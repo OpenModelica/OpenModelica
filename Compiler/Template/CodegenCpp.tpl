@@ -2478,7 +2478,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
         <%match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
-              << 
+              <<
               double* realVars = new double[<%listLength(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))))%> + _dimContinuousStates + _dimContinuousStates];
               int* integerVars = new int[<%listLength(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars))%>];
               bool* booleanVars = new bool[<%listLength(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars))%>];
@@ -2513,12 +2513,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
       deleteAlgloopSolverVariables();
     }
-    
+
     boost::shared_ptr<IAlgLoopSolverFactory> <%className%>::getAlgLoopSolverFactory()
     {
         return _algLoopSolverFactory;
     }
-    
+
     boost::shared_ptr<ISimData> <%className%>::getSimData()
     {
         return _sim_data;
@@ -2618,7 +2618,7 @@ match simCode
 
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
         >>
-    
+
 end generateSimulationCppConstructorContent;
 
 template algloopCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -13775,7 +13775,7 @@ end functionStoreDelay;
 // generate Member Function get Real
 
 
-template getVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, Integer indexOffset, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text& funcCalls, Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation) 
+template getVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, Integer indexOffset, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text& funcCalls, Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation)
 ::=
   let funcs =   List.partition(varsLst, 100) |> ls hasindex idx =>
                 let &varDecls = buffer "" /*BUFD*/
@@ -13850,14 +13850,14 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let &intFuncCalls = buffer ""
       let &boolFuncCalls = buffer ""
       let &stringFuncCalls = buffer ""
-      
+
       let stateVarCount = listLength(vars.stateVars)
       let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context, useFlatArrayNotation)
       let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &setRealFuncCalls, listLength(listAppend(vars.stateVars, vars.derivativeVars)), context, useFlatArrayNotation)
 
       let getStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => getStateVariables(var, i0, "z", i0) ;separator="\n")
       let setStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => setStateVariables(var, i0, "z", i0) ;separator="\n")
-      
+
       let getStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => getStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
       let setStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => setStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
 
@@ -13865,16 +13865,16 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &boolFuncCalls, context, useFlatArrayNotation)
 
       let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &stringFuncCalls, context, useFlatArrayNotation)
-      <<      
+      <<
       <%getrealvariable%>
-      
+
       void <%lastIdentOfPath(name)%>::getReal(double* z)
       {
         <%getStateVariables%>
         <%getStateDerVariables%>
         <%realFuncCalls%>
       }
-      
+
       <%setrealvariable%>
 
       void <%lastIdentOfPath(name)%>::setReal(const double* z)
@@ -13885,25 +13885,25 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       }
 
       <%getintvariable%>
-      
+
       void <%lastIdentOfPath(name)%>::getInteger(int* z)
       {
         <%intFuncCalls%>
-      }      
+      }
 
       <%getboolvariable%>
-      
+
       void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
       {
         <%boolFuncCalls%>
-      }   
+      }
 
       <%getstringvariable%>
-      
+
       void <%lastIdentOfPath(name)%>::getString(string* z)
       {
         <%stringFuncCalls%>
-      }   
+      }
 
       void <%lastIdentOfPath(name)%>::setInteger(const int* z)
       {
@@ -13935,7 +13935,7 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       {
          throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getReal is not implemented yet");
       }
-      
+
       void <%lastIdentOfPath(name)%>::getInteger(int* z)
       {
          throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getInteger is not implemented yet");
@@ -13950,12 +13950,12 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       {
          throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getString is not implemented yet");
       }
-  
+
       void <%lastIdentOfPath(name)%>::setReal(const double* z)
       {
          throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setReal is not implemented yet");
       }
-      
+
       void <%lastIdentOfPath(name)%>::setInteger(const int* z)
       {
          throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setInteger is not implemented yet");

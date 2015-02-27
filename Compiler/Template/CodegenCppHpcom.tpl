@@ -125,9 +125,9 @@ template generateAdditionalPublicMemberDeclaration(SimCode simCode, Text& extraF
         }
         >>
         /*
-        
+
         */
-      
+
       else ''
     else ''
   end match
@@ -1696,7 +1696,7 @@ template MemberVariableDefine(String type, SimVar simVar, String arrayName, Opti
                 <<
                 <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,name), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
                 >>
-            end match        
+            end match
           else
             match(hpcOmMemoryOpt)
               case SOME(hpcOmMemory) then
@@ -1712,7 +1712,7 @@ template MemberVariableDefine(String type, SimVar simVar, String arrayName, Opti
           case "0" then
             <<
             <%if createConstructorDeclaration then '' else '<%varType%> <%arrayName%>; //no cacheMap defined' %>
-            >>            
+            >>
           else
             <<
             <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%variableType(v.type_)%>,<%arraysize%>>  <%arrayName%>; //no cacheMap defined' %>
@@ -1763,7 +1763,7 @@ template MemberVariableDefine2(SimVar simVar, String arrayName, Option<MemoryMap
           else
             <<
             <%if createConstructorDeclaration then '' else '<%typeString%> <%arrayName%>; //no cacheMap defined' %>
-            >>     
+            >>
         else
           if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
             match(hpcOmMemoryOpt)
@@ -1796,7 +1796,7 @@ template MemberVariableDefine2(SimVar simVar, String arrayName, Option<MemoryMap
           else
             <<
             <%if createConstructorDeclaration then '' else '<%typeString%> <%arrayName%>; //no cacheMap defined' %>
-            >>     
+            >>
         else
           if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
             match(hpcOmMemoryOpt)
