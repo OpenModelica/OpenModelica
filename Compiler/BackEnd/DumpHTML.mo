@@ -251,10 +251,6 @@ algorithm
   System.writeFile(name, str);
 end dumpDocument;
 
-/*************************************************
- * protected
- ************************************************/
-
 protected function addHeadTag "add a head tag in the document.
   author Frenkel TUD 2012-11"
   input Tag tag;
@@ -390,7 +386,7 @@ algorithm
   tags := dumpFullMatching(matching, prefixId, tags);
 //  doc := addBodyTags(tags, doc);
   doc := addLine("<hr>", doc);
-  doc := addHyperLink("javascript:toggle('" + prefixId + "system')", "System einblenden", "System " + intString(i) + " ein/ausblenden", doc);
+  doc := addHyperLink("javascript:toggle('" + prefixId + "system')", "show system", "show/hide system " + intString(i), doc);
   doc := addDivision(prefixId + "system", {STYLE("display", "none")}, tags, doc);
   outTpl := (doc, i+1);
 end dumpEqSystem;
@@ -404,7 +400,7 @@ protected
   list<Tag> tags;
 algorithm
   ((tags, _)) := List.fold1(vars, dumpVar, prefixId, ({}, 1));
-  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "variables')", "Variablen einblenden", "Variablen ein/ausblenden", inTags);
+  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "variables')", "show variables", "show/hide variables", inTags);
   outTags := addDivisionTag(prefixId + "variables", {STYLE("background", "#FFFFCC"), STYLE("display", "none")}, tags, outTags);
 end printVarList;
 
@@ -436,7 +432,7 @@ protected
   list<Tag> tags;
 algorithm
   ((tags, _)) := List.fold1(eqns, dumpEqn, prefixId, ({}, 1));
-  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "equations')", "Equations einblenden", "Equations ein/ausblenden", inTags);
+  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "equations')", "show equations", "show/hide equations", inTags);
   outTags := addDivisionTag(prefixId + "equations", {STYLE("background", "#C0C0C0"), STYLE("display", "none")}, tags, outTags);
 end dumpEqns;
 
@@ -495,7 +491,7 @@ algorithm
   len_str := intString(len) + " variables and equations\n";
   outTags := addLineTag(len_str, outTags);
   tags := dumpMatching2(v, 1, len, prefixId, {});
-  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "matching')", "Matching einblenden", "Matching ein/ausblenden", outTags);
+  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "matching')", "show matching", "show/hide matching", outTags);
   outTags := addDivisionTag(prefixId + "matching", {STYLE("background", "#339966"), STYLE("display", "none")}, tags, outTags);
 end dumpMatching;
 
@@ -516,7 +512,7 @@ algorithm
     s := intString(i);
     eqn := v[i];
     s2 := intString(eqn);
-    s := "Variable <a href=\"#" + prefixId + "varanker" + s + "\" onclick=\"return show('" + prefixId + "variables');\">" + s + "</a> is solved in Equation  <a href=\"#" + prefixId + "eqanker" + s2 + "\" onclick=\"return show('" + prefixId + "equations');\">" + s2 + "</a>";
+    s := "Variable <a href=\"#" + prefixId + "varanker" + s + "\" onclick=\"return show('" + prefixId + "variables');\">" + s + "</a> is solved in equation  <a href=\"#" + prefixId + "eqanker" + s2 + "\" onclick=\"return show('" + prefixId + "equations');\">" + s2 + "</a>";
     outTags := dumpMatching2(v, i+1, len, prefixId, LINE(s)::inTags);
   else
     outTags := inTags;
