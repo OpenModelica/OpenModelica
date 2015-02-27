@@ -2466,6 +2466,106 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         , _sim_data(sim_data)
         <%simulationInitFile(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, false)%>
     {
+        <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    }
+
+    <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance.getGlobalSettings())
+        , <%className%>PreVariables()
+        , _algLoopSolverFactory(instance.getAlgLoopSolverFactory())
+        , _sim_data(instance.getSimData())
+        <%simulationInitFile(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, false)%>
+    {
+        <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+        <%match modelInfo
+            case MODELINFO(vars=SIMVARS(__)) then
+              << 
+              double* realVars = new double[<%listLength(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))))%> + _dimContinuousStates + _dimContinuousStates];
+              int* integerVars = new int[<%listLength(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars))%>];
+              bool* booleanVars = new bool[<%listLength(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars))%>];
+              string* stringVars = new string[<%listLength(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars))%>];
+              instance.getReal(realVars);
+              instance.getInteger(integerVars);
+              instance.getBoolean(booleanVars);
+              instance.getString(stringVars);
+              setReal(realVars);
+              setInteger(integerVars);
+              setBoolean(booleanVars);
+              setString(stringVars);
+              delete[] realVars;
+              delete[] integerVars;
+              delete[] booleanVars;
+              delete[] stringVars;
+              >>
+         %>
+    }
+
+    /* Destructor */
+    <%className%>::~<%className%>()
+    {
+      deleteObjects();
+    }
+
+    void <%className%>::deleteObjects()
+    {
+
+      if(_functions != NULL)
+        delete _functions;
+
+      deleteAlgloopSolverVariables();
+    }
+    
+    boost::shared_ptr<IAlgLoopSolverFactory> <%className%>::getAlgLoopSolverFactory()
+    {
+        return _algLoopSolverFactory;
+    }
+    
+    boost::shared_ptr<ISimData> <%className%>::getSimData()
+    {
+        return _sim_data;
+    }
+
+    <%generateInitAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
+
+    <%generateDeleteAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
+
+    <%Update(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+
+    <%DefaultImplementationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%checkForDiscreteEvents(discreteModelVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
+    <%giveZeroFunc1(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+
+    <%setConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%geConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%isConsistent(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+
+    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+
+    <%generateStepStarted(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
+
+    <%generatehandleTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%generateTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, true)%>
+
+    <%isODE(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%DimZeroFunc(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+
+    <%getCondition(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%handleSystemEvents(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
+
+
+    <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%extraFuncs%>
+    >>
+end simulationCppFile;
+
+template generateSimulationCppConstructorContent(SimCode simCode, Context context, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+    let className = lastIdentOfPath(modelInfo.name)
+      <<
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       _dimZeroFunc = <%zerocrosslength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>;
@@ -2507,7 +2607,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             #endif //MEASURETIME_MODELFUNCTIONS
             >>
         %>
-        //DAE's are not supported yet, Index reduction is enabled
+        //DAEs are not supported yet, Index reduction is enabled
         _dimAE = 0; // algebraic equations
         //Initialize the state vector
         SystemDefaultImplementation::initialize();
@@ -2517,58 +2617,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
 
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
-    }
-
-    /* Destructor */
-    <%className%>::~<%className%>()
-    {
-      deleteObjects();
-    }
-
-    void <%className%>::deleteObjects()
-    {
-
-      if(_functions != NULL)
-        delete _functions;
-
-      deleteAlgloopSolverVariables();
-    }
-
-    <%generateInitAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
-
-    <%generateDeleteAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
-
-    <%Update(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-
-    <%DefaultImplementationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%checkForDiscreteEvents(discreteModelVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
-    <%giveZeroFunc1(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-
-    <%setConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%geConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%isConsistent(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-
-    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-
-    <%generateStepStarted(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
-
-    <%generatehandleTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
-    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%generateTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, true)%>
-
-    <%isODE(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%DimZeroFunc(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-
-    <%getCondition(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%handleSystemEvents(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
-
-
-    <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%extraFuncs%>
-    >>
-end simulationCppFile;
+        >>
+    
+end generateSimulationCppConstructorContent;
 
 template algloopCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for algloop system ."
@@ -5303,7 +5354,7 @@ match modelInfo
 
 
   let getrealvars =
-  (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
+  (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), 100) |> ls hasindex idx =>
     <<
     void getReal_<%idx%>(double* z);
     void setReal_<%idx%>(const double* z);
@@ -5346,11 +5397,15 @@ match modelInfo
       <%additionalPublicMembers%>
 
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor, boost::shared_ptr<ISimData>);
+      <%lastIdentOfPath(modelInfo.name)%>(<%lastIdentOfPath(modelInfo.name)%> &instance);
 
       virtual ~<%lastIdentOfPath(modelInfo.name)%>();
 
       <%generateMethodDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       virtual bool getCondition(unsigned int index);
+
+      boost::shared_ptr<IAlgLoopSolverFactory> getAlgLoopSolverFactory();
+      boost::shared_ptr<ISimData> getSimData();
 
   protected:
       //Methods:
@@ -5359,7 +5414,7 @@ match modelInfo
       void deleteAlgloopSolverVariables();
       void deleteJacAlgloopSolverVariables();
       <%initDeleteAlgloopSolverVars%>
-      <% match context case FMI_CONTEXT(__) then
+      <% /*match context case FMI_CONTEXT(__) then*/
       <<
       <%getrealvars%>
       <%getintvars%>
@@ -6196,80 +6251,23 @@ case MODELINFO(vars=SIMVARS(__)) then
  >>
  end InitAlgloopParams;
 
- // template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
-// ::=
-// match simVar
-
-    // case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-    // case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-      // <<
-      // <%type%> <%cref(name,useFlatArrayNotation)%>;
-      // >>
-    // case v as SIMVAR(name=name, type_ = T_ARRAY(__), arrayCref=SOME(_),numArrayElement=num) then
-      // let &dims = buffer "" /*BUFD*/
-      // let arrayName = arraycref2(name,dims)
-      // let arraysize = arrayextentDims(name,v.numArrayElement)
-      // let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
-      // <<
-      // StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>  /*testarray3 <%test%> */;
-      // >>
-
-    // case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      // <<
-      // <%type%> <%cref(name,useFlatArrayNotation)%>;
-      // >>
-    // case SIMVAR(numArrayElement=_::_) then
-      // let& dims = buffer "" /*BUFD*/
-      // let varName = arraycref2(name,dims)
-      // let varType = variableType(type_)
-      // match dims
-        // case "0" then  '<%varType%> <%varName%>;'
-        // else ''
-// end MemberVariableDefine;
 
 template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
 ::=
 match simVar
-
-    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
-      <<
-      /*<%type%> <%cref(name,useFlatArrayNotation)%>;*/
-      >>
-
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
+      //SimVar is not an array
       <<
       <%type%> <%cref(name,useFlatArrayNotation)%>;
       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
-      let varType = variableType(type_)
-
-      match dims
-        case "0" then
-          <<
-          <%varType%> <%arrayName%>; /*testarray1 <%test%> */;
-          >>
-        else
-          <<
-          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>; /*testarray2 <%test%> */;
-          >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
       let arraysize = arrayextentDims(name,v.numArrayElement)
+      let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
       let varType = variableType(type_)
 
-      /*previous multiarray
-      <<
-        multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
-        >>*/
-      //
-      let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
       match dims
         case "0" then
           <<
@@ -6277,7 +6275,7 @@ match simVar
           >>
         else
           <<
-          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>  /*testarray4 <%test%> */;
+          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>;  /*testarray4 <%test%> */;
           >>
     case SIMVAR(numArrayElement=_::_) then
       let test = numArrayElement |> index =>  '<%index%>'; separator=","
@@ -6285,7 +6283,7 @@ match simVar
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims
-        case "0" then  '/*this*/<%varType%> <%varName%>; /*testscalar <%test%> */;'
+        case "0" then  '<%varType%> <%varName%>;'
         else ''
 end MemberVariableDefine;
 
@@ -6319,34 +6317,13 @@ template MemberVariableDefine2(SimVar simVar, String arrayName, Boolean useFlatA
 ::=
 
 match simVar
+    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
 
-
-    /*case SIMVAR(arrayCref=NONE()) then
-       <<
-       <%variableType(type_)%> <%cref(name)%>;
-       >>
-    */
-      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-      case SIMVAR(numArrayElement={},arrayCref=NONE()) then
+    case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
       <%variableType(type_)%> <%cref(name,useFlatArrayNotation)%>;
       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-     then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      match dims
-        case "0" then
-          <<
-          <%typeString%> <%arrayName%>; /*testarray1*/;
-          >>
-        else
-          <<
-          StatArrayDim<%dims%><<%typeString%>,<%arraysize%>>  <%arrayName%>/*testarray2*/;
-          >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
@@ -6361,7 +6338,7 @@ match simVar
           <<
           StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%> /*testarray4*/;
           >>
-   /*special case for varibales that marked as array but are not arrays */
+   /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
@@ -13798,13 +13775,12 @@ end functionStoreDelay;
 // generate Member Function get Real
 
 
-template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParams,list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation) ::=
-
-  let &funcCalls = buffer "" /*BUFD*/
+template getVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, Integer indexOffset, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text& funcCalls, Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation) 
+::=
   let funcs =   List.partition(varsLst, 100) |> ls hasindex idx =>
                 let &varDecls = buffer "" /*BUFD*/
                 let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
-                let init = giveVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100)
+                let init = getVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100, indexOffset)
                 <<
                 void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
                 {
@@ -13817,34 +13793,26 @@ template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcPara
 
   <<
   <%funcs%>
-
-  void <%funcNamePrefix%>(<%funcArgs%>)
-  {
-    <%funcCalls%>
-  }
   >>
+end getVariablesWithSplit;
 
 
-end giveVariablesWithSplit;
-
-
-template giveVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize)
+template getVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize, Integer indexOffset)
 ::=
 <<
  <%varsLst |>
-        var hasindex i0 fromindex (intMul(multiplicator, partitionSize)) => giveVariablesDefault(var, i0, useFlatArrayNotation)
+        var hasindex i0 fromindex (intAdd(indexOffset, intMul(multiplicator, partitionSize))) => giveVariablesDefault(var, i0, useFlatArrayNotation)
         ;separator="\n"%>
  >>
-end giveVariablesWithSplit2;
+end getVariablesWithSplit2;
 
 
 
-template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParams,list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation) ::=
-  let &funcCalls = buffer "" /*BUFD*/
+template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& funcCalls, Integer indexOffset, Context context, Boolean useFlatArrayNotation) ::=
   let funcs = List.partition(varsLst, 100) |> ls hasindex idx =>
     let &varDecls = buffer "" /*BUFD*/
     let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
-    let init = setVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100)
+    let init = setVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100, indexOffset)
     <<
     void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
     {
@@ -13856,128 +13824,154 @@ template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParam
 
   <<
   <%funcs%>
-
-  void <%funcNamePrefix%>(<%funcArgs%>)
-  {
-    <%funcCalls%>
-  }
   >>
 end setVariablesWithSplit;
 
 
-template setVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize)
+template setVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize, Integer indexOffset)
 ::=
 <<
  <%varsLst|>
-        var hasindex i0 fromindex intMul(multiplicator, partitionSize) => setVariablesDefault(var, i0, useFlatArrayNotation)
+        var hasindex i0 fromindex intMul(multiplicator, partitionSize) => setVariablesDefault(var, i0, useFlatArrayNotation, indexOffset)
         ;separator="\n"%>
 
  >>
 end setVariablesWithSplit2;
 
 
-
-
 template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArrayNotation,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Define Memeber Function getReal off Cpp Target"
 ::=
-match context  case FMI_CONTEXT(__) then
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-
-
-  let getrealvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
-  let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
-
-  let getintvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
-
-  let getboolvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
-
-  let getstringvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
-  <<
-
-  <%getrealvariable%>
-  <%setrealvariable%>
-
-  <%getintvariable%>
-
-  <%getboolvariable%>
-
-  <%getstringvariable%>
-
-  void <%lastIdentOfPath(name)%>::setInteger(const int* z)
-  {
-    <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
-        var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation)
-        ;separator="\n"%>
-  }
-
-  void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
-  {
-
-
-     <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
-        var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation)
-        ;separator="\n"%>
-
-
-  }
-
-  void <%lastIdentOfPath(name)%>::setString(const string* z)
-  {
-
-  }
-
-  >>
-  end match
-  else
+//match context  case FMI_CONTEXT(__) then
   match modelInfo
-  case MODELINFO(vars=SIMVARS(__)) then
-  <<
-  void <%lastIdentOfPath(name)%>::getReal(double* z)
-  {
-   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getReal is not implemented yet");
+    case MODELINFO(vars=SIMVARS(__)) then
+      let &realFuncCalls = buffer ""
+      let &setRealFuncCalls = buffer ""
+      let &intFuncCalls = buffer ""
+      let &boolFuncCalls = buffer ""
+      let &stringFuncCalls = buffer ""
+      
+      let stateVarCount = listLength(vars.stateVars)
+      let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context, useFlatArrayNotation)
+      let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &setRealFuncCalls, listLength(listAppend(vars.stateVars, vars.derivativeVars)), context, useFlatArrayNotation)
 
-  }
-  void <%lastIdentOfPath(name)%>::getInteger(int* z)
-  {
-   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getInteger is not implemented yet");
-  }
+      let getStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => getStateVariables(var, i0, "z", i0) ;separator="\n")
+      let setStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => setStateVariables(var, i0, "z", i0) ;separator="\n")
+      
+      let getStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => getStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
+      let setStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => setStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
 
-  void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
-  {
-   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getBoolean is not implemented yet");
+      let getintvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &intFuncCalls, context, useFlatArrayNotation)
+      let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &boolFuncCalls, context, useFlatArrayNotation)
 
-  }
+      let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &stringFuncCalls, context, useFlatArrayNotation)
+      <<      
+      <%getrealvariable%>
+      
+      void <%lastIdentOfPath(name)%>::getReal(double* z)
+      {
+        <%getStateVariables%>
+        <%getStateDerVariables%>
+        <%realFuncCalls%>
+      }
+      
+      <%setrealvariable%>
 
-  void <%lastIdentOfPath(name)%>::getString(string* z)
-  {
-    throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getString is not implemented yet");
+      void <%lastIdentOfPath(name)%>::setReal(const double* z)
+      {
+        <%setStateVariables%>
+        <%setStateDerVariables%>
+        <%setRealFuncCalls%>
+      }
 
-  }
-  void <%lastIdentOfPath(name)%>::setReal(const double* z)
-  {
-   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setReal is not implemented yet");
+      <%getintvariable%>
+      
+      void <%lastIdentOfPath(name)%>::getInteger(int* z)
+      {
+        <%intFuncCalls%>
+      }      
 
-  }
-  void <%lastIdentOfPath(name)%>::setInteger(const int* z)
-  {
-   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setInteger is not implemented yet");
+      <%getboolvariable%>
+      
+      void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
+      {
+        <%boolFuncCalls%>
+      }   
 
-  }
+      <%getstringvariable%>
+      
+      void <%lastIdentOfPath(name)%>::getString(string* z)
+      {
+        <%stringFuncCalls%>
+      }   
 
-  void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
-  {
-   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setBoolean is not implemented yet");
+      void <%lastIdentOfPath(name)%>::setInteger(const int* z)
+      {
+         <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
+           var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation, 0)
+           ;separator="\n"%>
+      }
 
-  }
+      void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
+      {
+         <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
+           var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation, 0)
+           ;separator="\n"%>
+      }
 
-  void <%lastIdentOfPath(name)%>::setString(const string* z)
-  {
-   throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setString is not implemented yet");
+      void <%lastIdentOfPath(name)%>::setString(const string* z)
+      {
+         <%listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars) |>
+           var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation, 0)
+           ;separator="\n"%>
+      }
+      >>
+  end match
+/*  else
+    match modelInfo
+      case MODELINFO(vars=SIMVARS(__)) then
+      <<
+      void <%lastIdentOfPath(name)%>::getReal(double* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getReal is not implemented yet");
+      }
+      
+      void <%lastIdentOfPath(name)%>::getInteger(int* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getInteger is not implemented yet");
+      }
 
-  }
-  >>
+      void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getBoolean is not implemented yet");
+      }
+
+      void <%lastIdentOfPath(name)%>::getString(string* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"getString is not implemented yet");
+      }
+  
+      void <%lastIdentOfPath(name)%>::setReal(const double* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setReal is not implemented yet");
+      }
+      
+      void <%lastIdentOfPath(name)%>::setInteger(const int* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setInteger is not implemented yet");
+      }
+
+      void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setBoolean is not implemented yet");
+      }
+
+      void <%lastIdentOfPath(name)%>::setString(const string* z)
+      {
+         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"setString is not implemented yet");
+      }
+      >>
+  */
   /*
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
@@ -13986,16 +13980,49 @@ case MODELINFO(vars=SIMVARS(__)) then
   */
 end giveVariables;
 
-template giveVariablesState(SimVar simVar, Integer valueReference, String arrayName, Integer index)
+template getStateVariables(SimVar simVar, Integer valueReference, String arrayName, Integer index)
  "Generates code for getting variables in cpp target for use in FMU. "
 ::=
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  z[<%valueReference%>] = <%arrayName%>[<%index%>]; <%description%>
+  <%arrayName%>[<%index%>] = this->__z[<%valueReference%>]; <%description%>
   >>
-end giveVariablesState;
+end getStateVariables;
+
+template setStateVariables(SimVar simVar, Integer valueReference, String arrayName, Integer index)
+ "Generates code for getting variables in cpp target for use in FMU. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  this->__z[<%valueReference%>] = <%arrayName%>[<%index%>]; <%description%>
+  >>
+end setStateVariables;
+
+template getStateDerivativeVariables(SimVar simVar, Integer valueReference, String arrayName, Integer index, Integer indexOffset)
+ "Generates code for getting variables in cpp target for use in FMU. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  <%arrayName%>[<%intAdd(index,indexOffset)%>] = this->__zDot[<%valueReference%>]; <%description%>
+  >>
+end getStateDerivativeVariables;
+
+template setStateDerivativeVariables(SimVar simVar, Integer valueReference, String arrayName, Integer index, Integer indexOffset)
+ "Generates code for getting variables in cpp target for use in FMU. "
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
+  <<
+  this->__zDot[<%valueReference%>] = <%arrayName%>[<%intAdd(index,indexOffset)%>]; <%description%>
+  >>
+end setStateDerivativeVariables;
 
 template giveVariablesDefault(SimVar simVar, Integer valueReference, Boolean useFlatArrayNotation)
  "Generates code for getting variables in cpp target for use in FMU. "
@@ -14008,19 +14035,18 @@ match simVar
   >>
 end giveVariablesDefault;
 
-template setVariablesDefault(SimVar simVar, Integer valueReference, Boolean useFlatArrayNotation)
+template setVariablesDefault(SimVar simVar, Integer valueReference, Boolean useFlatArrayNotation, Integer indexOffset)
  "Generates code for getting variables in cpp target for use in FMU. "
 ::=
-match simVar
-  case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
-  let variablename = cref(name, useFlatArrayNotation)
-  match causality
-    case INPUT() then
-      <<
-      <%variablename%> = z[<%valueReference%>]; <%description%>
-      >>
-
+  match simVar
+    case SIMVAR(__) then
+      let description = if comment then '// "<%comment%>"'
+      let variablename = cref(name, useFlatArrayNotation)
+      //match causality
+      //  case INPUT() then
+          <<
+          <%variablename%> = z[<%intAdd(indexOffset, valueReference)%>]; <%description%>
+          >>
   end match
 end setVariablesDefault;
 
