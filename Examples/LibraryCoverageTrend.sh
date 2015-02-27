@@ -3,10 +3,12 @@
 # $1 path to CountClassUses.py, /var/lib/hudson/jobs/OpenModelica_TEST_ALL_LIBRARIES/workspace/OpenModelica/Examples/CountClassUses.py
 # $2 path to where the libraries coverages is, /var/www/libraries
 # $3 the generated file name (trend.html)
+# $4 the detailed generated file name (trend-detailed.html)
 
 PY=$1
 WWW=$2
 TREND_FILE=$3
+TREND_FILE_DETAILED=$4
 
 cd "$WWW"
 OUT=a.html
@@ -26,7 +28,16 @@ for f in history/*-trend.svg; do
     echo "<hr />" >> $OUT
   fi
 done
-echo "<hr />" >> $OUT
+echo "<p>Please contact the <a href="https://www.openmodelica.org/">OpenModelica Team</a> if you have any questions." >> $OUT
+echo "</center>" >> $OUT
+echo "</body></html>" >> $OUT
+mv $OUT $TREND_FILE
+
+cd "$WWW"
+OUT=b.html
+SDATE=`date +"%Y-%m-%d %R week %U"`
+echo "<html><head><title>OpenModelica - Detailed Library Coverage Trend Overview</title><body>" > $OUT
+echo "<center>" >> $OUT
 echo "<h2>OpenModelica Detailed Library Coverage Overview ran each night by <a href="/hudson/view/Library%20Testing/">Hudson</a></h2><br/><b>$SDATE</b>" >> $OUT
 echo "<hr />" >> $OUT
 for f in history/*-trend-detailed.svg; do
@@ -43,7 +54,7 @@ done
 echo "<p>Please contact the <a href="https://www.openmodelica.org/">OpenModelica Team</a> if you have any questions." >> $OUT
 echo "</center>" >> $OUT
 echo "</body></html>" >> $OUT
-mv $OUT $TREND_FILE
+mv $OUT $TREND_FILE_DETAILED
 
 (cd "$WWW" && "$PY" MSL_3.2.1 ModelicaTest_3.2.1 > "$WWW/MSL_3.2.1/Coverage.txt")
 (cd "$WWW" && "$PY" MSL_trunk ModelicaTest_trunk > "$WWW/MSL_trunk/Coverage.txt")
