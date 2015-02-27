@@ -95,7 +95,7 @@ protected import Util;
 //   - printVarList
 // =============================================================================
 
-public function printBackendDAE "This function dumps the BackendDAE.BackendDAE representaton to stdout."
+public function printBackendDAE "This function dumps the BackendDAE.BackendDAE representation to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
 protected
   BackendDAE.EqSystems eqs;
@@ -107,7 +107,7 @@ algorithm
   printShared(shared);
 end printBackendDAE;
 
-public function printEqSystem "This function prints the BackendDAE.EqSystem representaton to stdout."
+public function printEqSystem "This function prints the BackendDAE.EqSystem representation to stdout."
   input BackendDAE.EqSystem inEqSystem;
 protected
   BackendDAE.Variables orderedVars;
@@ -255,7 +255,7 @@ public function printClassAttributes "This unction print the  Optimica ClassAttr
     print("\n");
 end printClassAttributes;
 
-public function printShared "This function dumps the BackendDAE.Shared representaton to stdout."
+public function printShared "This function dumps the BackendDAE.Shared representation to stdout."
   input BackendDAE.Shared inShared;
 protected
   BackendDAE.Variables knownVars, externalObjects, aliasVars;
@@ -531,7 +531,14 @@ end setIncidenceMatrix1;
 protected constant String BORDER    = "########################################";
 protected constant String UNDERLINE = "========================================";
 
-public function dumpBackendDAE "This function dumps the BackendDAE.BackendDAE representaton to stdout."
+public function dumpDAE "dumps the DAE representation of the current transformation state"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+algorithm
+  dumpBackendDAE(inDAE, "dumpDAE");
+end dumpDAE;
+
+public function dumpBackendDAE "This function dumps the BackendDAE.BackendDAE representation to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
   input String heading;
 algorithm
@@ -540,7 +547,7 @@ algorithm
   print("\n");
 end dumpBackendDAE;
 
-public function dumpBackendDAEToModelica "This function dumps the BackendDAE.BackendDAE representaton to a Modelica file."
+public function dumpBackendDAEToModelica "This function dumps the BackendDAE.BackendDAE representation to a Modelica file."
   input BackendDAE.BackendDAE inBackendDAE;
   input String suffix;
 protected
@@ -2150,7 +2157,7 @@ algorithm
 end dumpMatchingHTML2;
 
 protected function dumpSharedHTML
-"This function dumps the BackendDAE.Shared representaton to stdout."
+"This function dumps the BackendDAE.Shared representation to stdout."
   input BackendDAE.Shared inShared;
   input DumpHTML.Document inDoc;
   output DumpHTML.Document outDoc;
