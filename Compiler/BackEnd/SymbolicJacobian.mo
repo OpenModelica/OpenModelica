@@ -1435,13 +1435,16 @@ algorithm
           b = Flags.disableDebug(Flags.EXEC_STAT);
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
-                                                                   SOME({"removeEqualFunctionCalls","removeSimpleEquations"}),
+                                                                   SOME({"evalFunc","removeEqualFunctionCalls","removeSimpleEquations"}),
                                                                    NONE(),
                                                                    NONE(),
                                                                    SOME({"inlineArrayEqn",
                                                                          "constantLinearSystem",
                                                                          "removeSimpleEquations",
+                                                                         "removeConstants",
                                                                          "tearingSystem",
+                                                                         "solveSimpleEquations",
+                                                                         "simplifyTimeIndepFuncCalls",
                                                                          "calculateStrongComponentJacobians"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
           if Flags.isSet(Flags.JAC_DUMP) then
