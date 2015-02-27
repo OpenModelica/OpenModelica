@@ -241,12 +241,12 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 
   /* set nominal values of the states for absolute tolerances */
   dasslData->info[1] = 1;
-  infoStreamPrint(LOG_SOLVER, 1, " - The relative tolerance is %f. Following absolute tolerances are used for the states: ", data->simulationInfo.tolerance);
-  for(i=0;i<data->modelData.nStates;++i)
+  infoStreamPrint(LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo.tolerance);
+  for(i=0; i<data->modelData.nStates; ++i)
   {
     dasslData->rtol[i] = data->simulationInfo.tolerance;
-    dasslData->atol[i] = data->simulationInfo.tolerance * fmax(fabs(data->modelData.realVarsData[i].attribute.nominal),1e-32);
-    infoStreamPrint(LOG_SOLVER, 0, " %d. %s -> %f ", i+1, data->modelData.realVarsData[i].info.name, dasslData->atol[i]);
+    dasslData->atol[i] = data->simulationInfo.tolerance * fmax(fabs(data->modelData.realVarsData[i].attribute.nominal), 1e-32);
+    infoStreamPrint(LOG_SOLVER, 0, "%d. %s -> %g ", i+1, data->modelData.realVarsData[i].info.name, dasslData->atol[i]);
   }
   messageClose(LOG_SOLVER);
 
@@ -264,11 +264,11 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 
     dasslData->rwork[1] = maxStepSize;
     dasslData->info[6] = 1;
-    infoStreamPrint(LOG_SOLVER, 0, " - maximum step size %g", dasslData->rwork[1]);
+    infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", dasslData->rwork[1]);
   }
   else
   {
-    infoStreamPrint(LOG_SOLVER, 0, " - maximum step size not set");
+    infoStreamPrint(LOG_SOLVER, 0, "maximum step size not set");
   }
 
 
@@ -281,11 +281,11 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 
     dasslData->rwork[2] = initialStepSize;
     dasslData->info[7] = 1;
-    infoStreamPrint(LOG_SOLVER, 0, " - initial step size %g", dasslData->rwork[2]);
+    infoStreamPrint(LOG_SOLVER, 0, "initial step size %g", dasslData->rwork[2]);
   }
   else
   {
-    infoStreamPrint(LOG_SOLVER, 0, " - initial step size not set");
+    infoStreamPrint(LOG_SOLVER, 0, "initial step size not set");
   }
 
 
@@ -299,7 +299,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     dasslData->iwork[2] = maxOrder;
     dasslData->info[8] = 1;
   }
-  infoStreamPrint(LOG_SOLVER, 0, " - maximum integration order %d", dasslData->info[8]?dasslData->iwork[2]:maxOrder);
+  infoStreamPrint(LOG_SOLVER, 0, "maximum integration order %d", dasslData->info[8]?dasslData->iwork[2]:maxOrder);
 
 
   /* if FLAG_NOEQUIDISTANT_GRID is set, choose dassl step method */
@@ -311,7 +311,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   {
     dasslData->dasslSteps = 0; /* FALSE */
   }
-  infoStreamPrint(LOG_SOLVER, 0, " - use equidistant time grid %s", dasslData->dasslSteps?"NO":"YES");
+  infoStreamPrint(LOG_SOLVER, 0, "use equidistant time grid %s", dasslData->dasslSteps?"NO":"YES");
 
 
   /* if FLAG_DASSL_JACOBIAN is set, choose dassl jacobian calculation method */
@@ -331,7 +331,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
         warningStreamPrint(LOG_SOLVER, 1, "unrecognized jacobian calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
         for(i=1; i < DASSL_JAC_MAX; ++i)
         {
-          warningStreamPrint(LOG_SOLVER, 0, "  %-15s [%s]", dasslJacobianMethodStr[i], dasslJacobianMethodDescStr[i]);
+          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", dasslJacobianMethodStr[i], dasslJacobianMethodDescStr[i]);
         }
         messageClose(LOG_SOLVER);
       }
@@ -339,7 +339,8 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     }
   /* default case colored numerical jacobian */
   }
-  else{
+  else
+  {
     dasslData->dasslJacobian = DASSL_COLOREDNUMJAC;
   }
 
@@ -389,7 +390,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
       throwStreamPrint(data->threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
       break;
   }
-  infoStreamPrint(LOG_SOLVER, 0, " - jacobian is calculated by %s", dasslJacobianMethodDescStr[dasslData->dasslJacobian]);
+  infoStreamPrint(LOG_SOLVER, 0, "jacobian is calculated by %s", dasslJacobianMethodDescStr[dasslData->dasslJacobian]);
 
 
   /* if FLAG_DASSL_NO_ROOTFINDING is set, choose dassl with out internal root finding */
@@ -405,7 +406,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     dasslData->dasslRootFinding = 1;
     dasslData->zeroCrossingFunction = function_ZeroCrossingsDASSL;
   }
-  infoStreamPrint(LOG_SOLVER, 0, " - dassl uses internal root finding method %s", dasslData->dasslRootFinding?"YES":"NO");
+  infoStreamPrint(LOG_SOLVER, 0, "dassl uses internal root finding method %s", dasslData->dasslRootFinding?"YES":"NO");
 
 
   /* if FLAG_DASSL_NO_RESTART is set, choose dassl step method */
@@ -417,7 +418,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   {
     dasslData->dasslAvoidEventRestart = 0; /* FALSE */
   }
-  infoStreamPrint(LOG_SOLVER, 0, " - dassl performs an restart after an event occurs %s", dasslData->dasslAvoidEventRestart?"NO":"YES");
+  infoStreamPrint(LOG_SOLVER, 0, "dassl performs an restart after an event occurs %s", dasslData->dasslAvoidEventRestart?"NO":"YES");
 
   /* ### end configuration of dassl ### */
 
@@ -480,7 +481,7 @@ int printCurrentStatesVector(int logLevel, double* states, DATA* data){
   infoStreamPrint(logLevel, 1, "States: ");
   for(i=0;i<data->modelData.nStates;++i)
   {
-    infoStreamPrint(logLevel, 0, " %d. %s = %f ", i+1, data->modelData.realVarsData[i].info.name, states[i]);
+    infoStreamPrint(logLevel, 0, "%d. %s = %f ", i+1, data->modelData.realVarsData[i].info.name, states[i]);
   }
   messageClose(logLevel);
 
