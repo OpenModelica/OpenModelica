@@ -1977,194 +1977,6 @@ algorithm
   end match;
 end dumpOption;
 
-protected function dumpEqSystemHTML
-"This function dumps the BackendDAE.EqSystem representation to stdout."
-  input BackendDAE.EqSystem inEqSystem;
-  input String inPrefixIdstr;
-  input tuple<DumpHTML.Document,Integer> inTpl;
-  output tuple<DumpHTML.Document,Integer> outTpl;
-protected
-  list<BackendDAE.Var> vars;
-  Integer eqnlen,eqnssize,i;
-  String varlen_str,eqnlen_str,prefixIdstr,prefixId;
-  list<BackendDAE.Equation> eqnsl;
-  BackendDAE.Variables vars1;
-  BackendDAE.EquationArray eqns;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrix> mT;
-  BackendDAE.Matching matching;
-  DumpHTML.Document doc;
-  DumpHTML.Tags tags;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
-  (doc,i) := inTpl;
-  prefixId := inPrefixIdstr + "_" + intString(i);
-  vars := BackendVariable.varList(vars1);
-  varlen_str := "Variables (" + intString(listLength(vars)) + ")";
-  tags := DumpHTML.addHeadingTag(2,varlen_str,{});
-  tags := printVarListHTML(vars,prefixId,tags);
-  eqnsl := BackendEquation.equationList(eqns);
-  eqnlen_str := "Equations (" + intString(listLength(eqnsl)) + "," + intString(BackendDAEUtil.equationSize(eqns)) + ")";
-  tags := DumpHTML.addHeadingTag(2,eqnlen_str,tags);
-  tags := dumpEqnsHTML(eqnsl,prefixId,tags);
-  //dumpOption(m,dumpIncidenceMatrix);
-  //dumpOption(mT,dumpIncidenceMatrixT);
-  tags := dumpFullMatchingHTML(matching,prefixId,tags);
-//  doc := DumpHTML.addBodyTags(tags,doc);
-  doc := DumpHTML.addLine("<hr>",doc);
-  doc := DumpHTML.addHyperLink("javascript:toggle('" + prefixId + "system')","System einblenden","System " + intString(i) + " ein/ausblenden",doc);
-  doc := DumpHTML.addDivision(prefixId + "system",{("display","none")},tags,doc);
-  outTpl := (doc,i+1);
-end dumpEqSystemHTML;
-
-protected function printVarListHTML
-"Helper function to printVarList."
-  input list<BackendDAE.Var> vars;
-  input String prefixId;
-  input DumpHTML.Tags inTags;
-  output DumpHTML.Tags outTags;
-protected
-  DumpHTML.Tags tags;
-algorithm
-  ((tags,_)) := List.fold1(vars,dumpVarHTML,prefixId,({},1));
-  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" + prefixId + "variables')","Variablen einblenden","Variablen ein/ausblenden",inTags);
-  outTags := DumpHTML.addDivisionTag(prefixId + "variables",{("background","#FFFFCC"),("display","none")},tags,outTags);
-end printVarListHTML;
-
-protected function dumpVarHTML
-"Helper function to printVarList."
-  input BackendDAE.Var inVar;
-  input String prefixId;
-  input tuple<DumpHTML.Tags,Integer> inTpl;
-  output tuple<DumpHTML.Tags,Integer> oTpl;
-protected
-  DumpHTML.Tags tags;
-  Integer i;
-  String ln,istr;
-algorithm
-  (tags,i) := inTpl;
-  istr := intString(i);
-  ln := prefixId + "varanker" + istr;
-  tags := DumpHTML.addAnkerTag(ln,tags);
-  ln := istr + ": " + varString(inVar);
-  tags := DumpHTML.addLineTag(ln,tags);
-  oTpl := (tags,i+1);
-end dumpVarHTML;
-
-protected function dumpEqnsHTML
-"Helper function to printVarList."
-  input list<BackendDAE.Equation> eqns;
-  input String prefixId;
-  input DumpHTML.Tags inTags;
-  output DumpHTML.Tags outTags;
-protected
-  DumpHTML.Tags tags;
-algorithm
-  ((tags,_)) := List.fold1(eqns,dumpEqnHTML,prefixId,({},1));
-  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" + prefixId + "equations')","Equations einblenden","Equations ein/ausblenden",inTags);
-  outTags := DumpHTML.addDivisionTag(prefixId + "equations",{("background","#C0C0C0"),("display","none")},tags,outTags);
-end dumpEqnsHTML;
-
-protected function dumpEqnHTML
-"Helper function to dump_eqns"
-  input BackendDAE.Equation inEquation;
-  input String prefixId;
-  input tuple<DumpHTML.Tags,Integer> inTpl;
-  output tuple<DumpHTML.Tags,Integer> oTpl;
-protected
-  DumpHTML.Tags tags;
-  Integer i;
-  String ln,istr;
-algorithm
-  (tags,i) := inTpl;
-  istr := intString(i);
-  ln := prefixId + "eqanker" + istr;
-  tags := DumpHTML.addAnkerTag(ln,tags);
-  ln := istr + " (" + intString(BackendEquation.equationSize(inEquation)) + "): " + equationString(inEquation);
-  tags := DumpHTML.addLineTag(ln,tags);
-  oTpl := (tags,i+1);
-end dumpEqnHTML;
-
-protected function dumpFullMatchingHTML
-  input BackendDAE.Matching inMatch;
-  input String prefixId;
-  input DumpHTML.Tags inTags;
-  output DumpHTML.Tags outTags;
-algorithm
-  outTags:= match(inMatch,prefixId,inTags)
-    local
-      array<Integer> ass1;
-      DumpHTML.Tags tags;
-      BackendDAE.StrongComponents comps;
-    case (BackendDAE.NO_MATCHING(),_,_) then inTags;
-    case (BackendDAE.MATCHING(ass1,_,_),_,_)
-      equation
-        tags = dumpMatchingHTML(ass1,prefixId,inTags);
-        //dumpComponents(comps);
-      then
-        tags;
-  end match;
-end dumpFullMatchingHTML;
-
-protected function dumpMatchingHTML
-"author: Frenkel TUD 2012-11
-  prints the matching information on stdout."
-  input array<Integer> v;
-  input String prefixId;
-  input DumpHTML.Tags inTags;
-  output DumpHTML.Tags outTags;
-protected
-  Integer len;
-  String len_str;
-  DumpHTML.Tags tags;
-algorithm
-  outTags := DumpHTML.addHeadingTag(2,"Matching",inTags);
-  len := arrayLength(v);
-  len_str := intString(len) + " variables and equations\n";
-  outTags := DumpHTML.addLineTag(len_str,outTags);
-  tags := dumpMatchingHTML2(v, 1, len, prefixId, {});
-  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" + prefixId + "matching')","Matching einblenden","Matching ein/ausblenden",outTags);
-  outTags := DumpHTML.addDivisionTag(prefixId + "matching",{("background","#339966"),("display","none")},tags,outTags);
-end dumpMatchingHTML;
-
-protected function dumpMatchingHTML2
-"author: PA
-  Helper function to dumpMatching."
-  input array<Integer> v;
-  input Integer i;
-  input Integer len;
-  input String prefixId;
-  input DumpHTML.Tags inTags;
-  output DumpHTML.Tags outTags;
-algorithm
-  outTags := matchcontinue (v,i,len,prefixId,inTags)
-    local
-      Integer eqn;
-      String s,s2;
-    case (_,_,_,_,_)
-      equation
-        true = intLe(i,len);
-        s = intString(i);
-        eqn = v[i];
-        s2 = intString(eqn);
-        s = "Variable <a href=\"#" + prefixId + "varanker" + s + "\" onclick=\"return show('" + prefixId + "variables');\">" + s + "</a> is solved in Equation  <a href=\"#" + prefixId + "eqanker" + s2 + "\" onclick=\"return show('" + prefixId + "equations');\">" + s2 + "</a>";
-      then
-        dumpMatchingHTML2(v, i+1, len, prefixId, DumpHTML.LINE(s)::inTags);
-    else
-      then
-        inTags;
-  end matchcontinue;
-end dumpMatchingHTML2;
-
-protected function dumpSharedHTML
-"This function dumps the BackendDAE.Shared representation to stdout."
-  input BackendDAE.Shared inShared;
-  input DumpHTML.Document inDoc;
-  output DumpHTML.Document outDoc;
-algorithm
-  outDoc:= inDoc;
-end dumpSharedHTML;
-
 public function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
   input list<DAE.Algorithm> ialgs;
   input Integer indx;
@@ -3420,41 +3232,29 @@ algorithm
   end matchcontinue;
 end dumpStateVariable;
 
-public function bltdump
-"author: Frenkel TUD 2011-03"
+public function bltdump "author: Frenkel TUD 2011-03"
   input String headerline;
-  input BackendDAE.BackendDAE dae;
+  input BackendDAE.BackendDAE inDAE;
 algorithm
-   _ := matchcontinue dae
+   _ := matchcontinue inDAE
     local
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
-      String str,strlow;
-      DumpHTML.Document doc;
+      String str, strlow;
 
-    case BackendDAE.DAE(eqs,shared)
-      equation
-        Flags.STRING_FLAG(data=str) = Flags.getConfigValue(Flags.DUMP_TARGET);
-        strlow = System.tolower(str);
-        true = intGt(System.stringFind(str,".html"),0);
-        doc = DumpHTML.emtypDocumentWithToggleFunktion();
-        doc = DumpHTML.addHeading(1,headerline,doc);
-        strlow = intString(realInt(System.time()));
-        ((doc,_)) = List.fold1(eqs,dumpEqSystemHTML,strlow,(doc,1));
-        doc = dumpSharedHTML(shared,doc);
-        str = strlow + str;
-        DumpHTML.dumpDocument(doc,str);
-      then
-        ();
+    case _ equation
+      Flags.STRING_FLAG(data=str) = Flags.getConfigValue(Flags.DUMP_TARGET);
+      strlow = System.tolower(str);
+      true = intGt(System.stringFind(strlow, ".html"), 0);
+      DumpHTML.dumpDAE(inDAE, headerline, str);
+    then ();
 
-    case BackendDAE.DAE(eqs,shared)
-      equation
-        print(headerline); print(":\n");
-        List.map_0(eqs,printEqSystem);
-        print("\n");
-        printShared(shared);
-      then
-        ();
+    case BackendDAE.DAE(eqs, shared) equation
+      print(headerline + ":\n");
+      List.map_0(eqs, printEqSystem);
+      print("\n");
+      printShared(shared);
+    then ();
   end matchcontinue;
 end bltdump;
 
