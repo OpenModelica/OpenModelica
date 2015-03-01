@@ -3566,6 +3566,19 @@ algorithm
   end match;
 end makeLBinary;
 
+public function makeWeightProduct
+" w*f(x) => w==0 ? w : w*f(x)"
+  input DAE.Exp w;
+  input DAE.Exp x;
+  output DAE.Exp y;
+protected
+  DAE.Type tp = typeof(w);
+  DAE.Exp z = makeConstZero(tp); 
+  DAE.Exp con = DAE.RELATION(w,DAE.EQUAL(tp),z,-1,NONE());
+algorithm
+  y := makeNoEvent(DAE.IFEXP(con,w,expMul(w,x)));
+end makeWeightProduct;
+
 public function makeSum1
 "Takes a list of expressions an makes a sum
   expression sorting adding all elements in the list.
