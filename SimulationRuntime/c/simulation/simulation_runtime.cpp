@@ -484,7 +484,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string *method = new string(omc_flagValue[FLAG_S]);
     if(method) {
       data->simulationInfo.solverMethod = mmc_mk_scon(method->c_str());
-      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", (char*) data->simulationInfo.solverMethod);
+      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", MMC_STRINGDATA(data->simulationInfo.solverMethod));
     }
   }
 
