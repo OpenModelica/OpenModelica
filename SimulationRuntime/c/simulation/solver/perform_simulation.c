@@ -122,6 +122,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   }
 
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
+  printSparseStructure(data, LOG_SOLVER);
 
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)

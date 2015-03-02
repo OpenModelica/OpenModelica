@@ -606,7 +606,6 @@ int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
   }
   omc_alloc_interface.collect_a_little();
 
-
   if(0 == retVal)
   {
     /* if the model has no time changing variables skip the main loop*/

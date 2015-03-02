@@ -340,6 +340,55 @@ void printParameters(DATA *data, int stream)
   TRACE_POP
 }
 
+/*! \fn printSparseStructure
+ *
+ *  prints sparse structure of jacobian A
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [stream]
+ *
+ *  \author lochel
+ */
+void printSparseStructure(DATA *data, int stream)
+{
+  const int index = data->callback->INDEX_JAC_A;
+  unsigned int row, col, i;
+  char buffer[2048];
+
+  infoStreamPrint(stream, 1, "sparse structure of jacobian A [size: %ux%u]", data->simulationInfo.analyticJacobians[index].sizeRows, data->simulationInfo.analyticJacobians[index].sizeCols);
+  infoStreamPrint(stream, 0, "%u nonzero elements", data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros);
+  /*
+  sprintf(buffer, "");
+  for(row=0; row < data->simulationInfo.analyticJacobians[index].sizeRows; row++)
+    sprintf(buffer, "%s%u ", buffer, data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[row]);
+  infoStreamPrint(stream, 0, "leadindex: %s", buffer);
+
+  sprintf(buffer, "");
+  for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros; i++)
+    sprintf(buffer, "%s%u ", buffer, data->simulationInfo.analyticJacobians[index].sparsePattern.index[i]);
+  infoStreamPrint(stream, 0, "index: %s", buffer);
+  */
+  infoStreamPrint(stream, 1, "transposed sparse structure (rows: states)");
+  i=0;
+  for(row=0; row < data->simulationInfo.analyticJacobians[index].sizeRows; row++)
+  {
+    sprintf(buffer, "");
+    for(col=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[row]; col++)
+    {
+      if(data->simulationInfo.analyticJacobians[index].sparsePattern.index[i] == col)
+      {
+        sprintf(buffer, "%s* ", buffer);
+        ++i;
+      }
+      else
+        sprintf(buffer, "%s  ", buffer);
+    }
+    infoStreamPrint(stream, 0, "%s", buffer);
+  }
+  messageClose(stream);
+  messageClose(stream);
+}
+
 #ifdef USE_DEBUG_OUTPUT
 /*! \fn printRelationsDebug
  *

@@ -99,6 +99,7 @@ void printAllVars(DATA *data, int ringSegment, int stream);
 void printRelations(DATA *data, int stream);
 void printZeroCrossings(DATA *data, int stream);
 void printParameters(DATA *data, int stream);
+void printSparseStructure(DATA *data, int stream);
 
 void overwriteOldSimulationData(DATA *data);
 void copyRingBufferSimulationData(DATA *data, SIMULATION_DATA **destData, RINGBUFFER* destRing);
