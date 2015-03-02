@@ -40,7 +40,7 @@ public:
     void initialize();
 
     // for real-time usage (VxWorks and BODAS)
-    void runSingleStep(double cycletime);
+    void runSingleStep();
 
 private:
     void computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub);

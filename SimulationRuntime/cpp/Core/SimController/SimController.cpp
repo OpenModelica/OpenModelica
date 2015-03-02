@@ -186,9 +186,9 @@ void SimController::StartVxWorks(SimSettings simsettings,string modelKey)
 }
 
 // Added for real-time simulation using VxWorks and Bodas
-void SimController::calcOneStep(double cycletime)
+void SimController::calcOneStep()
 {
-  _simMgr->runSingleStep(cycletime);
+  _simMgr->runSingleStep();
 }
 
 

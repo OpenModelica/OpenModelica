@@ -196,9 +196,10 @@ void SimManager::initialize()
     #endif
 }
 
-void SimManager::runSingleStep(double cycletime)
+void SimManager::runSingleStep()
 {
     // Increase time event counter
+	double cycletime = _config->getGlobalSettings()->gethOutput();
     if (_dimtimeevent && cycletime > 0.0)
     {
 
@@ -220,7 +221,6 @@ void SimManager::runSingleStep(double cycletime)
         _timeevent_system->handleTimeEvent(_timeeventcounter);
 
     // Solve
-    _solver->setcycletime(cycletime);
     _solver->solve(_solverTask);
 
   _cycleCounter++;

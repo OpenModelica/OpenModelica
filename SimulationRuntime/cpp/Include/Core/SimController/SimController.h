@@ -32,7 +32,7 @@ public:
    virtual void StartVxWorks(SimSettings simsettings,string modelKey);
    virtual boost::weak_ptr<ISimData> getSimData(string modelname);
    virtual boost::weak_ptr<IMixedSystem> getSystem(string modelname);
-   virtual void calcOneStep(double cycletime);
+   virtual void calcOneStep();
 
 private:
     void initialize(PATH library_path, PATH modelicasystem_path);

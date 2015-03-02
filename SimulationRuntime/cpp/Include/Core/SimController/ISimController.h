@@ -58,7 +58,7 @@ public:
   virtual void StartVxWorks(SimSettings simsettings,string modelKey) = 0;
   virtual boost::weak_ptr<ISimData> getSimData(string modelname) = 0;
   virtual boost::weak_ptr<IMixedSystem> getSystem(string modelname) = 0;
-  virtual void calcOneStep(double cycletime) = 0;
+  virtual void calcOneStep() = 0;
 
   /// Stops the simulation
   virtual void Stop() = 0;
