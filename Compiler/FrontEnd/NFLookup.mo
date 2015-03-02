@@ -114,7 +114,7 @@ algorithm
     else
       algorithm
         name_str := Absyn.pathString(inName);
-        Error.addSourceMessage(inErrorType, {name_str, "<unknown>"}, inInfo); 
+        Error.addSourceMessage(inErrorType, {name_str, "<unknown>"}, inInfo);
       then
         fail();
 
@@ -130,7 +130,7 @@ protected
   String name;
 algorithm
   NFInst.CLASS_INST(children = children) := NFEnv.currentScope(inEnv);
-  
+
   for child in children loop
     _ := match child
       case NFInst.CLASS_INST()

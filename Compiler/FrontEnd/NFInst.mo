@@ -59,11 +59,11 @@ public uniontype Instance
     ScopeIndex scopeIndex;
     ScopeIndex parentScope;
   end CLASS_INST;
-  
+
   record EXTENDS_INST
     ScopeIndex scopeIndex;
   end EXTENDS_INST;
-  
+
   record COMP_INST
     String name;
     Instance ty;
@@ -74,7 +74,7 @@ public uniontype Instance
     SCode.Element element;
   end ELEMENT_DEF;
 end Instance;
- 
+
 protected function emptyClassInstance
   input String inName;
   output Instance outClass;
@@ -164,7 +164,7 @@ algorithm
     case SCode.COMPONENT()
       algorithm
         ty := NFLookup.lookupTypeSpec(inComponent.typeSpec, inEnv,
-          inComponent.info);  
+          inComponent.info);
         ty := instClass(ty, inEnv);
       then
         COMP_INST(inComponent.name, ty);
@@ -189,7 +189,7 @@ algorithm
         (el, outEnv) := partialInstClassDef(inClass.classDef, outEnv);
 
         // Partially instantiate classes.
-        el := partialInstClassElements(el, outEnv); 
+        el := partialInstClassElements(el, outEnv);
         (cls, outEnv) := updateClassChildren(cls, el, outEnv);
 
         // Partially instantiate extends.
@@ -197,7 +197,7 @@ algorithm
         (cls, outEnv) := updateClassChildren(cls, el, outEnv);
       then
         cls;
-        
+
   end match;
 end partialInstClass;
 
@@ -250,7 +250,7 @@ algorithm
         then
           ();
 
-    end match; 
+    end match;
   end for;
 
   outElements := listReverse(outElements);
@@ -265,7 +265,7 @@ algorithm
   _ := match inExtends
     case SCode.EXTENDS()
       algorithm
-        CLASS_INST(children = outElements) := 
+        CLASS_INST(children = outElements) :=
           NFLookup.lookupBaseClassName(inExtends.baseClassPath, inEnv, inExtends.info);
       then
         ();
@@ -283,7 +283,7 @@ algorithm
   outClass := setClassChildren(inClass, inChildren);
   outEnv := NFEnv.updateScope(outClass, inEnv);
 end updateClassChildren;
-  
+
 protected function setClassChildren
   input Instance inClass;
   input list<Instance> inChildren;
@@ -314,7 +314,7 @@ algorithm
   outInstances := match inClassDef
     case SCode.PARTS()
       then makeElementDefList(inClassDef.elementLst);
-        
+
   end match;
 end partialInstClassDef;
 
@@ -369,7 +369,7 @@ algorithm
         then
           ();
 
-    end match; 
+    end match;
 
   end for;
 

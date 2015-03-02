@@ -81,10 +81,10 @@ algorithm
    case NFInst.COMP_INST()
       algorithm
         NFInst.CLASS_INST(children = el) := flattenClass(inElement.ty);
-        el := prefixElements(el, inElement.name); 
+        el := prefixElements(el, inElement.name);
       then
         listAppend(el, inAccum);
-        
+
     else inAccum;
   end match;
 end flattenElement;
