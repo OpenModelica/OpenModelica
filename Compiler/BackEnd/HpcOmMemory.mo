@@ -1079,8 +1079,7 @@ encapsulated package HpcOmMemory
             end if;
           end if;
         then tmpMatchedCacheLine;
-      else
-        then NONE();
+      else NONE();
     end match;
   end findMatchingSharedCL0;
 
@@ -1502,8 +1501,7 @@ encapsulated package HpcOmMemory
           true = intGt(numBytesFree,0);
           cacheLines = (iCacheLineIdx,numBytesFree)::iCacheLines;
         then cacheLines;
-      else
-        then iCacheLines;
+      else iCacheLines;
     end matchcontinue;
   end createDetailedCacheMapInformations0;
 
@@ -2599,8 +2597,7 @@ encapsulated package HpcOmMemory
         then false;
       case(SOME(_))
         then true;
-      else
-        then false;
+      else false;
     end match;
   end useHpcomMemoryOptimization;
 
@@ -2722,7 +2719,7 @@ encapsulated package HpcOmMemory
         then DAE.CREF_IDENT(ident,identType,{});
       case(DAE.CREF_ITER(ident,index,identType,subscriptLst))
         then DAE.CREF_ITER(ident,index,identType,{});
-      else then iCref;
+      else iCref;
     end match;
   end removeSubscripts;
 

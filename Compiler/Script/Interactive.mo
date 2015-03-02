@@ -5963,7 +5963,7 @@ algorithm
         res = getModificationNames(mod);
       then
         res;
-    else then {};
+    else {};
   end matchcontinue;
 end getComponentModifierNames;
 

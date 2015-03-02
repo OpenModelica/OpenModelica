@@ -391,8 +391,7 @@ algorithm
         sccSimEqMapping = arrayCreate(arrayLength(tmpTaskGraph), {});
         HpcOmTaskGraph.dumpAsGraphMLSccLevel(tmpTaskGraph, tmpTaskGraphMeta, initDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       then ();
-    else
-      then ();
+    else ();
   end match;
 end createAndExportInitialSystemTaskGraph;
 
@@ -575,8 +574,7 @@ algorithm
         tmpContractedLevelfixTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, 500, sortedHeadArray, 1, (arrayLength(sortedHeadArray), {}, bigTaskExecTime), iContractedLevelfixTasks);
         tmpContractedLevelfixTasks = applyGRSForLevelFixScheduler(iTaskGraphMeta, iContractedTasks, rest, tmpContractedLevelfixTasks);
       then tmpContractedLevelfixTasks;
-    else
-      then iContractedLevelfixTasks;
+    else iContractedLevelfixTasks;
   end match;
 end applyGRSForLevelFixScheduler;
 
@@ -652,8 +650,7 @@ algorithm
           tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask+1, (bigTaskIdx, arrayGet(iSortedLevelTasks, iCurrentSmallTask)::bigTaskChilds, mergedGroupExecTime), tmpContractedTasks);
         end if;
       then tmpContractedTasks;
-    else
-      then iContractedLevelfixTasks;
+    else iContractedLevelfixTasks;
   end matchcontinue;
 end applyGRSForLevelFixSchedulerLevel;
 
@@ -1067,7 +1064,7 @@ algorithm
       equation
         tmpSimEqs = List.map1r(eqIdc, getSimCodeEqByIndexAndMapping, iSimEqIdxSimEqMapping);
       then tmpSimEqs;
-    else then {};
+    else {};
   end match;
 end getSimCodeEqsByTaskList0;
 
@@ -1173,8 +1170,7 @@ algorithm
       then findHighestSccIdxInMapping(rest,sccIdx);
     case((eqIdx,sccIdx)::rest,_)
       then findHighestSccIdxInMapping(rest,iHighestIndex);
-    else
-      then iHighestIndex;
+    else iHighestIndex;
   end matchcontinue;
 end findHighestSccIdxInMapping;
 
@@ -1386,7 +1382,7 @@ algorithm
          print("task"+intString(compIdx)+"-> measured: "+intString(realInt(exeCost))+" and estimated: "+intString(realInt(estimate))+"\n\n");
        outputTimeBenchmark2(comps,restCosts,eqSystemsIn,shared,compIdx+1);
      then ();
-     else then ();
+     else ();
   end matchcontinue;
 end outputTimeBenchmark2;
 

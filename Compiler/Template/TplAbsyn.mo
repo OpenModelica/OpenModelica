@@ -882,8 +882,7 @@ algorithm
         fargs = List.map1(fargs, addOutPrefixesRhs, trIdents);
       then ( MM_FN_CALL(fpath, fargs) );
 
-    else
-      then inStmt;
+    else inStmt;
 
   end matchcontinue;
 end addOutPrefixesRhs;
@@ -1567,22 +1566,13 @@ public function getExpListForMap
   input Expression inExp;
   output list<Expression> outExpsForMap;
 algorithm
-  outExpsForMap := matchcontinue inExp
+  outExpsForMap := match inExp
     local
-      Expression exp;
       list<Expression> explst;
-      //SourceInfo sinfo;
 
     case ( (MAP_ARG_LIST(parts = explst), _) )  then explst;
-    case ( exp )  then { exp };
-
-    //cannot happen
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!statementsFromExp failed\n");
-      then
-        fail();
-  end matchcontinue;
+    else {inExp};
+  end match;
 end getExpListForMap;
 
 
@@ -1671,15 +1661,8 @@ algorithm
 
 
     //otherwise no change
-    case ( explst, _, _, _ )
-      then explst;
+    else inArgLst;
 
-    //cannot happen
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addImplicitArgument failed\n");
-      then
-        fail();
   end matchcontinue;
 end addImplicitArgument;
 */
@@ -2896,8 +2879,7 @@ algorithm
       then false;
 
     //otherwise use it
-    else
-      then true;
+    else true;
 
   end matchcontinue;
 end shouldUseIterFunctions;
@@ -3060,7 +3042,7 @@ public function mmexpFromStrTokOption
   input Option<StringToken> inStrTokOption;
   output MMExp outMMExp;
 algorithm
-  outMMExp := matchcontinue inStrTokOption
+  outMMExp := match inStrTokOption
     local
       StringToken st;
 
@@ -3070,13 +3052,7 @@ algorithm
     case ( SOME(st) )
       then MM_FN_CALL(IDENT("SOME"), { MM_STR_TOKEN(st) });
 
-    //cannot happen
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!mmexpFromStrTokOption failed\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end mmexpFromStrTokOption;
 */
 
@@ -3181,9 +3157,7 @@ algorithm
         true = (listLength(encExtargsAligned) == listLength(encExtargs));
       then (extargsAligned, encExtargsAligned);
 
-    else
-      then
-        (inExtraArgs,inEncExtraArgs);
+    else (inExtraArgs,inEncExtraArgs);
 
   end matchcontinue;
 end alignExtArgsToScopeEnv;
@@ -3204,7 +3178,7 @@ algorithm
         outMatchArgName = encodeIdent(outInputValueName, funArgNamePrefix);
       then (outInputValueName, outMatchArgName);
     else
-      then (impossibleIdent, matchDefaultArgName);
+      (impossibleIdent, matchDefaultArgName);
   end matchcontinue;
 end getMatchArgName;
 
@@ -3386,9 +3360,7 @@ algorithm
         argid;
 
     //otherwise return "it" as the name
-    else
-      then
-        "it";
+    else "it";
 
   end matchcontinue;
 end getItNameFromArg;
@@ -3532,17 +3504,10 @@ algorithm
     // ** failures ***
     //TODO: will be concrete with output message
 
-    case (_, _,_)
+    else
       equation
         //locals = addLocalValue("#Error - type check#", mtype, locals);
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExp failed\n");
-      then
-        fail();
-
-    // should not ever happen
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!typeCheckMatchingExp failed\n");
       then
         fail();
 
@@ -4414,7 +4379,7 @@ algorithm
 
     else ();
 
-      end matchcontinue;
+  end matchcontinue;
 end checkResolvedType;
 
 
@@ -4444,7 +4409,7 @@ algorithm
       then
         UNRESOLVED_TYPE(msg);
 
-      end matchcontinue;
+  end matchcontinue;
 end checkTextType;
 
 
@@ -4520,9 +4485,7 @@ algorithm
 
     //all the rest cases creates an "as" binding of matchArgName
     //no need to addToLocals because it is already in the locals
-    else
-      then
-        (inMatchArgName, BIND_AS_MATCH(inMatchArgName, inMExp) );
+    else (inMatchArgName, BIND_AS_MATCH(inMatchArgName, inMExp) );
 
   end matchcontinue;
 end prepareMatchArgument;
@@ -4869,9 +4832,7 @@ algorithm
       then
         usedInImmediateLetScope(inIdent, inFreshIdent, restEnv);
 
-    else
-      then
-        false;
+    else false;
 
   end matchcontinue;
 end usedInImmediateLetScope;
@@ -5466,8 +5427,6 @@ algorithm
       then
         fail();
 
-
-
   end matchcontinue;
 end getFieldsForRecord;
 
@@ -5632,8 +5591,7 @@ algorithm
       then
         deAliasedType(dt, astDefs);
 
-    else
-      then inType;
+    else inType;
 
   end matchcontinue;
 end deAliasedType;
@@ -5945,9 +5903,9 @@ algorithm
       then
         (fname, iargs, oargs, tyVars);
 
-    case (fname, _, _)
+    else
       equation
-        msg = "Unresolved template/function name '" + pathIdentString(fname) + "'.";
+        msg = "Unresolved template/function name '" + pathIdentString(inFunName) + "'.";
         addSusanError(msg, inSourceInfo);
       then
         fail();
@@ -6095,7 +6053,7 @@ algorithm
         fail();
 
     //should not happen
-    case ( _ )
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! fullyQualifyASTDefs failed .\n");
       then
@@ -6235,17 +6193,8 @@ algorithm
         ts;
 
     //all the others
-    case ( ts , _, _ )
-      then
-        ts;
+    else inASTDefTypeSignature;
 
-
-    //should not happen
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! fullyQualifyAstTypeSignature failed .\n");
-      then
-        fail();
   end matchcontinue;
 end fullyQualifyAstTypeSignature;
 
@@ -6265,9 +6214,7 @@ algorithm
     //    STRING_TOKEN_TYPE();
 
 
-    else
-      then
-        NAMED_TYPE(inNameOfType);
+    else NAMED_TYPE(inNameOfType);
 
   end match;
 end convertNameTypeIfIntrinsic;
@@ -6371,17 +6318,7 @@ algorithm
         NAMED_TYPE(typepath);
 
     //all the others
-    case ( ts , _ )
-      then
-        ts;
-
-
-    //should not happen
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! fullyQualifyTemplateTypeSignature failed .\n");
-      then
-        fail();
+    else inTemplateTypeSignature;
   end matchcontinue;
 end fullyQualifyTemplateTypeSignature;
 
@@ -6428,9 +6365,7 @@ algorithm
         _ = lookupTupleList(lst, a);
       then lst;
 
-    case (lst, tpl)
-      then (tpl :: lst);
-
+    else (inTuple :: inList);
   end matchcontinue;
 end updateTupleList;
 

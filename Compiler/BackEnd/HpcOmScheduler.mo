@@ -793,8 +793,7 @@ algorithm
      equation
        true = listMember(childNode,tasks);
      then HpcOmTaskGraph.COMMUNICATION(nV1+nV2,listAppend(ints1,ints2),listAppend(fl1,fl2),listAppend(b1,b2),listAppend(s1,s2),childNode,reqT1+reqT2);
-   else
-     then iCommunication;
+   else iCommunication;
  end matchcontinue;
 end getCommunicationObjBetweenMergedTasks1;
 
@@ -2260,7 +2259,7 @@ algorithm
         true = intLe(iCurrentIdx, arrayLength(iArray));
         tmpTupleList = arrayToTupleListZeroRemoved(iArray, iCurrentIdx+1, iTupleList);
       then tmpTupleList;
-    else then iTupleList;
+    else iTupleList;
   end matchcontinue;
 end arrayToTupleListZeroRemoved;
 
@@ -3235,8 +3234,7 @@ algorithm
     equation
       eqIdc = List.map1(eqIdc,Array.getIndexFirst,assIn);
     then HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinished,threadIdx,eqIdc);
-  else
-    then taskIn;
+  else taskIn;
   end matchcontinue;
 end TDS_replaceSimEqSysIdxsInTask;
 
@@ -3468,8 +3466,7 @@ algorithm
       equation
         (jacCols,(newIdx,ass)) = List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
    then (SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx)),(newIdx,ass));
-   else
-     then(jacIn,tplIn);
+   else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate;
 
@@ -3491,8 +3488,7 @@ algorithm
       equation
         (simEqs,(newIdx,ass)) = List.mapFold(simEqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
    then((simEqs,simVars,colLen),(newIdx,ass));
-   else
-     then(jacIn,tplIn);
+   else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate;
 
@@ -3516,8 +3512,7 @@ algorithm
       equation
         jacCols = List.map1(jacCols,TDS_replaceSimEqSysIdxInJacobianColumn,assIn);
    then SOME((jacCols,vars,name,sparsePatt,colCols,maxCol,jacIdx));
-   else
-     then jacIn;
+   else jacIn;
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrix;
 
@@ -3538,8 +3533,7 @@ algorithm
       equation
         simEqs = List.map1(simEqs,TDS_replaceSimEqSysIndex,assIn);
    then ((simEqs,simVars,colLen));
-   else
-     then jacIn;
+   else jacIn;
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianColumn;
 
@@ -3986,8 +3980,7 @@ algorithm
       pos = List.position1OnTrue(eqSysLstIn,SimCodeUtil.equationIndexEqual,eqSysIn);
       eqSysLst = List.replaceAt(eqSysIn,pos,eqSysLstIn);
     then eqSysLst;
-    else
-    then eqSysLstIn;
+    else eqSysLstIn;
   end matchcontinue;
 end replaceSimEqSystemWithSameIndex;
 
@@ -4027,8 +4020,7 @@ algorithm
         (lsIdx,nlsIdx,mIdx) = idcsIn;
         simEqSys = SimCode.SES_MIXED(idx,cont,simVars,simEqSysLst,mIdx);
       then (simEqSys,(lsIdx,nlsIdx,mIdx+1));
-    else
-      then (simEqSysIn,idcsIn);
+    else (simEqSysIn,idcsIn);
   end match;
 end replaceSystemIndex;
 
@@ -4191,8 +4183,7 @@ algorithm
         DAE.CREF(componentRef=name) = BackendVarTransform.getReplacement(replIn,name);
         simVar = SimCodeVar.SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement,isValueChangeable,isProtected);
       then (simVar,true);
-    else
-      then (simVarIn,false);
+    else (simVarIn,false);
   end matchcontinue;
 end replaceCrefInSimVar;
 
@@ -4885,8 +4876,7 @@ algorithm
       then isEq;
     case(HpcOmSimCode.TASKEMPTY(),HpcOmSimCode.TASKEMPTY())
       then false;
-    else
-      then false;
+    else false;
   end match;
 end tasksEqual;
 
@@ -6136,9 +6126,7 @@ algorithm
   case(HpcOmSimCode.TASKEMPTY())
     then
       0.0;
-  else
-    then
-      -1.0;
+  else -1.0;
   end match;
 end getTimeFinished;
 
@@ -6153,9 +6141,7 @@ algorithm
   case(HpcOmSimCode.CALCTASK(threadIdx=threadIdx))
     then
       threadIdx;
-  else
-    then
-      -1;
+  else -1;
   end match;
 end getThreadId;
 
@@ -6170,9 +6156,7 @@ algorithm
     case(HpcOmSimCode.CALCTASK(index=taskIdx))
       then
         taskIdx;
-    else
-      then
-        -1;
+    else -1;
   end match;
 end getTaskIdx;
 
@@ -6185,9 +6169,7 @@ algorithm
   case(HpcOmSimCode.CALCTASK())
     then
       true;
-  else
-    then
-      false;
+  else false;
   end match;
 end isCalcTask;
 
@@ -6200,9 +6182,7 @@ algorithm
   case(HpcOmSimCode.TASKEMPTY())
     then
       true;
-  else
-    then
-      false;
+  else false;
   end match;
 end isEmptyTask;
 
@@ -6253,8 +6233,7 @@ algorithm
         tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, newEntry::oldEntry);
         tmpResultList = convertFixedLevelScheduleToTaskLists1(iLevelTasks, iCurrentArrayIdx+1, tmpResultList);
       then tmpResultList;
-    else
-      then iResultList;
+    else iResultList;
   end matchcontinue;
 end convertFixedLevelScheduleToTaskLists1;
 
@@ -6275,8 +6254,7 @@ algorithm
         tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, entry);
         tmpResultList = revertTaskLists(iCurrentArrayIdx+1, tmpResultList);
       then tmpResultList;
-    else
-      then iResultList;
+    else iResultList;
   end matchcontinue;
 end revertTaskLists;
 
@@ -6297,8 +6275,7 @@ algorithm
         tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, entry);
         //tmpResultList = revertTaskList(iCurrentArrayIdx+1, tmpResultList);
       then tmpResultList;
-    else
-      then iResultList;
+    else iResultList;
   end matchcontinue;
 end revertTaskList;
 

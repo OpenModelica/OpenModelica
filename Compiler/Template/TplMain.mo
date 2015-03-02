@@ -199,7 +199,7 @@ algorithm
         (notPassedCnt + 1);
 
     //should not ever happen
-    case (_,_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tplMainTest failed.\n");
       then
@@ -599,9 +599,7 @@ algorithm
         txt = pathIdent(txt, i_path);
       then txt;
 
-    case ( txt,
-           _ )
-      then txt;
+    else in_txt;
   end matchcontinue;
 end pathIdent;
 
@@ -1579,9 +1577,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
-    case ( txt,
-           _ )
-      then txt;
+    else in_txt;
   end matchcontinue;
 end exp;
 
@@ -1614,9 +1610,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("<"));
       then txt;
 
-    case ( txt,
-           _ )
-      then txt;
+    else in_txt;
   end matchcontinue;
 end oper;
 

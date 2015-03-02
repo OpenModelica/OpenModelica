@@ -333,7 +333,7 @@ algorithm
         annList = transformConnectAnnList(annList,{"Connect"},{},p); //Connectannotation
       then
         Absyn.EQUATIONITEM(e,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)),info);
-    else then inItem;
+    else inItem;
   end matchcontinue;
 end refactorGraphAnnInEqItem;
 
@@ -1374,39 +1374,25 @@ protected function isLayerAnnInList"
 "
   input list<Absyn.ElementArg> inList;
   output Boolean result;
-
 algorithm
-
   result := matchcontinue(inList)
-
     local
-
       list<Absyn.ElementArg> rest;
       Boolean res;
 
     case({}) then false;
-
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram")) :: _)
-
     then
       true;
-
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon")) :: _)
-
     then
       true;
-
     case(_ :: rest)
-
       equation
-
         res = isLayerAnnInList(rest);
-
       then
         res;
-
   end matchcontinue;
-
 end isLayerAnnInList;
 
 protected function  getCoordSysAnn "

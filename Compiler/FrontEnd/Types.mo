@@ -5552,7 +5552,7 @@ algorithm
         tys = List.map(ty.types, boxIfUnboxedType);
       then DAE.T_METATUPLE(tys,DAE.emptyTypeSource); // TODO?! should now propagate the type source?
 
-    else then if isBoxedType(ty) then ty else DAE.T_METABOXED(ty,DAE.emptyTypeSource);
+    else if isBoxedType(ty) then ty else DAE.T_METABOXED(ty,DAE.emptyTypeSource);
 
   end matchcontinue;
 end boxIfUnboxedType;
@@ -5595,7 +5595,7 @@ algorithm
       then
         DAE.T_METAARRAY(ty,DAE.emptyTypeSource);
 
-    else then ity;
+    else ity;
   end match;
 end unboxedType;
 

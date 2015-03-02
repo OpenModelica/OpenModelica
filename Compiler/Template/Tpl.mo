@@ -132,9 +132,7 @@ algorithm
 
     // a new-line is inside
     else
-      then
-        //writeChars(inText, stringListStringChar(inStr));
-        writeChars(inText, System.strtokIncludingDelimiters(inStr, "\n"));
+      writeChars(inText, System.strtokIncludingDelimiters(inStr, "\n"));
   end matchcontinue;
 end writeStr;
 
@@ -1344,16 +1342,7 @@ algorithm
       then
         (pos, isstart, aind);
 
-    case (_, _, pos, isstart, aind)
-      then
-        (pos, isstart, aind);
-
-    //should not ever happen
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tryWrap failed.\n");
-      then
-        fail();
+    else (inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent);
   end matchcontinue;
 end tryWrapString;
 

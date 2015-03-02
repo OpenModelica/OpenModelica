@@ -10611,7 +10611,7 @@ algorithm
         exp = Expression.makeASUB(exp,List.map(ss,Expression.getSubscriptExp));
       then (exp,c);
 
-    case (_,exp,_,_) then (exp,c);
+    else (inExp,c);
   end matchcontinue;
 end evaluateEmptyVariable;
 
@@ -10745,7 +10745,7 @@ algorithm
         subs;
 
     // not an array type!
-    case (subs,_) then subs;
+    else inExpSubscriptLst;
 
   end matchcontinue;
 end fillSubscripts;
@@ -11210,7 +11210,7 @@ algorithm
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
         e;
-    case (_,e,_,_,_) then e;
+    else inExp;
   end matchcontinue;
 end crefVectorize;
 
@@ -12205,7 +12205,7 @@ algorithm
       then
         t_1;
 
-    case (_,t) then t;
+    else inType;
   end matchcontinue;
 end subscriptCrefType;
 

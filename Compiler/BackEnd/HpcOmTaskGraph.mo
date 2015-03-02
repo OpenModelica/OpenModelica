@@ -191,8 +191,7 @@ algorithm
       equation
         ((tmpComps, tmpSystems,_)) = List.fold(systs,getSystemComponents0,({},{},1));
       then (tmpComps,listArray(tmpSystems));
-    else
-      then fail();
+    else fail();
   end match;
 end getSystemComponents;
 
@@ -563,9 +562,7 @@ algorithm
         rootNodes = childNode::rootNodesIn;
       then
         (adjLstIn,rootNodes);
-    else
-      then
-        (adjLstIn,rootNodesIn);
+    else (adjLstIn,rootNodesIn);
   end matchcontinue;
 end fillAdjacencyList;
 
@@ -865,9 +862,7 @@ algorithm
     case(BackendDAE.SINGLEWHENEQUATION())
     then
       true;
-  else
-    then
-      false;
+  else false;
   end matchcontinue;
 end isWhenEquation;
 
@@ -1111,9 +1106,7 @@ algorithm
         varLst = removeEventVars(eventVarLst,varLstIn,varIdx+1);
       then
         varLst;
-    else
-      then
-        varLstIn;
+    else varLstIn;
   end matchcontinue;
 end removeEventVars;
 
@@ -1134,8 +1127,7 @@ algorithm
         true = intEq(varState,1);
         returnValue = List.isMemberOnTrue(varIdx, varIdc, intEq);
       then not returnValue;
-    else
-      then true;
+    else true;
   end matchcontinue;
 end isTupleMember;
 
@@ -1311,8 +1303,7 @@ algorithm
       equation
         true = intLe(0,varIdx);
       then ((varIdx, 1));
-    else
-      then ((-varIdx,0));
+    else ((-varIdx,0));
    end matchcontinue;
 end getVarTuple;
 
@@ -1896,9 +1887,7 @@ algorithm
         childLst = getChildNodes(adjacencyLstIn,parents,childLst,Idx+1);
       then
         childLst;
-    else
-      then
-        childLstTmp;
+    else childLstTmp;
   end matchcontinue;
 end getChildNodes;
 
@@ -2134,8 +2123,7 @@ algorithm
         true = intEq(refCounter, 0);
         tmpNodesWithRefZero = iNodeIdx::tmpNodesWithRefZero;
       then tmpNodesWithRefZero;
-    else
-      then iNodesWithRefZero;
+    else iNodesWithRefZero;
   end matchcontinue;
 end getLevelNodes2;
 
@@ -2260,7 +2248,7 @@ algorithm
         tmpCompIdc = List.filter1OnTrue(tmpCompIdc, intGt, 0);
         //print("getComponentsOfZeroCrossing: components: " + stringDelimitList(List.map(tmpCompIdc, intString), ",") + "\n");
       then tmpCompIdc;
-    else then {};
+    else {};
   end matchcontinue;
 end getComponentsOfZeroCrossing;
 
@@ -2463,9 +2451,7 @@ algorithm
         backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
         solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
       then (solvesDiscreteValue,eqn);
-  else
-    then
-      (false,-1);
+  else (false,-1);
   end matchcontinue;
 end solvesDiscreteValue;
 
@@ -3281,8 +3267,7 @@ algorithm
         //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
         changed = intGt(listLength(singleNodes),numProc);
   then (iTaskGraph,iTaskGraphMeta,changed);
-  else
-    then (iTaskGraph,iTaskGraphMeta,false);
+  else (iTaskGraph,iTaskGraphMeta,false);
   end matchcontinue;
 end mergeSingleNodes;
 
@@ -4042,9 +4027,7 @@ algorithm
         true = intEq(inValue,listLength(inLst));
       then
         true;
-    else
-      then
-        false;
+    else false;
   end matchcontinue;
 end compareListLengthOnTrue;
 
@@ -4188,9 +4171,7 @@ algorithm
         inCompLstTmp = List.replaceAt(mergedSet, nodeIdx, inCompLstTmp);
       then
         inCompLstTmp;
-    else
-      then
-        inCompLstIn;
+    else inCompLstIn;
   end matchcontinue;
 end updateInComps1;
 
@@ -4719,8 +4700,7 @@ algorithm
         //print("convertSimEqToSccCosts2 sccIdx: " + intString(sccIdx) + " simEqIdx: " + intString(iSimEqIdx) + " reqTime: " + realString(iSimEqCalcTime) + "\n");
       then
         reqTime;
-    else
-      then iReqTime;
+    else iReqTime;
   end matchcontinue;
 end convertSimEqToSccCosts2;
 
@@ -4792,8 +4772,7 @@ algorithm
         execCost = List.fold3(iNodeSccs, createExecCost0, icomps_shared, compMapping, iRequiredTime, (0,0.0));
         arrayUpdate(iExecCosts,iNodeIdx,execCost);
       then ();
-    else
-      then ();
+    else ();
   end matchcontinue;
 end createExecCost;
 
@@ -5842,9 +5821,7 @@ algorithm
         arrayUpdate(annotInfoIn,taskIdx,annotString);
       then
         annotInfoIn;
-    else
-      then
-        annotInfoIn;
+    else annotInfoIn;
   end matchcontinue;
 end setAnnotationsForVar;
 
@@ -5915,8 +5892,7 @@ algorithm
       commCosts1 = List.threadFold1(nodeVarLst,newComps,setCommCostsToParent,74.0,commCosts1);
       graphData = TASKGRAPHMETA(inComps1,varCompMapping1,eqCompMapping1,compParamMapping1,rootNodes1,nodeNames1,compDescs1,exeCosts1,commCosts1,nodeMark1);
     then (graph,graphData);
-  else
-    then (graphIn,graphDataIn);
+  else (graphIn,graphDataIn);
   end matchcontinue;
 end appendRemovedEquations;
 

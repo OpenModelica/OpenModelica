@@ -712,7 +712,7 @@ algorithm
   ({sharedVar},_) := BackendVariable.getVar(sharedCref, orderedVars);
   isInnerOuter := match sharedVar
     case BackendDAE.VAR(innerOuter=DAE.INNER_OUTER()) then true;
-    else then false;
+    else false;
   end match;
 
   // if sharedCref is "inner outer" try the replacements
@@ -1539,7 +1539,7 @@ algorithm
     _ := match var
       case BackendDAE.VAR(varDirection=DAE.OUTPUT(), innerOuter = DAE.OUTER()) then fail();
       case BackendDAE.VAR(varDirection=DAE.INPUT()) then fail();
-      else then ();
+      else ();
     end match;
 
     BackendDAE.VAR(source=source) := var;
@@ -1914,7 +1914,7 @@ algorithm
       DAE.ComponentRef crefInner;
     case SOME(DAE.CREF(componentRef=crefInner)) guard  ComponentReference.crefLastIdentEqual(crefOuter, crefInner)
       then SOME(crefInner);
-    else then NONE();
+    else NONE();
   end match;
 end getOptInner;
 

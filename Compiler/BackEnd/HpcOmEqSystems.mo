@@ -109,7 +109,7 @@ algorithm
        true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
        (eqs,_) = List.map1Fold(eqs,reduceLinearTornSystem,shared,1);
     then BackendDAE.DAE(eqs,shared);
-    else then daeIn;
+    else daeIn;
   end matchcontinue;
 end partitionLinearTornSystem;
 
@@ -347,8 +347,7 @@ algorithm
       //b = List.fold(List.map(varLst,BackendVariable.isDummyDerVar),boolOr,b);
       //if b then print("THERE IS A DUMMY STATE!"); end if;
     then b;
-    else
-      then false;
+    else false;
   end match;
 end compHasDummyState;
 
@@ -396,8 +395,7 @@ algorithm
         var = arrayGet(varMap,var);
       then
         BackendDAE.SINGLEEQUATION(eqn,var);
-    else
-      then fail();
+    else fail();
   end match;
 end replaceIndecesInComp;
 
@@ -556,8 +554,7 @@ algorithm
         dest = IndexReduction.makeder(dest);
         repl =  BackendVarTransform.addReplacement(replIn,source,dest,NONE());
       then repl;
-  else
-    then replIn;
+  else replIn;
   end match;
 end addDerReplacement;
 
@@ -653,7 +650,7 @@ algorithm
        varIdcs := varIdx::varIdcs;
        eqIdcs := eqIdx::eqIdcs;
      then (eqIdcs,varIdcs,resEqLst);
-   else then tplIn;
+   else tplIn;
   end matchcontinue;
 end simplifyNewEquations1;
 
@@ -1914,8 +1911,7 @@ algorithm
       true = intGt(dim,3);
         (eqLst,addEqLst,addVarLst) = chiosCondensation(system);
     then (eqLst,addEqLst,addVarLst);
-  else
-    then ({},{},{});
+  else ({},{},{});
   end matchcontinue;
 end CramerRule;
 
@@ -2487,8 +2483,7 @@ algorithm
       //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = metaIn;
       //odeNodes = List.map3(odeNodes,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
     then (taskLst,daeNodes);
-    else
-    then ({},{});
+    else ({},{});
   end matchcontinue;
 end parallelizeTornSystems;
 
