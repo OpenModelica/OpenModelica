@@ -3853,13 +3853,13 @@ template extCBoolCast(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, T
         then
            let _ = inputAssignTest(c, contextFunction, tmp, &inputAssign)
       <<
-           <%tmp%>.getData()/*TestAusgabe1*/
+           <%tmp%>.getData()
           >>
         else
         let _ = outputAssignTest(c, contextFunction, tmp, &outputAssign)
     let &outputAllocate += '<%tmp%>.setDims(<%name%>.getDims());'
     <<
-         <%tmp%>.getData()/*TestAusgabe2*/
+         <%tmp%>.getData()
     >>
 
 
@@ -4180,7 +4180,7 @@ end varDefaultValue;
 template funArgDefinition(Variable var,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   match var
-  case VARIABLE(__) then '<%varType1(var, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> <%contextCref(name, contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> /*test1*/'
+  case VARIABLE(__) then '<%varType1(var, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> <%contextCref(name, contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end funArgDefinition;
 
@@ -6336,7 +6336,7 @@ match simVar
           >>
         else
           <<
-          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%> /*testarray4*/;
+          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
           >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
@@ -9200,16 +9200,17 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
      case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
       let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
 
-        let initial_assign =
+        /*let initial_assign =
         if initialCall then
           whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         else
-           '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'
+           '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'*/
       let assign = whenAssign(left,typeof(right),right,context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let pre_call = preCall(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       <<
       if(_initial)
       {
-        <%initial_assign%>;
+        <%pre_call%>
       }
       else if (0<%helpIf%>)
       {
@@ -9217,8 +9218,8 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
       }
       else
       {
-        <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);
-      }
+            <%pre_call%>
+       }
       >>
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
        let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
@@ -9229,6 +9230,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
          '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'
       let assign = whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+       
       <<
       if(_initial)
       {
@@ -9241,30 +9243,73 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
       <%elseWhen%>
       else
       {
+         
          <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);
       }
       >>
 end equationWhen;
 
 
+template preCall(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                    Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates assignment for when."
+::= 
+match ty
+  case T_ARRAY(dims=dims) then
+   let dimensions = checkDimension(dims)
+   let i_tmp_var= System.tmpTick()
+   let forLoopIteration = preCallForArray(dims,i_tmp_var)
+   let forloop = match listLength(dims) case 1 then
+   <<
+    <%forLoopIteration%>
+     <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>));
+   >>
+   case 2 then
+   <<
+     <%forLoopIteration%>
+        <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>) = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>(i0_<%i_tmp_var%>,i1_<%i_tmp_var%>));
+   >>
+   else
+    error(sourceInfo(), 'No support for this sort of pre call')
+   end match
+   forloop
+   else
+   <<
+    <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>);
+   >>
+end preCall;
+
+template preCallForArray(Dimensions dims,String tmp)
+::=
+  let operatorCall= dims |> dim  hasindex i0   =>
+    let dimindex = dimension(dim,contextOther)  
+  'for(int i<%i0%>_<%tmp%>=1;i<%i0%>_<%tmp%><= <%dimindex%>;++i<%i0%>_<%tmp%>)'
+  ;separator="\n\t"
+  <<
+   <%operatorCall%>
+  >>
+end preCallForArray;
+
+
 template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates assignment for when."
-::=
+::= /*
 match ty
+  
   case T_ARRAY(__) then
-    let &preExp = buffer "" /*BUFD*/
+   let &preExp = buffer "" 
     let expPart = daeExp(right, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     match expTypeFromExpShort(right)
     case "boolean" then
-      let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
+      let tvar = tempDecl("boolean_array", &varDecls )
       //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
       copy_boolean_array_data_mem(&<%expPart%>, &<%cref(left, useFlatArrayNotation)%>);
       >>
     case "integer" then
-      let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
+      let tvar = tempDecl("integer_array", &varDecls )
       //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
@@ -9283,7 +9328,7 @@ match ty
     else
       error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left, useFlatArrayNotation)%> = <%printExpStr(right)%>')
     end match
-  else
+  else*/
     let &preExp = buffer "" /*BUFD*/
     let exp = daeExp(right, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
