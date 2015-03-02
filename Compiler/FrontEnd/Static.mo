@@ -5687,7 +5687,7 @@ algorithm
   (outCache, exp, prop) := elabExpInExpression(inCache, inEnv,
     listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
   DAE.PROP(DAE.T_ARRAY(dims = {dim}, ty = arr_ty), c) := prop;
-  true := Expression.dimensionKnown(dim);
+
   ty := DAE.T_ARRAY(DAE.T_ARRAY(arr_ty, {dim}, DAE.emptyTypeSource), {dim}, DAE.emptyTypeSource);
   outProperties := DAE.PROP(ty, c);
   ty := Types.simplifyType(ty);
