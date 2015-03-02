@@ -199,7 +199,7 @@ void SimManager::initialize()
 void SimManager::runSingleStep()
 {
     // Increase time event counter
-	double cycletime = _config->getGlobalSettings()->gethOutput();
+  double cycletime = _config->getGlobalSettings()->gethOutput();
     if (_dimtimeevent && cycletime > 0.0)
     {
 

@@ -3573,7 +3573,7 @@ public function makeWeightProduct
   output DAE.Exp y;
 protected
   DAE.Type tp = typeof(w);
-  DAE.Exp z = makeConstZero(tp); 
+  DAE.Exp z = makeConstZero(tp);
   DAE.Exp con = DAE.RELATION(w,DAE.EQUAL(tp),z,-1,NONE());
 algorithm
   y := makeNoEvent(DAE.IFEXP(con,w,expMul(w,x)));
