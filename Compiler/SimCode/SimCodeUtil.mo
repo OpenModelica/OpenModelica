@@ -7768,9 +7768,12 @@ algorithm
       print("Kernel Function: "+Absyn.pathStringNoQual(path)+"\n");
       dumpFunctions(rest);
     then ();
-  case(SimCode.EXTERNAL_FUNCTION(name=path)::rest)
+  case(SimCode.EXTERNAL_FUNCTION(name=path,outVars=outVars)::rest)
     equation
       print("External Function: "+Absyn.pathStringNoQual(path)+"\n");
+      print("\toutVars: ");
+      dumpVariablesString(outVars," , ");
+      print("\n");
       dumpFunctions(rest);
     then ();
   case(SimCode.RECORD_CONSTRUCTOR(name=path, funArgs=funArgs, locals=locals)::rest)
@@ -7830,12 +7833,12 @@ algorithm
 
     case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp))
       equation
-        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp);
+        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
       then (s);
 
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,componentRef=cref,exp=exp))
       equation
-        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp);
+        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
     then (s);
 
       case(SimCode.SES_IFEQUATION(index=idx))
@@ -7878,7 +7881,7 @@ algorithm
       equation
         s = intString(idx) +": "+ " WHEN:( ";
         s = s + stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),", ") + " ) then: ";
-        s = s + ComponentReference.debugPrintComponentRefTypeStr(left) + " = " + ExpressionDump.printExpStr(right);
+        s = s + ComponentReference.debugPrintComponentRefTypeStr(left) + " = " + ExpressionDump.printExpStr(right) + "["+ DAEDump.daeTypeStr(Expression.typeof(right)) + "]";
         if Util.isSome(elseWhen) then
           s = s + " ELSEWHEN: " + dumpSimEqSystem(Util.getOption(elseWhen));
         end if;

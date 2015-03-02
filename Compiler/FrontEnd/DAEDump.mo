@@ -3195,6 +3195,16 @@ algorithm
   end match;
 end dumpVarsStream;
 
+public function daeTypeStr
+  input DAE.Type inType;
+  output String outTypeStr;
+protected
+  String s1,s2;
+algorithm
+  (s1,s2) := printTypeStr(inType);
+  outTypeStr := s1 + " " + s2;
+end daeTypeStr;
+
 public function printTypeStr
   input DAE.Type inType;
   output String outTypeStr;
