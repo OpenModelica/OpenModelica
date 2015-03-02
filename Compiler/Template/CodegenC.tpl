@@ -596,6 +596,9 @@ template simulationFile(SimCode simCode, String guid)
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #include <simulation/solver/perform_simulation.c>
 
+    #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
+    #include <simulation/solver/perform_qss_simulation.c>
+
     /* dummy VARINFO and FILEINFO */
     const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
     const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
@@ -655,6 +658,7 @@ template simulationFile(SimCode simCode, String guid)
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
+       (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
        <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,

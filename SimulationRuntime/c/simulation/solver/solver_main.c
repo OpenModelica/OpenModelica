@@ -173,7 +173,8 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   /* set tolerance for ZeroCrossings */
   setZCtol(fmin(simInfo->stepSize, simInfo->tolerance));
 
-  switch (solverInfo->solverMethod) {
+  switch (solverInfo->solverMethod)
+  {
   case S_EULER: break;
   case S_RUNGEKUTTA:
   {
@@ -187,6 +188,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     solverInfo->solverData = rungeData;
     break;
   }
+  case S_QSS: break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
   {
@@ -624,7 +626,23 @@ int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
       overwriteOldSimulationData(data);
       finishSimulation(data, &solverInfo, outputVariablesAtEnd);
     }
-    /* starts the simulation main loop */
+    /* starts the simulation main loop - special solvers */
+    else if(S_QSS == solverInfo.solverMethod)
+    {
+      sim_result.emit(&sim_result,data);
+
+      /* overwrite the whole ring-buffer with initialized values */
+      overwriteOldSimulationData(data);
+
+      infoStreamPrint(LOG_SOLVER, 0, "Start numerical integration (startTime: %g, stopTime: %g)", simInfo->startTime, simInfo->stopTime);
+      retVal = data->callback->performQSSSimulation(data, &solverInfo);
+      omc_alloc_interface.collect_a_little();
+
+      /* terminate the simulation */
+      finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+      omc_alloc_interface.collect_a_little();
+    }
+    /* starts the simulation main loop - standard solver interface */
     else
     {
       if(solverInfo.solverMethod != S_OPTIMIZATION)
