@@ -9230,7 +9230,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
          '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'
       let assign = whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-       
+
       <<
       if(_initial)
       {
@@ -9243,7 +9243,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
       <%elseWhen%>
       else
       {
-         
+
          <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);
       }
       >>
@@ -9253,7 +9253,7 @@ end equationWhen;
 template preCall(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates assignment for when."
-::= 
+::=
 match ty
   case T_ARRAY(dims=dims) then
    let dimensions = checkDimension(dims)
@@ -9282,7 +9282,7 @@ end preCall;
 template preCallForArray(Dimensions dims,String tmp)
 ::=
   let operatorCall= dims |> dim  hasindex i0   =>
-    let dimindex = dimension(dim,contextOther)  
+    let dimindex = dimension(dim,contextOther)
   'for(int i<%i0%>_<%tmp%>=1;i<%i0%>_<%tmp%><= <%dimindex%>;++i<%i0%>_<%tmp%>)'
   ;separator="\n\t"
   <<
@@ -9296,9 +9296,9 @@ template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text
  "Generates assignment for when."
 ::= /*
 match ty
-  
+
   case T_ARRAY(__) then
-   let &preExp = buffer "" 
+   let &preExp = buffer ""
     let expPart = daeExp(right, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     match expTypeFromExpShort(right)
     case "boolean" then
