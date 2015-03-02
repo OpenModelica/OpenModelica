@@ -113,7 +113,6 @@ import Parser;
 import Print;
 import Refactor;
 import SCodeDump;
-import NFEnv;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
@@ -3711,8 +3710,6 @@ algorithm
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
       list<GlobalScript.LoadedFile> lf;
-      NFSCodeEnv.Env senv;
-      NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
       Boolean b;
     case (_, GlobalScript.SYMBOLTABLE(ast=p))
@@ -3753,8 +3750,6 @@ algorithm
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
       list<GlobalScript.LoadedFile> lf;
-      NFSCodeEnv.Env senv;
-      NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
 
    case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
@@ -3788,17 +3783,23 @@ algorithm
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
 
-        (_,scode_builtin) = Builtin.getInitialFunctions();
+       // (_,scode_builtin) = Builtin.getInitialFunctions();
 
-        nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);
-        (dae, funcs) = NFInst.instClass(className, nfenv);
+       // nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);
+       // (dae, funcs) = NFInst.instClass(className, nfenv);
+
+       // cache = FCore.emptyCache();
+       // cache = FCore.setCachedFunctionTree(cache, funcs);
+       // env = FGraph.empty();
+       // ic_1 = Interactive.addInstantiatedClass(ic,
+       //   GlobalScript.INSTCLASS(className, dae, env));
+       // st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
+        _ = NFInst.instClassInProgram(className, scodeP);
 
         cache = FCore.emptyCache();
-        cache = FCore.setCachedFunctionTree(cache, funcs);
         env = FGraph.empty();
-        ic_1 = Interactive.addInstantiatedClass(ic,
-          GlobalScript.INSTCLASS(className, dae, env));
-        st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
+        dae = DAE.DAE({});
+        st = inInteractiveSymbolTable;
       then
         (cache, env, dae, st);
 

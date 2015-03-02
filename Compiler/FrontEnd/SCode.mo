@@ -2092,6 +2092,16 @@ algorithm
   end match;
 end isClassOrComponent;
 
+public function isClass
+  input Element inElement;
+  output Boolean outIsClass;
+algorithm
+  outIsClass := match inElement
+    case CLASS() then true;
+    else false;
+  end match;
+end isClass;
+
 public function foldEEquations<ArgT>
   "Calls the given function on the equation and all its subequations, and
    updates the argument for each call."
