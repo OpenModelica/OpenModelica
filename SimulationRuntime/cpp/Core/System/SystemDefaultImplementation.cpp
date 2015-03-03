@@ -464,7 +464,10 @@ int& SystemDefaultImplementation::getIntStartValue(int& var)
 {
   return _int_start_values.getGetStartValue(var);
 }
-
+string& SystemDefaultImplementation::getStringStartValue(string& var)
+{
+  return _string_start_values.getGetStartValue(var);
+}
 void SystemDefaultImplementation::setRealStartValue(double& var,double val)
 {
   var=val;
@@ -481,6 +484,11 @@ void SystemDefaultImplementation::setIntStartValue(int& var,int val)
 {
   var=val;
   _int_start_values.setStartValue(var,val);
+}
+void SystemDefaultImplementation::setStringStartValue(string& var,string val)
+{
+  var=val;
+  _string_start_values.setStartValue(var,val);
 }
 
 

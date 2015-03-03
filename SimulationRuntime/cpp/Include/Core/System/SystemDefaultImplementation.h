@@ -130,10 +130,11 @@ protected:
     double& getRealStartValue(double& var);
     bool& getBoolStartValue(bool& var);
     int& getIntStartValue(int& var);
+    string& getStringStartValue(string& var);
     void setRealStartValue(double& var,double val);
     void setBoolStartValue(bool& var,bool val);
     void setIntStartValue(int& var,int val);
-
+    void setStringStartValue(string& var,string val);
     double
         _simTime;             ///< current simulation time (given by the solver)
 
@@ -167,7 +168,7 @@ protected:
     InitVars<double> _real_start_values;
     InitVars<int> _int_start_values;
     InitVars<bool> _bool_start_values;
-
+    InitVars<string> _string_start_values;
 
 
     typedef boost::circular_buffer<double> buffer_type;
