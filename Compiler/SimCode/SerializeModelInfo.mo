@@ -74,7 +74,7 @@ algorithm
       equation
         fileName = code.fileNamePrefix + "_info.json";
         File.open(file,fileName,File.Mode.Write);
-        File.write(file, "{\"format\":\"OpenModelica debug info\",\"version\":1,\n\"info\":{\"name\":\"");
+        File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":\"");
         File.writeEscape(file, Absyn.pathStringNoQual(mi.name), escape=File.Escape.JSON);
         File.write(file, "\",\"description\":\"");
         File.writeEscape(file, mi.description, escape=File.Escape.JSON);
@@ -512,7 +512,7 @@ algorithm
         File.write(file, "\",\"tag\":\"container\",\"display\":\"linear\",\"defines\":[");
         serializeUses(file,list(match v case SimCodeVar.SIMVAR() then v.name; end match
                                 for v in eq.vars));
-        File.write(file, "],\"equation\":{\"size\":");
+        File.write(file, "],\"equation\":[{\"size\":");
         File.write(file,intString(i));
         if i <> 0 then
           File.write(file,",\"density\":");
@@ -522,7 +522,7 @@ algorithm
         serializeList1(file,eq.simJac,withOperations,serializeLinearCell);
         File.write(file,"],\"b\":[");
         serializeList(file,eq.beqs,serializeExp);
-        File.write(file,"]}}");
+        File.write(file,"]}]}");
       then true;
     case SimCode.SES_ALGORITHM(statements=stmt::_)
       equation
