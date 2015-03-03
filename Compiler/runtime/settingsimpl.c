@@ -196,6 +196,8 @@ char* Settings_getHomeDir(int runningTestsuite)
   if (homePath == NULL) {
     homePath = getpwuid(getuid())->pw_dir;
   }
+#else
+  return "%APPDATA%";
 #endif
   if (homePath == NULL || runningTestsuite) {
     return "";
