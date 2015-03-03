@@ -342,7 +342,7 @@ static void readInfoJson(const char *str,MODEL_DATA_XML *xml)
   str=assertChar(str,'{');
   str=assertStringValue(str,"format");
   str=assertChar(str,':');
-  str=assertStringValue(str,"OpenModelica debug info");
+  str=assertStringValue(str,"Transformational debugger info");
   str=assertChar(str,',');
   str=assertStringValue(str,"version");
   str=assertChar(str,':');
