@@ -4152,7 +4152,7 @@ algorithm
         (e_2,extraArg) = func(e2, extraArg);
         x = if referenceEq(e,e_1) and referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN(tp,e_1,e_2,source);
       then (x::{},extraArg);
-      
+
     case (DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);

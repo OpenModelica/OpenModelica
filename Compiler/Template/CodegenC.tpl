@@ -7820,7 +7820,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     wrapperArray
     else
       let dimsLenStr = listLength(crefDims(cr))
-      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")      
+      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")
       let arrName = contextCref(crefStripSubs(cr), context,&auxFunction)
       let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let arrayType = expTypeArray(ty)
