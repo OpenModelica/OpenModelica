@@ -13,6 +13,7 @@ template translateModel(SimCode simCode)
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__)) then
         let target  = simulationCodeTarget()
+        let preVarsCount = getPreVarsCount(simCode)
         let &extraFuncs = buffer "" /*BUFD*/
         let &extraFuncsDecl = buffer "" /*BUFD*/
         let()= textFile(simulationMainFile(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", ""), 'OMCpp<%fileNamePrefix%>Main.cpp')
@@ -37,9 +38,9 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationStateSelectionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
         let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
-        let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
+        let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", preVarsCount),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,false), "", false),'OMCpp<%fileNamePrefix%>PreVariables.h')
+        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,false), "", preVarsCount, false),'OMCpp<%fileNamePrefix%>PreVariables.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
         let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
@@ -449,14 +450,28 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
 end simulationWriteOutputHeaderFile;
 
 
-template simulationPreVarsHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String memberVariableDefinitions, String additionalPublicMembers, Boolean useFlatArrayNotation)
+template getPreVarsCount(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo=MODELINFO(__)) then
+      match modelInfo
+        case MODELINFO(vars=SIMVARS(__)) then
+          let allVarCount = intAdd(intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd(listLength(vars.intAlgVars), intAdd(listLength(vars.boolAlgVars), listLength(vars.stateVars))))
+          <<
+          <%allVarCount%>
+          >>
+      end match
+    else ''
+end getPreVarsCount;
+
+
+template simulationPreVarsHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String memberVariableDefinitions, String additionalPublicMembers, String preVarsCount, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
-  let allVarCount = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
   <<
   #pragma once
 
@@ -475,7 +490,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void initPreVariables();
     virtual void savePreVariables();
     <%
-      let savePreVarFuncs = (List.partition(List.intRange(stringInt(allVarCount)), 100) |> ls hasindex idx => 'virtual void savePreVariables_<%idx%>();';separator="\n")
+      let savePreVarFuncs = (List.partition(List.intRange(stringInt(preVarsCount)), 100) |> ls hasindex idx => 'virtual void savePreVariables_<%idx%>();';separator="\n")
       <<
       <%savePreVarFuncs%>
       >>
@@ -1086,55 +1101,56 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
    >>
 end simulationWriteOutputAliasVarsCppFile;
 
-template simulationExtensionCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template simulationExtensionCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String preVarsCount)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
+case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(__))) then
   let classname = lastIdentOfPath(modelInfo.name)
    <<
    /* #include <Core/Modelica.h>
    #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Extension.h" */
-   <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data)
-       , <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory, sim_data)
-       , <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings, nonlinsolverfactory, sim_data)
-       , <%lastIdentOfPath(modelInfo.name)%>Jacobian(globalSettings, nonlinsolverfactory, sim_data)
-       , <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, nonlinsolverfactory, sim_data)
+   <%classname%>Extension::<%classname%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
+       : PreVariables(<%preVarsCount%>)
+       , <%classname%>(globalSettings, nonlinsolverfactory, sim_data)
+       , <%classname%>WriteOutput(globalSettings,nonlinsolverfactory, sim_data)
+       , <%classname%>Initialize(globalSettings, nonlinsolverfactory, sim_data)
+       , <%classname%>Jacobian(globalSettings, nonlinsolverfactory, sim_data)
+       , <%classname%>StateSelection(globalSettings, nonlinsolverfactory, sim_data)
 
    {
    }
 
-   <%lastIdentOfPath(modelInfo.name)%>Extension::~<%lastIdentOfPath(modelInfo.name)%>Extension()
+   <%classname%>Extension::~<%classname%>Extension()
    {
    }
 
-   bool <%lastIdentOfPath(modelInfo.name)%>Extension::initial()
+   bool <%classname%>Extension::initial()
    {
-      return <%lastIdentOfPath(modelInfo.name)%>Initialize::initial();
+      return <%classname%>Initialize::initial();
    }
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setInitial(bool value)
+   void <%classname%>Extension::setInitial(bool value)
    {
-      <%lastIdentOfPath(modelInfo.name)%>Initialize::setInitial(value);
-   }
-
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::initialize()
-   {
-     <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
-     <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
-     <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
-
-     <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA();
+      <%classname%>Initialize::setInitial(value);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getJacobian(SparseMatrix& matrix)
+   void <%classname%>Extension::initialize()
+   {
+     <%classname%>WriteOutput::initialize();
+     <%classname%>Initialize::initialize();
+     <%classname%>Jacobian::initialize();
+
+     <%classname%>Jacobian::initializeColoredJacobianA();
+   }
+
+   void <%classname%>Extension::getJacobian(SparseMatrix& matrix)
    {
      getAJacobian(matrix);
 
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateSetJacobian(unsigned int index,SparseMatrix& matrix)
+   void <%classname%>Extension::getStateSetJacobian(unsigned int index,SparseMatrix& matrix)
    {
      switch (index)
      {
@@ -1154,126 +1170,126 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       }
    }
 
-   bool <%lastIdentOfPath(modelInfo.name)%>Extension::handleSystemEvents(bool* events)
+   bool <%classname%>Extension::handleSystemEvents(bool* events)
    {
-     return <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(events);
+     return <%classname%>::handleSystemEvents(events);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::saveAll()
+   void <%classname%>Extension::saveAll()
    {
-     return <%lastIdentOfPath(modelInfo.name)%>::saveAll();
+     return <%classname%>::saveAll();
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::initEquations()
+   void <%classname%>Extension::initEquations()
    {
-     <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations();
+     <%classname%>Initialize::initEquations();
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::writeOutput(const IWriteOutput::OUTPUT command)
+   void <%classname%>Extension::writeOutput(const IWriteOutput::OUTPUT command)
    {
-     <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(command);
+     <%classname%>WriteOutput::writeOutput(command);
    }
 
-   IHistory* <%lastIdentOfPath(modelInfo.name)%>Extension::getHistory()
+   IHistory* <%classname%>Extension::getHistory()
    {
-     return <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory();
+     return <%classname%>WriteOutput::getHistory();
    }
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimStateSets() const
+   int <%classname%>Extension::getDimStateSets() const
    {
-     return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimStateSets();
+     return <%classname%>StateSelection::getDimStateSets();
    }
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimStates(unsigned int index) const
+   int <%classname%>Extension::getDimStates(unsigned int index) const
    {
-     return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimStates(index);
+     return <%classname%>StateSelection::getDimStates(index);
    }
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimCanditates(unsigned int index) const
+   int <%classname%>Extension::getDimCanditates(unsigned int index) const
    {
-     return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimCanditates(index);
+     return <%classname%>StateSelection::getDimCanditates(index);
    }
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimDummyStates(unsigned int index) const
+   int <%classname%>Extension::getDimDummyStates(unsigned int index) const
    {
-     return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimDummyStates(index);
+     return <%classname%>StateSelection::getDimDummyStates(index);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStates(unsigned int index,double* z)
+   void <%classname%>Extension::getStates(unsigned int index,double* z)
    {
-     <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStates(index,z);
+     <%classname%>StateSelection::getStates(index,z);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setStates(unsigned int index,const double* z)
+   void <%classname%>Extension::setStates(unsigned int index,const double* z)
    {
-     <%lastIdentOfPath(modelInfo.name)%>StateSelection::setStates(index,z);
+     <%classname%>StateSelection::setStates(index,z);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateCanditates(unsigned int index,double* z)
+   void <%classname%>Extension::getStateCanditates(unsigned int index,double* z)
    {
-     <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStateCanditates(index,z);
+     <%classname%>StateSelection::getStateCanditates(index,z);
    }
 
-   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,DynArrayDim2<int> & A)
+   bool <%classname%>Extension::getAMatrix(unsigned int index,DynArrayDim2<int> & A)
    {
-     return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
+     return <%classname%>StateSelection::getAMatrix(index,A);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,DynArrayDim2<int> & A)
+   void <%classname%>Extension::setAMatrix(unsigned int index,DynArrayDim2<int> & A)
    {
-     <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
+     <%classname%>StateSelection::setAMatrix(index,A);
    }
 
-   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
+   bool <%classname%>Extension::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
    {
-     return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
+     return <%classname%>StateSelection::getAMatrix(index,A);
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,DynArrayDim1<int> & A)
+   void <%classname%>Extension::setAMatrix(unsigned int index,DynArrayDim1<int> & A)
    {
-     <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
+     <%classname%>StateSelection::setAMatrix(index,A);
    }
 
    /*needed for colored jacobians*/
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size)
+   void <%classname%>Extension::getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size)
    {
     memcpy(A_sparsePattern_leadindex, _A_sparsePattern_leadindex, size * sizeof(int));
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_index(int* A_sparsePattern_index, int size)
+   void <%classname%>Extension::getA_sparsePattern_index(int* A_sparsePattern_index, int size)
    {
     memcpy(A_sparsePattern_index, _A_sparsePattern_index, size * sizeof(int));
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size)
+   void <%classname%>Extension::getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size)
    {
     memcpy(A_sparsePattern_colorCols, _A_sparsePattern_colorCols, size * sizeof(int));
    }
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sparsePattern_maxColors()
+   int <%classname%>Extension::getA_sparsePattern_maxColors()
    {
     return _A_sparsePattern_maxColors;
    }
 
    /*********************************************************************************************/
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_colorCols()
+   int <%classname%>Extension::getA_sizeof_sparsePattern_colorCols()
    {
     return _A_sizeof_sparsePattern_colorCols;
    }
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_leadindex()
+   int <%classname%>Extension::getA_sizeof_sparsePattern_leadindex()
    {
     return _A_sizeof_sparsePattern_leadindex ;
    }
 
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_index()
+   int <%classname%>Extension::getA_sizeof_sparsePattern_index()
    {
     return _A_sizeof_sparsePattern_index;
    }
 
-   string <%lastIdentOfPath(modelInfo.name)%>Extension::getModelName()
+   string <%classname%>Extension::getModelName()
    {
     return "<%fileNamePrefix%>";
    }

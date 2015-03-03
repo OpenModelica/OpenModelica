@@ -881,6 +881,17 @@ algorithm
   end match;
 end getOptionOrDefault;
 
+public function isSome<T>
+  "Returns true if SOME, otherwise false"
+  input Option<T> inOption;
+  output Boolean outIsSome;
+algorithm
+  outIsSome := match(inOption)
+    case(SOME(_)) then true;
+    else then false;
+  end match;
+end isSome;
+
 public function intPositive
   "Returns true if integer value is positive (>= 0)"
   input Integer v;

@@ -23,7 +23,7 @@ void DiscreteEvents::initialize()
 {
 
   _preVars->initPreVariables();
-  _preVars->_pre_vars.resize((boost::extents[_preVars->_pre_real_vars_idx.size()+_preVars->_pre_int_vars_idx.size()+_preVars->_pre_bool_vars_idx.size()]));
+  //_preVars->_pre_vars.resize((boost::extents[_preVars->_pre_real_vars_idx.size()+_preVars->_pre_int_vars_idx.size()+_preVars->_pre_bool_vars_idx.size()]));
 }
 
 /*

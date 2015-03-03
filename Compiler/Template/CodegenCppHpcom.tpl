@@ -20,6 +20,7 @@ template translateModel(SimCode simCode)
       let target  = simulationCodeTarget()
       let &extraFuncs = buffer "" /*BUFD*/
       let &extraFuncsDecl = buffer "" /*BUFD*/
+      let preVarsCount = getPreVarsCount(simCode)
       let stateDerVectorName = "__zDot"
       let useMemoryOptimization = HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)
 
@@ -46,9 +47,9 @@ template translateModel(SimCode simCode)
       let() = textFile(simulationStateSelectionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
       let() = textFile(simulationStateSelectionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>StateSelection.h')
       let() = textFile(simulationExtensionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Extension.h')
-      let() = textFile(simulationExtensionCppFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Extension.cpp')
+      let() = textFile(simulationExtensionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", preVarsCount), 'OMCpp<%fileNamePrefix%>Extension.cpp')
       let() = textFile(simulationWriteOutputHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>WriteOutput.h')
-      let() = textFile(simulationPreVarsHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo, hpcOmMemory, stringBool(useMemoryOptimization), false), generateAdditionalPublicMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, ""), false), 'OMCpp<%fileNamePrefix%>PreVariables.h')
+      let() = textFile(simulationPreVarsHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo, hpcOmMemory, stringBool(useMemoryOptimization), false), generateAdditionalPublicMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, ""), preVarsCount, false), 'OMCpp<%fileNamePrefix%>PreVariables.h')
       let() = textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
       let() = textFile(simulationPreVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>PreVariables.cpp')
       let() = textFile(simulationWriteOutputAlgVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
