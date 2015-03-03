@@ -140,10 +140,11 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
     <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void initializeParameterVars_<%idx%>();';separator="\n"%>
     <%List.partition(vars.intParamVars, 100) |> ls hasindex idx => 'void initializeIntParameterVars_<%idx%>();';separator="\n"%>
     <%List.partition(vars.boolParamVars, 100) |> ls hasindex idx => 'void initializeBoolParameterVars_<%idx%>();';separator="\n"%>
-
+    <%List.partition(vars.stringParamVars, 100) |> ls hasindex idx => 'void initializeStringParameterVars_<%idx%>();';separator="\n"%>
     void initializeParameterVars();
     void initializeIntParameterVars();
     void initializeBoolParameterVars();
+    void initializeStringParameterVars();
     void initializeStateVars();
     void initializeDerVars();
     /*extraFuncs*/
@@ -654,6 +655,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init10  = initValstWithSplit(varDecls10, "Real", '<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars', vars.paramVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
    let init11  = initValstWithSplit(varDecls11, "Int", '<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntParameterVars', vars.intParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
    let init12  = initValstWithSplit(varDecls12, "Bool", '<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolParameterVars', vars.boolParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
+    let init13  = initValstWithSplit(varDecls12, "String", '<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStringParameterVars', vars.stringParamVars, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)
    <<
      <%varDecls10%>
      <%varDecls11%>
@@ -661,6 +663,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
      <%init10%>
      <%init11%>
      <%init12%>
+     <%init13%>
    >>
 
 end simulationInitParameterCppFile;
@@ -4389,7 +4392,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       initializeParameterVars();
       initializeIntParameterVars();
       initializeBoolParameterVars();
-
+      initializeStringParameterVars();
       initializeAlgVars();
       initializeDiscreteAlgVars();
       initializeIntAlgVars();
