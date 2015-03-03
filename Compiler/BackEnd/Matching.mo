@@ -4427,72 +4427,6 @@ algorithm
   end match;
 end cheapmatchingalgorithm1;
 
-
-protected function matchSingleVars
-"function matchSingleVars, match all vars with one equation
- author: Frenkel TUD 2012-04"
-  input Integer i;
-  input Integer nv;
-  input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
-  input array<Integer> ass1 "ass[eqnindx]=varindx";
-  input array<Integer> ass2 "ass[varindx]=eqnindx";
-algorithm
-  _:=
-  matchcontinue (i,nv,ne,m,mT,ass1,ass2)
-    local
-      list<Integer> rows;
-    case (_,_,_,_,_,_,_)
-      equation
-        true=intGt(i,ne);
-      then
-        ();
-    case (_,_,_,_,_,_,_)
-      equation
-        // search cheap matching
-        rows = List.select(m[i], Util.intPositive);
-        matchSingleVars1(rows,i,ass1,ass2);
-        matchSingleVars(i+1,nv,ne,m,mT,ass1,ass2);
-      then
-        ();
-    case (_,_,_,_,_,_,_)
-      equation
-        matchSingleVars(i+1,nv,ne,m,mT,ass1,ass2);
-      then
-        ();
-    else
-      equation
-        Error.addInternalError("function matchSingleVars failed in equation " + intString(i), sourceInfo());
-      then
-        fail();
-  end matchcontinue;
-end matchSingleVars;
-
-protected function matchSingleVars1
-"function helper for matchSingleVars
- author: Frenkel TUD 2012-03"
-  input list<Integer> rows;
-  input Integer c;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
-algorithm
-  _:=
-  match (rows,c,ass1,ass2)
-    local
-      list<Integer> rest;
-      Integer r;
-    case (r::{},_,_,_)
-      equation
-        // row is unmatched -> return
-        true = intLt(ass2[r],0);
-        arrayUpdate(ass1,c,r);
-        arrayUpdate(ass2,r,c);
-      then
-        ();
-  end match;
-end matchSingleVars1;
-
 protected function cheapmatching
 "function cheapmatching, traverses all colums and look for a cheap matching, a unmatch row
  author: Frenkel TUD 2012-03"
@@ -5883,29 +5817,6 @@ algorithm
         fail();
   end matchcontinue;
 end assignmentsArrayExpand;
-
-protected function prune
-"author: Frenkel TUD 2012-06
-  function to prune, mark as never again test, collums"
-  input list<Integer> inVisitedcolums;
-  input Integer ne;
-  input array<Integer> rowmarks;
-  input array<Integer> ass1;
-algorithm
-  _:= match (inVisitedcolums,ne,rowmarks,ass1)
-     local
-       Integer c,r;
-       list<Integer> rest;
-     case ({},_,_,_) then ();
-     case (c::rest,_,_,_)
-       equation
-         r = ass1[c];
-         arrayUpdate(rowmarks,r,ne+1);
-         prune(rest,ne,rowmarks,ass1);
-       then
-         ();
-   end match;
-end prune;
 
 protected function checkAssignment
 "author: Frenkel TUD 2012-06

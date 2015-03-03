@@ -2054,16 +2054,6 @@ algorithm
   end match;
 end getAliasContinue;
 
-protected function appendNextRow "author: Frenkel TUD 2012-12"
-  input Integer nr;
-  input Integer mark;
-  input array<SimpleContainer> simpleeqnsarr;
-  input list<Integer> iNext;
-  output list<Integer> oNext;
-algorithm
-  oNext := List.consOnTrue(intNe(getVisited(simpleeqnsarr[nr]), mark), nr, iNext);
-end appendNextRow;
-
 protected function isVisited "author: Frenkel TUD 2012-12"
   input Integer mark;
   input SimpleContainer iS;

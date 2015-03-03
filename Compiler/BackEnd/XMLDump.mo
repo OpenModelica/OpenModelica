@@ -2527,38 +2527,6 @@ algorithm
   end matchcontinue;
 end dumpLstIntAttr;
 
-
-protected function dumpLstStr "
-function dumpLsTStr dumps a list
-of String as a list of XML Element.
-The method takes the String list as
-input. The output is:
-
-<ELEMENT>FirstStringOfList</ELEMENT>
-..
-<ELEMENT>LastStringOfList</ELEMENT>
-
-"
-  input list<String> inLstStr;
-algorithm
-  _:=
-  matchcontinue(inLstStr)
-      local
-        String h;
-        list<String> t;
-    case {} then ();
-    case {h}
-      equation
-        dumpStrTagContent(ELEMENT,h);
-    then  ();
-    case (h :: t)
-      equation
-        dumpStrTagContent(ELEMENT,h);
-        dumpLstStr(t);
-    then();
-  end matchcontinue;
-end dumpLstStr;
-
 protected function dumpMatching
 "author: Frenkel TUD 2011-05
   prints the matching information on stdout."

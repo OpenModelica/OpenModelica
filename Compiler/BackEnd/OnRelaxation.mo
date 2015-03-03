@@ -727,44 +727,6 @@ algorithm
   end matchcontinue;
 end generateCliquesResidual2;
 
-protected function getTearingConstraints "author: Frenkel TUD 2012-07"
-  input list<Integer> inOrphans;
-  input array<Integer> ass1;
-  input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
-  input BackendDAE.Variables vars;
-  input list<Integer> iconstraints;
-  output list<Integer> oconstraints;
-algorithm
-  oconstraints := matchcontinue(inOrphans,ass1,ass2,m,mt,vars,iconstraints)
-    local
-      list<Integer> rest,constraints,elst,rlst;
-      Integer o;
-      Boolean constr;
-      list<Boolean> blst;
-      list<BackendDAE.Var> vlst;
-    case ({},_,_,_,_,_,_)
-      then
-       iconstraints;
-    case (o::rest,_,_,_,_,_,_)
-      equation
-        elst = mt[o];
-        rlst = List.flatten(List.map1r(elst,arrayGet,ass2));
-        // check for partner
-        //  BackendDump.debuglst((rlst,intString,", ","\n"));
-        vlst = List.map1r(rlst,BackendVariable.getVarAt,vars);
-        blst = List.map(vlst,BackendVariable.isFlowVar);
-        constr = Util.boolAndList(blst);
-        constraints = List.consOnTrue(constr, o, iconstraints);
-      then
-       getTearingConstraints(rest,ass1,ass2,m,mt,vars,constraints);
-    case (_::rest,_,_,_,_,_,_)
-      then
-        getTearingConstraints(rest,ass1,ass2,m,mt,vars,iconstraints);
-  end matchcontinue;
-end getTearingConstraints;
-
 protected function prepairOrphansOrder "author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;

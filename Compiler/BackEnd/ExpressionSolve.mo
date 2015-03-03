@@ -502,40 +502,6 @@ algorithm
   end match;
 end solveSimple;
 
-
-protected function generateAssertZero
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  input DAE.Exp a;
-  input list<DAE.Statement> inAsserts;
-  output list<DAE.Statement> outAsserts;
-algorithm
-  outAsserts := matchcontinue (inExp1,inExp2,inExp3,a,inAsserts)
-    local
-      DAE.Exp z;
-      DAE.Type tp;
-      String estr,se1,se2,se3,sa;
-    case (_,_,_,_,_)
-      equation
-        // zero check already done
-        true = Expression.isConst(a);
-      then
-        inAsserts;
-    else
-      equation
-        tp = Expression.typeof(a);
-        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        se1 = ExpressionDump.printExpStr(inExp2);
-        se2 = ExpressionDump.printExpStr(inExp1);
-        se3 = ExpressionDump.printExpStr(inExp3);
-        sa = ExpressionDump.printExpStr(a);
-        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero! When solving for exp: ", se3, "."});
-      then
-        DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_WARNING,DAE.emptyElementSource)::inAsserts;
-  end matchcontinue;
-end generateAssertZero;
-
 protected function generateAssertType
   input DAE.Type tp;
   input DAE.ComponentRef cr;
