@@ -89,9 +89,8 @@ static void writeOutputVars(char* names, DATA* data);
 
 int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  int retVal;
-
   TRACE_PUSH
+  int retVal;
 
   switch(solverInfo->solverMethod)
   {
@@ -433,12 +432,12 @@ int initializeModel(DATA* data, const char* init_initMethod,
  */
 int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd)
 {
+  TRACE_PUSH
+
   int retValue = 0;
   int ui;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
-
-  TRACE_PUSH
 
   /* Last step with terminal()=true */
   if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION)
@@ -564,12 +563,12 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
     double init_time, int lambda_steps, int solverID, const char* outputVariablesAtEnd)
 {
+  TRACE_PUSH
+
   int i, retVal = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
-
-  TRACE_PUSH
 
   solverInfo.solverMethod = solverID;
 

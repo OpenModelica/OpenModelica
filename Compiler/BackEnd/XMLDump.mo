@@ -29,46 +29,47 @@
  *
  */
 
-/*
- * For any request about the implementation of this package,
- * please contact Filippo Donida (donida@elet.polimi.it).
- */
-
-/////////////////////////////////////////////////////////////////
-// Important discrete states are not recognised as states. //////
-// The varKind shoud be varVariability and another method  //////
-// and also the relative structure for the variable should //////
-// be implemented to output the information like: state,   //////
-// dummy der, dummy state,...                              //////
-/////////////////////////////////////////////////////////////////
+// =============================================================================
+// For any request about the implementation of this package,
+// please contact Filippo Donida (donida@elet.polimi.it).
+// =============================================================================
 
 
-///////////////////////////////////////////////////////
-// With a delaration like:                          ///
-// parameter Real a = 1;                            ///
-// the bindValue Optional value of the BackendDAE.VAR   ///
-// record is everytime empty.  Why?                 ///
-///////////////////////////////////////////////////////
+// =============================================================================
+// Important discrete states are not recognised as states.
+// The varKind shoud be varVariability and another method
+// and also the relative structure for the variable should
+// be implemented to output the information like: state,
+// dummy der, dummy state,...
+// =============================================================================
 
 
-////////////////////////////////////////////////////////////////////
-// In order to compile the XMLDump module (XMLDump.mo package)   ///
-// XMLDump.mo text in the Compiler/Makefile.common file (SRCMO   ///
-// variable) has been added.                                     ///
-////////////////////////////////////////////////////////////////////
+// =============================================================================
+// With a delaration like:
+// parameter Real a = 1;
+// the bindValue Optional value of the BackendDAE.VAR
+// record is everytime empty.  Why?
+// =============================================================================
 
-/*
-Probably it's better to put a link to the corresponging
-algorithm/variable/when/zeroCross/...
-One solution could be to add an attribute like: Algorithm_Number
-to the algorith tab, like:
-<ALGORITHM LABEL=algorithm_Number>
-and then when dumping the algorithm reference in this function put
-the corresponding tag:
-<ANCHOR id=algorithm_Number/>
-within the equation element.
-*/
 
+// =============================================================================
+// In order to compile the XMLDump module (XMLDump.mo package)
+// XMLDump.mo text in the Compiler/Makefile.common file (SRCMO
+// variable) has been added.
+// =============================================================================
+
+
+// =============================================================================
+// Probably it's better to put a link to the corresponging
+// algorithm/variable/when/zeroCross/...
+// One solution could be to add an attribute like: Algorithm_Number
+// to the algorith tab, like:
+// <ALGORITHM LABEL=algorithm_Number>
+// and then when dumping the algorithm reference in this function put
+// the corresponding tag:
+// <ANCHOR id=algorithm_Number/>
+// within the equation element.
+// =============================================================================
 
 encapsulated package XMLDump
 " file:        XMLDump.mo

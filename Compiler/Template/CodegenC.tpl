@@ -2962,7 +2962,6 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
     <%addRootsTempArray()%>
     <%varDecls%>
 
-
     data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, functionDAE_systems);'
@@ -3631,8 +3630,8 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
    */
   void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
   {
-    const int equationIndexes[2] = {1,<%ix%>};
     TRACE_PUSH
+    const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
     <%x%>
     TRACE_POP
@@ -3695,8 +3694,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
    */
   void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
   {
-    const int equationIndexes[2] = {1,<%ix%>};
     TRACE_PUSH
+    const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
     <%x%>
     TRACE_POP

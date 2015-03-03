@@ -62,12 +62,11 @@ static double tolZC;
  */
 void updateDiscreteSystem(DATA *data)
 {
+  TRACE_PUSH
   int IterationNum = 0;
   int discreteChanged = 0;
   modelica_boolean relationChanged = 0;
   data->simulationInfo.needToIterate = 0;
-
-  TRACE_PUSH
 
   data->simulationInfo.callStatistics.updateDiscreteSystem++;
 
@@ -121,9 +120,8 @@ void updateDiscreteSystem(DATA *data)
  */
 void saveZeroCrossings(DATA* data)
 {
-  long i = 0;
-
   TRACE_PUSH
+  long i = 0;
 
   debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings");
 
@@ -166,11 +164,10 @@ void copyStartValuestoInitValues(DATA *data)
  */
 void printAllVars(DATA *data, int ringSegment, int stream)
 {
+  TRACE_PUSH
   long i;
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  TRACE_PUSH
 
   if (!ACTIVE_STREAM(stream)) return;
 
@@ -224,11 +221,10 @@ void printAllVars(DATA *data, int ringSegment, int stream)
  */
 void printAllVarsDebug(DATA *data, int ringSegment, int stream)
 {
+  TRACE_PUSH
   long i;
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  TRACE_PUSH
 
   debugStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
 
@@ -279,10 +275,9 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
  */
 void printParameters(DATA *data, int stream)
 {
+  TRACE_PUSH
   long i;
   MODEL_DATA *mData = &(data->modelData);
-
-  TRACE_PUSH
 
   if (!ACTIVE_STREAM(stream)) return;
 
@@ -399,9 +394,8 @@ void printSparseStructure(DATA *data, int stream)
  */
 void printRelationsDebug(DATA *data, int stream)
 {
-  long i;
-
   TRACE_PUSH
+  long i;
 
   debugStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
   for(i=0; i<data->modelData.nRelations; i++)
@@ -421,9 +415,8 @@ void printRelationsDebug(DATA *data, int stream)
  */
 void printRelations(DATA *data, int stream)
 {
-  long i;
-
   TRACE_PUSH
+  long i;
 
   if (!ACTIVE_STREAM(stream))
   {
@@ -450,9 +443,8 @@ void printRelations(DATA *data, int stream)
  */
 void printZeroCrossings(DATA *data, int stream)
 {
-  long i;
-
   TRACE_PUSH
+  long i;
 
   if (!ACTIVE_STREAM(stream))
   {
@@ -486,9 +478,8 @@ void printZeroCrossings(DATA *data, int stream)
  */
 void overwriteOldSimulationData(DATA *data)
 {
-  long i;
-
   TRACE_PUSH
+  long i;
 
   for(i=1; i<ringBufferLength(data->simulationData); ++i)
   {
@@ -517,9 +508,9 @@ void overwriteOldSimulationData(DATA *data)
  */
 void copyRingBufferSimulationData(DATA *data, SIMULATION_DATA **destData, RINGBUFFER* destRing)
 {
+  TRACE_PUSH
   long i;
 
-  TRACE_PUSH
   assertStreamPrint(data->threadData, ringBufferLength(data->simulationData) == ringBufferLength(destRing), "copy ring buffer failed, because of different sizes.");
 
   for(i=0; i<ringBufferLength(data->simulationData); ++i)
@@ -549,9 +540,8 @@ void copyRingBufferSimulationData(DATA *data, SIMULATION_DATA **destData, RINGBU
  */
 void restoreExtrapolationDataOld(DATA *data)
 {
-  long i;
-
   TRACE_PUSH
+  long i;
 
   for(i=1; i<ringBufferLength(data->simulationData); ++i)
   {
@@ -575,11 +565,10 @@ void restoreExtrapolationDataOld(DATA *data)
  */
 void setAllVarsToStart(DATA *data)
 {
+  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   long i;
-
-  TRACE_PUSH
 
   for(i=0; i<mData->nVariablesReal; ++i)
   {
@@ -615,11 +604,10 @@ void setAllVarsToStart(DATA *data)
  */
 void setAllStartToVars(DATA *data)
 {
+  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   long i;
-
-  TRACE_PUSH
 
   debugStreamPrint(LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
   for(i=0; i<mData->nVariablesReal; ++i)
@@ -659,11 +647,10 @@ void setAllStartToVars(DATA *data)
  */
 void setAllParamsToStart(DATA *data)
 {
+  TRACE_PUSH
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
   MODEL_DATA      *mData = &(data->modelData);
   long i;
-
-  TRACE_PUSH
 
   for(i=0; i<mData->nParametersReal; ++i)
   {
@@ -699,11 +686,10 @@ void setAllParamsToStart(DATA *data)
  */
 void storeOldValues(DATA *data)
 {
+  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  TRACE_PUSH
 
   sInfo->timeValueOld = sData->timeValue;
   memcpy(sInfo->realVarsOld, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
@@ -724,11 +710,10 @@ void storeOldValues(DATA *data)
  */
 void restoreOldValues(DATA *data)
 {
+  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  TRACE_PUSH
 
   sData->timeValue = sInfo->timeValueOld;
   memcpy(sData->realVars, sInfo->realVarsOld, sizeof(modelica_real)*mData->nVariablesReal);
@@ -749,11 +734,10 @@ void restoreOldValues(DATA *data)
  */
 void storePreValues(DATA *data)
 {
+  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  TRACE_PUSH
 
   memcpy(sInfo->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
   memcpy(sInfo->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
@@ -773,8 +757,8 @@ void storePreValues(DATA *data)
  */
 modelica_boolean checkRelations(DATA *data)
 {
-  int i;
   TRACE_PUSH
+  int i;
 
   for(i=0; i<data->modelData.nRelations; ++i)
     if(data->simulationInfo.relationsPre[i] != data->simulationInfo.relations[i])
@@ -851,10 +835,9 @@ double getNextSampleTimeFMU(DATA *data)
  */
 void initializeDataStruc(DATA *data)
 {
+  TRACE_PUSH
   SIMULATION_DATA tmpSimData = {0};
   size_t i = 0;
-
-  TRACE_PUSH
 
   /* RingBuffer */
   data->simulationData = 0;
@@ -1024,9 +1007,8 @@ void initializeDataStruc(DATA *data)
  */
 void deInitializeDataStruc(DATA *data)
 {
-  size_t i = 0;
-
   TRACE_PUSH
+  size_t i = 0;
 
   /* prepair RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)

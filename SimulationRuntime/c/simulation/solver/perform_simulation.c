@@ -83,6 +83,7 @@ void updateContinuousSystem(DATA *data)
  */
 int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 {
+  TRACE_PUSH
 
   int retValIntegrator=0;
   int retValue=0;
@@ -90,14 +91,10 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   FILE *fmtReal = NULL, *fmtInt = NULL;
   unsigned int stepNo=0;
-
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
-
-  solverInfo->currentTime = simInfo->startTime;
-
   unsigned int __currStepNo = 0;
 
-  TRACE_PUSH
+  SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  solverInfo->currentTime = simInfo->startTime;
 
   if(measure_time_flag)
   {

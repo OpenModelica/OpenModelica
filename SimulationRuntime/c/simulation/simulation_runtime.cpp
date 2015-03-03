@@ -628,14 +628,12 @@ int initializeResultData(DATA* simData, int cpuTime)
 int callSolver(DATA* simData, string init_initMethod, string init_file,
       double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
+  TRACE_PUSH
   int retVal = -1;
   long i;
   long solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
   threadData_t *threadData = simData->threadData;
-
-  TRACE_PUSH
-
   MMC_TRY_INTERNAL(mmc_jumper)
   MMC_TRY_INTERNAL(globalJumpBuffer)
 

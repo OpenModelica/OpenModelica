@@ -67,9 +67,8 @@ int checkForStateEvent(DATA* data, LIST *eventList);
  */
 void initSample(DATA* data, double startTime, double stopTime)
 {
-  long i;
-
   TRACE_PUSH
+  long i;
 
   data->callback->function_initSample(data);              /* set-up sample */
   data->simulationInfo.nextSampleEvent = stopTime + 1.0;  /* should never be reached */
@@ -109,9 +108,8 @@ void initSample(DATA* data, double startTime, double stopTime)
  */
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
-  double nextTimeStep = solverInfo->currentTime + solverInfo->currentStepSize;
-
   TRACE_PUSH
+  double nextTimeStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
   if ((data->simulationInfo.nextSampleEvent <= nextTimeStep + SAMPLE_EPS) && (data->simulationInfo.nextSampleEvent >= solverInfo->currentTime))
   {
@@ -134,9 +132,8 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
  */
 int checkForStateEvent(DATA* data, LIST *eventList)
 {
-  long i=0;
-
   TRACE_PUSH
+  long i=0;
 
   debugStreamPrint(LOG_EVENTS, 1, "check state-event zerocrossing at time %g",  data->localData[0]->timeValue);
 
@@ -224,11 +221,10 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
  */
 void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
+  TRACE_PUSH
   double time = data->localData[0]->timeValue;
   long i;
   LIST_NODE* it;
-
-  TRACE_PUSH
 
   /* time event */
   if(data->simulationInfo.sampleActivated)
@@ -336,6 +332,8 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
  */
 void findRoot(DATA* data, LIST *eventList, double *eventTime)
 {
+  TRACE_PUSH
+
   long event_id;
   LIST_NODE* it;
   fortran_integer i=0;
@@ -346,8 +344,6 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
 
   double time_left = data->simulationInfo.timeValueOld;
   double time_right = data->localData[0]->timeValue;
-
-  TRACE_PUSH
 
   tmpEventList = allocList(sizeof(long));
 
@@ -451,13 +447,13 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
  */
 double bisection(DATA* data, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
+  TRACE_PUSH
+
   double TTOL = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
   double c;
   long i=0;
   /* n >= log(2)/log(2) + log(|b-a|/TOL)/log(2)*/
   unsigned int n = 1 + ceil(log(fabs(*b - *a)/TTOL)/log(2));
-
-  TRACE_PUSH
 
   memcpy(data->simulationInfo.zeroCrossingsBackup, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(modelica_real));
 
@@ -515,8 +511,8 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
  */
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 {
-  LIST_NODE *it;
   TRACE_PUSH
+  LIST_NODE *it;
 
   listClear(tmpEventList);
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection checks for condition changes");
@@ -555,9 +551,8 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
  */
 void saveZeroCrossingsAfterEvent(DATA *data)
 {
-  long i=0;
-
   TRACE_PUSH
+  long i=0;
 
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
 

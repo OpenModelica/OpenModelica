@@ -164,11 +164,10 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
 
 int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 {
+  TRACE_PUSH
   /* work arrays for DASSL */
   unsigned int i;
   SIMULATION_DATA tmpSimData = {0};
-
-  TRACE_PUSH
 
   RHSFinalFlag = 0;
 
@@ -431,8 +430,8 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 
 int dassl_deinitial(DASSL_DATA *dasslData)
 {
-  unsigned int i;
   TRACE_PUSH
+  unsigned int i;
 
   /* free work arrays for DASSL */
   free(dasslData->rwork);
@@ -500,6 +499,7 @@ int printCurrentStatesVector(int logLevel, double* states, DATA* data, double ti
  **********************************************************************************************/
 int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
 {
+  TRACE_PUSH
   double tout = 0;
   int i = 0;
   unsigned int ui = 0;
@@ -521,8 +521,6 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
 
   dasslData->rpar[0] = (double*) (void*) data;
   dasslData->rpar[1] = (double*) (void*) dasslData;
-
-  TRACE_PUSH
 
   saveJumpState = data->threadData->currentErrorStage;
   data->threadData->currentErrorStage = ERROR_INTEGRATOR;
@@ -714,9 +712,8 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
 static int
 continue_DASSL(int* idid, double* atol)
 {
-  int retValue = -1;
-
   TRACE_PUSH
+  int retValue = -1;
 
   switch(*idid)
   {
@@ -780,6 +777,7 @@ continue_DASSL(int* idid, double* atol)
 int functionODE_residual(double *t, double *y, double *yd, double* cj, double *delta,
                     int *ires, double *rpar, int *ipar)
 {
+  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = data->threadData;
@@ -789,7 +787,6 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   int saveJumpState;
   int success = 0;
 
-  TRACE_PUSH
   if (dasslData->currentContext == CONTEXT_UNKNOWN)
   {
     setDasslContext(dasslData, t, CONTEXT_ODE);
@@ -844,14 +841,15 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
 int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
         int *ng, double *gout, double *rpar, int* ipar)
 {
+  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
 
   double timeBackup;
   int saveJumpState;
 
-  TRACE_PUSH
-  if (dasslData->currentContext == CONTEXT_UNKNOWN){
+  if (dasslData->currentContext == CONTEXT_UNKNOWN)
+  {
     setDasslContext(dasslData, t, CONTEXT_EVENTS);
   }
 
@@ -883,10 +881,9 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 
 int functionJacAColored(DATA* data, double* jac)
 {
+  TRACE_PUSH
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,l,k,ii;
-
-  TRACE_PUSH
 
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
   {
@@ -947,10 +944,9 @@ int functionJacAColored(DATA* data, double* jac)
 
 int functionJacASym(DATA* data, double* jac)
 {
+  TRACE_PUSH
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,k;
-
-  TRACE_PUSH
 
   k = 0;
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
@@ -1000,14 +996,13 @@ int functionJacASym(DATA* data, double* jac)
 static int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
          double *rpar, int* ipar)
 {
+  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double* backupStates;
   double timeBackup;
   int i;
   int j;
-
-  TRACE_PUSH
 
   setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
 
@@ -1045,14 +1040,13 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
 static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
          double *rpar, int* ipar)
 {
+  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double* backupStates;
   double timeBackup;
   int i;
   int j;
-
-  TRACE_PUSH
 
   setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
 
@@ -1090,8 +1084,8 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
  */
 int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
+  TRACE_PUSH
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  /* const int index = INDEX_JAC_A; */
 
   double delta_h = dasslData->sqrteps;
   double delta_hh,delta_hhh, deltaInv;
@@ -1099,7 +1093,6 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   int ires;
   int i,j;
 
-  TRACE_PUSH
 
   for(i=data->modelData.nStates-1; i >= 0; i--)
   {
@@ -1150,11 +1143,11 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
 static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
     double *rpar, int* ipar)
 {
+  TRACE_PUSH
   int i,j;
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
 
-  TRACE_PUSH
   setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
 
   if(jacA_num(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
@@ -1183,6 +1176,7 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
  */
 int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
 {
+  TRACE_PUSH
   const int index = data->callback->INDEX_JAC_A;
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double delta_h = dasslData->sqrteps;
@@ -1192,8 +1186,6 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   double* ysave = dasslData->ysave;
 
   unsigned int i,j,l,k,ii;
-
-  TRACE_PUSH
 
   for(i = 0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
   {
@@ -1260,11 +1252,11 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
 static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, int* ipar)
 {
+  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   int i,j;
 
-  TRACE_PUSH
   setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
 
   if(jacA_numColored(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
