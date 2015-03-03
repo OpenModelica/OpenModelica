@@ -2053,15 +2053,6 @@ algorithm
       then
         fail();
 
-    //differentiate function partial
-    case (e as DAE.CALL(), _, _, _, _)
-    guard(Flags.isSet(Flags.SIMPLIFY_JAC_FUN))
-      equation
-        (e, functions) = differentiateFunctionCallPartial(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        (e,_,_,_) = Inline.inlineExp(e,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
-      then
-        (e, functions);
-
     // try to inline
     case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), _, _, _, _)
       equation
@@ -2074,7 +2065,6 @@ algorithm
 
     //differentiate function partial
     case (e as DAE.CALL(), _, _, _, _)
-    guard(not Flags.isSet(Flags.SIMPLIFY_JAC_FUN))
       equation
         (e, functions) = differentiateFunctionCallPartial(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e,_,_,_) = Inline.inlineExp(e,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
@@ -2385,15 +2375,13 @@ algorithm
 
     case (expLst::rest, de::restDiff, DAE.TSUB(exp=DAE.CALL(path=path, attr=attr), ix =ix, ty=ty), _) equation
       res = DAE.TSUB(DAE.CALL(path, expLst, attr), ix, ty);
-      //res = Expression.expMul(de, res);
-      res = if Flags.isSet(Flags.SIMPLIFY_JAC_FUN) then Expression.makeWeightProduct(de, res) else Expression.expMul(de, res);
+      res = Expression.expMul(de, res);
       res = Expression.expAdd(inAccum, res);
     then createPartialSum(rest, restDiff, inCall, res);
 
     case (expLst::rest, de::restDiff, DAE.CALL(path=path, attr=attr), _) equation
       res = DAE.CALL(path, expLst, attr);
-      //res = Expression.expMul(de, res);
-      res = if Flags.isSet(Flags.SIMPLIFY_JAC_FUN) then Expression.makeWeightProduct(de, res) else Expression.expMul(de, res);
+      res = Expression.expMul(de, res);
       res = Expression.expAdd(inAccum, res);
     then createPartialSum(rest, restDiff, inCall, res);
   end match;
