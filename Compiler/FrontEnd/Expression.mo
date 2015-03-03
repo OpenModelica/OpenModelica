@@ -3573,7 +3573,7 @@ public function makeWeightProduct
   output DAE.Exp y;
 protected
   DAE.Type tp = typeof(w);
-  DAE.Exp z = makeConstZero(tp);
+  DAE.Exp z = makeConstZero(tp); 
   DAE.Exp con = DAE.RELATION(w,DAE.EQUAL(tp),z,-1,NONE());
 algorithm
   y := makeNoEvent(DAE.IFEXP(con,w,expMul(w,x)));
@@ -6103,34 +6103,41 @@ algorithm
   (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
       Boolean b;
+      Integer i;
       ComponentRef cr;
       DAE.Exp e1;
 
     case(DAE.IFEXP(e1,_,_),(cr,false))
+    guard(not isFunCall(e1,"noEvent"))
      equation
        b = expHasCref(e1,cr);
-     then (e1,not b,(cr,b));
-/*
-    case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_,e1}),(cr,false))
+     then (e1, true,(cr,b));
+
+    case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {DAE.ICONST(i),e1}),(cr,false))
+    guard(i>1)
+     then (e1,true, (cr,true));
+
+    case(DAE.CALL(), (cr,false))
+    guard(isEventTriggeringFunctionExp(inExp))
      equation
-       (b,_) = expHasCrefInIfWork(e1,inTpl);
-     then (e1, b,(cr,b));
-*/
+     b = expHasCref(inExp, cr);
+     then(inExp, true,(cr,b));
+
     case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1,_,_}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1, b,(cr,b));
+     then (e1, true,(cr,b));
 
     case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1, b,(cr,b));
+     then (e1, not b,(cr,b));
 
-    case (_,(_,b)) then (inExp,not b,inTpl);
+    case (_, (_,true)) then (inExp,false,inTpl);
+    else (inExp, true, inTpl);
 
   end matchcontinue;
 end expHasCrefInIfWork;
-
 
 
 public function traverseCrefsFromExp "
