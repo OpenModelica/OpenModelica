@@ -298,10 +298,10 @@ void convertBoolToInt(BaseArray<bool>& a, BaseArray<int>& b)
   int* dest_data = b.getData();
   for (int i = 0; (numEle > 0) && (i <= numEle); i++)
   {
-	  if(source_data[i])
-		  dest_data[i]=1;
-	  else
-		  dest_data[i]=0;
+    if(source_data[i])
+      dest_data[i]=1;
+    else
+      dest_data[i]=0;
   }
 }
 
