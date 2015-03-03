@@ -358,21 +358,6 @@ template simulationFile_dly(SimCode simCode, String guid)
   end match
 end simulationFile_dly;
 
-template simulationFile_eqs(SimCode simCode, String guid)
-"Equations"
-::=
-  match simCode
-    case simCode as SIMCODE(__) then
-    <<
-    /* Equations */
-    <%simulationFileHeader(simCode)%>
-
-    <%\n%>
-    >>
-    /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match
-end simulationFile_eqs;
-
 template simulationFile_bnd(SimCode simCode, String guid)
 "update bound parameters and variable attributes (start, nominal, min, max)"
 ::=
@@ -1005,43 +990,6 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
   end match
 end variableDefinitions;
 
-/*
-template globalDataVarInfoArray(String _name, list<SimVar> items, Integer offset)
-  "Generates array with variable names in global data section."
-::=
-  match items
-  case {} then
-    <<
-    const struct VAR_INFO <%_name%>[1] = {omc_dummyVarInfo};
-    >>
-  case items then
-    <<
-    const struct VAR_INFO <%_name%>[<%listLength(items)%>] = {
-      <%items |> var as SIMVAR(source=SOURCE(info=info as INFO(__))) => '{<%System.tmpTick()%>,"<%escapedString(crefStr(var.name),true)%>","<%Util.escapeModelicaStringToCString(var.comment)%>",{<%infoArgs(info)%>}}'; separator=",\n"%>
-    };
-    <%items |> var as SIMVAR(source=SOURCE(info=info as INFO(__))) hasindex i0 => '#define <%cref(var.name)%>__varInfo <%_name%>[<%i0%>]'; separator="\n"%>
-    >>
-  end match
-end globalDataVarInfoArray;
-*/
-
-template globalDataFunctionInfoArray(String name, list<Function> items)
-  "Generates array with variable names in global data section."
-::=
-  match items
-  case {} then
-    <<
-    const struct FUNCTION_INFO funcInfo[1] = {{-1,"",omc_dummyFileInfo}};
-    >>
-  case items then
-    <<
-    const struct FUNCTION_INFO funcInfo[<%listLength(items)%>] = {
-      <%items |> fn => '{<%System.tmpTick()%>,"<%functionName(fn,true)%>",{<%infoArgs(functionInfo(fn))%>}}'; separator=",\n"%>
-    };
-    >>
-  end match
-end globalDataFunctionInfoArray;
-
 template globalDataParDefine(SimVar simVar, String arrayName)
   "Generates a define statement for a parameter."
 ::=
@@ -1235,23 +1183,6 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
     end match
   end match
 end jacobianVarDefine;
-
-template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, String matrixName) "template variableDefinitionsJacobians2
-  Generates Matrixes for Linear Model."
-::=
-  let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%cref(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
-    ;separator="\n")
-  let diffedVarsResult = (diffedVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%cref(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
-    ;separator="\n")
-  /* generate at least one print command to have the same index and avoid the strange side effect */
-  <<
-  /* <%matrixName%> sparse indexes */
-  <%diffVarsResult%>
-  <%diffedVarsResult%>
-  >>
-end defineSparseIndexes;
 
 template aliasVarNameType(AliasVariable var)
   "Generates type of alias."
@@ -1777,17 +1708,6 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Text &eqs
   equation_(eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefixStr)
   end match
 end functionExtraResidualsPreBody;
-
-template equationNamesExtraResidualsPreBody(SimEqSystem eq, String modelNamePrefixStr)
- "Generates an equation."
-::=
-  match eq
-  case e as SES_RESIDUAL(__)
-  then ""
-  else
-  equationNames_(eq, contextSimulationDiscrete, modelNamePrefixStr)
-  end match
-end equationNamesExtraResidualsPreBody;
 
 template functionNonLinearResiduals(list<SimEqSystem> allEquations, String modelNamePrefix)
   "Generates functions in simulation file."
@@ -2991,32 +2911,6 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   >>
 end functionAlgebraic;
 
-template functionAliasEquation(list<SimEqSystem> removedEquations, String modelNamePrefix)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer ""
-  let &tmp = buffer ""
-  let removedPart = (removedEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix)
-    ;separator="\n")
-  <<
-  <%&tmp%>
-  /* for continuous time variables */
-  int functionAliasEquations(DATA *data)
-  {
-    <%varDecls%>
-
-    TRACE_PUSH
-
-    data->simulationInfo.discreteCall = 0;
-    <%removedPart%>
-
-    TRACE_POP
-    return 0;
-  }
-  >>
-end functionAliasEquation;
-
 template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, String modelNamePrefix)
   "Generates function in simulation file.
   This is a helper of template simulationFile."
@@ -3385,15 +3279,6 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   >>
 end functionAssertsforCheck;
 
-template defvars(SimVar item) "template defvars
-  Declare variables
-  This template is not used."
-::=
-  match item
-  case SIMVAR(__) then
-    <<<%cref(name)%> = 0;>>
-end defvars;
-
 template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "template functionlinearmodel
   Generates function in simulation file."
 ::=
@@ -3688,13 +3573,6 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   }
   >>
 end functionJac;
-
-template intArr(list<Integer> values)
-::=
-  <<
-  <%values ;separator=", "%>
-  >>
-end intArr;
 
 template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &varDecls, Text &eqArray, Text &eqfuncs, String modelNamePrefix)
  "Generates an equation.
@@ -4865,15 +4743,6 @@ template arrayCrefStr(ComponentRef cr)
   case CREF_QUAL(__) then '<%ident%>._<%arrayCrefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
-
-template expCref(DAE.Exp ecr)
-::=
-  match ecr
-  case CREF(__) then cref(componentRef)
-  case CALL(path = IDENT(name = "der"), expLst = {arg as CREF(__)}) then
-    '$P$DER<%cref(arg.componentRef)%>'
-  else "ERROR_NOT_A_CREF"
-end expCref;
 
 template crefFunctionName(ComponentRef cr)
 ::=
@@ -7790,26 +7659,6 @@ template elseExpr(DAE.Else else_, Context context, Text &varDecls, Text &auxFunc
     >>
 end elseExpr;
 
-template rhsCref(ComponentRef cr, Type ty)
- "Like cref but with cast if type is integer."
-::=
-  match cr
-  case CREF_IDENT(__) then '<%rhsCrefType(ty)%><%ident%>'
-  case CREF_QUAL(__)  then '<%rhsCrefType(ty)%><%ident%>._<%rhsCref(componentRef,ty)%>'
-  else error(sourceInfo(), 'rhsCref:ERROR')
-end rhsCref;
-
-
-template rhsCrefType(Type type)
- "Helper to rhsCref."
-::=
-  match type
-  case T_INTEGER(__) then "(modelica_integer)"
-  case T_ENUMERATION(__) then "(modelica_integer)"
-  //else ""
-end rhsCrefType;
-
-
 template daeExp(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
  "Generates code for an expression."
 ::=
@@ -10053,14 +9902,6 @@ template daeExpMetaHelperBoxStart(Integer numVariables)
   if intGt(numVariables,20) then '(<%numVariables%>, ' else '<%numVariables%>('
 end daeExpMetaHelperBoxStart;
 
-template outDecl(String ty, Text &varDecls)
- "Declares a temporary variable in varDecls and returns the name."
-::=
-  let newVar = 'out'
-  let &varDecls += '<%ty%> <%newVar%>;<%\n%>'
-  newVar
-end outDecl;
-
 template tempDecl(String ty, Text &varDecls)
  "Declares a temporary variable in varDecls and returns the name."
 ::=
@@ -10160,14 +10001,6 @@ template getTempDeclMatchOutputName(list<Exp> outputs, String prefix, String sta
   newVar
 end getTempDeclMatchOutputName;
 
-template tempDeclConst(String ty, String val, Text &varDecls)
- "Declares a temporary variable in varDecls and returns the name."
-::=
-  let newVar = 'tmp<%System.tmpTick()%>'
-  let &varDecls += '<%ty%> <%newVar%> = <%val%>;<%\n%>'
-  newVar
-end tempDeclConst;
-
 template varType(Variable var)
  "Generates type for a variable."
 ::=
@@ -10243,13 +10076,6 @@ template expTypeShort(DAE.Type type)
   case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
   else error(sourceInfo(),'expTypeShort: <%unparseType(type)%>')
 end expTypeShort;
-
-template mmcVarType(Variable var)
-::=
-  match var
-  case VARIABLE(__) then 'modelica_<%mmcTypeShort(ty)%>'
-  case FUNCTION_PTR(__) then 'modelica_fnptr'
-end mmcVarType;
 
 template mmcTypeShort(DAE.Type type)
 ::=
