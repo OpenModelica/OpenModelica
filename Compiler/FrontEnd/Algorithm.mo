@@ -114,13 +114,13 @@ end makeAssignmentNoTypeCheck;
 public function makeArrayAssignmentNoTypeCheck
 "Used to optimize assignments to NORETCALL if applicable"
   input DAE.Type ty;
-  input DAE.ComponentRef lhs;
+  input DAE.Exp lhs;
   input DAE.Exp rhs;
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
   outStatement := match (ty,lhs,rhs,source)
-    case (_,DAE.WILD(),_,_)
+    case (_,DAE.CREF(DAE.WILD()),_,_)
       then DAE.STMT_NORETCALL(rhs, source);
     else DAE.STMT_ASSIGN_ARR(ty, lhs, rhs, source);
   end match;
@@ -156,8 +156,8 @@ algorithm
       DAE.Exp lhs1;
       DAE.ComponentRef cr;
     case (true,_,_,_,_,_) then DAE.STMT_NORETCALL(rhs, source);
-    case (_,true,DAE.T_TUPLE(types=(ty1 as DAE.T_ARRAY())::_),DAE.CREF(componentRef=cr)::_,_,_)
-      then DAE.STMT_ASSIGN_ARR(ty1, cr, DAE.TSUB(rhs, 1, ty1), source);
+    case (_,true,DAE.T_TUPLE(types=(ty1 as DAE.T_ARRAY())::_),lhs1::_,_,_)
+      then DAE.STMT_ASSIGN_ARR(ty1, lhs1, DAE.TSUB(rhs, 1, ty1), source);
     case (_,true,DAE.T_TUPLE(types=ty1::_),lhs1::_,_,_)
       then DAE.STMT_ASSIGN(ty1, lhs1, DAE.TSUB(rhs,1,ty1), source);
     else DAE.STMT_TUPLE_ASSIGN(ty,lhs,rhs,source);
@@ -295,14 +295,14 @@ algorithm
       then
         DAE.STMT_ASSIGN(t, e1, rhs_1);
       */
-    case (DAE.CREF(componentRef = c), _, _, _, _)
+    case (DAE.CREF(), _, _, _, _)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
         ty = Types.getPropType(lhprop);
         t = Types.simplifyType(ty);
       then
-        DAE.STMT_ASSIGN_ARR(t, c, rhs_1, source);
+        DAE.STMT_ASSIGN_ARR(t, lhs, rhs_1, source);
 
     case(e3 as DAE.ASUB(_, _), _, _, _, _)
       equation

@@ -1740,20 +1740,20 @@ algorithm
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_TUPLE_ASSIGN(tp, expl2, e_1, source)::xs_1, extraArg));
 
-    case DAE.STMT_ASSIGN_ARR(type_=tp, componentRef=cr, exp=e, source=source)::xs equation
+    case DAE.STMT_ASSIGN_ARR(type_=tp, lhs=e2, exp=e, source=source)::xs equation
       (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
-      (DAE.CREF(cr_1, _), _, extraArg) = collectZCAlgsFor(Expression.crefExp(cr), extraArg);
+      (e_2, _, extraArg) = collectZCAlgsFor(e2, extraArg);
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
-    then ((DAE.STMT_ASSIGN_ARR(tp, cr_1, e_1, source)::xs_1, extraArg));
+    then ((DAE.STMT_ASSIGN_ARR(tp, e_2, e_1, source)::xs_1, extraArg));
 
-    case (x as DAE.STMT_ASSIGN_ARR(type_=tp, componentRef=cr, exp=e, source=source))::xs equation
+    case (x as DAE.STMT_ASSIGN_ARR(type_=tp, lhs=e2, exp=e, source=source))::xs equation
       (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
-      failure((DAE.CREF(_, _), _, _) = collectZCAlgsFor(Expression.crefExp(cr), extraArg));
+      failure((e_2, _, _) = collectZCAlgsFor(e2, extraArg));
       true = Flags.isSet(Flags.FAILTRACE);
       print(DAEDump.ppStatementStr(x));
       print("Warning, not allowed to set the componentRef to a expression in FindZeroCrossings.traverseStmtsExps for ZeroCrosssing\n");
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
-    then ((DAE.STMT_ASSIGN_ARR(tp, cr, e_1, source)::xs_1, extraArg));
+    then ((DAE.STMT_ASSIGN_ARR(tp, e_2, e_1, source)::xs_1, extraArg));
 
     case (DAE.STMT_IF(exp=e, statementLst=stmts, else_=algElse, source=source))::xs equation
       ((algElse, extraArg)) = traverseStmtsElseExps(algElse, inExtraArg, inKnvars);

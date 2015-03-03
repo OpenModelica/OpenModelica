@@ -496,11 +496,13 @@ algorithm
         true = b1 or b2;
       then
         (DAE.STMT_TUPLE_ASSIGN(t,explst_1,e_1,source),true);
-    case(DAE.STMT_ASSIGN_ARR(t,cref,e,source),fns)
+    case(DAE.STMT_ASSIGN_ARR(t,e1,e2,source),fns)
       equation
-        (e_1,source,true,_) = inlineExp(e,fns,source);
+        (e1_1,source,b1,_) = inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) = inlineExp(e2,fns,source);
+        true = b1 or b2;
       then
-        (DAE.STMT_ASSIGN_ARR(t,cref,e_1,source),true);
+        (DAE.STMT_ASSIGN_ARR(t,e1_1,e2_1,source),true);
     case(DAE.STMT_IF(e,stmts,a_else,source),fns)
       equation
         (e_1,source,b1,_) = inlineExp(e,fns,source);
@@ -995,7 +997,7 @@ algorithm
         (repl,assertStmts) = mergeFunctionBody(stmts,repl,assertStmtsIn);
       then
         (repl,assertStmts);
-    case (DAE.STMT_ASSIGN_ARR(componentRef = cr, exp = exp)::stmts,_,_)
+    case (DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr), exp = exp)::stmts,_,_)
       equation
         (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
         repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);

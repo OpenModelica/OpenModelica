@@ -838,7 +838,7 @@ template dumpArrayAssignStatement(DAE.Statement stmt)
 ::=
 match stmt
   case STMT_ASSIGN_ARR(__) then
-    let lhs_str =  dumpCref(componentRef)
+    let lhs_str =  dumpExp(lhs)
     let rhs_str = dumpExp(exp)
     let src_str = dumpSource(source)
     <<

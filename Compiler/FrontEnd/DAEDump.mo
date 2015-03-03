@@ -1357,10 +1357,10 @@ algorithm
       then
         ();
 
-    case (DAE.STMT_ASSIGN_ARR(componentRef = c,exp = e),i)
+    case (DAE.STMT_ASSIGN_ARR(lhs = e2,exp = e),i)
       equation
         indent(i);
-        ComponentReference.printComponentRef(c);
+        ExpressionDump.printExp(e2);
         Print.printBuf(" := ");
         ExpressionDump.printExp(e);
         Print.printBuf(";\n");
@@ -1591,10 +1591,10 @@ algorithm
       then
         str;
 
-    case (DAE.STMT_ASSIGN_ARR(componentRef = c,exp = e),i)
+    case (DAE.STMT_ASSIGN_ARR(lhs=e2,exp = e),i)
       equation
         s1 = indentStr(i);
-        s2 = ComponentReference.printComponentRefStr(c);
+        s2 = ExpressionDump.printExpStr(e2);
         s3 = ExpressionDump.printExpStr(e);
         str = stringAppendList({s1,s2," := ",s3,";\n"});
       then

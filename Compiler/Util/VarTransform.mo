@@ -633,7 +633,7 @@ algorithm
   (outAlgorithmStatementLst,replacementPerformed) :=
   matchcontinue (inAlgorithmStatementLst,repl,condExpFunc)
     local
-      DAE.Exp e_1,e_2,e,e2,e3,e_3;
+      DAE.Exp e_1,e_2,e,e1,e2,e3,e_3;
       list<DAE.Exp> expl1,expl2;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts2;
@@ -668,22 +668,22 @@ algorithm
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1,true);
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),_,_)
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp, lhs = e1, exp = e2, source = source) :: xs),_,_)
       equation
-        (e_1,b1) = replaceExp(e, repl, condExpFunc);
-        (DAE.CREF(cr_1,_),b2) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+        (e_1,b1) = replaceExp(e1, repl, condExpFunc);
+        (e_2,b2) = replaceExp(e2, repl, condExpFunc);
         true = b1 or b2;
         /* TODO: Add operation to source; do simplify? */
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,true);
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),_,_)
-      equation
-        (e_1,true) = replaceExp(e, repl, condExpFunc);
-        /* TODO: Add operation to source; do simplify? */
-        (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
-      then
-        (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,true);
+        (DAE.STMT_ASSIGN_ARR(tp,e_1,e_2,source) :: xs_1,true);
+    // case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),_,_)
+      // equation
+        // (e_1,true) = replaceExp(e, repl, condExpFunc);
+        // /* TODO: Add operation to source; do simplify? */
+        // (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
+      // then
+        // (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,true);
     case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el,source = source)) :: xs),_,_)
       equation
         (el_1,b1) = replaceEquationsElse(el,repl,condExpFunc);

@@ -1137,11 +1137,11 @@ algorithm
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);
 
-    case (localCache,localEnv,ih,DAE.STMT_ASSIGN_ARR(t,cRef,e,source) :: rest,localAccList,pre)
+    case (localCache,localEnv,ih,DAE.STMT_ASSIGN_ARR(t,e1,e,source) :: rest,localAccList,pre)
       equation
-        (localCache,cRef) = prefixCref(localCache,localEnv,ih,pre,cRef);
+        (localCache,e1) = prefixExp(localCache,localEnv,ih,e1,pre);
         (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
-        elem = DAE.STMT_ASSIGN_ARR(t,cRef,e,source);
+        elem = DAE.STMT_ASSIGN_ARR(t,e1,e,source);
         localAccList = listAppend(localAccList,List.create(elem));
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);

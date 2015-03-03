@@ -2738,7 +2738,7 @@ template algStmtAssignArr(DAE.Statement stmt, Context context,
  "Generates an array assigment algorithm statement."
 ::=
 match stmt
-case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
+case STMT_ASSIGN_ARR(exp=e, lhs=CREF(componentRef=cr), type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)

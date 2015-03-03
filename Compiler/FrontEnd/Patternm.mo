@@ -2737,11 +2737,11 @@ algorithm
         outStatement = Algorithm.makeTupleAssignmentNoTypeCheck(ty,exps,exp,source);
       then (outStatement,useTree);
 
-    case DAE.STMT_ASSIGN_ARR(type_=ty,componentRef=cr,exp=exp,source=source as DAE.SOURCE(info=info))
+    case DAE.STMT_ASSIGN_ARR(type_=ty,lhs=lhs,exp=exp,source=source as DAE.SOURCE(info=info))
       equation
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
-        (DAE.CREF(componentRef=cr),_) = Expression.traverseExp(DAE.CREF(cr,DAE.T_REAL_DEFAULT), checkDefUse, (localsTree,useTree,info));
-        outStatement = Algorithm.makeArrayAssignmentNoTypeCheck(ty,cr,exp,source);
+        lhs = Expression.traverseExp(lhs, checkDefUse, (localsTree,useTree,info));
+        outStatement = Algorithm.makeArrayAssignmentNoTypeCheck(ty,lhs,exp,source);
       then (outStatement,useTree);
 
     case DAE.STMT_IF(exp=exp,statementLst=body,else_=else_,source=source)

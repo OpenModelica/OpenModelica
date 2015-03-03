@@ -819,14 +819,12 @@ algorithm
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions);
     then (derivedStatements2, functions);
 
-    case ((currStatement as DAE.STMT_ASSIGN_ARR(componentRef= cref, exp=rhs, type_=type_, source=source))::restStatements, _, _, _, _, _)
+    case ((currStatement as DAE.STMT_ASSIGN_ARR(lhs=lhs, exp=rhs, type_=type_, source=source))::restStatements, _, _, _, _, _)
       equation
-        lhs = Expression.crefExp(cref);
         (derivedLHS, functions) = differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (derivedRHS, functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
         (derivedRHS,_) = ExpressionSimplify.simplify(derivedRHS);
-        cref = Expression.expCref(derivedLHS);
-        derivedStatements1 = {DAE.STMT_ASSIGN_ARR(type_, cref, derivedRHS, source), currStatement};
+        derivedStatements1 = {DAE.STMT_ASSIGN_ARR(type_, derivedLHS, derivedRHS, source), currStatement};
         derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions);
     then (derivedStatements2, functions);

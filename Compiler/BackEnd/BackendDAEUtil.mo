@@ -2193,8 +2193,9 @@ algorithm
         xs = removeDiscreteAssignments(rest,vars);
       then xs;
       */
-    case ((DAE.STMT_ASSIGN_ARR(componentRef = cref)::rest),vars)
+    case ((DAE.STMT_ASSIGN_ARR(lhs = e)::rest),vars)
       equation
+        cref = Expression.expCref(e);
         ({v},_) = BackendVariable.getVar(cref,vars);
         true = BackendVariable.isVarDiscrete(v);
         xs = removeDiscreteAssignments(rest,vars);
@@ -3930,10 +3931,10 @@ algorithm
       then
         traverseStmts(xs, func, extraArg);
 
-    case ((DAE.STMT_ASSIGN_ARR(componentRef = cr, exp = e)::xs),_,extraArg)
+    case ((DAE.STMT_ASSIGN_ARR(lhs = e2, exp = e)::xs),_,extraArg)
       equation
         ((_, extraArg)) = func((e, extraArg));
-        ((_, extraArg)) = func((Expression.crefExp(cr), extraArg));
+        ((_, extraArg)) = func((e2, extraArg));
       then
         traverseStmts(xs, func, extraArg);
 

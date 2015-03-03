@@ -471,8 +471,9 @@ algorithm
       then ht;
 
     // a := expr;  // where a is array
-    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
+    case (DAE.STMT_ASSIGN_ARR(lhs=exp1), _, _)
       equation
+        cr = Expression.expCref(exp1);
         subs = ComponentReference.crefLastSubs(cr);
         if not listEmpty(subs) // not an empty subs list
         then

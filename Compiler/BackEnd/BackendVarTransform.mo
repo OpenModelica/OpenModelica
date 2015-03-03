@@ -2112,9 +2112,8 @@ algorithm
       then
         ( es_1,b);
 
-    case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e2,source=source)::es),repl,_,_,_)
+    case ((DAE.STMT_ASSIGN_ARR(type_=type_, lhs = e1 as DAE.CREF(componentRef=cr),exp=e2,source=source)::es),repl,_,_,_)
       equation
-        e1 = Expression.crefExp(cr);
         (e1_1,b1) = replaceExp(e1,repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
         true = b1 or b2;
@@ -2338,14 +2337,14 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.Exp> elst,elst1;
       DAE.Type tp;
-      DAE.Exp e;
+      DAE.Exp e, crefexp;
       list<Integer> ds;
       list<list<DAE.Subscript>> subslst;
       String msg;
-    case (_,DAE.CREF(componentRef=cr),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,rhs,source)::inStatementLst;
-    case (_,DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef=cr)),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
-    case (_,DAE.UNARY(DAE.UMINUS_ARR(tp),DAE.CREF(componentRef=cr)),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,DAE.UNARY(DAE.UMINUS_ARR(tp),rhs),source)::inStatementLst;
-    case (_,DAE.LUNARY(DAE.NOT(tp),DAE.CREF(componentRef=cr)),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
+    case (_,crefexp,_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,rhs,source)::inStatementLst;
+    case (_,DAE.UNARY(DAE.UMINUS(tp),crefexp),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
+    case (_,DAE.UNARY(DAE.UMINUS_ARR(tp),crefexp),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.UNARY(DAE.UMINUS_ARR(tp),rhs),source)::inStatementLst;
+    case (_,DAE.LUNARY(DAE.NOT(tp),crefexp),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
     case (_,DAE.ARRAY(array=elst),_,_,_,_)
       equation
         ds = Expression.dimensionsSizes(Expression.arrayDimension(type_));

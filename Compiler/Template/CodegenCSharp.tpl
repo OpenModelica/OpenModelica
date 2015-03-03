@@ -1787,20 +1787,20 @@ template algStatement(DAE.Statement stmt, Context context, SimCode simCode) ::=
     <%expPart1%> = <%expPart2%>;
     >>
   //works only for array name as IDENT with subscripts
-  case STMT_ASSIGN_ARR(componentRef = CREF_IDENT(subscriptLst=subs as (_ :: _))) then
+  case STMT_ASSIGN_ARR(lhs=CREF(componentRef= cr as CREF_IDENT(subscriptLst=subs as (_ :: _)))) then
      let &preExp = buffer ""
      let expPart = daeExp(exp, context, &preExp, simCode)
      let spec = daeExpCrefRhsIndexSpec(subs, context, &preExp, simCode)
      <<
      <%preExp%>
-     <%componentRef.ident%>.AssignSpec(<%spec%>, <%expPart%>.A);
+     <%cr.ident%>.AssignSpec(<%spec%>, <%expPart%>.A);
      >>
-  case STMT_ASSIGN_ARR(__) then
+  case STMT_ASSIGN_ARR(lhs=CREF(componentRef=cr)) then
      let &preExp = buffer ""
      let expPart = daeExp(exp, context, &preExp, simCode)
      <<
      <%preExp%>
-     ArrayCopy(<%expPart%>.A, <%contextCref(componentRef, context, simCode)%>.A);
+     ArrayCopy(<%expPart%>.A, <%contextCref(cr, context, simCode)%>.A);
      >>
   case STMT_IF(__) then
     let &preExp = buffer ""

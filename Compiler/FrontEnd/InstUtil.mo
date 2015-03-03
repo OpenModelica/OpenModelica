@@ -8615,13 +8615,13 @@ algorithm
         unbound = List.fold1(lhss,traverseCrefSubs,info,unbound);
         unbound = List.fold(lhss,crefFiltering,unbound);
       then ((false,false,unbound));
-    case (DAE.STMT_ASSIGN_ARR(componentRef=cr,exp=rhs,source=source),_,(_,_,unbound))
+    case (DAE.STMT_ASSIGN_ARR(lhs=lhs,exp=rhs,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
-        unbound = traverseCrefSubs(DAE.CREF(cr,DAE.T_UNKNOWN_DEFAULT),info,unbound);
-        unbound = crefFiltering(DAE.CREF(cr,DAE.T_UNKNOWN_DEFAULT),unbound);
+        unbound = traverseCrefSubs(lhs,info,unbound);
+        unbound = crefFiltering(lhs,unbound);
       then ((false,false,unbound));
     case (DAE.STMT_IF(exp,stmts,else_,source),_,(_,_,unbound))
       equation

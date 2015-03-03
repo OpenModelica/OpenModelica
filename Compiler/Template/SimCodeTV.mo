@@ -1585,7 +1585,7 @@ package DAE
     end STMT_ASSIGN;
     record STMT_ASSIGN_ARR
       Type type_;
-      ComponentRef componentRef;
+      Exp lhs;
       Exp exp;
       ElementSource source;
     end STMT_ASSIGN_ARR;

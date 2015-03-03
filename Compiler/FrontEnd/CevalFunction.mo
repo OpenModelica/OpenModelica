@@ -1091,9 +1091,10 @@ algorithm
       then
         (cache, env, NEXT(), st);
 
-    case (DAE.STMT_ASSIGN_ARR(componentRef = lhs_cref, exp = rhs), _, env, st)
+    case (DAE.STMT_ASSIGN_ARR(lhs = lhs, exp = rhs), _, env, st)
       equation
         (cache, rhs_val, st) = cevalExp(rhs, inCache, env, st);
+        lhs_cref = extractLhsComponentRef(lhs);
         (cache, env, st) = assignVariable(lhs_cref, rhs_val, cache, env, st);
       then
         (cache, env, NEXT(), st);

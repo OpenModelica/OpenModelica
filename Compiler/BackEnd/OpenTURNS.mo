@@ -593,7 +593,7 @@ algorithm
       list<DAE.Statement> stmts;
 
     case(DAE.ALGORITHM_STMTS({})) then false;
-    case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF_IDENT(ident="correlation"),_,_)::_)) then true;
+    case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF(DAE.CREF_IDENT(ident="correlation"),_),_,_)::_)) then true;
     case(DAE.ALGORITHM_STMTS(_::stmts)) then hasCorrelationStatement(DAE.ALGORITHM_STMTS(stmts));
 
   end matchcontinue;
@@ -606,7 +606,7 @@ algorithm
   res := matchcontinue(alg)
     local list<DAE.Statement> stmts;
 
-    case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF_IDENT(ident="correlation"),res,_)::_)) then res;
+    case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF(DAE.CREF_IDENT(ident="correlation"),_),res,_)::_)) then res;
     case(DAE.ALGORITHM_STMTS(_::stmts)) then getCorrelationExp(DAE.ALGORITHM_STMTS(stmts));
 
   end matchcontinue;

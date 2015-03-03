@@ -1886,10 +1886,9 @@ algorithm
     equation
       expLst = listAppend(expLst,expsIn);
     then expLst;
-  case(DAE.STMT_ASSIGN_ARR(componentRef=cref,exp=exp),_)
-    equation
-      exp = Expression.crefExp(cref);
+  case(DAE.STMT_ASSIGN_ARR(lhs=exp),_)
     then {exp};
+    // then exp::expsIn;
   case(DAE.STMT_IF(statementLst=stmtLst1,else_=else_),_)
     equation
       stmtLstLst = getDAEelseStatemntLsts(else_,{});
@@ -2006,9 +2005,8 @@ algorithm
       expLst = listAppend(expLst,expsIn);
     then
       expLst;
-  case(DAE.STMT_ASSIGN_ARR(componentRef=lhsCref,exp=exp),_,_)
+  case(DAE.STMT_ASSIGN_ARR(lhs=exp),_,_)
     equation
-      exp = Expression.crefExp(lhsCref);
       expLst = Expression.getComplexContents(exp);
       expLst = listAppend(expLst,expsIn);
     then expLst;

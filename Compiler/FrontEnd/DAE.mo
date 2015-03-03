@@ -623,7 +623,7 @@ uniontype Statement "There are four kinds of statements:
 
   record STMT_ASSIGN_ARR
     Type type_;
-    ComponentRef componentRef;
+    Exp lhs;
     Exp exp;
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_ASSIGN_ARR;

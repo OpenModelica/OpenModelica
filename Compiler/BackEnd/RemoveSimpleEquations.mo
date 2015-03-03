@@ -3950,7 +3950,7 @@ algorithm
     then hs;
 
     // add also lhs of array assign stmts because these are not replaceable with array(...)
-    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _) equation
+    case (DAE.STMT_ASSIGN_ARR(lhs=DAE.CREF(componentRef=cr)), _) equation
       cr = ComponentReference.crefStripLastSubs(cr);
       hs = BaseHashSet.add(cr, inHS);
     then hs;
@@ -3993,7 +3993,7 @@ algorithm
       hs = List.fold(crlst, BaseHashSet.add, inHS);
     then hs;
 
-    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _) equation
+    case (DAE.STMT_ASSIGN_ARR(lhs=DAE.CREF(componentRef=cr)), _) equation
       cr = ComponentReference.crefStripLastSubs(cr);
       hs = BaseHashSet.add(cr, inHS);
     then hs;

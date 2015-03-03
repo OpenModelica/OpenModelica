@@ -6963,9 +6963,9 @@ template algStmtAssignArr(DAE.Statement stmt, Context context,
  "Generates an array assigment algorithm statement."
 ::=
 match stmt
-case STMT_ASSIGN_ARR(exp=RANGE(__), componentRef=cr, type_=t) then
+case STMT_ASSIGN_ARR(lhs=CREF(componentRef=cr), exp=RANGE(__), type_=t) then
   fillArrayFromRange(t,exp,cr,context,&varDecls,&auxFunction)
-case STMT_ASSIGN_ARR(exp=e as CALL(__), componentRef=cr, type_=t) then
+case STMT_ASSIGN_ARR(lhs=CREF(componentRef=cr), exp=e as CALL(__), type_=t) then
   let &preExp = buffer ""
   let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
   let ispec = indexSpecFromCref(cr, context, &preExp, &varDecls, &auxFunction)
@@ -6979,19 +6979,27 @@ case STMT_ASSIGN_ARR(exp=e as CALL(__), componentRef=cr, type_=t) then
     <%preExp%>
     <%copyArrayDataAndFreeMemAfterCall(t, expPart, cr, context)%>
     >>
-case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
+case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=e, type_=t) then
   let &preExp = buffer ""
   let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
   let ispec = indexSpecFromCref(cr, context, &preExp, &varDecls, &auxFunction)
+  let lhs = daeExpCrefRhs(lhsexp, context, &preExp, &varDecls, &auxFunction)
+  let type = expTypeArray(t)
   if ispec then
     <<
     <%preExp%>
     <%indexedAssign(t, expPart, cr, ispec, context, &varDecls)%>
     >>
   else
+    /*
     <<
     <%preExp%>
     <%copyArrayData(t, expPart, cr, context)%>
+    >>
+    */
+    <<
+    <%preExp%>
+    copy_<%type%>_data(<%expPart%>, &<%lhs%>);
     >>
 end algStmtAssignArr;
 
@@ -7041,9 +7049,7 @@ template indexedAssign(DAE.Type ty, String exp, DAE.ComponentRef cr,
       error(sourceInfo(), 'indexedAssign simulationContext failed')
 end indexedAssign;
 
-template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
-
-  Context context)
+template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,  Context context)
 ::=
   let type = expTypeArray(ty)
   let cref = contextArrayCref(cr, context)
@@ -7814,7 +7820,8 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     wrapperArray
     else
       let dimsLenStr = listLength(crefDims(cr))
-      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")      let arrName = contextCref(crefStripSubs(cr), context,&auxFunction)
+      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")      
+      let arrName = contextCref(crefStripSubs(cr), context,&auxFunction)
       let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let arrayType = expTypeArray(ty)
       let slicedArray = tempDecl(arrayType, &varDecls)

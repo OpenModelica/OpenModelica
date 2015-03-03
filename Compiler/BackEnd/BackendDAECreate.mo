@@ -2974,7 +2974,7 @@ algorithm
         v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
       then v_2;
 
-    case (v, knv, (DAE.STMT_ASSIGN_ARR(componentRef = cr)::xs), true)
+    case (v, knv, (DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef=cr))::xs), true)
       equation
         (vars, _) = BackendVariable.getVar(cr, v);
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());

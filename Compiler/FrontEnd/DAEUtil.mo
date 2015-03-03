@@ -4152,7 +4152,7 @@ algorithm
         (e_2,extraArg) = func(e2, extraArg);
         x = if referenceEq(e,e_1) and referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN(tp,e_1,e_2,source);
       then (x::{},extraArg);
-
+      
     case (DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source),_,_,extraArg)
       equation
         (e_1, extraArg) = func(e, extraArg);
@@ -4160,20 +4160,20 @@ algorithm
         x = if referenceEq(e,e_1) and referenceEq(expl1,expl2) then inStmt else DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source);
       then (x::{},extraArg);
 
-    case (DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source),_,_,extraArg)
+    case (DAE.STMT_ASSIGN_ARR(type_ = tp, lhs=e, exp = e2, source = source),_,_,extraArg)
       equation
-        (e_1, extraArg) = func(e, extraArg);
+        (e_2, extraArg) = func(e2, extraArg);
         _ = matchcontinue()
           case ()
             equation
-              (DAE.CREF(cr_1,_), extraArg) = traverseStatementsOptionsEvalLhs(Expression.crefExp(cr), extraArg, func, opt);
-               x = if referenceEq(e,e_1) and referenceEq(cr,cr_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source);
+              (e_1 as DAE.CREF(_,_), extraArg) = traverseStatementsOptionsEvalLhs(e, extraArg, func, opt);
+               x = if referenceEq(e2,e_2) and referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e_1,e_2,source);
              then
                ();
           else
             equation
-              failure((DAE.CREF(_,_), _) = func(Expression.crefExp(cr), extraArg));
-              x = if referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source);
+              failure((DAE.CREF(_,_), _) = func(e, extraArg));
+              x = if referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e,e_2,source);
               /* We need to pass this through because simplify/etc may scalarize the cref...
                  true = Flags.isSet(Flags.FAILTRACE);
                  print(DAEDump.ppStatementStr(x));
@@ -4371,28 +4371,28 @@ algorithm
         (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
       then ((DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source)::xs_1),extraArg);
 
-    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source))::xs),_,extraArg)
+    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp, lhs=e, exp = e2, source = source))::xs),_,extraArg)
       equation
-        ((e_1, extraArg)) = func((e, x,  extraArg));
+        ((e_2, extraArg)) = func((e2, x,  extraArg));
         _ = matchcontinue()
           case ()
             equation
-              ((DAE.CREF(cr_1,_), extraArg)) = func((Expression.crefExp(cr),  x, extraArg));
+              ((e_1 as DAE.CREF(_,_), extraArg)) = func((e,  x, extraArg));
               (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
             then ();
           else
             equation
-              failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), x, extraArg)));
+              failure(((DAE.CREF(_,_), _)) = func((e, x, extraArg)));
               // We need to pass this through because simplify/etc may scalarize the cref...
               // true = Flags.isSet(Flags.FAILTRACE);
               // print(DAEDump.ppStatementStr(x));
               // print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
-              cr_1 = cr;
+              e_1 = e;
               (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
             then
               ();
         end matchcontinue;
-      then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source)::xs_1,extraArg);
+      then (DAE.STMT_ASSIGN_ARR(tp,e_1,e_2,source)::xs_1,extraArg);
 
     case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source))::xs),_,extraArg)
       equation
