@@ -819,7 +819,7 @@ traversal function for addNoEventToRelations"
   output DAE.Exp outExp;
 algorithm
   outExp := match e
-    case DAE.RELATION() then DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool);
+    case DAE.RELATION() then makeNoEvent(e);
     else e;
   end match;
 end addNoEventToRelationExp;
@@ -840,8 +840,8 @@ algorithm
   outExp := match e
     local
       DAE.Exp e1,e2,e3;
-    case DAE.RELATION() then DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool);
-    case DAE.IFEXP(e1,e2,e3) then DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{e1},DAE.callAttrBuiltinBool),e2,e3);
+    case DAE.RELATION() then  makeNoEvent(e);
+    case DAE.IFEXP(e1,e2,e3) then DAE.IFEXP(makeNoEvent(e1),e2,e3);
     else e;
   end match;
 end addNoEventToRelationandCondExp;
@@ -863,7 +863,7 @@ algorithm
     case DAE.CALL()
       equation
         true = isEventTriggeringFunctionExp(e);
-      then DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool);
+      then makeNoEvent(e);
     else e;
   end matchcontinue;
 end addNoEventToEventTriggeringFunctionsExp;
@@ -3037,7 +3037,7 @@ public function makeNoEvent " adds a noEvent call around an expression"
 input DAE.Exp e1;
 output DAE.Exp res;
 algorithm
-  res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},DAE.callAttrBuiltinBool);
+  res := Expression.makePureBuiltinCall("noEvent", {e1}, DAE.T_BOOL_DEFAULT);
 end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and
