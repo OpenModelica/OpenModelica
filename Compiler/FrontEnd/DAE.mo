@@ -113,11 +113,11 @@ end ElementSource;
 public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},NONE(),{},{},{},{});
 
 public uniontype SymbolicOperation
-  record FLATTEN "From one equation/statement to a list of DAE elements (in case it is expanded)"
+  record FLATTEN "From one equation/statement to an element"
     SCode.EEquation scode;
     Option<Element> dae;
   end FLATTEN;
-  record SIMPLIFY
+  record SIMPLIFY "Before and after expression is equivalent"
     EquationExp before;
     EquationExp after;
   end SIMPLIFY;
@@ -125,29 +125,29 @@ public uniontype SymbolicOperation
     list<Exp> substitutions;
     Exp source;
   end SUBSTITUTION;
-  record OP_INLINE
+  record OP_INLINE "Before and after inlining of function calls"
     EquationExp before;
     EquationExp after;
   end OP_INLINE;
-  record OP_SCALARIZE "x = {1,2}, [1] => x[1] = {1}"
+  record OP_SCALARIZE "Convert array equation into scalar equations; x = {1,2}, [1] => x[1] = {1}"
     EquationExp before;
     Integer index;
     EquationExp after;
   end OP_SCALARIZE;
-  record OP_DIFFERENTIATE "d/dcr before => after"
+  record OP_DIFFERENTIATE "Differentiate w.r.t. cr"
     ComponentRef cr;
     Exp before;
     Exp after;
   end OP_DIFFERENTIATE;
 
-  record SOLVE "exp1 = exp2 => cr = exp"
+  record SOLVE "Solve equation, exp1 = exp2 => cr = exp; note that assertions may have been generated for example in case of divisions"
     ComponentRef cr;
     Exp exp1;
     Exp exp2;
     Exp res;
     list<Exp> assertConds;
   end SOLVE;
-  record SOLVED
+  record SOLVED "Equation is solved"
     ComponentRef cr;
     Exp exp;
   end SOLVED;
@@ -157,11 +157,11 @@ public uniontype SymbolicOperation
     list<Real> rhs;
     list<Real> result;
   end LINEAR_SOLVED;
-  record NEW_DUMMY_DER
+  record NEW_DUMMY_DER "Introduced a dummy derivative (from index reduction)"
     ComponentRef chosen;
     list<ComponentRef> candidates;
   end NEW_DUMMY_DER;
-  record OP_RESIDUAL "e1=e2 => 0=e"
+  record OP_RESIDUAL "Converted the equation into residual form, to use nonlinear equation solvers 0=e (0=e1-e2)"
     Exp e1;
     Exp e2;
     Exp e;
