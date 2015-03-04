@@ -1262,8 +1262,8 @@ public function createDifferentiatedCrefName
   input String inMatrixName;
   output DAE.ComponentRef outCref;
 protected
- String str; 
-algorithm 
+ String str;
+algorithm
   outCref := ComponentReference.replaceSubsWithString(inCref);
   outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix + inMatrixName, ComponentReference.crefTypeConsiderSubs(inCref), {}));
   outCref := ComponentReference.joinCrefs(outCref, inX);

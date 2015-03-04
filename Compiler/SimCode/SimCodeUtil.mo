@@ -4630,7 +4630,7 @@ algorithm
 
         residualVars = BackendVariable.listVar1(residualVarsLst);
         independentVars = BackendVariable.listVar1(independentVarsLst);
- 
+
         columnVars = createAllDiffedSimVars(dependentVarsLst, x, residualVars, 0, name, {});
         columnVars = listReverse(columnVars);
 
@@ -4662,7 +4662,7 @@ algorithm
 
         // create seed vars
         seedVars = replaceSeedVarsName(seedVars, name);
-        
+
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
@@ -4919,7 +4919,7 @@ protected function replaceSeedVarsName
   input list<SimCodeVar.SimVar> inVars;
   input String inMatrixName;
   output list<SimCodeVar.SimVar> outSimVars = {};
-protected 
+protected
   DAE.ComponentRef newCref, oldCref;
 algorithm
   for v in inVars loop
