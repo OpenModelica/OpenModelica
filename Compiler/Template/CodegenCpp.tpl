@@ -3878,25 +3878,25 @@ template extCBoolCast(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, T
        case T_BOOL(__) then
          let tmp = match dimsStr
 
-      case "" then tempDecl('DynArrayDim<%listLength(dims)%><int>', &varDecls /*BUFD*/)
-          else   tempDecl('StatArrayDim<%dimStr%><int,<%dimsStr%> > ', &varDecls /*BUFD*/)
-          end match
-       if(iI)
-        then
-           let _ = inputAssignTest(c, contextFunction, tmp, &inputAssign)
-      <<
-           <%tmp%>.getData()
-          >>
-        else
-        let _ = outputAssignTest(c, contextFunction, tmp, &outputAssign)
-    let &outputAllocate += '<%tmp%>.setDims(<%name%>.getDims());'
-    <<
-         <%tmp%>.getData()
-    >>
-
-
-    else
-     '(<%extType2(t,iI,true)%>)<%name%>.getData() '
+           case "" then tempDecl('DynArrayDim<%listLength(dims)%><int>', &varDecls /*BUFD*/)
+              else   tempDecl('StatArrayDim<%dimStr%><int,<%dimsStr%> > ', &varDecls /*BUFD*/)
+              end match
+           if(iI)
+            then
+               let _ = inputAssignTest(c, contextFunction, tmp, &inputAssign)
+          <<
+               <%tmp%>.getData()
+              >>
+            else
+            let _ = outputAssignTest(c, contextFunction, tmp, &outputAssign)
+            let &outputAllocate += '<%tmp%>.setDims(<%name%>.getDims());'
+            <<
+                <%tmp%>.getData()
+            >>
+       case T_STRING(__) then
+            '(<%extType2(t,iI,true)%>)<%name%>.getCStrData()/*testfuncdata*/ '
+       else
+        '(<%extType2(t,iI,true)%>)<%name%>.getData()/*testfuncdata2*/ '
     end match
 end extCBoolCast;
 

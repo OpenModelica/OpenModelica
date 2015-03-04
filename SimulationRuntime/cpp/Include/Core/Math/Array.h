@@ -24,7 +24,10 @@ public:
   virtual unsigned int getNumDims() = 0;
   virtual void setDims(std::vector<size_t> v) = 0;
   virtual void resize(std::vector<size_t> dims) = 0;
-
+  virtual const char** getCStrData()
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array getCStrData call");
+  }
   virtual T& operator()(unsigned int i)
   {
      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
@@ -71,21 +74,21 @@ public:
   StatArrayDim1(const T* data)
   :BaseArray<T>(true)
   {
-    //std::copy(data,data+size,_real_array.begin());
-    memcpy( _real_array.begin(), data, size * sizeof( T ) );
+    //std::copy(data,data+size,_array_data.begin());
+    memcpy( _array_data.begin(), data, size * sizeof( T ) );
   }
 
   StatArrayDim1(const StatArrayDim1<T,size>& otherarray)
   :BaseArray<T>(true)
   {
-     _real_array = otherarray._real_array;
+     _array_data = otherarray._array_data;
   }
   StatArrayDim1(const DynArrayDim1<T>& otherarray)
   :BaseArray<T>(true)
   {
      const T* data_otherarray = otherarray.getData();
-    //std::copy(data_otherarray,data_otherarray+size,_real_array.begin());
-    memcpy( _real_array.begin(), data_otherarray, size * sizeof( T ) );
+    //std::copy(data_otherarray,data_otherarray+size,_array_data.begin());
+    memcpy( _array_data.begin(), data_otherarray, size * sizeof( T ) );
   }
 
   StatArrayDim1()
@@ -97,7 +100,7 @@ public:
 
   //void assign(StatArrayDim1<T,size> otherArray)
   //{
-  //  _real_array = otherArray._real_array;
+  //  _array_data = otherArray._array_data;
   //}
 
 
@@ -111,13 +114,13 @@ public:
          if(rhs.isStatic())
          {
             StatArrayDim1<T,size>&  a = dynamic_cast<StatArrayDim1<T,size>&  >(rhs);
-            _real_array = a._real_array;
+            _array_data = a._array_data;
          }
          else
          {
              DynArrayDim1<T>&  a = dynamic_cast<DynArrayDim1<T>&  >(rhs);
              const T* data = rhs.getData();
-             memcpy( _real_array.begin(), data, size * sizeof( T ) );
+             memcpy( _array_data.begin(), data, size * sizeof( T ) );
 
          }
       }
@@ -134,7 +137,7 @@ public:
  {
   if (this != &rhs)
   {
-      _real_array= rhs._real_array;
+      _array_data= rhs._array_data;
   }
   return *this;
  }
@@ -147,8 +150,8 @@ public:
 
    virtual void assign(const T* data)
   {
-      //std::copy(data,data+size,_real_array.begin());
-      memcpy( _real_array.begin(), data, size * sizeof( T ) );
+      //std::copy(data,data+size,_array_data.begin());
+      memcpy( _array_data.begin(), data, size * sizeof( T ) );
   }
 
 
@@ -157,27 +160,27 @@ public:
     //std::vector<size_t> v;
     //v = otherArray.getDims();
     const T* data_otherarray = otherArray.getData();
-    //std::copy(data_otherarray,data_otherarray+size,_real_array.begin());
-    memcpy( _real_array.begin(), data_otherarray, size * sizeof( T ) );
+    //std::copy(data_otherarray,data_otherarray+size,_array_data.begin());
+    memcpy( _array_data.begin(), data_otherarray, size * sizeof( T ) );
     /*for(unsigned int i = 1; i <= min(v[0],size); i++)
     {
-      _real_array[i-1] = otherArray(i);
+      _array_data[i-1] = otherArray(i);
     }*/
   }
   virtual T& operator()(vector<size_t> idx)
   {
-     return _real_array[idx[0]-1];
+     return _array_data[idx[0]-1];
   };
 
 
   inline virtual T& operator()(unsigned int index)
   {
-      return _real_array[index - 1];
+      return _array_data[index - 1];
   }
   inline virtual const T& operator()(unsigned int index) const
   {
 
-    return _real_array[index - 1];
+    return _array_data[index - 1];
   }
 
   virtual std::vector<size_t> getDims() const
@@ -191,14 +194,14 @@ public:
   */
   virtual T* getData()
   {
-    return _real_array.c_array();
+    return _array_data.c_array();
   }
   /*
   access to data (read-only)
   */
   virtual const T* getData() const
   {
-     return _real_array.data();
+     return _array_data.data();
   }
   virtual unsigned int getNumElems()
   {
@@ -216,18 +219,18 @@ public:
   typedef typename  boost::array<T,size>::iterator                                   iterator;
   iterator begin()
   {
-    return   _real_array.begin();
+    return   _array_data.begin();
   }
    iterator end()
    {
-    return   _real_array.end();
+    return   _array_data.end();
    }
 
   private:
-    boost::array<T,size> _real_array;
+    boost::array<T,size> _array_data;
 };
 
-/*Specialization for string arrays*/
+/*Specialization for string 1-dim arrays*/
 
 
 template<std::size_t size>class StatArrayDim1<string,size> : public BaseArray<string>
@@ -239,14 +242,24 @@ public:
   {
     for(int i=0;i<size;i++)
     {
-      _real_array[i]=data[i];
+      _array_data[i]=data[i];
     }
+    
+    for(int i=0;i<size;i++)
+    {
+      _c_array_data[i]=_array_data[i].c_str();
+    }
+    
   }
 
   StatArrayDim1(const StatArrayDim1<string,size>& otherarray)
   :BaseArray<string>(true)
   {
-     _real_array = otherarray._real_array;
+     _array_data = otherarray._array_data;
+     for(int i=0;i<size;i++)
+    {
+      _c_array_data[i]=_array_data[i].c_str();
+    }
   }
   StatArrayDim1(const DynArrayDim1<string>& otherarray)
   :BaseArray<string>(true)
@@ -263,7 +276,7 @@ public:
 
   //void assign(StatArrayDim1<T,size> otherArray)
   //{
-  //  _real_array = otherArray._real_array;
+  //  _array_data = otherArray._array_data;
   //}
 
  virtual void resize(std::vector<size_t> dims)
@@ -282,13 +295,21 @@ public:
          if(rhs.isStatic())
          {
             StatArrayDim1<string,size>&  a = dynamic_cast<StatArrayDim1<string,size>&  >(rhs);
-            _real_array = a._real_array;
+            _array_data = a._array_data;
+            for(int i=0;i<size;i++)
+            {
+                _c_array_data[i]=_array_data[i].c_str();
+            }
          }
          else
          {
              for(unsigned int i=0;i<size;i++)
              {
-                  _real_array[i]=rhs(i);
+                  _array_data[i]=rhs(i);
+             }
+             for(int i=0;i<size;i++)
+             {
+                _c_array_data[i]=_array_data[i].c_str();
              }
 
 
@@ -307,16 +328,24 @@ public:
  {
   if (this != &rhs)
   {
-      _real_array= rhs._real_array;
+      _array_data= rhs._array_data;
+      for(int i=0;i<size;i++)
+      {
+         _c_array_data[i]=_array_data[i].c_str();
+      }
   }
   return *this;
  }
 
    virtual void assign(const string data[])
   {
-     for(int i=0;i<size;i++)
+    for(int i=0;i<size;i++)
     {
-      _real_array[i]=data[i];
+      _array_data[i]=data[i];
+    }
+    for(int i=0;i<size;i++)
+    {
+      _c_array_data[i]=_array_data[i].c_str();
     }
   }
 
@@ -325,22 +354,26 @@ public:
   {
     for(int i=0;i<size;i++)
     {
-      _real_array[i]=otherArray(i);
+      _array_data[i]=otherArray(i);
+    }
+    for(int i=0;i<size;i++)
+    {
+      _c_array_data[i]=_array_data[i].c_str();
     }
   }
   virtual string& operator()(vector<size_t> idx)
   {
-     return _real_array[idx[0]-1];
+     return _array_data[idx[0]-1];
   };
 
 
   inline virtual string& operator()(unsigned int index)
   {
-    return _real_array[index - 1];
+    return _array_data[index - 1];
   }
   inline virtual const string& operator()(unsigned int index) const
   {
-    return _real_array[index - 1];
+    return _array_data[index - 1];
   }
 
   virtual std::vector<size_t> getDims() const
@@ -354,15 +387,21 @@ public:
   */
   virtual string* getData()
   {
-    return _real_array.c_array();
+    return _array_data.c_array();
   }
   /*
   access to data (read-only)
   */
   virtual const string* getData() const
   {
-     return _real_array.data();
+     return _array_data.data();
   }
+  virtual const char** getCStrData() 
+  {
+    return _c_array_data.c_array();
+  }
+  
+  
   virtual unsigned int getNumElems()
   {
     return size;
@@ -379,15 +418,16 @@ public:
   typedef typename  boost::array<string,size>::iterator                                   iterator;
   iterator begin()
   {
-    return   _real_array.begin();
+    return   _array_data.begin();
   }
    iterator end()
    {
-    return   _real_array.end();
+    return   _array_data.end();
    }
 
   private:
-    boost::array<string,size> _real_array;
+    boost::array<string,size> _array_data;
+    boost::array<const char*, size> _c_array_data;
 };
 
 
@@ -398,8 +438,9 @@ public:
   StatArrayDim2(const T* data) //const T (&data)     const T (&data)[size1*size2]
   :BaseArray<T>(true)
   {
-    //std::copy(data,data+size1*size2,_real_array.begin());
-    memcpy( _real_array.begin(), data, size1*size2 * sizeof( T ) );
+    //std::copy(data,data+size1*size2,_array_data.begin());
+    memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
+    
   }
 
   StatArrayDim2()
@@ -410,13 +451,13 @@ public:
   StatArrayDim2(const StatArrayDim2<T,size1,size2>& otherarray)
   :BaseArray<T>(true)
   {
-     _real_array = otherarray._real_array;
+     _array_data = otherarray._array_data;
   }
  StatArrayDim2<T,size1,size2>& operator=(const StatArrayDim2<T,size1,size2>& rhs)
  {
   if (this != &rhs)
   {
-     _real_array = rhs._real_array;
+     _array_data = rhs._array_data;
   }
   return *this;
  }
@@ -428,7 +469,7 @@ public:
       try
       {
          StatArrayDim2<T,size1,size2>& a = dynamic_cast<StatArrayDim2<T,size1,size2>& >(rhs);
-         _real_array = a._real_array;
+         _array_data = a._array_data;
       }
       catch(std::bad_exception & be)
       {
@@ -444,7 +485,8 @@ public:
   {
     const T* data = rhs.getData();
     // std::copy(data,data+size2,data0+(size1));
-    memcpy( _real_array.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
+    memcpy( _array_data.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
+
 
   }
 
@@ -460,35 +502,37 @@ public:
     std::vector<size_t> v;
     v = otherArray.getDims();
     const T* data_otherarray = otherArray.getData();
-     //std::copy(data_otherarray,data_otherarray+size1*size2,_real_array.begin());
-     memcpy( _real_array.begin(), data_otherarray, size1*size2 * sizeof( T ) );
+     //std::copy(data_otherarray,data_otherarray+size1*size2,_array_data.begin());
+    memcpy( _array_data.begin(), data_otherarray, size1*size2 * sizeof( T ) );
+   
 
   }
 
   virtual void assign(const T* data)//)const T (&data) [size1*size2]
   {
-    //std::copy(data,data+size1*size2,_real_array.begin());
-    memcpy( _real_array.begin(), data, size1*size2 * sizeof( T ) );
+    //std::copy(data,data+size1*size2,_array_data.begin());
+    memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
+    
 
   }
   virtual T& operator()(vector<size_t> idx)
   {
-     return _real_array[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
+     return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
   };
 
   inline virtual T& operator()(const unsigned int i, const unsigned  int j)
   {
     if(fotran)
-       return _real_array[size1*(j - 1) + i - 1]; //column wise order
+       return _array_data[size1*(j - 1) + i - 1]; //column wise order
      else
-       return _real_array[size2*(i - 1) + j - 1]; //row wise order
+       return _array_data[size2*(i - 1) + j - 1]; //row wise order
   }
   inline virtual const T& operator()(const unsigned int i, const unsigned  int j) const
   {
     if(fotran)
-     return _real_array[size1*(j - 1) + i - 1];//column wise order
+     return _array_data[size1*(j - 1) + i - 1];//column wise order
     else
-     return _real_array[size2*(i - 1) + j - 1];//row wise order
+     return _array_data[size2*(i - 1) + j - 1];//row wise order
   }
 
 
@@ -514,22 +558,220 @@ public:
   */
   virtual T* getData()
   {
-    return _real_array. c_array();
+    return _array_data. c_array();
   }
   /*
   access to data (read-only)
   */
   virtual const T* getData() const
   {
-     return _real_array.data();
+     return _array_data.data();
   }
+  
   virtual void setDims(std::vector<size_t> v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
-  //boost::array< boost::array<T, size2>, size1> _real_array;
-  boost::array<T, size2 * size1> _real_array;
-  //T _real_array[size2*size1];
+  //boost::array< boost::array<T, size2>, size1> _array_data;
+  boost::array<T, size2 * size1> _array_data;
+  
+  //T _array_data[size2*size1];
 };
+
+
+/*Specialization for string 2-dim arrays*/
+
+
+template<std::size_t size1,std::size_t size2>
+class StatArrayDim2<string,size1,size2> : public BaseArray<string>
+{
+
+public:
+  StatArrayDim2(const string data[]) //const T (&data)     const T (&data)[size1*size2]
+  :BaseArray<string>(true)
+  {
+   
+    std::copy(data,data+size1*size2,_array_data.begin());
+       for(int i=0;i<size1;i++)
+      {
+         for(int j=0;j<size2;j++)    
+         {
+            _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+         }
+      }
+  }
+
+  StatArrayDim2()
+  :BaseArray<string>(true)
+  {
+  
+  }
+
+  StatArrayDim2(const StatArrayDim2<string,size1,size2>& otherarray)
+  :BaseArray<string>(true)
+  {
+     _array_data = otherarray._array_data;
+     
+     for(int i=0;i<size1;i++)
+      {
+         for(int j=0;j<size2;j++)    
+         {
+            _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+         }
+      }
+  }
+ StatArrayDim2<string,size1,size2>& operator=(const StatArrayDim2<string,size1,size2>& rhs)
+ {
+  if (this != &rhs)
+  {
+     _array_data = rhs._array_data;
+      for(int i=0;i<size1;i++)
+      {
+         for(int j=0;j<size2;j++)    
+         {
+            _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+         }
+      }
+  }
+  return *this;
+ }
+
+  StatArrayDim2<string,size1,size2>& operator=(BaseArray<string>& rhs)
+ {
+  if (this != &rhs)
+  {
+      try
+      {
+         StatArrayDim2<string,size1,size2>& a = dynamic_cast<StatArrayDim2<string,size1,size2>& >(rhs);
+         _array_data = a._array_data;
+        for(int i=0;i<size1;i++)
+        {
+             for(int j=0;j<size2;j++)    
+             {
+                _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+             }
+        }
+      }
+      catch(std::bad_exception & be)
+      {
+        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
+      }
+  }
+  return *this;
+ }
+
+  ~StatArrayDim2(){}
+
+  void append(size_t i,const StatArrayDim1<string,size2>& rhs)
+  {
+   
+     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"append not supported for 2-dim string array");
+  }
+
+  virtual void resize(std::vector<size_t> dims)
+  {
+      if (dims != getDims())
+          std::runtime_error("Cannot resize static array!");
+  }
+
+  virtual void assign(const BaseArray<string>& otherArray)
+  {
+    std::vector<size_t> v;
+    v = otherArray.getDims();
+    const string* data_otherarray = otherArray.getData();
+    std::copy(data_otherarray,data_otherarray+size1*size2,_array_data.begin());
+	for(int i=0;i<size1;i++)
+        {
+             for(int j=0;j<size2;j++)    
+             {
+                const char* c_str_data = _array_data[size2*i + j].c_str();
+                _c_array_data[size2*i + j ] = c_str_data;
+             }
+        }
+   }
+
+  virtual void assign(const string data[])//)const T (&data) [size1*size2]
+  {
+      std::copy(data,data+size1*size2,_array_data.begin());
+      for(int i=0;i<size1;i++)
+        {
+             for(int j=0;j<size2;j++)    
+             {
+                const char* c_str_data = _array_data[size2*i + j].c_str();
+                _c_array_data[size2*i + j ] = c_str_data;
+             }
+        }
+  }
+  virtual string& operator()(vector<size_t> idx)
+  {
+     return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
+  };
+
+  inline virtual string& operator()(const unsigned int i, const unsigned  int j)
+  {
+      return _array_data[size2*(i - 1) + j - 1]; //row wise order
+  }
+  inline virtual const string& operator()(const unsigned int i, const unsigned  int j) const
+  {
+       return _array_data[size2*(i - 1) + j - 1];//row wise order
+  }
+
+
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size1);
+    v.push_back(size2);
+    return v;
+  }
+
+  virtual unsigned int getNumElems()
+  {
+    return size1 * size2;
+  }
+
+    virtual unsigned int getNumDims()
+  {
+     return 2;
+  }
+  /*
+  access to data
+  */
+  virtual string* getData()
+  {
+    return _array_data. c_array();
+  }
+  /*
+  access to data (read-only)
+  */
+  virtual const string* getData() const
+  {
+     return _array_data.data();
+  }
+  
+  virtual const char** getCStrData() 
+  {
+    
+    return _c_array_data.c_array();
+  }
+  
+  virtual void setDims(std::vector<size_t> v) {  }
+  void setDims(size_t i,size_t j)  {  }
+private:
+  //boost::array< boost::array<T, size2>, size1> _array_data;
+  boost::array<string, size2 * size1> _array_data;
+  boost::array<const char*,size2 * size1> _c_array_data;
+  //T _array_data[size2*size1];
+};
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -540,8 +782,8 @@ public:
   StatArrayDim3(const T data[])
   :BaseArray<T>(true)
   {
-    //std::copy(data,data+size1*size2*size3,_real_array.begin());
-     memcpy( _real_array.begin(), data, size1*size2*size3 * sizeof( T ) );
+    //std::copy(data,data+size1*size2*size3,_array_data.begin());
+     memcpy( _array_data.begin(), data, size1*size2*size3 * sizeof( T ) );
   }
 
   StatArrayDim3()
@@ -554,7 +796,7 @@ public:
 
   /*void assign(StatArrayDim3<T,size1,size2,size3> otherArray)
   {
-    _real_array = otherArray._real_array;
+    _array_data = otherArray._array_data;
   }
   */
   virtual  void assign(const BaseArray<T>& otherArray)
@@ -562,8 +804,8 @@ public:
     std::vector<size_t> v;
     v = otherArray.getDims();
      const T* data_otherarray = otherArray.getData();
-     //std::copy(data_otherarray,data_otherarray+size1*size2*size3,_real_array.begin());
-      memcpy( _real_array.begin(), data_otherarray, size1*size2*size3 * sizeof( T ) );
+     //std::copy(data_otherarray,data_otherarray+size1*size2*size3,_array_data.begin());
+      memcpy( _array_data.begin(), data_otherarray, size1*size2*size3 * sizeof( T ) );
 
   }
   void append(size_t i,const StatArrayDim2<T,size2,size3>& rhs)
@@ -571,14 +813,14 @@ public:
 
         const T* data = rhs.getData();
         // std::copy(data,data+size2,data0+(size1));
-        memcpy( _real_array.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
+        memcpy( _array_data.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
 
 
   }
   virtual void assign(const T* data)
   {
-     //std::copy(data,data+size1*size2*size3,_real_array.begin());
-     memcpy( _real_array.begin(), data, size1*size2*size3 * sizeof( T ) );
+     //std::copy(data,data+size1*size2*size3,_array_data.begin());
+     memcpy( _array_data.begin(), data, size1*size2*size3 * sizeof( T ) );
   }
 
   virtual void resize(std::vector<size_t> dims)
@@ -599,23 +841,23 @@ public:
  {
   if (this != &rhs)
   {
-      _real_array = rhs._real_array;
+      _array_data = rhs._array_data;
   }
   return *this;
  }
   virtual T& operator()(vector<size_t> idx)
   {
     //row-major order
-   return _real_array[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))];
+   return _array_data[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))];
      //column-major order
-    //return _real_array[(idx[2] - 1)*size2*size1 +   (idx[1] - 1)*size1 + (idx[0] - 1)];
+    //return _array_data[(idx[2] - 1)*size2*size1 +   (idx[1] - 1)*size1 + (idx[0] - 1)];
   };
  inline virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
     //row-major order
-    return _real_array[(k - 1) + size3*((j-1)+size2*(i-1))];
+    return _array_data[(k - 1) + size3*((j-1)+size2*(i-1))];
     //column-major order
-    //return _real_array[(k - 1)*size2*size1 +   (j - 1)*size1 + (i - 1)];
+    //return _array_data[(k - 1)*size2*size1 +   (j - 1)*size1 + (i - 1)];
   }
 
   virtual unsigned int getNumElems()
@@ -635,18 +877,18 @@ public:
   */
   virtual T* getData()
   {
-    return _real_array.c_array();
+    return _array_data.c_array();
   }
    /*
   access to data (read-only)
   */
   virtual const T* getData() const
   {
-     return _real_array.data();
+     return _array_data.data();
   }
 private:
-    boost::array<T, size2 * size1*size3> _real_array;
- // boost::array< boost::array< boost::array<T,size3> ,size2>,size1> _real_array;
+    boost::array<T, size2 * size1*size3> _array_data;
+ // boost::array< boost::array< boost::array<T,size3> ,size2>,size1> _array_data;
 };
 
 
@@ -668,7 +910,7 @@ public:
         {
           for(int l = 0; l < size4; l++)
           {
-            _real_array[i][j][k][l] = data[i * size2 * size3 * size4 + j * size3 * size4 + k * size4 + l];//TODO
+            _array_data[i][j][k][l] = data[i * size2 * size3 * size4 + j * size3 * size4 + k * size4 + l];//TODO
           }
         }
       }
@@ -691,7 +933,7 @@ public:
         {
           for(int l = 0; l < size4; l++)
           {
-            _real_array[i][j][k][l] = otherArray._real_array[i][j][k][l];
+            _array_data[i][j][k][l] = otherArray._array_data[i][j][k][l];
           }
         }
       }
@@ -710,7 +952,7 @@ public:
         {
           for(int l = 1; l <= min(v[3],size4); l++)
           {
-            _real_array[i - 1][j - 1][k - 1][l - 1] = otherArray(i,j,k,l);
+            _array_data[i - 1][j - 1][k - 1][l - 1] = otherArray(i,j,k,l);
           }
         }
       }
@@ -727,7 +969,7 @@ public:
         {
           for(int l = 1; l <= size4; l++)
           {
-            _real_array[i][j][k][l] = data[i * size2 * size3 * size4 + j * size3 * size4 + k * size4 + l];
+            _array_data[i][j][k][l] = data[i * size2 * size3 * size4 + j * size3 * size4 + k * size4 + l];
           }
         }
       }
@@ -747,7 +989,7 @@ public:
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l)
   {
-    return _real_array[i - 1][j - 1][k - 1][l - 1];
+    return _array_data[i - 1][j - 1][k - 1][l - 1];
   }
 
   virtual unsigned int getNumElems()
@@ -759,7 +1001,7 @@ public:
 
   }
 private:
-  boost::array< boost::array< boost::array<boost::array<T,size4>,size3>,size2>,size1> _real_array;
+  boost::array< boost::array< boost::array<boost::array<T,size4>,size3>,size2>,size1> _array_data;
 };
 
 
@@ -782,7 +1024,7 @@ public:
           {
             for(int m = 0; m < size5; m++)
             {
-              _real_array[i][j][k][l][m] = data[i * size2 * size3 * size4 *size5 + j * size3 * size4 * size5 + k * size4 * size5 + l * size5 + m];
+              _array_data[i][j][k][l][m] = data[i * size2 * size3 * size4 *size5 + j * size3 * size4 * size5 + k * size4 * size5 + l * size5 + m];
             }
           }
         }
@@ -808,7 +1050,7 @@ public:
           {
             for(int m = 0; m < size5; m++)
             {
-              _real_array[i][j][k][l][m] = otherArray._real_array[i][j][k][l][m];
+              _array_data[i][j][k][l][m] = otherArray._array_data[i][j][k][l][m];
             }
           }
         }
@@ -830,7 +1072,7 @@ public:
           {
             for(int m = 1; m <= min(v[4],size5); m++)
             {
-              _real_array[i - 1][j - 1][k - 1][l - 1][m - 1] = otherArray(i,j,k,l,m);
+              _array_data[i - 1][j - 1][k - 1][l - 1][m - 1] = otherArray(i,j,k,l,m);
             }
           }
         }
@@ -851,7 +1093,7 @@ public:
           {
             for(int m = 0; m < size5; m++)
             {
-              _real_array[i][j][k][l][m] = data[i * size2 * size3 * size4 *size5 + j * size3 * size4 * size5 + k * size4 * size5 + l * size5 + m];
+              _array_data[i][j][k][l][m] = data[i * size2 * size3 * size4 *size5 + j * size3 * size4 * size5 + k * size4 * size5 + l * size5 + m];
             }
           }
         }
@@ -873,7 +1115,7 @@ public:
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l, unsigned int m)
   {
-    return _real_array[i - 1][j - 1][k - 1][l - 1][m - 1];
+    return _array_data[i - 1][j - 1][k - 1][l - 1][m - 1];
   }
   virtual unsigned int getNumElems()
   {
@@ -884,7 +1126,7 @@ public:
 
   }
 private:
-  boost::array< boost::array< boost::array< boost::array<boost::array<T,size5>,size4>,size3>,size2>,size1> _real_array;
+  boost::array< boost::array< boost::array< boost::array<boost::array<T,size5>,size4>,size3>,size2>,size1> _array_data;
 };
 
 */
