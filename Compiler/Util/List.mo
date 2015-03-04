@@ -1483,7 +1483,7 @@ algorithm
         a = addPos(inList1, a, 1);
         a = addPos(inList2, a, 1);
       then
-        intersectionIntVec(a, inN, {});
+        intersectionIntVec(a, inList1, inN, {});
 
     else {};
 
@@ -1493,13 +1493,14 @@ end intersectionIntN;
 protected function intersectionIntVec
   "Helper function to intersectionIntN."
   input array<Integer> inArray;
+  input list<Integer> inList1;
   input Integer inIndex;
   input list<Integer> iAcc;
   output list<Integer> outResult = {};
 algorithm
-  for i in inIndex:1 loop
-    if inArray[inIndex] == 2 then
-      outResult := inArray[inIndex] :: outResult;
+  for i in inList1 loop
+    if arrayGet(inArray,i) == 2 then
+      outResult := i :: outResult;
     end if;
   end for;
 end intersectionIntVec;
