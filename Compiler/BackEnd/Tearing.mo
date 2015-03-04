@@ -1786,7 +1786,7 @@ algorithm
   unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
   if not List.isEmpty(unsolvableDiscretes) then
     Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
-	fail();
+  fail();
   end if;
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
@@ -1959,14 +1959,14 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of selectTearingVar\n\n");
       end if;
-	  SimCodeUtil.execStat("\n\nTIC\n\n");
+    SimCodeUtil.execStat("\n\nTIC\n\n");
       tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
-	  SimCodeUtil.execStat("\n\nTIMETVAR\n\n");
-	  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    SimCodeUtil.execStat("\n\nTIMETVAR\n\n");
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of selectTearingVar\n" + BORDER + "\n\n");
       end if;
       // mark tvar in ass1In
-	  arrayUpdate(ass1In,tvar,arrayLength(ass1In)*2);
+    arrayUpdate(ass1In,tvar,arrayLength(ass1In)*2);
       // remove tearing var from incidence matrix and transposed inc matrix
       deleteEntriesFromIncidenceMatrix(mIn,mtIn,{tvar});
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1984,7 +1984,7 @@ algorithm
         print("\n" + BORDER + "\nBEGINNING of Tarjan\n\n");
       end if;
       (order,causal) = Tarjan(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,true);
-	  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of Tarjan\n" + BORDER + "\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1994,19 +1994,19 @@ algorithm
       end if;
       // find out if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
-	  // hier (sehr kleine Listen, da nur neue unsolvables, wird so oft gemacht wie eine neue tvar gesucht wird)
+    // hier (sehr kleine Listen, da nur neue unsolvables, wird so oft gemacht wie eine neue tvar gesucht wird)
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
       (tvars, order) = TearingSystemCellier(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
      then
     (tvars,order);
-  
+
   // case: There are unsolvables and/or variables with annotation 'tearingSelect = always'
   case(false,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
     equation
       // First choose unsolvables and 'always'-vars as tVars
       tvars = List.unique(listAppend(Unsolvables,tSel_always));
-	  // hier (sehr kleine Listen, wird einmal am Anfang gemacht und immer wenn neue unsolvables dazugekommen sind,
-	  // max so oft wie es tvars gibt)
+    // hier (sehr kleine Listen, wird einmal am Anfang gemacht und immer wenn neue unsolvables dazugekommen sind,
+    // max so oft wie es tvars gibt)
       tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
       if listLength(tVar_never)<>0 then
         Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
@@ -2019,7 +2019,7 @@ algorithm
       markTVars(tvars, ass1In);
       // remove tearing var from incidence matrix and transposed inc matrix
       deleteEntriesFromIncidenceMatrix(mIn,mtIn,tvars);
-	  deleteRowsFromIncidenceMatrix(mtIn,tvars);
+    deleteRowsFromIncidenceMatrix(mtIn,tvars);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n\n###BEGIN print Incidence Matrix w/o tvars###########\n(Function: TearingSystemCellier)\n");
         BackendDump.dumpIncidenceMatrix(mIn);
@@ -2029,7 +2029,7 @@ algorithm
       end if;
       tvars = listAppend(tvars,tvarsIn);
       (order,causal) = Tarjan(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,true);
-	  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of Tarjan\n" + BORDER + "\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2039,7 +2039,7 @@ algorithm
       end if;
       // find out if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
-	  // hier (sehr kleine Listen,da nur neue unsolvables, nach jeder wahl von unsolvables als tvars, max so oft ie es tvars gibt)
+    // hier (sehr kleine Listen,da nur neue unsolvables, nach jeder wahl von unsolvables als tvars, max so oft ie es tvars gibt)
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
       (tvars, order) = TearingSystemCellier(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
      then
@@ -2684,15 +2684,15 @@ algorithm
   // 4.1 Check if potentialTVars is empty, if yes, choose all unassigned non-discrete variables without attribute tearingSelect=never as potentialTVars
   if List.isEmpty(potentialTVars) then
     ((_,potentialTVars)) := Array.fold(ass1In,getUnassigned,(1,{}));
-	// hier
+  // hier
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
-	if List.isEmpty(potentialTVars) then
-	  Error.addCompilerError("It is not possible to select a new tearing variable, because all left variables are discrete or have the attribute tearingSelect=never");
-	  fail();
-	end if;
+  if List.isEmpty(potentialTVars) then
+    Error.addCompilerError("It is not possible to select a new tearing variable, because all left variables are discrete or have the attribute tearingSelect=never");
+    fail();
+  end if;
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-	  print("\nNone of the variables from (3rd) is able to causalize an equation in the next step.\nNow consider ALL unassigned non-discrete variables without attribute tearingSelect=never as potential tVars.\n\n");
+    print("\nNone of the variables from (3rd) is able to causalize an equation in the next step.\nNow consider ALL unassigned non-discrete variables without attribute tearingSelect=never as potential tVars.\n\n");
       print("\n4th: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All unassigned non-discrete variables without attribute 'never')\n\n");
     end if;
   end if;
@@ -2736,7 +2736,7 @@ algorithm
   tVar := listGet(potentials,1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("7th: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (6th) with most occurrence in equations (" + intString(edges) +" times))\n\nChosen tearing variable: " + intString(tVar) + "\n\n");
-  end if; 
+  end if;
   if listMember(tVar,tSel_avoid) then
     Error.addCompilerWarning("The Tearing heuristic has chosen variables with annotation attribute 'tearingSelect = avoid'. Use +d=tearingdump and +d=tearingdumpV for more information.");
   end if;
@@ -2867,7 +2867,7 @@ protected
   BackendDAE.AdjacencyMatrixEnhanced me;
   list<Integer> selEqs,selVars,cVars,interEqs,counts;
   array<Integer> ass1In;
-  Integer size,num,indx,Var;  
+  Integer size,num,indx,Var;
 algorithm
   (me,ass1In,selEqs,selVars,cVars,num,indx,counts) := inValue;
   // hier (für jede potentielle tearing variable, aber relativ kleine lsiten)
@@ -2877,22 +2877,22 @@ algorithm
   arrayUpdate(ass1In,Var,1);
   size := List.fold2(interEqs,sizeOfAssignable,me,ass1In,0);
   arrayUpdate(ass1In,Var,-1);
-  
+
   OutValue := matchcontinue(size,num)
-	case(_,_)
-	  equation
-	    true = size < num;
+  case(_,_)
+    equation
+      true = size < num;
      then ((me,ass1In,selEqs,selVars,cVars,num,indx+1,size::counts));
     case(_,_)
-	  equation
-	    true = size == num;
+    equation
+      true = size == num;
      then ((me,ass1In,selEqs,selVars,indx::cVars,num,indx+1,size::counts));
     case(_,_)
-	  equation
-	    true = size > num;
+    equation
+      true = size > num;
      then ((me,ass1In,selEqs,selVars,{indx},size,indx+1,size::counts));
   end matchcontinue;
-  
+
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Var " + intString(listGet(selVars,indx)) + " would causalize " + intString(size) + " Eqns\n");
   end if;
@@ -3027,9 +3027,9 @@ algorithm
     end if;
     (eqQueue,order,ass) := TarjanAssignment(eqQueueIn,mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn);
     (orderOut,causal) := Tarjan(mIn,mtIn,meIn,metIn,ass1In,ass2In,order,eqQueue,mapEqnIncRow,mapIncRowEqn,ass);
-  else 
+  else
     ((_,unassigned)) := Array.fold(ass1In,getUnassigned,(1,{}));
-	if List.isEmpty(unassigned) then
+  if List.isEmpty(unassigned) then
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\ncausal\n");
       end if;
@@ -3175,14 +3175,14 @@ algorithm
      then (inAcc1,inAcc2);
    case(e::rest,_,_,_,_,_,_)
     equation
-	 eqnColl = mapIncRowEqn[e];
-	 eqnSize = listLength(mapEqnIncRow[eqnColl]);
+   eqnColl = mapIncRowEqn[e];
+   eqnSize = listLength(mapEqnIncRow[eqnColl]);
      true = listLength(m[e]) == eqnSize + prescient;
      if eqnSize == 1 then
      (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,inAcc1,e::inAcc2);
-	 else
-	 (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,e::inAcc1,inAcc2);
-	 end if;
+   else
+   (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,e::inAcc1,inAcc2);
+   end if;
   then (acc1,acc2);
    case(_::rest,_,_,_,_,_,_)
     equation
@@ -3208,8 +3208,8 @@ algorithm
      then ();
    case(eq::rest1,var::rest2,_,_,_,_)
     equation
-	  arrayUpdate(ass1In,var,eq);
-	  arrayUpdate(ass2In,eq,var);
+    arrayUpdate(ass1In,var,eq);
+    arrayUpdate(ass2In,eq,var);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("assignment: Eq"+intString(eq)+" - Var"+intString(var)+"\n");
       end if;
@@ -3217,7 +3217,7 @@ algorithm
       deleteEntriesFromIncidenceMatrix(mIn,mtIn,{var});
       _ = Array.replaceAtWithFill(var,{},{},mtIn);
       deleteEntriesFromIncidenceMatrix(mtIn,mIn,{eq});
-	  makeAssignment(rest1,rest2,ass1In,ass2In,mIn,mtIn);
+    makeAssignment(rest1,rest2,ass1In,ass2In,mIn,mtIn);
     then ();
    else
     equation
@@ -3470,7 +3470,7 @@ protected
 algorithm
   for entry in entries loop
      rowsIndx := arrayGet(mHelp,entry);
-	 for rowIndx in rowsIndx loop
+   for rowIndx in rowsIndx loop
         row := arrayGet(mUpdate,rowIndx);
         row := List.deleteMember(row,entry);
         Array.replaceAtWithFill(rowIndx,row,row,mUpdate);
