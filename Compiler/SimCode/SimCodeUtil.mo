@@ -9407,7 +9407,7 @@ algorithm
     if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
       // suppress this warning if we're running the testsuite
       if not Config.getRunningTestsuite() then
-        Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d+"/"+n for d in dirs, n in names)}, info);
+        Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d + "/" + n for d in dirs, n in names)}, info);
       end if;
     end if;
   end if;
@@ -9594,7 +9594,7 @@ algorithm
       then ({str},{});
 
     case Absyn.STRING("OpenModelicaFMIRuntimeC")
-      then ({"OpenModelicaFMIRuntimeC","shlwapi"},{});
+      then ({"OpenModelicaFMIRuntimeC.lib","shlwapi.lib"},{});
 
     // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
@@ -9605,7 +9605,7 @@ algorithm
     case Absyn.STRING(str)
       equation
         str = str + ".lib";
-      then ({str},{str});
+      then ({str},{});
 
     else
       equation
