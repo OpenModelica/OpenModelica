@@ -1925,7 +1925,6 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
   mpIconViewToolButton->setToolTip(Helper::iconView);
   mpIconViewToolButton->setAutoRaise(true);
   mpIconViewToolButton->setCheckable(true);
-  connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
   // diagram view tool button
   mpDiagramViewToolButton = new QToolButton;
   mpDiagramViewToolButton->setText(Helper::diagramView);
@@ -1934,7 +1933,6 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
   mpDiagramViewToolButton->setToolTip(Helper::diagramView);
   mpDiagramViewToolButton->setAutoRaise(true);
   mpDiagramViewToolButton->setCheckable(true);
-  connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
   // modelica text view tool button
   mpTextViewToolButton = new QToolButton;
   mpTextViewToolButton->setText(Helper::textView);
@@ -1943,7 +1941,6 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
   mpTextViewToolButton->setToolTip(Helper::textView);
   mpTextViewToolButton->setAutoRaise(true);
   mpTextViewToolButton->setCheckable(true);
-  connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showModelicaTextView(bool)));
   // documentation view tool button
   mpDocumentationViewToolButton = new QToolButton;
   mpDocumentationViewToolButton->setText(Helper::documentationView);
@@ -1951,7 +1948,6 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
   mpDocumentationViewToolButton->setIconSize(Helper::buttonIconSize);
   mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
   mpDocumentationViewToolButton->setAutoRaise(true);
-  connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
   // view buttons box
   mpViewsButtonGroup = new QButtonGroup;
   mpViewsButtonGroup->setExclusive(true);
@@ -1993,6 +1989,10 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
   setLayout(pMainLayout);
   // show hide widgets based on library type
   if (mpLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
+    connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
+    connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
+    connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showModelicaTextView(bool)));
+    connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
     pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
     pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
     pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
@@ -2043,7 +2043,6 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     pMainLayout->addWidget(mpIconGraphicsView, 1);
     pMainLayout->addWidget(mpModelicaTextEditor, 1);
   } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
-    disconnect(mpTextViewToolButton, SIGNAL(toggled(bool)), this, SLOT(showModelicaTextView(bool)));
     mpTextViewToolButton->setChecked(true);
     pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
     // icon graphics framework
