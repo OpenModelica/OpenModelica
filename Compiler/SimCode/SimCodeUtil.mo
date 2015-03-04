@@ -9380,7 +9380,10 @@ algorithm
       else ();
     end match;
     if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
-      Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d+"/"+n for d in dirs, n in names)}, info);
+      // suppress this warning if we're running the testsuite
+      if not Config.getRunningTestsuite() then
+        Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d+"/"+n for d in dirs, n in names)}, info);
+      end if;
     end if;
   end if;
 end lookForExtFunctionLibrary;
