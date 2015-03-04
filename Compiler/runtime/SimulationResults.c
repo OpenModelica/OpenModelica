@@ -272,7 +272,6 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
 
 static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, SimulationResult_Globals* simresglob)
 {
-  const char *msg[2] = {"",""};
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,simresglob)) {
     return mmc_mk_nil();
   }
