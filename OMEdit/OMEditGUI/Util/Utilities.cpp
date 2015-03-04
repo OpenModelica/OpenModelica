@@ -55,7 +55,7 @@ MainWindow* MdiArea::getMainWindow()
 }
 
 Label::Label(QWidget *parent, Qt::WindowFlags flags)
-  : QLabel(parent, flags), mElideMode(Qt::ElideNone)
+  : QLabel(parent, flags), mElideMode(Qt::ElideNone), mText("")
 {
   setTextInteractionFlags(Qt::TextSelectableByMouse);
 }

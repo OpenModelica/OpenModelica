@@ -1913,52 +1913,10 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
   QDesktopServices::openUrl(url);
 }
 
-ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
-  : QWidget(pParent)
+ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pModelWidgetContainer, bool newClass, bool extendsClass,
+                         QString text)
+  : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeNode(pLibraryTreeNode)
 {
-  mpModelWidgetContainer = pParent;
-  mpLibraryTreeNode = pLibraryTreeNode;
-  // icon graphics framework
-  mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
-  mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
-  mpIconGraphicsView->setScene(mpIconGraphicsScene);
-  mpIconGraphicsView->hide();
-  // diagram graphics framework
-  mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
-  mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
-  mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
-  mpDiagramGraphicsView->hide();
-  // create a modelica text editor for modelica text
-  mpCursorPositionLabel = new Label;
-  mpModelicaTextEditor = new ModelicaTextEditor(this);
-  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-  mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), pMainWindow,
-                                                          mpModelicaTextEditor->document());
-  mpModelicaTextEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-  connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
-  // set Project Status Bar lables
-  mpReadOnlyLabel = mpLibraryTreeNode->isReadOnly() ? new Label(Helper::readOnly) : new Label(tr("Writeable"));
-  mpModelicaTypeLabel = new Label(StringHandler::getModelicaClassType(pLibraryTreeNode->getModelicaType()));
-  mpViewTypeLabel = new Label(StringHandler::getViewType(StringHandler::Diagram));
-  mpModelFilePathLabel = new Label(pLibraryTreeNode->getFileName());
-  mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
-  // documentation view tool button
-  mpFileLockToolButton = new QToolButton;
-  mpFileLockToolButton->setText(mpLibraryTreeNode->isReadOnly() ? tr("Make writable") : tr("File is writable"));
-  mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeNode->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
-  mpFileLockToolButton->setEnabled(mpLibraryTreeNode->isReadOnly());
-  /* should be disabled for system library */
-  if (mpLibraryTreeNode->isSystemLibrary())
-    mpFileLockToolButton->setEnabled(false);
-  mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
-  mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
-  mpFileLockToolButton->setAutoRaise(true);
-  connect(mpFileLockToolButton, SIGNAL(clicked()), SLOT(makeFileWritAble()));
-  // frame to contain view buttons
-  QFrame *pViewButtonsFrame = new QFrame;
-  QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
-  pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-  pViewButtonsHorizontalLayout->setSpacing(0);
   // icon view tool button
   mpIconViewToolButton = new QToolButton;
   mpIconViewToolButton->setText(Helper::iconView);
@@ -1968,7 +1926,6 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpIconViewToolButton->setAutoRaise(true);
   mpIconViewToolButton->setCheckable(true);
   connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
-  pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
   // diagram view tool button
   mpDiagramViewToolButton = new QToolButton;
   mpDiagramViewToolButton->setText(Helper::diagramView);
@@ -1978,7 +1935,6 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpDiagramViewToolButton->setAutoRaise(true);
   mpDiagramViewToolButton->setCheckable(true);
   connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
-  pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
   // modelica text view tool button
   mpTextViewToolButton = new QToolButton;
   mpTextViewToolButton->setText(Helper::textView);
@@ -1988,7 +1944,6 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpTextViewToolButton->setAutoRaise(true);
   mpTextViewToolButton->setCheckable(true);
   connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showModelicaTextView(bool)));
-  pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
   // documentation view tool button
   mpDocumentationViewToolButton = new QToolButton;
   mpDocumentationViewToolButton->setText(Helper::documentationView);
@@ -1997,8 +1952,6 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
   mpDocumentationViewToolButton->setAutoRaise(true);
   connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
-  pViewButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
-  pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
   // view buttons box
   mpViewsButtonGroup = new QButtonGroup;
   mpViewsButtonGroup->setExclusive(true);
@@ -2006,195 +1959,138 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpViewsButtonGroup->addButton(mpIconViewToolButton);
   mpViewsButtonGroup->addButton(mpTextViewToolButton);
   mpViewsButtonGroup->addButton(mpDocumentationViewToolButton);
-  // create project status bar
-  mpModelStatusBar = new QStatusBar;
-  mpModelStatusBar->setObjectName("ModelStatusBar");
-  mpModelStatusBar->setSizeGripEnabled(false);
-  mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
-  mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
-  mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
-  // only get the model components, connectors and shapes if the class is not a new class or class is an extends class.
-  if (newClass)
-  {
-    mpIconGraphicsView->addClassAnnotation();
-    mpIconGraphicsView->setCanAddClassAnnotation(true);
-    mpDiagramGraphicsView->addClassAnnotation();
-    mpDiagramGraphicsView->setCanAddClassAnnotation(true);
-  }
-  if (!newClass || extendsClass)
-  {
-    getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
-    getModelComponents(getLibraryTreeNode()->getNameStructure());
-    getModelConnections(getLibraryTreeNode()->getNameStructure());
-  }
-  mpIconGraphicsScene->clearSelection();
-  mpDiagramGraphicsScene->clearSelection();
-  // set layout
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setSpacing(4);
-  pMainLayout->addWidget(mpModelStatusBar);
-  pMainLayout->addWidget(mpDiagramGraphicsView, 1);
-  pMainLayout->addWidget(mpIconGraphicsView, 1);
-  pMainLayout->addWidget(mpModelicaTextEditor, 1);
-  setLayout(pMainLayout);
-}
-
-ModelWidget::ModelWidget(QString text, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
-  : QWidget(pParent)
-{
-  mpModelWidgetContainer = pParent;
-  mpLibraryTreeNode = pLibraryTreeNode;
-  // icon graphics framework
-  mpIconGraphicsScene = 0;
-  mpIconGraphicsView = 0;
-  // diagram graphics framework
-  mpDiagramGraphicsScene = 0;
-  mpDiagramGraphicsView = 0;
-  // create a modelica text editor for modelica text
-  mpCursorPositionLabel = new Label;
-  mpModelicaTextEditor = 0;
-  mpTextEditor = new TextEditor(this);
-  mpTextEditor->setPlainText(text);
-  mpModelicaTypeLabel = 0;
-  mpViewTypeLabel = 0;
-  mpReadOnlyLabel = new Label(tr("Writeable"));
-  mpModelFilePathLabel = new Label;
-  mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
-  // documentation view tool button
-  mpFileLockToolButton = new QToolButton;
-  mpFileLockToolButton->setText(tr("File is writable"));
-  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
-  mpFileLockToolButton->setEnabled(false);
-  mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
-  mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
-  mpFileLockToolButton->setAutoRaise(true);
-  connect(mpFileLockToolButton, SIGNAL(clicked()), SLOT(makeFileWritAble()));
   // frame to contain view buttons
   QFrame *pViewButtonsFrame = new QFrame;
   QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
   pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
   pViewButtonsHorizontalLayout->setSpacing(0);
-  // text view tool button
-  mpTextViewToolButton = new QToolButton;
-  mpTextViewToolButton->setText(Helper::textView);
-  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
-  mpTextViewToolButton->setToolTip(Helper::textView);
-  mpTextViewToolButton->setAutoRaise(true);
-  mpTextViewToolButton->setCheckable(true);
-  mpTextViewToolButton->setChecked(true);
-  pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
   pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
-  // view buttons box
-  mpViewsButtonGroup = new QButtonGroup;
-  mpViewsButtonGroup->setExclusive(true);
-  mpViewsButtonGroup->addButton(mpTextViewToolButton);
-  // create project status bar
-  mpModelStatusBar = new QStatusBar;
-  mpModelStatusBar->setObjectName("ModelStatusBar");
-  mpModelStatusBar->setSizeGripEnabled(false);
-  mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
-  mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
-  mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
-  // set layout
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setSpacing(4);
-  pMainLayout->addWidget(mpModelStatusBar);
-  pMainLayout->addWidget(mpTextEditor, 1);
-  setLayout(pMainLayout);
-}
-
-ModelWidget::ModelWidget(QString text, QString Xml, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
-  : QWidget(pParent)
-{
-  mpModelWidgetContainer = pParent;
-  mpLibraryTreeNode = pLibraryTreeNode;
-  // icon graphics framework
-  mpIconGraphicsScene = 0;
-  mpIconGraphicsView = 0;
-  // diagram graphics framework
-  mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
-  mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
-  mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
-  mpDiagramGraphicsView->hide();
-  // create an xml editor for TLM
-  mpCursorPositionLabel = new Label;
-  mpModelicaTextEditor = 0;
-  mpTLMEditor = new TLMEditor(this);
-  mpTLMEditor->setPlainText(text);
-  MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-  mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), pMainWindow,
-                                                          mpTLMEditor->document());
-//  mpTLMEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-  connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
-
-  mpModelicaTypeLabel = 0;
-  mpViewTypeLabel = 0;
-  mpReadOnlyLabel = new Label(tr("Writeable"));
-  mpModelFilePathLabel = new Label;
+  // set Project Status Bar lables
+  mpReadOnlyLabel = mpLibraryTreeNode->isReadOnly() ? new Label(Helper::readOnly) : new Label(tr("Writable"));
+  mpModelicaTypeLabel = new Label;
+  mpViewTypeLabel = new Label;
+  mpModelFilePathLabel = new Label(pLibraryTreeNode->getFileName());
   mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
-  // documentation view tool button
+  mpCursorPositionLabel = new Label;
   mpFileLockToolButton = new QToolButton;
-  mpFileLockToolButton->setText(tr("File is writable"));
-  mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
-  mpFileLockToolButton->setEnabled(false);
   mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
+  mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeNode->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
+  mpFileLockToolButton->setText(mpLibraryTreeNode->isReadOnly() ? tr("Make writable") : tr("File is writable"));
   mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
+  mpFileLockToolButton->setEnabled(mpLibraryTreeNode->isReadOnly() && !mpLibraryTreeNode->isSystemLibrary());
   mpFileLockToolButton->setAutoRaise(true);
   connect(mpFileLockToolButton, SIGNAL(clicked()), SLOT(makeFileWritAble()));
-  // frame to contain view buttons
-  QFrame *pViewButtonsFrame = new QFrame;
-  QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
-  pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-  pViewButtonsHorizontalLayout->setSpacing(0);
-  // diagram view tool button
-  mpDiagramViewToolButton = new QToolButton;
-  mpDiagramViewToolButton->setText(Helper::diagramView);
-  mpDiagramViewToolButton->setIcon(QIcon(":/Resources/icons/modeling.png"));
-  mpDiagramViewToolButton->setIconSize(Helper::buttonIconSize);
-  mpDiagramViewToolButton->setToolTip(Helper::diagramView);
-  mpDiagramViewToolButton->setAutoRaise(true);
-  mpDiagramViewToolButton->setCheckable(true);
-  pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
-  // xml view tool button
-  mpTextViewToolButton = new QToolButton;
-  mpTextViewToolButton->setText(Helper::textView);
-  mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  mpTextViewToolButton->setIconSize(Helper::buttonIconSize);
-  mpTextViewToolButton->setToolTip(Helper::textView);
-  mpTextViewToolButton->setAutoRaise(true);
-  mpTextViewToolButton->setCheckable(true);
-  mpTextViewToolButton->setChecked(true);
-  pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
-  pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
-  // view buttons box
-  mpViewsButtonGroup = new QButtonGroup;
-  mpViewsButtonGroup->setExclusive(true);
-  mpViewsButtonGroup->addButton(mpTextViewToolButton);
   // create project status bar
   mpModelStatusBar = new QStatusBar;
   mpModelStatusBar->setObjectName("ModelStatusBar");
   mpModelStatusBar->setSizeGripEnabled(false);
   mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
-  mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
-  mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
-  mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
-  // set layout
+  // create the main layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setSpacing(4);
   pMainLayout->addWidget(mpModelStatusBar);
-  pMainLayout->addWidget(mpTLMEditor, 1);
   setLayout(pMainLayout);
+  // show hide widgets based on library type
+  if (mpLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
+    pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
+    pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
+    pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
+    pViewButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
+    mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(pLibraryTreeNode->getModelicaType()));
+    mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
+    // icon graphics framework
+    mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
+    mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
+    mpIconGraphicsView->setScene(mpIconGraphicsScene);
+    mpIconGraphicsView->hide();
+    // diagram graphics framework
+    mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
+    mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
+    mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
+    mpDiagramGraphicsView->hide();
+    // only get the model components, connectors and shapes if the class is not a new class or class is an extends class.
+    if (newClass) {
+      mpIconGraphicsView->addClassAnnotation();
+      mpIconGraphicsView->setCanAddClassAnnotation(true);
+      mpDiagramGraphicsView->addClassAnnotation();
+      mpDiagramGraphicsView->setCanAddClassAnnotation(true);
+    }
+    if (!newClass || extendsClass) {
+      getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
+      getModelComponents(getLibraryTreeNode()->getNameStructure());
+      getModelConnections(getLibraryTreeNode()->getNameStructure());
+    }
+    mpIconGraphicsScene->clearSelection();
+    mpDiagramGraphicsScene->clearSelection();
+    // modelica text editor
+    mpModelicaTextEditor = new ModelicaTextEditor(this);
+    MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), pMainWindow,
+                                                            mpModelicaTextEditor->document());
+    mpModelicaTextEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
+    connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
+    mpTextEditor = 0;
+    mpTLMEditor = 0;
+    mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
+    mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
+    // set layout
+    pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+    pMainLayout->addWidget(mpIconGraphicsView, 1);
+    pMainLayout->addWidget(mpModelicaTextEditor, 1);
+  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
+    disconnect(mpTextViewToolButton, SIGNAL(toggled(bool)), this, SLOT(showModelicaTextView(bool)));
+    mpTextViewToolButton->setChecked(true);
+    pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
+    // icon graphics framework
+    mpIconGraphicsScene = 0;
+    mpIconGraphicsView = 0;
+    // diagram graphics framework
+    mpDiagramGraphicsScene = 0;
+    mpDiagramGraphicsView = 0;
+    mpModelicaTextEditor = 0;
+    mpTextEditor = new TextEditor(this);
+    mpTextEditor->setPlainText(text);
+    mpTLMEditor = 0;
+    mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
+    mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
+    // set layout
+    pMainLayout->addWidget(mpModelStatusBar);
+    pMainLayout->addWidget(mpTextEditor, 1);
+  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
+    // icon graphics framework
+    mpIconGraphicsScene = 0;
+    mpIconGraphicsView = 0;
+    // diagram graphics framework
+    mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
+    mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
+    mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
+    mpDiagramGraphicsView->hide();
+    // create an xml editor for TLM
+    mpModelicaTextEditor = 0;
+    mpTextEditor = 0;
+    mpTLMEditor = new TLMEditor(this);
+    mpTLMEditor->setPlainText(text);
+    MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+    mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), pMainWindow,
+                                          mpTLMEditor->document());
+    mpTLMEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
+    connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
+    mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
+    mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
+    // set layout
+    pMainLayout->addWidget(mpModelStatusBar);
+    pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+    pMainLayout->addWidget(mpTLMEditor, 1);
+  }
 }
 
 void ModelWidget::setModelFilePathLabel(QString path)

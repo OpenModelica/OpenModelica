@@ -291,9 +291,7 @@ class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pParent);
-  ModelWidget(QString text, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent);
-  ModelWidget(QString text, QString Xml, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent);
+  ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pModelWidgetContainer, bool newClass, bool extendsClass, QString text);
   LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
@@ -318,6 +316,17 @@ public:
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeNode *mpLibraryTreeNode;
+  QToolButton *mpIconViewToolButton;
+  QToolButton *mpDiagramViewToolButton;
+  QToolButton *mpTextViewToolButton;
+  QToolButton *mpDocumentationViewToolButton;
+  QButtonGroup *mpViewsButtonGroup;
+  Label *mpReadOnlyLabel;
+  Label *mpModelicaTypeLabel;
+  Label *mpViewTypeLabel;
+  Label *mpModelFilePathLabel;
+  Label *mpCursorPositionLabel;
+  QToolButton *mpFileLockToolButton;
   GraphicsView *mpDiagramGraphicsView;
   GraphicsScene *mpDiagramGraphicsScene;
   GraphicsView *mpIconGraphicsView;
@@ -328,17 +337,6 @@ private:
   TLMEditor *mpTLMEditor;
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
-  QButtonGroup *mpViewsButtonGroup;
-  QToolButton *mpDiagramViewToolButton;
-  QToolButton *mpIconViewToolButton;
-  QToolButton *mpTextViewToolButton;
-  QToolButton *mpDocumentationViewToolButton;
-  Label *mpReadOnlyLabel;
-  Label *mpModelicaTypeLabel;
-  Label *mpViewTypeLabel;
-  Label *mpModelFilePathLabel;
-  Label *mpCursorPositionLabel;
-  QToolButton *mpFileLockToolButton;
 public slots:
   void makeFileWritAble();
   void showIconView(bool checked);

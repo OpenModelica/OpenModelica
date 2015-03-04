@@ -1966,15 +1966,7 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
     mpMainWindow->getModelWidgetContainer()->addModelWidget(pLibraryTreeNode->getModelWidget());
   } else {
     ModelWidget *pModelWidget = 0;
-    if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
-      pModelWidget = new ModelWidget(newClass, extendsClass, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
-    } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
-      pModelWidget = new ModelWidget(text, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
-    } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
-      pModelWidget = new ModelWidget(text, text, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
-    } else {
-      // ???
-    }
+    pModelWidget = new ModelWidget(pLibraryTreeNode, mpMainWindow->getModelWidgetContainer(), newClass, extendsClass, text);
     pLibraryTreeNode->setModelWidget(pModelWidget);
     pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure() + (pLibraryTreeNode->isSaved() ? "" : "*"));
     mpMainWindow->getModelWidgetContainer()->addModelWidget(pModelWidget);
