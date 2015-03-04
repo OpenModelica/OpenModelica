@@ -436,32 +436,28 @@ void index_alloc_boolean_array(const boolean_array_t* source,
 {
     int i;
     int j;
-    int ndimsdiff;
 
     assert(base_array_ok(source));
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_base_array(source_spec, source));
 
-    ndimsdiff = 0;
-    for(i = 0; i < source_spec->ndims; ++i) {
-        if((source_spec->index_type[i] == 'W')
-            ||
-            (source_spec->index_type[i] == 'A')) {
-            ndimsdiff--;
-        }
+    for(i = 0, j = 0; i < source_spec->ndims; ++i) {
+         if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
+           ++j;
+         }
     }
-
-    dest->ndims = source->ndims + ndimsdiff;
+    dest->ndims = j;
     dest->dim_size = size_alloc(dest->ndims);
 
-    for(i = 0,j = 0; i < dest->ndims; ++i) {
-        while(source_spec->index_type[i+j] == 'S') { /* Skip scalars */
-            j++;
-        }
-        if(source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
-            dest->dim_size[i]=source->dim_size[i+j];
-        } else if(source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
-            dest->dim_size[i]=source_spec->dim_size[i+j];
+    for(i = 0, j = 0; i < source_spec->ndims; ++i) {
+        if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
+            if(source_spec->index[i] != NULL) { /* is 'A' */
+                dest->dim_size[j] = source_spec->dim_size[i];
+            } else { /* is 'W' */
+                dest->dim_size[j] = source->dim_size[i];
+            }
+
+            ++j;
         }
     }
 

@@ -431,51 +431,10 @@ void index_alloc_real_array(const real_array_t * source,
 {
     int i;
     int j;
-    /*int ndimsdiff;*/
 
     assert(base_array_ok(source));
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_base_array(source_spec, source));
-
-
-    /*
-    ndimsdiff = 0;
-    for(i = 0; i < source_spec->ndims; ++i) {
-        if((source_spec->index_type[i] == 'W')
-            ||
-            (source_spec->index_type[i] == 'A'))
-            ndimsdiff--;
-    }
-
-    / * !!! this is a major bug here, it should be
-     * dest->ndims = -ndimsdiff;
-     * for example in
-     * (to be allocated)dest := source[{2,3}];
-     * it leads to 0 ndims ... 1 - 1
-     * and, in the next lines,
-     * memory was written after its allocated area (not used in fact)
-     * /
-    dest->ndims = source->ndims + ndimsdiff;
-    assert(dest->ndims > 0); / * dest->ndims <= 0 was happenning ... * /
-    dest->dim_size = size_alloc(dest->ndims);
-
-    for(i = 0,j = 0; i < dest->ndims; ++i) {
-      / * !!! a little bug is here !!!
-       * When source_spec is in line with dest, everything is ok,
-       * for every dest dimension there has to be a 'W' or 'A',
-       * but when the input is incorrect, what is not tested/asserted yet,
-       * there can be the last index_type[i+j] == 'S'
-       * --> index out of bounds
-       * --> corrupted memory in the next lines --> nondeterministic behavior
-       * /
-        while(source_spec->index_type[i+j] == 'S') ++j; / * Skip scalars * /
-        if(source_spec->index_type[i+j] == 'W') { / *take whole dimension from source* /
-            dest->dim_size[i]=source->dim_size[i+j];
-        } else if(source_spec->index_type[i+j] == 'A') { / * Take dimension size from splice* /
-            dest->dim_size[i]=source_spec->dim_size[i+j];
-        }
-    }
-    */
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
          if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
