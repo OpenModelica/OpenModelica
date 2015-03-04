@@ -2043,7 +2043,6 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     pMainLayout->addWidget(mpIconGraphicsView, 1);
     pMainLayout->addWidget(mpModelicaTextEditor, 1);
   } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
-    mpTextViewToolButton->setChecked(true);
     pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
     // icon graphics framework
     mpIconGraphicsScene = 0;
@@ -2773,6 +2772,11 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
     setActiveSubWindow(pSubWindow);
+  }
+  if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Text) {
+    pModelWidget->getTextViewToolButton()->setChecked(true);
+  } else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM) {
+    pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   if (!checkPreferedView || pModelWidget->getLibraryTreeNode()->getLibraryType() != LibraryTreeNode::Modelica) {
     return;
