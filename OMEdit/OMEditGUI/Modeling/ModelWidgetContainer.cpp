@@ -2865,57 +2865,75 @@ bool ModelWidgetContainer::isShowGridLines()
 
 bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
 {
-  if (!object || isHidden() || qApp->activeWindow() != mpMainWindow)
+  if (!object || isHidden() || qApp->activeWindow() != mpMainWindow) {
     return QMdiArea::eventFilter(object, event);
+  }
   // Global key events with Ctrl modifier.
-  if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
-  {
-    if (subWindowList(QMdiArea::ActivationHistoryOrder).size() > 0)
-    {
+  if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
+    if (subWindowList(QMdiArea::ActivationHistoryOrder).size() > 0) {
       QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
       // Ingore key events without a Ctrl modifier (except for press/release on the modifier itself).
 #ifdef Q_OS_MAC
-      if (!(keyEvent->modifiers() & Qt::AltModifier) && keyEvent->key() != Qt::Key_Alt)
+      if (!(keyEvent->modifiers() & Qt::AltModifier) && keyEvent->key() != Qt::Key_Alt) {
 #else
-      if (!(keyEvent->modifiers() & Qt::ControlModifier) && keyEvent->key() != Qt::Key_Control)
+      if (!(keyEvent->modifiers() & Qt::ControlModifier) && keyEvent->key() != Qt::Key_Control) {
 #endif
         return QMdiArea::eventFilter(object, event);
+      }
       // check key press
       const bool keyPress = (event->type() == QEvent::KeyPress) ? true : false;
+      ModelWidget *pCurrentModelWidget = getCurrentModelWidget();
       switch (keyEvent->key()) {
 #ifdef Q_OS_MAC
         case Qt::Key_Alt:
 #else
         case Qt::Key_Control:
 #endif
-          if (keyPress)
-          {
+          if (keyPress) {
             // add items to mpRecentModelsList to show in mpModelSwitcherDialog
             mpRecentModelsList->clear();
             QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-            for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--)
-            {
+            for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
               ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
               QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
               listItem->setText(pModelWidget->getLibraryTreeNode()->getNameStructure());
               listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeNode()->getNameStructure());
             }
-          }
-          else
-          {
-            if (!mpRecentModelsList->selectedItems().isEmpty())
+          } else {
+            if (!mpRecentModelsList->selectedItems().isEmpty()) {
               openRecentModelWidget(mpRecentModelsList->selectedItems().at(0));
+            }
             mpModelSwitcherDialog->hide();
           }
           break;
+        case Qt::Key_1: // Ctrl+1 switches to icon view
+          if (pCurrentModelWidget) {
+            pCurrentModelWidget->getIconViewToolButton()->setChecked(true);
+          }
+          return true;
+        case Qt::Key_2: // Ctrl+2 switches to diagram view
+          if (pCurrentModelWidget) {
+            pCurrentModelWidget->getDiagramViewToolButton()->setChecked(true);
+          }
+          return true;
+        case Qt::Key_3: // Ctrl+3 switches to text view
+          if (pCurrentModelWidget) {
+            pCurrentModelWidget->getTextViewToolButton()->setChecked(true);
+          }
+          return true;
+        case Qt::Key_4: // Ctrl+4 shows the documentation view
+          if (pCurrentModelWidget) {
+            pCurrentModelWidget->showDocumentationView();
+          }
+          return true;
         case Qt::Key_Tab:
         case Qt::Key_Backtab:
-          if (keyPress)
-          {
-            if (keyEvent->key() == Qt::Key_Tab)
+          if (keyPress) {
+            if (keyEvent->key() == Qt::Key_Tab) {
               changeRecentModelsListSelection(true);
-            else
+            } else {
               changeRecentModelsListSelection(false);
+            }
           }
           return true;
 #ifndef QT_NO_RUBBERBAND
@@ -2937,22 +2955,22 @@ void ModelWidgetContainer::changeRecentModelsListSelection(bool moveDown)
   mpModelSwitcherDialog->show();
   mpRecentModelsList->setFocus();
   int count = mpRecentModelsList->count();
-  if (count < 1)
+  if (count < 1) {
     return;
-  int currentRow = mpRecentModelsList->currentRow();
-  if (moveDown)
-  {
-    if (currentRow < count - 1)
-      mpRecentModelsList->setCurrentRow(currentRow + 1);
-    else
-      mpRecentModelsList->setCurrentRow(0);
   }
-  else if (!moveDown)
-  {
-    if (currentRow == 0)
+  int currentRow = mpRecentModelsList->currentRow();
+  if (moveDown) {
+    if (currentRow < count - 1) {
+      mpRecentModelsList->setCurrentRow(currentRow + 1);
+    } else {
+      mpRecentModelsList->setCurrentRow(0);
+    }
+  } else if (!moveDown) {
+    if (currentRow == 0) {
       mpRecentModelsList->setCurrentRow(count - 1);
-    else
+    } else {
       mpRecentModelsList->setCurrentRow(currentRow - 1);
+    }
   }
 }
 

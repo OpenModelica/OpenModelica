@@ -355,6 +355,9 @@ public slots:
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void autoSave();
+  void switchToWelcomePerspectiveSlot();
+  void switchToModelingPerspectiveSlot();
+  void switchToPlottingPerspectiveSlot();
 private:
   void createActions();
   void createToolbars();

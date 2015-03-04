@@ -193,12 +193,25 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpStatusBar->addPermanentWidget(mpProgressBar);
   mpStatusBar->addPermanentWidget(mpPointerXPositionLabel);
   mpStatusBar->addPermanentWidget(mpPointerYPositionLabel);
+  // create the perspective tabs
   mpPerspectiveTabbar = new QTabBar;
   mpPerspectiveTabbar->setDocumentMode(true);
   mpPerspectiveTabbar->setShape(QTabBar::RoundedSouth);
+  // welcome perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omedit.png"), tr("Welcome"));
+  QShortcut *pWelcomeShortcut = new QShortcut(QKeySequence("Ctrl+f1"), this);
+  connect(pWelcomeShortcut, SIGNAL(activated()), SLOT(switchToWelcomePerspectiveSlot()));
+  mpPerspectiveTabbar->setTabToolTip(0, tr("Changes to welcome perspective (%1)").arg(pWelcomeShortcut->key().toString()));
+  // modeling perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
+  QShortcut *pModelingShortcut = new QShortcut(QKeySequence("Ctrl+f2"), this);
+  connect(pModelingShortcut, SIGNAL(activated()), SLOT(switchToModelingPerspectiveSlot()));
+  mpPerspectiveTabbar->setTabToolTip(1, tr("Changes to modeling perspective (%1)").arg(pModelingShortcut->key().toString()));
+  // plotting perspective
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
+  QShortcut *pPlottingShortcut = new QShortcut(QKeySequence("Ctrl+f3"), this);
+  connect(pPlottingShortcut, SIGNAL(activated()), SLOT(switchToPlottingPerspectiveSlot()));
+  mpPerspectiveTabbar->setTabToolTip(2, tr("Changes to plotting perspective (%1)").arg(pPlottingShortcut->key().toString()));
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
@@ -1906,6 +1919,21 @@ void MainWindow::autoSave()
       }
     }
   }
+}
+
+void MainWindow::switchToWelcomePerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(0);
+}
+
+void MainWindow::switchToModelingPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(1);
+}
+
+void MainWindow::switchToPlottingPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(2);
 }
 
 //! Defines the actions used by the toolbars
