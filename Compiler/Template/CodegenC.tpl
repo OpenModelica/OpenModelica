@@ -1166,9 +1166,9 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
     case SIMVAR(aliasvar=NOALIAS(),name=name) then
       let crefName = cref(name)
       let arrayName = match index case -1 then 'tmpVars[<%index0%>]' else 'resultVars[<%index%>]'
-      let optDefineMayer = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationMayerTermName%>$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
-      let optDefineLangrangeB = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$pDERB$PdummyVarB') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
-      let optDefineLangrangeC = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
+      let optDefineMayer = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationMayerTermName%>$P$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
+      let optDefineLangrangeB = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERB$PdummyVarB') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
+      let optDefineLangrangeC = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
         <<
         #define _<%crefName%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].<%arrayName%>
         #define <%crefName%> _<%crefName%>(0)
@@ -1182,8 +1182,8 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
       let tmp = System.tmpTick()
       let crefName = cref(name)
       <<
-      #define <%crefName%>$pDER<%matrixName%><%crefName%> data->simulationInfo.analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
-      #define <%crefName%>$pDER<%matrixName%><%crefName%>__varInfo dummyVAR_INFO
+      #define <%crefName%> data->simulationInfo.analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
+      #define <%crefName%>__varInfo dummyVAR_INFO
       >>
     end match
   end match
@@ -10870,8 +10870,8 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case SOME(exp) then
           <<
           *res =  &$P$OMC$objectMayerTerm;
-          #ifdef $P$OMC$objectMayerTerm$pDERC$PdummyVarC$indexdiffed
-          *index_Dres = $P$OMC$objectMayerTerm$pDERC$PdummyVarC$indexdiffed;
+          #ifdef $P<%BackendDAE.optimizationMayerTermName%>$P$pDERC$PdummyVarC$indexdiffed
+          *index_Dres = $P<%BackendDAE.optimizationMayerTermName%>$P$pDERC$PdummyVarC$indexdiffed;
           return 0;
           #endif
           >>
@@ -10887,9 +10887,9 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case SOME(exp) then
           <<
           *res =  &$P$OMC$objectLagrangeTerm;
-          #ifdef $P$OMC$objectLagrangeTerm$pDERB$PdummyVarB$indexdiffed
-          *index_DresB = $P$OMC$objectLagrangeTerm$pDERB$PdummyVarB$indexdiffed;
-          *index_DresC = $P$OMC$objectLagrangeTerm$pDERC$PdummyVarC$indexdiffed;
+          #ifdef $P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERB$PdummyVarB$indexdiffed
+          *index_DresB = $P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERB$PdummyVarB$indexdiffed;
+          *index_DresC = $P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERC$PdummyVarC$indexdiffed;
           return 0;
           #endif
           >>

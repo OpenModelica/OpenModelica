@@ -1181,7 +1181,8 @@ algorithm
       equation
         //true = List.isMemberOnTrue(cr, diffCref, ComponentReference.crefEqual);
         (_::_, _) = BackendVariable.getVar(cr, timevars);
-        cr = differentiateCrefWithRespectToX(cr, cr, matrixName);
+        cr = createSeedCrefName(cr, matrixName);
+
         res = DAE.CREF(cr, tp);
 
         //se1 = ExpressionDump.printExpStr(e);
@@ -1201,7 +1202,7 @@ algorithm
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n GG dummy: " + se1);
 
-        cr = differentiateCrefWithRespectToX(cr, inDiffwrtCref, matrixName);
+        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
 
         //se1 = ExpressionDump.printExpStr(res);
@@ -1219,7 +1220,7 @@ algorithm
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n GG dummy: " + se1);
 
-        cr = differentiateCrefWithRespectToX(cr, inDiffwrtCref, matrixName);
+        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
 
         //se1 = ExpressionDump.printExpStr(res);
@@ -1255,41 +1256,31 @@ algorithm
     end matchcontinue;
 end differentiateCrefs;
 
-protected function differentiateCrefWithRespectToX "author: lochel"
+public function createDifferentiatedCrefName
   input DAE.ComponentRef inCref;
   input DAE.ComponentRef inX;
   input String inMatrixName;
   output DAE.ComponentRef outCref;
+protected
+ String str; 
+algorithm 
+  outCref := ComponentReference.replaceSubsWithString(inCref);
+  outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix + inMatrixName, ComponentReference.crefTypeConsiderSubs(inCref), {}));
+  outCref := ComponentReference.joinCrefs(outCref, inX);
+end createDifferentiatedCrefName;
+
+public function createSeedCrefName
+  input DAE.ComponentRef inCref;
+  input String inMatrixName;
+  output DAE.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref, inX, inMatrixName)//, inStateVars)
-    local
-      DAE.ComponentRef cref, x;
-      String id,str;
-      String matrixName;
-
-    case(cref, x, matrixName)
-      equation
-        id = ComponentReference.printComponentRefStr(cref) + BackendDAE.partialDerivativeNamePrefix + matrixName + "$P" + ComponentReference.printComponentRefStr(x);
-        id = Util.stringReplaceChar(id, ",", "$c");
-        id = Util.stringReplaceChar(id, ".", "$P");
-        id = Util.stringReplaceChar(id, "[", "$lB");
-        id = Util.stringReplaceChar(id, "]", "$rB");
-      then ComponentReference.makeCrefIdent(id, DAE.T_REAL_DEFAULT, {});
-
-    case(cref, _, _)
-      equation
-        str = "Differentiate.differentiateCrefWithRespectToX failed: " +  ComponentReference.printComponentRefStr(cref);
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-  end matchcontinue;
-end differentiateCrefWithRespectToX;
-
+  outCref := ComponentReference.replaceSubsWithString(inCref);
+  outCref := ComponentReference.makeCrefIdent(ComponentReference.crefModelicaStr(outCref) + "Seed" + inMatrixName, ComponentReference.crefTypeConsiderSubs(inCref), {});
+end createSeedCrefName;
 
 protected function differentiateCalls
 "
 function: differentiateCalls
-
-
 "
   input DAE.Exp inExp;   // in as DAE.CALL(_)
   input DAE.ComponentRef inDiffwrtCref;
@@ -1347,7 +1338,7 @@ algorithm
         cr = Expression.expCref(e);
         tp = Expression.typeof(e);
         cr = ComponentReference.crefPrefixDer(cr);
-        cr = differentiateCrefWithRespectToX(cr, inDiffwrtCref, matrixName);
+        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = Expression.makeCrefExp(cr, tp);
 
         b = ComponentReference.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref);
@@ -2925,42 +2916,6 @@ algorithm
       then fail();
   end matchcontinue;
 end addElementVars2Dep;
-
-public function differentiateVarWithRespectToX "author: lochel
-  TODO: REMOVE ME"
-  input DAE.ComponentRef inCref;
-  input DAE.ComponentRef inX;
-  input tuple<String,Boolean> inMatrixName;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := matchcontinue(inCref, inX, inMatrixName)
-    local
-      DAE.ComponentRef cref, x;
-      String id,str;
-      String matrixName;
-
-    // replace the subscripts with strings because not all elements of the arrays may be derived, this avoid trouble when generate simulation code
-    case(cref, x, (matrixName,true)) equation
-      cref = ComponentReference.joinCrefs(ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix, ComponentReference.crefType(cref), {}),cref);
-      cref = ComponentReference.appendStringCref(matrixName, cref);
-      cref = ComponentReference.joinCrefs(cref, x);
-      cref = ComponentReference.replaceSubsWithString(cref);
-    then cref;
-
-    case(cref, x, (matrixName,false)) equation
-      id = ComponentReference.printComponentRefStr(cref) + BackendDAE.partialDerivativeNamePrefix + matrixName + "$P" + ComponentReference.printComponentRefStr(x);
-      id = Util.stringReplaceChar(id, ",", "$c");
-      id = Util.stringReplaceChar(id, ".", "$P");
-      id = Util.stringReplaceChar(id, "[", "$lB");
-      id = Util.stringReplaceChar(id, "]", "$rB");
-    then ComponentReference.makeCrefIdent(id, DAE.T_REAL_DEFAULT, {});
-
-    case(cref, _, _) equation
-      str = "BackendDAEOptimize.differentiateVarWithRespectToX failed: " +  ComponentReference.printComponentRefStr(cref);
-      Error.addMessage(Error.INTERNAL_ERROR, {str});
-    then fail();
-  end matchcontinue;
-end differentiateVarWithRespectToX;
 
 annotation(__OpenModelica_Interface="backend");
 end Differentiate;

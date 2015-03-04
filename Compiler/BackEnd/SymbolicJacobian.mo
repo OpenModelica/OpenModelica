@@ -1345,8 +1345,7 @@ algorithm
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
 
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
-        seedlst = List.map1(comref_vars, createSeedVars, (inName,false));
-        _ = List.map(seedlst, BackendVariable.varCref);
+        seedlst = List.map1(comref_vars, createSeedVars, inName);
         s1 =  intString(listLength(inVars));
 
         SimCodeUtil.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:" + s + " diffed equations: " +  s1);
@@ -1433,6 +1432,10 @@ algorithm
           end if;
 
           b = Flags.disableDebug(Flags.EXEC_STAT);
+
+          if Flags.isSet(Flags.JAC_DUMP) then
+            BackendDump.bltdump("Symbolic Jacobian",backendDAE);
+          end if;
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
                                                                    SOME({"evalFunc","removeEqualFunctionCalls","removeSimpleEquations"}),
@@ -1542,9 +1545,7 @@ algorithm
         print("*** analytical Jacobians -> derived all algorithms time: " + realString(clock()) + "\n");
       end if;
       diffVarsArr = BackendVariable.listVar1(diffVars);
-      _ = BackendVariable.varList(diffedVars);
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      _ = arrayList(ass2);
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
       eqns = BackendEquation.equationList(orderedEqs);
       (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
@@ -1560,7 +1561,7 @@ algorithm
       // all variables for new equation system
       // d(ordered vars)/d(dummyVar)
       diffvars = BackendVariable.varList(orderedVars);
-      derivedVariables = createAllDiffedVars(diffvars, x, diffedVars, 0, (matrixName, false),{});
+      derivedVariables = createAllDiffedVars(diffvars, x, diffedVars, 0, matrixName, {});
 
       jacOrderedVars = BackendVariable.listVar1(derivedVariables);
       // known vars: all variable from original system + seed
@@ -1583,7 +1584,7 @@ algorithm
       jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, graph, DAE.emptyFuncTree, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}, ei));
     then (jacobian, functions);
 
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars,   functionTree=functions)), diffVars, diffedVars, _, _, _, _, matrixName) equation
+    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, functionTree=functions)), diffVars, diffedVars, _, _, _, _, matrixName) equation
 
       // Generate tmp varibales
       dummyVarName = ("dummyVar" + matrixName);
@@ -1594,15 +1595,12 @@ algorithm
         print("*** analytical Jacobians -> derived all algorithms time: " + realString(clock()) + "\n");
       end if;
       diffVarsArr = BackendVariable.listVar1(diffVars);
-      _ = BackendVariable.varList(diffedVars);
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      _ = arrayList(ass2);
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
-      _ = BackendEquation.equationList(orderedEqs);
 
-      comref_diffvars = List.map(diffVars, BackendVariable.varCref);
       diffvars = BackendVariable.varList(orderedVars);
-      (derivedVariables,comref_diffvars) = generateJacobianVars(diffvars, comref_diffvars, (inMatrixName,false));
+
+      derivedVariables = createAllDiffedVars(diffvars, x, diffedVars, 0, matrixName, {});
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("*** analytical Jacobians -> created all derived vars: " + "No. :" + intString(listLength(comref_diffvars)) + "time: " + realString(clock()) + "\n");
       end if;
@@ -1621,11 +1619,11 @@ algorithm
   end matchcontinue;
 end generateSymbolicJacobian;
 
-protected function createSeedVars
+public function createSeedVars
   // function: createSeedVars
   // author: wbraun
   input DAE.ComponentRef indiffVar;
-  input tuple<String,Boolean> inMatrixName;
+  input String inMatrixName;
   output BackendDAE.Var outseedVar;
 algorithm
   outseedVar := match(indiffVar,inMatrixName)
@@ -1634,94 +1632,18 @@ algorithm
       DAE.ComponentRef derivedCref;
     case (_, _)
       equation
-        derivedCref = Differentiate.differentiateVarWithRespectToX(indiffVar, indiffVar, inMatrixName);
+        derivedCref = Differentiate.createSeedCrefName(indiffVar, inMatrixName);
         jacvar = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
       then jacvar;
   end match;
 end createSeedVars;
-
-protected function generateJacobianVars "author: lochel"
-  input list<BackendDAE.Var> inVars1;
-  input list<DAE.ComponentRef> inVars2;
-  input tuple<String,Boolean> inMatrixName;
-  output list<BackendDAE.Var> outVars;
-  output list<DAE.ComponentRef> outcrefVars;
-algorithm
-  (outVars, outcrefVars) := matchcontinue(inVars1, inVars2, inMatrixName)
-  local
-    BackendDAE.Var currVar;
-    list<BackendDAE.Var> restVar, r1, r2, r;
-    list<DAE.ComponentRef> vars2,res,res1,res2;
-
-    case({}, _, _)
-    then ({},{});
-
-    case(currVar::restVar, vars2, _) equation
-      (r1,res1) = generateJacobianVars2(currVar, vars2, inMatrixName);
-      (r2,res2) = generateJacobianVars(restVar, vars2, inMatrixName);
-      res = listAppend(res1, res2);
-      r = listAppend(r1, r2);
-    then (r,res);
-
-    else
-     equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateJacobianVars failed"});
-    then fail();
-  end matchcontinue;
-end generateJacobianVars;
-
-protected function generateJacobianVars2 "author: lochel"
-  input BackendDAE.Var inVar1;
-  input list<DAE.ComponentRef> inVars2;
-  input tuple<String,Boolean> inMatrixName;
-  output list<BackendDAE.Var> outVars;
-  output list<DAE.ComponentRef> outcrefVars;
-algorithm
-  (outVars,outcrefVars) := matchcontinue(inVar1, inVars2, inMatrixName)
-  local
-    BackendDAE.Var var, r1;
-    DAE.ComponentRef currVar, cref, derivedCref;
-    list<DAE.ComponentRef> restVar,res,res1;
-    list<BackendDAE.Var> r,r2;
-
-    case(_, {}, _)
-    then ({},{});
-
-    // skip for dicrete variable
-    case(var as BackendDAE.VAR(varKind=BackendDAE.DISCRETE()), _::restVar, _ ) equation
-      (r2,res) = generateJacobianVars2(var, restVar, inMatrixName);
-    then (r2,res);
-
-    case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE()), currVar::restVar, _) equation
-      cref = ComponentReference.crefPrefixDer(cref);
-      derivedCref = Differentiate.differentiateVarWithRespectToX(cref, currVar, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
-      (r2,res1) = generateJacobianVars2(var, restVar, inMatrixName);
-      res = listAppend({derivedCref}, res1);
-      r = listAppend({r1}, r2);
-    then (r,res);
-
-    case(var as BackendDAE.VAR(varName=cref), currVar::restVar, _) equation
-      derivedCref = Differentiate.differentiateVarWithRespectToX(cref, currVar, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
-      (r2,res1) = generateJacobianVars2(var, restVar, inMatrixName);
-      res = listAppend({derivedCref}, res1);
-      r = listAppend({r1}, r2);
-    then (r,res);
-
-    else
-     equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateJacobianVars2 failed"});
-    then fail();
-  end matchcontinue;
-end generateJacobianVars2;
 
 protected function createAllDiffedVars "author: wbraun"
   input list<BackendDAE.Var> inVars;
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inAllVars;
   input Integer inIndex;
-  input tuple<String,Boolean> inMatrixName;
+  input String inMatrixName;
   input list<BackendDAE.Var> iVars;
   output list<BackendDAE.Var> outVars;
 algorithm
@@ -1741,34 +1663,34 @@ algorithm
      case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
       ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
       ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
-      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
 
      case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
-      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
-      derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      derivedCref = Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
 
     else
      equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.createAllDiffedVars failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"SymbolicJacobian.createAllDiffedVars failed"});
     then fail();
   end matchcontinue;
 end createAllDiffedVars;
