@@ -14162,7 +14162,7 @@ template setVariablesDefault(SimVar simVar, Integer valueReference, Boolean useF
 ::=
   match simVar
     case SIMVAR(__) then
-      let description = if comment then '// "<%comment%>"'
+      let description = if comment then '/* "<%comment%>" */'
       let variablename = cref(name, useFlatArrayNotation)
       //match causality
       //  case INPUT() then
