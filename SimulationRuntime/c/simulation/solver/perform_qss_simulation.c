@@ -93,6 +93,19 @@ int prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   warningStreamPrint(LOG_STDOUT, 0, "This QSS method is under development and should not be used yet.");
 
+  if (data->callback->initialAnalyticJacobianA(data))
+  {
+    if(data->modelData.nStates == 1) /* TODO: is it the dummy state? */
+    {
+      infoStreamPrint(LOG_SOLVER, 0, "No SparsePattern, since there are no states! Switch back to normal.");
+    }
+    else
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+    }
+  }
+  printSparseStructure(data, LOG_SOLVER);
+
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
   {
