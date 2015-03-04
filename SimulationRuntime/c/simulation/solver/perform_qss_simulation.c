@@ -97,11 +97,11 @@ int prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solverInfo)
   {
     if(data->modelData.nStates == 1) /* TODO: is it the dummy state? */
     {
-      infoStreamPrint(LOG_SOLVER, 0, "No SparsePattern, since there are no states! Switch back to normal.");
+      infoStreamPrint(LOG_SOLVER, 0, "No sparse pattern, since there are no states.");
     }
     else
     {
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
     }
   }
   printSparseStructure(data, LOG_SOLVER);
