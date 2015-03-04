@@ -392,6 +392,8 @@ namespace IAEX
         rule = new Rule( "TextAlignment", "Center" );
       else if( (Qt::Alignment)alignment_ == Qt::AlignJustify )
         rule = new Rule( "TextAlignment", "Justify" );
+      else
+        rule = new Rule( "TextAlignment", "Left" );
 
       document()->getCursor()->currentCell()->addRule( rule );
 

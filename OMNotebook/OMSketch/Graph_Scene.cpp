@@ -264,10 +264,10 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
             poly2->setPolygonDrawn(true);
             mode=true;
             poly2->lines.clear();
-      poly2->isObjectSelected=true;
-      for(int i=0;i<polygons.size();i++)
-        polygons[i]->isObjectSelected=false;
-      polygons.push_back(poly2);
+            poly2->isObjectSelected=true;
+            for(int i=0;i<polygons.size();i++)
+              polygons[i]->isObjectSelected=false;
+            polygons.push_back(poly2);
             QRectF poly_rect=poly2->item->boundingRect();
             object1->ObjectStrtPnt=poly_rect.topLeft();
             object1->ObjectEndPnt=poly_rect.bottomRight();
@@ -275,8 +275,8 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
             object1->setObjects(4,polygons.size()-1);
             object1->ObjectIndx=polygons.size()-1;
             objects.push_back(object1);
-      objectToDraw=0;
-      objectToEdit=4;
+            objectToDraw=0;
+            objectToEdit=4;
          }
 
      Draw_Line *line2 = new Draw_Line();
@@ -632,7 +632,7 @@ void Graph_Scene::draw_arc()
 
     if(!arcs.isEmpty() && objectToDraw==6)
     {
-    if(!k && arcs[arcs.size()-1]->getMode()==true && arc)
+       if(!k && arcs[arcs.size()-1]->getMode()==true && arc)
        {
           if(arc->click==0)
           {
@@ -645,7 +645,7 @@ void Graph_Scene::draw_arc()
              addItem(arc->item);
            }
        }
-       if(arc->click==1)
+       if(arc && arc->click==1)
        {
           arc->setCurvePoint(strt_pnt);
           arc->item->setPath(arc->getArc());
@@ -2608,7 +2608,7 @@ void Graph_Scene::draw_polygon_state(QPointF pnt,QPointF pnt1)
       polygon->setEndPoint(pnt1);
     }
 
-    if((polygons.size()>=1)&&!polygon->getPolygonDrawn() && objectToDraw==4)
+    if(polygon && (polygons.size()>=1)&&!polygon->getPolygonDrawn() && objectToDraw==4)
     {
       qDebug()<<"entered polyon state\n";
       polygon->setEndPoint(pnt1);
@@ -2623,7 +2623,7 @@ void Graph_Scene::draw_polygon_state(QPointF pnt,QPointF pnt1)
             object4->setBoundPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
             object4->pnts=polygon->poly_pnts;
             polygon->setState(0);
-      objectToEdit=4;
+            objectToEdit=4;
         }
 
         if(polygon->getState()==2)
@@ -2632,14 +2632,14 @@ void Graph_Scene::draw_polygon_state(QPointF pnt,QPointF pnt1)
             object4->setBoundPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
             object4->pnts=polygon->poly_pnts;
             polygon->setState(0);
-      objectToEdit=4;
+            objectToEdit=4;
         }
 
-    if(polygon->getState()==3)
-    {
-      polygon->setState(0);
-      objectToEdit=4;
-    }
+        if(polygon->getState()==3)
+        {
+            polygon->setState(0);
+            objectToEdit=4;
+        }
 
     }
 
@@ -3184,7 +3184,7 @@ void Graph_Scene::draw_text_state(QPointF pnt,QPointF pnt1)
      objectToDraw=10;
     }
 
-    if(text->getMode()==true)
+    if(text && text->getMode()==true)
     {
         if(text->getState()==1)
         {
@@ -5461,7 +5461,7 @@ void Graph_Scene::setPen(const QPen Pen)
   if(linearrow && linearrow->getMode()&&(linearrow->Strt_Rect->isVisible()))
     {
        linearrow->setPen(Pen.color());
-       if(!linearrows.isEmpty())
+       if(arc && !linearrows.isEmpty())
        {
          for(int i=0;i<linearrows.size();i++)
          {
@@ -5863,7 +5863,7 @@ void Graph_Scene::setBrush(const QBrush brush)
    if(triangle && triangle->getMode()&&(triangle->Strt_Rect->isVisible()))
    {
         triangle->setBrush(brush);
-        if(!triangles.isEmpty())
+        if(round_rect && !triangles.isEmpty())
         {
             for(int i=0;i<triangles.size();i++)
             {
