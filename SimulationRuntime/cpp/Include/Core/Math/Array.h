@@ -244,12 +244,12 @@ public:
     {
       _array_data[i]=data[i];
     }
-    
+
     for(int i=0;i<size;i++)
     {
       _c_array_data[i]=_array_data[i].c_str();
     }
-    
+
   }
 
   StatArrayDim1(const StatArrayDim1<string,size>& otherarray)
@@ -396,12 +396,12 @@ public:
   {
      return _array_data.data();
   }
-  virtual const char** getCStrData() 
+  virtual const char** getCStrData()
   {
     return _c_array_data.c_array();
   }
-  
-  
+
+
   virtual unsigned int getNumElems()
   {
     return size;
@@ -440,7 +440,7 @@ public:
   {
     //std::copy(data,data+size1*size2,_array_data.begin());
     memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
-    
+
   }
 
   StatArrayDim2()
@@ -504,7 +504,7 @@ public:
     const T* data_otherarray = otherArray.getData();
      //std::copy(data_otherarray,data_otherarray+size1*size2,_array_data.begin());
     memcpy( _array_data.begin(), data_otherarray, size1*size2 * sizeof( T ) );
-   
+
 
   }
 
@@ -512,7 +512,7 @@ public:
   {
     //std::copy(data,data+size1*size2,_array_data.begin());
     memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
-    
+
 
   }
   virtual T& operator()(vector<size_t> idx)
@@ -567,13 +567,13 @@ public:
   {
      return _array_data.data();
   }
-  
+
   virtual void setDims(std::vector<size_t> v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
   //boost::array< boost::array<T, size2>, size1> _array_data;
   boost::array<T, size2 * size1> _array_data;
-  
+
   //T _array_data[size2*size1];
 };
 
@@ -589,11 +589,11 @@ public:
   StatArrayDim2(const string data[]) //const T (&data)     const T (&data)[size1*size2]
   :BaseArray<string>(true)
   {
-   
+
     std::copy(data,data+size1*size2,_array_data.begin());
        for(int i=0;i<size1;i++)
       {
-         for(int j=0;j<size2;j++)    
+         for(int j=0;j<size2;j++)
          {
             _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
          }
@@ -603,17 +603,17 @@ public:
   StatArrayDim2()
   :BaseArray<string>(true)
   {
-  
+
   }
 
   StatArrayDim2(const StatArrayDim2<string,size1,size2>& otherarray)
   :BaseArray<string>(true)
   {
      _array_data = otherarray._array_data;
-     
+
      for(int i=0;i<size1;i++)
       {
-         for(int j=0;j<size2;j++)    
+         for(int j=0;j<size2;j++)
          {
             _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
          }
@@ -626,7 +626,7 @@ public:
      _array_data = rhs._array_data;
       for(int i=0;i<size1;i++)
       {
-         for(int j=0;j<size2;j++)    
+         for(int j=0;j<size2;j++)
          {
             _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
          }
@@ -645,7 +645,7 @@ public:
          _array_data = a._array_data;
         for(int i=0;i<size1;i++)
         {
-             for(int j=0;j<size2;j++)    
+             for(int j=0;j<size2;j++)
              {
                 _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
              }
@@ -663,7 +663,7 @@ public:
 
   void append(size_t i,const StatArrayDim1<string,size2>& rhs)
   {
-   
+
      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"append not supported for 2-dim string array");
   }
 
@@ -679,9 +679,9 @@ public:
     v = otherArray.getDims();
     const string* data_otherarray = otherArray.getData();
     std::copy(data_otherarray,data_otherarray+size1*size2,_array_data.begin());
-	for(int i=0;i<size1;i++)
+  for(int i=0;i<size1;i++)
         {
-             for(int j=0;j<size2;j++)    
+             for(int j=0;j<size2;j++)
              {
                 const char* c_str_data = _array_data[size2*i + j].c_str();
                 _c_array_data[size2*i + j ] = c_str_data;
@@ -694,7 +694,7 @@ public:
       std::copy(data,data+size1*size2,_array_data.begin());
       for(int i=0;i<size1;i++)
         {
-             for(int j=0;j<size2;j++)    
+             for(int j=0;j<size2;j++)
              {
                 const char* c_str_data = _array_data[size2*i + j].c_str();
                 _c_array_data[size2*i + j ] = c_str_data;
@@ -747,13 +747,13 @@ public:
   {
      return _array_data.data();
   }
-  
-  virtual const char** getCStrData() 
+
+  virtual const char** getCStrData()
   {
-    
+
     return _c_array_data.c_array();
   }
-  
+
   virtual void setDims(std::vector<size_t> v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
