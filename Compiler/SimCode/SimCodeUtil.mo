@@ -269,6 +269,7 @@ algorithm
 
     case (_, _)
       equation
+        //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
         /* Todo: This also generates an error for example itearation variables, so i commented  out
         "Template did not find the simulation variable for "+ ComponentReference.printComponentRefStr(cref) + ". ";
@@ -1745,6 +1746,7 @@ algorithm
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
 
+      //dumpCrefToSimVarHashTable(crefToSimVarHT);
       // print("*** SimCode -> collect all files started: " + realString(clock()) + "\n");
       // adrpo: collect all the files from SourceInfo and DAE.ElementSource
       // simCode = collectAllFiles(simCode);
@@ -13981,6 +13983,24 @@ algorithm
     else iIdx + 1;
   end match;
 end dumpIdxScVarMapping0;
+
+protected function dumpCrefToSimVarHashTable
+  input SimCode.HashTableCrefToSimVar iCrefToSimVarHT;
+protected
+  array<list<tuple<DAE.ComponentRef,Integer>>> hashTable;
+  list<tuple<DAE.ComponentRef,Integer>> entry;
+  tuple<DAE.ComponentRef,Integer> tupleEntry;
+algorithm
+  SimCode.HASHTABLE(hashTable=hashTable) := iCrefToSimVarHT;
+  for entryIdx in 1:arrayLength(hashTable) loop
+    entry := arrayGet(hashTable, entryIdx);
+    if(intGt(listLength(entry), 1)) then
+      for tupleEntry in entry loop
+        print(ComponentReference.printComponentRefStr(Util.tuple21(tupleEntry)) + " mapped to " + intString(Util.tuple22(tupleEntry)) + "\n");
+      end for;
+    end if;
+  end for;
+end dumpCrefToSimVarHashTable;
 
 protected function dumpBackendMapping"dump function for the backendmapping
 author:Waurich TUD 2014-04"

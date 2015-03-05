@@ -2767,18 +2767,19 @@ protected
   array<tuple<Integer,Integer,Integer>> eqCompMapping, varCompMapping;
   list<list<String>> eqCharsLst;
   array<Integer> nodeMark;
-  array<String> compDescs, nodeNames;
+  array<String> compDescs, compNames;
   array<list<Integer>> inComps;
   array<tuple<Integer,Real>> exeCosts;
   array<list<Integer>> compParamMapping;
   array<HpcOmTaskGraph.Communications> commCosts;
+  array<HpcOmTaskGraph.ComponentInfo> compInformations;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, nodeMark=nodeMark) := metaIn;
+  HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, nodeMark=nodeMark,compInformations=compInformations) := metaIn;
   numNodes := arrayLength(graph);
   // get the inComps
   inComps := listArray(List.map(List.intRange(numNodes),List.create));
-  // get the nodeNames
-  nodeNames := listArray(List.map(List.intRange(numNodes),intString));
+  // get the compNames
+  compNames := listArray(List.map(List.intRange(numNodes),intString));
   //get the exeCost
   exeCosts := arrayCreate(numNodes,(3,20.0));
   //get the commCosts
@@ -2789,7 +2790,7 @@ algorithm
   descLst := List.map1(eqStrings,stringAppend," FOR ");
   descLst := List.threadMap(descLst,varStrings,stringAppend);
   compDescs := listArray(descLst);
-  metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,{},nodeNames,compDescs,exeCosts,commCosts,nodeMark);
+  metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
 end buildTaskgraphMetaForTornSystem;
 
 protected function buildDummyCommCosts "generates preliminary commCosts for a children list.
@@ -2889,12 +2890,12 @@ protected
   array<String> compDescs;
   array<list<Integer>> inComps;
   GraphML.NodeLabel nodeLabel;
-  String nodeString, nodeDesc, nodeName;
+  String nodeString, nodeDesc, compName;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,compDescs=compDescs) := metaIn;
   nodeDesc := arrayGet(compDescs,nodeIdx);
   nodeString := intString(nodeIdx);
-  nodeName := stringDelimitList(List.map(arrayGet(inComps,nodeIdx),intString),",");
+  compName := stringDelimitList(List.map(arrayGet(inComps,nodeIdx),intString),",");
   nameAttIdx := listGet(atts,1);
   nodeLabel := GraphML.NODELABEL_INTERNAL(nodeString,NONE(),GraphML.FONTPLAIN());
   (tmpGraph,(_,_)) := GraphML.addNode("Node"+intString(nodeIdx),
@@ -2902,7 +2903,7 @@ algorithm
                                               {nodeLabel},
                                               GraphML.RECTANGLE(),
                                               SOME(nodeDesc),
-                                              {(nameAttIdx,nodeName)},
+                                              {(nameAttIdx,compName)},
                                               graphIdx,
                                               graphInfoIn);
   childNodes := arrayGet(graphIn,nodeIdx);

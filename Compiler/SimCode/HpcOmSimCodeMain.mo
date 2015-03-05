@@ -273,7 +273,7 @@ algorithm
       taskGraphMetaMessage = if taskGraphMetaValid then "TaskgraphMeta valid\n" else "TaskgraphMeta invalid\n";
       print(taskGraphMetaMessage);
 
-      //print("ODE\n");
+      //print("ODE Task Graph Informations\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);
 
