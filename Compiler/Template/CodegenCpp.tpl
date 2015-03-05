@@ -225,7 +225,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <%jacobianvars%>
     >>
     %>
-    //workaround for jacobian variables
+    
     <%variableDefinitionsJacobians(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
 
@@ -788,6 +788,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        , _A_sparsePattern_leadindex(NULL)
        , _A_sparsePattern_index(NULL)
        , _A_sparsePattern_colorCols(NULL)
+       <%jacobiansVariableInit(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
    {
    }
 
@@ -6521,7 +6522,8 @@ template varToString(ComponentRef cr,Context context, Boolean useFlatArrayNotati
 ::=
  match context
     case JACOBIAN_CONTEXT()
-              then   <<<%crefWithoutIndexOperator(cr)%>>>
+              //then   <<<%crefWithoutIndexOperator(cr)%>>>
+              then   '_<%crefToCStr(cr,false)%>'
  else
   match cr
    case CREF_IDENT(ident = "time") then "_simTime"
@@ -11425,13 +11427,18 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
     case VARIABLE(__) then
      match var
         case SIMVAR(index=-2) then
-         '<%localcref(inCref, useFlatArrayNotation)%>'
+          match context
+            case JACOBIAN_CONTEXT() then
+                  '_<%crefToCStr(inCref,false)%>'
+                 else
+                    '<%localcref(inCref, useFlatArrayNotation)%>'
+            end match
     else
         match context
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false)
                 then  '_system-><%cref(inCref, useFlatArrayNotation)%>'
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=true)
-                then  '_system-><%crefWithoutIndexOperator(inCref)%>'
+                then  '_system->_<%crefToCStr(inCref,false)%>'
         else
             '<%varToString(inCref,context, useFlatArrayNotation)%>'
   else
@@ -11465,7 +11472,8 @@ template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode ,Te
 case(SIMVAR(index=i)) then
   match context
          case JACOBIAN_CONTEXT()
-                then   <<<%crefWithoutIndexOperator(inCref)%>>>
+                //then   <<<%crefWithoutIndexOperator(inCref)%>>>
+                then  '_<%crefToCStr(inCref,false)%>'
         else
              <<<%stateDerVectorName%>[<%i%>]>>
 end representationCref2;
@@ -13351,7 +13359,6 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes,SimC
     /* Jacobian Variables */
     <%analyticVars%>
     >>
-
 end variableDefinitionsJacobians;
 
 template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
@@ -13382,11 +13389,11 @@ case "jacobianVars" then
     match index
     case -1 then
       <<
-      #define <%crefWithoutIndexOperator(name)%> _<%matrixName%>jac_tmp(<%index0%>)
+      double& _<%crefToCStr(name,false)%>;
       >>
     case _ then
       <<
-      #define <%crefWithoutIndexOperator(name)%> _<%matrixName%>jac_y(<%index%>)
+       double& _<%crefToCStr(name,false)%>;
       >>
     end match
   end match
@@ -13395,10 +13402,75 @@ case "jacobianVarsSeed" then
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
-    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$P<%crefWithoutIndexOperator(name)%> _<%matrixName%>jac_x(<%index0%>)
+    double& _<%crefToCStr(name,false)%>;
     >>
   end match
 end jacobianVarDefine;
+
+
+
+template jacobiansVariableInit(list<JacobianMatrix> JacobianMatrixes,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+ "Generates defines for jacobian vars."
+::=
+
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,_), _, _, jacIndex) =>
+    let varsDef = jacobiansVariableInit2(jacIndex, jacColumn, seedVars, name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+    <<
+    <%varsDef%>
+    >>
+    ;separator="\n";empty)
+
+    <<
+     <%analyticVars%>
+    >>
+end jacobiansVariableInit;
+
+template jacobiansVariableInit2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+ "Generates Matrixes for Linear Model."
+::=
+  let seedVarsResult = (seedVars |> var hasindex index0 =>
+    jacobianVarInit(var, "jacobianVarsSeed", indexJacobian, index0, name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+    ;separator="\n";empty)
+  let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
+      (vars |> var hasindex index0 => jacobianVarInit(var, "jacobianVars", indexJacobian, index0,name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
+      ;separator="\n";empty)
+    ;separator="\n")
+
+<<
+<%seedVarsResult%>
+<%columnVarsResult%>
+>>
+end jacobiansVariableInit2;
+
+
+template jacobianVarInit(SimVar simVar, String array, Integer indexJac, Integer index0,String matrixName,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+""
+::=
+match array
+case "jacobianVars" then
+  match simVar
+  case SIMVAR(aliasvar=NOALIAS(),name=name) then
+    match index
+    case -1 then
+      <<
+       ,_<%crefToCStr(name,false)%>(_<%matrixName%>jac_tmp(<%index0%>))
+      >>
+    case _ then
+      <<
+      ,_<%crefToCStr(name,false)%>(_<%matrixName%>jac_y(<%index%>))
+      >>
+    end match
+  end match
+case "jacobianVarsSeed" then
+  match simVar
+  case SIMVAR(aliasvar=NOALIAS()) then
+  let tmp = System.tmpTick()
+    <<
+    ,_<%crefToCStr(name,false)%>( _<%matrixName%>jac_x(<%index0%>))
+    >>
+  end match
+end jacobianVarInit;
+
 
 
 

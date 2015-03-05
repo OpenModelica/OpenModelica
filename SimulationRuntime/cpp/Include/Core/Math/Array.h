@@ -306,11 +306,9 @@ public:
              for(unsigned int i=0;i<size;i++)
              {
                   _array_data[i]=rhs(i);
+                  _c_array_data[i]=_array_data[i].c_str();
              }
-             for(int i=0;i<size;i++)
-             {
-                _c_array_data[i]=_array_data[i].c_str();
-             }
+             
 
 
          }
@@ -342,11 +340,9 @@ public:
     for(int i=0;i<size;i++)
     {
       _array_data[i]=data[i];
-    }
-    for(int i=0;i<size;i++)
-    {
       _c_array_data[i]=_array_data[i].c_str();
     }
+    
   }
 
 
@@ -355,11 +351,9 @@ public:
     for(int i=0;i<size;i++)
     {
       _array_data[i]=otherArray(i);
+       _c_array_data[i]=_array_data[i].c_str();
     }
-    for(int i=0;i<size;i++)
-    {
-      _c_array_data[i]=_array_data[i].c_str();
-    }
+    
   }
   virtual string& operator()(vector<size_t> idx)
   {
