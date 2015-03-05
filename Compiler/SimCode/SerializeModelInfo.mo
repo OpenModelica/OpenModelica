@@ -475,7 +475,7 @@ algorithm
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
-        File.writeEscape(file,crefStr(eq.componentRef),escape=File.Escape.JSON);
+        File.writeEscape(file,crefStr(Expression.expCref(eq.lhs)),escape=File.Escape.JSON);
         File.write(file, "\"],\"uses\":[");
         serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
         File.write(file, "],\"equation\":[\"");

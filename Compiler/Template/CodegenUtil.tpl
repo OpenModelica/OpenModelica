@@ -337,12 +337,12 @@ template dumpEqs(list<SimEqSystem> eqs)
       type: SIMPLE_ASSIGN
       <%crefStr(e.cref)%> = <%escapeCComments(printExpStr(e.exp))%>
       >>
-    case e as SES_ARRAY_CALL_ASSIGN(__) then
+    case e as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       <<
       equation index: <%equationIndex(eq)%>
       type: ARRAY_CALL_ASSIGN
 
-      <%crefStr(e.componentRef)%> = <%escapeCComments(printExpStr(e.exp))%>
+      <%crefStr(lhs.componentRef)%> = <%escapeCComments(printExpStr(e.exp))%>
       >>
     case e as SES_ALGORITHM(statements={}) then
       <<

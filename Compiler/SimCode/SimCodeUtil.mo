@@ -3586,7 +3586,7 @@ algorithm
   (eqSystems, ouniqueEqIndex, otempvars) := matchcontinue (eqs)
     local
       Integer size, uniqueEqIndex;
-      DAE.Exp res_exp, e1, e2, e;
+      DAE.Exp res_exp, e1, e2, e, lhse;
       list<DAE.Exp> explst, explst1;
       list<BackendDAE.Equation> rest;
       BackendDAE.Equation eq;
@@ -3622,12 +3622,14 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source)::rest) equation
       ty = Expression.typeof(e1);
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
+      lhse = DAE.CREF(left,ty);
+      
       res_exp = Expression.createResidualExp(e1, e2);
       res_exp = Expression.replaceDerOpInExp(res_exp);
       crefstmp = ComponentReference.expandCref(left, false);
       explst1 = List.map(crefstmp, Expression.crefExp);
       (eqSystlst, uniqueEqIndex) = List.map1Fold(explst1, makeSES_RESIDUAL, source, iuniqueEqIndex);
-      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, left, res_exp, source)::eqSystlst;
+      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, res_exp, source)::eqSystlst;
       tempvars = createArrayTempVar(left, ds, explst1, itempvars);
       (eqSystemsRest, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(rest, uniqueEqIndex+1, tempvars);
       eqSystemsRest = listAppend(eqSystlst, eqSystemsRest);
@@ -6229,7 +6231,7 @@ algorithm
   (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(genDiscrete, inEquations, inVars, iuniqueEqIndex, itempvars, iextra)
     local
       list<Integer> ds;
-      DAE.Exp e1, e2, e1_1, e2_1;
+      DAE.Exp e1, e2, e1_1, e2_1, lhse;
       list<DAE.Exp> ea1, ea2, expLst, expLstTmp;
       list<BackendDAE.Equation> re;
       list<BackendDAE.Var> vars;
@@ -6274,6 +6276,8 @@ algorithm
       // create tmp vars and exps
       ty = Expression.typeof(e1);
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
+      lhse = DAE.CREF(left,ty);
+
       crefstmp = ComponentReference.expandCref(left, false);
       expLstTmp = List.map(crefstmp, Expression.crefExp);
       tempvars = createArrayTempVar(left, ds, expLstTmp, itempvars);
@@ -6281,67 +6285,19 @@ algorithm
       exptl = List.threadTuple(expLst, expLstTmp);
       (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
 
-      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, left, e2_1, source)::eqSystlst;
+      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2_1, source)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
 
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
+    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1,_), right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
       // We need to strip subs from the name since they are removed in cr.
-      cr_1 = ComponentReference.crefStripLastSubs(cr);
-      e1 = Expression.replaceDerOpInExp(e1);
+      e1 = Expression.replaceDerOpInExp(lhse);
       e2 = Expression.replaceDerOpInExp(e2);
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
       (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
-      (equation_, uniqueEqIndex) = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, source);
+      equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e1, e2, source);
+      uniqueEqIndex = iuniqueEqIndex + 1;
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
-
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind)))::_, vars, _, _, _) equation
-      true = Expression.isArray(e1) or Expression.isMatrix(e1);
-      true = Expression.isArray(e2) or Expression.isMatrix(e2);
-      e1 = Expression.replaceDerOpInExp(e1);
-      e2 = Expression.replaceDerOpInExp(e2);
-      ea1 = Expression.flattenArrayExpToList(e1);
-      ea2 = Expression.flattenArrayExpToList(e2);
-      ea1 = BackendDAEUtil.collateArrExpList(ea1, NONE());
-      ea2 = BackendDAEUtil.collateArrExpList(ea2, NONE());
-      re = List.threadMap2(ea1, ea2, BackendEquation.generateEQUATION, source, eqKind);
-      eqns_1 = BackendEquation.listEquation(re);
-      av = BackendVariable.emptyVars();
-      eeqns = BackendEquation.emptyEqns();
-      evars = BackendVariable.listVar1({});
-      cache = FCore.emptyCache();
-      graph = FGraph.empty();
-      funcs = DAEUtil.avlTreeNew();
-      vars1 = BackendVariable.listVar1(vars);
-      syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
-      subsystem_dae = BackendDAE.DAE({syst}, shared);
-      (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
-      (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
-    then (equations_, noDiscequations, uniqueEqIndex, tempvars);
-
-    case (_, BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, vars, _, _, _) equation
-      e1 = Expression.replaceDerOpInExp(e1);
-      e2 = Expression.replaceDerOpInExp(e2);
-      subslst = Expression.dimensionSizesSubscripts(ds);
-      subslst = Expression.rangesToSubscripts(subslst);
-      ea1 = List.map1r(subslst, Expression.applyExpSubscripts, e1);
-      ea2 = List.map1r(subslst, Expression.applyExpSubscripts, e2);
-      re = List.threadMap2(ea1, ea2, BackendEquation.generateEQUATION, source, eqKind);
-      eqns_1 = BackendEquation.listEquation(re);
-      av = BackendVariable.emptyVars();
-      eeqns = BackendEquation.emptyEqns();
-      evars = BackendVariable.listVar1({});
-      cache = FCore.emptyCache();
-      graph = FGraph.empty();
-      funcs = DAEUtil.avlTreeNew();
-      vars1 = BackendVariable.listVar1(vars);
-      syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
-      subsystem_dae = BackendDAE.DAE({syst}, shared);
-      (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
-      (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
-    then (equations_, noDiscequations, uniqueEqIndex, tempvars);
 
     // failure
     else equation
@@ -6422,90 +6378,6 @@ algorithm
     then fail();
   end matchcontinue;
 end createSingleAlgorithmCode;
-
-// TODO: are the cases really correct?
-protected function createSingleArrayEqnCode2
-  input DAE.ComponentRef inComponentRef1;
-  input DAE.ComponentRef inComponentRef2;
-  input DAE.Exp inExp3;
-  input DAE.Exp inExp4;
-  input Integer iuniqueEqIndex;
-  input DAE.ElementSource source;
-  output SimCode.SimEqSystem equation_;
-  output Integer ouniqueEqIndex;
-algorithm
-  (equation_, ouniqueEqIndex) := matchcontinue (inComponentRef1, inComponentRef2, inExp3, inExp4, iuniqueEqIndex, source)
-    local
-      DAE.ComponentRef cr, eltcr, cr2;
-      DAE.Exp e1, e2;
-      DAE.Type ty;
-
-    case (cr, eltcr, (DAE.CREF(componentRef = cr2)), e2, _, _)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, eltcr, e2, source), iuniqueEqIndex+1);
-
-    case (cr, eltcr, e1, (DAE.CREF(componentRef = cr2)), _, _)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, eltcr, e1, source), iuniqueEqIndex+1);
-
-    case (cr, eltcr, (DAE.UNARY(exp=DAE.CREF(componentRef = cr2))), e2, _, _)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        _ = Expression.typeof(e2);
-        e2 = Expression.negate(e2);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, eltcr, e2, source), iuniqueEqIndex+1);
-
-    case (cr, eltcr, e1, (DAE.UNARY(exp=DAE.CREF(componentRef = cr2))), _, _)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        e1 = Expression.negate(e1);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, eltcr, e1, source), iuniqueEqIndex+1);
-
-    case (_, _, e1, DAE.UNARY(DAE.UMINUS_ARR(_), e2), _, _)
-      equation
-        cr2 = getVectorizedCrefFromExp(e2);
-        e1 = Expression.negate(e1);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, cr2, e1, source), iuniqueEqIndex+1);
-
-    case (_, _, DAE.UNARY(DAE.UMINUS_ARR(_), e1), e2, _, _) /* e2 is array of crefs, {v{1}, v{2}, ...v{n}} */
-      equation
-        cr2 = getVectorizedCrefFromExp(e1);
-        e2 = Expression.negate(e2);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, cr2, e2, source), iuniqueEqIndex+1);
-
-    case (_, _, e1, e2, _, _) /* e2 is array of crefs, {v{1}, v{2}, ...v{n}} */
-      equation
-        cr2 = getVectorizedCrefFromExp(e2);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, cr2, e1, source), iuniqueEqIndex+1);
-
-    case (_, _, e1, e2, _, _) /* e1 is array of crefs, {v{1}, v{2}, ...v{n}} */
-      equation
-        cr2 = getVectorizedCrefFromExp(e1);
-      then
-        (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, cr2, e2, source), iuniqueEqIndex+1);
-
-/*
-    case (cr, _, e1, e2, _, _)
-       equation
-       s1 = ExpressionDump.printExpStr(e1);
-       s2 = ExpressionDump.printExpStr(e2);
-       s3 = ComponentReference.crefStr(cr);
-       s = stringAppendList({"function createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
-       Error.addInternalError(s, sourceInfo());
-    then
-      fail();
-*/
-  end matchcontinue;
-end createSingleArrayEqnCode2;
 
 protected function createInitialEquations "author: lochel"
   input Option<BackendDAE.BackendDAE> inInitDAE;
@@ -7840,7 +7712,7 @@ algorithm
       Integer idx,idxLS,idxNLS,idxMS;
       String s;
       list<String> sLst;
-      DAE.Exp exp,right;
+      DAE.Exp exp,right,lhs;
       DAE.ElementSource source;
       DAE.ComponentRef cref,left;
       SimCode.SimEqSystem cont;
@@ -7864,9 +7736,9 @@ algorithm
         s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
       then (s);
 
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,componentRef=cref,exp=exp))
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp))
       equation
-        s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
+        s = intString(idx) +": "+ ExpressionDump.printExpStr(lhs) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
     then (s);
 
       case(SimCode.SES_IFEQUATION(index=idx))
@@ -9887,7 +9759,7 @@ algorithm
   outSES:=
   matchcontinue (inSES)
     local
-      DAE.Exp e;
+      DAE.Exp e,left;
       DAE.ComponentRef cr;
       Boolean partOfMixed;
       list<SimCodeVar.SimVar> vars;
@@ -9916,11 +9788,11 @@ algorithm
         e = addDivExpErrorMsgtoExp(e, source);
       then
         SimCode.SES_SIMPLE_ASSIGN(index, cr, e, source);
-    case SimCode.SES_ARRAY_CALL_ASSIGN(index = index, componentRef = cr, exp = e, source = source)
+    case SimCode.SES_ARRAY_CALL_ASSIGN(index = index, lhs = left, exp = e, source = source)
       equation
         e = addDivExpErrorMsgtoExp(e, source);
       then
-        SimCode.SES_ARRAY_CALL_ASSIGN(index, cr, e, source);
+        SimCode.SES_ARRAY_CALL_ASSIGN(index, left, e, source);
         /*
          case (SimCode.SES_ALGORITHM(), inDlowMode)
          equation
@@ -12231,7 +12103,7 @@ protected function traverseExpsEqSystem
 algorithm
   (oeq, oa) := match (eq, func, ia)
     local
-      DAE.Exp exp, right;
+      DAE.Exp exp, right, leftexp;
       DAE.ComponentRef cr, left;
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
       list<DAE.Statement> stmts;
@@ -12263,9 +12135,10 @@ algorithm
       (exp, a) = func(exp, a);
     then (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source), a);
 
-    case (SimCode.SES_ARRAY_CALL_ASSIGN(index, cr, exp, source), _, a) equation
+    case (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source), _, a) equation
+      (leftexp, a) = func(leftexp, a);
       (exp, a) = func(exp, a);
-    then (SimCode.SES_ARRAY_CALL_ASSIGN(index, cr, exp, source), a);
+    then (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source), a);
 
     case (SimCode.SES_IFEQUATION(index, ifbranches, elsebranch, source), _, a)
       /* TODO: Me */
@@ -13333,6 +13206,7 @@ author:Waurich TUD 2014-05"
 algorithm
   crefsOut := match(simEqSys)
     local
+      DAE.Exp lhs;
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs,crefs2;
       list<SimCodeVar.SimVar> simVars;
@@ -13344,9 +13218,9 @@ algorithm
     case(SimCode.SES_SIMPLE_ASSIGN(cref=cref))
       equation
     then {cref};
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(componentRef=cref))
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs))
       equation
-    then {cref};
+    then {Expression.expCref(lhs)};
     case(SimCode.SES_IFEQUATION())
       equation
         print("implement SES_IFEQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
@@ -13723,7 +13597,7 @@ algorithm
       list<Boolean> bLst;
       DAE.ComponentRef cref;
       DAE.ElementSource source;
-      DAE.Exp exp;
+      DAE.Exp exp,lhs;
       SimCode.SimEqSystem simEqSys;
       list<DAE.Exp> expLst;
       list<DAE.Statement> stmts;
@@ -13745,9 +13619,9 @@ algorithm
       equation
         simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
     then simEqSys;
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(componentRef=cref,exp=exp,source=source),_)
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs,exp=exp,source=source),_)
       equation
-        simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,cref,exp,source);
+        simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,lhs,exp,source);
     then simEqSys;
     case(SimCode.SES_IFEQUATION(ifbranches=ifbranches,elsebranch=elsebranch,source=source),_)
       equation

@@ -3792,11 +3792,10 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 <%modelicaLine(eqInfo(eq))%>
 <%match eq
 
-case eqn as SES_ARRAY_CALL_ASSIGN(__) then
+case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let lhsstr = daeBareCrefArrayLhsSimContextArray(eqn.componentRef, expTypeFromExpShort(eqn.exp),
-                                    context, &preExp, &varDecls, &auxFunction)
+  let lhsstr = daeExpCrefLhs(lhs, context, &preExp, &varDecls, &auxFunction)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
     <<
@@ -7959,31 +7958,6 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     else
       error(sourceInfo(),'daeExpCrefLhsSimContext: UNHANDLED CREF: <%ExpressionDump.printExpStr(ecr)%>')
 end daeExpCrefLhsSimContext;
-
-
-/*This function is used in cases where there is a bare ComponentRef to be generated. That is a ComponentRef
-not wraped in a DAE.Exp as DAE.CREF(). see SES_ARRAY_CALL_ASSIGN, SES_SIMPLE_ASSIGN. This records should be
-updated to hold Exps instead of ComponentRef and then made to use daeExpCrefLhs. In the meantime we use this
-function to handle cases where the ComponentRef are arrays.*/
-template daeBareCrefArrayLhsSimContextArray(ComponentRef cr, String type, Context context, Text &preExp,
-                        Text &varDecls, Text &auxFunction)
-::=
-  match cr
-  case _ then
-    let arrayType = type + "_array"
-    let wrapperArray = tempDecl(arrayType, &varDecls)
-    if crefSubIsScalar(cr) then
-      let dimsLenStr = listLength(crefDims(cr))
-      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")
-      let nosubname = contextCref(crefStripSubs(cr),context, &auxFunction)
-      let substring = (crefSubs(crefArrayGetFirstCref(cr)) |> INDEX(__) =>
-                   daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
-                   ;separator=", ")
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&(<%nosubname%>_index(<%substring%>))), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-    wrapperArray
-    else
-      error(sourceInfo(),'daeBareCrefArrayLhsSimContextArray: This should have been handled in indexed assign and should not have gotten here <%crefStr(cr)%>')
-end daeBareCrefArrayLhsSimContextArray;
 
 template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)

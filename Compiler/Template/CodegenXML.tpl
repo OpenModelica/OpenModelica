@@ -856,7 +856,7 @@ template equationArrayCallAssignXml(SimEqSystem eq, Context context,
 <<
 <%match eq
 
-case eqn as SES_ARRAY_CALL_ASSIGN(__) then
+case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExpXml(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
   //let &helpInits = buffer "" /*BUFD*/
@@ -868,16 +868,16 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   case "boolean" then
     <<
     <%expPart%>
-    <%crefXml(eqn.componentRef)%>
+    <%crefXml(lhs.componentRef)%>
     >>
   case "integer" then
     <<
     <%expPart%>
-    <%crefXml(eqn.componentRef)%>
+    <%crefXml(lhs.componentRef)%>
     >>
   case "real" then
     <<
-    <%crefXml(eqn.componentRef)%>
+    <%crefXml(lhs.componentRef)%>
     <%expPart%>
     >>
   else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')

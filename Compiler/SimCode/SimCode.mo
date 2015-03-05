@@ -367,7 +367,7 @@ uniontype SimEqSystem
 
   record SES_ARRAY_CALL_ASSIGN
     Integer index;
-    DAE.ComponentRef componentRef;
+    DAE.Exp lhs;
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_ARRAY_CALL_ASSIGN;

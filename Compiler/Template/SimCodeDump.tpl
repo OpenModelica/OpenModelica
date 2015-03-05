@@ -190,11 +190,11 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
         <%dumpElementSource(e.source,withOperations)%>
       </equation><%\n%>
       >>
-    case e as SES_ARRAY_CALL_ASSIGN(__) then
+    case e as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       <<
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <assign type="array">
-          <defines name="<%crefStrNoUnderscore(e.componentRef)%>" />
+          <defines name="<%crefStrNoUnderscore(lhs.componentRef)%>" />
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
         </assign>
         <%dumpElementSource(e.source,withOperations)%>

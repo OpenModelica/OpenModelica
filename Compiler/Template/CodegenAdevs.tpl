@@ -1377,12 +1377,12 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 ::=
 match eq
 
-case eqn as SES_ARRAY_CALL_ASSIGN(__) then
+case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp, &varDecls /*BUFD*/)
   <<
   <%preExp%>
-  <%crefarray(eqn.componentRef)%>.assign(<%expPart%>);
+  <%crefarray(lhs.componentRef)%>.assign(<%expPart%>);
   >>
 end equationArrayCallAssign;
 

@@ -4050,7 +4050,7 @@ algorithm
       list<Boolean> bLst;
       DAE.ComponentRef cref;
       DAE.ElementSource source;
-      DAE.Exp exp;
+      DAE.Exp exp,lhs;
       SimCode.SimEqSystem simEqSys;
       list<DAE.Exp> expLst;
       list<DAE.ComponentRef> crefs;
@@ -4077,12 +4077,13 @@ algorithm
         (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
     then (simEqSys,changed or hasRepl);
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,componentRef=cref,exp=exp,source=source),_)
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp,source=source),_)
       equation
+        cref = Expression.expCref(lhs);
         hasRepl = BackendVarTransform.hasReplacement(replIn,cref);
-        DAE.CREF(componentRef=cref) = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
+        lhs = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
         (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
-        simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,cref,exp,source);
+        simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,lhs,exp,source);
     then (simEqSys,changed or hasRepl);
     case(SimCode.SES_IFEQUATION(index=idx,ifbranches=ifs,elsebranch=elsebranch,source=source),_)
       equation

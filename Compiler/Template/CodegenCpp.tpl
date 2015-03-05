@@ -9216,7 +9216,7 @@ template equationArrayCallAssign(SimEqSystem eq, Context context, Text &varDecls
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
 
-case eqn as SES_ARRAY_CALL_ASSIGN(__) then
+case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
@@ -9231,21 +9231,21 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    <%cref1(eqn.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>=<%expPart%>;
+    <%cref1(lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>=<%expPart%>;
     >>
   case "int" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    <%cref1(eqn.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>=<%expPart%>;
+    <%cref1(lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>=<%expPart%>;
     >>
   case "double" then
     <<
     <%preExp%>
-    <%assignDerArray(context,expPart,eqn.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%assignDerArray(context,expPart,lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     >>
  end equationArrayCallAssign;
-  /*<%cref1(eqn.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, useFlatArrayNotation)%>=<%expPart%>;*/
+  /*<%cref1(lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, useFlatArrayNotation)%>=<%expPart%>;*/
 
 
 template assignDerArray(Context context, String arr, ComponentRef c,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)

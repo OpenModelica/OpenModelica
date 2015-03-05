@@ -123,12 +123,16 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       </equation><%\n%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__) then
+      let &defines = buffer ""
+      let &depends = buffer ""
+      let _ = eqDefinesDepends(e, defines, depends)
       <<
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
-        <assign type="array">
-          <defines name="<%crefStrNoUnderscore(e.componentRef)%>" />
+        <assign_array>
+          <%defines%>
+          <%depends%>
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
-        </assign>
+        </assign_array>
       </equation><%\n%>
       >>
     case e as SES_ALGORITHM(statements={}) then 'empty algorithm<%\n%>'
@@ -248,6 +252,10 @@ template eqDefinesDepends(SimEqSystem eq, Text &defines, Text &depends)
     ""
   case e as SES_SIMPLE_ASSIGN(__) then
     let &defines += '<defines name="<%crefStrNoUnderscore(e.cref)%>"/><%\n%>'
+    let &depends += extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
+    ""
+  case e as SES_ARRAY_CALL_ASSIGN(__) then
+    let &defines += extractUniqueCrefsFromExpDerPreStart(e.lhs) |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
     let &depends += extractUniqueCrefsFromExpDerPreStart(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
     ""
   else "Unrecognized Equation in eqDefinesDepends"
