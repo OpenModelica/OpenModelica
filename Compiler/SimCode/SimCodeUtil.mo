@@ -9650,7 +9650,7 @@ algorithm
       then ({str},{});
 
     case Absyn.STRING("OpenModelicaFMIRuntimeC")
-      then (if System.os()=="Windows_NT" then {"-lOpenModelicaFMIRuntimeC","-lshlwapi"} else {"-lOpenModelicaFMIRuntimeC"},{});
+      then (if System.os()=="Windows_NT" then {"-lOpenModelicaFMIRuntimeC","-lfmilib","-lshlwapi"} else {"-lOpenModelicaFMIRuntimeC"},{});
 
     case Absyn.STRING(str)
       equation
