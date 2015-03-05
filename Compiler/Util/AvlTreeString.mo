@@ -208,15 +208,6 @@ algorithm
   end match;
 end createEmptyAvlIfNone;
 
-protected function nodeValue "return the node value"
-input AvlTree bt;
-output AvlValue v;
-algorithm
-  v := match(bt)
-    case(NODE(value=SOME(VALUE(_,v)))) then v;
-  end match;
-end nodeValue;
-
 protected function balance "Balances a AvlTree"
   input AvlTree inBt;
   output AvlTree outBt;

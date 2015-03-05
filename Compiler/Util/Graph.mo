@@ -735,17 +735,6 @@ algorithm
   outElem := arrayGet(inArray,inIndex);
 end getArrayElem;
 
-protected function cleanOptList
-  input Option<list<Type_a>> inListOption;
-  output list<Type_a> outList;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outList := match(inListOption)
-    case (SOME(outList)) then outList;
-    case (NONE()) then {};
-  end match;
-end cleanOptList;
-
 protected function arrayUpdateListAppend
   input Integer inIndex;
   input array<Option<list<NodeType>>> inArray;

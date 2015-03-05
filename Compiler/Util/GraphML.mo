@@ -633,28 +633,5 @@ algorithm
   print("node: "+id+" desc: "+Util.getOption(optDesc)+"\n\tatts: "+atts+"\n");
 end printNode;
 
-protected function printGraph
-  input Graph graph;
-protected
-    String id;
-    list<Integer> nodeIdc;
-algorithm
-  GRAPH(id=id,nodeIdc=nodeIdc) := graph;
-  print("graph: "+id+" nodeIdc: "+stringDelimitList(List.map(nodeIdc,intString),", ")+"\n");
-end printGraph;
-
-protected function printAttribute
-  input Attribute attr;
-protected
-    Integer attIdx;
-    String defaultValue;
-    String name;
-    AttributeType attType;
-    AttributeTarget attTarget;
-algorithm
-  ATTRIBUTE(attIdx=attIdx,name=name) := attr;
-  print("attIdx: "+intString(attIdx)+" name: "+name+"\n");
-end printAttribute;
-
 annotation(__OpenModelica_Interface="susan");
 end GraphML;

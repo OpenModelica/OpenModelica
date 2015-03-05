@@ -1162,21 +1162,6 @@ algorithm
   end match;
 end severityStr;
 
-protected function selectString "author: adrpo, 2006-02-05
-  selects first string is bool is true otherwise the second string"
-  input Boolean inBoolean1;
-  input String inString2;
-  input String inString3;
-  output String outString;
-algorithm
-  outString:=
-  match (inBoolean1,inString2,inString3)
-    local String s1,s2;
-    case (true,s1,_) then s1;
-    case (false,_,s2) then s2;
-  end match;
-end selectString;
-
 public function infoStr "
   Converts an SourceInfo into a string ready to be used in error messages.
   Format is [filename:line start:column start-line end:column end]"

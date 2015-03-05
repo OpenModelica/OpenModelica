@@ -137,28 +137,6 @@ algorithm
   end match;
 end applyReplacementsDAE;
 
-protected function applyReplacementsDAEFuncLst "help function to applyReplacementsDAE, goes though the function tree"
-  input list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
-  input VariableReplacements repl;
-  input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
-  output list<tuple<DAE.AvlKey,DAE.AvlValue>> outFuncLst;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
-algorithm
-  outFuncLst := match(funcLst,repl,condExpFunc)
-   local
-     Absyn.Path p;
-     DAE.Function elt;
-    case({},_,_) then {};
-    case((p,SOME(elt))::outFuncLst,_,_) equation
-      {elt} = applyReplacementsFunctions({elt},repl,condExpFunc);
-      outFuncLst = applyReplacementsDAEFuncLst(outFuncLst,repl,condExpFunc);
-    then ((p,SOME(elt))::outFuncLst);
-  end match;
-end applyReplacementsDAEFuncLst;
-
 public function applyReplacementsDAEElts "Help function to applyReplacementsDAE, goes though the element list"
   input list<DAE.Element> inDae;
   input VariableReplacements repl;
@@ -382,46 +360,6 @@ algorithm
       then elt::dae;
   end matchcontinue;
 end applyReplacementsDAEElts;
-
-protected function applyReplacementsFunctions
-  input list<DAE.Function> fns;
-  input VariableReplacements repl;
-  input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
-  output list<DAE.Function> outFns;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
-algorithm
-  outFns := match (fns,repl,condExpFunc)
-    local
-       list<DAE.Function> dae,dae2;
-       list<DAE.Element> elist,elist2;
-       list<DAE.FunctionDefinition> derFuncs;
-       DAE.InlineType inlineType;
-       DAE.Type ftp;
-       Boolean partialPrefix,isImpure;
-       DAE.ElementSource source;
-       Absyn.Path path;
-       DAE.ExternalDecl extdecl;
-       Option<SCode.Comment> cmt;
-       SCode.Visibility visibility;
-
-    case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae,_,_)
-      equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
-      then
-        DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
-
-    case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae,_,_)
-      equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
-      then
-        DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,visibility,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
-  end match;
-end applyReplacementsFunctions;
 
 protected function applyReplacementsVarAttr "Help function to applyReplacementsDAEElts"
   input Option<DAE.VariableAttributes> attr;
@@ -1010,14 +948,6 @@ algorithm
   end matchcontinue;
 end addReplacement;
 
-protected function keyEqual
-  input tuple<DAE.ComponentRef,DAE.Exp,Integer> key1;
-  input tuple<DAE.ComponentRef,DAE.Exp,Integer> key2;
-  output Boolean res;
-algorithm
-     res := ComponentReference.crefEqual(Util.tuple31(key1),Util.tuple31(key2)) and Expression.expEqual(Util.tuple32(key1),Util.tuple32(key2));
-end keyEqual;
-
 public function addReplacementNoTransitive "Similar to addReplacement but
 does not make transitive replacement rules.
 "
@@ -1248,35 +1178,6 @@ algorithm
     else (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
-
-protected function addReplacements "
-  Adding of several replacements at once with common destination.
-  Uses add_replacement
-"
-  input VariableReplacements repl;
-  input list<DAE.ComponentRef> isrcs;
-  input DAE.Exp dst;
-  output VariableReplacements outRepl;
-algorithm
-  outRepl:=
-  matchcontinue (repl,isrcs,dst)
-    local
-      VariableReplacements repl_1,repl_2;
-      DAE.ComponentRef src;
-      list<DAE.ComponentRef> srcs;
-    case (_,{},_) then repl;
-    case (_,(src :: srcs),_)
-      equation
-        repl_1 = addReplacement(repl, src, dst);
-        repl_2 = addReplacements(repl_1, srcs, dst);
-      then
-        repl_2;
-    else
-      equation
-        print("add_replacements failed\n");
-      then fail();
-  end matchcontinue;
-end addReplacements;
 
 public function getReplacement "
   Retrives a replacement variable given a set of replacement rules and a
@@ -1707,25 +1608,6 @@ algorithm
   end match;
 end replaceExpMatrix;
 
-protected function bintreeToExplist "This function takes a BinTree and transform it into a list
-  representation, i.e. two lists of keys and values"
-  input BinTree inBinTree;
-  output list<DAE.Exp> outExpExpLst1;
-  output list<DAE.Exp> outExpExpLst2;
-algorithm
-  (outExpExpLst1,outExpExpLst2):=
-  match (inBinTree)
-    local
-      list<DAE.Exp> klst,vlst;
-      BinTree bt;
-    case (bt)
-      equation
-        (klst,vlst) = bintreeToExplist2(bt, {}, {});
-      then
-        (klst,vlst);
-  end match;
-end bintreeToExplist;
-
 protected function bintreeToExplist2 "helper function to bintree_to_list"
   input BinTree inBinTree1;
   input list<DAE.Exp> inExpExpLst2;
@@ -1779,237 +1661,6 @@ algorithm
         (klst,vlst);
   end match;
 end bintreeToExplistOpt;
-
-protected function treeGet "
-  Copied from generic implementation. Changed that no hashfunction is passed
-  since a string can not be uniquely mapped to an int. Therefore we need to
-  compare two strings to get a unique ordering.
-"
-  input BinTree inBinTree;
-  input Key inKey;
-  output Value outValue;
-algorithm
-  outValue:=
-  matchcontinue (inBinTree,inKey)
-    local
-      String rkeystr,keystr;
-      DAE.ComponentRef rkey,key;
-      DAE.Exp rval,res;
-      BinTree left,right;
-      Integer cmpval;
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval))),key)
-      equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
-      then
-        rval;
-    case (TREENODE(value = SOME(TREEVALUE(rkey,_)),right = SOME(right)),key)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        res = treeGet(right, key);
-      then
-        res;
-    case (TREENODE(value = SOME(TREEVALUE(rkey,_)),left = SOME(left)),key)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        res = treeGet(left, key);
-      then
-        res;
-  end matchcontinue;
-end treeGet;
-
-protected function treeAdd "
-  Copied from generic implementation. Changed that no hashfunction is passed
-  since a string (ComponentRef) can not be uniquely mapped to an int.
-  Therefore we need to compare two strings to get a unique ordering.
-"
-  input BinTree inBinTree;
-  input Key inKey;
-  input Value inValue;
-  output BinTree outBinTree;
-algorithm
-  outBinTree:=
-  matchcontinue (inBinTree,inKey,inValue)
-    local
-      DAE.ComponentRef key,rkey;
-      DAE.Exp value,rval;
-      String rkeystr,keystr;
-      Option<BinTree> left,right;
-      Integer cmpval;
-      BinTree t_1,t,right_1,left_1;
-    case (TREENODE(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE(SOME(TREEVALUE(key,value)),NONE(),NONE());
-    case (TREENODE(value = SOME(TREEVALUE(rkey,_)),left = left,right = right),key,value)
-      equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
-      then
-        TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = SOME(t)),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        t_1 = treeAdd(t, key, value);
-      then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = NONE()),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
-      then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = SOME(t),right = right),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        t_1 = treeAdd(t, key, value);
-      then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = NONE(),right = right),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
-      then
-        TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left_1),right);
-    else
-      equation
-        print("tree_add failed\n");
-      then
-        fail();
-  end matchcontinue;
-end treeAdd;
-
-protected function treeGet2 "
-  Copied from generic implementation. Changed that no hashfunction is passed
-  since a string can not be uniquely mapped to an int. Therefore we need
-  to compare two strings to get a unique ordering.
-"
-  input BinTree2 inBinTree2;
-  input Key inKey;
-  output Value2 outValue2;
-algorithm
-  outValue2:=
-  matchcontinue (inBinTree2,inKey)
-    local
-      String rkeystr,keystr;
-      DAE.ComponentRef rkey,key;
-      list<DAE.ComponentRef> rval,res;
-      BinTree2 left,right;
-      Integer cmpval;
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval))),key)
-      equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
-      then
-        rval;
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,_)),right = SOME(right)),key)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        res = treeGet2(right, key);
-      then
-        res;
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,_)),left = SOME(left)),key)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        res = treeGet2(left, key);
-      then
-        res;
-  end matchcontinue;
-end treeGet2;
-
-protected function treeAdd2
-"Copied from generic implementation. Changed that no hashfunction is passed
-  since a string (ComponentRef) can not be uniquely mapped to an int.
-  Therefore we need to compare two strings to get a unique ordering."
-  input BinTree2 inBinTree2;
-  input Key inKey;
-  input Value2 inValue2;
-  output BinTree2 outBinTree2;
-algorithm
-  outBinTree2:=
-  matchcontinue (inBinTree2,inKey,inValue2)
-    local
-      DAE.ComponentRef key,rkey;
-      list<DAE.ComponentRef> value,rval;
-      String rkeystr,keystr;
-      Option<BinTree2> left,right;
-      Integer cmpval;
-      BinTree2 t_1,t,right_1,left_1;
-    case (TREENODE2(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE2(SOME(TREEVALUE2(key,value)),NONE(),NONE());
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,_)),left = left,right = right),key,value)
-      equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
-      then
-        TREENODE2(SOME(TREEVALUE2(rkey,value)),left,right);
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = SOME(t)),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        t_1 = treeAdd2(t, key, value);
-      then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(t_1));
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = NONE()),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        right_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
-      then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(right_1));
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = SOME(t),right = right),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        t_1 = treeAdd2(t, key, value);
-      then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(t_1),right);
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = NONE(),right = right),key,value)
-      equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        left_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
-      then
-        TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(left_1),right);
-    else
-      equation
-        print("tree_add2 failed\n");
-      then
-        fail();
-  end matchcontinue;
-end treeAdd2;
 
 annotation(__OpenModelica_Interface="frontend");
 end VarTransform;
