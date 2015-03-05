@@ -2,6 +2,7 @@
 
 #include <math.h>                        ///< mathematical expressions
 #include <stdlib.h>
+#include "ILapack.h"        ///< For the use of DGESV, etc.
 #include <limits>
 #include <string>
 #include <exception>
@@ -146,6 +147,86 @@ inline double Phorner(double &x, int degree_P, double* P)
         return P[degree_P];
 
     return h*x + P[degree_P];
+}
+
+/// Solution of a (determined) linear homogeneous or inhomogeneous system of equation with quadratic coefficient matrix A
+inline int solveLGS(long int* dim, double* A, double* b)
+{
+    if(dim > 0)
+    {
+        long int
+            dimRHS = 1,                            // number of right hand sides (dimension of b)
+            irtrn = 0;                            // return value
+
+        long int* p = new long int[(int)*dim];        // Pivot elements
+
+        // Solution is written to b
+        /*dgesv_*/dgesv_(dim,&dimRHS,A,dim,p,b,dim,&irtrn);
+
+        delete [] p;
+
+        return ((int)irtrn);
+    }
+    else
+        return 0;
+}
+
+/// Solution of a (determined) linear homogeneous or inhomogeneous system of equation with quadratic almost singular coefficient matrix A
+inline int solveLGSPrecond(long int* dim, double* A, double* b)
+{
+    if(dim > 0)
+    {
+        double
+            dRcond            = 0.0,            // Conditionnumber
+            dForwErr        = 0.0,            // Upper limit for error of largest element in solution vector (=\frac{(\hat{x}_j - x_j)}{x_j})
+            dBackErr        = 0.0;            // Lower limit for error of largest element in solution vector (=\frac{(\hat{x}_j - x_j)}{x_j})
+
+        char
+            jobFactorize        = 'E',        // Jac is equilibrated if necessary, then copied to JacScal and factored
+            jobTranspose        = 'N',        // A * X = B (No transpose)
+            jobEquilibriate        = 'B';        // Both row and column equilibration, Jac isreplaced by diag(R)*Jac*diag(C).
+
+        double
+            *p,                                // Pivot elements
+            *AScaled,                        // Factored form of the equilibrated matrix A
+            *R,                                // Row scale factors for A
+            *C,                                // Column scale factors for A
+            *X,
+            *work;                            // work array
+
+        long int
+            dimRHS = 1,                        // number of right hand sides (dimension of b)
+            irtrn = 0,                        // return value
+            *iwork;                            // work array
+
+        p        = new double[(int)*dim];
+        R        = new double[(int)*dim];
+        C        = new double[(int)*dim];
+        X        = new double[(int)*dim];
+        work    = new double[4*(int)*dim];
+        iwork    = new long int[(int)*dim];
+        AScaled    = new double[(int)*dim*(int)*dim];
+
+        // Scale row and columns of A, so that condition number is reduced
+        // solve linear system by LU-decomposion and Forw.-Backw.-Subst.
+        // _f is overwirtten with diag(R)*_f
+        DGESVX(&jobFactorize,&jobTranspose,dim,&dimRHS,A,dim,AScaled,dim,p,
+            &jobEquilibriate,R,C,b,dim,X,dim,&dRcond,&dForwErr,&dBackErr,
+            work,iwork,&irtrn);
+
+        delete [] p;
+        delete [] R;
+        delete [] C;
+        delete [] X;
+        delete [] work;
+        delete [] iwork;
+        delete [] AScaled;
+
+        return irtrn;
+
+    }
+    else
+        return 0;
 }
 
 template<class T >

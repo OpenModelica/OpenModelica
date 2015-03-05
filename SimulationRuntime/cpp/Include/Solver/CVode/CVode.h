@@ -8,8 +8,8 @@
 #include <cvode/cvode.h>
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_direct.h>
-//#include <cvode/cvode_dense.h>
-#include <cvode/cvode_lapack.h>
+#include <cvode/cvode_dense.h>
+#include <cvode/cvode_spgmr.h>
 
 #ifdef RUNTIME_PROFILING
 #include <Core/Utils/extension/measure_time.hpp>

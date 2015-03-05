@@ -1,7 +1,6 @@
 #include <Core/Modelica.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
-#include <Core/Math/ILapack.h>
 
 #if defined(__TRICORE__)
 #include <include/kinsol/kinsol.h>

@@ -3,7 +3,6 @@
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Solver/Euler/Euler.h>
 #include <Solver/Euler/EulerSettings.h>
-#include <Core/Math/ILapack.h>
 
 
 
