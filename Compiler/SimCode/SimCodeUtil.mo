@@ -9593,8 +9593,8 @@ algorithm
         str = System.getCorbaLibs();
       then ({str},{});
 
-    case Absyn.STRING("OpenModelicaFMIRuntimeC")
-      then ({"OpenModelicaFMIRuntimeC.lib","shlwapi.lib"},{});
+    case Absyn.STRING("fmilib")
+      then ({"fmilib.lib","shlwapi.lib"},{});
 
     // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
@@ -9649,8 +9649,8 @@ algorithm
         str = System.getCorbaLibs();
       then ({str},{});
 
-    case Absyn.STRING("OpenModelicaFMIRuntimeC")
-      then (if System.os()=="Windows_NT" then {"-lOpenModelicaFMIRuntimeC","-lfmilib","-lshlwapi"} else {"-lOpenModelicaFMIRuntimeC"},{});
+    case Absyn.STRING("fmilib")
+      then (if System.os()=="Windows_NT" then {"-lfmilib","-lshlwapi"} else {"-lfmilib"},{});
 
     case Absyn.STRING(str)
       equation
