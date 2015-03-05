@@ -297,8 +297,7 @@ void simple_indexed_assign_integer_array2(const integer_array_t * source,
     integer_set(dest, index, integer_get(*source, index));
 }
 
-void indexed_assign_integer_array(const integer_array_t source,
-                                  integer_array_t* dest,
+void indexed_assign_integer_array(const integer_array_t source, integer_array_t* dest,
                                   const index_spec_t* dest_spec)
 {
     _index_t* idx_vec1;
@@ -317,15 +316,14 @@ void indexed_assign_integer_array(const integer_array_t source,
     assert(j == source.ndims);
 
     idx_vec1 = size_alloc(dest->ndims);
-    // idx_vec2 = size_alloc(source->ndims);
     idx_size = size_alloc(dest_spec->ndims);
 
     for(i = 0; i < dest_spec->ndims; ++i) {
         idx_vec1[i] = 0;
 
-        if(dest_spec->index[i] != NULL) {
+        if(dest_spec->index[i] != NULL) { /* is 'S' or 'A' */
             idx_size[i] = imax(dest_spec->dim_size[i],1);
-        } else {
+        } else { /* is 'W' */
             idx_size[i] = dest->dim_size[i];
         }
     }

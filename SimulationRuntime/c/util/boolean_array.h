@@ -111,7 +111,7 @@ extern char print_boolean(m_boolean value);
  a[1:3] := b;
 
 */
-extern void indexed_assign_boolean_array(const boolean_array_t* source,
+extern void indexed_assign_boolean_array(const boolean_array_t source,
                                   boolean_array_t* dest,
                                   const index_spec_t* dest_spec);
 extern void simple_indexed_assign_boolean_array1(const boolean_array_t* source,
