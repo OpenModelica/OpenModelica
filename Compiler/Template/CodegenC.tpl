@@ -3795,7 +3795,7 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let lhsstr = daeBareCrefArrayLhsSimContextArray(eqn.componentRef, expTypeFromExpShort(eqn.exp), 
+  let lhsstr = daeBareCrefArrayLhsSimContextArray(eqn.componentRef, expTypeFromExpShort(eqn.exp),
                                     context, &preExp, &varDecls, &auxFunction)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
@@ -6980,7 +6980,7 @@ case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=e as CALL(__), typ
     <%preExp%>
     <%assign%>
     >>
-   
+
 case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=e, type_=t) then
   let &preExp = buffer ""
   let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
@@ -7018,7 +7018,7 @@ case RANGE(__) then
 
 end fillArrayFromRange;
 
-template indexedAssign(DAE.Exp lhs, String exp, Context context, 
+template indexedAssign(DAE.Exp lhs, String exp, Context context,
                                         Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   match lhs
@@ -7036,7 +7036,7 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
         let type = expTypeShort(aty)
         let wrapperArray = tempDecl(arrayType, &varDecls)
         let dimsLenStr = listLength(crefDims(cr))
-        let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")      
+        let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")
         let arrName = contextCref(crefStripSubs(cr), context,&auxFunction)
         <<
         <%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>
@@ -7046,7 +7046,7 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
     error(sourceInfo(), 'indexedAssign simulationContext failed')
 end indexedAssign;
 
-template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr, Context context, 
+template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr, Context context,
                                         Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   let type = expTypeArray(ty)
@@ -7832,7 +7832,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
         '<%cast%><%nosubname%>_index(<%substring%>)'
     else
       error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDump.printExpStr(ecr)%>')
-end daeExpCrefRhsSimContext;                     
+end daeExpCrefRhsSimContext;
 
 template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
@@ -7929,7 +7929,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
     // 'omc_<%record_type_name%>(threadData<%vars%>)'
     error(sourceInfo(), 'daeExpCrefLhsSimContext got record <%crefStr(cr)%>. This does not make sense. Assigning to records is handled in a different way in the code generator, and reaching here is probably an error...') // '<%ret_var%>.c1'
-  
+
   case ecr as CREF(componentRef=cr, ty=T_ARRAY(ty=aty, dims=dims)) then
     let type = expTypeShort(aty)
     let arrayType = type + "_array"
@@ -7963,7 +7963,7 @@ end daeExpCrefLhsSimContext;
 
 /*This function is used in cases where there is a bare ComponentRef to be generated. That is a ComponentRef
 not wraped in a DAE.Exp as DAE.CREF(). see SES_ARRAY_CALL_ASSIGN, SES_SIMPLE_ASSIGN. This records should be
-updated to hold Exps instead of ComponentRef and then made to use daeExpCrefLhs. In the meantime we use this 
+updated to hold Exps instead of ComponentRef and then made to use daeExpCrefLhs. In the meantime we use this
 function to handle cases where the ComponentRef are arrays.*/
 template daeBareCrefArrayLhsSimContextArray(ComponentRef cr, String type, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
@@ -7974,7 +7974,7 @@ template daeBareCrefArrayLhsSimContextArray(ComponentRef cr, String type, Contex
     let wrapperArray = tempDecl(arrayType, &varDecls)
     if crefSubIsScalar(cr) then
       let dimsLenStr = listLength(crefDims(cr))
-      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")    
+      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")
       let nosubname = contextCref(crefStripSubs(cr),context, &auxFunction)
       let substring = (crefSubs(crefArrayGetFirstCref(cr)) |> INDEX(__) =>
                    daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
@@ -7983,7 +7983,7 @@ template daeBareCrefArrayLhsSimContextArray(ComponentRef cr, String type, Contex
     wrapperArray
     else
       error(sourceInfo(),'daeBareCrefArrayLhsSimContextArray: This should have been handled in indexed assign and should not have gotten here <%crefStr(cr)%>')
-end daeBareCrefArrayLhsSimContextArray; 
+end daeBareCrefArrayLhsSimContextArray;
 
 template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)

@@ -58,7 +58,7 @@ typedef struct DATA_HOMOTOPY
 
   double xtol; /* tolerance for updating solution vector */
   double ftol; /* tolerance fo accepting accuracy */
-  
+
   double error_f;
 
   double* resScaling; /* residual scaling */
@@ -145,9 +145,9 @@ int allocateHomotopyData(int size, void** voiddata)
   data->m = size + 1;
   data->xtol = 1e-24;
   data->ftol = 1e-24;
-  
+
   data->error_f = 0;
-  
+
   data->maxNumberOfIterations = size*100;
   data->numberOfIterations = 0;
   data->numberOfFunctionEvaluations = 0;
@@ -1748,7 +1748,7 @@ int solveHomotopy(DATA *data, int sysNumber)
       debugVectorDouble(LOG_NLS_V,"Solution", solverData->x0, solverData->n);
       /* reset continous flag */
       ((DATA*)data)->simulationInfo.solveContinuous = 0;
-      
+
       free(relationsPreBackup);
 
       /* write statistics */
