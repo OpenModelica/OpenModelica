@@ -80,6 +80,7 @@ typedef struct OptDataDim{
  modelica_real **** analyticJacobians_tmpVars;
 
  int dim_tmpVars[2];
+ modelica_boolean exTimeGrid;
 
 }OptDataDim;
 

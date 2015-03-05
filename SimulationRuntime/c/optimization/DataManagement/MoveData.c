@@ -56,6 +56,9 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
 static inline void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
                                 const int i, const int j, const int shift);
 
+static inline int getNsi(char*, const int, modelica_boolean*);
+static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, long double c[], const int np, const int nsi);
+
 /* pick up model data
  * author: Vitalij Ruge
  */
@@ -131,7 +134,7 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
 static inline void pickUpDim(OptDataDim * dim, DATA* data){
 
   char * cflags = NULL;
-  cflags = (char*)omc_flagValue[FLAG_OPTIZER_NP];
+  cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_NP];
   if(cflags){
     dim->np = atoi(cflags);
     if(dim->np != 1 && dim->np!=3){
@@ -148,7 +151,13 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data){
   dim->nJ = dim->nx + dim->nc;
   dim->nJ2 = dim->nJ + 2;
   dim->nReal = data->modelData.nVariablesReal;
+
+  cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
   dim->nsi = data->simulationInfo.numSteps;
+
+  if(cflags)
+    dim->nsi = getNsi(cflags, dim->nsi, &dim->exTimeGrid);
+
   dim->nt = dim->nsi*dim->np;
   dim->NV = dim->nt*dim->nv;
   dim->NRes = dim->nt*dim->nJ + dim->ncf;
@@ -156,6 +165,7 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data){
   dim->index_conf = dim->index_con + dim->nc;
   assert(dim->nt > 0);
 }
+
 
 
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct
@@ -169,6 +179,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
   long double dc[np];
   int i, k;
   double t;
+  char * cflags = NULL;
 
   time->t0 = (long double)fmax(data->simulationInfo.startTime, preSimTime);
   time->tf = (long double)data->simulationInfo.stopTime;
@@ -214,6 +225,85 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
       time->t[i][k] = time->t[i-1][np1] + c[k]*time->dt[nsi-1];
   }else
     time->dt[1] = time->dt[0];
+
+  cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
+
+  if(cflags)
+    overwriteTimeGridFile(time, cflags, c, np, nsi);
+}
+
+static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
+  int n = 0, c;
+  FILE * pFile = NULL;
+
+  *exTimeGrid = 0;
+  pFile = fopen(filename,"r");
+  if(pFile == NULL){
+    warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
+    fclose(pFile);
+    return nsi;
+  }
+   while(1){
+    c = fgetc(pFile);
+    if (c==EOF) break;
+    if (c=='\n') ++n;
+   }
+   // check if csv file is empty!
+   if (n == 0){
+    warningStreamPrint(LOG_STDOUT, 0, "time grid file: %s is empty", filename);
+    fclose(pFile);
+    return nsi;
+   }
+   *exTimeGrid = 1;
+   return n-1;
+}
+
+static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, long double c[], const int np, const int nsi){
+  int i,k;
+  long double dc[np];
+  int np1 = np - 1;
+  double t;
+  FILE * pFile = NULL;
+  pFile = fopen(filename,"r");
+
+  fscanf(pFile, "%lf", &t);
+  time->t0 = t;
+  fscanf(pFile, "%lf", &t);
+  time->t[0][np1] = t;
+  time->dt[0] = time->t[0][np1] - time->t0;
+
+  if(time->dt[0] <= 0){
+    warningStreamPrint(LOG_STDOUT, 0, "read time grid from file fail!");
+    warningStreamPrint(LOG_STDOUT, 0, "line %i: %g <= %g",0, (double)time->t[0][np1], (double)time->t0);
+    EXIT(0);
+  }
+
+
+  for(k = 0; k < np; ++k){
+    dc[k] = c[k]*time->dt[0];
+    time->t[0][k] = time->t0 + dc[k];
+  }
+
+  for(i=1;i<nsi;++i){
+    fscanf(pFile, "%lf", &t);
+    time->t[i][np1] = t;
+    time->dt[i] = time->t[i][np1] - time->t[i-1][np1];
+
+    for(k = 0; k < np; ++k){
+      dc[k] = c[k]*time->dt[i];
+      time->t[i][k] = time->t[i-1][np1] + dc[k];
+    }
+
+    if(time->dt[i] <= 0){
+      warningStreamPrint(LOG_STDOUT, 0, "read time grid");
+      warningStreamPrint(LOG_STDOUT, 0, "line %i/%i: %g <= %g",i, nsi, (double)time->t[i][np1], (double)time->t[i-1][np1]);
+      warningStreamPrint(LOG_STDOUT, 0, "failed!");
+      EXIT(0);
+    }
+
+  }
+  time->tf = time->t[nsi-1][np1];
+  fclose(pFile);
 }
 
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct
