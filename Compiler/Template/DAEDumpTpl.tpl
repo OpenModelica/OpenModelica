@@ -233,13 +233,12 @@ match lst
    let varAttr = match variableAttributesOption case SOME(VariableAttributes) then dumpVariableAttributes(VariableAttributes)
    let cmt_str = dumpCommentOpt(comment)
    let ann_str = dumpCompAnnotation(comment)
-   if bindingExp then
+   let binding_str = if bindingExp then ' = <%bindingExp%>'
+   /* uncomment this and use the source_str if you want to print the typeLst inside the source (we should maybe put it on a flag or something
+   let source_str = match source case SOURCE(__) then (typeLst |> tp => AbsynDumpTpl.dumpPath(tp) ;separator=", ") else ''
+   */
    <<
-    <%varVisibility%><%final%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%attr%><%varAttr%> = <%bindingExp%><%cmt_str%><%ann_str%>;
-   >>
-   else
-   <<
-    <%varVisibility%><%final%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%attr%><%varAttr%><%cmt_str%><%ann_str%>;
+    <%varVisibility%><%final%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%attr%><%varAttr%><%binding_str%><%cmt_str%><%ann_str%>;
    >>
 end dumpVar;
 
