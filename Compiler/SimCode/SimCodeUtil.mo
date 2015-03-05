@@ -3623,7 +3623,7 @@ algorithm
       ty = Expression.typeof(e1);
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
       lhse = DAE.CREF(left,ty);
-      
+
       res_exp = Expression.createResidualExp(e1, e2);
       res_exp = Expression.replaceDerOpInExp(res_exp);
       crefstmp = ComponentReference.expandCref(left, false);
