@@ -1637,6 +1637,27 @@ algorithm
   textStringBuf(txt);
 end tplPrint3;
 
+public function tplNoret3
+  input Tpl_Fun inFun;
+  input ArgType1 inArg;
+  input ArgType2 inArg2;
+  input ArgType2 inArg3;
+
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    input ArgType2 inArgC;
+    output Text out_txt;
+  end Tpl_Fun;
+protected
+  Integer nErr;
+algorithm
+  nErr := Error.getNumErrorMessages();
+  _ := tplCallWithFailError3(inFun, inArg, inArg2, inArg3);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
+end tplNoret3;
+
 public function tplNoret2
   input Tpl_Fun inFun;
   input ArgType1 inArg;

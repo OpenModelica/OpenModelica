@@ -3421,6 +3421,11 @@ package FMI
     output Boolean success;
   end isFMIVersion20;
 
+  function isFMICSType "Checks if FMU type is co-simulation"
+    input String inFMIType;
+    output Boolean success;
+  end isFMICSType;
+
   function getEnumerationTypeFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;
     input String inBaseType;

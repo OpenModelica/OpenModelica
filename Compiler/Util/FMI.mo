@@ -242,6 +242,27 @@ algorithm
   end match;
 end isFMIVersion20;
 
+public function checkFMIType "Checks if the FMU type is supported."
+  input String inFMIType;
+  output Boolean success;
+algorithm
+  success := match (inFMIType)
+    case ("me") then true;
+    case ("cs") then true;
+    else false;
+  end match;
+end checkFMIType;
+
+public function isFMICSType "Checks if FMU type is co-simulation"
+  input String inFMIType;
+  output Boolean success;
+algorithm
+  success := match (inFMIType)
+    case ("cs") then true;
+    else false;
+  end match;
+end isFMICSType;
+
 public function getEnumerationTypeFromTypes
   input list<TypeDefinitions> inTypeDefinitionsList;
   input String inBaseType;

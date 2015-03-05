@@ -1326,22 +1326,30 @@ algorithm
       then
         (cache,ret_val,st_1);*/
 
-    case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(filenameprefix)},st,_)
+    case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(str2),Values.STRING(filenameprefix)},st,_)
       equation
         true = FMI.checkFMIVersion(str1);
+        true = FMI.checkFMIType(str2);
         str = Absyn.pathString(className);
         filenameprefix = if filenameprefix == "<default>" then str else filenameprefix;
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         defaulSimOpt = buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
         simSettings = convertSimulationOptionsToSimCode(defaulSimOpt);
-        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, str1, filenameprefix, true, SOME(simSettings));
+        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, str1, str2, filenameprefix, true, SOME(simSettings));
       then
         (cache,ret_val,st_1);
 
-    case (cache,_,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(_)),Values.STRING(str1),Values.STRING(_)},st,_)
+    case (cache,_,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(_)),Values.STRING(str1),Values.STRING(_),Values.STRING(_)},st,_)
       equation
         false = FMI.checkFMIVersion(str1);
         Error.addMessage(Error.UNKNOWN_FMU_VERSION, {str1});
+      then
+        (cache,Values.STRING(""),st);
+
+    case (cache,_,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(_)),Values.STRING(_),Values.STRING(str1),Values.STRING(_)},st,_)
+      equation
+        false = FMI.checkFMIType(str1);
+        Error.addMessage(Error.UNKNOWN_FMU_TYPE, {str1});
       then
         (cache,Values.STRING(""),st);
 
@@ -3940,6 +3948,7 @@ protected function translateModelFMU " author: Frenkel TUD
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFMUVersion;
+  input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
@@ -3948,7 +3957,7 @@ protected function translateModelFMU " author: Frenkel TUD
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
-  match (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFileNamePrefix,addDummy,inSimSettingsOpt)
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFMUType,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -3956,11 +3965,11 @@ algorithm
       GlobalScript.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, FMUVersion, fileNamePrefix, str;
-    case (cache,env,_,st,FMUVersion,fileNamePrefix,_,_) /* mo file directory */
+      String file_dir, FMUVersion, FMUType, fileNamePrefix, str;
+    case (cache,env,_,st,FMUVersion,FMUType,fileNamePrefix,_,_) /* mo file directory */
       equation
         (cache, outValMsg, st,_, libs,_, _) =
-          SimCodeMain.translateModelFMU(cache,env,className,st,FMUVersion,fileNamePrefix,addDummy,inSimSettingsOpt);
+          SimCodeMain.translateModelFMU(cache,env,className,st,FMUVersion,FMUType,fileNamePrefix,addDummy,inSimSettingsOpt);
 
         // compile
         fileNamePrefix = stringAppend(fileNamePrefix,"_FMU");

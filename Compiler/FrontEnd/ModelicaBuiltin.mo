@@ -2270,7 +2270,8 @@ The only required argument is the className, while all others have some default 
   Example command:
   translateModelFMU(className, version=\"2.0\");"
   input TypeName className "the class that should translated";
-  input String version = "1.0" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  input String version = "1.0" "FMU version, 1.0 or 2.0.";
+  input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation).";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";

@@ -50,7 +50,7 @@ import CodegenUtil.*;
 import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 
 
-template translateModel(SimCode simCode, String FMUVersion)
+template translateModel(SimCode simCode, String FMUVersion, String FMUType)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
@@ -71,13 +71,13 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
   let x = covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefix%>_FMU.c')
-  let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion), 'modelDescription.xml')
+  let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion,FMUType), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode,FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
 
-template fmuModelDescriptionFile(SimCode simCode, String guid, String FMUVersion)
+template fmuModelDescriptionFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -86,7 +86,7 @@ case SIMCODE(__) then
   <?xml version="1.0" encoding="UTF-8"?>
   <%
   if isFMIVersion20(FMUVersion) then fmi2ModelDescription(simCode,guid)
-  else fmiModelDescription(simCode,guid)
+  else fmiModelDescription(simCode,guid,FMUType)
   %>
   >>
 end fmuModelDescriptionFile;
@@ -307,7 +307,7 @@ case SIMVAR(nominalValue = nominalValue) then
 end NominalString2;
 
 // Code for generating modelDescription.xml file for FMI 1.0 ModelExchange.
-template fmiModelDescription(SimCode simCode, String guid)
+template fmiModelDescription(SimCode simCode, String guid, String FMUType)
  "Generates code for ModelDescription file for FMU target."
 ::=
 //  <%UnitDefinitions(simCode)%>
@@ -320,6 +320,7 @@ case SIMCODE(__) then
     <%TypeDefinitions(modelInfo, "1.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo, "1.0")%>
+    <%if isFMICSType(FMUType) then Implementation()%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
@@ -336,7 +337,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
-  let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else  vi.numStateVars
+  let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else vi.numStateVars
   let numberOfEventIndicators = vi.numZeroCrossings
   <<
   fmiVersion="<%fmiVersion%>"
@@ -661,6 +662,23 @@ template externalFunction(Function fn)
         valueReference="<%System.tmpTick()%>"/>
       >>
 end externalFunction;
+
+template Implementation()
+ "Generate Co-simulation Implementation section"
+::=
+  <<
+  <Implementation>
+    <CoSimulation_StandAlone>
+      <Capabilities
+        canHandleVariableCommunicationStepSize="true"
+        canHandleEvents="true"
+        canBeInstantiatedOnlyOncePerProcess="true"
+        canInterpolateInputs="true"
+        maxOutputDerivativeOrder="1"/>
+    </CoSimulation_StandAlone>
+  </Implementation>
+  >>
+end Implementation;
 
 template ModelStructure(SimCode simCode, list<JacobianMatrix> jacobianMatrixes)
  "Generates Model Structure."
