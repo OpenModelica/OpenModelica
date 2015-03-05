@@ -1126,7 +1126,7 @@ algorithm
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
         eqConstraint = InstUtil.equalityConstraint(env_2, els, info);
         // DAEUtil.addComponentType(dae1, fq_class);
-        ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, DAE.emptyTypeSource);
+        ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, {fq_class});
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
         bc = if Util.isSome(bc) then bc else SOME(ty2);
         ty = InstUtil.mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
