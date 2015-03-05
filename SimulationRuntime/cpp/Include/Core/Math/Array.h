@@ -308,7 +308,7 @@ public:
                   _array_data[i]=rhs(i);
                   _c_array_data[i]=_array_data[i].c_str();
              }
-             
+
 
 
          }
@@ -342,7 +342,7 @@ public:
       _array_data[i]=data[i];
       _c_array_data[i]=_array_data[i].c_str();
     }
-    
+
   }
 
 
@@ -353,7 +353,7 @@ public:
       _array_data[i]=otherArray(i);
        _c_array_data[i]=_array_data[i].c_str();
     }
-    
+
   }
   virtual string& operator()(vector<size_t> idx)
   {

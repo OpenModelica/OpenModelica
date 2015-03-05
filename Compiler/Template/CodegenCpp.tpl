@@ -225,7 +225,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <%jacobianvars%>
     >>
     %>
-    
+
     <%variableDefinitionsJacobians(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
 
