@@ -1920,7 +1920,7 @@ QStringList OMCProxy::getSimulationOptions(QString className, double defaultTole
 bool OMCProxy::translateModelFMU(QString className, double version, QString fileNamePrefix)
 {
   fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), fileNamePrefix);
+  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), "me", fileNamePrefix);
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     return true;
   } else {
