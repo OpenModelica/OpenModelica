@@ -232,6 +232,7 @@ static inline void freeOptimizerData(OptData*optData){
   for(i=0; i < nsi; ++i)
     free(optData->time.t[i]);
   free(optData->time.t);
+  free(optData->time.dt);
   /*************************/
   free(optData->bounds.vmin);
   free(optData->bounds.vmax);

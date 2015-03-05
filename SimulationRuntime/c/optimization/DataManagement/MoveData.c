@@ -173,6 +173,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
   time->t0 = (long double)fmax(data->simulationInfo.startTime, preSimTime);
   time->tf = (long double)data->simulationInfo.stopTime;
 
+  time->dt = (long double*) malloc((nsi+1)*sizeof(long double));
   time->dt[0] = (time->tf - time->t0)/nsi;
 
   time->t = (long double**)malloc(nsi*sizeof(long double*));
@@ -199,18 +200,18 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
     time->t[0][k] = time->t0 + dc[k];
   }
 
-  for(i = 1; i < nsi; ++i)
+  for(i = 1; i < nsi; ++i){
+    time->dt[i] = time->dt[i-1];
     for(k = 0; k < np; ++k)
       time->t[i][k] = time->t[i-1][np1] + dc[k];
-
+  }
   time->t[nsi-1][np1] = time->tf;
 
   if(nsi > 1){
     i = nsi - 1;
-    time->dt[1] = time->t[i][np1] - time->t[i-1][np1];
+    time->dt[nsi-1] = time->t[i][np1] - time->t[i-1][np1];
     for(k = 0; k < np; ++k)
-      time->t[i][k] = time->t[i-1][np1] + c[k]*time->dt[1];
-
+      time->t[i][k] = time->t[i-1][np1] + c[k]*time->dt[nsi-1];
   }else
     time->dt[1] = time->dt[0];
 }
@@ -331,20 +332,16 @@ static inline void calculatedScalingHelper(OptDataBounds * bounds, OptDataTime *
   for(i = 0; i < nsi; ++i)
     bounds->scaldt[i] = (long double*) malloc(nx*sizeof(long double));
 
-  for(i = 0; i+1 < nsi; ++i)
+  for(i = 0; i < nsi; ++i)
     for(j = 0; j < nx; ++j){
-      bounds->scaldt[i][j] = bounds->scalF[j]*time->dt[0];
+      bounds->scaldt[i][j] = bounds->scalF[j]*time->dt[i];
     }
-  for(j = 0; j < nx; ++j){
-    bounds->scaldt[i][j] = bounds->scalF[j]*time->dt[1];
-  }
 
   bounds->scalb = (long double**)malloc(nsi*sizeof(long double*));
   for(i = 0; i < nsi; ++i){
     bounds->scalb[i] = (long double*)malloc(np*sizeof(long double));
-    l = (i + 1 < nsi ) ? 0 : 1;
     for(j = 0; j < np; ++j){
-      bounds->scalb[i][j] = time->dt[l]*rk->b[j];
+      bounds->scalb[i][j] = time->dt[i]*rk->b[j];
     }
   }
 }

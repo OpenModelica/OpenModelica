@@ -60,30 +60,21 @@ Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData
     const long double * const dt = optData->time.dt;
 
     modelica_real *** v = optData->v;
-    long double erg = 0.0;
-    long double erg1 = 0.0;
-    long double erg0[np];
+    long double erg[np];
     int i,j;
 
     for(j = 0; j< np; ++j){
-      erg0[j] = v[0][j][il];
+      erg[j] = dt[0]*v[0][j][il];
     }
 
-    for(i = 1; i + 1 < nsi; ++i){
+    for(i = 1; i < nsi; ++i){
       for(j = 0; j< np; ++j){
-        erg0[j] += v[i][j][il];
+        erg[j] += dt[i]*v[i][j][il];
       }
     }
 
-    for(j = 0; j< np; ++j){
-      erg += b[j]*erg0[j];
-    }
-
-    i = nsi - 1;
-    for(j = 0; j < np; ++j)
-      erg1 += b[j]*v[i][j][il];
-
-    lagrange = (erg*dt[0] + erg1*dt[1]);
+    for(j = 0; j< np; ++j)
+      lagrange += b[j]*erg[j];
   }
 
   if(ma){

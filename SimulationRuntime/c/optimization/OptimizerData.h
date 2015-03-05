@@ -86,7 +86,7 @@ typedef struct OptDataDim{
 typedef struct OptDataTime{
   long double t0;
   long double tf;
-  long double dt[2];
+  long double *dt;
 
   long double **t;
 }OptDataTime;
