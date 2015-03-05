@@ -6258,16 +6258,6 @@ algorithm
       DAE.Type ty;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
 
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
-      // We need to strip subs from the name since they are removed in cr.
-      cr_1 = ComponentReference.crefStripLastSubs(cr);
-      e1 = Expression.replaceDerOpInExp(e1);
-      e2 = Expression.replaceDerOpInExp(e2);
-      (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
-      (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
-      (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
-      (equation_, uniqueEqIndex) = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, source);
-    then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
     // An array equation
     // {z1,z2,..} = f(...) -> solved for {z1,z2,..}
@@ -6293,6 +6283,17 @@ algorithm
 
       eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, left, e2_1, source)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
+      
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
+      // We need to strip subs from the name since they are removed in cr.
+      cr_1 = ComponentReference.crefStripLastSubs(cr);
+      e1 = Expression.replaceDerOpInExp(e1);
+      e2 = Expression.replaceDerOpInExp(e2);
+      (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
+      (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
+      (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
+      (equation_, uniqueEqIndex) = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, source);
+    then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
     case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind)))::_, vars, _, _, _) equation
       true = Expression.isArray(e1) or Expression.isMatrix(e1);
