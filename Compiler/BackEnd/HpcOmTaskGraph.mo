@@ -159,8 +159,8 @@ protected
   array<String> compDescs;
   list<Integer> eventEqLst, eventVarLst, rootVars;
   Integer numberOfVars, numberOfEqs;
-  array<ComponentInfo> compInformations; 
-  
+  array<ComponentInfo> compInformations;
+
   Integer eqSysIdx;
   tuple<TaskGraph,TaskGraphMeta,Integer> tplOut;
 
@@ -314,7 +314,7 @@ protected
   array<tuple<Integer,Real>> exeCosts, exeCosts1;
   array<Communications> commCosts, commCosts1;
   array<Integer>nodeMark, nodeMark1;
-  array<ComponentInfo> compInformations, compInformations1; 
+  array<ComponentInfo> compInformations, compInformations1;
 algorithm
   TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, compInformations=compInformations) := graphDataIn;
   inComps1 := arrayCopy(inComps);
@@ -351,7 +351,7 @@ protected
   array<tuple<Integer,Integer,Integer>> varCompMapping1, varCompMapping2; //Map each variable to the scc which solves her
   array<String> compNames1, compNames2;
   array<String> compDescs1, compDescs2;
-  array<ComponentInfo> compInformations1, compInformations2; 
+  array<ComponentInfo> compInformations1, compInformations2;
   TaskGraph graph2;
 algorithm
   TASKGRAPHMETA(inComps = inComps1 ,varCompMapping=varCompMapping1, eqCompMapping=eqCompMapping1, compParamMapping=compParamMapping1, compNames=compNames1, compDescs=compDescs1, exeCosts=exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1, compInformations=compInformations1) := graphData1In;
@@ -2898,7 +2898,7 @@ protected
 algorithm
   for nodeIdx in 1:arrayLength(iInComps) loop
     compRow := arrayGet(iInComps,nodeIdx);
-    print("node " + intString(nodeIdx) + " solves components: " + stringDelimitList(List.map(compRow,intString),", ") + "\n");  
+    print("node " + intString(nodeIdx) + " solves components: " + stringDelimitList(List.map(compRow,intString),", ") + "\n");
   end for;
   print("--------------------------------\n");
 end printInComps;
@@ -2911,7 +2911,7 @@ protected
 algorithm
   for varIdx in 1:arrayLength(iVarCompMapping) loop
     ((comp,eqSysIdx,varOffset)) := arrayGet(iVarCompMapping,varIdx);
-    print("variable " + intString(varIdx-varOffset) + " (offset: " + intString(varOffset) + ") of equation system " + intString(eqSysIdx) + " is solved in component: " + intString(comp) + "\n");  
+    print("variable " + intString(varIdx-varOffset) + " (offset: " + intString(varOffset) + ") of equation system " + intString(eqSysIdx) + " is solved in component: " + intString(comp) + "\n");
   end for;
   print("--------------------------------\n");
 end printVarCompMapping;
@@ -2924,7 +2924,7 @@ protected
 algorithm
   for eqIdx in 1:arrayLength(iEqCompMapping) loop
     ((comp,eqSysIdx,eqOffset)) := arrayGet(iEqCompMapping,eqIdx);
-    print("equation " + intString(eqIdx) + " (offset: " + intString(eqOffset) + ") of equation system " + intString(eqSysIdx) + " is computed in component: " + intString(comp) + "\n");  
+    print("equation " + intString(eqIdx) + " (offset: " + intString(eqOffset) + ") of equation system " + intString(eqSysIdx) + " is computed in component: " + intString(comp) + "\n");
   end for;
   print("--------------------------------\n");
 end printEqCompMapping;
@@ -2938,7 +2938,7 @@ protected
 algorithm
   for compIdx in 1:arrayLength(iCompParamMapping) loop
     params := arrayGet(iCompParamMapping,compIdx);
-    print("component " + intString(compIdx) + " needs the parameters: " + stringDelimitList(List.map(params, intString), ",") + "\n");  
+    print("component " + intString(compIdx) + " needs the parameters: " + stringDelimitList(List.map(params, intString), ",") + "\n");
   end for;
   print("--------------------------------\n");
 end printCompParamMapping;
@@ -3888,7 +3888,7 @@ protected
   array<Communications> commCosts;
   array<Integer> nodeMark;
   list<list<Integer>> inCompsLst;
-  array<ComponentInfo> compInformations; 
+  array<ComponentInfo> compInformations;
 algorithm
   TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, compInformations=compInformations) := graphDataIn;
   inComps := updateInCompsForMerging(inComps,contractNodes);
@@ -4561,7 +4561,7 @@ protected
   array<Communications> commCosts;
   Integer nodeNumber;
   TaskGraphMeta taskGraphMeta;
-  array<ComponentInfo> compInformations; 
+  array<ComponentInfo> compInformations;
 algorithm
   (nodeNumber,taskGraphMeta) := iTaskGraphMeta;
   TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,compParamMapping=compParamMapping,compNames=compNames,compDescs=compDescs,exeCosts=execCosts,commCosts=commCosts,nodeMark=nodeRefCount,compInformations=compInformations) := taskGraphMeta;
