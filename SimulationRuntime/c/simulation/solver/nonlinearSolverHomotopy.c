@@ -58,7 +58,7 @@ typedef struct DATA_HOMOTOPY
 
   double xtol; /* tolerance for updating solution vector */
   double ftol; /* tolerance fo accepting accuracy */
-
+  
   double error_f;
 
   double* resScaling; /* residual scaling */
@@ -145,9 +145,9 @@ int allocateHomotopyData(int size, void** voiddata)
   data->m = size + 1;
   data->xtol = 1e-24;
   data->ftol = 1e-24;
-
+  
   data->error_f = 0;
-
+  
   data->maxNumberOfIterations = size*100;
   data->numberOfIterations = 0;
   data->numberOfFunctionEvaluations = 0;
@@ -1090,9 +1090,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   /* set default solver message */
   solverData->info = 0;
 
-   /* copy function values from fx0,fJacx0 to fvec,fJac */
-  vecCopy(n*m, solverData->fJacx0, solverData->fJac);
-
   /* calculated error of function values */
   error_f = vecNorm2(solverData->n, solverData->f1);
   error_f_scaled = error_f;
@@ -1102,14 +1099,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     numberOfIterations++;
     /* debug information */
     debugInt(LOG_NLS_V, "Iteration:", numberOfIterations);
-
-    /* calculate scaling factor of residuals */
-    matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
-    debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
-
-    scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
-    if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0)
+    if ((numberOfIterations>1) && (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0))
     {
       /* report solver abortion */
       solverData->info=-1;
@@ -1344,6 +1335,10 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       break;
     }
     vecCopy(n, solverData->f1, solverData->fJac + n*n);
+    /* calculate scaling factor of residuals */
+    matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
+    debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
+    scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
   }
   return 0;
 }
@@ -1744,25 +1739,29 @@ int solveHomotopy(DATA *data, int sysNumber)
       debugString(LOG_NLS_V, "------------------------------------------------------");
         /* take the solution */
       vecCopy(solverData->n, solverData->x0, systemData->nlsx);
-      solverData->numberOfIterations += 0;
       debugVectorDouble(LOG_NLS_V,"Solution", solverData->x0, solverData->n);
       /* reset continous flag */
       ((DATA*)data)->simulationInfo.solveContinuous = 0;
-
+      
       free(relationsPreBackup);
 
       /* write statistics */
       systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
-      systemData->numberOfIterations = solverData->numberOfIterations;
 
       return success;
     }
-    solverData->fJac_f(solverData, solverData->x0, solverData->fJacx0);
-    vecCopy(solverData->n, solverData->f1, solverData->fJacx0 + solverData->n*solverData->n);
+    solverData->fJac_f(solverData, solverData->x0, solverData->fJac);
+    vecCopy(solverData->n, solverData->f1, solverData->fJac + solverData->n*solverData->n);
+    vecCopy(solverData->n*solverData->m, solverData->fJac, solverData->fJacx0);
     if (mixedSystem)
       memcpy(relationsPreBackup, data->simulationInfo.relations, sizeof(modelica_boolean)*data->modelData.nRelations);
+    /* calculate scaling factor of residuals */
+    matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
+    debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
+    scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
+
     pos = solverData->n;
-    assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJacx0, solverData->indRow, solverData->indCol, &pos, &rank) != 0);
+    assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac, solverData->indRow, solverData->indCol, &pos, &rank) != 0);
     if (!assert)
       debugString(LOG_NLS_V, "regular initial point!!!");
     giveUp = 0;
@@ -1821,6 +1820,15 @@ int solveHomotopy(DATA *data, int sysNumber)
           runHomotopy = 0;
           alreadyTested = 1;
           vecCopy(solverData->n, solverData->x0, solverData->x);
+          vecCopy(solverData->n, solverData->fx0, solverData->f1);
+          vecCopy(solverData->n*solverData->m, solverData->fJacx0, solverData->fJac);
+          
+          /* calculate scaling factor of residuals */
+          matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
+          scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
+
+          pos = solverData->n;
+          solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank);
           debugDouble(LOG_NLS,"solve mixed system at time : ", solverData->timeValue);
           continue;
         }
@@ -1884,10 +1892,18 @@ int solveHomotopy(DATA *data, int sysNumber)
 #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
  #endif
-      solverData->f(solverData, solverData->x, solverData->fx0);
-      solverData->fJac_f(solverData, solverData->x, solverData->fJacx0);
-      debugString(LOG_NLS_HOMOTOPY, "regular initial point!!!");
-      assert = 0;
+      solverData->f(solverData, solverData->x, solverData->f1);
+      solverData->fJac_f(solverData, solverData->x, solverData->fJac);
+      vecCopy(solverData->n, solverData->f1, solverData->fJac + solverData->n*solverData->n);
+      /* calculate scaling factor of residuals */
+      matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
+      debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
+      scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
+
+      pos = solverData->n;
+      assert = (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank) != 0);
+      if (!assert)
+        debugString(LOG_NLS_V, "regular initial point!!!");
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
  #endif
