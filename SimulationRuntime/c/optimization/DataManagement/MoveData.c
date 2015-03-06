@@ -40,7 +40,7 @@
 #include "../../simulation/options.h"
 #include "../../simulation/solver/model_help.h"
 
-static inline void pickUpDim(OptDataDim * dim, DATA* data);
+static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time);
 static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime);
 static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* data);
 static inline void check_nominal(OptDataBounds * bounds, const double min, const double max,
@@ -58,6 +58,7 @@ static inline void setLocalVars(OptData * optData, DATA * data, const double * c
 
 static inline int getNsi(char*, const int, modelica_boolean*);
 static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, long double c[], const int np, const int nsi);
+static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], const int np, const int nsi);
 
 /* pick up model data
  * author: Vitalij Ruge
@@ -73,7 +74,7 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
   OptData *optData =  (OptData*) solverInfo->solverData;
   OptDataDim *dim;
 
-  pickUpDim(&optData->dim, data);
+  pickUpDim(&optData->dim, data, &optData->time);
   pickUpBounds(&optData->bounds, &optData->dim, data);
   pickUpTime(&optData->time, &optData->dim, data, optData->bounds.preSim);
   setRKCoeff(&optData->rk, optData->dim.np);
@@ -131,7 +132,7 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
 /* pick up information(nStates...) from model data to optimizer struct
  * author: Vitalij Ruge
  */
-static inline void pickUpDim(OptDataDim * dim, DATA* data){
+static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
 
   char * cflags = NULL;
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_NP];
@@ -153,7 +154,11 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data){
   dim->nReal = data->modelData.nVariablesReal;
 
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
-  dim->nsi = data->simulationInfo.numSteps;
+  data->callback->getTimeGrid(data, &dim->nsi, &time->tt);
+  time->model_grid = (modelica_boolean)(dim->nsi > 0);
+
+  if(!time->model_grid)
+    dim->nsi = data->simulationInfo.numSteps;
 
   if(cflags)
     dim->nsi = getNsi(cflags, dim->nsi, &dim->exTimeGrid);
@@ -230,6 +235,8 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
 
   if(cflags)
     overwriteTimeGridFile(time, cflags, c, np, nsi);
+  if(time->model_grid)
+    overwriteTimeGridModel(time, c, np, nsi);
 }
 
 static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
@@ -261,7 +268,7 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
 static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, long double c[], const int np, const int nsi){
   int i,k;
   long double dc[np];
-  int np1 = np - 1;
+  const int np1 = np - 1;
   double t;
   FILE * pFile = NULL;
   pFile = fopen(filename,"r");
@@ -304,6 +311,30 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
   }
   time->tf = time->t[nsi-1][np1];
   fclose(pFile);
+}
+
+int cmp_modelica_real(const void *v1, const void *v2) {
+           return (*(modelica_real*)v1 - *(modelica_real*)v2);
+}
+
+static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], const int np, const int nsi){
+  int i,k;
+  const int np1 = np - 1;
+  time->t0 = time->tt[0];
+  time->tf = time->tt[nsi];
+
+  qsort((void*) time->tt, nsi+1, sizeof(modelica_real), &cmp_modelica_real);
+
+  for(i = 0; i<nsi; ++i){
+    time->dt[i] = time->tt[i+1] - time->tt[i];
+    for(k=0; k<np; ++k){
+      time->t[i][k] = time->tt[i] + c[k]*time->dt[i];
+      /*printf("\nt[%i][%i] = %g",i,k,(double)time->t[i][k]);*/
+    }
+  }
+
+  free(time->tt);
+
 }
 
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct

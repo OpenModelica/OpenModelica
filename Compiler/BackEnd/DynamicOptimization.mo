@@ -52,6 +52,7 @@ protected import ComponentReference;
 protected import Config;
 
 protected import Expression;
+protected import Error;
 protected import Flags;
 protected import List;
 
@@ -72,10 +73,9 @@ protected
   Option<DAE.Exp> mayer, lagrange, startTimeE, finalTimeE;
   BackendDAE.Variables v, inVarsAndknvars;
   list<BackendDAE.Var> varlst;
+  BackendDAE.Var tG;
   list<BackendDAE.Equation> e;
 algorithm
-
-
 
   if not inOptimicaFlag and not inDynOptimization then //no optimization
     outVars := inVars;
@@ -93,6 +93,8 @@ algorithm
                         else (NONE(), NONE(),NONE(),NONE());
                         end match;
 
+
+    _ := addTimeGrid(BackendVariable.varList(knvars), knvars); 
     inVarsAndknvars := BackendVariable.addVariables(inVars, BackendVariable.copyVariables(knvars));
     varlst := BackendVariable.varList(inVarsAndknvars);
     (v, e, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), inVars, inEqns);
@@ -105,6 +107,25 @@ algorithm
   end if;
 
 end addOptimizationVarsEqns;
+
+
+protected function addTimeGrid
+  input list<BackendDAE.Var> varlst;
+  input BackendDAE.Variables iv;
+  output BackendDAE.Variables ov = iv;
+protected
+  list<BackendDAE.Var> tG = findTimeGrid(varlst);
+  list<Integer> ind;
+algorithm
+  if listLength(tG) > 0 then
+    ind := BackendVariable.getVarIndexFromVars(tG, ov);
+    for i in ind loop
+      ov := BackendVariable.setVarKindForVar(i, BackendDAE.OPT_TGRID(), ov);
+      //BackendDump.printVar(BackendVariable.getVarAt(ov,i));
+    end for;
+  end if; 
+  
+end addTimeGrid;
 
 protected function joinConstraints "author: Vitalij Ruge"
   input list< .DAE.Constraint> inConstraint;
@@ -246,6 +267,13 @@ find lagrange-term from annotation"
 input list<BackendDAE.Var> varlst;
 output Option<DAE.Exp> lagrange = findObjTerm(varlst,BackendVariable.hasLagrangeTermAnno);
 end findLagrangeTerm;
+
+protected function findTimeGrid
+"author: Vitalij Ruge
+find lagrange-term from annotation"
+input list<BackendDAE.Var> varlst;
+output list<BackendDAE.Var> timeGrids = List.select(varlst, BackendVariable.hasTimeGridAnno);
+end findTimeGrid;
 
 
 protected function findObjTerm

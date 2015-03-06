@@ -861,6 +861,7 @@ algorithm
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_FCONSTR())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_WITH_DER())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID())) then ();
   end match;
 end failIfNonState;
 
@@ -971,6 +972,7 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_FCONSTR()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_WITH_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID()) :: _)) then true;
     case ((_ :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;
@@ -1306,6 +1308,7 @@ algorithm
   outBoolean:=
   matchcontinue (inVar)
     case BackendDAE.VAR(varKind = BackendDAE.PARAM()) then true;
+    case BackendDAE.VAR(varKind = BackendDAE.OPT_TGRID()) then true;
     case (_) then false;
   end matchcontinue;
 end isParam;
@@ -1462,6 +1465,22 @@ algorithm
     else false;
   end match;
 end hasFinalConTermAnno;
+
+public function hasTimeGridAnno
+"author: Vitalij Ruge
+ Return true if variable has isTimeGrid=true annotation"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    local SCode.Comment comm;
+
+    case (BackendDAE.VAR(comment=  SOME(comm) ))
+       then SCode.commentHasBooleanNamedAnnotation(comm, "isTimeGrid");
+    else false;
+  end match;
+end hasTimeGridAnno;
+
 
 public function isNonRealParam
 "Return true if variable is NOT a parameter of real-type"

@@ -742,6 +742,10 @@ algorithm
       equation
         File.write(file,"derivation of input");
       then ();
+    case BackendDAE.OPT_TGRID()
+      equation
+        File.write(file,"time grid for optimization");
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});

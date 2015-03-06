@@ -226,6 +226,7 @@ uniontype VarKind "variable kind"
   record OPT_FCONSTR end OPT_FCONSTR;
   record OPT_INPUT_WITH_DER end OPT_INPUT_WITH_DER;
   record OPT_INPUT_DER end OPT_INPUT_DER;
+  record OPT_TGRID end OPT_TGRID;
 end VarKind;
 
 public uniontype TearingSelect

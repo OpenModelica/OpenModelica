@@ -279,6 +279,14 @@ int (*pickUpBoundsForInputsInOptimization)(DATA* data, modelica_real* min, model
 int (*setInputData)(DATA* data);
 
 
+/*
+ * This function is used only for optimization purpose
+ * and return the time gride. In case it's not present
+ * a dummy function is added which return -1.
+ */
+int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_real**t);
+
+
 
 
 };

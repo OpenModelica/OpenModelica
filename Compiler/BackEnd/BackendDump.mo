@@ -2301,6 +2301,7 @@ algorithm
     case BackendDAE.OPT_FCONSTR()  then "OPT_FCONSTR";
     case BackendDAE.OPT_INPUT_WITH_DER()  then "OPT_INPUT_WITH_DER";
     case BackendDAE.OPT_INPUT_DER()  then "OPT_INPUT_DER";
+    case BackendDAE.OPT_TGRID()  then "OPT_TGRID";
   end match;
 end kindString;
 

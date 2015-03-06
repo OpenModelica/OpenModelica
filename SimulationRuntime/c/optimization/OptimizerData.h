@@ -90,6 +90,8 @@ typedef struct OptDataTime{
   long double *dt;
 
   long double **t;
+  modelica_real *tt;
+  modelica_boolean model_grid;
 }OptDataTime;
 
 typedef struct OptDataBounds{

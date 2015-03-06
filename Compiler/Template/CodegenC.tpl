@@ -519,6 +519,7 @@ template simulationFile_opt_header(SimCode simCode, String guid)
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
       int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data);
+      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
     #if defined(__cplusplus)
     }
     #endif
@@ -644,6 +645,7 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
     extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
@@ -691,7 +693,8 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"mayer")%>,
        <%symbolName(modelNamePrefixStr,"lagrange")%>,
        <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
-       <%symbolName(modelNamePrefixStr,"setInputData")%>
+       <%symbolName(modelNamePrefixStr,"setInputData")%>,
+       <%symbolName(modelNamePrefixStr,"getTimeGrid")%>
     <%\n%>
     };
 
@@ -10833,6 +10836,7 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
         int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * i1, short*i2){return -1;}
         int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt){return -1;}
         int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data){return -1;}
+        int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){return -1};
         >>
       else
         (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n")
@@ -10888,6 +10892,19 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               %>
             >>
 
+      let getTG = match simCode
+        case simCode as SIMCODE(__) then
+          match modelInfo
+            case MODELINFO(vars=SIMVARS(__)) then
+            <<
+              *nsi=(-1 <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) hasindex i0 => '+1'
+               ;separator=" "%>);
+              *t = (modelica_real*) malloc((*nsi+1)*sizeof(modelica_real));
+              <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) hasindex i0 =>
+              '(*t)[<%i0%>] = <%cref(name)%>;'
+              ;separator="\n"
+              %>
+            >>
 
       let inputBounds = match simCode
         case simCode as SIMCODE(__) then
@@ -10933,7 +10950,10 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             TRACE_POP
             return 0;
            }
-
+           int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){
+            <%getTG%>
+            return 0;
+           }
            >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end optimizationComponents1;
