@@ -59,9 +59,9 @@ template translateModel(SimCode simCode)
         let()= textFile(calcHelperMainfile3(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp')
         let()= textFile(calcHelperMainfile4(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp')
         let()= textFile(calcHelperMainfile5(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain5.cpp')
-		match target 
-		case "vxworks69" then
-		let()= textFile(ftp_script(simCode), '<%fileNamePrefix%>_ftp.bat')
+    match target
+    case "vxworks69" then
+    let()= textFile(ftp_script(simCode), '<%fileNamePrefix%>_ftp.bat')
         ""
      else ""
    end match
@@ -1769,215 +1769,215 @@ let modelname = identOfPath(modelInfo.name)
 
 extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path);
 
-extern "C"  int runSimulation(void) 
+extern "C"  int runSimulation(void)
 {
-	// Enable Telnet and Floatingpoint Unit
-	enableTelnetPrintf();
-	enableFpuSupport();
-	
-	// Wait 10 seconds 
-	timespec delay;
-	delay.tv_sec = 10;
-	delay.tv_nsec = 0;
-	nanosleep( &delay ,NULL);
+  // Enable Telnet and Floatingpoint Unit
+  enableTelnetPrintf();
+  enableFpuSupport();
 
-	MLPIHANDLE connection = MLPI_INVALIDHANDLE;
+  // Wait 10 seconds
+  timespec delay;
+  delay.tv_sec = 10;
+  delay.tv_nsec = 0;
+  nanosleep( &delay ,NULL);
 
-	MLPIRESULT result;
-	
-	// connect to API
-	result = mlpiApiConnect(MLPI_LOCALHOST, &connection); // replace localhost with control IP to connect to another control
-	if (MLPI_FAILED(result)) 
-	{
-		printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
-		
-		//////////////////////////////////////
-		//  Place error handling here       //
-		//////////////////////////////////////
-		
-		return result;
-	}
-	
-	// Get MotionCycle time
-	ULONG cycletime_us = 0;
-	result = mlpiParameterReadDataUlong(connection, 0, MLPI_SIDN_C(400), &cycletime_us);
-	if (MLPI_FAILED(result)) 
-	{
-		printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
+  MLPIHANDLE connection = MLPI_INVALIDHANDLE;
 
-		//////////////////////////////////////
-		//  Place error handling here       //
-		//////////////////////////////////////
-		
-		return result;
-	}
-	
-	// Convert mu_s to s
-	double cycletime = (double)cycletime_us/(1e6);
-	
-	/*
-	=============================================================================================================
-	==                 Initialization of SimCore
-	=============================================================================================================
-	*/
-	wvEvent(0,NULL,0);
-	printf("runSimulation started");
-	
-	PATH libraries_path = "";
-	PATH modelicaSystem_path = ""; 
-	boost::shared_ptr<VxWorksFactory> factory = boost::shared_ptr<VxWorksFactory>(new VxWorksFactory(libraries_path, modelicaSystem_path));
-	ISimController* sim_controller = createSimController(libraries_path, modelicaSystem_path);
-	boost::weak_ptr<ISimData> simData = sim_controller->LoadSimData("model2");
-	boost::weak_ptr<IMixedSystem> system = sim_controller->LoadSystem("model2","model2");	
-	boost::shared_ptr<ISimData> simData_shared = simData.lock();
-	
-	
-	
-	// Declare Input specify initial_values if needed!!! 
-	<%defineInputVars(simCode)%>
+  MLPIRESULT result;
 
-	// Declare Output 
-	<%defineOutputVars(simCode)%>
-	
-	
-	// Set simulation Settings: mainly stepsize important
-		SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "model2",EMPTY, 100,EMPTY2, OFF};
-	//                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance  
-	try
-	{
-		sim_controller->StartVxWorks(settings, "model2");
-	}
-	catch(ModelicaSimulationError& ex)
-	{
-		string arg1 = string("Simulation failed for ") + settings.outputfile_name;
-		string arg2 = ex.what();//ex.what();
-		SIMULATION_ERROR arg3 = ex.getErrorID();
-		std::string error = add_error_info(arg1,arg2,arg3);
-		int lengthOfString = error.length();
-		lengthOfString = (int) (lengthOfString / 60 ) + 1;
-		
-		
-		
-		for (int i = 0 ; i < lengthOfString ; i++ )
-		{
-			result = mlpiSystemSetDiagnosis(connection, MLPI_DIAGNOSIS_ERROR_FATAL, 1, A2W16( error.substr(0 + i * 60 ,60 + i * 60).c_str()) );		       
-		//////////////////////////////////////
-		//  Place error handling here       //
-		//////////////////////////////////////
-		}
-		
+  // connect to API
+  result = mlpiApiConnect(MLPI_LOCALHOST, &connection); // replace localhost with control IP to connect to another control
+  if (MLPI_FAILED(result))
+  {
+    printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
 
-		return -1;
-	}
-	printf("StartVxWorks finished");
-	wvEvent(1,NULL,0);
-	
+    //////////////////////////////////////
+    //  Place error handling here       //
+    //////////////////////////////////////
 
-	
-	
-	result = mlpiSystemSetTargetMode(connection, MLPI_SYSTEMMODE_P2);
-	if (MLPI_FAILED(result)) 
-	{
-		printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-		//////////////////////////////////////
-		//  Place error handling here       //
-		//////////////////////////////////////
-		return result;
-	}
+    return result;
+  }
 
-	
+  // Get MotionCycle time
+  ULONG cycletime_us = 0;
+  result = mlpiParameterReadDataUlong(connection, 0, MLPI_SIDN_C(400), &cycletime_us);
+  if (MLPI_FAILED(result))
+  {
+    printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
 
-	// Set Priority of Task
-	result = mlpiTaskSetCurrentPriority(connection,  MLPI_PRIORITY_HIGH_MAX );
-	if (MLPI_FAILED(result)) 
-	{
-		printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-		//////////////////////////////////////
-		//  Place error handling here       //
-		//////////////////////////////////////
-		return result;
-	}
-	
-	MlpiSystemMode mode;
-	// run simulation
-	while(true)
-	{
+    //////////////////////////////////////
+    //  Place error handling here       //
+    //////////////////////////////////////
 
-		// Wait for motion interrupt
-		result = mlpiTaskWaitForEvent(connection, MLPI_TASKEVENT_MOTION_CYCLE, MLPI_INFINITE);
-		if (MLPI_FAILED(result)) 
-		{
-			printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-			//////////////////////////////////////
-			//  Place error handling here       //
-			//////////////////////////////////////
-			return result;
-		}
-		// Get Current Mode of PLC
-		result = mlpiSystemGetCurrentMode(connection, &mode);
-		if (MLPI_FAILED(result)) 
-		{
-			printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-			//////////////////////////////////////
-			//  Place error handling here       //
-			//////////////////////////////////////
-			return result;
-		}
-		
-		
-		// Only compute one step if PLC is in mode P4
-		if(mode == MLPI_SYSTEMMODE_BB) //
-		{
-			//Write input
-			/* do something with the inputs!*/
-			/*
-			<%setInputVars(simCode)%>
-			*/
-			
-			//Calculate one step
-			try
-			{
-				sim_controller->calcOneStep();
-			}
-		    catch(ModelicaSimulationError& ex)
-		    {
-				string arg1 = string("Simulation failed for ") + settings.outputfile_name;
-				string arg2 = ex.what();//ex.what();
-				SIMULATION_ERROR arg3 = ex.getErrorID();
-				std::string error = add_error_info(arg1,arg2,arg3);
+    return result;
+  }
 
-				int lengthOfString = error.length();
-				lengthOfString = (int) (lengthOfString / 60 ) + 1;
-				
-				
-				
-				for (int i = 0 ; i < lengthOfString ; i++ )
-				{
-					result = mlpiSystemSetDiagnosis(connection, MLPI_DIAGNOSIS_ERROR_FATAL, 1, A2W16( error.substr(0 + i * 60 ,60 + i * 60).c_str()) );		       
-					//////////////////////////////////////
-					//  Place error handling here       //
-					//////////////////////////////////////
+  // Convert mu_s to s
+  double cycletime = (double)cycletime_us/(1e6);
 
-				}
-				return -1;
-		    }
-			
-			//Write output
-			<%getOutputVars(simCode)%>
-			
-		}
-	}
-	
-	delete sim_controller;
-	
-	result = mlpiApiDisconnect(&connection);
-	{
-		//////////////////////////////////////
-		//  Place error handling here       //
-		//////////////////////////////////////
-		return result;
-	}
-	return 0;
+  /*
+  =============================================================================================================
+  ==                 Initialization of SimCore
+  =============================================================================================================
+  */
+  wvEvent(0,NULL,0);
+  printf("runSimulation started");
+
+  PATH libraries_path = "";
+  PATH modelicaSystem_path = "";
+  boost::shared_ptr<VxWorksFactory> factory = boost::shared_ptr<VxWorksFactory>(new VxWorksFactory(libraries_path, modelicaSystem_path));
+  ISimController* sim_controller = createSimController(libraries_path, modelicaSystem_path);
+  boost::weak_ptr<ISimData> simData = sim_controller->LoadSimData("model2");
+  boost::weak_ptr<IMixedSystem> system = sim_controller->LoadSystem("model2","model2");
+  boost::shared_ptr<ISimData> simData_shared = simData.lock();
+
+
+
+  // Declare Input specify initial_values if needed!!!
+  <%defineInputVars(simCode)%>
+
+  // Declare Output
+  <%defineOutputVars(simCode)%>
+
+
+  // Set simulation Settings: mainly stepsize important
+    SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "model2",EMPTY, 100,EMPTY2, OFF};
+  //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
+  try
+  {
+    sim_controller->StartVxWorks(settings, "model2");
+  }
+  catch(ModelicaSimulationError& ex)
+  {
+    string arg1 = string("Simulation failed for ") + settings.outputfile_name;
+    string arg2 = ex.what();//ex.what();
+    SIMULATION_ERROR arg3 = ex.getErrorID();
+    std::string error = add_error_info(arg1,arg2,arg3);
+    int lengthOfString = error.length();
+    lengthOfString = (int) (lengthOfString / 60 ) + 1;
+
+
+
+    for (int i = 0 ; i < lengthOfString ; i++ )
+    {
+      result = mlpiSystemSetDiagnosis(connection, MLPI_DIAGNOSIS_ERROR_FATAL, 1, A2W16( error.substr(0 + i * 60 ,60 + i * 60).c_str()) );
+    //////////////////////////////////////
+    //  Place error handling here       //
+    //////////////////////////////////////
+    }
+
+
+    return -1;
+  }
+  printf("StartVxWorks finished");
+  wvEvent(1,NULL,0);
+
+
+
+
+  result = mlpiSystemSetTargetMode(connection, MLPI_SYSTEMMODE_P2);
+  if (MLPI_FAILED(result))
+  {
+    printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
+    //////////////////////////////////////
+    //  Place error handling here       //
+    //////////////////////////////////////
+    return result;
+  }
+
+
+
+  // Set Priority of Task
+  result = mlpiTaskSetCurrentPriority(connection,  MLPI_PRIORITY_HIGH_MAX );
+  if (MLPI_FAILED(result))
+  {
+    printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
+    //////////////////////////////////////
+    //  Place error handling here       //
+    //////////////////////////////////////
+    return result;
+  }
+
+  MlpiSystemMode mode;
+  // run simulation
+  while(true)
+  {
+
+    // Wait for motion interrupt
+    result = mlpiTaskWaitForEvent(connection, MLPI_TASKEVENT_MOTION_CYCLE, MLPI_INFINITE);
+    if (MLPI_FAILED(result))
+    {
+      printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
+      //////////////////////////////////////
+      //  Place error handling here       //
+      //////////////////////////////////////
+      return result;
+    }
+    // Get Current Mode of PLC
+    result = mlpiSystemGetCurrentMode(connection, &mode);
+    if (MLPI_FAILED(result))
+    {
+      printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
+      //////////////////////////////////////
+      //  Place error handling here       //
+      //////////////////////////////////////
+      return result;
+    }
+
+
+    // Only compute one step if PLC is in mode P4
+    if(mode == MLPI_SYSTEMMODE_BB) //
+    {
+      //Write input
+      /* do something with the inputs!*/
+      /*
+      <%setInputVars(simCode)%>
+      */
+
+      //Calculate one step
+      try
+      {
+        sim_controller->calcOneStep();
+      }
+        catch(ModelicaSimulationError& ex)
+        {
+        string arg1 = string("Simulation failed for ") + settings.outputfile_name;
+        string arg2 = ex.what();//ex.what();
+        SIMULATION_ERROR arg3 = ex.getErrorID();
+        std::string error = add_error_info(arg1,arg2,arg3);
+
+        int lengthOfString = error.length();
+        lengthOfString = (int) (lengthOfString / 60 ) + 1;
+
+
+
+        for (int i = 0 ; i < lengthOfString ; i++ )
+        {
+          result = mlpiSystemSetDiagnosis(connection, MLPI_DIAGNOSIS_ERROR_FATAL, 1, A2W16( error.substr(0 + i * 60 ,60 + i * 60).c_str()) );
+          //////////////////////////////////////
+          //  Place error handling here       //
+          //////////////////////////////////////
+
+        }
+        return -1;
+        }
+
+      //Write output
+      <%getOutputVars(simCode)%>
+
+    }
+  }
+
+  delete sim_controller;
+
+  result = mlpiApiDisconnect(&connection);
+  {
+    //////////////////////////////////////
+    //  Place error handling here       //
+    //////////////////////////////////////
+    return result;
+  }
+  return 0;
 }
 
 
@@ -2002,22 +2002,22 @@ return 0;
 
 BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_start(int param1, int param2, int param3)
 {
-taskSpawn(	"<%lastIdentOfPath(modelInfo.name)%>",     			// name of task
-			200,					            // priority of task 
-			VX_FP_TASK,                         // options (executes with the floating-point coprocessor)
-			0x200000, 							// stacksize
-			(FUNCPTR)& runSimulation,  			// entry point (function)
-			0, 									// arguments 1
-			0,									// arguments 2
-			0,                                  // arguments 3
-			0,                                  // arguments 4
-			0,                                  // arguments 5
-			0,                                  // arguments 6
-			0,                                  // arguments 7
-			0,                                  // arguments 8
-			0,                                  // arguments 9
-			0);                                 // arguments 10  
-	
+taskSpawn(  "<%lastIdentOfPath(modelInfo.name)%>",           // name of task
+      200,                      // priority of task
+      VX_FP_TASK,                         // options (executes with the floating-point coprocessor)
+      0x200000,               // stacksize
+      (FUNCPTR)& runSimulation,        // entry point (function)
+      0,                   // arguments 1
+      0,                  // arguments 2
+      0,                                  // arguments 3
+      0,                                  // arguments 4
+      0,                                  // arguments 5
+      0,                                  // arguments 6
+      0,                                  // arguments 7
+      0,                                  // arguments 8
+      0,                                  // arguments 9
+      0);                                 // arguments 10
+
 printf("\n###################################################################");
 printf("\n## onStart ########################################################");
 printf("\n###################################################################");
@@ -2185,14 +2185,14 @@ then
           let &optpreExp = buffer "" /*BUFD*/
 
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
-		  <<
-		  boost::shared_ptr<SimDouble> sim_value_in<%cref(name, false)%>(new SimDouble(0.0)/*set start value here*/);
-		  simData_shared->Add("<%cref(name, false)%>", sim_value_in<%cref(name, false)%>);
-		  >>
-		  ;separator="\n"
-          
-		  <<
-			<%inputnames%>
+      <<
+      boost::shared_ptr<SimDouble> sim_value_in<%cref(name, false)%>(new SimDouble(0.0)/*set start value here*/);
+      simData_shared->Add("<%cref(name, false)%>", sim_value_in<%cref(name, false)%>);
+      >>
+      ;separator="\n"
+
+      <<
+      <%inputnames%>
           >>
 
   <<
@@ -2215,13 +2215,13 @@ then
           let &optpreExp = buffer "" /*BUFD*/
 
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
-		  <<
-		  (dynamic_cast<SimDouble*>(simData_shared->Get("<%cref(name, false)%>")))->getValue()   = //place variable here ;
-		  >>
-		  ;separator="\n"
-          
-		<<
-		<%inputnames%>
+      <<
+      (dynamic_cast<SimDouble*>(simData_shared->Get("<%cref(name, false)%>")))->getValue()   = //place variable here ;
+      >>
+      ;separator="\n"
+
+    <<
+    <%inputnames%>
         >>
 
   <<
@@ -2244,14 +2244,14 @@ then
           let &optpreExp = buffer "" /*BUFD*/
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
-		  <<
-		  boost::shared_ptr<SimDouble> sim_value_out<%cref(name, false)%>(new SimDouble(0.0));
-		  simData_shared->Add("<%cref(name, false)%>", sim_value_out<%cref(name, false)%>);
-		  >>
-		  ;separator="\n"
-          
-		  <<
-			<%outputnames%>
+      <<
+      boost::shared_ptr<SimDouble> sim_value_out<%cref(name, false)%>(new SimDouble(0.0));
+      simData_shared->Add("<%cref(name, false)%>", sim_value_out<%cref(name, false)%>);
+      >>
+      ;separator="\n"
+
+      <<
+      <%outputnames%>
           >>
 
   <<
@@ -2275,17 +2275,17 @@ then
           let &optpreExp = buffer "" /*BUFD*/
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
-		  <<
-		  place variable here  = dynamic_cast<SimDouble*>simData_shared->Get("<%cref(name, false)%>"))->getValue();
-		  >>
-		  ;separator="\n"
-          
-		<<
-	    /* do something with the outputs!*/
-		/*
-		<%outputnames%>
+      <<
+      place variable here  = dynamic_cast<SimDouble*>simData_shared->Get("<%cref(name, false)%>"))->getValue();
+      >>
+      ;separator="\n"
+
+    <<
+      /* do something with the outputs!*/
+    /*
+    <%outputnames%>
         */
-		>>
+    >>
 
   <<
   <%outputs%>
@@ -2900,303 +2900,303 @@ case "gcc" then
                 >>
             %>
             >>
-	end match
+  end match
 case "vxworks69" then
     match simCode
         case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
             <<
-			BUILD_SPEC=ATOMgnu 
-			DEBUG_MODE=1 
-			TRACE=1 
+      BUILD_SPEC=ATOMgnu
+      DEBUG_MODE=1
+      TRACE=1
 
-			MODEL_NAME = <%fileNamePrefix%>
+      MODEL_NAME = <%fileNamePrefix%>
 
 
-			WIND_HOME := $(subst \,/,$(WIND_HOME))
-			WIND_BASE := $(subst \,/,$(WIND_BASE))
-
-			all : clean pre_build main_all post_build
-
-			_clean ::
-			<%\t%>@echo "make: removing targets and objects of `pwd`"
-
-			TRACE=0
-			TRACEON=$(TRACE:0=@)
-			TRACE_FLAG=$(TRACEON:1=)
-
-			JOBS?=1
-			TARGET_JOBS?=$(JOBS)
-
-			MAKEFILE := Makefile
-
-			FLEXIBLE_BUILD := 1
-
-			BUILD_SPEC = ATOMgnu
-			DEBUG_MODE = 1
-			ifeq ($(DEBUG_MODE),1)
-			MODE_DIR := Debug
-			else
-			MODE_DIR := NonDebug
-			endif
-			OBJ_DIR := .
-
-
-
-
-			#Global Build Macros
-			PROJECT_TYPE = DKM
-			DEFINES = 
-			EXPAND_DBG = 0
-
-
-			#BuildSpec specific Build Macros
-			VX_CPU_FAMILY = pentium
-			CPU = ATOM
-			TOOL_FAMILY = gnu
-			TOOL = gnu
-			TOOL_PATH = 
-			CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
-			VSB_DIR = $(WIND_BASE)/target/lib
-			VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
-			LIBPATH = 
-			LIBS = 
-
-			IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/ 
-
-			IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a 
-
-			IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"   
-
-
-
-			#BuildTool flags
-			ifeq ($(DEBUG_MODE),1)
-			DEBUGFLAGS_C-Compiler = -g
-			DEBUGFLAGS_C++-Compiler = -g
-			DEBUGFLAGS_Linker = -g
-			DEBUGFLAGS_Partial-Image-Linker = 
-			DEBUGFLAGS_Librarian = 
-			DEBUGFLAGS_Assembler = -g
-			else
-			DEBUGFLAGS_C-Compiler =  -O2
-			DEBUGFLAGS_C++-Compiler =  -O2
-			DEBUGFLAGS_Linker =  -O2
-			DEBUGFLAGS_Partial-Image-Linker = 
-			DEBUGFLAGS_Librarian = 
-			DEBUGFLAGS_Assembler =  -O2
-			endif
-
-
-			#Project Targets
-			PROJECT_TARGETS = com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o
-
-
-			#Rules
-
-			# com.boschrexroth.$(MODEL_NAME)
-			ifeq ($(DEBUG_MODE),1)
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler = -g
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler = -g
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Linker = -g
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler = -g
-			else
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler =  -O2
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler =  -O2
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Linker =  -O2
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
-			endif
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/ 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"   
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : PROJECT_TYPE = DKM
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEFINES = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : EXPAND_DBG = 0
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VX_CPU_FAMILY = pentium
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CPU = ATOM
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_FAMILY = gnu
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL = gnu
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_PATH = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : LIBPATH = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : LIBS = 
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : OBJ_DIR := com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)
-
-			OBJECTS_com.boschrexroth.$(MODEL_NAME) = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o
-
-			ifeq ($(TARGET_JOBS),1)
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : $(OBJECTS_com.boschrexroth.$(MODEL_NAME))
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@";rm -f "$@";nmpentium $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) | tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium -tags $(VSB_DIR)/tags/pentium/ATOM/common/dkm.tags > $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_Linker) $(CC_ARCH_SPEC) -fdollars-in-identifiers -Wall -Wsystem-headers  $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES)  $(IDE_DEFINES) $(DEFINES) -o $(OBJ_DIR)/ctdt.o -c $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X -T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT -o "$@" $(OBJ_DIR)/ctdt.o $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
-
-			else
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out_jobs
-
-			endif
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_compile_file : $(FILE) ;
-
-			_clean :: com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_clean
-
-			com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_clean : 
-			<%\t%>$(TRACE_FLAG)if [ -d "com.boschrexroth.$(MODEL_NAME)" ]; then cd "com.boschrexroth.$(MODEL_NAME)"; rm -rf $(MODE_DIR); fi
-
-
-			# com.boschrexroth.$(MODEL_NAME)_partialImage
-			ifeq ($(DEBUG_MODE),1)
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler = -g
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler = -g
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Linker = -g
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler = -g
-			else
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler =  -O2
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler =  -O2
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Linker =  -O2
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
-			endif
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/ 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"   
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : PROJECT_TYPE = DKM
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEFINES = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : EXPAND_DBG = 0
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VX_CPU_FAMILY = pentium
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CPU = ATOM
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_FAMILY = gnu
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL = gnu
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_PATH = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : LIBPATH = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : LIBS = 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : OBJ_DIR := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)
+      WIND_HOME := $(subst \,/,$(WIND_HOME))
+      WIND_BASE := $(subst \,/,$(WIND_BASE))
+
+      all : clean pre_build main_all post_build
+
+      _clean ::
+      <%\t%>@echo "make: removing targets and objects of `pwd`"
+
+      TRACE=0
+      TRACEON=$(TRACE:0=@)
+      TRACE_FLAG=$(TRACEON:1=)
+
+      JOBS?=1
+      TARGET_JOBS?=$(JOBS)
+
+      MAKEFILE := Makefile
+
+      FLEXIBLE_BUILD := 1
+
+      BUILD_SPEC = ATOMgnu
+      DEBUG_MODE = 1
+      ifeq ($(DEBUG_MODE),1)
+      MODE_DIR := Debug
+      else
+      MODE_DIR := NonDebug
+      endif
+      OBJ_DIR := .
+
+
+
+
+      #Global Build Macros
+      PROJECT_TYPE = DKM
+      DEFINES =
+      EXPAND_DBG = 0
+
+
+      #BuildSpec specific Build Macros
+      VX_CPU_FAMILY = pentium
+      CPU = ATOM
+      TOOL_FAMILY = gnu
+      TOOL = gnu
+      TOOL_PATH =
+      CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
+      VSB_DIR = $(WIND_BASE)/target/lib
+      VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
+      LIBPATH =
+      LIBS =
+
+      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/
+
+      IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a
+
+      IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
+
+
+
+      #BuildTool flags
+      ifeq ($(DEBUG_MODE),1)
+      DEBUGFLAGS_C-Compiler = -g
+      DEBUGFLAGS_C++-Compiler = -g
+      DEBUGFLAGS_Linker = -g
+      DEBUGFLAGS_Partial-Image-Linker =
+      DEBUGFLAGS_Librarian =
+      DEBUGFLAGS_Assembler = -g
+      else
+      DEBUGFLAGS_C-Compiler =  -O2
+      DEBUGFLAGS_C++-Compiler =  -O2
+      DEBUGFLAGS_Linker =  -O2
+      DEBUGFLAGS_Partial-Image-Linker =
+      DEBUGFLAGS_Librarian =
+      DEBUGFLAGS_Assembler =  -O2
+      endif
+
+
+      #Project Targets
+      PROJECT_TARGETS = com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o
+
+
+      #Rules
+
+      # com.boschrexroth.$(MODEL_NAME)
+      ifeq ($(DEBUG_MODE),1)
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler = -g
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler = -g
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Linker = -g
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler = -g
+      else
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler =  -O2
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler =  -O2
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Linker =  -O2
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
+      endif
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : PROJECT_TYPE = DKM
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEFINES =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : EXPAND_DBG = 0
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VX_CPU_FAMILY = pentium
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CPU = ATOM
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_FAMILY = gnu
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL = gnu
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_PATH =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : LIBPATH =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : LIBS =
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : OBJ_DIR := com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)
+
+      OBJECTS_com.boschrexroth.$(MODEL_NAME) = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o
+
+      ifeq ($(TARGET_JOBS),1)
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : $(OBJECTS_com.boschrexroth.$(MODEL_NAME))
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@";rm -f "$@";nmpentium $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) | tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium -tags $(VSB_DIR)/tags/pentium/ATOM/common/dkm.tags > $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_Linker) $(CC_ARCH_SPEC) -fdollars-in-identifiers -Wall -Wsystem-headers  $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES)  $(IDE_DEFINES) $(DEFINES) -o $(OBJ_DIR)/ctdt.o -c $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X -T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT -o "$@" $(OBJ_DIR)/ctdt.o $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
+
+      else
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out_jobs
+
+      endif
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_compile_file : $(FILE) ;
+
+      _clean :: com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_clean
+
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_clean :
+      <%\t%>$(TRACE_FLAG)if [ -d "com.boschrexroth.$(MODEL_NAME)" ]; then cd "com.boschrexroth.$(MODEL_NAME)"; rm -rf $(MODE_DIR); fi
+
+
+      # com.boschrexroth.$(MODEL_NAME)_partialImage
+      ifeq ($(DEBUG_MODE),1)
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler = -g
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler = -g
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Linker = -g
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler = -g
+      else
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler =  -O2
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler =  -O2
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Linker =  -O2
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
+      endif
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : PROJECT_TYPE = DKM
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEFINES =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : EXPAND_DBG = 0
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VX_CPU_FAMILY = pentium
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CPU = ATOM
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_FAMILY = gnu
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL = gnu
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_PATH =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : LIBPATH =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : LIBS =
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : OBJ_DIR := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).o : OMCpp$(MODEL_NAME).cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).o : OMCpp$(MODEL_NAME).cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)AlgLoopMain.o : OMCpp$(MODEL_NAME)AlgLoopMain.cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)AlgLoopMain.o : OMCpp$(MODEL_NAME)AlgLoopMain.cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o : OMCpp$(MODEL_NAME)CalcHelperMain.cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o : OMCpp$(MODEL_NAME)CalcHelperMain.cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain2.o : OMCpp$(MODEL_NAME)CalcHelperMain2.cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain2.o : OMCpp$(MODEL_NAME)CalcHelperMain2.cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain3.o : OMCpp$(MODEL_NAME)CalcHelperMain3.cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain3.o : OMCpp$(MODEL_NAME)CalcHelperMain3.cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain4.o : OMCpp$(MODEL_NAME)CalcHelperMain4.cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain4.o : OMCpp$(MODEL_NAME)CalcHelperMain4.cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain5.o : OMCpp$(MODEL_NAME)CalcHelperMain5.cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain5.o : OMCpp$(MODEL_NAME)CalcHelperMain5.cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.o : OMCpp$(MODEL_NAME)Main.cpp $(FORCE_FILE_BUILD)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.o : OMCpp$(MODEL_NAME)Main.cpp $(FORCE_FILE_BUILD)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
 
 
-			OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).o \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)AlgLoopMain.o \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain2.o \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain3.o \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain4.o \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain5.o \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.o
+      OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).o \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)AlgLoopMain.o \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain2.o \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain3.o \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain4.o \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain5.o \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.o
 
-			ifeq ($(TARGET_JOBS),1)
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o : $(OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage)
-			<%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X  -o "$@" $(OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage) $(ADDED_OBJECTS) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
+      ifeq ($(TARGET_JOBS),1)
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o : $(OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage)
+      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X  -o "$@" $(OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage) $(ADDED_OBJECTS) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
 
-			else
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o : com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o_jobs
+      else
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o : com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o_jobs
 
-			endif
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_compile_file : $(FILE) ;
+      endif
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_compile_file : $(FILE) ;
 
-			_clean :: com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_clean
+      _clean :: com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_clean
 
-			com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_clean : 
-			<%\t%>$(TRACE_FLAG)if [ -d "com.boschrexroth.$(MODEL_NAME)_partialImage" ]; then cd "com.boschrexroth.$(MODEL_NAME)_partialImage"; rm -rf $(MODE_DIR); fi
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_clean :
+      <%\t%>$(TRACE_FLAG)if [ -d "com.boschrexroth.$(MODEL_NAME)_partialImage" ]; then cd "com.boschrexroth.$(MODEL_NAME)_partialImage"; rm -rf $(MODE_DIR); fi
 
-			force : 
+      force :
 
-			TARGET_JOBS_RULE?=echo "Update the makefile template via File > Import > Build Settings : Update makefile template";exit 1
-			%_jobs : 
-			<%\t%>$(TRACE_FLAG)$(TARGET_JOBS_RULE)
+      TARGET_JOBS_RULE?=echo "Update the makefile template via File > Import > Build Settings : Update makefile template";exit 1
+      %_jobs :
+      <%\t%>$(TRACE_FLAG)$(TARGET_JOBS_RULE)
 
-			DEP_FILES := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)AlgLoopMain.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.d \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain2.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain3.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain4.d \
-			<%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain5.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/com.boschrexroth.$(MODEL_NAME).d
-			-include $(DEP_FILES)
+      DEP_FILES := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME).d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)AlgLoopMain.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.d \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain2.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain3.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain4.d \
+      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain5.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/com.boschrexroth.$(MODEL_NAME).d
+      -include $(DEP_FILES)
 
 
-			WIND_SCOPETOOLS_BASE := $(subst \,/,$(WIND_SCOPETOOLS_BASE))
+      WIND_SCOPETOOLS_BASE := $(subst \,/,$(WIND_SCOPETOOLS_BASE))
 
-			clean_scopetools :
-			<%\t%>$(TRACE_FLAG)rm -rf .coveragescope/db
+      clean_scopetools :
+      <%\t%>$(TRACE_FLAG)rm -rf .coveragescope/db
 
-			CLEAN_STEP := clean_scopetools
+      CLEAN_STEP := clean_scopetools
 
 
-			#-include *.makefile
+      #-include *.makefile
 
-			#-include *.makefile
+      #-include *.makefile
 
-			TARGET_JOBS_RULE=$(MAKE) -f $(MAKEFILE) --jobs $(TARGET_JOBS) $(MFLAGS) $* TARGET_JOBS=1
-			ifeq ($(JOBS),1)
-			main_all : external_build  $(PROJECT_TARGETS)
-			<%\t%>@echo "make: built targets of `pwd`"
-			else
-			main_all : external_build 
-			<%\t%>@$(MAKE) -f $(MAKEFILE) --jobs $(JOBS) $(MFLAGS) $(PROJECT_TARGETS) TARGET_JOBS=1 &&\
-			<%\t%>echo "make: built targets of `pwd`"
-			endif 
+      TARGET_JOBS_RULE=$(MAKE) -f $(MAKEFILE) --jobs $(TARGET_JOBS) $(MFLAGS) $* TARGET_JOBS=1
+      ifeq ($(JOBS),1)
+      main_all : external_build  $(PROJECT_TARGETS)
+      <%\t%>@echo "make: built targets of `pwd`"
+      else
+      main_all : external_build
+      <%\t%>@$(MAKE) -f $(MAKEFILE) --jobs $(JOBS) $(MFLAGS) $(PROJECT_TARGETS) TARGET_JOBS=1 &&\
+      <%\t%>echo "make: built targets of `pwd`"
+      endif
 
-			# entry point for extending the build
-			external_build ::
-			<%\t%>@echo ""
+      # entry point for extending the build
+      external_build ::
+      <%\t%>@echo ""
 
-			# main entry point for pre processing prior to the build
-			pre_build :: $(PRE_BUILD_STEP) generate_sources
-			<%\t%>@echo ""
+      # main entry point for pre processing prior to the build
+      pre_build :: $(PRE_BUILD_STEP) generate_sources
+      <%\t%>@echo ""
 
-			# entry point for generating sources prior to the build
-			generate_sources ::
-			<%\t%>@echo ""
+      # entry point for generating sources prior to the build
+      generate_sources ::
+      <%\t%>@echo ""
 
-			# main entry point for post processing after the build
-			post_build :: $(POST_BUILD_STEP) deploy_output
-			<%\t%>@echo ""
+      # main entry point for post processing after the build
+      post_build :: $(POST_BUILD_STEP) deploy_output
+      <%\t%>@echo ""
 
-			# entry point for deploying output after the build
-			deploy_output ::
-			<%\t%>@echo ""
+      # entry point for deploying output after the build
+      deploy_output ::
+      <%\t%>@echo ""
 
-			clean :: external_clean $(CLEAN_STEP) _clean
+      clean :: external_clean $(CLEAN_STEP) _clean
 
-			# entry point for extending the build clean
-			external_clean ::
-			<%\t%>@echo ""
+      # entry point for extending the build clean
+      external_clean ::
+      <%\t%>@echo ""
 
-			>>
+      >>
 end match
 end simulationMakefile;
 
