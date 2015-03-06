@@ -6261,9 +6261,10 @@ algorithm
 
 
     // An array equation
-    // {z1,z2,..} = f(...) -> solved for {z1,z2,..}
-    // => tmp = f(x); {z1,z2} = tmp;
-    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=(e2 as DAE.CALL()), source=source))::{}, _, _, _, _) equation
+    // {z1,z2,..} = rhsexp -> solved for {z1,z2,..}
+    // => tmp = rhsexp; 
+    // z1 = tmp[1]; z2 = tmp[2] ....
+    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=e2, source=source))::{}, _, _, _, _) equation
       (DAE.ARRAY(array=expLst)) = Expression.replaceDerOpInExp(e1);
       e2_1 = Expression.replaceDerOpInExp(e2);
       //check that {z1,z2,...} are in e1
@@ -6287,10 +6288,10 @@ algorithm
       eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2_1, source)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
 
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
-      // We need to strip subs from the name since they are removed in cr.
-      cr_1 = ComponentReference.crefStripLastSubs(cr);
-      e1 = Expression.replaceDerOpInExp(e1);
+    // An array equation
+    // cref = rhsexp
+    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
+      e1 = Expression.replaceDerOpInExp(lhse);
       e2 = Expression.replaceDerOpInExp(e2);
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
