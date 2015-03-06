@@ -94,7 +94,7 @@ algorithm
                         end match;
 
 
-    _ := addTimeGrid(BackendVariable.varList(knvars), knvars); 
+    _ := addTimeGrid(BackendVariable.varList(knvars), knvars);
     inVarsAndknvars := BackendVariable.addVariables(inVars, BackendVariable.copyVariables(knvars));
     varlst := BackendVariable.varList(inVarsAndknvars);
     (v, e, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), inVars, inEqns);
@@ -123,8 +123,8 @@ algorithm
       ov := BackendVariable.setVarKindForVar(i, BackendDAE.OPT_TGRID(), ov);
       //BackendDump.printVar(BackendVariable.getVarAt(ov,i));
     end for;
-  end if; 
-  
+  end if;
+
 end addTimeGrid;
 
 protected function joinConstraints "author: Vitalij Ruge"

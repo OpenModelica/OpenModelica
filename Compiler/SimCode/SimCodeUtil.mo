@@ -6262,7 +6262,7 @@ algorithm
 
     // An array equation
     // {z1,z2,..} = rhsexp -> solved for {z1,z2,..}
-    // => tmp = rhsexp; 
+    // => tmp = rhsexp;
     // z1 = tmp[1]; z2 = tmp[2] ....
     case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=e2, source=source))::{}, _, _, _, _) equation
       (DAE.ARRAY(array=expLst)) = Expression.replaceDerOpInExp(e1);
