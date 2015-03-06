@@ -47,7 +47,7 @@
    - Dec. 3 , 2008: First version by Martin Otter (DLR) and Hans Olsson (Dynasim).
 
 
-   Copyright © 2008-2009, MODELISAR consortium. All rights reserved.
+   Copyright (C) 2008-2009, MODELISAR consortium. All rights reserved.
    This file is licensed by the copyright holders under the BSD License
    (http://www.opensource.org/licenses/bsd-license.html):
 
@@ -101,6 +101,7 @@
 #define fmiFullName(name) fmiPasteB(MODEL_IDENTIFIER, name)
 
 #define fmiGetModelTypesPlatform      fmiFullName(_fmiGetModelTypesPlatform)
+#define fmiGetTypesPlatform           fmiFullName(_fmiGetTypesPlatform)
 #define fmiGetVersion                 fmiFullName(_fmiGetVersion)
 #define fmiInstantiateModel           fmiFullName(_fmiInstantiateModel)
 #define fmiFreeModelInstance          fmiFullName(_fmiFreeModelInstance)
@@ -126,6 +127,23 @@
 #define fmiTerminate                  fmiFullName(_fmiTerminate)
 #define fmiSetExternalFunction        fmiFullName(_fmiSetExternalFunction)
 
+/***************************************************
+Functions for FMI for Co-Simulation
+****************************************************/
+#define fmiInstantiateSlave         fmiFullName(_fmiInstantiateSlave)
+#define fmiInitializeSlave          fmiFullName(_fmiInitializeSlave)
+#define fmiTerminateSlave           fmiFullName(_fmiTerminateSlave)
+#define fmiResetSlave               fmiFullName(_fmiResetSlave)
+#define fmiFreeSlaveInstance        fmiFullName(_fmiFreeSlaveInstance)
+#define fmiSetRealInputDerivatives  fmiFullName(_fmiSetRealInputDerivatives)
+#define fmiGetRealOutputDerivatives fmiFullName(_fmiGetRealOutputDerivatives)
+#define fmiDoStep                   fmiFullName(_fmiDoStep)
+#define fmiCancelStep               fmiFullName(_fmiCancelStep)
+#define fmiGetStatus                fmiFullName(_fmiGetStatus)
+#define fmiGetRealStatus            fmiFullName(_fmiGetRealStatus)
+#define fmiGetIntegerStatus         fmiFullName(_fmiGetIntegerStatus)
+#define fmiGetBooleanStatus         fmiFullName(_fmiGetBooleanStatus)
+#define fmiGetStringStatus          fmiFullName(_fmiGetStringStatus)
 
 /* Version number */
 #define fmiVersion "1.0"
@@ -134,6 +152,7 @@ extern "C" {
 #endif
 /* Inquire version numbers of header files */
    DllExport const char* fmiGetModelTypesPlatform();
+   DllExport const char* fmiGetTypesPlatform();
    DllExport const char* fmiGetVersion();
 
 /* make sure all compiler use the same alignment policies for structures */
@@ -146,17 +165,20 @@ extern "C" {
                   fmiWarning,
                   fmiDiscard,
                   fmiError,
-                  fmiFatal} fmiStatus;
+                  fmiFatal,
+                  fmiPending} fmiStatus;
 
    typedef void  (*fmiCallbackLogger)        (fmiComponent c, fmiString instanceName, fmiStatus status,
                                               fmiString category, fmiString message, ...);
    typedef void* (*fmiCallbackAllocateMemory)(size_t nobj, size_t size);
    typedef void  (*fmiCallbackFreeMemory)    (void* obj);
+   typedef void  (*fmiStepFinished)          (fmiComponent c, fmiStatus status);
 
    typedef struct {
      fmiCallbackLogger         logger;
      fmiCallbackAllocateMemory allocateMemory;
      fmiCallbackFreeMemory     freeMemory;
+     fmiStepFinished           stepFinished;
    } fmiCallbackFunctions;
 
    typedef struct {
@@ -210,6 +232,60 @@ extern "C" {
    DllExport fmiStatus fmiGetStateValueReferences   (fmiComponent c, fmiValueReference vrx[], size_t nx);
    DllExport fmiStatus fmiTerminate                 (fmiComponent c);
    DllExport fmiStatus fmiSetExternalFunction       (fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[]);
+
+/***************************************************
+Functions for FMI for Co-Simulation
+****************************************************/
+
+/* Creation and destruction of slave instances and setting debug status */
+   DllExport fmiComponent fmiInstantiateSlave(fmiString  instanceName,
+                                              fmiString  fmuGUID,
+                                              fmiString  fmuLocation,
+                                              fmiString  mimeType,
+                                              fmiReal    timeout,
+                                              fmiBoolean visible,
+                                              fmiBoolean interactive,
+                                              fmiCallbackFunctions functions,
+                                              fmiBoolean loggingOn);
+
+   DllExport fmiStatus fmiInitializeSlave(fmiComponent c,
+                                          fmiReal      tStart,
+                                          fmiBoolean   StopTimeDefined,
+                                          fmiReal      tStop);
+
+   DllExport fmiStatus fmiTerminateSlave   (fmiComponent c);
+   DllExport fmiStatus fmiResetSlave       (fmiComponent c);
+   DllExport void      fmiFreeSlaveInstance(fmiComponent c);
+
+   DllExport fmiStatus fmiSetRealInputDerivatives(fmiComponent c,
+                                                  const  fmiValueReference vr[],
+                                                  size_t nvr,
+                                                  const  fmiInteger order[],
+                                                  const  fmiReal value[]);
+
+   DllExport fmiStatus fmiGetRealOutputDerivatives(fmiComponent c,
+                                                   const   fmiValueReference vr[],
+                                                   size_t  nvr,
+                                                   const   fmiInteger order[],
+                                                   fmiReal value[]);
+
+   DllExport fmiStatus fmiCancelStep(fmiComponent c);
+   DllExport fmiStatus fmiDoStep    (fmiComponent c,
+                                     fmiReal      currentCommunicationPoint,
+                                     fmiReal      communicationStepSize,
+                                     fmiBoolean   newStep);
+
+
+   typedef enum {fmiDoStepStatus,
+                 fmiPendingStatus,
+                 fmiLastSuccessfulTime} fmiStatusKind;
+
+   DllExport fmiStatus fmiGetStatus       (fmiComponent c, const fmiStatusKind s, fmiStatus*  value);
+   DllExport fmiStatus fmiGetRealStatus   (fmiComponent c, const fmiStatusKind s, fmiReal*    value);
+   DllExport fmiStatus fmiGetIntegerStatus(fmiComponent c, const fmiStatusKind s, fmiInteger* value);
+   DllExport fmiStatus fmiGetBooleanStatus(fmiComponent c, const fmiStatusKind s, fmiBoolean* value);
+   DllExport fmiStatus fmiGetStringStatus (fmiComponent c, const fmiStatusKind s, fmiString*  value);
+
 #ifdef __cplusplus
 }
 #endif

@@ -24,7 +24,7 @@
                     Hans Olsson (Dynasim).
 
 
-   Copyright © 2008-2010, MODELISAR consortium. All rights reserved.
+   Copyright (C) 2008-2010, MODELISAR consortium. All rights reserved.
    This file is licensed by the copyright holders under the BSD License
    (http://www.opensource.org/licenses/bsd-license.html)
 
@@ -62,6 +62,7 @@
 
 /* Platform (combination of machine, compiler, operating system) */
 #define fmiModelTypesPlatform "standard32"
+#define fmiPlatform "standard32"
 
 /* Type definitions of variables passed as arguments
    Version "standard32" means:

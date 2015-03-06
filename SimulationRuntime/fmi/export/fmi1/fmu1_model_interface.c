@@ -101,10 +101,17 @@ static fmiBoolean vrOutOfRange(ModelInstance* comp, const char* f, fmiValueRefer
 // ---------------------------------------------------------------------------
 // FMI functions: class methods not depending of a specific model instance
 // ---------------------------------------------------------------------------
-
+/***************************************************
+Common Functions
+****************************************************/
 const char* fmiGetModelTypesPlatform()
 {
   return fmiModelTypesPlatform;
+}
+
+const char* fmiGetTypesPlatform()
+{
+  return fmiPlatform;
 }
 
 const char* fmiGetVersion()
@@ -112,6 +119,9 @@ const char* fmiGetVersion()
   return fmiVersion;
 }
 
+/***************************************************
+Functions for FMI for Model Exchange
+****************************************************/
 fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn)
 {
   ModelInstance* comp;
@@ -846,6 +856,93 @@ fmiStatus fmiTerminate(fmiComponent c)
   GC_free(comp->fmuData);
 
   comp->state = modelTerminated;
+  return fmiOK;
+}
+
+/***************************************************
+Functions for FMI for Co-Simulation
+****************************************************/
+fmiComponent fmiInstantiateSlave(fmiString instanceName, fmiString fmuGUID, fmiString fmuLocation, fmiString mimeType, fmiReal timeout, fmiBoolean visible,
+                                 fmiBoolean interactive, fmiCallbackFunctions functions, fmiBoolean loggingOn)
+{
+  // TODO Write code here
+  return 0;
+}
+
+fmiStatus fmiInitializeSlave(fmiComponent c, fmiReal tStart, fmiBoolean StopTimeDefined, fmiReal tStop)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiTerminateSlave(fmiComponent c)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiResetSlave(fmiComponent c)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+void fmiFreeSlaveInstance(fmiComponent c)
+{
+  // TODO Write code here
+}
+
+fmiStatus fmiSetRealInputDerivatives(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger order[], const fmiReal value[])
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetRealOutputDerivatives(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger order[], fmiReal value[])
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiCancelStep(fmiComponent c)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiDoStep(fmiComponent c, fmiReal currentCommunicationPoint, fmiReal communicationStepSize, fmiBoolean newStep)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetStatus(fmiComponent c, const fmiStatusKind s, fmiStatus* value)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetRealStatus(fmiComponent c, const fmiStatusKind s, fmiReal* value)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetIntegerStatus(fmiComponent c, const fmiStatusKind s, fmiInteger* value)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetBooleanStatus(fmiComponent c, const fmiStatusKind s, fmiBoolean* value)
+{
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetStringStatus(fmiComponent c, const fmiStatusKind s, fmiString* value)
+{
+  // TODO Write code here
   return fmiOK;
 }
 
