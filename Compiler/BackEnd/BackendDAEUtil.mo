@@ -7189,6 +7189,7 @@ algorithm
     (outSystem, _) := BackendDAETransform.strongComponentsScalar(syst, inShared, mapEqnIncRow, mapIncRowEqn);
     dumpStrongComponents(outSystem, inShared);
   else
+    //BackendDump.dumpEqSystem(inSystem, "Transformation module sort components failed for following system:");
     Error.addInternalError("Transformation module sort components failed", sourceInfo());
     fail();
   end try;
@@ -7360,7 +7361,6 @@ protected
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc,String> matchingAlgorithm;
 algorithm
-
   preOptModules := getPreOptModules(strPreOptModules);
   postOptModules := getPostOptModules(strpostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);

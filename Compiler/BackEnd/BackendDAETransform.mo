@@ -74,38 +74,38 @@ public function strongComponentsScalar "author: PA
   This is the second part of the BLT sorting. It takes the variable
   assignments and the incidence matrix as input and identifies strong
   components, i.e. subsystems of equations."
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem inSystem;
+  input BackendDAE.Shared inShared;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem outSystem;
   output BackendDAE.StrongComponents outComps "list of components";
+protected
+  list<list<Integer>> comps;
+  array<Integer> ass1, ass2;
+  BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.Variables vars;
+  array<Integer> markarray;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  (osyst, outComps) := matchcontinue (syst)
-    local
-      list<list<Integer>> comps;
-      array<Integer> ass1, ass2;
-      BackendDAE.IncidenceMatrixT mt;
-      BackendDAE.StrongComponents comps1;
-      BackendDAE.EquationArray eqs;
-      BackendDAE.Variables vars;
-      array<Integer> markarray;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+  try
+    BackendDAE.EQSYSTEM(vars, eqs, SOME(_), SOME(mt), BackendDAE.MATCHING(ass1=ass1, ass2=ass2), stateSets=stateSets, partitionKind=partitionKind) := inSystem;
 
-    case BackendDAE.EQSYSTEM(vars, eqs, SOME(_), SOME(mt), BackendDAE.MATCHING(ass1=ass1, ass2=ass2), stateSets=stateSets, partitionKind=partitionKind) equation
-      comps = tarjanAlgorithm(mt, ass2);
-      markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
-      comps1 = analyseStrongComponentsScalar(comps, syst, shared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray, {});
-      ass1 = varAssignmentNonScalar(ass1, mapIncRowEqn);
-      //noscalass2 = eqnAssignmentNonScalar(1, arrayLength(mapEqnIncRow), mapEqnIncRow, ass2, {});
+    comps := tarjanAlgorithm(mt, ass2);
+
+    markarray := arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
+    outComps := analyseStrongComponentsScalar(comps, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray, {});
+    ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
+
+    // noscalass2 = eqnAssignmentNonScalar(1, arrayLength(mapEqnIncRow), mapEqnIncRow, ass2, {});
     // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-    then (BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, comps1), stateSets, partitionKind), comps1);
-
-    else equation
-      Error.addInternalError("function strongComponentsScalar failed\n- sorting equations (strongComponents) failed", sourceInfo());
-    then fail();
-  end matchcontinue;
+    outSystem := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, outComps), stateSets, partitionKind);
+  else
+    Error.addInternalError("function strongComponentsScalar failed (sorting strong components)", sourceInfo());
+    fail();
+  end try;
 end strongComponentsScalar;
 
 public function eqnAssignmentNonScalar
@@ -208,7 +208,7 @@ algorithm
         comp = List.fold2(comp,uniqueComp,imark,markarray,{});
         //comp = List.unique(comp);
         eqn_lst = List.map1r(comp,BackendEquation.equationNth1,eqns);
-        compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);
+        compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared);
       then
         (compX,imark+1);
     else
@@ -334,7 +334,7 @@ algorithm
     case (comp,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2)
       equation
         (eqn_lst,var_varindx_lst) = List.map3_2(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
-        compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);
+        compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared);
       then
         compX;
     else
@@ -345,32 +345,28 @@ algorithm
   end match;
 end analyseStrongComponent;
 
-protected function analyseStrongComponentBlock "author: Frenkel TUD 2011-05
-  helper for analyseStrongComponent."
+protected function analyseStrongComponentBlock "author: Frenkel TUD 2011-05"
   input list<Integer> inComp;
   input list<BackendDAE.Equation> inEqnLst;
-  input list<tuple<BackendDAE.Var,Integer>> inVarVarindxLst;
+  input list<tuple<BackendDAE.Var, Integer>> inVarVarindxLst;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input array<Integer> inAss1;
-  input array<Integer> inAss2;
-  input Boolean inLoop; //true if the function call itself
   output BackendDAE.StrongComponent outComp;
 algorithm
   outComp:=
-  matchcontinue (inComp,inEqnLst,inVarVarindxLst,isyst,ishared,inAss1,inAss2,inLoop)
+  matchcontinue (inComp, inEqnLst, inVarVarindxLst)
     local
-      Integer compelem,v;
-      list<Integer> comp,varindxs;
-      list<tuple<BackendDAE.Var,Integer>> var_varindx_lst,var_varindx_lst_cond;
-      array<Integer> ass1,ass2;
+      Integer compelem, v;
+      list<Integer> comp, varindxs;
+      list<tuple<BackendDAE.Var, Integer>> var_varindx_lst, var_varindx_lst_cond;
+      array<Integer> ass1, ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      BackendDAE.Variables vars,vars_1;
-      list<BackendDAE.Equation> eqn_lst,eqn_lst1,cont_eqn,disc_eqn;
-      list<BackendDAE.Var> var_lst,var_lst_1,cont_var,disc_var;
-      list<Integer> indxcont_var,indxdisc_var,indxcont_eqn,indxdisc_eqn;
-      BackendDAE.EquationArray eqns_1,eqns;
+      BackendDAE.Variables vars, vars_1;
+      list<BackendDAE.Equation> eqn_lst, eqn_lst1, cont_eqn, disc_eqn;
+      list<BackendDAE.Var> var_lst, var_lst_1, cont_var, disc_var;
+      list<Integer> indxcont_var, indxdisc_var, indxcont_eqn, indxdisc_eqn;
+      BackendDAE.EquationArray eqns_1, eqns;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       BackendDAE.StrongComponent sc;
@@ -381,84 +377,77 @@ algorithm
       list<String> slst;
       Boolean jacConstant, mixedSystem;
 
-    case (compelem::{},BackendDAE.ALGORITHM()::{},var_varindx_lst,_,_,_,_,false)
-      equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);
-      then
-        BackendDAE.SINGLEALGORITHM(compelem,varindxs);
+    case (compelem::{}, BackendDAE.ALGORITHM()::{}, var_varindx_lst) equation
+      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    then BackendDAE.SINGLEALGORITHM(compelem, varindxs);
 
-    case (compelem::{},BackendDAE.ARRAY_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
-      equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);
-      then
-        BackendDAE.SINGLEARRAY(compelem,varindxs);
+    case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_varindx_lst) equation
+      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    then BackendDAE.SINGLEARRAY(compelem, varindxs);
 
-    case (compelem::{},BackendDAE.IF_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
-      equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);
-      then
-        BackendDAE.SINGLEIFEQUATION(compelem,varindxs);
+    case (compelem::{}, BackendDAE.IF_EQUATION()::{}, var_varindx_lst) equation
+      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    then BackendDAE.SINGLEIFEQUATION(compelem, varindxs);
 
-    case (compelem::{},BackendDAE.COMPLEX_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
-      equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);
-      then
-        BackendDAE.SINGLECOMPLEXEQUATION(compelem,varindxs);
+    case (compelem::{}, BackendDAE.COMPLEX_EQUATION()::{}, var_varindx_lst) equation
+      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    then BackendDAE.SINGLECOMPLEXEQUATION(compelem, varindxs);
 
-    case (compelem::{},BackendDAE.WHEN_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
-      equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);
-      then
-        BackendDAE.SINGLEWHENEQUATION(compelem,varindxs);
+    case (compelem::{}, BackendDAE.WHEN_EQUATION()::{}, var_varindx_lst) equation
+      varindxs = List.map(var_varindx_lst, Util.tuple22);
+    then BackendDAE.SINGLEWHENEQUATION(compelem, varindxs);
 
-    case (compelem::{},_,(_,v)::{},_,_,_,_,false)
-      then BackendDAE.SINGLEEQUATION(compelem,v);
+    case (compelem::{}, _, (_, v)::{})
+    then BackendDAE.SINGLEEQUATION(compelem, v);
 
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(),shared,_,_,_)
-      equation
-        var_lst = List.map(var_varindx_lst,Util.tuple21);
-        //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
-        true = BackendVariable.hasContinousVar(var_lst);   //lochel: pure discrete equation systems are not supported
-        varindxs = List.map(var_varindx_lst,Util.tuple22);
-        eqn_lst1 = BackendEquation.replaceDerOpInEquationList(eqn_lst);
-        // States are solved for der(x) not x.
-        var_lst_1 = List.map(var_lst, transformXToXd);
-        vars_1 = BackendVariable.listVar1(var_lst_1);
-        eqns_1 = BackendEquation.listEquation(eqn_lst1);
-        (mixedSystem,_) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
-        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-        (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE(),NONE());
-        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        (jac,shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, shared);
-        // Jacobian of a Linear System is always linear
-        (jac_tp,jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1,eqns_1,jac);
-        // if constant check for singular jacobian
-        true = analyzeConstantJacobian(jacConstant,jac,arrayLength(mt),var_lst,eqn_lst,shared);
-      then
-        BackendDAE.EQUATIONSYSTEM(comp,varindxs,BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
+    case (comp, eqn_lst, var_varindx_lst) equation
+      var_lst = List.map(var_varindx_lst, Util.tuple21);
+      //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
+      true = BackendVariable.hasContinousVar(var_lst);   //lochel: pure discrete equation systems are not supported
+      varindxs = List.map(var_varindx_lst, Util.tuple22);
+      eqn_lst1 = BackendEquation.replaceDerOpInEquationList(eqn_lst);
+      // States are solved for der(x) not x.
+      var_lst_1 = List.map(var_lst, transformXToXd);
+      vars_1 = BackendVariable.listVar1(var_lst_1);
+      eqns_1 = BackendEquation.listEquation(eqn_lst1);
+      (mixedSystem, _) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
+      syst = BackendDAE.EQSYSTEM(vars_1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
+      // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+      (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
+      // Jacobian of a Linear System is always linear
+      (jac_tp, jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
+      // if constant check for singular jacobian
+      true = analyzeConstantJacobian(jacConstant, jac, arrayLength(mt), var_lst, eqn_lst, shared);
+    then BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
 
-    case (_,eqn_lst,var_varindx_lst,BackendDAE.EQSYSTEM(),_,_,_,_)
-      equation
-        var_lst = List.map(var_varindx_lst,Util.tuple21);
-        true = BackendVariable.hasDiscreteVar(var_lst);
-        false = BackendVariable.hasContinousVar(var_lst);
-        msg = getInstanceName() + " failed
-Sorry - Support for Discrete Equation Systems is not yet implemented\n";
-        crlst = List.map(var_lst,BackendVariable.varCref);
-        slst = List.map(crlst,ComponentReference.printComponentRefStr);
-        msg = msg + stringDelimitList(slst,"\n");
-        slst = List.map(eqn_lst,BackendDump.equationString);
-        msg = msg + "\n" + stringDelimitList(slst,"\n");
-        Error.addInternalError(msg, sourceInfo());
-      then
-        fail();
+    case (_, eqn_lst, var_varindx_lst) equation
+      var_lst = List.map(var_varindx_lst, Util.tuple21);
+      true = BackendVariable.hasDiscreteVar(var_lst);
+      false = BackendVariable.hasContinousVar(var_lst);
+      msg = getInstanceName() + " failed (Sorry - Support for Discrete Equation Systems is not yet implemented)\n";
+      crlst = List.map(var_lst, BackendVariable.varCref);
+      slst = List.map(crlst, ComponentReference.printComponentRefStr);
+      msg = msg + stringDelimitList(slst, "\n");
+      slst = List.map(eqn_lst, BackendDump.equationString);
+      msg = msg + "\n" + stringDelimitList(slst, "\n");
+      Error.addInternalError(msg, sourceInfo());
+    then fail();
+    
+    case (_, eqn_lst, var_varindx_lst) equation
+      var_lst = List.map(var_varindx_lst, Util.tuple21);
+      msg = getInstanceName() + " failed\nvariables:\n  ";
+      crlst = List.map(var_lst, BackendVariable.varCref);
+      slst = List.map(crlst, ComponentReference.printComponentRefStr);
+      msg = msg + stringDelimitList(slst, "\n  ");
+      slst = List.map(eqn_lst, BackendDump.equationString);
+      msg = msg + "\nequations:\n  " + stringDelimitList(slst, "\n  ");
+      Error.addInternalError(msg, sourceInfo());
+    then fail();
 
-    else
-      equation
-        Error.addInternalError("function analyseStrongComponentBlock failed", sourceInfo());
-      then
-        fail();
-
+    else equation
+      Error.addInternalError("function analyseStrongComponentBlock failed", sourceInfo());
+    then fail();
   end matchcontinue;
 end analyseStrongComponentBlock;
 
