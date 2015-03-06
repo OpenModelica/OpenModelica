@@ -4404,8 +4404,7 @@ end createTornSystemOtherEqns1;
 //
 // =============================================================================
 
-public function createStateSets
-"author: Frenkel TUD 2012
+protected function createStateSets "author: Frenkel TUD 2012
   This function handle states sets for code generation."
   input BackendDAE.BackendDAE inDAE;
   input list<SimCode.StateSet> iEquations;
