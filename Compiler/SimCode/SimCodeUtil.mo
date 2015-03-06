@@ -6287,9 +6287,10 @@ algorithm
       eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2_1, source)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
 
-    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1,_), right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
       // We need to strip subs from the name since they are removed in cr.
-      e1 = Expression.replaceDerOpInExp(lhse);
+      cr_1 = ComponentReference.crefStripLastSubs(cr);
+      e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());

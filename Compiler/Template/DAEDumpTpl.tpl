@@ -234,7 +234,7 @@ match lst
    let cmt_str = dumpCommentOpt(comment)
    let ann_str = dumpCompAnnotation(comment)
    let binding_str = if bindingExp then ' = <%bindingExp%>'
-   /* uncomment this and use the source_str if you want to print the typeLst inside the source (we should maybe put it on a flag or something
+   /* uncomment this and use the source_str if you want to print the typeLst inside the source (we should maybe put it on a flag or something)
    let source_str = match source case SOURCE(__) then (typeLst |> tp => AbsynDumpTpl.dumpPath(tp) ;separator=", ") else ''
    */
    <<
