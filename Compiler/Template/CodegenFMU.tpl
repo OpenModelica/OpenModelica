@@ -252,23 +252,24 @@ match simvar
 case SIMVAR(varKind = varKind, initialValue = initialValue, isValueChangeable = isValueChangeable, index = index) then
   match varKind
   case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
-  else
-    match varKind
-    case PARAM(__) then if isValueChangeable then '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>' else '<%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
-    else '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
+  case PARAM(__) then if isValueChangeable then '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>' else '<%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
+  else '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
 end ScalarVariableTypeCommonAttribute2;
 
 template StartString2(SimVar simvar)
 ::=
 match simvar
-case SIMVAR(initialValue = initialValue) then
+case SIMVAR(initialValue = initialValue, causality = causality, type_ = type_) then
   match initialValue
     case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
-    else ''
+    else
+      match causality
+        case INPUT(__) then ' start="<%initDefaultValXml(type_)%>"'
+        else ''
 end StartString2;
 
 template MinString2(SimVar simvar)

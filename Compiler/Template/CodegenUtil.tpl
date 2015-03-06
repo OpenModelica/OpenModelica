@@ -146,6 +146,16 @@ end escapeCComments;
 
 
 
+template initDefaultValXml(DAE.Type type_)
+::=
+  match type_
+  case T_INTEGER(__) then '0'
+  case T_REAL(__) then '0.0'
+  case T_BOOL(__) then 'false'
+  case T_STRING(__) then ''
+  case T_ENUMERATION(__) then '0'
+  else error(sourceInfo(), 'initial value of unknown type: <%unparseType(type_)%>')
+end initDefaultValXml;
 
 template initValXml(Exp exp)
 ::=
