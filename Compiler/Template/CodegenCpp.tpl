@@ -2904,7 +2904,7 @@ case "gcc" then
 case "vxworks69" then
     match simCode
         case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-            <<
+      <<
       BUILD_SPEC=ATOMgnu
       DEBUG_MODE=1
       TRACE=1
