@@ -65,32 +65,26 @@ protected import System;
 protected import Util;
 protected import Values;
 
-/******************************************
- strongComponents and stuff
- *****************************************/
+// =============================================================================
+// strongComponents and stuff
+//
+// =============================================================================
 
 public function strongComponentsScalar "author: PA
-
   This is the second part of the BLT sorting. It takes the variable
   assignments and the incidence matrix as input and identifies strong
-  components, i.e. subsystems of equations.
-
-  inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT, int vector, int vector)
-  outputs: (int list list /* list of components */ )
-"
+  components, i.e. subsystems of equations."
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponents outComps "list of components";
 algorithm
-  (osyst,outComps) :=
-  matchcontinue (syst,shared,mapEqnIncRow,mapIncRowEqn)
+  (osyst, outComps) := matchcontinue (syst)
     local
       list<list<Integer>> comps;
-      array<Integer> ass1,ass2;
-      BackendDAE.IncidenceMatrix m;
+      array<Integer> ass1, ass2;
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.StrongComponents comps1;
       BackendDAE.EquationArray eqs;
@@ -99,21 +93,18 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(_),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets,partitionKind=partitionKind),_,_,_)
-      equation
-        comps = tarjanAlgorithm(mt,ass2);
-        markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs),-1);
-        comps1 = analyseStrongComponentsScalar(comps,syst,shared,ass1,ass2,mapEqnIncRow,mapIncRowEqn,1,markarray,{});
-        ass1 = varAssignmentNonScalar(ass1,mapIncRowEqn);
-        //noscalass2 = eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
-      then
-        // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets,partitionKind),comps1);
-    else
-      equation
-      Error.addInternalError("function strongComponentsScalar failed
-- sorting equations (strongComponents) failed", sourceInfo());
-      then fail();
+    case BackendDAE.EQSYSTEM(vars, eqs, SOME(_), SOME(mt), BackendDAE.MATCHING(ass1=ass1, ass2=ass2), stateSets=stateSets, partitionKind=partitionKind) equation
+      comps = tarjanAlgorithm(mt, ass2);
+      markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
+      comps1 = analyseStrongComponentsScalar(comps, syst, shared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray, {});
+      ass1 = varAssignmentNonScalar(ass1, mapIncRowEqn);
+      //noscalass2 = eqnAssignmentNonScalar(1, arrayLength(mapEqnIncRow), mapEqnIncRow, ass2, {});
+    // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
+    then (BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, comps1), stateSets, partitionKind), comps1);
+
+    else equation
+      Error.addInternalError("function strongComponentsScalar failed\n- sorting equations (strongComponents) failed", sourceInfo());
+    then fail();
   end matchcontinue;
 end strongComponentsScalar;
 
@@ -228,7 +219,6 @@ algorithm
   end match;
 end analyseStrongComponentScalar;
 
-
 protected function uniqueComp
   input Integer c;
   input Integer mark;
@@ -248,7 +238,6 @@ algorithm
         iAcc;
   end matchcontinue;
 end uniqueComp;
-
 
 public function strongComponents "author: PA
 
@@ -1104,9 +1093,10 @@ algorithm
   end matchcontinue;
 end checkStack;
 
-/******************************************
- traverseBackendDAEExps stuff
- *****************************************/
+// =============================================================================
+// traverseBackendDAEExps stuff
+//
+// =============================================================================
 
 public function traverseExpsOfEquation
 "author: Frenkel TUD 2010-11

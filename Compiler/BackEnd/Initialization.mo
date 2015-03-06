@@ -2452,11 +2452,9 @@ algorithm
       // Error.addCompilerNotification("VARIABLE (fixed=false); " + BackendDump.varString(var));
     then (var, (vars, fixvars, eqns, hs));
 
-    else
-      equation
-        Error.addInternalError("function collectInitialVars failed for: " + BackendDump.varString(inVar), sourceInfo());
-      then fail();
-
+    else equation
+      Error.addInternalError("function collectInitialVars failed for: " + BackendDump.varString(inVar), sourceInfo());
+    then fail();
   end matchcontinue;
 end collectInitialVars;
 

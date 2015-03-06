@@ -755,13 +755,6 @@ template mainTop(Text mainBody, String url)
   >>
 end mainTop;
 
-/* public */ template symbolName(String modelNamePrefix, String symbolName)
-  "Creates a unique name for the function
-   used in Compiler/Template/CodegenFMU.tpl"
-::=
-  modelNamePrefix + "_" + symbolName
-end symbolName;
-
 template simulationFileHeader(SimCode simCode)
   "Generates header part of simulation file."
 ::=

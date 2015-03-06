@@ -7018,7 +7018,7 @@ algorithm
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
   // sort assigned equations to blt form
-  (systs,shared) := mapSortEqnsDAE(systs,shared,{});
+  systs := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
   SimCodeUtil.execStat("sorting");
 end causalizeDAE;
@@ -7147,68 +7147,51 @@ algorithm
   end match;
 end stateDeselectionDAE;
 
-protected function mapSortEqnsDAE "
-  Run Tarjans Algorithm."
-  input list<BackendDAE.EqSystem> isysts;
-  input BackendDAE.Shared ishared;
+protected function mapSortEqnsDAE "Run Tarjans Algorithm."
+  input list<BackendDAE.EqSystem> inSystem;
+  input BackendDAE.Shared inShared;
   input list<BackendDAE.EqSystem> acc;
-  output list<BackendDAE.EqSystem> osysts;
-  output BackendDAE.Shared oshared;
+  output list<BackendDAE.EqSystem> outSystem;
 algorithm
-  (osysts,oshared) := match (isysts,ishared,acc)
+  outSystem := match (inSystem)
     local
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
-      BackendDAE.Shared shared;
 
-    case ({},_,_) then (listReverse(acc),ishared);
+    case ({})
+    then listReverse(acc);
 
-    case ((syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)))::systs,_,_)
-      equation
-        (systs,shared) = mapSortEqnsDAE(systs,ishared,syst::acc);
-      then (systs,shared);
+    case ((syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)))::systs) equation
+      systs = mapSortEqnsDAE(systs, inShared, syst::acc);
+    then systs;
 
-    case (syst::systs,_,_)
-      equation
-        (syst,shared) = sortEqnsDAEWork(syst,ishared);
-        (systs,shared) = mapSortEqnsDAE(systs,shared,syst::acc);
-      then (systs,shared);
-
+    case (syst::systs) equation
+      syst = sortEqnsDAEWork(syst, inShared);
+      systs = mapSortEqnsDAE(systs, inShared, syst::acc);
+    then systs;
   end match;
 end mapSortEqnsDAE;
 
-protected function sortEqnsDAEWork "
-  Run Tarjans Algorithm."
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
+protected function sortEqnsDAEWork "Run Tarjans Algorithm."
+  input BackendDAE.EqSystem inSystem;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.EqSystem outSystem;
+protected
+  BackendDAE.EqSystem syst;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn;
+  DAE.FunctionTree funcs;
 algorithm
-  (osyst,oshared) := matchcontinue (isyst,ishared)
-    local
-      String str;
-      BackendDAE.EqSystem syst;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;
-      DAE.FunctionTree funcs;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED())
-      equation
-        // sorting algorithm
-        funcs = getFunctions(ishared);
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
-        (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);
-        dumpStrongComponents(syst,ishared);
-      then (syst,ishared);
-
-    else
-      equation
-        str = "Transformation Module sort components failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-
-  end matchcontinue;
+  try
+    // sorting algorithm
+    funcs := getFunctions(inShared);
+    (syst, _, _, mapEqnIncRow, mapIncRowEqn) := getIncidenceMatrixScalar(inSystem, BackendDAE.NORMAL(), SOME(funcs));
+    (outSystem, _) := BackendDAETransform.strongComponentsScalar(syst, inShared, mapEqnIncRow, mapIncRowEqn);
+    dumpStrongComponents(outSystem, inShared);
+  else
+    Error.addInternalError("Transformation module sort components failed", sourceInfo());
+    fail();
+  end try;
 end sortEqnsDAEWork;
 
 function dumpStrongComponents

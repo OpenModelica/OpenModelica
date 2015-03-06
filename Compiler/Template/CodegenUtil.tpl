@@ -47,6 +47,12 @@ package CodegenUtil
 
 import interface SimCodeTV;
 
+/* public */ template symbolName(String modelNamePrefix, String symbolName)
+  "Creates a unique name for the function"
+::=
+  modelNamePrefix + "_" + symbolName
+end symbolName;
+
 template replaceDotAndUnderscore(String str)
  "Replace _ with __ and dot in identifiers with _"
 ::=
