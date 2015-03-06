@@ -10836,7 +10836,7 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
         int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * i1, short*i2){return -1;}
         int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt){return -1;}
         int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data){return -1;}
-        int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){return -1};
+        int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){return -1;}
         >>
       else
         (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n")
