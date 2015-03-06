@@ -433,7 +433,7 @@ algorithm
       msg = msg + "\n" + stringDelimitList(slst, "\n");
       Error.addInternalError(msg, sourceInfo());
     then fail();
-    
+
     case (_, eqn_lst, var_varindx_lst) equation
       var_lst = List.map(var_varindx_lst, Util.tuple21);
       msg = getInstanceName() + " failed\nvariables:\n  ";

@@ -392,7 +392,7 @@ template TypeDefinitionsHelper(list<SimCodeVar.SimVar> vars, String FMUVersion)
  "Generates code for TypeDefinitions for FMU target."
 ::=
   if intGt(listLength(vars), 0) then
-  << 
+  <<
   <TypeDefinitions>
     <%vars |> var => TypeDefinition(var,FMUVersion) ;separator="\n"%>
   </TypeDefinitions>
