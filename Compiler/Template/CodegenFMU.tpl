@@ -383,13 +383,20 @@ template TypeDefinitions(ModelInfo modelInfo, String FMUVersion)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  <TypeDefinitions>
-    <%SimCodeUtil.getEnumerationTypes(vars) |> var =>
-      TypeDefinition(var,FMUVersion)
-    ;separator="\n"%>
-  </TypeDefinitions>
+  <%TypeDefinitionsHelper(SimCodeUtil.getEnumerationTypes(vars), FMUVersion)%>
   >>
 end TypeDefinitions;
+
+template TypeDefinitionsHelper(list<SimCodeVar.SimVar> vars, String FMUVersion)
+ "Generates code for TypeDefinitions for FMU target."
+::=
+  if intGt(listLength(vars), 0) then
+  << 
+  <TypeDefinitions>
+    <%vars |> var => TypeDefinition(var,FMUVersion) ;separator="\n"%>
+  </TypeDefinitions>
+  >>
+end TypeDefinitionsHelper;
 
 template TypeDefinition(SimVar simVar, String FMUVersion)
 ::=
