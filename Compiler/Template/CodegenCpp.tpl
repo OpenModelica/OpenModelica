@@ -2252,7 +2252,7 @@ then
 
       <<
       <%outputnames%>
-          >>
+      >>
 
   <<
   <%outputs%>
@@ -3493,6 +3493,7 @@ match simCode
       }
       >>
 end queryDensity;
+
 
 template updateAlgloop(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eqn,Context context)
 ::=
