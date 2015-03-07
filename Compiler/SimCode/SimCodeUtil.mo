@@ -6274,7 +6274,7 @@ algorithm
       ty = Expression.typeof(e1);
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
       lhse = DAE.CREF(left,ty);
-      // Expand the tmp cref and create the list of rhs vars 
+      // Expand the tmp cref and create the list of rhs vars
       // to update the original lhs vars
       crefstmp = ComponentReference.expandCref(left, false);
       expLstTmp = List.map(crefstmp, Expression.crefExp);
