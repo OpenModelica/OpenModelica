@@ -212,8 +212,6 @@ algorithm
   end match;
 end printAndFailIfError;
 
-
-
 public function parseError
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -393,13 +391,13 @@ algorithm
 
     case (c :: chars, linfo, ec)
       equation
-        equality(c = ec);
+        true = stringEq(c, ec);
       then (chars, linfo);
 
     case (chars, linfo, ec)
       equation
-        //failure(equality(c = ec));
-        //or chars = {}
+        // false = stringEq(c, ec));
+        // or chars = {}
         (linfo) = parseError(chars, linfo, "Expected character '" + ec + "' at the position.", false);
         //fprint(Flags.FAILTRACE, "???Expected character '" + ec + "'\n");
       then (chars, linfo);
@@ -432,13 +430,13 @@ algorithm
       equation
         (chars, linfo) = interleave(chars, linfo);
         (c :: chars) = chars;
-        equality(c = ec);
+        true = stringEq(c, ec);
       then (chars, linfo);
 
     case (chars, linfo, ec)
       equation
-        //failure(equality(c = ec));
-        //or chars = {}
+        // false = stringEq( c, ec );
+        // or chars = {}
         (linfo) = parseError(chars, linfo, "Expected character '" + ec + "' after the position.",false);
       then (chars, linfo);
 
@@ -464,7 +462,7 @@ algorithm
 
     case (c :: chars, kwc :: kwchars)
       equation
-        equality(c = kwc);
+        true = stringEq(c, kwc);
       then takeKeywordChars(chars, kwchars);
 
     case (chars, {})
@@ -752,32 +750,32 @@ public function newLine
   output list<String> outChars;
   output LineInfo outLineInfo;
 algorithm
-  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo) := match(inChars, inLineInfo)
     local
       list<String> chars;
       ParseInfo pinfo;
       String c;
       Integer lnum, llen, i;
-    //CR + LF .. Windows
-    case(c :: chars, LINE_INFO(parseInfo = pinfo, lineNumber = lnum))
-      equation
-        13 = stringCharInt(c);   // \r
-        ("\n" :: chars) = chars; // \n
-        llen = charsTillEndOfLine(chars, 1); //1 is colum number of the first character, so count it
-        lnum = lnum + 1;
-      then (chars, LINE_INFO(pinfo, lnum, llen, chars));
 
-    //LF only ... Linux
-    //or CR only - Mac OS up to 9
+    // CR + LF .. Windows
+    // LF only ... Linux
+    // or CR only - Mac OS up to 9
     case (c :: chars, LINE_INFO(parseInfo = pinfo, lineNumber = lnum))
       equation
         i = stringCharInt(c);
+        if i == 13
+        then
+          chars = match(chars)
+            case ("\n" :: chars) then chars; // \n
+            else chars;
+          end match;
+        end if;
         true = (i == 10) or (i == 13); // \n or \r
-        llen = charsTillEndOfLine(chars, 1); //1 is colum number of the first character, so count it
+        llen = charsTillEndOfLine(chars, 1); // 1 is colum number of the first character, so count it
         lnum = lnum + 1;
       then (chars, LINE_INFO(pinfo, lnum, llen, chars));
 
-  end matchcontinue;
+  end match;
 end newLine;
 
 /*
@@ -992,7 +990,7 @@ public function identifier_rest
   output list<String> outChars;
   output list<String> outRestIdentChars;
 algorithm
-  (outChars, outRestIdentChars) := matchcontinue inChars
+  (outChars, outRestIdentChars) := match inChars
     local
       list<String> chars, restIdChars;
       String c;
@@ -1002,20 +1000,21 @@ algorithm
       equation
         i = stringCharInt(c);
         //[_0-9A-Za-z]
-        true = (i == 95/*_*/)
+        if (i == 95/*_*/)
             or ( 48/*0*/ <= i and i <= 57/*9*/)
             or ( 65/*A*/ <= i and i <= 90/*Z*/)
-            or ( 97/*a*/ <= i and i <= 122/*z*/);
-        (chars, restIdChars) = identifier_rest(chars);
-      then (chars, c :: restIdChars);
+            or ( 97/*a*/ <= i and i <= 122/*z*/)
+        then
+          (chars, restIdChars) = identifier_rest(chars);
+          restIdChars = c :: restIdChars;
+        else
+          chars = inChars;
+          restIdChars = {};
+        end if;
+      then (chars, restIdChars);
 
-    else (inChars, {});
-
-  end matchcontinue;
+  end match;
 end identifier_rest;
-
-
-
 
 /*
 pathIdent:
@@ -4027,13 +4026,13 @@ algorithm
       equation
         (chars, linfo) = newLine(chars, linfo);
         (c :: "%" :: chars) = chars;
-        equality(c = rquot);
+        true = stringEq(c, rquot);
         str = stringCharListString(listReverse(accChars));
       then (chars, linfo, str :: accStrList,NONE());
 
     case (c :: "%" :: chars, linfo, rquot, accChars, accStrList)
       equation
-        equality(c = rquot);
+        true = stringEq(c, rquot);
         str = stringCharListString(listReverse(accChars));
       then (chars, linfo, str :: accStrList,NONE());
 
@@ -4436,7 +4435,7 @@ public function lineIndent
   output list<String> outChars;
   output Integer outLineIndent;
 algorithm
-  (outChars, outLineIndent) := matchcontinue (inChars, inLineIndent)
+  (outChars, outLineIndent) := match (inChars, inLineIndent)
     local
       list<String> chars;
       Integer lineInd;
@@ -4453,7 +4452,7 @@ algorithm
 
    else (inChars, inLineIndent);
 
-  end matchcontinue;
+  end match;
 end lineIndent;
 /*
 // & ... no interleave
@@ -4533,13 +4532,13 @@ algorithm
    /*
    case (startChars as (c :: "#" :: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
-        equality( c  = lesc );
+        true = stringEq( c, lesc );
         (chars, linfo) = interleave(chars, startLinfo);
         (chars, linfo, eexp) = nonTemplateExprWithOpts(chars, linfo, lesc, resc);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "#");
         (chars, linfo) = expectChar(chars, linfo, resc);
         //("#" :: c :: chars) = chars;
-        //equality( c  = resc );
+        // true = stringEq( c, resc );
         (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
         (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
         LINE_INFO(startOfLineChars = solChars) = startLinfo;
@@ -4547,56 +4546,6 @@ algorithm
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
       then (chars, linfo, exp);
    */
-
-   //<% %>  empty expression ... i.e. comment or a break in line that is not parsed
-   case (c :: "%":: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        equality( c  = lesc );
-        (chars, linfo) = interleave(chars, linfo);
-        ("%" :: c :: chars) = chars;
-        equality( c  = resc );
-        (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
-        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
-      then (chars, linfo, expB);
-
-   //<% expression %>
-   case ((c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        equality( c  = lesc );
-        (chars, linfo) = interleave(chars, startLinfo);
-        (chars, linfo, eexp) = expression(chars, linfo, lesc, resc, false);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "%");
-        (chars, linfo) = expectChar(chars, linfo, resc);
-        //(c :: chars) = chars;
-        //equality( c  = resc );
-        (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
-        LINE_INFO(startOfLineChars = solChars) = startLinfo;
-        linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
-        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
-      then (chars, linfo, expB);
-
-   case (startChars, startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        (chars, linfo) = newLine(startChars, startLinfo);
-        (expLst, indStack, actInd, errOpt) = onNewLine(expLst, indStack, actInd, lineInd, accChars);
-        LINE_INFO(startOfLineChars = solChars) = startLinfo;
-        linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
-        (chars, linfo, expB) = templateBody(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd);
-      then (chars, linfo, expB);
-
-   //isSingleQuote = true
-   case ("'" :: chars, linfo, _, _, true, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        expLst = onTemplEnd(false, expLst, indStack, actInd, lineInd, accChars);
-        expB = makeTemplateFromExpList(expLst, "'","'");
-      then (chars, linfo, expB);
-
-   //isDoubleQuote = false =>  << >>
-   case (">"::">":: chars, linfo, _, _, false, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        expLst = onTemplEnd(true, expLst, indStack, actInd, lineInd, accChars);
-        expB = makeTemplateFromExpList(expLst, "<<",">>");
-      then (chars, linfo, expB);
 
    //??? should we allow escaping at all ??
    /* experimentally we will disallow it ... use "" constants in like 'hey son<%"'"%>s brother'
@@ -4607,6 +4556,61 @@ algorithm
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
       then (chars, linfo, exp);
    */
+
+   // isSingleQuote = true
+   case ("'" :: chars, linfo, _, _, true, expLst, indStack, actInd, lineInd, accChars)
+      equation
+        expLst = onTemplEnd(false, expLst, indStack, actInd, lineInd, accChars);
+        expB = makeTemplateFromExpList(expLst, "'","'");
+      then (chars, linfo, expB);
+
+   // isDoubleQuote = false =>  << >>
+   case (">"::">":: chars, linfo, _, _, false, expLst, indStack, actInd, lineInd, accChars)
+      equation
+        expLst = onTemplEnd(true, expLst, indStack, actInd, lineInd, accChars);
+        expB = makeTemplateFromExpList(expLst, "<<",">>");
+      then (chars, linfo, expB);
+
+   // <% %>  empty expression ... i.e. comment or a break in line that is not parsed
+   case (c :: "%":: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+      equation
+        true = stringEq(c,  lesc);
+        (chars, linfo) = interleave(chars, linfo);
+        ("%" :: c :: chars) = chars;
+        true = stringEq(c, resc);
+        (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
+        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
+      then (chars, linfo, expB);
+
+   // <% expression %>
+   case ((c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+      equation
+        true = stringEq(c, lesc);
+        (chars, linfo) = interleave(chars, startLinfo);
+        (chars, linfo, eexp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "%");
+        (chars, linfo) = expectChar(chars, linfo, resc);
+        //(c :: chars) = chars;
+        // true = stringEq( c , resc );
+        (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
+        LINE_INFO(startOfLineChars = solChars) = startLinfo;
+        linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
+        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
+      then (chars, linfo, expB);
+
+   case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+      equation
+        (chars, linfo) = newLine(c :: chars, linfo);
+        (expLst, indStack, actInd, errOpt) = onNewLine(expLst, indStack, actInd, lineInd, accChars);
+        LINE_INFO(startOfLineChars = solChars) = linfo;
+        linfo = parseErrorPrevPositionOpt(solChars, linfo, linfo, errOpt, false);
+
+        // adrpo: replace this call with the actual body of templateBody
+        // (chars, linfo, expB) = templateBody(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd);
+        (chars, lineInd) = lineIndent(chars, 0);
+        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, {});
+      then (chars, linfo, expB);
+
    case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
@@ -4763,14 +4767,14 @@ algorithm
    //we need a flag for having something non-space on the line
    //case (TplAbsyn.STR_TOKEN(value = Tpl.ST_NEW_LINE()), expLst, indStack, actInd, lineInd, accChars)
    //   equation
-   //     //equality( lineInd = actInd);
+   //     // true = intEq( lineInd, actInd);
    //     expLst = addAccStringChars(expLst, "\n" :: accChars);
    //   then (expLst, indStack,  actInd);
 
    //the same indent level
    case (exp, expLst, indStack, actInd, lineInd, accChars)
       equation
-        equality( lineInd = actInd);
+        true = intEq( lineInd, actInd );
         expLst = addAccStringChars(expLst, accChars);
         expLst = finalizeLastStringToken(expLst);
         expLst = exp :: expLst;
