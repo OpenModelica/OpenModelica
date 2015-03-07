@@ -385,7 +385,7 @@ protected
 algorithm
   LINE_INFO(startOfLineChars = sol_chars) := inLineInfoPrevPos;
   outLineInfo := parseErrorPrevPositionOpt(sol_chars, inLineInfoPrevPos,
-    inLineInfo, inErrMessage, isFatal); 
+    inLineInfo, inErrMessage, isFatal);
 end parseErrorPrevPositionOptInfoChars;
 
 public function expectChar
@@ -4505,7 +4505,7 @@ protected
   list<tuple<Integer, list<TplAbsyn.Expression>>> ind_stack = inIndentStack;
 
   String char, next_char;
-  Boolean remaining_chars = true; 
+  Boolean remaining_chars = true;
   TplAbsyn.Expression exp;
   list<String> chars, sol_chars, acc_chars = {};
   Option<String> err_opt;
@@ -4536,13 +4536,13 @@ algorithm
         (outChars, linfo) := newLine(char :: outChars, outLineInfo);
         (expl, ind_stack, aindent, err_opt) := onNewLine(expl, ind_stack, aindent, lindent, acc_chars);
         outLineInfo := parseErrorPrevPositionOptInfoChars(outLineInfo, linfo, err_opt, false);
-        (outChars, lindent) := lineIndent(outChars, 0); 
-        acc_chars := {}; 
+        (outChars, lindent) := lineIndent(outChars, 0);
+        acc_chars := {};
       // <% something %>
       elseif char == inLeftEsc and next_char == "%" then
         (outChars, linfo) := interleave(chars, outLineInfo);
         char :: next_char :: chars := outChars;
-        
+
         // <% %>  empty expression ... i.e. comment or a break in line that is not parsed.
         if char == "%" and next_char == inRightEsc then
           (outChars, outLineInfo, lindent) :=
