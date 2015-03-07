@@ -473,15 +473,7 @@ algorithm
     // a := expr;  // where a is array
     case (DAE.STMT_ASSIGN_ARR(lhs=exp1), _, _)
       equation
-        cr = Expression.expCref(exp1);
-        subs = ComponentReference.crefLastSubs(cr);
-        if not listEmpty(subs) // not an empty subs list
-        then
-          subs = List.fill(DAE.WHOLEDIM(), listLength(subs));
-          cr = ComponentReference.crefSetLastSubs(cr, subs);
-        end if;
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, iht);
+        (_, (_, ht)) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, (inCrefExpansion, iht));
       then ht;
 
     case(DAE.STMT_IF(statementLst = stmts, else_ = elsebranch), _, _)

@@ -6265,26 +6265,24 @@ algorithm
     // => tmp = rhsexp;
     // z1 = tmp[1]; z2 = tmp[2] ....
     case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=e2, source=source))::{}, _, _, _, _) equation
-      (DAE.ARRAY(array=expLst)) = Expression.replaceDerOpInExp(e1);
+      // Flattne multi-dimensional ARRAY{ARRAY} expressions
+      expLst = Expression.flattenArrayExpToList(e1);
+      // Replace the der() operators
+      expLst = List.map(expLst, Expression.replaceDerOpInExp);
       e2_1 = Expression.replaceDerOpInExp(e2);
-      //check that {z1,z2,...} are in e1
-      crefs = List.map(inVars, BackendVariable.varCref);
-      ht = HashSet.emptyHashSet();
-      ht = List.fold(crefs, BaseHashSet.add, ht);
-      List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
-
-      // create tmp vars and exps
+      // create the lhs tmp var
       ty = Expression.typeof(e1);
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
       lhse = DAE.CREF(left,ty);
-
+      // Expand the tmp cref and create the list of rhs vars 
+      // to update the original lhs vars
       crefstmp = ComponentReference.expandCref(left, false);
       expLstTmp = List.map(crefstmp, Expression.crefExp);
       tempvars = createArrayTempVar(left, ds, expLstTmp, itempvars);
-
+      // Create the simple assignments for the lhs vars from the tmp rhs's
       exptl = List.threadTuple(expLst, expLstTmp);
       (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
-
+      // Create the array equation with the tmp var as lhs
       eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2_1, source)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
 
