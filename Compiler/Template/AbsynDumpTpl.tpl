@@ -797,7 +797,9 @@ match exp
     '(<%tuple_str%>)'
   case END(__) then 'end'
   case CODE(__) then '$Code(<%dumpCodeNode(code)%>)'
-  case AS(__) then 'as'
+  case AS(__) then
+    let exp_str = dumpExp(exp)
+    '<%id%> as <%exp_str%>'
   case CONS(__) then
     let head_str = dumpExp(head)
     let rest_str = dumpExp(rest)
