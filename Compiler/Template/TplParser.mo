@@ -374,6 +374,19 @@ algorithm
   end matchcontinue;
 end parseErrorPrevPositionOpt;
 
+public function parseErrorPrevPositionOptInfoChars
+  input LineInfo inLineInfoPrevPos;
+  input LineInfo inLineInfo;
+  input Option<String> inErrMessage;
+  input Boolean isFatal;
+  output LineInfo outLineInfo;
+protected
+  list<String> sol_chars;
+algorithm
+  LINE_INFO(startOfLineChars = sol_chars) := inLineInfoPrevPos;
+  outLineInfo := parseErrorPrevPositionOpt(sol_chars, inLineInfoPrevPos,
+    inLineInfo, inErrMessage, isFatal); 
+end parseErrorPrevPositionOptInfoChars;
 
 public function expectChar
   input list<String> inChars;
@@ -4332,7 +4345,7 @@ algorithm
         (chars, lineInd) = lineIndent(startChars,0);
         //correct the indent of the line right after << to baseInd
         lineInd = lineInd + baseInd;
-        (chars, linfo, expB) = restOfTemplLine(chars, startLInfo, lesc, resc, false, {}, {}, baseInd, lineInd, {});
+        (chars, linfo, expB) = restOfTemplLine(chars, startLInfo, lesc, resc, false, {}, {}, baseInd, lineInd);
         sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
       then (chars, linfo, (expB, sinfo));
   end matchcontinue;
@@ -4397,26 +4410,13 @@ public function templateBody
   output list<String> outChars;
   output LineInfo outLineInfo;
   output TplAbsyn.ExpressionBase outExpressionBase;
+protected
+  Integer lindent;
 algorithm
-  (outChars, outLineInfo, outExpressionBase)
-  := match (inChars, inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList, inIndentStack, inActualIndent)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String  lesc, resc;
-      Boolean isSQ;
-      Integer actInd, lineInd;
-      TplAbsyn.ExpressionBase expB;
-      list<TplAbsyn.Expression> expLst;
-      list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
-
-   case (chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd)
-      equation
-        (chars, lineInd) = lineIndent(chars,0);
-        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, {});
-      then (chars, linfo, expB);
-
-  end match;
+  (outChars, lindent) := lineIndent(inChars, 0);
+  (outChars, outLineInfo, outExpressionBase) := restOfTemplLine(outChars,
+    inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList,
+    inIndentStack, inActualIndent, lindent);
 end templateBody;
 
 /*
@@ -4435,23 +4435,10 @@ public function lineIndent
   output list<String> outChars;
   output Integer outLineIndent;
 algorithm
-  (outChars, outLineIndent) := match (inChars, inLineIndent)
-    local
-      list<String> chars;
-      Integer lineInd;
-
-   case (" " :: chars, lineInd)
-     equation
-       (chars, lineInd) = lineIndent(chars, lineInd + 1);
-     then (chars, lineInd);
-
-   case ("\t" :: chars, lineInd)
-     equation
-       (chars, lineInd) = lineIndent(chars, lineInd + TabSpaces);
-     then (chars, lineInd);
-
-   else (inChars, inLineIndent);
-
+  (outChars, outLineIndent) := match inChars
+    case " "  :: outChars then lineIndent(outChars, inLineIndent + 1);
+    case "\t" :: outChars then lineIndent(outChars, inLineIndent + TabSpaces);
+    else (inChars, inLineIndent);
   end match;
 end lineIndent;
 /*
@@ -4507,172 +4494,108 @@ public function restOfTemplLine
   input list<tuple<Integer,list<TplAbsyn.Expression>>> inIndentStack;
   input Integer inActualIndent;
   input Integer inLineIndent;
-  input list<String> inAccStringChars;
 
-  output list<String> outChars;
-  output LineInfo outLineInfo;
+  output list<String> outChars = inChars;
+  output LineInfo outLineInfo = inLineInfo;
   output TplAbsyn.ExpressionBase outExpressionBase;
+protected
+  list<TplAbsyn.Expression> expl = inExpressionList;
+  Integer lindent = inLineIndent;
+  Integer aindent = inActualIndent;
+  list<tuple<Integer, list<TplAbsyn.Expression>>> ind_stack = inIndentStack;
+
+  String char, next_char;
+  Boolean remaining_chars = true; 
+  TplAbsyn.Expression exp;
+  list<String> chars, sol_chars, acc_chars = {};
+  Option<String> err_opt;
+  LineInfo linfo;
 algorithm
-  (outChars, outLineInfo, outExpressionBase)
-  := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList, inIndentStack,
-                    inActualIndent, inLineIndent, inAccStringChars)
-    local
-      list<String> chars, startChars, accChars, solChars;
-      LineInfo linfo, startLinfo;
-      String c, lesc, resc;
-      Option<String> errOpt;
-      Boolean isSQ;
-      Integer actInd, lineInd;
-      TplAbsyn.Expression   eexp;
-      TplAbsyn.ExpressionBase expB;
-      list<TplAbsyn.Expression> expLst;
-      list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
+  try
+    while true loop
+      char :: outChars := outChars;
 
-   //<# #> or $# #$
-   /*
-   case (startChars as (c :: "#" :: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        true = stringEq( c, lesc );
-        (chars, linfo) = interleave(chars, startLinfo);
-        (chars, linfo, eexp) = nonTemplateExprWithOpts(chars, linfo, lesc, resc);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "#");
-        (chars, linfo) = expectChar(chars, linfo, resc);
-        //("#" :: c :: chars) = chars;
-        // true = stringEq( c, resc );
-        (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
-        (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
-        LINE_INFO(startOfLineChars = solChars) = startLinfo;
-        linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
-      then (chars, linfo, exp);
-   */
+      // isSingleQuote = true
+      if inIsSingleQuote and char == "'" then
+        expl := onTemplEnd(false, expl, ind_stack, aindent, lindent, acc_chars);
+        outExpressionBase := makeTemplateFromExpList(expl, "'", "'");
+        return;
+      end if;
 
-   //??? should we allow escaping at all ??
-   /* experimentally we will disallow it ... use "" constants in like 'hey son<%"'"%>s brother'
-   // \ will be taken literally,  '\\' and <<\\>> are both double-backslash !
-   case ("\\":: c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        true = (c == "\\" or c == "'" or c == lesc or c == resc);
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
-      then (chars, linfo, exp);
-   */
+      // Peek at the next character.
+      next_char :: chars := outChars;
 
-   // isSingleQuote = true
-   case ("'" :: chars, linfo, _, _, true, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        expLst = onTemplEnd(false, expLst, indStack, actInd, lineInd, accChars);
-        expB = makeTemplateFromExpList(expLst, "'","'");
-      then (chars, linfo, expB);
+      // isSingleQuote = false =>  << >>
+      if not inIsSingleQuote and char == ">" and next_char == ">" then
+        expl := onTemplEnd(true, expl, ind_stack, aindent, lindent, acc_chars);
+        outExpressionBase := makeTemplateFromExpList(expl, "<<", ">>");
+        outChars := chars;
+        return;
+      // New line.
+      elseif char == "\r" or char == "\n" then
+        (outChars, linfo) := newLine(char :: outChars, outLineInfo);
+        (expl, ind_stack, aindent, err_opt) := onNewLine(expl, ind_stack, aindent, lindent, acc_chars);
+        outLineInfo := parseErrorPrevPositionOptInfoChars(outLineInfo, linfo, err_opt, false);
+        (outChars, lindent) := lineIndent(outChars, 0); 
+        acc_chars := {}; 
+      // <% something %>
+      elseif char == inLeftEsc and next_char == "%" then
+        (outChars, linfo) := interleave(chars, outLineInfo);
+        char :: next_char :: chars := outChars;
+        
+        // <% %>  empty expression ... i.e. comment or a break in line that is not parsed.
+        if char == "%" and next_char == inRightEsc then
+          (outChars, outLineInfo, lindent) :=
+            dropNewLineAfterEmptyExp(chars, linfo, lindent, acc_chars);
+        else // <% expression %>
+          (outChars, linfo, exp) := expression(outChars, linfo, inLeftEsc, inRightEsc, false);
+          (outChars, linfo) := interleaveExpectChar(outChars, linfo, "%");
+          (outChars, linfo) := expectChar(outChars, linfo, inRightEsc);
+          (expl, ind_stack, aindent, err_opt) :=
+            onEscapedExp(exp, expl, ind_stack, aindent, lindent, acc_chars);
+          outLineInfo := parseErrorPrevPositionOptInfoChars(outLineInfo, linfo, err_opt, false);
+          acc_chars := {};
+        end if;
+      // Anything else.
+      else
+        acc_chars := char :: acc_chars;
+      end if;
+    end while;
+  else
+    outChars := {};
+    outLineInfo := parseError({}, inLineInfo, "Not able to parse the text template expression from the point.", true);
+    outExpressionBase := TplAbsyn.ERROR_EXP();
+  end try;
 
-   // isDoubleQuote = false =>  << >>
-   case (">"::">":: chars, linfo, _, _, false, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        expLst = onTemplEnd(true, expLst, indStack, actInd, lineInd, accChars);
-        expB = makeTemplateFromExpList(expLst, "<<",">>");
-      then (chars, linfo, expB);
-
-   // <% %>  empty expression ... i.e. comment or a break in line that is not parsed
-   case (c :: "%":: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        true = stringEq(c,  lesc);
-        (chars, linfo) = interleave(chars, linfo);
-        ("%" :: c :: chars) = chars;
-        true = stringEq(c, resc);
-        (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
-        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
-      then (chars, linfo, expB);
-
-   // <% expression %>
-   case ((c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        true = stringEq(c, lesc);
-        (chars, linfo) = interleave(chars, startLinfo);
-        (chars, linfo, eexp) = expression(chars, linfo, lesc, resc, false);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "%");
-        (chars, linfo) = expectChar(chars, linfo, resc);
-        //(c :: chars) = chars;
-        // true = stringEq( c , resc );
-        (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
-        LINE_INFO(startOfLineChars = solChars) = startLinfo;
-        linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
-        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
-      then (chars, linfo, expB);
-
-   case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        (chars, linfo) = newLine(c :: chars, linfo);
-        (expLst, indStack, actInd, errOpt) = onNewLine(expLst, indStack, actInd, lineInd, accChars);
-        LINE_INFO(startOfLineChars = solChars) = linfo;
-        linfo = parseErrorPrevPositionOpt(solChars, linfo, linfo, errOpt, false);
-
-        // adrpo: replace this call with the actual body of templateBody
-        // (chars, linfo, expB) = templateBody(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd);
-        (chars, lineInd) = lineIndent(chars, 0);
-        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, {});
-      then (chars, linfo, expB);
-
-   case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
-      then (chars, linfo, expB);
-
-   case ({}, linfo, _, _, _, _, _, _, _, _)
-      equation
-        (linfo) = parseError({}, linfo, "Not able to parse the text template expression from the point.", true);
-      then ({}, linfo, TplAbsyn.ERROR_EXP());
-
-  end matchcontinue;
+//   //<# #> or $# #$
+//   /*
+//   case (startChars as (c :: "#" :: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+//      equation
+//        equality( c  = lesc );
+//        (chars, linfo) = interleave(chars, startLinfo);
+//        (chars, linfo, eexp) = nonTemplateExprWithOpts(chars, linfo, lesc, resc);
+//        (chars, linfo) = interleaveExpectChar(chars, linfo, "#");
+//        (chars, linfo) = expectChar(chars, linfo, resc);
+//        //("#" :: c :: chars) = chars;
+//        //equality( c  = resc );
+//        (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
+//        (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
+//        LINE_INFO(startOfLineChars = solChars) = startLinfo;
+//        linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
+//        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
+//      then (chars, linfo, exp);
+//   */
+//
+//   //??? should we allow escaping at all ??
+//   /* experimentally we will disallow it ... use "" constants in like 'hey son<%"'"%>s brother'
+//   // \ will be taken literally,  '\\' and <<\\>> are both double-backslash !
+//   case ("\\":: c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+//      equation
+//        true = (c == "\\" or c == "'" or c == lesc or c == resc);
+//        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
+//      then (chars, linfo, exp);
+//   */
 end restOfTemplLine;
-
-/* obsolete
-public function restOfTemplLineAfterEmptyExp
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input String inLeftEsc;
-  input String inRightEsc;
-  input Boolean inIsSingleQuote;
-  input list<TplAbsyn.Expression> inExpressionList;
-  input list<tuple<Integer,list<TplAbsyn.Expression>>> inIndentStack;
-  input Integer inActualIndent;
-  input Integer inLineIndent;
-  input list<String> inAccStringChars;
-
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
-algorithm
-  (outChars, outLineInfo, outExpression)
-  := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc, inIsSingleQuote, inExpressionList, inIndentStack,
-                    inActualIndent, inLineIndent, inAccStringChars)
-    local
-      list<String> chars, accChars;
-      LineInfo linfo;
-      String c, lesc, resc;
-      Boolean isSQ;
-      Integer actInd, lineInd;
-      TplAbsyn.Expression exp;
-      list<TplAbsyn.Expression> expLst;
-      list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
-
-   //ignore a pure-empty-exp line
-   //accChars = {} nothing before the empty exp
-   //and [space] and newLine() after it
-   case (chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, _, {})
-      equation
-        //try take a space and new line
-        (chars, linfo) = takeSpaceAndNewLine(chars, linfo);
-        (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd);
-      then (chars, linfo, exp);
-
-   //simple restOfTemplLine() otherwise ... i.e. continue parsing after the empty exp
-   case (chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
-      equation
-        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
-      then (chars, linfo, exp);
-
-  end matchcontinue;
-end restOfTemplLineAfterEmptyExp;
-*/
 
 public function dropNewLineAfterEmptyExp
   input list<String> inChars;
