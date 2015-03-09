@@ -347,8 +347,13 @@ void printParameters(DATA *data, int stream)
 void printSparseStructure(DATA *data, int stream)
 {
   const int index = data->callback->INDEX_JAC_A;
-  unsigned int row, col, i;
-  char buffer[2048];
+  unsigned int row, col, i, j;
+  /* Will crash with a static size array */
+  char buffer[2*data->simulationInfo.analyticJacobians[index].sizeCols + 4];
+
+  if (!ACTIVE_STREAM(stream)) {
+    return;
+  }
 
   infoStreamPrint(stream, 1, "sparse structure of jacobian A [size: %ux%u]", data->simulationInfo.analyticJacobians[index].sizeRows, data->simulationInfo.analyticJacobians[index].sizeCols);
   infoStreamPrint(stream, 0, "%u nonzero elements", data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros);
@@ -367,16 +372,18 @@ void printSparseStructure(DATA *data, int stream)
   i=0;
   for(row=0; row < data->simulationInfo.analyticJacobians[index].sizeRows; row++)
   {
-    sprintf(buffer, "");
+    j=0;
+    buffer[0] = '\0';
     for(col=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[row]; col++)
     {
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.index[i] == col)
       {
-        sprintf(buffer, "%s* ", buffer);
+        buffer[j++] = '*';
         ++i;
+      } else {
+        buffer[j++] = ' ';
       }
-      else
-        sprintf(buffer, "%s  ", buffer);
+      buffer[j++] = ' ';
     }
     infoStreamPrint(stream, 0, "%s", buffer);
   }
