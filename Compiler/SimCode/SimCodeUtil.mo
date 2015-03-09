@@ -9056,7 +9056,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       BackendDAE.Variables knvars;
-    case (BackendDAE.VAR(varName = DAE.CREF_IDENT(), varDirection = DAE.OUTPUT()), _) then SimCodeVar.OUTPUT();
+    case (BackendDAE.VAR(varName = cr, varDirection = DAE.OUTPUT()), _) then SimCodeVar.OUTPUT();
     case (BackendDAE.VAR(varName = cr, varDirection = DAE.INPUT()), knvars)
       equation
         (_, _) = BackendVariable.getVar(cr, knvars);
