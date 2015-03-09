@@ -349,11 +349,13 @@ void printSparseStructure(DATA *data, int stream)
   const int index = data->callback->INDEX_JAC_A;
   unsigned int row, col, i, j;
   /* Will crash with a static size array */
-  char buffer[2*data->simulationInfo.analyticJacobians[index].sizeCols + 4];
+  char *buffer = NULL;
 
   if (!ACTIVE_STREAM(stream)) {
     return;
   }
+
+  buffer = (char*)GC_malloc(sizeof(char)* 2*data->simulationInfo.analyticJacobians[index].sizeCols + 4);
 
   infoStreamPrint(stream, 1, "sparse structure of jacobian A [size: %ux%u]", data->simulationInfo.analyticJacobians[index].sizeRows, data->simulationInfo.analyticJacobians[index].sizeCols);
   infoStreamPrint(stream, 0, "%u nonzero elements", data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros);
@@ -389,6 +391,7 @@ void printSparseStructure(DATA *data, int stream)
   }
   messageClose(stream);
   messageClose(stream);
+  GC_free(buffer);
 }
 
 #ifdef USE_DEBUG_OUTPUT
