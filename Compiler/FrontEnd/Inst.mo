@@ -3415,7 +3415,7 @@ algorithm
       DAE.Binding binding;
       DAE.ComponentRef cref, vn;
       DAE.DAElist dae;
-      DAE.Mod mod, mods, class_mod, mm, cmod, mod_1, var_class_mod, m_1;
+      DAE.Mod mod, mods, class_mod, mm, cmod, mod_1, var_class_mod, m_1, cls_mod;
       DAE.Type ty;
       DAE.Var new_var;
       FCore.Cache cache;
@@ -3447,14 +3447,18 @@ algorithm
     case (_, _, _, _, _, _, _,(SCode.IMPORT(),_), _, _, _, _, _)
       then (inCache, inEnv, inIH, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
 
-    // classdefinitions
-    case (_, _, _, _, _, _, _, (SCode.CLASS(), _), _, _, _, _, _)
+    // class definitions, add the modifiers from the extends to the env
+    case (_, _, _, _, _, _, _, (cls as SCode.CLASS(), cmod), _, _, _, _, _)
       equation
         //(cache, cenv, ih, store, dae, csets, ty, ci_state, _, graph) = instClass(cache, env, ih, inUnitStore, inMod, inPrefix, cls, inInstDims, inImplicit, inCallingScope, inGraph, inSets);
-        //env = FGraph.updateClass(env, cls, inPrefix, inMod, FCore.CLS_INSTANCE(name), cenv);
+        if not Mod.isEmptyMod(cmod) then
+          env = FGraph.updateClass(inEnv, cls, inPrefix, cmod, FCore.CLS_UNTYPED(), inEnv);
+        else
+          env = inEnv;
+        end if;
       then
-        //(cache, env, ih, store, dae, csets, ci_state, {}, graph);
-        (inCache, inEnv, inIH, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
+        (inCache, env, inIH, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
+        // (inCache, inEnv, inIH, inUnitStore, DAE.emptyDae, inSets, inState, {}, inGraph);
 
     // A component
     // This is the rule for instantiating a model component.  A component can be
@@ -3575,8 +3579,15 @@ algorithm
         node = FNode.fromRef(FNode.child(FGraph.lastScopeRef(cenv), SCode.className(cls)));
         if (not FNode.isInstance(FNode.fromRef(FGraph.lastScopeRef(cenv)))) then
           FCore.N(data=FCore.CL(mod = class_mod)) = node;
-          class_mod = Mod.removeMod(class_mod, SCode.className(cls));
-          mod_1 = Mod.merge(mod_1, class_mod, env2, pre);
+          cls_mod = Mod.removeMod(class_mod, SCode.className(cls));
+          if not Mod.isEmptyMod(cls_mod)
+          then
+            if not List.isEmpty(ad) // add each if needed
+            then
+              cls_mod = Mod.addEachIfNeeded(cls_mod, {DAE.DIM_INTEGER(1)});
+            end if;
+            mod_1 = Mod.merge(mod_1, cls_mod, env2, pre);
+          end if;
         end if;
         attr = SCode.mergeAttributesFromClass(attr, cls);
 

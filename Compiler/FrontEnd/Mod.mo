@@ -3318,6 +3318,16 @@ algorithm
   end match;
 end getModInfo;
 
+public function isRedeclareMod
+  input DAE.Mod inMod;
+  output Boolean yes;
+algorithm
+  yes := match(inMod)
+    case DAE.REDECL() then true;
+    else false;
+  end match;
+end isRedeclareMod;
+
 annotation(__OpenModelica_Interface="frontend");
 end Mod;
 
