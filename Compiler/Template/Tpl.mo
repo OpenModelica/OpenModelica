@@ -13,6 +13,7 @@ protected import ClockIndexes;
 protected import Debug;
 protected import Error;
 protected import Flags;
+protected import List;
 protected import Print;
 protected import System;
 
@@ -1192,54 +1193,31 @@ public function iterSeparatorAlignWrapString
 
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
+protected
+  Tokens toks = inTokens;
+  StringToken tok;
+  StringToken septok = inSeparator;
+  Integer idx = inActualIndex;
+  Integer anum = inAlignNum;
+  StringToken asep = inAlignSeparator;
+  Integer wwidth = inWrapWidth;
+  StringToken wsep = inWrapSeparator;
+  Integer pos = inActualPositionOnLine;
+  Boolean isstart = inAtStartOfLine;
+  Integer aind = inAfterNewLineIndent;
 algorithm
-  (outActualPositionOnLine, outAtStartOfLine)
-   := matchcontinue (inTokens, inSeparator, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
-    local
-      Tokens toks;
-      StringToken tok, septok, asep, wsep;
-      Integer pos, aind, idx, anum, wwidth;
-      Boolean isstart;
-
-    case ({}, _,_,_,_,_,_, pos, isstart, _)
-      then
-        (pos, isstart);
-
-    //align and try wrap
-    //align separator includes the separator (by default - otherwise can be provided by user)
-    //--> only align separator is written here
-    case (tok :: toks, septok, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      equation
-        true = (idx > 0) and (intMod(idx,anum) == 0);
-        (pos, isstart, aind) = tokString(asep, pos, isstart, aind);
-        (pos, isstart, aind) = tryWrapString(wwidth, wsep, pos, isstart, aind);
-        (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         = iterSeparatorAlignWrapString(toks, septok, idx + 1, anum, asep, wwidth, wsep,
-              pos, isstart, aind);
-      then
-        (pos, isstart);
-
-    //separator + try wrap - no align
-    case (tok :: toks, septok, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      equation
-        (pos, isstart, aind) = tokString(septok, pos, isstart, aind);
-        (pos, isstart, aind) = tryWrapString(wwidth, wsep, pos, isstart, aind);
-        (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         = iterSeparatorAlignWrapString(toks, septok, idx + 1, anum, asep, wwidth, wsep,
-               pos, isstart, aind);
-      then
-        (pos, isstart);
-
-
-    //should not ever happen
+  while (boolNot(List.isEmpty(toks))) loop
+    tok::toks := toks;
+    if((idx > 0) and (intMod(idx,anum) == 0)) then
+      (pos, isstart, aind) := tokString(asep, pos, isstart, aind);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterSeparatorAlignWrapString failed.\n");
-      then
-        fail();
-  end matchcontinue;
+      (pos, isstart, aind) := tokString(septok, pos, isstart, aind);
+    end if;
+    (pos, isstart, aind) := tryWrapString(wwidth, wsep, pos, isstart, aind);
+    (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
+    idx := idx + 1;
+  end while;
+  (outActualPositionOnLine, outAtStartOfLine) := (pos, isstart);
 end iterSeparatorAlignWrapString;
 
 
