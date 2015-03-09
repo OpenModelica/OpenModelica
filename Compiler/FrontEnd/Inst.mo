@@ -3440,6 +3440,7 @@ algorithm
       SCode.Visibility vis;
       String name, id, ns, s, scope_str;
       UnitAbsyn.InstStore store;
+      FCore.Node node;
 
     // Imports are simply added to the current frame, so that the lookup rule can find them.
     // Import have already been added to the environment so there is nothing more to do here.
@@ -3571,6 +3572,12 @@ algorithm
           = redeclareType(cache, env2, ih, mod, comp, pre, ci_state, impl, DAE.NOMOD());
 
         (cache, cls, cenv) = Lookup.lookupClass(cache, env2 /* env */, t, true);
+        node = FNode.fromRef(FNode.child(FGraph.lastScopeRef(cenv), SCode.className(cls)));
+        if (not FNode.isInstance(FNode.fromRef(FGraph.lastScopeRef(cenv)))) then
+          FCore.N(data=FCore.CL(mod = class_mod)) = node;
+          class_mod = Mod.removeMod(class_mod, SCode.className(cls));
+          mod_1 = Mod.merge(mod_1, class_mod, env2, pre);
+        end if;
         attr = SCode.mergeAttributesFromClass(attr, cls);
 
         // If the element is protected, and an external modification
@@ -4212,7 +4219,7 @@ algorithm
       Absyn.TypeSpec tsNew;
       SCode.Mod m;
       SCode.Comment comment;
-      DAE.Mod cmod,mods;
+      DAE.Mod cmod,mods,rmod;
       SCode.Element cl, compNew;
       FCore.Graph cenv,env2,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
@@ -4241,6 +4248,20 @@ algorithm
     //case (cache,env,ih,pre,DAE.NOMOD(),cref,ci_state,csets,impl,_)
     //  then
     //    (cache,env,ih,csets,updatedComps);
+
+    // if we have a redeclare for a component
+    /*case (cache,env,ih,_,
+        DAE.MOD(eqModOption = NONE(),
+                subModLst = {
+                  DAE.NAMEMOD(ident=n,
+                  mod = rmod as DAE.REDECL(_, _, {(SCode.COMPONENT(name = name),_)}))}),_,_,_,_,_)
+      equation
+        id = Absyn.crefFirstIdent(cref);
+        true = stringEq(id, name);
+        true = stringEq(id, n);
+        (outCache,outEnv,outIH,outUpdatedComps) = updateComponentInEnv(inCache,inEnv,inIH,pre,rmod,cref,inCIState,impl,inUpdatedComps,currentCref);
+      then
+        (outCache,outEnv,outIH,outUpdatedComps);*/
 
     // if we have a redeclare for a component
     case (cache,env,ih,_,

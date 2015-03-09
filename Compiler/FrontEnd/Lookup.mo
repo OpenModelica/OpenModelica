@@ -2728,7 +2728,7 @@ algorithm
         (DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,_),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
 
         // leave just the last scope from component env as it SHOULD BE ONLY THERE, i.e. don't go on searching the parents!
-        componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
+        // componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
 
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
 

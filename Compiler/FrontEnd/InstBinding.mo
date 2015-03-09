@@ -881,6 +881,25 @@ algorithm
       then
         binding;
 
+    /*/ If the previous case fails, then there is no binding for this component, ignore it
+    case (_, _, _, _, DAE.TYPES_VAR(name = name, binding = DAE.UNBOUND(), ty = ty) :: rest_vars, sub_mods, _, _, _, _)
+      equation
+        // make sure there is no binding for it
+        // The previous cases can also fail for other reasons. e.g type mismatch.
+        (sub_mods, NONE()) = List.deleteMemberOnTrue(name, sub_mods, InstUtil.isSubModNamed);
+        binding = makeRecordBinding2(
+                     inCache, inEnv,
+                     inRecordName,
+                     inRecordType,
+                     rest_vars,
+                     sub_mods,
+                     inInfo,
+                     inAccumExps,
+                     inAccumVals,
+                     inAccumNames);
+      then
+        binding; */
+
     case (_, _, _, _, DAE.TYPES_VAR(name = name) :: _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

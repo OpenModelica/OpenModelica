@@ -481,6 +481,16 @@ algorithm
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
 
+    /* / use the expression second
+    case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
+                        eqModOption = SOME(DAE.TYPED(modifierAsExp = dexp, info = info)))))
+      equation
+        //es = ExpressionDump.printExpStr(e);
+        subs_1 = unelabSubmods(subs);
+        e_1 = Expression.unelabExp(dexp);
+      then
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed */
+
     case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         eqModOption = SOME(DAE.TYPED(_,_,_,absynExp,info)))))
       equation

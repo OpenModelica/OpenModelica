@@ -2417,6 +2417,7 @@ algorithm
     // we do have a redeclaration of class.
     case (cache,env,ih,pre,( (sel1 as SCode.CLASS())),_,SOME(m))
       equation
+        m = Mod.lookupCompModification(m, sel1.name);
         false = valueEq(m, DAE.NOMOD());
         env_1 = FGraph.mkClassNode(env, sel1, pre, m);
         // call to redeclareType which calls updateComponents in env wich updates the class frame
