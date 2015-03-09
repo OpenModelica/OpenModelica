@@ -13901,11 +13901,11 @@ template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> ja
 
      match seedVars
         case {} then ""
-        
+
        case _ then
          match colorList
           case {} then ""
-          
+
          case _ then
           let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
           let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
@@ -13931,7 +13931,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname =  lastIdentOfPath(modelInfo.name)
    let &varDecls = buffer "" /*BUFD*/
- 
+
  let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_), colorList, maxColor, jacIndex) =>
     generateMatrix(jacIndex, mat, vars, name, sparsepattern, colorList, maxColor,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n\n";empty)
@@ -13944,7 +13944,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
     ;separator="\n";empty)
   */
 
-  
+
 <<
 
 <%jacMats%>
@@ -13957,8 +13957,8 @@ void <%classname%>Jacobian::initialize()
       ;separator="")
       %>
 
- 
- 
+
+
    //initialize Algloopsolver for analytical Jacobians
       <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  initAlgloopsolver(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="")
