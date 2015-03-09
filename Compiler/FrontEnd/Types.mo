@@ -4505,8 +4505,9 @@ algorithm
     // Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22]
     case (DAE.MATRIX(integer = nmax,matrix = ell),
           DAE.T_ARRAY(dims = {dim1},ty = DAE.T_ARRAY(dims = {dim11},ty = t1)),
-          DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = DAE.T_ARRAY(dims = {dim22},ty = t2, source = ts1), source = ts2),
+          DAE.T_ARRAY(dims = {dim2},ty = DAE.T_ARRAY(dims = {dim22},ty = t2, source = ts1), source = ts2),
           _)
+          guard not Expression.dimensionKnown(dim2)
       equation
         true = Expression.dimensionsKnownAndEqual(dim11, dim22);
         ell_1 = typeConvertMatrix(ell,t1,t2,printFailtrace);
