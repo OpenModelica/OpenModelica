@@ -134,10 +134,10 @@ protected type VarSetAttributes =
 
 protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}, (NONE(), NONE()));
 
-/*
- * fastAcausal
- *
- */
+// =============================================================================
+// section for fastAcausal
+//
+// =============================================================================
 
 public function fastAcausal "author: Frenkel TUD 2012-12
   This Function remove with a linear scaling with respect to the number of
@@ -200,7 +200,7 @@ algorithm
     outSystem := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, outSystem);
     outTpl := ((repl, b, unReplaceable, traversals));
   else
-    Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
+    //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
     outSystem := inSystem;
     outShared := inShared;
     outTpl := inTpl;
@@ -221,38 +221,25 @@ protected function causalFinder "author: Frenkel TUD 2012-12"
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean globalFoundSimple;
   output tuple<Integer, BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean> oTpl;
+protected
+  BackendDAE.Variables vars;
+  BackendVarTransform.VariableReplacements repl;
+  Boolean b1;
+  array<SimpleContainer> simpleeqns;
+  list<BackendDAE.Equation> eqnslst;
+  BackendDAE.Shared shared;
 algorithm
-  oTpl:=
-  match (foundSimple, iSimpleeqnslst, iEqnslst, index, traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple)
-    local
-      BackendDAE.Variables vars;
-      BackendVarTransform.VariableReplacements repl;
-      Boolean b1;
-      array<SimpleContainer> simpleeqns;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.Shared shared;
-
-    case (false, _, {}, _, _, _, _, _, _, _, _, _)
-      then ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple));
-
-    case (false, _, _, _, _, _, _, _, _, _, {}, _)
-      then ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, iEqnslst, globalFoundSimple));
-
-    case (false, _, _, _, _, _, _, _, _, _, _, _)
-      then ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
-
-    case (true, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        // transform simpleeqns to array
-        simpleeqns = listArray(listReverse(iSimpleeqnslst));
-        // collect and handle sets
-        (vars, eqnslst, shared, repl) = handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
-        // perform replacements and try again
-        (eqnslst, b1) = BackendVarTransform.replaceEquations(eqnslst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-      then
-        causalFinder1(intGt(index, traversals), b1, eqnslst, index+1, traversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
-
-  end match;
+  if foundSimple then
+    // transform simpleeqns to array
+    simpleeqns := listArray(listReverse(iSimpleeqnslst));
+    // collect and handle sets
+    (vars, eqnslst, shared, repl) := handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+    // perform replacements and try again
+    (eqnslst, b1) := BackendVarTransform.replaceEquations(eqnslst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+    oTpl := causalFinder1(intGt(index, traversals), b1, eqnslst, index+1, traversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
+  else
+    oTpl := ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
+  end if;
 end causalFinder;
 
 protected function causalFinder1 "author: Frenkel TUD 2012-12"
@@ -288,9 +275,11 @@ algorithm
   end match;
 end causalFinder1;
 
-/*
- * allAcausal
- */
+
+// =============================================================================
+// section for allAcausal
+//
+// =============================================================================
 
 public function allAcausal "author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
@@ -352,9 +341,10 @@ algorithm
 end allAcausal1;
 
 
-/*
- * causal
- */
+// =============================================================================
+// section for causal
+//
+// =============================================================================
 
 public function causal "author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
@@ -585,14 +575,11 @@ algorithm
   end match;
 end allCausalFinder2;
 
-/*
- * protected section
- *
- */
 
-/*
- * functions to find simple equations
- */
+// =============================================================================
+// functions to find simple equations
+//
+// =============================================================================
 
 protected function simpleEquationsFinder "author: Frenkel TUD 2012-12
   map from equation to lhs and rhs"
@@ -3289,9 +3276,11 @@ algorithm
   end match;
 end selectMinDepth;
 
-/*
- * functions to update equation system and shared
- */
+
+// =============================================================================
+// functions to update equation system and shared
+//
+// =============================================================================
 
 protected function updateSystem "author: Frenkel TUD 2012-12
   replace the simplified variables and equations in the system"
@@ -3806,16 +3795,17 @@ algorithm
   end match;
 end replaceOptExprTraverser;
 
-/*
- * functions to find unReplaceable variables
- *
- * unReplaceable:
- *   - variables with variable subscribts
- *   - variables set in when-clauses
- *   - variables used in pre
- *   - statescandidates of statesets
- *   - lhs of array assign statement, because there is a cref used and this is not replaceable_ with array of crefs
- */
+
+// =============================================================================
+// functions to find unReplaceable variables
+//
+// unReplaceable:
+//   - variables with variable subscribts
+//   - variables set in when-clauses
+//   - variables used in pre
+//   - statescandidates of statesets
+//   - lhs of array assign statement, because there is a cref used and this is not replaceable_ with array of crefs
+// =============================================================================
 
 protected function addUnreplaceableFromStateSets "author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
