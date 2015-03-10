@@ -248,7 +248,11 @@ QString OMEquation::toString()
   if (tag == "dummy") {
     return "";
   } else if (tag == "assign") {
-    return QString("%1 := %2").arg(defines[0]).arg(text[0]);
+    if (text.size()==1) {
+     return QString("%1 := %2").arg(defines[0]).arg(text[0]);
+    } else {
+     return QString("%1 := %2").arg(text[0]).arg(text[1]);
+    }
   } else if (tag == "statement" || tag == "algorithm") {
     return text.join("\n");
   } else if (tag == "container") {
