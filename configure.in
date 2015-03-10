@@ -879,9 +879,11 @@ SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 AC_MSG_CHECKING([for OpenModelica platform name])
 # I don't really agree with the Modelica specification since "Intel 32-bit" is
 # very unspecific.
-# Also, they forgot about Mac users. We will just default to uname -sm and patch
-# to Modelica Spec standards as well.
-OPENMODELICA_SPEC_PLATFORM=`echo $host | sed "s/unknown-linux-gnu/linux/" | sed "s/linux-gnu/linux/" | sed "s/i@<:@3456@:>@86/i386/" | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
+# Also, they forgot about Mac users.
+# We will just default to use the $host_cpu-$host_os (treating gnu-linux as linux).
+# We then patch it up a bit to look for Modelica/FMU standard locations as well.
+
+OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-$host_os | sed "s/linux-gnu/linux/" | sed "s/linux-gnu/linux/" | sed "s/i@<:@3456@:>@86/i386/" | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
 AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
 AC_MSG_CHECKING([for Modelica platform name])
 if test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-linux" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-linux"; then
