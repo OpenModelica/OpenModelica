@@ -595,7 +595,6 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiInitialize: toleranceControlled=%d relativeTolerance=%g",
       toleranceControlled, relativeTolerance);
-  *eventInfo  = comp->eventInfo;
 
   /* set zero-crossing tolerance */
   setZCtol(relativeTolerance);
@@ -643,19 +642,19 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
 
-    comp->eventInfo.iterationConverged = fmiTrue;
-    comp->eventInfo.stateValueReferencesChanged = fmiFalse;
-    comp->eventInfo.stateValuesChanged = fmiTrue;
-    comp->eventInfo.terminateSimulation = fmiFalse;
+    eventInfo->iterationConverged = fmiTrue;
+    eventInfo->stateValueReferencesChanged = fmiFalse;
+    eventInfo->stateValuesChanged = fmiTrue;
+    eventInfo->terminateSimulation = fmiFalse;
 
     /* Get next event time (sample calls)*/
     nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
     if (nextSampleEvent == -1){
-      comp->eventInfo.upcomingTimeEvent = fmiFalse;
+      eventInfo->upcomingTimeEvent = fmiFalse;
     }else{
-      comp->eventInfo.upcomingTimeEvent = fmiTrue;
-      comp->eventInfo.nextEventTime = nextSampleEvent;
-      fmiEventUpdate(comp, fmiFalse, &(comp->eventInfo));
+      eventInfo->upcomingTimeEvent = fmiTrue;
+      eventInfo->nextEventTime = nextSampleEvent;
+      fmiEventUpdate(comp, fmiFalse, eventInfo);
     }
 
     return fmiOK;
@@ -692,50 +691,33 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       eventInfo->stateValuesChanged = fmiTrue;
     }
 
-    if(eventInfo->nextEventTime <= comp->fmuData->localData[0]->timeValue)
-      comp->fmuData->simulationInfo.sampleActivated = 1;
+    storePreValues(comp->fmuData);
 
-    /* sample event */
-    if(comp->fmuData->simulationInfo.sampleActivated)
+    /* activate sample event */
+    for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
     {
-      storePreValues(comp->fmuData);
-
-      /* activate sample event */
-      for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
+      if(comp->fmuData->simulationInfo.nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue)
       {
-        if(comp->fmuData->simulationInfo.nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue)
-        {
-          comp->fmuData->simulationInfo.samples[i] = 1;
-          infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData.samplesInfo[i].index, comp->fmuData->modelData.samplesInfo[i].start, comp->fmuData->modelData.samplesInfo[i].interval);
-        }
+        comp->fmuData->simulationInfo.samples[i] = 1;
+        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData.samplesInfo[i].index, comp->fmuData->modelData.samplesInfo[i].start, comp->fmuData->modelData.samplesInfo[i].interval);
       }
-
-      comp->fmuData->callback->functionDAE(comp->fmuData);
-
-      /* deactivate sample events */
-      for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
-      {
-        if(comp->fmuData->simulationInfo.samples[i])
-        {
-          comp->fmuData->simulationInfo.samples[i] = 0;
-          comp->fmuData->simulationInfo.nextSampleTimes[i] += comp->fmuData->modelData.samplesInfo[i].interval;
-        }
-      }
-
-      for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
-        if((i == 0) || (comp->fmuData->simulationInfo.nextSampleTimes[i] < comp->fmuData->simulationInfo.nextSampleEvent))
-          comp->fmuData->simulationInfo.nextSampleEvent = comp->fmuData->simulationInfo.nextSampleTimes[i];
-
-      comp->fmuData->simulationInfo.sampleActivated = 0;
     }
-    else
+
+    comp->fmuData->callback->functionDAE(comp->fmuData);
+
+    /* deactivate sample events */
+    for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
     {
-      comp->fmuData->callback->function_updateRelations(comp->fmuData, 1);
-      updateRelationsPre(comp->fmuData);
-      storeRelations(comp->fmuData);
-
-      comp->fmuData->callback->functionDAE(comp->fmuData);
+      if(comp->fmuData->simulationInfo.samples[i])
+      {
+        comp->fmuData->simulationInfo.samples[i] = 0;
+        comp->fmuData->simulationInfo.nextSampleTimes[i] += comp->fmuData->modelData.samplesInfo[i].interval;
+      }
     }
+
+    for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
+      if((i == 0) || (comp->fmuData->simulationInfo.nextSampleTimes[i] < comp->fmuData->simulationInfo.nextSampleEvent))
+        comp->fmuData->simulationInfo.nextSampleEvent = comp->fmuData->simulationInfo.nextSampleTimes[i];
 
     if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->stateValuesChanged)
     {
