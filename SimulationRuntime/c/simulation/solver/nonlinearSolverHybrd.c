@@ -50,49 +50,6 @@ extern "C" {
 #include "nonlinearSolverHybrd.h"
 extern double enorm_(integer *n, double *x);
 
-typedef struct DATA_HYBRD
-{
-  int initialized; /* 1 = initialized, else = 0*/
-  double* resScaling;
-  int useXScaling;
-  double* xScalefactors;
-  double* fvecScaled;
-
-  integer n;
-  double* x;
-  double* xSave;
-  double* xScaled;
-  double* fvec;
-  double* fvecSave;
-  double xtol;
-  integer maxfev;
-  int ml;
-  int mu;
-  double epsfcn;
-  double* diag;
-  double* diagres;
-  integer mode;
-  double factor;
-  integer nprint;
-  integer info;
-  integer nfev;
-  integer njev;
-  double* fjac;
-  double* fjacobian;
-  integer ldfjac;
-  double* r__;
-  integer lr;
-  double* qtf;
-  double* wa1;
-  double* wa2;
-  double* wa3;
-  double* wa4;
-
-  unsigned int numberOfIterations; /* over the whole simulation time */
-  unsigned int numberOfFunctionEvaluations; /* over the whole simulation time */
-
-} DATA_HYBRD;
-
 struct dataAndSys {
   DATA* data;
   int sysNumber;

@@ -44,6 +44,7 @@
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHomotopy.h"
+#include "nonlinearSolverHybrd.h"
 
 /*! \typedef DATA_HOMOTOPY
  * define memory structure for nonlinear system solver
@@ -127,6 +128,8 @@ typedef struct DATA_HOMOTOPY
   double timeValue;
   int mixedSystem;
 
+  void* dataHybrid;
+
 } DATA_HOMOTOPY;
 
 /*! \fn allocateHomotopyData
@@ -194,6 +197,8 @@ int allocateHomotopyData(int size, void** voiddata)
   data->indRow =(int*) calloc(size,sizeof(int));
   data->indCol =(int*) calloc(size+1,sizeof(int));
 
+  allocateHybrdData(size, &data->dataHybrid);
+
   assertStreamPrint(NULL, 0 != *voiddata, "allocationHomotopyData() voiddata failed!");
   return 0;
 }
@@ -244,6 +249,8 @@ int freeHomotopyData(void **voiddata)
   /* linear system */
   free(data->indRow);
   free(data->indCol);
+
+  freeHybrdData(&data->dataHybrid);
 
   return 0;
 }
@@ -1637,6 +1644,7 @@ int solveHomotopy(DATA *data, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HOMOTOPY* solverData = (DATA_HOMOTOPY*)(systemData->solverData);
+  DATA_HYBRD* solverDataHybrid;
   threadData_t *threadData = data->threadData;
 
   /*
@@ -1701,9 +1709,10 @@ int solveHomotopy(DATA *data, int sysNumber)
     debugVectorDouble(LOG_NLS_V,"System extrapolation", solverData->xStart, solverData->n);
   }
   vecCopy(solverData->n, solverData->xStart, solverData->x0);
-/* Use actual working point for scaling */
-  for (i=0;i<solverData->n;i++)
+  /* Use actual working point for scaling */
+  for (i=0;i<solverData->n;i++){
     solverData->xScaling[i] = fmax(systemData->nominal[i],fabs(solverData->x0[i]));
+  }
   solverData->xScaling[solverData->n] = 1.0;
 
   debugVectorDouble(LOG_NLS_V,"Nominal values", systemData->nominal, solverData->n);
@@ -1798,7 +1807,26 @@ int solveHomotopy(DATA *data, int sysNumber)
     giveUp = 1;
 
     solverData->info = 0;
-    if (!skipNewton) newtonAlgorithm(solverData, solverData->x);
+    /*if (!skipNewton) newtonAlgorithm(solverData, solverData->x); */
+    if (!skipNewton){
+
+      /* set x vector */
+      if(data->simulationInfo.discreteCall)
+        memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
+      else
+        memcpy(systemData->nlsxExtrapolation, solverData->x, solverData->n*(sizeof(double)));
+
+      newtonAlgorithm(solverData, solverData->x);
+      if (solverData->info == -1){
+        solverDataHybrid = (DATA_HYBRD*)(solverData->dataHybrid);
+        systemData->solverData = solverDataHybrid;
+
+        solverData->info = solveHybrd(data, sysNumber);
+
+        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+        systemData->solverData = solverData;
+      }
+    }
 
     /* solution found */
     if(solverData->info == 1)
