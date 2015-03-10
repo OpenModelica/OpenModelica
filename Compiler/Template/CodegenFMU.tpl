@@ -545,7 +545,7 @@ case SIMVAR(__) then
   <<
   <ScalarVariable
     <%ScalarVariableAttribute(simVar)%>>
-    <%ScalarVariableType(type_,unit,displayUnit,initialValue,isFixed)%>
+    <%ScalarVariableType(simVar)%>
   </ScalarVariable>
   >>
 end ScalarVariable;
@@ -602,43 +602,36 @@ match aliasvar
   else "noAlias"
 end getAliasVar;
 
-template ScalarVariableType(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
+template ScalarVariableType(SimVar simvar)
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
-match type_
-  case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
-  /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
-  case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
-  case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
-  case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
-  case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
-  else 'UNKOWN_TYPE'
+match simvar
+case SIMVAR(__) then
+  match type_
+    case T_INTEGER(__) then '<Integer<%StartString(simvar)%>/>'
+    /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
+    case T_REAL(__) then '<Real<%StartString(simvar)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
+    case T_BOOL(__) then '<Boolean<%StartString(simvar)%>/>'
+    case T_STRING(__) then '<String<%StartString(simvar)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%StartString(simvar)%>/>'
+    else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
-template StartString(DAE.Exp exp, Boolean isFixed)
+template StartString(SimVar simvar)
 ::=
-match exp
-  case ICONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-  case RCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-  case SCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-  case BCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-  case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-  else ''
+match simvar
+case SIMVAR(initialValue = initialValue, causality = causality, type_ = type_) then
+  match initialValue
+    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
+    else
+      match causality
+        case INPUT(__) then ' start="<%initDefaultValXml(type_)%>"'
+        else ''
 end StartString;
-
-template ScalarVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean isFixed)
- "Generates code for ScalarVariable Type file for FMU target."
-::=
-match initialValue
-  case SOME(exp) then '<%StartString(exp, isFixed)%>'
-end ScalarVariableTypeCommonAttribute;
-
-template StringVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean isFixed)
- "Generates code for ScalarVariable Type file for FMU target."
-::=
-match initialValue
-  case SOME(exp) then ' start=<%initVal(exp)%> fixed="<%isFixed%>"'
-end StringVariableTypeCommonAttribute;
 
 template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
  "Generates code for ScalarVariable Type Real file for FMU target."
