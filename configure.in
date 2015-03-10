@@ -89,6 +89,8 @@ AC_SUBST(OMC)
 AC_SUBST(OMCTARGET)
 AC_SUBST(BOOTSTRAP_STATIC)
 AC_SUBST(LIBDL)
+AC_SUBST(LIBDL)
+AC_SUBST(BOOST_INCLUDE)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -228,6 +230,19 @@ if test ! "$DARWIN" = "1"; then
   LIBRT="$LIBS"
   LIBS=""
 fi
+
+dnl Checks for boost include for Mac.
+
+if test ! "$DARWIN" = "1"; then
+  if test -f "/opt/local/include/boost/array.hpp"; then
+    BOOST_INCLUDE="-DBOOST_ROOT=/opt/local/include/boost/"
+  else
+    BOOST_INCLUDE=""
+  fi
+else
+  BOOST_INCLUDE=""
+fi
+
 
 dnl Checks for header files.
 AC_HEADER_STDC
