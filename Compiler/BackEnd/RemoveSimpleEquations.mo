@@ -142,8 +142,8 @@ protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}
 public function fastAcausal "author: Frenkel TUD 2012-12
   This Function remove with a linear scaling with respect to the number of
   equations in an acausal system as much as possible simple equations."
-  input BackendDAE.BackendDAE dae;
-  output BackendDAE.BackendDAE odae;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 protected
   BackendVarTransform.VariableReplacements repl;
   Boolean b;
@@ -151,28 +151,28 @@ protected
   HashSet.HashSet unReplaceable;
 algorithm
   // get the size of the system to set up the replacement hashmap
-  size := BackendDAEUtil.daeSize(dae);
+  size := BackendDAEUtil.daeSize(inDAE);
   size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
-  ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(dae, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
-  unReplaceable := addUnreplaceableFromWhens(dae, unReplaceable);
+  ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
+  unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
     BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
   // traverse all systems and remove simple equations
-  (odae, (repl, b, _, _)) := BackendDAEUtil.mapEqSystemAndFold(dae, fastAcausal1, (repl, false, unReplaceable, Flags.getConfigInt(Flags.MAXTRAVERSALS)));
+  (outDAE, (repl, b, _, _)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, fastAcausal1, (repl, false, unReplaceable, Flags.getConfigInt(Flags.MAXTRAVERSALS)));
   // traverse the shared parts
-  odae := removeSimpleEquationsShared(b, odae, repl);
+  outDAE := removeSimpleEquationsShared(b, outDAE, repl);
 end fastAcausal;
 
 protected function fastAcausal1 "author: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
-  input BackendDAE.EqSystem isyst;
+  input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
   input tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer> inTpl;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem outSystem = BackendDAEUtil.copyEqSystem(inSystem);
   output BackendDAE.Shared outShared;
   output tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer> outTpl;
 protected
@@ -188,17 +188,23 @@ protected
   Integer traversals;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets,partitionKind=partitionKind) := isyst;
-  ((repl, globalFindSimple, unReplaceable, traversals)) := inTpl;
-  // transform to list, this is later not neccesary because the acausal system should save the equations as list
-  eqnslst := BackendEquation.equationList(eqns);
-  mT := arrayCreate(BackendVariable.varsSize(vars), {});
-  // check equations
-  ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold(eqnslst, simpleEquationsFinder, (vars, inShared, {}, {}, 1, mT, false));
-  ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) :=
-     causalFinder(foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, inShared, repl, unReplaceable, mT, {}, globalFindSimple);
-  osyst := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
-  outTpl := ((repl, b, unReplaceable, traversals));
+  try
+    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets,partitionKind=partitionKind) := outSystem;
+    ((repl, globalFindSimple, unReplaceable, traversals)) := inTpl;
+    // transform to list, this is later not neccesary because the acausal system should save the equations as list
+    eqnslst := BackendEquation.equationList(eqns);
+    mT := arrayCreate(BackendVariable.varsSize(vars), {});
+    // check equations
+    ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold(eqnslst, simpleEquationsFinder, (vars, inShared, {}, {}, 1, mT, false));
+    ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) := causalFinder(foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, inShared, repl, unReplaceable, mT, {}, globalFindSimple);
+    outSystem := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, outSystem);
+    outTpl := ((repl, b, unReplaceable, traversals));
+  else
+    Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
+    outSystem := inSystem;
+    outShared := inShared;
+    outTpl := inTpl;
+  end try;
 end fastAcausal1;
 
 protected function causalFinder "author: Frenkel TUD 2012-12"

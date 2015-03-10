@@ -115,7 +115,6 @@ protected
 type Var = BackendDAE.Var;
 type VarKind = BackendDAE.VarKind;
 type VariableArray = BackendDAE.VariableArray;
-type EquationArray = BackendDAE.EquationArray;
 type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
 type BackendDAEType = BackendDAE.BackendDAEType;
 type SymbolicJacobians = BackendDAE.SymbolicJacobians;
@@ -257,7 +256,7 @@ algorithm
   (outExpCrefs,outWrongEqns) := matchcontinue (inBackendDAE)
     local
       BackendDAE.Variables vars1,vars2,allvars;
-      EquationArray eqns,reqns,ieqns;
+      BackendDAE.EquationArray eqns,reqns,ieqns;
       list<BackendDAE.WhenClause> whenClauseLst;
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5;
@@ -451,105 +450,52 @@ algorithm
   end matchcontinue;
 end checkAssertCondition;
 
-/************************************************************
-  Util function at Backend using for lowering and other stuff
- ************************************************************/
-
-/* adrpo: 2013-10-14 not used function
-public function createEmptyBackendDAE "author: wbraun
-  Copy the dae to avoid changes in vectors."
-  input BackendDAE.BackendDAEType inBDAEType;
-  output BackendDAE.BackendDAE outBDAE;
-protected
-  BackendDAE.Variables emptyvars;
-  EquationArray emptyEqns;
-  BackendDAE.Variables emptyAliasVars;
-  FCore.Cache cache;
-  DAE.FunctionTree funcTree;
-algorithm
-  emptyvars :=  BackendVariable.emptyVars();
-  emptyEqns := BackendEquation.emptyEqns();
-  emptyAliasVars := BackendVariable.emptyVars();
-  cache := FCore.emptyCache();
-  funcTree := DAEUtil.avlTreeNew();
-  outBDAE := BackendDAE.DAE({BackendDAE.EQSYSTEM(emptyvars,
-                                                 emptyEqns,
-                                                 NONE(),
-                                                 NONE(),
-                                                 BackendDAE.NO_MATCHING(),{})},
-                            BackendDAE.SHARED(emptyvars,
-                                              emptyvars,
-                                              emptyAliasVars,
-                                              emptyEqns,
-                                              emptyEqns,
-                                              {},
-                                              {},
-                                              cache,
-                                              {},
-                                              funcTree,
-                                              BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0),
-                                              {},
-                                              inBDAEType,
-                                              {},
-                                              BackendDAE.EXTRA_INFO("")));
-end createEmptyBackendDAE;
-*/
+// =============================================================================
+// Util function at Backend using for lowering and other stuff
+//
+// =============================================================================
 
 public function copyBackendDAE "author: Frenkel TUD, wbraun
   Copy the dae to avoid changes in vectors."
-  input BackendDAE.BackendDAE inBDAE;
-  output BackendDAE.BackendDAE outBDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  outBDAE:=
-  match (inBDAE)
-    local
-      EqSystems eqns;
-      BackendDAE.Shared shared,shared1;
-      BackendDAE.BackendDAE bDAE;
-
-    case (bDAE as BackendDAE.DAE(eqs=eqns, shared=shared))
-      equation
-        BackendDAE.DAE(eqs=eqns) = mapEqSystem(bDAE, copyBackendDAEEqSystem);
-        shared1 = copyBackendDAEShared(shared);
-      then
-        BackendDAE.DAE(eqns, shared1);
-  end match;
+  outDAE := mapEqSystem(inDAE, copyEqSystemAndShared);
 end copyBackendDAE;
 
-public  function copyBackendDAEEqSystem
-"  author: Frenkel TUD, wbraun
-  Copy the dae to avoid changes in
-  vectors."
-  input BackendDAE.EqSystem inSysts;
+public function copyEqSystemAndShared
+  input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSysts;
+  output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
 algorithm
-  (outSysts, outShared) := match (inSysts,inShared)
-    local
-      BackendDAE.Variables ordvars,ordvars1;
-      EquationArray eqns,eqns1;
-      Option<BackendDAE.IncidenceMatrix> m,mT,m1,mT1;
-      BackendDAE.Matching matching,matching1;
-      BackendDAE.Shared shared;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+  outSystem := copyEqSystem(inSystem);
+  outShared := copyBackendDAEShared(inShared);
+end copyEqSystemAndShared;
 
-    case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind),shared)
-      equation
-        // copy varibales
-        ordvars1 = BackendVariable.copyVariables(ordvars);
-        // copy equations
-        eqns1 = BackendEquation.copyEquationArray(eqns);
-        m1 = copyIncidenceMatrix(m);
-        mT1 = copyIncidenceMatrix(mT);
-        matching1 = copyMatching(matching);
-      then
-        (BackendDAE.EQSYSTEM(ordvars1,eqns1,m1,mT1,matching1,stateSets,partitionKind),shared);
-  end match;
-end copyBackendDAEEqSystem;
+public function copyEqSystem
+  input BackendDAE.EqSystem inSystem;
+  output BackendDAE.EqSystem outSystem;
+protected
+  BackendDAE.Variables ordvars, ordvars1;
+  BackendDAE.EquationArray eqns, eqns1;
+  Option<BackendDAE.IncidenceMatrix> m, mT, m1, mT1;
+  BackendDAE.Matching matching, matching1;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+algorithm
+  BackendDAE.EQSYSTEM(ordvars, eqns, m, mT, matching, stateSets, partitionKind) := inSystem;
 
-public  function copyBackendDAEShared
+  ordvars1 := BackendVariable.copyVariables(ordvars);
+  eqns1 := BackendEquation.copyEquationArray(eqns);
+  m1 := copyIncidenceMatrix(m);
+  mT1 := copyIncidenceMatrix(mT);
+  matching1 := copyMatching(matching);
+
+  outSystem := BackendDAE.EQSYSTEM(ordvars1, eqns1, m1, mT1, matching1, stateSets, partitionKind);
+end copyEqSystem;
+
+public function copyBackendDAEShared
 "  author: Frenkel TUD, wbraun
   Copy the shared part of an BackendDAE to avoid changes in
   vectors."
@@ -560,7 +506,7 @@ algorithm
   match (inShared)
     local
       BackendDAE.Variables knvars,exobj,knvars1,exobj1,av;
-      EquationArray remeqns,inieqns,remeqns1,inieqns1;
+      BackendDAE.EquationArray remeqns,inieqns,remeqns1,inieqns1;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       FCore.Cache cache;
@@ -608,7 +554,7 @@ public function addBackendDAEKnVars
   output BackendDAE.BackendDAE outBDAE;
 protected
   BackendDAE.Variables exobj,av;
-  EquationArray remeqns,inieqns;
+  BackendDAE.EquationArray remeqns,inieqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
   FCore.Cache cache;
@@ -635,7 +581,7 @@ algorithm
   outBDAE := match (inFunctionTree, inBDAE)
     local
       BackendDAE.Variables knvars,exobj,av;
-      EquationArray remeqns,inieqns;
+      BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       FCore.Cache cache;
@@ -664,7 +610,7 @@ algorithm
   outShared := match (inFunctionTree, inShared)
     local
       BackendDAE.Variables knvars,exobj,av;
-      EquationArray remeqns,inieqns;
+      BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       FCore.Cache cache;
@@ -688,7 +634,7 @@ public function addVarsToEqSystem
   output BackendDAE.EqSystem osyst;
 protected
   BackendDAE.Variables vars;
-  EquationArray eqs;
+  BackendDAE.EquationArray eqs;
   Option<BackendDAE.IncidenceMatrix> m,mT;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
@@ -868,7 +814,7 @@ algorithm
     local
       list<BackendDAE.Var> knvarlst,varlst1,varlst2;
       BackendDAE.Variables knvars,extVars,paramvars,av;
-      EquationArray seqns,ie;
+      BackendDAE.EquationArray seqns,ie;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       FCore.Cache cache;
@@ -1473,14 +1419,14 @@ end daeSize;
 
 public function systemSize
 "author: Frenkel TUD
-  Returns the size of the dae system, the size of the equations in an EquationArray,
+  Returns the size of the dae system, the size of the equations in an BackendDAE.EquationArray,
   which not corresponds to the number of equations in a system."
   input BackendDAE.EqSystem syst;
   output Integer n;
 algorithm
   n := match(syst)
     local
-      EquationArray eqns;
+      BackendDAE.EquationArray eqns;
     case BackendDAE.EQSYSTEM(orderedEqs = eqns)
       equation
         n = equationSize(eqns);
@@ -1507,7 +1453,7 @@ end numOfComps;
 
 public function equationSize "author: PA
 
-  Returns the size of the equations in an EquationArray, which not
+  Returns the size of the equations in an BackendDAE.EquationArray, which not
   corresponds to the number of equations in a system."
   input BackendDAE.EquationArray inEquationArray;
   output Integer outInteger;
@@ -1527,7 +1473,7 @@ public function equationArraySizeDAE
 algorithm
   n := match(dae)
     local
-      EquationArray eqns;
+      BackendDAE.EquationArray eqns;
     case BackendDAE.EQSYSTEM(orderedEqs = eqns)
       equation
         n = equationArraySize(eqns);
@@ -1537,7 +1483,7 @@ end equationArraySizeDAE;
 
 public function equationArraySize "author: PA
 
-  Returns the number of equations in an EquationArray, which not
+  Returns the number of equations in an BackendDAE.EquationArray, which not
   corresponds to the number of equations in a system but not
   to the size of the system"
   input BackendDAE.EquationArray inEquationArray;
@@ -1698,7 +1644,7 @@ algorithm
       array<Integer> arr,arr_1;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states;
       BackendDAE.Variables v,kv;
-      EquationArray e,se,ie;
+      BackendDAE.EquationArray e,se,ie;
       array<Integer> ass1,ass2;
       array<list<Integer>> m,mt;
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,_,comps)))
@@ -2066,7 +2012,7 @@ algorithm
     Var var;
     list<BackendDAE.Equation> eqn_lst;
     list<BackendDAE.Var> var_lst;
-    EquationArray eqnsNew;
+    BackendDAE.EquationArray eqnsNew;
     BackendDAE.Variables varsNew;
     case ({},_,_,eqnsNew,varsNew) then (eqnsNew,varsNew);
     case (comp::rest,_,_,eqnsNew,varsNew)
@@ -2088,7 +2034,7 @@ algorithm
   oshared := match (inWcLst,shared)
     local
       BackendDAE.Variables knvars,exobj,aliasVars;
-      EquationArray remeqns,inieqns;
+      BackendDAE.EquationArray remeqns,inieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       FCore.Cache cache;
@@ -2484,7 +2430,7 @@ public function incidenceMatrix
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 protected
   BackendDAE.Variables vars;
-  EquationArray eqns;
+  BackendDAE.EquationArray eqns;
 algorithm
   try
     BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns) := inEqSystem;
@@ -2509,7 +2455,7 @@ public function incidenceMatrixScalar
   output array<Integer> outMapIncRowEqn;
 protected
   BackendDAE.Variables vars;
-  EquationArray eqns;
+  BackendDAE.EquationArray eqns;
 algorithm
   try
     BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns) := syst;
@@ -3466,7 +3412,7 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.Variables vars;
-      EquationArray daeeqns;
+      BackendDAE.EquationArray daeeqns;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
@@ -3542,7 +3488,7 @@ public function updateIncidenceMatrixScalar
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
   input Option<DAE.FunctionTree> functionTree;
-  input list<Integer> inIntegerLst "numbers of equations in equationarray";
+  input list<Integer> inIntegerLst "numbers of equations in BackendDAE.EquationArray";
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
   output BackendDAE.EqSystem osyst;
@@ -3556,7 +3502,7 @@ algorithm
       Integer oldsize,newsize,oldsize1,newsize1,deltasize;
       list<Integer> eqns;
       BackendDAE.Variables vars;
-      EquationArray daeeqns;
+      BackendDAE.EquationArray daeeqns;
       BackendDAE.Matching matching;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
@@ -3858,7 +3804,7 @@ public function getIncidenceMatrix "this function returns the incidence matrix,
   output BackendDAE.IncidenceMatrix outMT;
 protected
   BackendDAE.Variables v;
-  EquationArray eq;
+  BackendDAE.EquationArray eq;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
@@ -3879,7 +3825,7 @@ public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
   output array<Integer> outMapIncRowEqn;
 protected
   BackendDAE.Variables v;
-  EquationArray eq;
+  BackendDAE.EquationArray eq;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
@@ -5962,7 +5908,7 @@ algorithm
   matchcontinue (inBackendDAE,func,inTypeA)
     local
       BackendDAE.Variables vars2;
-      EquationArray reqns,ieqns;
+      BackendDAE.EquationArray reqns,ieqns;
       list<BackendDAE.WhenClause> whenClauseLst;
       Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
@@ -6138,7 +6084,7 @@ algorithm
   matchcontinue (inBackendDAE,func,inTypeA)
     local
       BackendDAE.Variables vars2;
-      EquationArray reqns,ieqns;
+      BackendDAE.EquationArray reqns,ieqns;
       Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
       list<BackendDAE.WhenClause> wc;
@@ -6176,7 +6122,7 @@ public function traverseBackendDAEExpsEqSystem "This function goes through the B
   end FuncExpType;
 protected
   BackendDAE.Variables vars;
-  EquationArray eqns;
+  BackendDAE.EquationArray eqns;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns) := syst;
   outTypeA := traverseBackendDAEExpsVars(vars,func,inTypeA);
@@ -6199,7 +6145,7 @@ public function traverseBackendDAEExpsEqSystemWithUpdate "This function goes thr
   end FuncExpType;
 protected
   BackendDAE.Variables vars;
-  EquationArray eqns;
+  BackendDAE.EquationArray eqns;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns) := syst;
   outTypeA := traverseBackendDAEExpsVarsWithUpdate(vars,func,inTypeA);
@@ -7860,9 +7806,9 @@ end foldEqSystem;
 
 public function mapEqSystem
   "Helper to map a preopt module over each equation system"
-  input BackendDAE.BackendDAE dae;
-  input Function func;
-  output BackendDAE.BackendDAE odae;
+  input BackendDAE.BackendDAE inDAE;
+  input Function inFunc;
+  output BackendDAE.BackendDAE outDAE;
   partial function Function
     input BackendDAE.EqSystem syst;
     input BackendDAE.Shared shared;
@@ -7873,11 +7819,11 @@ protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(systs,shared) := dae;
-  (systs,shared) := List.mapFold(systs,func,shared);
+  BackendDAE.DAE(systs, shared) := inDAE;
+  (systs, shared) := List.mapFold(systs, inFunc, shared);
   // Filter out empty systems
   systs := filterEmptySystems(systs);
-  odae := BackendDAE.DAE(systs,shared);
+  outDAE := BackendDAE.DAE(systs, shared);
 end mapEqSystem;
 
 public function nonEmptySystem
@@ -7898,7 +7844,7 @@ public function setEqSystemMatching
   output BackendDAE.EqSystem osyst;
 protected
   BackendDAE.Variables vars;
-  EquationArray eqs;
+  BackendDAE.EquationArray eqs;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
   BackendDAE.StateSets stateSets;
