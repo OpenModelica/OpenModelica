@@ -98,6 +98,11 @@ typedef struct omc_ModelInput
 
 // a map for overrides
 typedef std::map<std::string, std::string> omc_CommandLineOverrides;
+// a map to find out which names were used
+#define OMC_OVERRIDE_UNUSED 0
+#define OMC_OVERRIDE_USED   1
+typedef std::map<std::string, int> omc_CommandLineOverridesUses;
+
 // function to handle command line settings override
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile);
 
@@ -765,9 +770,16 @@ std::string& ltrim(std::string& str) {
     return str.erase(0, i);
 }
 
+std::string getOverrideValue(omc_CommandLineOverrides& mOverrides, omc_CommandLineOverridesUses& mOverridesUses, std::string name)
+{
+    mOverridesUses[name] = OMC_OVERRIDE_USED;
+    return mOverrides[name];
+}
+
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile)
 {
   omc_CommandLineOverrides mOverrides;
+  omc_CommandLineOverridesUses mOverridesUses;
   char* overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL))
   {
@@ -845,6 +857,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
 
       // map[key]=value
       mOverrides[key] = value;
+      mOverridesUses[key] = OMC_OVERRIDE_UNUSED;
 
       infoStreamPrint(LOG_SOLVER, 0, "override %s = %s", key.c_str(), value.c_str());
 
@@ -855,72 +868,80 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     free(overrideStr);
 
     // now we have all overrides in mOverrides, override mi now
-    mi.de["solver"]         = mOverrides.count("solver")         ? mOverrides["solver"]         : mi.de["solver"];
-    mi.de["startTime"]      = mOverrides.count("startTime")      ? mOverrides["startTime"]      : mi.de["startTime"];
-    mi.de["stopTime"]       = mOverrides.count("stopTime")       ? mOverrides["stopTime"]       : mi.de["stopTime"];
-    mi.de["stepSize"]       = mOverrides.count("stepSize")       ? mOverrides["stepSize"]       : mi.de["stepSize"];
-    mi.de["tolerance"]      = mOverrides.count("tolerance")      ? mOverrides["tolerance"]      : mi.de["tolerance"];
-    mi.de["outputFormat"]   = mOverrides.count("outputFormat")   ? mOverrides["outputFormat"]   : mi.de["outputFormat"];
-    mi.de["variableFilter"] = mOverrides.count("variableFilter") ? mOverrides["variableFilter"] : mi.de["variableFilter"];
+    mi.de["solver"]         = mOverrides.count("solver")         ? getOverrideValue(mOverrides, mOverridesUses, "solver")    : mi.de["solver"];
+    mi.de["startTime"]      = mOverrides.count("startTime")      ? getOverrideValue(mOverrides, mOverridesUses, "startTime") : mi.de["startTime"];
+    mi.de["stopTime"]       = mOverrides.count("stopTime")       ? getOverrideValue(mOverrides, mOverridesUses, "stopTime")  : mi.de["stopTime"];
+    mi.de["stepSize"]       = mOverrides.count("stepSize")       ? getOverrideValue(mOverrides, mOverridesUses, "stepSize")  : mi.de["stepSize"];
+    mi.de["tolerance"]      = mOverrides.count("tolerance")      ? getOverrideValue(mOverrides, mOverridesUses, "tolerance")      : mi.de["tolerance"];
+    mi.de["outputFormat"]   = mOverrides.count("outputFormat")   ? getOverrideValue(mOverrides, mOverridesUses, "outputFormat")   : mi.de["outputFormat"];
+    mi.de["variableFilter"] = mOverrides.count("variableFilter") ? getOverrideValue(mOverrides, mOverridesUses, "variableFilter") : mi.de["variableFilter"];
 
     // override all found!
     for(long i=0; i<modelData->nStates; i++)
     {
-      mi.rSta[i]["start"] = mOverrides.count(mi.rSta[i]["name"]) ? mOverrides[mi.rSta[i]["name"]] : mi.rSta[i]["start"];
-      mi.rDer[i]["start"] = mOverrides.count(mi.rDer[i]["name"]) ? mOverrides[mi.rDer[i]["name"]] : mi.rDer[i]["start"];
+      mi.rSta[i]["start"] = mOverrides.count(mi.rSta[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rSta[i]["name"]) : mi.rSta[i]["start"];
+      mi.rDer[i]["start"] = mOverrides.count(mi.rDer[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rDer[i]["name"]) : mi.rDer[i]["start"];
     }
     for(long i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
     {
-      mi.rAlg[i]["start"] = mOverrides.count(mi.rAlg[i]["name"]) ? mOverrides[mi.rAlg[i]["name"]] : mi.rAlg[i]["start"];
+      mi.rAlg[i]["start"] = mOverrides.count(mi.rAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAlg[i]["name"]) : mi.rAlg[i]["start"];
     }
     for(long i=0; i<modelData->nVariablesInteger; i++)
     {
-      mi.iAlg[i]["start"] = mOverrides.count(mi.iAlg[i]["name"]) ? mOverrides[mi.iAlg[i]["name"]] : mi.iAlg[i]["start"];
+      mi.iAlg[i]["start"] = mOverrides.count(mi.iAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAlg[i]["name"]) : mi.iAlg[i]["start"];
     }
     for(long i=0; i<modelData->nVariablesBoolean; i++)
     {
-      mi.bAlg[i]["start"] = mOverrides.count(mi.bAlg[i]["name"]) ? mOverrides[mi.bAlg[i]["name"]] : mi.bAlg[i]["start"];
+      mi.bAlg[i]["start"] = mOverrides.count(mi.bAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAlg[i]["name"]) : mi.bAlg[i]["start"];
     }
     for(long i=0; i<modelData->nVariablesString; i++)
     {
-      mi.sAlg[i]["start"] = mOverrides.count(mi.sAlg[i]["name"]) ? mOverrides[mi.sAlg[i]["name"]] : mi.sAlg[i]["start"];
+      mi.sAlg[i]["start"] = mOverrides.count(mi.sAlg[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAlg[i]["name"]) : mi.sAlg[i]["start"];
     }
     for(long i=0; i<modelData->nParametersReal; i++)
     {
       // TODO: only allow to override primary parameters
-      mi.rPar[i]["start"] = mOverrides.count(mi.rPar[i]["name"]) ? mOverrides[mi.rPar[i]["name"]] : mi.rPar[i]["start"];
+      mi.rPar[i]["start"] = mOverrides.count(mi.rPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rPar[i]["name"]) : mi.rPar[i]["start"];
     }
     for(long i=0; i<modelData->nParametersInteger; i++)
     {
       // TODO: only allow to override primary parameters
-      mi.iPar[i]["start"] = mOverrides.count(mi.iPar[i]["name"]) ? mOverrides[mi.iPar[i]["name"]] : mi.iPar[i]["start"];
+      mi.iPar[i]["start"] = mOverrides.count(mi.iPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iPar[i]["name"]) : mi.iPar[i]["start"];
     }
     for(long i=0; i<modelData->nParametersBoolean; i++)
     {
       // TODO: only allow to override primary parameters
-      mi.bPar[i]["start"] = mOverrides.count(mi.bPar[i]["name"]) ? mOverrides[mi.bPar[i]["name"]] : mi.bPar[i]["start"];
+      mi.bPar[i]["start"] = mOverrides.count(mi.bPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bPar[i]["name"]) : mi.bPar[i]["start"];
     }
     for(long i=0; i<modelData->nParametersString; i++)
     {
       // TODO: only allow to override primary parameters
-      mi.sPar[i]["start"] = mOverrides.count(mi.sPar[i]["name"]) ? mOverrides[mi.sPar[i]["name"]] : mi.sPar[i]["start"];
+      mi.sPar[i]["start"] = mOverrides.count(mi.sPar[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sPar[i]["name"]) : mi.sPar[i]["start"];
     }
     for(long i=0; i<modelData->nAliasReal; i++)
     {
-      mi.rAli[i]["start"] = mOverrides.count(mi.rAli[i]["name"]) ? mOverrides[mi.rAli[i]["name"]] : mi.rAli[i]["start"];
+      mi.rAli[i]["start"] = mOverrides.count(mi.rAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.rAli[i]["name"]) : mi.rAli[i]["start"];
     }
     for(long i=0; i<modelData->nAliasInteger; i++)
     {
-      mi.iAli[i]["start"] = mOverrides.count(mi.iAli[i]["name"]) ? mOverrides[mi.iAli[i]["name"]] : mi.iAli[i]["start"];
+      mi.iAli[i]["start"] = mOverrides.count(mi.iAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.iAli[i]["name"]) : mi.iAli[i]["start"];
     }
     for(long i=0; i<modelData->nAliasBoolean; i++)
     {
-      mi.bAli[i]["start"] = mOverrides.count(mi.bAli[i]["name"]) ? mOverrides[mi.bAli[i]["name"]] : mi.bAli[i]["start"];
+      mi.bAli[i]["start"] = mOverrides.count(mi.bAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.bAli[i]["name"]) : mi.bAli[i]["start"];
     }
     for(long i=0; i<modelData->nAliasString; i++)
     {
-      mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? mOverrides[mi.sAli[i]["name"]] : mi.sAli[i]["start"];
+      mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? getOverrideValue(mOverrides, mOverridesUses, mi.sAli[i]["name"]) : mi.sAli[i]["start"];
     }
+
+    // give a warning if an override is not used #3204
+    for (std::map<std::string,int>::iterator it = mOverridesUses.begin(); it != mOverridesUses.end(); ++it)
+      if (it->second == OMC_OVERRIDE_UNUSED)
+      {
+         warningStreamPrint(LOG_STDOUT, 0, "simulation_input_xml.cpp: override variable name not found in model: %s\n", it->first.c_str());
+      }
+
     infoStreamPrint(LOG_SOLVER, 0, "override done!");
   }
   else
