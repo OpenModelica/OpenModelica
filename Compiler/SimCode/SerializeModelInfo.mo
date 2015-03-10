@@ -524,6 +524,26 @@ algorithm
         serializeList(file,eq.beqs,serializeExp);
         File.write(file,"]}]}");
       then true;
+    case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSIGN()})
+      equation
+        File.write(file, "\n{\"eqIndex\":");
+        File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        File.write(file, "\",\"tag\":\"algorithm\",\"defines\":[\"");
+        File.writeEscape(file,crefStr(Expression.expCref(stmt.exp1)),escape=File.Escape.JSON);
+        File.write(file, "\"],\"uses\":[");
+        serializeUses(file,Expression.extractUniqueCrefsFromExp(stmt.exp));
+        File.write(file, "],\"equation\":[");
+        serializeList(file,eq.statements,serializeStatement);
+        File.write(file, "],\"source\":");
+        serializeSource(file,Algorithm.getStatementSource(stmt),withOperations);
+        File.write(file, "}");
+      then true;
     case SimCode.SES_ALGORITHM(statements=stmt::_)
       equation
         File.write(file, "\n{\"eqIndex\":");
