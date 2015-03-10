@@ -340,6 +340,9 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
 
   ((orderedVars, eqnlst)) := BackendEquation.traverseEquationArray(orderedEqs, inlineWhenForInitializationEquation, (orderedVars, {}));
+  //print("Before: " + intString(listLength(eqnlst)) + "\n");
+  eqnlst := List.uniqueOnTrue(eqnlst, BackendEquation.equationEqual);
+  //print("After: " + intString(listLength(eqnlst)) + "\n");
   eqns := BackendEquation.listEquation(eqnlst);
 
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
@@ -381,6 +384,8 @@ algorithm
       size = listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
       crintLst = BaseHashTable.hashTableList(leftCrs);
       crefLst = List.fold(crintLst, selectSecondZero, {});
+      // crefLst = List.uniqueOnTrue(crefLst, ComponentReference.crefEqual);
+      // print("LHS Crefs: " + stringDelimitList(List.map(crefLst, ComponentReference.printComponentRefStr), ", ") + "\n");
       (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
       eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), eqns);
     then (eqn, (vars, eqns));
@@ -462,7 +467,6 @@ algorithm
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()))::{}, true, _, _) equation
       false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      _ = List.map1(crefLst, Util.makeTuple, 1);
       leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
     then ({}, leftCrs);
 
@@ -1426,7 +1430,7 @@ algorithm
   unassigned := Matching.getUnassigned(nVars+nAddVars, vec1, {});
   if 0 < listLength(unassigned) then
     Error.addCompilerNotification("The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
-    //BackendDump.dumpEqSystem(syst, "The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
+    // BackendDump.dumpEqSystem(syst, "The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
   end if;
   0 := listLength(unassigned); // if this fails, the system is singular (mixed-determined)
 
