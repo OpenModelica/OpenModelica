@@ -173,7 +173,7 @@ public function evaluateReplaceProtectedFinalEvaluateParameters "author: Frenkel
 protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinal);
+  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinalOrProtected);
   outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
 end evaluateReplaceProtectedFinalEvaluateParameters;
 
