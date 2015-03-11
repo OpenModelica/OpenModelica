@@ -24,7 +24,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack Cdaskr boehm-gc qtclients omshell omnotebook omedit omvisualize omoptim omoptimbasis
+.PHONY : interactive omc release mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc qtclients omshell omnotebook omedit omvisualize omoptim omoptimbasis
 
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -210,6 +210,7 @@ qjson:
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT)
 	cp -a 3rdParty/qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(builddir_lib)/omc/
 	cp -a 3rdParty/qjson-0.8.1/src/*.h 3rdParty/qjson-0.8.1/build/include/qjson
+	
 CMinpack:
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build
@@ -221,12 +222,21 @@ CMinpack:
 	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* $(builddir_lib)/omc)
 	# Darwin has to be special always
 	(test ! `uname` = Darwin || cp -af 3rdParty/CMinpack/install/lib*/*.dylib $(builddir_lib)/omc)
-
+	
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
 	rm -f 3rdParty/CMinpack/build/Makefile
 
+metis:
+	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -G $(CMAKE_TARGET) && make)
+	cp 3rdParty/metis-5.1.0/libmetis/libmetis.a $(builddir_lib)/omc/
+	
+metis-clean:
+	if test -f 3rdParty/metis-5.1.0/Makefile; then make -C 3rdParty/metis-5.1.0 clean; fi
+	if test -f 3rdParty/metis-5.1.0/CMakeCache.txt; then rm 3rdParty/metis-5.1.0/CMakeCache.txt; fi
+	if test -f 3rdParty/metis-5.1.0/libmetis/libmetis.a; then rm 3rdParty/metis-5.1.0/libmetis/libmetis.a; fi
+	
 Cdaskr:
 	test -d 3rdParty/Cdaskr/solver
 	(cd 3rdParty/Cdaskr/solver && CC="$(CC)" CFLAGS="$(CFLAGS)" make -f Makefile)
@@ -331,7 +341,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean)
