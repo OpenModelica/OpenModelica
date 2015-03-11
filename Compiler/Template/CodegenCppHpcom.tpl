@@ -537,7 +537,7 @@ template simulationCppFile(SimCode simCode, Context context, Text& extraFuncs, T
       <%saveAll(modelInfo,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
 
       <%LabeledDAE(modelInfo.labels,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-      <%giveVariables(modelInfo,context,useFlatArrayNotation,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
+      <%giveVariables(modelInfo,context,useFlatArrayNotation,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,stateDerVectorName)%>
       <%extraFuncs%>
       >>
   end match

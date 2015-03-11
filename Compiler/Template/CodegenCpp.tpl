@@ -3321,7 +3321,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
     <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName)%>
     <%extraFuncs%>
     >>
 end simulationCppFile;
@@ -7041,11 +7041,11 @@ match simVar
       match dims
         case "0" then
           <<
-          <%varType%> <%arrayName%>; /*testarray3 <%test%> */;
+          <%varType%> <%arrayName%>; 
           >>
         else
           <<
-          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>;  /*testarray4 <%test%> */;
+          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>;  
           >>
     case SIMVAR(numArrayElement=_::_) then
       let test = numArrayElement |> index =>  '<%index%>'; separator=","
@@ -7102,7 +7102,7 @@ match simVar
       match dims
         case "0" then
           <<
-          <%typeString%> <%arrayName%>; /*testarray3*/;
+          <%typeString%> <%arrayName%>; 
           >>
         else
           <<
@@ -14717,12 +14717,12 @@ end functionStoreDelay;
 // generate Member Function get Real
 
 
-template getVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, Integer indexOffset, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text& funcCalls, Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation)
+template getVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, Integer indexOffset, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text& funcCalls, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/ , Boolean useFlatArrayNotation)
 ::=
   let funcs =   List.partition(varsLst, 100) |> ls hasindex idx =>
                 let &varDecls = buffer "" /*BUFD*/
                 let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
-                let init = getVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100, indexOffset)
+                let init = getVariablesWithSplit2(ls, simCode ,&varDecls, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, stateDerVectorName,useFlatArrayNotation, idx, 100, indexOffset)
                 <<
                 void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
                 {
@@ -14739,22 +14739,22 @@ template getVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcPara
 end getVariablesWithSplit;
 
 
-template getVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize, Integer indexOffset)
+template getVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode,Text& varDecls,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/ ,Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize, Integer indexOffset)
 ::=
 <<
  <%varsLst |>
-        var hasindex i0 fromindex (intAdd(indexOffset, intMul(multiplicator, partitionSize))) => giveVariablesDefault(var, i0, useFlatArrayNotation)
+        var hasindex i0 fromindex (intAdd(indexOffset, intMul(multiplicator, partitionSize))) => giveVariablesDefault(var, i0,simCode,varDecls, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
         ;separator="\n"%>
  >>
 end getVariablesWithSplit2;
 
 
 
-template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& funcCalls, Integer indexOffset, Context context, Boolean useFlatArrayNotation) ::=
+template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcParams, list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& funcCalls, Integer indexOffset, Context context, Text stateDerVectorName /*=__zDot*/ ,  Boolean useFlatArrayNotation) ::=
   let funcs = List.partition(varsLst, 100) |> ls hasindex idx =>
     let &varDecls = buffer "" /*BUFD*/
     let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
-    let init = setVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100, indexOffset)
+    let init = setVariablesWithSplit2(ls, simCode , varDecls,&extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context,stateDerVectorName, useFlatArrayNotation, idx, 100, indexOffset)
     <<
     void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
     {
@@ -14770,18 +14770,18 @@ template setVariablesWithSplit(Text funcNamePrefix, Text funcArgs, Text funcPara
 end setVariablesWithSplit;
 
 
-template setVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize, Integer indexOffset)
+template setVariablesWithSplit2(list<SimVar> varsLst, SimCode simCode ,Text& varDecls,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/ ,  Boolean useFlatArrayNotation, Integer multiplicator, Integer partitionSize, Integer indexOffset)
 ::=
 <<
  <%varsLst|>
-        var hasindex i0 fromindex intMul(multiplicator, partitionSize) => setVariablesDefault(var, i0, useFlatArrayNotation, indexOffset)
+        var hasindex i0 fromindex intMul(multiplicator, partitionSize) => setVariablesDefault(var, i0, indexOffset,simCode, varDecls,extraFuncs,extraFuncsDecl,extraFuncsNamespace,context,stateDerVectorName, useFlatArrayNotation)
         ;separator="\n"%>
 
  >>
 end setVariablesWithSplit2;
 
 
-template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArrayNotation,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArrayNotation,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/ )
  "Define Memeber Function getReal off Cpp Target"
 ::=
 //match context  case FMI_CONTEXT(__) then
@@ -14794,8 +14794,8 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let &stringFuncCalls = buffer ""
 
       let stateVarCount = listLength(vars.stateVars)
-      let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context, useFlatArrayNotation)
-      let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &setRealFuncCalls, listLength(listAppend(vars.stateVars, vars.derivativeVars)), context, useFlatArrayNotation)
+      let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context,stateDerVectorName, useFlatArrayNotation)
+      let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &setRealFuncCalls, listLength(listAppend(vars.stateVars, vars.derivativeVars)), context,stateDerVectorName, useFlatArrayNotation)
 
       let getStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => getStateVariables(var, i0, "z", i0) ;separator="\n")
       let setStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => setStateVariables(var, i0, "z", i0) ;separator="\n")
@@ -14803,15 +14803,34 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let getStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => getStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
       let setStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => setStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
 
-      let getintvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &intFuncCalls, context, useFlatArrayNotation)
-      let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &boolFuncCalls, context, useFlatArrayNotation)
+      let getintvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &intFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
+      let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &boolFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
 
-      let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &stringFuncCalls, context, useFlatArrayNotation)
+      let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &stringFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
+      
+      let &varDeclsInt = buffer "" /*BUFD*/
+      let setIntVariables = (listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
+           var hasindex i0 fromindex 0 => 
+           setVariablesDefault(var, i0, 0,simCode,varDeclsInt, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
+           ;separator="\n")
+      let &varDeclsBool = buffer "" /*BUFD*/  
+      let setBoolVariables =     (listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
+           var hasindex i0 fromindex 0 => 
+           setVariablesDefault(var, i0,0,simCode,varDeclsBool, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
+           ;separator="\n")
+           
+         let &varDeclsString = buffer "" /*BUFD*/  
+        let setStringVariables =  (listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars) |>
+           var hasindex i0 fromindex 0 => 
+           setVariablesDefault(var, i0, 0,simCode,varDeclsString, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
+           ;separator="\n")
+           
       <<
       <%getrealvariable%>
 
       void <%lastIdentOfPath(name)%>::getReal(double* z)
       {
+        
         <%getStateVariables%>
         <%getStateDerVariables%>
         <%realFuncCalls%>
@@ -14849,23 +14868,17 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
 
       void <%lastIdentOfPath(name)%>::setInteger(const int* z)
       {
-         <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
-           var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation, 0)
-           ;separator="\n"%>
+         <%setIntVariables%>
       }
 
       void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
       {
-         <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
-           var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation, 0)
-           ;separator="\n"%>
+        <%setBoolVariables%>
       }
 
       void <%lastIdentOfPath(name)%>::setString(const string* z)
       {
-         <%listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars) |>
-           var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation, 0)
-           ;separator="\n"%>
+        <%setStringVariables%>
       }
       >>
   end match
@@ -14966,26 +14979,33 @@ match simVar
   >>
 end setStateDerivativeVariables;
 
-template giveVariablesDefault(SimVar simVar, Integer valueReference, Boolean useFlatArrayNotation)
+template giveVariablesDefault(SimVar simVar, Integer valueReference,SimCode simCode,Text& varDecls, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/ ,Boolean useFlatArrayNotation)
  "Generates code for getting variables in cpp target for use in FMU. "
 ::=
 match simVar
   case SIMVAR(__) then
   let description = if comment then '/* <%comment%> */'
+  let varname = cref1(name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+  match aliasvar
+    case ALIAS(__) then 'z[<%valueReference%>] =<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%>;<%description%>'
+    case NEGATEDALIAS(__) then 'z[<%valueReference%>] =-<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%>; <%description%>'
+  else
   <<
-  z[<%valueReference%>] = <%cref(name, useFlatArrayNotation)%>; <%description%>
+  z[<%valueReference%>] = <%varname%> ; <%description%>
   >>
 end giveVariablesDefault;
 
-template setVariablesDefault(SimVar simVar, Integer valueReference, Boolean useFlatArrayNotation, Integer indexOffset)
+template setVariablesDefault(SimVar simVar, Integer valueReference, Integer indexOffset,SimCode simCode,Text& varDecls,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/ , Boolean useFlatArrayNotation)
  "Generates code for getting variables in cpp target for use in FMU. "
 ::=
   match simVar
     case SIMVAR(__) then
       let description = if comment then '/* "<%comment%>" */'
-      let variablename = cref(name, useFlatArrayNotation)
-      //match causality
-      //  case INPUT() then
+      let variablename = cref1(name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, varDecls, stateDerVectorName, useFlatArrayNotation)
+      match aliasvar
+      case ALIAS(__) then '<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%> = z[<%intAdd(indexOffset, valueReference)%>];<%description%>'
+      case NEGATEDALIAS(__) then '<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%> =  -z[<%intAdd(indexOffset, valueReference)%>];<%description%>'
+      else
           <<
           <%variablename%> = z[<%intAdd(indexOffset, valueReference)%>]; <%description%>
           >>
