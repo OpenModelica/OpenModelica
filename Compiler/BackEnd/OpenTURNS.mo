@@ -380,7 +380,7 @@ algorithm
   varLst := BackendDAEUtil.getAllVarLst(dae2);
   varLst := List.select(varLst,BackendVariable.varHasDistributionAttribute);
 
-  Error.assertion(List.isEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...", Absyn.dummyInfo);
+  Error.assertion(not List.isEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...", Absyn.dummyInfo);
   dists := List.map(varLst,BackendVariable.varDistribution);
   (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae2);
 
@@ -633,8 +633,10 @@ protected
   DAE.Exp val;
   String valStr;
   Integer p1,p2,plow,phigh;
+  Absyn.Path fpath;
 algorithm
-  DAE.CALL(path = Absyn.IDENT("Correlation"),expLst = {DAE.CREF(cr1,_),DAE.CREF(cr2,_),val}) := exp;
+  DAE.CALL(path = fpath,expLst = {DAE.CREF(cr1,_),DAE.CREF(cr2,_),val}) := exp;
+  Absyn.IDENT("Correlation") := Absyn.makeNotFullyQualified(fpath);
   valStr := ExpressionDump.printExpStr(val);
   p1 := List.position(ComponentReference.crefStr(cr1),uncertainVars)-1 "TODO: remove shift if possible";
   p2 := List.position(ComponentReference.crefStr(cr2),uncertainVars)-1 "TODO: remove shift if possible";

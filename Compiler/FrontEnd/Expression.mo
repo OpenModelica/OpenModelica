@@ -8804,7 +8804,7 @@ algorithm
     local
       Integer i;
       DAE.Exp cr,c1,c2,e1,e2,e,c,t,f,cref;
-      String s,str;
+      String s,str,s1,s2;
       Boolean res,res1,res2,res3;
       list<Boolean> reslist;
       list<DAE.Exp> explist,args;
@@ -8842,9 +8842,9 @@ algorithm
       then
         res;
 
-    case ((DAE.CREF()),_ ) then false;
+    case ((DAE.CREF()), _) then false;
 
-    case (DAE.BINARY(exp1 = e1,exp2 = e2),cr )
+    case (DAE.BINARY(exp1 = e1,exp2 = e2),cr)
       equation
         res1 = expContains(e1, cr);
         res2 = expContains(e2, cr);
@@ -8916,6 +8916,14 @@ algorithm
       then
         res;
 
+    /*/ record constructors
+    case (DAE.RECORD(exps = args),(cr as DAE.CREF()))
+      equation
+        reslist = List.map1(args, expContains, cr);
+        res = Util.boolOrList(reslist);
+      then
+        res; */
+
     case (DAE.CAST(ty = DAE.T_REAL(),exp = DAE.ICONST()),_ ) then false;
 
     case (DAE.CAST(ty = DAE.T_REAL(),exp = e),cr )
@@ -8939,12 +8947,13 @@ algorithm
       then
         res;
 
-    case (e,_)
+    case (_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Expression.expContains failed\n");
-        s = ExpressionDump.printExpStr(e);
-        str = stringAppendList({"exp = ",s});
+        s1 = ExpressionDump.printExpStr(inExp1);
+        s2 = ExpressionDump.printExpStr(inExp2);
+        str = stringAppendList({"exp = ", s1," subexp = ", s2});
         Debug.traceln(str);
       then
         fail();
