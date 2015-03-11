@@ -1574,13 +1574,16 @@ template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Te
  "Adds specific compiler flags for HPCOM mode to simulation makefile."
 ::=
   let type = getConfigString(HPCOM_CODE)
+  let cppFlags = getConfigString(CPP_FLAGS)
 
   let &additionalCFlags_GCC = buffer ""
   let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
   let &additionalCFlags_GCC += if stringEq(type,"tbb") then ' -I"$(INTEL_TBB_INCLUDE)"' else ""
+  let &additionalCFlags_GCC += cppFlags + "Blub"
 
   let &additionalCFlags_MSVC = buffer ""
   let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
+  let &additionalCFlags_MSVC += cppFlags
 
   let &additionalLinkerFlags_GCC = buffer ""
   let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then " $(INTEL_TBB_LIBS) " else ""

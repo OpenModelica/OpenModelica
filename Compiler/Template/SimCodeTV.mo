@@ -2989,6 +2989,7 @@ package Flags
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;
+  constant ConfigFlag CPP_FLAGS;
 
   function isSet
     input DebugFlag inFlag;
