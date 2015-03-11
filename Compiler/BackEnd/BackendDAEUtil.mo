@@ -8059,7 +8059,7 @@ protected
 algorithm
   try
     DAE.RANGE(ty = ty, start = start, step = ostep, stop = stop) := inRangeExp;
-   
+
     start := evalExp(start, inKnVariables);
     stop := evalExp(stop, inKnVariables);
 

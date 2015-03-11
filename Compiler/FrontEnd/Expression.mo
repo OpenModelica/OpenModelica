@@ -12127,7 +12127,7 @@ algorithm
       algorithm
         DAE.ICONST(istep) := Util.getOptionOrDefault(ostep_exp, DAE.ICONST(1));
       then
-        list(DAE.ICONST(i) for i in 
+        list(DAE.ICONST(i) for i in
           List.intRange3(start_exp.integer, istep, stop_exp.integer));
 
     case (DAE.RCONST(), DAE.RCONST())
