@@ -8053,25 +8053,62 @@ public function extendRange
   input BackendDAE.Variables inKnVariables;
   output list<DAE.Exp> outExpLst = {};
 protected
-  DAE.Exp start, stepvalue, stop;
-  Option<DAE.Exp> step;
-  Integer istart, istop, istep;
-  list<Integer> ilst;
+  DAE.Exp start, step, stop;
+  Option<DAE.Exp> ostep;
+  DAE.Type ty;
 algorithm
   try
-    DAE.RANGE(start=start, step=step, stop=stop) := inRangeExp;
-    stepvalue := Util.getOptionOrDefault(step, DAE.ICONST(1));
-    istart := expInt(start, inKnVariables);
-    istep := expInt(stepvalue, inKnVariables);
-    istop := expInt(stop, inKnVariables);
-    ilst := List.intRange3(istart, istep, istop);
-    outExpLst := List.map(ilst, Expression.makeIntegerExp);
+    DAE.RANGE(ty = ty, start = start, step = ostep, stop = stop) := inRangeExp;
+   
+    start := evalExp(start, inKnVariables);
+    stop := evalExp(stop, inKnVariables);
+
+    if isSome(ostep) then
+      SOME(step) := ostep;
+      ostep := SOME(evalExp(step, inKnVariables));
+    end if;
+
+    outExpLst := Expression.expandRange(DAE.RANGE(ty, start, ostep, stop));
   else
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.trace("BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
     end if;
   end try;
 end extendRange;
+
+public function evalExp
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inKnVariables;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match inExp
+    local
+      DAE.Exp e, e1, e2;
+
+    case DAE.CREF()
+      algorithm
+        ((BackendDAE.VAR(bindExp = SOME(e)) :: _), _) :=
+          BackendVariable.getVar(inExp.componentRef, inKnVariables);
+      then
+        e;
+
+    case DAE.BINARY(operator = DAE.ADD(DAE.T_INTEGER()))
+      algorithm
+        e1 := evalExp(inExp.exp1, inKnVariables);
+        e2 := evalExp(inExp.exp2, inKnVariables);
+      then
+        DAE.ICONST(Expression.expInt(e1) + Expression.expInt(e2));
+
+    case DAE.BINARY(operator = DAE.SUB(DAE.T_INTEGER()))
+      algorithm
+        e1 := evalExp(inExp.exp1, inKnVariables);
+        e2 := evalExp(inExp.exp2, inKnVariables);
+      then
+        DAE.ICONST(Expression.expInt(e1) - Expression.expInt(e2));
+
+    else inExp;
+  end match;
+end evalExp;
 
 public function expInt "returns the int value of an expression"
   input DAE.Exp inExp;

@@ -12108,5 +12108,61 @@ algorithm
   outExp := typeCast(inExp, ty);
 end typeCastElements;
 
+public function expandRange
+  input DAE.Exp inRange;
+  output list<DAE.Exp> outValues;
+protected
+  DAE.Exp start_exp, stop_exp;
+  Option<DAE.Exp> ostep_exp;
+  Integer istep;
+  Real rstep;
+  list<DAE.Exp> vals;
+  list<String> enum_names;
+  Absyn.Path enum_type;
+algorithm
+  DAE.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := inRange;
+
+  outValues := match (start_exp, stop_exp)
+    case (DAE.ICONST(), DAE.ICONST())
+      algorithm
+        DAE.ICONST(istep) := Util.getOptionOrDefault(ostep_exp, DAE.ICONST(1));
+      then
+        list(DAE.ICONST(i) for i in 
+          List.intRange3(start_exp.integer, istep, stop_exp.integer));
+
+    case (DAE.RCONST(), DAE.RCONST())
+      algorithm
+        DAE.RCONST(rstep) := Util.getOptionOrDefault(ostep_exp, DAE.RCONST(1.0));
+      then
+        list(DAE.RCONST(r) for r in
+          ExpressionSimplify.simplifyRangeReal(start_exp.real, rstep, stop_exp.real));
+
+    case (DAE.BCONST(false), DAE.BCONST(true))
+      then {start_exp, stop_exp};
+
+    case (DAE.BCONST(true), DAE.BCONST(false))
+      then {};
+
+    case (DAE.BCONST(), DAE.BCONST())
+      then {start_exp};
+
+    case (DAE.ENUM_LITERAL(), DAE.ENUM_LITERAL())
+      algorithm
+        if start_exp.index > stop_exp.index then
+          vals := {};
+        elseif start_exp.index == stop_exp.index then
+          vals := {start_exp};
+        else
+          DAE.RANGE(ty = DAE.T_ENUMERATION(path = enum_type, names = enum_names)) := inRange;
+          enum_names := List.sublist(enum_names, start_exp.index,
+            (stop_exp.index - start_exp.index) + 1);
+          vals := makeEnumLiterals(enum_type, enum_names);
+        end if;
+      then
+        vals;
+
+  end match;
+end expandRange;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;
