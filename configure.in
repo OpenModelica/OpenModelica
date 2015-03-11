@@ -861,8 +861,9 @@ AC_ARG_WITH(METIS, [  --with-METIS=DIR                 Compile with Metis graph 
   GRAPHLIB="-L$withval -lmetis";
   USE_PATOH=0
 ], [
-    USE_GRAPH=0
-    USE_METIS=0
+    USE_GRAPH=1
+    GRAPHLIB="-L$PREFIX/lib/omc -lmetis";
+    USE_METIS=1
 ])
 
 AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hypergraph partitioner in DIR],
