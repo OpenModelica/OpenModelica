@@ -973,19 +973,20 @@ algorithm  outExp := matchcontinue(inExp,inType)
 end avoidDoubleHashLookup;
 
 
-public function replacementEmpty
+public function isReplacementEmpty
   input VariableReplacements repl;
   output Boolean empty;
 algorithm
   empty := match(repl)
     local
       HashTable2.HashTable ht;
-    case REPLACEMENTS(hashTable = ht,derConst=NONE())
-      then
-        intLt(BaseHashTable.hashTableCurrentSize(ht),1);
-    case REPLACEMENTS(derConst=SOME(_)) then false;
+
+    case REPLACEMENTS(hashTable=ht, derConst=NONE())
+    then intLt(BaseHashTable.hashTableCurrentSize(ht), 1);
+
+		case REPLACEMENTS(derConst=SOME(_)) then false;
   end match;
-end replacementEmpty;
+end isReplacementEmpty;
 
 public function replacementCurrentSize
   input VariableReplacements repl;
@@ -1547,7 +1548,7 @@ algorithm
     case(_,_,_)
       equation
         // Do not do empty replacements; it just takes time ;)
-        false = replacementEmpty(repl);
+        false = isReplacementEmpty(repl);
         ((_,_,eqns,replacementPerformed)) = BackendEquation.traverseEquationArray(inEqns,replaceEquationTraverser,(repl,inFuncTypeExpExpToBooleanOption,{},false));
         outEqns = if replacementPerformed then BackendEquation.listEquation(eqns) else inEqns;
       then
@@ -1600,7 +1601,7 @@ algorithm
     case(_,_,_)
       equation
         // Do not do empty replacements; it just takes time ;)
-        false = replacementEmpty(repl);
+        false = isReplacementEmpty(repl);
         (eqns,replacementPerformed) = replaceEquations2(inEqns,repl,inFuncTypeExpExpToBooleanOption,{},false);
       then
         (eqns,replacementPerformed);

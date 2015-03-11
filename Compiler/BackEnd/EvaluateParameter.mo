@@ -140,7 +140,10 @@ protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
   (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.isFinalOrProtectedVar);
-  outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
+
+	if not BackendVarTransform.isReplacementEmpty(repl) then
+		outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
+	end if;
 end evaluateReplaceFinalParameters;
 
 public function evaluateReplaceEvaluateParameters
@@ -152,7 +155,10 @@ protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
   (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotation);
-  outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
+
+	if not BackendVarTransform.isReplacementEmpty(repl) then
+		outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
+	end if;
 end evaluateReplaceEvaluateParameters;
 
 public function evaluateReplaceFinalEvaluateParameters "author: Frenkel TUD
@@ -163,7 +169,10 @@ protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
   (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinal);
-  outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
+
+	if not BackendVarTransform.isReplacementEmpty(repl) then
+		outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
+	end if;
 end evaluateReplaceFinalEvaluateParameters;
 
 public function evaluateReplaceProtectedFinalEvaluateParameters "author: Frenkel TUD
@@ -174,7 +183,10 @@ protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
   (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinalOrProtected);
-  outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
+
+	if not BackendVarTransform.isReplacementEmpty(repl) then
+		outDAE := replaceEvaluatedParametersEqns(outDAE, repl);
+	end if;
 end evaluateReplaceProtectedFinalEvaluateParameters;
 
 /*
@@ -1041,51 +1053,43 @@ algorithm
   end matchcontinue;
 end replaceEvaluatedParameterTraverser;
 
-protected function replaceEvaluatedParametersEqns
-"author Frenkel TUD"
-  input Boolean replacementsEmpty;
+protected function replaceEvaluatedParametersEqns "author Frenkel TUD"
   input BackendDAE.BackendDAE inDAE;
-  input BackendVarTransform.VariableReplacements repl;
+  input BackendVarTransform.VariableReplacements inRepl;
   output BackendDAE.BackendDAE outDAE;
+protected
+	DAE.FunctionTree funcs;
+	BackendDAE.Variables knvars, exobj, av;
+	BackendDAE.EquationArray remeqns, inieqns;
+	list<DAE.Constraint> constrs;
+	list<DAE.ClassAttributes> clsAttrs;
+	FCore.Cache cache;
+	FCore.Graph graph;
+	BackendDAE.EventInfo einfo;
+	BackendDAE.ExternalObjectClasses eoc;
+	BackendDAE.SymbolicJacobians symjacs;
+	BackendDAE.BackendDAEType btp;
+	list<BackendDAE.Equation> eqnslst;
+	BackendDAE.EqSystems systs;
+	Boolean b;
+	BackendDAE.ExtraInfo ei;
 algorithm
-  outDAE := match (replacementsEmpty,inDAE,repl)
-    local
-      DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj,av;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-      Boolean b;
-      BackendDAE.ExtraInfo ei;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei)) := inDAE;
 
-    // do nothing if there are no replacements
-    case (true,_,_) then inDAE;
+	// do replacements in initial equations
+	eqnslst := BackendEquation.equationList(inieqns);
+	(eqnslst, b) := BackendVarTransform.replaceEquations(eqnslst, inRepl, NONE());
+	inieqns := if b then BackendEquation.listEquation(eqnslst) else inieqns;
 
-    case (false,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)),_)
-      equation
-        // do replacements in initial equations
-        eqnslst = BackendEquation.equationList(inieqns);
-        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-        inieqns = if b then BackendEquation.listEquation(eqnslst) else inieqns;
-        // do replacements in simple equations
-        eqnslst = BackendEquation.equationList(remeqns);
-        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-        remeqns = if b then BackendEquation.listEquation(eqnslst) else remeqns;
-        // do replacements in systems
-        systs = List.map1(systs,replaceEvaluatedParametersSystemEqns,repl);
-      then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei));
+	// do replacements in simple equations
+	eqnslst := BackendEquation.equationList(remeqns);
+	(eqnslst, b) := BackendVarTransform.replaceEquations(eqnslst, inRepl, NONE());
+	remeqns := if b then BackendEquation.listEquation(eqnslst) else remeqns;
 
-  end match;
+	// do replacements in systems
+	systs := List.map1(systs, replaceEvaluatedParametersSystemEqns, inRepl);
+
+	outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei));
 end replaceEvaluatedParametersEqns;
 
 protected function replaceEvaluatedParametersSystemEqns
