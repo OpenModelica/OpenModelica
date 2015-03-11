@@ -1000,8 +1000,8 @@ constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(65, "maxSize
   Util.gettext("Max size for solveLinearSystem."));
 
 constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(66, "cppFlags",
-  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets extra flags for compilation with the C++ compiler (e.g. cppFlags='-O3 -Wall')"));
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
+  Util.gettext("Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)"));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's

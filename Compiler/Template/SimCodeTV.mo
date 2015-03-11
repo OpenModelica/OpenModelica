@@ -3006,6 +3006,11 @@ package Flags
     output String outValue;
   end getConfigString;
 
+  function getConfigStringList
+    input ConfigFlag inFlag;
+    output list<String> outValue;
+  end getConfigStringList;
+
   function configuredWithClang
     output Boolean yes;
   end configuredWithClang;
