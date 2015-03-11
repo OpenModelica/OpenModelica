@@ -129,7 +129,7 @@ protected type VarSetAttributes =
     tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>>,
     list<tuple<DAE.Exp, DAE.ComponentRef>>,
     tuple<Option<DAE.Exp>,
-    Option<DAE.Exp>>
+          Option<DAE.Exp>>
   > "fixed, list<startvalue, origin, cr>, nominal, (min, max)";
 
 protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}, (NONE(), NONE()));
@@ -3210,7 +3210,7 @@ algorithm
   outVar := matchcontinue(iZeroFreeValues, iFavorit, iStr, iAttributeName, inFunc, inVar)
     local
       DAE.Exp e, es;
-      DAE.ComponentRef cr, crs;
+      DAE.ComponentRef cr, crs, crVar;
       BackendDAE.Var v;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       Integer i, is;
@@ -3223,9 +3223,8 @@ algorithm
     // end of list analyse what we got
     case ({}, rest, _, _, _, _) equation
       ((e, cr, i)) = selectNonZeroExpression(rest);
-      s = iStr + "=> select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n" +
-          "   because its component reference (or its binding component reference) is closer to the top level scope with depth: " + intString(i) + ".\n" +
-          "   If we have equal component reference depth for several components choose the one with non zero binding.";
+      crVar = BackendVariable.varCref(inVar);
+      s = iStr + "=> select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
       Error.addMessage(Error.COMPILER_WARNING, {s});
       v = inFunc(inVar, e);
     then v;
@@ -3241,14 +3240,18 @@ algorithm
       s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       true = intEq(i, is);
-      favorit = (e, cr, i)::(es, crs, is)::rest;
+      crVar = BackendVariable.varCref(inVar);
+      favorit = if ComponentReference.crefEqual(crVar, cr) then {(e, cr, i),(es, crs, is)} else {(es, crs, is),(e, cr, i)};
+      favorit = listAppend(favorit,rest);
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
 
     // less than, remove all from list, return just this one
-    case ((e, cr)::zerofreevalues, (_, _, is)::_, _, _, _, _) equation
+    case ((e, cr)::zerofreevalues, (es, crs, is)::_, _, _, _, _) equation
       s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       favorit = if intLt(i, is) then {(e, cr, i)} else iFavorit;
+      crVar = BackendVariable.varCref(inVar);
+      favorit = if ComponentReference.crefEqual(crVar, crs) then {(es, crs, is),(e, cr, i)} else favorit;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
   end matchcontinue;
 end selectFreeValue1;
