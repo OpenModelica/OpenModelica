@@ -7041,11 +7041,11 @@ match simVar
       match dims
         case "0" then
           <<
-          <%varType%> <%arrayName%>; 
+          <%varType%> <%arrayName%>;
           >>
         else
           <<
-          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>;  
+          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>;
           >>
     case SIMVAR(numArrayElement=_::_) then
       let test = numArrayElement |> index =>  '<%index%>'; separator=","
@@ -7102,7 +7102,7 @@ match simVar
       match dims
         case "0" then
           <<
-          <%typeString%> <%arrayName%>; 
+          <%typeString%> <%arrayName%>;
           >>
         else
           <<
@@ -14807,30 +14807,30 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &boolFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
 
       let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &stringFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
-      
+
       let &varDeclsInt = buffer "" /*BUFD*/
       let setIntVariables = (listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
-           var hasindex i0 fromindex 0 => 
+           var hasindex i0 fromindex 0 =>
            setVariablesDefault(var, i0, 0,simCode,varDeclsInt, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
            ;separator="\n")
-      let &varDeclsBool = buffer "" /*BUFD*/  
+      let &varDeclsBool = buffer "" /*BUFD*/
       let setBoolVariables =     (listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
-           var hasindex i0 fromindex 0 => 
+           var hasindex i0 fromindex 0 =>
            setVariablesDefault(var, i0,0,simCode,varDeclsBool, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
            ;separator="\n")
-           
-         let &varDeclsString = buffer "" /*BUFD*/  
+
+         let &varDeclsString = buffer "" /*BUFD*/
         let setStringVariables =  (listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars) |>
-           var hasindex i0 fromindex 0 => 
+           var hasindex i0 fromindex 0 =>
            setVariablesDefault(var, i0, 0,simCode,varDeclsString, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
            ;separator="\n")
-           
+
       <<
       <%getrealvariable%>
 
       void <%lastIdentOfPath(name)%>::getReal(double* z)
       {
-        
+
         <%getStateVariables%>
         <%getStateDerVariables%>
         <%realFuncCalls%>

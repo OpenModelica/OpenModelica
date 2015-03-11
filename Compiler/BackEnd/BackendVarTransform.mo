@@ -984,7 +984,7 @@ algorithm
     case REPLACEMENTS(hashTable=ht, derConst=NONE())
     then intLt(BaseHashTable.hashTableCurrentSize(ht), 1);
 
-		case REPLACEMENTS(derConst=SOME(_)) then false;
+    case REPLACEMENTS(derConst=SOME(_)) then false;
   end match;
 end isReplacementEmpty;
 
