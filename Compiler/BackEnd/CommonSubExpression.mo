@@ -631,7 +631,7 @@ algorithm
           //BackendDump.dumpIncidenceMatrix(m);
           //BackendDump.dumpIncidenceMatrixT(mT);
       cseLst = commonSubExpressionFind(m, mT, vars, eqs);
-      //if List.isNotEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "")+"\n");end if;
+      //if not listEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "")+"\n");end if;
       (syst, shared) = commonSubExpressionUpdate(cseLst, m, mT, sysIn, sharedIn, {}, {});
           //print("done this eqSystem\n");
           //BackendDump.dumpEqSystem(syst, "eqSystem");

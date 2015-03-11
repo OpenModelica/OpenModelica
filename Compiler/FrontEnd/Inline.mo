@@ -831,7 +831,7 @@ algorithm
           // merge statements to one line
           (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
           // depend on detection of assert or not
-          if (List.isEmpty(assrtStmts))
+          if (listEmpty(assrtStmts))
           then // no assert detected
             newExp = getReplacementCheckComplex(repl,cr,ty);
             argmap = List.threadTuple(crefs,args);

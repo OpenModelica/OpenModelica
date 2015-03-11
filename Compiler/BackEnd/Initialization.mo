@@ -220,8 +220,8 @@ algorithm
     end if;
 
     // warn about selected default initial conditions
-    b1 := List.isNotEmpty(dumpVars);
-    b2 := List.isNotEmpty(removedEqns);
+    b1 := not listEmpty(dumpVars);
+    b2 := not listEmpty(removedEqns);
     if Flags.isSet(Flags.INITIALIZATION) then
       if b1 then
         Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
@@ -387,7 +387,7 @@ algorithm
       // crefLst = List.uniqueOnTrue(crefLst, ComponentReference.crefEqual);
       // print("LHS Crefs: " + stringDelimitList(List.map(crefLst, ComponentReference.printComponentRefStr), ", ") + "\n");
       (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
-      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), eqns);
+      eqns = List.consOnTrue(not listEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), eqns);
     then (eqn, (vars, eqns));
 
     case (eqn, (vars, eqns))
@@ -747,7 +747,7 @@ algorithm
       // If the component is none of these types, do nothing.
     end matchcontinue;
 
-    if not List.isEmpty(vlst) then
+    if not listEmpty(vlst) then
       // Filter out the variables that are missing start values.
       vars := List.map1r(vlst, BackendVariable.getVarAt, ordered_vars);
       //vars := list(BackendVariable.getVarAt(ordered_vars, idx) for idx in vlst);
@@ -755,7 +755,7 @@ algorithm
       //vars := List.filterOnTrue(vars, BackendVariable.varHasStartValue);
 
       // Print a warning if we found any variables with missing start values.
-      if not List.isEmpty(vars) then
+      if not listEmpty(vars) then
         outWarning := true;
 
         if inShowWarnings then
@@ -1206,7 +1206,7 @@ algorithm
 
     case (_, _, _, _, _, _) equation
       row = mt[n];
-      true = List.isEmpty(row);
+      true = listEmpty(row);
 
       var = BackendVariable.getVarAt(inVars, n);
       cref = BackendVariable.varCref(var);
@@ -1217,7 +1217,7 @@ algorithm
 
     case (_, _, _, _, _, _) equation
       row = mt[n];
-      true = List.isEmpty(row);
+      true = listEmpty(row);
 
       var = BackendVariable.getVarAt(inVars, n);
       cref = BackendVariable.varCref(var);
@@ -1228,7 +1228,7 @@ algorithm
 
     case (_, _, _, _, _, _) equation
       row = mt[n];
-      false = List.isEmpty(row);
+      false = listEmpty(row);
     then (inVars, inEqs, iB, inDumpVars);
 
     else equation

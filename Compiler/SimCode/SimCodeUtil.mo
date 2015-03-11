@@ -2266,8 +2266,8 @@ algorithm
         zceqnsmarks = BackendDAEUtil.markZeroCrossingEquations(syst, inAllZeroCrossings, zceqnsmarks, ass1);
         (odeEquations1, algebraicEquations1, allEquations1, equationsForZeroCrossings1, uniqueEqIndex, tempvars, eqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =
           createEquationsForSystem1(stateeqnsmark, zceqnsmarks, syst, shared, comps, iuniqueEqIndex, itempvars, isccOffset, ieqSccMapping, ieqBackendSimCodeMapping, iBackendMapping, {}, {}, {}, {});
-        odeEquations = List.consOnTrue(not List.isEmpty(odeEquations1),odeEquations1,inOdeEquations);
-        algebraicEquations = List.consOnTrue(not List.isEmpty(algebraicEquations1),algebraicEquations1, inAlgebraicEquations);
+        odeEquations = List.consOnTrue(not listEmpty(odeEquations1),odeEquations1,inOdeEquations);
+        algebraicEquations = List.consOnTrue(not listEmpty(algebraicEquations1),algebraicEquations1, inAlgebraicEquations);
         allEquations = listAppend(inAllEquations, allEquations1);
         equationsForZeroCrossings = listAppend(inEquationsForZeroCrossings, equationsForZeroCrossings1);
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars, eqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =
@@ -2828,32 +2828,22 @@ protected function whenEquationsIndices "
   Returns all equation-indices that contain a when clause"
   input BackendDAE.EquationArray eqns;
   output list<Integer> res;
+protected
+  Boolean b;
+  Integer i = 1;
+  Integer size;
 algorithm
-  res := whenEquationsIndices2(1, BackendDAEUtil.equationArraySize(eqns), eqns);
+  size := BackendDAEUtil.equationArraySize(eqns);
+  res := {};
+  while i <= size loop
+    b:= match BackendEquation.equationNth1(eqns, i)
+      case BackendDAE.WHEN_EQUATION() then true;
+      else false;
+    end match;
+    res := if b then i::res else res;
+    i := i+1;
+  end while;
 end whenEquationsIndices;
-
-protected function whenEquationsIndices2
-  input Integer i;
-  input Integer size;
-  input BackendDAE.EquationArray eqns;
-  output list<Integer> eqnLst;
-algorithm
-  eqnLst := matchcontinue(i, size, eqns)
-    case(_, _, _)
-      equation
-        true = (i > size );
-      then {};
-    case(_, _, _)
-      equation
-        BackendDAE.WHEN_EQUATION() = BackendEquation.equationNth1(eqns, i);
-        eqnLst = whenEquationsIndices2(i+1, size, eqns);
-      then i::eqnLst;
-    case(_, _, _)
-      equation
-        eqnLst=whenEquationsIndices2(i+1, size, eqns);
-      then eqnLst;
-  end matchcontinue;
-end whenEquationsIndices2;
 
 protected function updateZeroCrossEqnIndex
   input list<BackendDAE.ZeroCrossing> izeroCrossings;
@@ -7563,7 +7553,7 @@ author:Waurich TUD 2014-05"
   input list<SimCodeVar.SimVar> varLst;
   input String header;
 algorithm
-  if List.isNotEmpty(varLst) then
+  if not listEmpty(varLst) then
     print(header+":\n");
     print("----------------------\n");
     List.map_0(varLst,dumpVar);

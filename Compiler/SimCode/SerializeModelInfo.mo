@@ -225,7 +225,7 @@ algorithm
   File.write(file,"{\"info\":");
   serializeInfo(file,info);
 
-  if not List.isEmpty(partOfLst) then
+  if not listEmpty(partOfLst) then
     paths := list(match w case Absyn.WITHIN() then w.path; end match
                   for w guard (match w case Absyn.TOP() then false; else true; end match)
                   in partOfLst);
@@ -240,13 +240,13 @@ algorithm
     File.write(file,"\"");
   end if;
 
-  if not List.isEmpty(typeLst) then
+  if not listEmpty(typeLst) then
     File.write(file,",\"typeLst\":[");
     serializeList(file,typeLst,serializePath);
     File.write(file,"]");
   end if;
 
-  if withOperations and not List.isEmpty(operations) then
+  if withOperations and not listEmpty(operations) then
     File.write(file,",\"operations\":[");
     serializeList(file, operations, serializeOperation);
     File.write(file,"]}");
@@ -494,7 +494,7 @@ algorithm
           else {};
         end match;
         eqs = SimCodeUtil.sortEqSystems(listAppend(eq.residual,jeqs));
-        if List.isEmpty(eqs) then
+        if listEmpty(eqs) then
           File.write(file, "\n{\"eqIndex\":");
         else
           serializeEquation(file,listGet(eqs,1),section,withOperations,parent=eq.index,first=true);

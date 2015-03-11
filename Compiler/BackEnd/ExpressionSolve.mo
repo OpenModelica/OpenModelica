@@ -111,7 +111,7 @@ algorithm
     i := i + 1;
   end for;
 
-  if  not List.isEmpty(newVars) then
+  if  not listEmpty(newVars) then
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := osyst;
     vars := BackendVariable.addVars(newVars, vars);
     osyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),matching,stateSets,partitionKind);
@@ -173,7 +173,7 @@ algorithm
           //(e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(eindex));
           (e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
           source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, asserts);
-           if List.isEmpty(solveEqns) then
+           if listEmpty(solveEqns) then
              eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
            else
              solveCr := listReverse(solveCr);
@@ -187,7 +187,7 @@ algorithm
            // ExpressionSolve fail!
            // try simplify equation
            (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, NONE(), NONE(), 0);
-           true := List.isEmpty(solveEqns);
+           true := listEmpty(solveEqns);
            eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
          else
            eqn_ := eqn_;
@@ -1952,7 +1952,7 @@ protected
   DAE.Exp e, e1, e2;
   DAE.Operator op;
 algorithm
-  if List.isEmpty(inExpLst) then
+  if listEmpty(inExpLst) then
     outExp := DAE.RCONST(1.0);
   return;
   end if;
@@ -1961,7 +1961,7 @@ algorithm
 
   (expLstDiv, expLst) :=  List.splitOnTrue(inExpLst, Expression.isDivBinary);
   outExp := makeProductLstSort2(expLst, tp);
-  if not List.isEmpty(expLstDiv) then
+  if not listEmpty(expLstDiv) then
     expLst2 := {};
     expLst := {};
 
@@ -1971,14 +1971,14 @@ algorithm
       expLst2 := e2::expLst2;
     end for;
 
-    if not List.isEmpty(expLst2) then
+    if not listEmpty(expLst2) then
       e := makeProductLstSort(expLst2);
       if not Expression.isOne(e) then
         outExp := Expression.makeDiv(outExp,e);
       end if;
     end if;
 
-    if not List.isEmpty(expLst) then
+    if not listEmpty(expLst) then
       e := makeProductLstSort(expLst);
       outExp := Expression.expMul(outExp,e);
     end if;

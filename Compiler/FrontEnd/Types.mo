@@ -1967,7 +1967,7 @@ algorithm
 
     case(DAE.T_SUBTYPE_BASIC(ci,varlst,ty,ec,ts),d)
       equation
-        true = List.isNotEmpty(getDimensions(ty));
+        false = listEmpty(getDimensions(ty));
         ty_1 = liftArrayRight(ty,d);
       then
         DAE.T_SUBTYPE_BASIC(ci,varlst,ty_1,ec,ts);

@@ -3582,7 +3582,7 @@ algorithm
           cls_mod = Mod.removeMod(class_mod, SCode.className(cls));
           if not Mod.isEmptyMod(cls_mod)
           then
-            if not List.isEmpty(ad) // add each if needed
+            if not listEmpty(ad) // add each if needed
             then
               cls_mod = Mod.addEachIfNeeded(cls_mod, {DAE.DIM_INTEGER(1)});
             end if;

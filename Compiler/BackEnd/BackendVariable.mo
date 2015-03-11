@@ -2772,7 +2772,7 @@ algorithm
   try
     varlst := getVar(inComponentRef, inVariables);
     varlst := if skipDiscrete then List.select(varlst, isVarNonDiscrete) else varlst;
-    outExists := List.isNotEmpty(varlst);
+    outExists := not listEmpty(varlst);
   else
     outExists := false;
   end try;

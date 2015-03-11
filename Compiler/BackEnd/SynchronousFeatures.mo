@@ -285,7 +285,7 @@ algorithm
     cr := BackendVariable.varCref(v);
 
     // Select any equation that could define this variable
-    if List.isEmpty(mT[i]) then
+    if listEmpty(mT[i]) then
       name := ComponentReference.printComponentRefStr(cr);
       info := DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
       Error.addSourceMessage(Error.EQUATIONS_VAR_NOT_DEFINED, {name}, info);

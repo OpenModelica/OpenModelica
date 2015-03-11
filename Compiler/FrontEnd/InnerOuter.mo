@@ -1772,7 +1772,7 @@ algorithm
     case(INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _))
       equation
         outers = List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
-        strOuters = if List.isEmpty(outers)
+        strOuters = if listEmpty(outers)
                       then ""
                       else (" Referenced by 'outer' components: {" +
                         stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") + "}");
@@ -1942,10 +1942,10 @@ public function isEmpty "Returns true if hashtable is empty"
   input InstHierarchyHashTable hashTable;
   output Boolean res;
 algorithm
-  res := matchcontinue(hashTable)
+  res := match(hashTable)
     case(HASHTABLE(_,_,_,0)) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isEmpty;
 
 public function add

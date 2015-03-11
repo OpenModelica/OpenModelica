@@ -990,7 +990,7 @@ algorithm
       equation
         (_,states) = BackendVariable.getAllStateVarIndexFromVariables(vars);
         states = List.removeOnTrue(ass1, isAssigned, states);
-        true = List.isNotEmpty(states);
+        false = listEmpty(states);
         tvar = selectVarWithMostEqns(states,ass2,mt,-1,-1);
       then
         tvar;
@@ -1000,7 +1000,7 @@ algorithm
     case(_,_,_,_,_,_,_,_)
       equation
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
-        false = List.isEmpty(unsolvables);
+        false = listEmpty(unsolvables);
         tvar = listGet(unsolvables,1);
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
@@ -1784,7 +1784,7 @@ algorithm
   // Look for unsolvable discrete variables because this leads to causalization error
   // hier (wahrscheinlich relativ kleine Listen, wird nur einmal gemacht)
   unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
-  if not List.isEmpty(unsolvableDiscretes) then
+  if not listEmpty(unsolvableDiscretes) then
     Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
   fail();
   end if;
@@ -2682,12 +2682,12 @@ algorithm
     print("4th: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All non-discrete variables from (3rd) without attribute 'never')\n\n");
   end if;
   // 4.1 Check if potentialTVars is empty, if yes, choose all unassigned non-discrete variables without attribute tearingSelect=never as potentialTVars
-  if List.isEmpty(potentialTVars) then
+  if listEmpty(potentialTVars) then
     ((_,potentialTVars)) := Array.fold(ass1In,getUnassigned,(1,{}));
   // hier
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
-  if List.isEmpty(potentialTVars) then
+  if listEmpty(potentialTVars) then
     Error.addCompilerError("It is not possible to select a new tearing variable, because all left variables are discrete or have the attribute tearingSelect=never");
     fail();
   end if;
@@ -2707,14 +2707,14 @@ algorithm
     print("\n5th (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
   end if;
   // 5.4 Prefer variables with annotation attribute 'tearingSelect=prefer'
-  if List.isNotEmpty(tSel_prefer) then
+  if not listEmpty(tSel_prefer) then
     points := preferAvoidVariables(potentialTVars, points, tSel_prefer, 3.0, 1);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("    (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Points after preferring variables with attribute 'prefer')\n");
     end if;
   end if;
   // 5.5 Avoid variables with annotation attribute 'tearingSelect=avoid'
-  if List.isNotEmpty(tSel_avoid) then
+  if not listEmpty(tSel_avoid) then
     points := preferAvoidVariables(potentialTVars, points, tSel_avoid, 0.334, 1);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("    (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Points after discrimination against variables with attribute 'avoid')\n");
@@ -3029,7 +3029,7 @@ algorithm
     (orderOut,causal) := Tarjan(mIn,mtIn,meIn,metIn,ass1In,ass2In,order,eqQueue,mapEqnIncRow,mapIncRowEqn,ass);
   else
     ((_,unassigned)) := Array.fold(ass1In,getUnassigned,(1,{}));
-  if List.isEmpty(unassigned) then
+  if listEmpty(unassigned) then
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\ncausal\n");
       end if;

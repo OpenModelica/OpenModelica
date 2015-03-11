@@ -426,7 +426,7 @@ algorithm
           namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
           duplicates = List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
           duplicatesStr = stringDelimitList(duplicates, ", ");
-          Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
+          Error.assertionOrAddSourceMessage(listEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
 
           // get all the .mo files in the directory!
           mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
@@ -436,13 +436,13 @@ algorithm
           // build a list
           intersection = List.intersectionOnTrue(subdirs,mofiles,stringEq);
           differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
-          Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
+          Error.assertionOrAddSourceMessage(listEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
           mofiles = listAppend(subdirs,mofiles);
           // check if all are present in the package.order
           differences = List.setDifference(mofiles, namesToFind);
           // issue a warning if not all are present
           differencesStr = stringDelimitList(differences, "\n\t");
-          Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
+          Error.assertionOrAddSourceMessage(listEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
           po1 = getPackageContentNamesinParts(namesToFind,cp,{});
           List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
 
@@ -457,7 +457,7 @@ algorithm
           // Look for duplicates
           intersection = List.sortedDuplicates(mofiles,stringEq);
           differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
-          Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},info);
+          Error.assertionOrAddSourceMessage(listEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},info);
 
           po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
         end if;

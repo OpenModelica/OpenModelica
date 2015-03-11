@@ -479,7 +479,7 @@ algorithm
     case((v as DAE.VAR(componentRef = cr))::rest, _, _)
       equation
         // variable is in the list! jump over it
-        isEmpty = List.isEmpty(List.select1(variableNames, ComponentReference.crefEqual, cr));
+        isEmpty = listEmpty(List.select1(variableNames, ComponentReference.crefEqual, cr));
         els = removeVariablesFromElements(rest, variableNames, List.consOnTrue(isEmpty, v, inAcc));
       then els;
 
@@ -6580,7 +6580,7 @@ algorithm
       equation
         // algs are not empty
         (_,_,_,_,a,_,_,_) = splitElements(els);
-        false = List.isEmpty(a);
+        false = listEmpty(a);
       then
         true;
 

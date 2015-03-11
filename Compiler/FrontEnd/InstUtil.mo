@@ -1054,7 +1054,7 @@ algorithm
       equation
         lst = List.map(inComps, Util.tuple21);
         lst = extractConstantPlusDeps2(lst, ocr, allComps, className, {});
-        true = List.isNotEmpty(lst);
+        false = listEmpty(lst);
         lst = listReverse(lst);
         oel = List.filter1OnTrue(inComps, elementNameMember, lst);
       then
@@ -1105,7 +1105,7 @@ algorithm
     case(_, SOME(_), _, _)
       equation
         outComps = extractConstantPlusDeps2(inComps, ocr, allComps, className,{});
-        true = List.isNotEmpty(outComps);
+        false = listEmpty(outComps);
         outComps = listReverse(outComps);
       then
         outComps;
@@ -3669,7 +3669,7 @@ algorithm
     local DAE.Type ty;
     case (DAE.T_SUBTYPE_BASIC(complexType = ty),_)
       equation
-        true = List.isNotEmpty(Types.getDimensions(ty));
+        false = listEmpty(Types.getDimensions(ty));
       then
         tp;
     else Types.liftArray(tp, dimt);
@@ -4840,7 +4840,7 @@ algorithm
         true = System.getPartialInstantiation();
         // if all the functions are complete, add them, otherwise, NO
         fLst = List.select(funcs, DAEUtil.isNotCompleteFunction);
-        fLst = if_(List.isEmpty(fLst), funcs, {});
+        fLst = if_(listEmpty(fLst), funcs, {});
         cache = FCore.addDaeFunction(cache, fLst);
       then
         cache;*/
@@ -7715,7 +7715,7 @@ algorithm
     case (DAE.T_SUBTYPE_BASIC(complexType = ty), _)
       equation
         // check if it has any dimensions
-        true = List.isNotEmpty(Types.getDimensions(ty));
+        false = listEmpty(Types.getDimensions(ty));
       then
         ty;
 

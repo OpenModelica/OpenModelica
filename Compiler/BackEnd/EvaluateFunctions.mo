@@ -301,7 +301,7 @@ algorithm
         // get the elements of the function and the algorithms
         SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
         elements = DAEUtil.getFunctionElements(func);
-        true = List.isNotEmpty(elements);
+        false = listEmpty(elements);
         protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
         algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
 
@@ -367,9 +367,9 @@ algorithm
         //print("varScalarCrefs 1\n"+stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         // is it completely constant or partially?
-        funcIsConst = List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs);
-        funcIsPartConst = (List.isNotEmpty(varScalarCrefs) or List.isNotEmpty(varComplexCrefs)) and (List.isNotEmpty(constScalarCrefs) or List.isNotEmpty(constComplexCrefs)) and not funcIsConst;
-        isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs) and List.isEmpty(constComplexCrefs);
+        funcIsConst = listEmpty(varScalarCrefs) and listEmpty(varComplexCrefs);
+        funcIsPartConst = ((not listEmpty(varScalarCrefs)) or (not listEmpty(varComplexCrefs))) and ((not listEmpty(constScalarCrefs)) or (not listEmpty(constComplexCrefs))) and not funcIsConst;
+        isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and listEmpty(varScalarCrefs) and listEmpty(varComplexCrefs) and listEmpty(constComplexCrefs);
 
         //bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
@@ -423,7 +423,7 @@ algorithm
         outputVarNames = List.map(newOutputVars,DAEUtil.varName);
         attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,SOME(outputVarNames),DAE.emptyTypeSource));
         DAE.CALL_ATTR(ty = singleOutputType) = attr1;
-        singleOutputType = if List.isNotEmpty(newOutputVars) then List.first(outputVarTypes) else singleOutputType;//if the function is evaluated completely
+        singleOutputType = if not listEmpty(newOutputVars) then List.first(outputVarTypes) else singleOutputType;//if the function is evaluated completely
         attr1 = DAEUtil.replaceCallAttrType(attr1,singleOutputType);
         attr2 = if intEq(listLength(newOutputVars),1) then attr1 else attr2;
         //DAEDump.dumpCallAttr(attr2);
@@ -441,7 +441,7 @@ algorithm
         //ExpressionDump.dumpExp(exp);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("Finish evaluation in:\n"+ExpressionDump.printExpStr(outputExp)+" := "+ExpressionDump.printExpStr(exp)+"\n");
-          if List.isNotEmpty(constEqs) then
+          if not listEmpty(constEqs) then
             BackendDump.dumpEquationList(constEqs,"including the additional equations:\n");
           end if;
         end if;
@@ -468,7 +468,7 @@ algorithm
     case(_)
       equation
         lst = Expression.getComplexContents(e);
-        true = List.isNotEmpty(lst);
+        false = listEmpty(lst);
       then
         lst;
     else
@@ -719,8 +719,8 @@ algorithm
       then (varOutputs,outputExp,varScalarCrefsInFunc);
     case(_,_,_,_,_,_,DAE.TUPLE(PR=expLst))
       equation
-        true = List.isEmpty(List.flatten(scalarOutputs));
-        true = not List.isEmpty(constScalarCrefs);
+        true = listEmpty(List.flatten(scalarOutputs));
+        true = not listEmpty(constScalarCrefs);
         varScalarCrefsInFunc = {};
         allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(constScalarCrefs,allOutputCrefs,ComponentReference.crefEqual);
@@ -835,7 +835,7 @@ algorithm
         //print("the cref\n"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
         //print("scalars to check\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
-        true = List.isNotEmpty(scalars);
+        false = listEmpty(scalars);
         (constVars,_,_) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
         //print("constVars\n"+stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
@@ -858,7 +858,7 @@ algorithm
         cref = DAEUtil.varCref(elem);
         scalars = getScalarsForComplexVar(elem);
         // function output is one dimensional
-        true = List.isEmpty(scalars);
+        true = listEmpty(scalars);
         const = listMember(cref,constCrefs);
         constCompl = if const then cref::constComplexLstIn else constComplexLstIn;
         varCompl = if not const then cref::varComplexLstIn else varComplexLstIn;
@@ -1511,7 +1511,7 @@ algorithm
           addStmts = {};
           repl = replIn;
         end if;
-        predicted = List.isNotEmpty(addStmts) or List.isEmpty(stmtsNew) and not isEval;
+        predicted = (not listEmpty(addStmts)) or listEmpty(stmtsNew) and not isEval;
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval then
           print("could it be predicted? "+boolString(predicted)+"\n");
         end if;
@@ -2486,7 +2486,7 @@ algorithm
          end if;
          (constOutExps,_,varOutExps) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
 
-         _ = List.isNotEmpty(constOutExps) and List.isEmpty(varOutExps);
+         _ = (not listEmpty(constOutExps)) and listEmpty(varOutExps);
          //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
          //bcall(not predicted,print,"remove the replacement for: "+stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+"\n");
          repl = replIn;

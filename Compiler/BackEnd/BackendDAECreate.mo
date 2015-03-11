@@ -1652,7 +1652,7 @@ algorithm
       equation
         (DAE.PARTIAL_EQUATION(cond), source) = Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(cond), (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         (res, reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, inEquationLst, {});
-        whenClauseList = makeWhenClauses(List.isNotEmpty(reinit), cond, reinit, inWhenClauseLst);
+        whenClauseList = makeWhenClauses(not listEmpty(reinit), cond, reinit, inWhenClauseLst);
       then
         (res, whenClauseList);
 
@@ -1661,7 +1661,7 @@ algorithm
         (elseEqnLst, whenClauseList) = lowerWhenEqn(elsePart, functionTree, {}, inWhenClauseLst);
         (DAE.PARTIAL_EQUATION(cond), source) = Inline.simplifyAndInlineEquationExp(DAE.PARTIAL_EQUATION(cond), (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         (trueEqnLst, reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
-        whenClauseList = makeWhenClauses(List.isNotEmpty(reinit), cond, reinit, whenClauseList);
+        whenClauseList = makeWhenClauses(not listEmpty(reinit), cond, reinit, whenClauseList);
         res = mergeClauses(trueEqnLst, elseEqnLst, inEquationLst);
       then
         (res, whenClauseList);
@@ -3150,7 +3150,7 @@ algorithm
    case(DAE.FUNCTION_DEF(body=body),_)
      equation
        params = List.filter(body,DAEUtil.isParameter);
-       true = List.isNotEmpty(params);
+       false = listEmpty(params);
        crefs = List.map(params,DAEUtil.varCref);
        crefs_new = List.map1r(crefs,ComponentReference.prependStringCref,pathName);
        params_new = List.map(crefs_new,Expression.crefExp);

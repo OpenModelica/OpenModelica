@@ -203,7 +203,7 @@ algorithm
     case(partition::rest,_,_,_,_,_,_,_,_,_)
       equation
         (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
-        true = List.isEmpty(partition);
+        true = listEmpty(partition);
         eqLst = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMapping,varMapping,daeEqs,daeVars,nonLoopEqs);
     then
       eqLst;
@@ -391,7 +391,7 @@ algorithm
 
         //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
         subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
-        isNoSingleLoop = List.isEmpty(subLoop);
+        isNoSingleLoop = listEmpty(subLoop);
         simpleLoops = if isNoSingleLoop then simpleLoops else {subLoop};
         paths0 = listAppend(simpleLoops,connectedPaths);
         paths0 = sortPathsAsChain(paths0);
@@ -411,7 +411,7 @@ algorithm
         (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.last(paths)));
           //print("the shortest paths: \n"+stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+"\n");
 
-        paths1 = if List.isEmpty(paths1) then paths0 else paths1;
+        paths1 = if listEmpty(paths1) then paths0 else paths1;
         closedPaths = List.map1(paths1,closePathDirectly,paths0);
         closedPaths = List.fold1(closedPaths,getReverseDoubles,closedPaths,{});   // all paths with just one direction
         closedPaths = List.map(closedPaths,List.unique);
@@ -424,7 +424,7 @@ algorithm
          // no crossNodes
            //print("no crossNodes\n");
          varEqsLst = List.map1(eqsIn,Array.getIndexFirst,mIn);
-         isNoSingleLoop = List.exist(varEqsLst,List.isEmpty);
+         isNoSingleLoop = List.exist(varEqsLst,listEmpty);
          subLoop = if isNoSingleLoop then {} else eqsIn;
        then
          {subLoop};
@@ -456,11 +456,11 @@ algorithm
   // the startNode is connected to a loop
   loops1 := List.filter1OnTrue(allLoops,firstInListIsEqual,startNode);
   loops2 := List.filter1OnTrue(allLoops,lastInListIsEqual,startNode);
-  b1 := List.isNotEmpty(loops1) or List.isNotEmpty(loops2);
+  b1 := (not listEmpty(loops1)) or (not listEmpty(loops2));
   // the endNode is connected to a loop
   loops1 := List.filter1OnTrue(allLoops,firstInListIsEqual,endNode);
   loops2 := List.filter1OnTrue(allLoops,lastInListIsEqual,endNode);
-  b2 := List.isNotEmpty(loops1) or List.isNotEmpty(loops2);
+  b2 := (not listEmpty(loops1)) or (not listEmpty(loops2));
   connected := b1 and b2;
 end connectsLoops;
 
@@ -550,11 +550,11 @@ algorithm
       (replEqs,_,_) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
 
       // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
-      if List.isNotEmpty(eqs) then
+      if not listEmpty(eqs) then
         pos = List.first(eqs);
-      elseif List.isNotEmpty(replEqs) then
+      elseif not listEmpty(replEqs) then
         pos = List.first(replEqs);
-      elseif List.isNotEmpty(crossEqs) then
+      elseif not listEmpty(crossEqs) then
         pos = List.first(crossEqs);
       else
         pos = -1;
@@ -605,8 +605,8 @@ algorithm
         //print("priorized eqs: "+stringDelimitList(List.map(eqs,intString),",")+"\n");
 
       // first try to replace a non cross node, otherwise an already replaced eq
-      pos = if List.isNotEmpty(replEqs) then List.first(replEqs) else -1;
-      pos = if List.isNotEmpty(eqs) then List.first(eqs) else pos;
+      pos = if not listEmpty(replEqs) then List.first(replEqs) else -1;
+      pos = if not listEmpty(eqs) then List.first(eqs) else pos;
 
       eqs = List.deleteMember(loop1,pos);
         //print("contract eqs: "+stringDelimitList(List.map(eqs,intString),",")+" to eq "+intString(pos)+"\n");
@@ -956,7 +956,7 @@ algorithm
         startNode::_ = pathIn;
         endNode = List.last(pathIn);
         path = findPathByEnds(pathLstIn,startNode,endNode);
-        closed = List.isNotEmpty(path);
+        closed = not listEmpty(path);
         path = if closed then path else {};
         path = listAppend(pathIn,path);
         path = List.unique(path);
@@ -1381,7 +1381,7 @@ algorithm
         // get adjacent equation nodes
         checked = node::alreadyChecked;
         vars = arrayGet(m,node);
-        true = List.isNotEmpty(vars);
+        true = not listEmpty(vars);
         eqs = List.fold1(vars,getArrayEntryAndAppend,mT,{});
         (_,eqs,_) = List.intersection1OnTrue(eqs,checked,intEq);
 
@@ -1439,7 +1439,7 @@ protected
   list<Integer> row;
 algorithm
   row := arrayGet(arrayIn,idx);
-  row := if List.isEmpty(row) then {idx} else {};
+  row := if listEmpty(row) then {idx} else {};
   lstOut := listAppend(lstIn,row);
 end arrayGetIsEmptyLst;
 
@@ -1603,10 +1603,10 @@ algorithm
         paths1 = List.filter1OnTrue(pathsIn, firstInListIsEqual, lastNode);
         paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, lastNode);
         paths1 = listAppend(paths1,paths2);
-        true = List.isNotEmpty(paths1);
+        false = listEmpty(paths1);
         path = List.first(paths1);
-        endNode = if List.isNotEmpty(paths1) then List.last(path) else -1;
-        endNode = if List.isNotEmpty(paths2) then List.first(path) else -1;
+        endNode = if not listEmpty(paths1) then List.last(path) else -1;
+        endNode = if not listEmpty(paths2) then List.first(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = listAppend(sortedPathsIn,{path});
         sortedPaths = sortPathsAsChain1(rest,firstNode,endNode,sortedPaths);
@@ -1619,10 +1619,10 @@ algorithm
         paths1 = List.filter1OnTrue(pathsIn, firstInListIsEqual, firstNode);
         paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, firstNode);
         paths1 = listAppend(paths1,paths2);
-        true = List.isNotEmpty(paths1);
+        false = listEmpty(paths1);
         path = List.first(paths1);
-        startNode = if List.isNotEmpty(paths1) then List.last(path) else -1;
-        startNode = if List.isNotEmpty(paths2) then List.first(path) else -1;
+        startNode = if not listEmpty(paths1) then List.last(path) else -1;
+        startNode = if not listEmpty(paths2) then List.first(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = path::sortedPathsIn;
         sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);

@@ -627,7 +627,7 @@ algorithm
         // remove assigned equation of this row
         next = List.removeOnTrue(ass1[r], intEq, next);
         //  print("Eqns use Var " + intString(r) + " : " + stringDelimitList(List.map(next,intString),", ") + "\n");
-        true = List.isNotEmpty(next);
+        false = listEmpty(next);
       then
         generateCliquesResidual1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,ifoundFlow,vars);
     case (r::rest,_,_,_,_,_,_,_,_,_)
@@ -639,7 +639,7 @@ algorithm
         next = List.select2(next, unmarked, colummarks, mark);
         // remove assigned equation of this row
         next = List.removeOnTrue(ass1[r], intEq, next);
-        false = List.isNotEmpty(next);
+        true = listEmpty(next);
         arrayUpdate(rowmarks,r,mark);
         e = ass1[r];
         // print("Go From " + intString(r) + " to " + intString(e) + "\n");
@@ -818,7 +818,7 @@ algorithm
         // remove assigned
         next = List.fold1(ass2[e],List.removeOnTrue, intEq, next);
         //  print("Used Vars of " + intString(e) + " : " + stringDelimitList(List.map(next,intString),", ") + "\n");
-        true = List.isNotEmpty(next);
+        false = listEmpty(next);
       then
         prepairOrphansOrder1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,prer,ifoundFlow,vars);
     case (e::rest,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -830,7 +830,7 @@ algorithm
         next = List.select2(next, unmarked, rowmarks, mark);
         // remove assigned
         next = List.fold1(ass2[e],List.removeOnTrue, intEq, next);
-        false = List.isNotEmpty(next);
+        true = listEmpty(next);
         arrayUpdate(colummarks,e,mark);
         r = ass2[e];
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r,intString),", ") + "\n");
@@ -2788,7 +2788,7 @@ algorithm
         //  print("Process Colum " + intString(c) + " Rows " + stringDelimitList(List.map(r,intString),", ") + "  " + boolString(b) +"\n");
         (colums1,b2) = getIndexQueque1(r,c,mT,mark,rowmarks,{},false);
         //  BackendDump.debuglst((colums1,intString,", ","\n"));
-        b1 = List.isNotEmpty(colums);
+        b1 = not listEmpty(colums);
         // cons next rows in front to jump over marked nodes
         queue = if b1 then List.unionOnTrue(colums1, nextqueue, intEq) else nextqueue;
         //  print("queue: "); BackendDump.debuglst((queue,intString,", ","\n"));
@@ -2875,7 +2875,7 @@ protected function isResOrphan
   input array<list<Integer>> ass;
   output Boolean b;
 algorithm
-  b := List.isEmpty(ass[indx]);
+  b := listEmpty(ass[indx]);
 end isResOrphan;
 
 protected function isNoResOrphan
@@ -2883,7 +2883,7 @@ protected function isNoResOrphan
   input array<list<Integer>> ass;
   output Boolean b;
 algorithm
-  b := List.isNotEmpty(ass[indx]);
+  b := not listEmpty(ass[indx]);
 end isNoResOrphan;
 
 protected function doAssign "author: Frenkel TUD 2012-05"

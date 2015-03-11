@@ -424,7 +424,7 @@ algorithm
   (HtCr2U, b, HtS2U, HtU2S):=inTpl;
   (HtCr2U, HtS2U, HtU2S, expListList):=foldEquation2(inEq, HtCr2U, HtS2U, HtU2S);
   List.map2_0(expListList, Errorfunction, inEq, HtU2S);
-  b := List.isEmpty(expListList) and b;
+  b := listEmpty(expListList) and b;
   outTpl := (HtCr2U, b, HtS2U, HtU2S);
 end foldEquation;
 

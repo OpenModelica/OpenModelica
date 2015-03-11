@@ -85,13 +85,13 @@ type T = list<Tree>;
 constant T empty = {};
 
 /*
-function isEmpty = List.isEmpty;
+function isEmpty = listEmpty;
 */
 function isEmpty
   input T ts;
   output Boolean isEmpty;
 algorithm
-  isEmpty := List.isEmpty(ts);
+  isEmpty := listEmpty(ts);
 end isEmpty;
 
 function insert

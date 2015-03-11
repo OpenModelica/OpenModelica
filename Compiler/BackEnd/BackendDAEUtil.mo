@@ -303,7 +303,7 @@ algorithm
     case (exp,(vars,lstExpCrefs))
       equation
         (_,(_,crefs)) = Expression.traverseExp(exp,traversecheckBackendDAEExp,(vars,{}));
-        lstExpCrefs1 = if List.isNotEmpty(crefs) then (exp,crefs)::lstExpCrefs else lstExpCrefs;
+        lstExpCrefs1 = if not listEmpty(crefs) then (exp,crefs)::lstExpCrefs else lstExpCrefs;
        then (exp,(vars,lstExpCrefs1));
     else (inExp,inTpl);
   end matchcontinue;

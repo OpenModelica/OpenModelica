@@ -2526,7 +2526,7 @@ algorithm
         ass1arr = listArray(ass1);
         nass1arr = arrayLength(ass1arr);
         (dstates1,states1) = checkAssignment(1,nass1arr,ass1arr,vars,{},{});
-        assigend1 = if List.isNotEmpty(assigned) then List.intRange2(1,nassigned) else {};
+        assigend1 = if not listEmpty(assigned) then List.intRange2(1,nassigned) else {};
         nunassigned = nassigned+nunassigned;
         nassigned = nassigned+1;
         range = List.intRange2(nassigned,nunassigned);

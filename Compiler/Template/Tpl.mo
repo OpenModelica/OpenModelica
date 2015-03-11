@@ -1206,7 +1206,7 @@ protected
   Boolean isstart = inAtStartOfLine;
   Integer aind = inAfterNewLineIndent;
 algorithm
-  while (boolNot(List.isEmpty(toks))) loop
+  while (boolNot(listEmpty(toks))) loop
     tok::toks := toks;
     if((idx > 0) and (intMod(idx,anum) == 0)) then
       (pos, isstart, aind) := tokString(asep, pos, isstart, aind);

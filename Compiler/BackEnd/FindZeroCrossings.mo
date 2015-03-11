@@ -1041,7 +1041,7 @@ algorithm
       e_1 = DAE.LUNARY(op, e1);
       zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
-      zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
+      zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         BackendDump.debugExpStr(e_1, "\n");
       end if;
@@ -1058,7 +1058,7 @@ algorithm
       e_1 = DAE.LBINARY(e_1, op, e_2);
       zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
-      zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
+      zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         BackendDump.dumpZeroCrossingList(zeroCrossings, "");
       end if;
@@ -1265,7 +1265,7 @@ algorithm
       e_1 = DAE.LUNARY(op, e1);
       zc = createZeroCrossing(e_1, {alg_indx}, {});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
-      zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
+      zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         print("collectZCAlgsFor LUNARY result zc: ");
         BackendDump.debugExpStr(e_1, "\n");
@@ -1313,7 +1313,7 @@ algorithm
       e_1 = DAE.LBINARY(e_1, op, e_2);
       zc = createZeroCrossing(e_1, {alg_indx}, {});
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
-      zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
+      zeroCrossings = if listEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         BackendDump.dumpZeroCrossingList(zeroCrossings, "collectZCAlgsFor LBINARY2 result zc");
       end if;

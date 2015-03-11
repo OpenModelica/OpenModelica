@@ -418,7 +418,7 @@ algorithm
       vars := BackendVariable.daeKnVars(outShared);
 
       ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
-      if List.isEmpty(idercr) then
+      if listEmpty(idercr) then
         fail();
       end if;
       // der(u) -> u has der

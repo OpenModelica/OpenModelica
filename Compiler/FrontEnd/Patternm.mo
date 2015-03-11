@@ -1390,7 +1390,7 @@ algorithm
     case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
       equation
         namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
-        pat = if List.isEmpty(namedPatterns) then DAE.PAT_WILD() else DAE.PAT_CALL_NAMED(name, namedPatterns);
+        pat = if listEmpty(namedPatterns) then DAE.PAT_WILD() else DAE.PAT_CALL_NAMED(name, namedPatterns);
       then ((pat,a));
     case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
       equation
