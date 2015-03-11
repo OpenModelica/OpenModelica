@@ -33,7 +33,7 @@ encapsulated package BackendDAEOptimize
 " file:        BackendDAEOptimize.mo
   package:     BackendDAEOptimize
   description: BackendDAEOptimize contains functions that do some kind of
-               optimazation on the BackendDAE datatype:
+               optimization on the BackendDAE datatype:
                - removing simpleEquations
                - Tearing/Relaxation
                - Linearization
