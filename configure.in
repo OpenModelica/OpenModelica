@@ -234,10 +234,14 @@ fi
 dnl Checks for boost include for Mac.
 
 if test ! "$DARWIN" = "1"; then
-  if test -f "/opt/local/include/boost/array.hpp"; then
-    BOOST_INCLUDE="-DBOOST_ROOT=/opt/local/include/boost/"
+  if test -f "$prefix/include/boost/array.hpp"; then
+    BOOST_INCLUDE="-DBOOST_ROOT=$prefix/include/"
   else
-    BOOST_INCLUDE=""
+    if test -f "/opt/local/include/boost/array.hpp"; then
+      BOOST_INCLUDE="-DBOOST_ROOT=/opt/local/include/"
+    else
+      BOOST_INCLUDE=""
+    fi
   fi
 else
   BOOST_INCLUDE=""
