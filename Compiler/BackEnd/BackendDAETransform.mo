@@ -383,9 +383,6 @@ algorithm
 
     case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_varindx_lst) equation
       varindxs = List.map(var_varindx_lst, Util.tuple22);
-      var_lst = List.map(var_varindx_lst, Util.tuple21);
-      crlst = List.map(var_lst,BackendVariable.varCref);
-      true = List.fold(List.map(crlst,ComponentReference.isArrayElement),boolAnd,true); // its only an array equation if all the solved variables belong to an array. if not, its a nonlinear system
     then BackendDAE.SINGLEARRAY(compelem, varindxs);
 
     case (compelem::{}, BackendDAE.IF_EQUATION()::{}, var_varindx_lst) equation
