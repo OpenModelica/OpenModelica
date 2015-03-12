@@ -13,11 +13,6 @@
         <translation type="obsolete">&amp;Öppna</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="374"/>
-        <source>Ctrl+L</source>
-        <translation></translation>
-    </message>
-    <message>
         <location filename="oms.cpp" line="369"/>
         <source>Open mo-file</source>
         <oldsource>Load mo-file</oldsource>
@@ -35,6 +30,13 @@
         <translation>&amp;Öppna</translation>
     </message>
     <message>
+        <location filename="oms.cpp" line="275"/>
+        <source>
+To get help on using OMShell and OpenModelica, type &quot;help()&quot; and press enter.
+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="oms.cpp" line="375"/>
         <source>Load the Modelica Standard Library</source>
         <translation>Öppna Modelica Standard Bibliotek (MSL)</translation>
@@ -45,11 +47,6 @@
         <translation>A&amp;vsluta</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="380"/>
-        <source>Ctrl+D</source>
-        <translation></translation>
-    </message>
-    <message>
         <location filename="oms.cpp" line="381"/>
         <source>Quit the application</source>
         <translation>Avsluta programmet</translation>
@@ -58,11 +55,6 @@
         <location filename="oms.cpp" line="385"/>
         <source>Cu&amp;t</source>
         <translation>&amp;Klipp ut</translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="386"/>
-        <source>Ctrl+X</source>
-        <translation></translation>
     </message>
     <message>
         <location filename="oms.cpp" line="387"/>
@@ -90,6 +82,12 @@
         <translation>Om Qt</translation>
     </message>
     <message>
+        <location filename="oms.cpp" line="818"/>
+        <source>OK to quit running OpenModelica Compiler process at exit?
+(Answer No if other OMShell/OMNotebook/Graphic editor is still running)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="oms.cpp" line="865"/>
         <source>[ERROR] Selected fontsize not between 8 and 120.
 </source>
@@ -106,11 +104,6 @@
         <translation>K&amp;opiera</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="392"/>
-        <source>Ctrl+C</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Copy the selection and put it on the Clipboard</source>
         <translation type="obsolete">Kopiera markeringen</translation>
     </message>
@@ -118,11 +111,6 @@
         <location filename="oms.cpp" line="397"/>
         <source>&amp;Paste</source>
         <translation>K&amp;listra in</translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="398"/>
-        <source>Ctrl+V</source>
-        <translation></translation>
     </message>
     <message>
         <source>Insert Clipboard contents</source>
@@ -159,11 +147,6 @@
         <location filename="oms.cpp" line="420"/>
         <source>Cl&amp;ear</source>
         <translation>&amp;Rensa</translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="421"/>
-        <source>Ctrl+Shift+C</source>
-        <translation></translation>
     </message>
     <message>
         <location filename="oms.cpp" line="422"/>

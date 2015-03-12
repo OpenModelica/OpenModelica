@@ -272,7 +272,7 @@ OMS::OMS( QWidget* parent )
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
   copyright_info_ = QString("OMShell 1.1 Copyright Open Source Modelica Consortium (OSMC) 2002-") + (dateStr+7) + "\nDistributed under OMSC-PL and GPL, see www.openmodelica.org\n\nConnected to OpenModelica " + omc_version_;
   cursor_.insertText( copyright_info_, textFormat_ );
-  cursor_.insertText( "\nTo get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
+  cursor_.insertText( tr("\nTo get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n"), textFormat_ );
 
 
   // create command compleation instance
@@ -365,37 +365,37 @@ void OMS::createMoshEdit()
 void OMS::createAction()
 {
   loadModel_ = new QAction( tr("&Open"), this );
-  loadModel_->setShortcut( tr("Ctrl+O") );
+  loadModel_->setShortcut( "Ctrl+O" );
   loadModel_->setStatusTip( tr("Open mo-file") );
   connect( loadModel_, SIGNAL( triggered() ),
     this, SLOT( loadModel() ));
 
   loadModelicaLibrary_ = new QAction( tr("Load &Modelica Library"), this );
-  loadModelicaLibrary_->setShortcut( tr("Ctrl+L") );
+  loadModelicaLibrary_->setShortcut( "Ctrl+L" );
   loadModelicaLibrary_->setStatusTip( tr("Load the Modelica Standard Library") );
   connect( loadModelicaLibrary_, SIGNAL( triggered() ),
     this, SLOT( loadModelicaLibrary() ));
 
   exit_ = new QAction( tr("&Exit"), this );
-  exit_->setShortcut( tr("Ctrl+D") );
+  exit_->setShortcut( "Ctrl+D" );
   exit_->setStatusTip( tr("Quit the application") );
   connect( exit_, SIGNAL( triggered() ),
     this, SLOT( close() ));
 
   cut_ = new QAction( tr("Cu&t"), this );
-  cut_->setShortcut( tr("Ctrl+X") );
+  cut_->setShortcut( "Ctrl+X" );
   cut_->setStatusTip( tr("Cut the selection") );
   connect( cut_, SIGNAL( triggered() ),
     this, SLOT( cut() ));
 
   copy_ = new QAction( tr("&Copy"), this );
-  copy_->setShortcut( tr("Ctrl+C") );
+  copy_->setShortcut( "Ctrl+C" );
   copy_->setStatusTip( tr("Copy the selection") );
   connect( copy_, SIGNAL( triggered() ),
     this, SLOT( copy() ));
 
   paste_ = new QAction( tr("&Paste"), this );
-  paste_->setShortcut( tr("Ctrl+V") );
+  paste_->setShortcut( "Ctrl+V" );
   paste_->setStatusTip( tr("Insert from clipboard") );
   connect( paste_, SIGNAL( triggered() ),
     this, SLOT( paste() ));
@@ -418,7 +418,7 @@ void OMS::createAction()
     this, SLOT( aboutQT() ));
 
   clearWindow_ = new QAction( tr("Cl&ear"), this );
-  clearWindow_->setShortcut( tr("Ctrl+Shift+C") );
+  clearWindow_->setShortcut( "Ctrl+Shift+C" );
   clearWindow_->setStatusTip( tr("Clear the input window") );
   connect( clearWindow_, SIGNAL( triggered() ),
     this, SLOT( clear() ));
@@ -815,7 +815,7 @@ bool OMS::exit()
       QMessageBox *msgBox = new QMessageBox(0);
       msgBox->setWindowTitle(tr("Close OMC"));
       msgBox->setIcon(QMessageBox::Question);
-      msgBox->setText("OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)");
+      msgBox->setText(tr("OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)"));
       msgBox->setStandardButtons(QMessageBox::Ok | QMessageBox::No | QMessageBox::Cancel);
       msgBox->setDefaultButton(QMessageBox::Ok);
 

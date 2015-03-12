@@ -9,11 +9,6 @@
         <translation>OMShell - OpenModelica Shell</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="374"/>
-        <source>Ctrl+L</source>
-        <translation>Strg+L</translation>
-    </message>
-    <message>
         <location filename="oms.cpp" line="369"/>
         <source>Open mo-file</source>
         <oldsource>Load mo-file</oldsource>
@@ -41,11 +36,6 @@
         <translation>&amp;Beenden</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="380"/>
-        <source>Ctrl+D</source>
-        <translation>Strg+D</translation>
-    </message>
-    <message>
         <location filename="oms.cpp" line="381"/>
         <source>Quit the application</source>
         <translation>Programm beenden</translation>
@@ -56,29 +46,14 @@
         <translation>Aus&amp;schneiden</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="386"/>
-        <source>Ctrl+X</source>
-        <translation>Strg+X</translation>
-    </message>
-    <message>
         <location filename="oms.cpp" line="391"/>
         <source>&amp;Copy</source>
         <translation>&amp;Kopieren</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="392"/>
-        <source>Ctrl+C</source>
-        <translation>Strg+C</translation>
-    </message>
-    <message>
         <location filename="oms.cpp" line="397"/>
         <source>&amp;Paste</source>
         <translation>&amp;Einfügen</translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="398"/>
-        <source>Ctrl+V</source>
-        <translation>Strg+V</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="404"/>
@@ -99,6 +74,14 @@
         <location filename="oms.cpp" line="387"/>
         <source>Cut the selection</source>
         <translation>Auswahl ausschneiden</translation>
+    </message>
+    <message>
+        <location filename="oms.cpp" line="275"/>
+        <source>
+To get help on using OMShell and OpenModelica, type &quot;help()&quot; and press enter.
+</source>
+        <translation>
+Um Hilfe zur Benutzung von OMShell und OpenModelica zu bekommen, tippen Sie &quot;help()&quot; und dann Enter.</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="393"/>
@@ -124,11 +107,6 @@
         <location filename="oms.cpp" line="420"/>
         <source>Cl&amp;ear</source>
         <translation>&amp;Löschen</translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="421"/>
-        <source>Ctrl+Shift+C</source>
-        <translation>Strg+Umschalt+C</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="422"/>
@@ -169,6 +147,13 @@
         <location filename="oms.cpp" line="816"/>
         <source>Close OMC</source>
         <translation>OMC schließen</translation>
+    </message>
+    <message>
+        <location filename="oms.cpp" line="818"/>
+        <source>OK to quit running OpenModelica Compiler process at exit?
+(Answer No if other OMShell/OMNotebook/Graphic editor is still running)</source>
+        <translation>OK zum Beenden des OpenModelica Compiler Prozesses beim Verlassen?
+(Wählen Sie Neine, wenn andere OMShell/OMNotebook Instanzen noch laufen)</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="865"/>
