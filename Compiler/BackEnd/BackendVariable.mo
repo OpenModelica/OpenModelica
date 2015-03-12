@@ -4126,8 +4126,8 @@ algorithm
 
     case (SOME(min),SOME(max))
       equation
-        rmin = Expression.expReal(min);
-        rmax = Expression.expReal(max);
+        rmin = Expression.toReal(min);
+        rmax = Expression.toReal(max);
         true = realGt(rmin,rmax);
         s1 = ComponentReference.printComponentRefStr(cr1);
         s2 = if negate then " = -" else " = ";

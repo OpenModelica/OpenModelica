@@ -1338,7 +1338,7 @@ algorithm
 
     case (DAE.CREF(), _, _, _)
       equation
-        indices = rangeIntExprs(rangeExpr);
+        indices = rangeExprs(rangeExpr);
         clonedElements = List.fill(arrayVar, listLength(indices));
         newElements = generateArrayElements(clonedElements, indices, iteratorExp);
       then newElements;
@@ -1347,7 +1347,7 @@ algorithm
       equation
         // If the range is constant, then we can use it to generate only those
         // array elements that are actually used.
-        indices = rangeIntExprs(rangeExpr);
+        indices = rangeExprs(rangeExpr);
         clonedElements = List.fill(arrayVar, listLength(indices));
         newElements = generateArrayElements(clonedElements, indices, iteratorExp);
       then newElements;
@@ -1376,31 +1376,23 @@ algorithm
   end matchcontinue;
 end explodeArrayVars;
 
-protected function rangeIntExprs
+protected function rangeExprs
   "Tries to convert a range to a list of integer expressions. Returns a list of
   integer expressions if possible, or fails. Used by explodeArrayVars."
-  input DAE.Exp range;
-  output list<DAE.Exp> integers;
+  input DAE.Exp inRange;
+  output list<DAE.Exp> outValues;
 algorithm
-  integers := match(range)
+  outValues := match inRange
     local
       list<DAE.Exp> arrayElements;
       Integer start, stop;
       list<Integer> vals;
 
-    case (DAE.ARRAY(array = arrayElements)) then arrayElements;
-
-    case (DAE.RANGE(start = DAE.ICONST(integer = start), stop = DAE.ICONST(integer = stop), step = NONE()))
-      equation
-        vals = ExpressionSimplify.simplifyRange(start, 1, stop);
-        arrayElements = List.map(vals, Expression.makeIntegerExp);
-      then
-        arrayElements;
-
-    case (_) then fail();
+    case DAE.ARRAY(array = arrayElements) then arrayElements;
+    case DAE.RANGE() then Expression.expandRange(inRange);
 
   end match;
-end rangeIntExprs;
+end rangeExprs;
 
 public function daeSize
 "author: Frenkel TUD
@@ -2879,12 +2871,13 @@ algorithm
       Boolean b;
       list<DAE.Exp> explst;
       Option<DAE.Exp> stepvalueopt;
-      Integer istart, istep, istop, i;
+      Integer i;
       list<DAE.ComponentRef> crlst;
       Option<DAE.FunctionTree> ofunctionTree;
       DAE.FunctionTree functionTree;
       tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> tpl;
       Integer diffindx;
+      list<DAE.Subscript> subs;
 
     case (DAE.LBINARY(), tpl)
     then (inExp, false, tpl);
@@ -2900,17 +2893,15 @@ algorithm
     case (DAE.RANGE(), tpl)
     then (inExp, false, tpl);
 
-    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=explst), (vars, pa, ofunctionTree)) equation
-      {DAE.RANGE(start=startvalue, step=stepvalueopt, stop=stopvalue)} = ExpressionSimplify.simplifyList(explst, {});
-      stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
-      istart = Expression.expInt(startvalue);
-      istep = Expression.expInt(stepvalue);
-      istop = Expression.expInt(stopvalue);
-      ilst = List.intRange3(istart, istep, istop);
-      crlst = List.map1r(ilst, ComponentReference.subscriptCrefWithInt, cr);
-      (varslst, p) = BackendVariable.getVarLst(crlst, vars,{},{});
-      pa = incidenceRowExp1(varslst, p, pa, 0);
-    then (inExp, false, (vars, pa, ofunctionTree));
+    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=explst), (vars, pa, ofunctionTree))
+      algorithm
+        {e1 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst, {});
+        subs := list(DAE.INDEX(e) for e in extendRange(e1, vars));
+        crlst := list(ComponentReference.subscriptCref(cr, {s}) for s in subs);
+        (varslst, p) := BackendVariable.getVarLst(crlst, vars,{},{});
+        pa := incidenceRowExp1(varslst, p, pa, 0);
+      then
+        (inExp, false, (vars, pa, ofunctionTree));
 
     case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}), tpl) equation
       e1 = Expression.nthArrayExp(e1, i);

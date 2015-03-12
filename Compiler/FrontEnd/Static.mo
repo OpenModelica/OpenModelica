@@ -4696,7 +4696,7 @@ algorithm
         variability = Types.getPropConst(prop1);
         false = valueEq(variability,DAE.C_VAR());
           // check if argument is non-negativ
-          rInterval = Expression.expReal(interval);
+          rInterval = Expression.toReal(interval);
           true = rInterval >= 0.0;
 
         ty =  DAE.T_FUNCTION(
@@ -4737,7 +4737,7 @@ algorithm
         ty2 = Types.arrayElementType(Types.getPropType(prop2));
         (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
         (startInterval,_) = Types.matchType(startInterval,ty2,DAE.T_REAL_DEFAULT,true);
-        rStartInterval = Expression.expReal(startInterval);
+        rStartInterval = Expression.toReal(startInterval);
         true = rStartInterval >= 0.0;
 
         ty =  DAE.T_FUNCTION(

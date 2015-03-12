@@ -2967,8 +2967,8 @@ algorithm
       Real rmin, rmax;
     case ((SOME(min), SOME(max)), _, _)
       equation
-        rmin = Expression.expReal(min);
-        rmax = Expression.expReal(max);
+        rmin = Expression.toReal(min);
+        rmax = Expression.toReal(max);
         true = realGt(rmin, rmax);
         s4 = ExpressionDump.printExpStr(min);
         s5 = ExpressionDump.printExpStr(max);

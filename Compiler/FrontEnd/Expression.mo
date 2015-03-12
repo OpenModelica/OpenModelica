@@ -1495,17 +1495,26 @@ end arrayDimensionSetFirst;
 /* Getter  */
 /***************************************************/
 
-public function expReal "returns the real value if expression is constant Real"
-  input DAE.Exp exp;
-  output Real r;
+public function toReal
+  "Returns the value of a constant Real expression."
+  input DAE.Exp inExp;
+  output Real outReal;
 algorithm
-  r := match(exp) local Integer i;
-    case(DAE.RCONST(r)) then r;
-    case(DAE.ICONST(i)) then intReal(i);
-    case(DAE.CAST(_,DAE.ICONST(i))) then intReal(i);
-    case (DAE.ENUM_LITERAL(index = i)) then intReal(i);
+  outReal := match inExp
+    case DAE.RCONST() then inExp.real;
+    case DAE.ICONST() then intReal(inExp.integer);
+    case DAE.CAST() then toReal(inExp.exp);
+    case DAE.ENUM_LITERAL() then intReal(inExp.index);
   end match;
-end expReal;
+end toReal;
+
+public function toBool
+  "Returns the value of a constant Boolean expression."
+  input DAE.Exp inExp;
+  output Boolean outBool;
+algorithm
+  DAE.BCONST(outBool) := inExp;
+end toBool;
 
 public function realExpIntLit "returns the int value if expression is constant Real that can be represented by an Integer"
   input DAE.Exp exp;
@@ -1756,28 +1765,6 @@ algorithm
     case DAE.MATRIX(matrix=ess) then ess;
   end match;
 end get2dArrayOrMatrixContent;
-
-public function getBoolConst "returns the expression as a Boolean value.
-"
-input DAE.Exp e;
-output Boolean b;
-algorithm
-  DAE.BCONST(b) := e;
-end getBoolConst;
-
-public function getRealConst "returns the expression as a Real value.
-Integer constants are cast to Real"
-  input DAE.Exp ie;
-  output Real v;
-algorithm
-  v := match (ie)
-    local Integer i; DAE.Exp e;
-    case(DAE.RCONST(v)) then v;
-    case(DAE.CAST(_,e)) then getRealConst(e);
-    case(DAE.ICONST(i)) then intReal(i);
-    case DAE.ENUM_LITERAL(index = i) then intReal(i);
-  end match;
-end getRealConst;
 
 // stefan
 public function unboxExpType

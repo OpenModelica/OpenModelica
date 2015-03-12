@@ -1527,7 +1527,7 @@ algorithm
     // sqrt function
     case("sqrt",DAE.CALL(expLst={e}))
       equation
-        r = realSqrt(Expression.getRealConst(e));
+        r = realSqrt(Expression.toReal(e));
       then
         DAE.RCONST(r);
 
@@ -1548,19 +1548,19 @@ algorithm
     // sin function
     case("sin",DAE.CALL(expLst={e}))
       equation
-        r = realSin(Expression.getRealConst(e));
+        r = realSin(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // cos function
     case("cos",DAE.CALL(expLst={e}))
       equation
-        r = realCos(Expression.getRealConst(e));
+        r = realCos(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // sin function
     case("asin",DAE.CALL(expLst={e}))
       equation
-        r = Expression.getRealConst(e);
+        r = Expression.toReal(e);
         true = r >= -1.0 and r <= 1.0;
         r = realAsin(r);
       then DAE.RCONST(r);
@@ -1568,29 +1568,29 @@ algorithm
     // cos function
     case("acos",DAE.CALL(expLst={e}))
       equation
-        r = Expression.getRealConst(e);
+        r = Expression.toReal(e);
         true = r >= -1.0 and r <= 1.0;
-        r = realAcos(Expression.getRealConst(e));
+        r = realAcos(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // tangent function
     case("tan",DAE.CALL(expLst={e}))
       equation
-        v1 = realSin(Expression.getRealConst(e));
-        v2 = realCos(Expression.getRealConst(e));
+        v1 = realSin(Expression.toReal(e));
+        v2 = realCos(Expression.toReal(e));
         r = v1 / v2;
       then DAE.RCONST(r);
 
     // DAE.Exp function
     case("exp",DAE.CALL(expLst={e}))
       equation
-        r = realExp(Expression.getRealConst(e));
+        r = realExp(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // log function
     case("log",DAE.CALL(expLst={e}))
       equation
-        r = Expression.getRealConst(e);
+        r = Expression.toReal(e);
         true = r > 0;
         r = realLn(r);
       then
@@ -1599,7 +1599,7 @@ algorithm
     // log10 function
     case("log10",DAE.CALL(expLst={e}))
       equation
-        r = Expression.getRealConst(e);
+        r = Expression.toReal(e);
         true = r > 0;
         r = realLog10(r);
       then
@@ -1614,8 +1614,8 @@ algorithm
     // min function on reals
     case("min",DAE.CALL(expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL())))
       equation
-        v1 = Expression.getRealConst(e);
-        v2 = Expression.getRealConst(e1);
+        v1 = Expression.toReal(e);
+        v2 = Expression.toReal(e1);
         r = realMin(v1, v2);
       then DAE.RCONST(r);
 
@@ -1634,8 +1634,8 @@ algorithm
     // max function on reals
     case("max",DAE.CALL(expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL())))
       equation
-        v1 = Expression.getRealConst(e);
-        v2 = Expression.getRealConst(e1);
+        v1 = Expression.toReal(e);
+        v2 = Expression.toReal(e1);
         r = realMax(v1, v2);
       then DAE.RCONST(r);
 
@@ -3446,8 +3446,8 @@ algorithm
 
     case(DAE.LESS(),_,_)
       equation
-        v1 = Expression.getRealConst(e1);
-        v2 = Expression.getRealConst(e2);
+        v1 = Expression.toReal(e1);
+        v2 = Expression.toReal(e2);
         b = v1 < v2;
       then b;
 
@@ -3459,8 +3459,8 @@ algorithm
 
     case(DAE.LESSEQ(),_,_)
       equation
-        v1 = Expression.getRealConst(e1);
-        v2 = Expression.getRealConst(e2);
+        v1 = Expression.toReal(e1);
+        v2 = Expression.toReal(e2);
         b = v1 <= v2;
       then b;
 
@@ -3472,8 +3472,8 @@ algorithm
 
     case(DAE.EQUAL(),_,_)
       equation
-        v1 = Expression.getRealConst(e1);
-        v2 = Expression.getRealConst(e2);
+        v1 = Expression.toReal(e1);
+        v2 = Expression.toReal(e2);
       then realEq(v1,v2);
 
     // Express GT, GE, NE using LE, LT, EQ
@@ -4618,8 +4618,8 @@ algorithm
     // constants
     case (_,oper,e1,e2)
       equation
-        b1 = Expression.getBoolConst(e1);
-        b2 = Expression.getBoolConst(e2);
+        b1 = Expression.toBool(e1);
+        b2 = Expression.toBool(e2);
         e3 = simplifyLBinaryConst(oper, b1, b2);
       then e3;
 
@@ -4820,7 +4820,7 @@ algorithm
     // not true => false, not false => true
     case (_,DAE.NOT(DAE.T_BOOL()),e1)
       equation
-        b1 = Expression.getBoolConst(e1);
+        b1 = Expression.toBool(e1);
         b1 = not b1;
       then DAE.BCONST(b1);
 

@@ -1722,7 +1722,7 @@ algorithm
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
-        isIf = if isCon then Expression.getBoolConst(exp1) else false;
+        isIf = if isCon then Expression.toBool(exp1) else false;
 
         // check if its the IF case, if true then evaluate:
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
@@ -1791,7 +1791,7 @@ algorithm
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
-        isElseIf = if isCon then Expression.getBoolConst(exp1) else false;
+        isElseIf = if isCon then Expression.toBool(exp1) else false;
         if isCon and not isElseIf then
           (stmts,isElseIf) = evaluateElse(else_,info);
         end if;
@@ -2159,7 +2159,7 @@ algorithm
           //ExpressionDump.dumpExp(exp);
         // check if this could be evaluated
         const = Expression.isConst(exp);
-        isElseIf = if const then Expression.getBoolConst(exp) else false;
+        isElseIf = if const then Expression.toBool(exp) else false;
         //print("do we have to use the elseif: "+boolString(isElseIf)+"\n");
         if const and isElseIf then
           (stmts,(funcs,repl,idx)) = evaluateFunctions_updateStatement(stmts,(funcs,replIn,idx),{});  // is this elseif case
@@ -2486,7 +2486,7 @@ algorithm
          end if;
          (constOutExps,_,varOutExps) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
 
-         _ = (not listEmpty(constOutExps)) and listEmpty(varOutExps);
+         //_ = (not listEmpty(constOutExps)) and listEmpty(varOutExps);
          //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
          //bcall(not predicted,print,"remove the replacement for: "+stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+"\n");
          repl = replIn;
