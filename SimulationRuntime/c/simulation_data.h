@@ -208,9 +208,9 @@ typedef struct DATA_STRING_ALIAS
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
 {
-  const char* quantity;            /* = "" */
-  const char* unit;                /* = "" */
-  const char* displayUnit;         /* = "" */
+  modelica_string quantity;            /* = "" */
+  modelica_string unit;                /* = "" */
+  modelica_string displayUnit;         /* = "" */
   modelica_real min;                   /* = -Inf */
   modelica_real max;                   /* = +Inf */
   modelica_boolean fixed;              /* depends on the type */
@@ -222,7 +222,7 @@ typedef struct REAL_ATTRIBUTE
 
 typedef struct INTEGER_ATTRIBUTE
 {
-  const char* quantity;            /* = "" */
+  modelica_string quantity;            /* = "" */
   modelica_integer min;                /* = -Inf */
   modelica_integer max;                /* = +Inf */
   modelica_boolean fixed;              /* depends on the type */
@@ -232,7 +232,7 @@ typedef struct INTEGER_ATTRIBUTE
 
 typedef struct BOOLEAN_ATTRIBUTE
 {
-  const char* quantity;            /* = "" */
+  modelica_string quantity;            /* = "" */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useStart;           /* = false */
   modelica_boolean start;              /* = false */
@@ -240,7 +240,7 @@ typedef struct BOOLEAN_ATTRIBUTE
 
 typedef struct STRING_ATTRIBUTE
 {
-  const char* quantity;            /* = "" */
+  modelica_string quantity;            /* = "" */
   modelica_boolean useStart;           /* = false */
   modelica_string start;               /* = "" */
 }STRING_ATTRIBUTE;
