@@ -1594,17 +1594,17 @@ protected
   String ts_str;
 algorithm
   try
-     SOME(SCode.COMMENT(annotation_ = SOME(ann))) := comment;
-     val := SCode.getNamedAnnotation(ann, "tearingSelect");
-     ts_str := Absyn.crefIdent(Absyn.expCref(val));
-     ts := match(ts_str)
+    SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
+    val := SCode.getNamedAnnotation(ann, "tearingSelect");
+    ts_str := Absyn.crefIdent(Absyn.expCref(val));
+    ts := match(ts_str)
       case "always" then SOME(BackendDAE.ALWAYS());
-        case "prefer" then SOME(BackendDAE.PREFER());
-        case "avoid"  then SOME(BackendDAE.AVOID());
-        case "never"  then SOME(BackendDAE.NEVER());
-    case "default" then SOME(BackendDAE.DEFAULT());
-        else NONE();
-     end match;
+      case "prefer" then SOME(BackendDAE.PREFER());
+      case "avoid"  then SOME(BackendDAE.AVOID());
+      case "never"  then SOME(BackendDAE.NEVER());
+      case "default" then SOME(BackendDAE.DEFAULT());
+      else NONE();
+    end match;
   else
     ts := NONE();
   end try;
