@@ -150,7 +150,7 @@ fi
 
 TRY_FLAGS="-fno-stack-protector"
 # GCC 4.8 generates bad code with some optimisation flags. Let's try to disable them.
-if $CC --version | head -n1 | sed "s/ *[(].*[)]//" | grep -q 4[.]8; then
+if $CC --version | head -n1 | grep -q gcc | sed "s/ *[(].*[)]//" | grep -q 4[.]8; then
   TRY_FLAGS="$TRY_FLAGS -fno-tree-ch -fno-tree-vrp -fno-tree-pre"
 fi
 for flag in $TRY_FLAGS; do

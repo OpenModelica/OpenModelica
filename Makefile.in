@@ -153,7 +153,7 @@ ifeq (@MODELICA3D@,)
 	@echo Skipping Modelica3D
 else
 	cd 3rdParty/modelica3d && mkdir -p build
-	cd 3rdParty/modelica3d/build && $(CMAKE_RPATH) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 $(BOOST_INCLUDE) ..
+	cd 3rdParty/modelica3d/build && $(CMAKE_RPATH) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 $(BOOST_INCLUDE) ..
 	$(MAKE) -C 3rdParty/modelica3d/build
 	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk$(SHREXT) 3rdParty/modelica3d/build/lib/proc3d/libproc3d$(SHREXT) build/lib/
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libproc3d.dylib build/lib/libproc3d.dylib

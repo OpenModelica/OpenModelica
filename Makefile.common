@@ -229,7 +229,7 @@ CMinpack-clean:
 	rm -f 3rdParty/CMinpack/build/Makefile
 
 metis:
-	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)
+	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)
 	cp 3rdParty/metis-5.1.0/libmetis/libmetis.a $(builddir_lib)/omc/
 	
 metis-clean:
