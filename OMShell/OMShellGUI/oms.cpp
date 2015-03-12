@@ -365,37 +365,37 @@ void OMS::createMoshEdit()
 void OMS::createAction()
 {
   loadModel_ = new QAction( tr("&Open"), this );
-  loadModel_->setShortcut( "Ctrl+O" );
+  loadModel_->setShortcut(QKeySequence("Ctrl+O"));
   loadModel_->setStatusTip( tr("Open mo-file") );
   connect( loadModel_, SIGNAL( triggered() ),
     this, SLOT( loadModel() ));
 
   loadModelicaLibrary_ = new QAction( tr("Load &Modelica Library"), this );
-  loadModelicaLibrary_->setShortcut( "Ctrl+L" );
+  loadModelicaLibrary_->setShortcut(QKeySequence("Ctrl+L"));
   loadModelicaLibrary_->setStatusTip( tr("Load the Modelica Standard Library") );
   connect( loadModelicaLibrary_, SIGNAL( triggered() ),
     this, SLOT( loadModelicaLibrary() ));
 
   exit_ = new QAction( tr("&Exit"), this );
-  exit_->setShortcut( "Ctrl+D" );
+  exit_->setShortcut(QKeySequence("Ctrl+D"));
   exit_->setStatusTip( tr("Quit the application") );
   connect( exit_, SIGNAL( triggered() ),
     this, SLOT( close() ));
 
   cut_ = new QAction( tr("Cu&t"), this );
-  cut_->setShortcut( "Ctrl+X" );
+  cut_->setShortcut(QKeySequence("Ctrl+X"));
   cut_->setStatusTip( tr("Cut the selection") );
   connect( cut_, SIGNAL( triggered() ),
     this, SLOT( cut() ));
 
   copy_ = new QAction( tr("&Copy"), this );
-  copy_->setShortcut( "Ctrl+C" );
+  copy_->setShortcut(QKeySequence("Ctrl+C"));
   copy_->setStatusTip( tr("Copy the selection") );
   connect( copy_, SIGNAL( triggered() ),
     this, SLOT( copy() ));
 
   paste_ = new QAction( tr("&Paste"), this );
-  paste_->setShortcut( "Ctrl+V" );
+  paste_->setShortcut(QKeySequence("Ctrl+V"));
   paste_->setStatusTip( tr("Insert from clipboard") );
   connect( paste_, SIGNAL( triggered() ),
     this, SLOT( paste() ));
@@ -418,7 +418,7 @@ void OMS::createAction()
     this, SLOT( aboutQT() ));
 
   clearWindow_ = new QAction( tr("Cl&ear"), this );
-  clearWindow_->setShortcut( "Ctrl+Shift+C" );
+  clearWindow_->setShortcut(QKeySequence("Ctrl+Shift+C"));
   clearWindow_->setStatusTip( tr("Clear the input window") );
   connect( clearWindow_, SIGNAL( triggered() ),
     this, SLOT( clear() ));
