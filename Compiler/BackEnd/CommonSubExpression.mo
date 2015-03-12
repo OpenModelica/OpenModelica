@@ -68,21 +68,32 @@ public function CSE "authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germ
   NOTE: This is currently just an experimental prototype to demonstrate interesting effects."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  Boolean bCSE_CALL = Flags.getConfigBool(Flags.CSE_CALL);
+  Boolean bCSE_EACHCALL = Flags.getConfigBool(Flags.CSE_EACHCALL);
+  Boolean bCSE_BINARY = Flags.getConfigBool(Flags.CSE_BINARY);
 algorithm
-  if Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL) or Flags.getConfigBool(Flags.CSE_BINARY) then
-    outDAE := BackendDAEUtil.mapEqSystemAndFold(inDAE, CSE1, 1);
+  if bCSE_CALL or bCSE_EACHCALL or bCSE_BINARY then
+    outDAE := BackendDAEUtil.mapEqSystemAndFold(inDAE, CSE1, (1, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
   end if;
 end CSE;
+
+public function CSE_EachCall
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+algorithm
+  outDAE := BackendDAEUtil.mapEqSystemAndFold(inDAE, CSE1, (1, false, true, false));
+end CSE_EachCall;
 
 protected function CSE1
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  input Integer inStartIndex;
+  input tuple<Integer, Boolean, Boolean, Boolean> inTpl;
   output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared = inShared;
-  output Integer outStartIndex = inStartIndex;
+  output tuple<Integer, Boolean, Boolean, Boolean> outTpl;
 algorithm
-  outSystem := matchcontinue(inSystem)
+  (outSystem, outTpl) := matchcontinue(inSystem, inTpl)
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
@@ -92,8 +103,12 @@ algorithm
       list<BackendDAE.Equation> eqList;
       HashTableExpToExp.HashTable HT;
       HashTableExpToIndex.HashTable HT2, HT3;
+      Integer index;
+      Boolean bCSE_CALL;
+      Boolean bCSE_EACHCALL;
+      Boolean bCSE_BINARY;
 
-    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind) equation
+    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind), (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY)) equation
     //if Flags.isSet(Flags.DUMP_CSE) then
     //  BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
     //  BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
@@ -104,13 +119,13 @@ algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("collect statistics\n========================================\n");
       end if;
-      (HT, HT2, outStartIndex) = BackendEquation.traverseEquationArray(orderedEqs, createStatistics, (HT, HT2, inStartIndex));
+      (HT, HT2, index, _, _, _) = BackendEquation.traverseEquationArray(orderedEqs, createStatistics, (HT, HT2, index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
     //BaseHashTable.dumpHashTable(HT);
     //BaseHashTable.dumpHashTable(HT2);
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("\nstart substitution\n========================================\n");
       end if;
-      (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}));
+      (orderedEqs, (HT, HT2, _, eqList, varList, _, _, _)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("\n");
       end if;
@@ -120,22 +135,22 @@ algorithm
         BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
         BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
       end if;
-    then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
 
-    else inSystem;
+    else (inSystem, inTpl);
   end matchcontinue;
 end CSE1;
 
 protected function substituteCSE
   input BackendDAE.Equation inEq;
-  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> inTuple;
+  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>, Boolean, Boolean, Boolean> inTuple;
   output BackendDAE.Equation outEq;
-  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> outTuple;
+  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>, Boolean, Boolean, Boolean> outTuple;
 algorithm
   (outEq, outTuple) := match(inEq)
     local
       BackendDAE.Equation eq;
-      tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> tpl;
+      tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>, Boolean, Boolean, Boolean> tpl;
 
     case BackendDAE.ALGORITHM() then (inEq, inTuple);
     case BackendDAE.WHEN_EQUATION() then (inEq, inTuple);  // not necessary
@@ -154,19 +169,19 @@ end substituteCSE;
 
 protected function substituteCSE1
   input DAE.Exp inExp;
-  input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>, DAE.ElementSource> inTuple;
+  input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>, Boolean, Boolean, Boolean>, DAE.ElementSource> inTuple;
   output DAE.Exp outExp;
-  output tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>, DAE.ElementSource> outTuple;
+  output tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>, Boolean, Boolean, Boolean>, DAE.ElementSource> outTuple;
 algorithm
   (outExp, outTuple) := Expression.traverseExpTopDown(inExp, substituteCSE_main, inTuple);
 end substituteCSE1;
 
 protected function substituteCSE_main
   input DAE.Exp inExp;
-  input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>, DAE.ElementSource> inTuple;
+  input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>, Boolean, Boolean, Boolean>, DAE.ElementSource> inTuple;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>, DAE.ElementSource> outTuple;
+  output tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>, Boolean, Boolean, Boolean>, DAE.ElementSource> outTuple;
 algorithm
   (outExp, cont, outTuple) := matchcontinue(inExp, inTuple)
     local
@@ -183,9 +198,9 @@ algorithm
       DAE.Exp expReplaced;
       list<DAE.Exp> expLst;
       DAE.ElementSource source;
+      Boolean bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY;
 
-    case (DAE.BINARY(), ((HT, HT2, HT3, eqLst, varLst), source)) equation
-      true = Flags.getConfigBool(Flags.CSE_BINARY);
+    case (DAE.BINARY(), ((HT, HT2, HT3, eqLst, varLst, bCSE_CALL, bCSE_EACHCALL, true), source)) equation
       value = BaseHashTable.get(inExp, HT);
       counter = BaseHashTable.get(value, HT2);
       true = intGt(counter, 1);
@@ -200,15 +215,15 @@ algorithm
         eq = BackendEquation.generateEquation(value, inExp, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
         eqLst = eq::eqLst;
       end if;
-    then (value, true, ((HT, HT2, HT3, eqLst, varLst), source));
+    then (value, true, ((HT, HT2, HT3, eqLst, varLst, bCSE_CALL, bCSE_EACHCALL, true), source));
 
-    case (DAE.CALL(path, expLst, attr), ((HT, HT2, HT3, eqLst, varLst), source)) equation
-      true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
+    case (DAE.CALL(path, expLst, attr), ((HT, HT2, HT3, eqLst, varLst, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY), source)) equation
+      true = bCSE_CALL or bCSE_EACHCALL;
 
       value = BaseHashTable.get(inExp, HT);
       counter = BaseHashTable.get(value, HT2);
 
-      if not Flags.getConfigBool(Flags.CSE_EACHCALL) then
+      if not bCSE_EACHCALL then
         true = intGt(counter, 1);
       end if;
 
@@ -226,7 +241,7 @@ algorithm
         expReplaced = prepareExpForReplace(value);
 
         // traverse all arguments of the function
-        (expLst, ((HT, HT2, HT3, eqLst1, varLst1), source)) = Expression.traverseExpList(expLst, substituteCSE1, ((HT, HT2, HT3, {}, {}), source));
+        (expLst, ((HT, HT2, HT3, eqLst1, varLst1, _, _, _), source)) = Expression.traverseExpList(expLst, substituteCSE1, ((HT, HT2, HT3, {}, {}, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY), source));
         exp1 = DAE.CALL(path, expLst, attr);
         varLst = listAppend(varLst1, varLst);
         eqLst = listAppend(eqLst1, eqLst);
@@ -256,7 +271,7 @@ algorithm
         // use replaced expression
         value = prepareExpForReplace(value);
       end if;
-    then (value, false, ((HT, HT2, HT3, eqLst, varLst), source));
+    then (value, false, ((HT, HT2, HT3, eqLst, varLst, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY), source));
 
     else (inExp, true, inTuple);
   end matchcontinue;
@@ -264,14 +279,14 @@ end substituteCSE_main;
 
 protected function createStatistics
   input BackendDAE.Equation inEq;
-  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> inTuple;
+  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer, Boolean, Boolean, Boolean> inTuple;
   output BackendDAE.Equation outEq;
-  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> outTuple;
+  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer, Boolean, Boolean, Boolean> outTuple;
 algorithm
   (outEq, outTuple) := match(inEq)
     local
       BackendDAE.Equation eq;
-      tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> tpl;
+      tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer, Boolean, Boolean, Boolean> tpl;
 
     case BackendDAE.ALGORITHM() then (inEq, inTuple);
     case BackendDAE.WHEN_EQUATION() then (inEq, inTuple);  // not necessary
@@ -290,19 +305,19 @@ end createStatistics;
 
 protected function createStatistics1
   input DAE.Exp inExp;
-  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> inTuple;
+  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer, Boolean, Boolean, Boolean> inTuple;
   output DAE.Exp outExp;
-  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> outTuple;
+  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer, Boolean, Boolean, Boolean> outTuple;
 algorithm
   (outExp, outTuple) := Expression.traverseExpTopDown(inExp, createStatistics_main, inTuple);
 end createStatistics1;
 
 protected function createStatistics_main
   input DAE.Exp inExp;
-  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> inTuple;
+  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer, Boolean, Boolean, Boolean> inTuple;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> outTuple;
+  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer, Boolean, Boolean, Boolean> outTuple;
 algorithm
   (outExp, cont, outTuple) := matchcontinue(inExp, inTuple)
     local
@@ -320,9 +335,9 @@ algorithm
       BackendDAE.Var var;
       BackendDAE.Equation eq;
       DAE.Type tp;
+      Boolean bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY;
 
-    case (DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) equation
-      true = Flags.getConfigBool(Flags.CSE_BINARY);
+    case (DAE.BINARY(exp1, op, exp2), (HT, HT2, i, bCSE_CALL, bCSE_EACHCALL, true)) equation
       if checkOp(op) then
         if BaseHashTable.hasKey(inExp, HT) then
           value = BaseHashTable.get(inExp, HT);
@@ -347,7 +362,7 @@ algorithm
           print("  - cse binary expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
         end if;
       end if;
-    then (inExp, true, (HT, HT2, i));
+    then (inExp, true, (HT, HT2, i, bCSE_CALL, bCSE_EACHCALL, true));
 
     // skip some kinds of expressions
     case (DAE.IFEXP(), _)
@@ -363,8 +378,8 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("homotopy")), _)
     then (inExp, false, inTuple);
 
-    case (DAE.CALL(attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
-      true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
+    case (DAE.CALL(attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY)) equation
+      true = bCSE_CALL or bCSE_EACHCALL;
       if BaseHashTable.hasKey(inExp, HT) then
         value = BaseHashTable.get(inExp, HT);
         counter = BaseHashTable.get(value, HT2) + 1;
@@ -379,7 +394,7 @@ algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("  - cse call expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
       end if;
-    then (inExp, true, (HT, HT2, i));
+    then (inExp, true, (HT, HT2, i, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
 
     else (inExp, true, inTuple);
   end matchcontinue;

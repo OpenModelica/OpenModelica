@@ -7501,7 +7501,7 @@ algorithm
                        (EvaluateFunctions.evalFunctions, "evalFunc", false),
                        (UnitCheck.unitChecking, "unitChecking", true),
                        (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false),
-                       (CommonSubExpression.CSE, "CSE", false),
+                       (CommonSubExpression.CSE_EachCall, "CSE_EachCall", false),
                        (BackendDump.dumpDAE, "dumpDAE", false),
                        (XMLDump.dumpDAEXML, "dumpDAEXML", false)
                        };
