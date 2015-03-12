@@ -382,7 +382,7 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)})
       equation
         matrix = list(DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),true,list(if i==j then DAE.ICONST(1) else DAE.ICONST(0) for i in 1:n)) for j in 1:n);
-      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),true,matrix);
+      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,matrix);
 
     case DAE.CALL(path = Absyn.IDENT(name = "diagonal"), expLst = {DAE.ARRAY(array=expl,ty=tp)})
       equation
@@ -390,7 +390,7 @@ algorithm
         tp = Types.arrayElementType(tp);
         zero = Expression.makeConstZero(tp);
         matrix = list(DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),true,list(if i==j then listGet(expl,i) else zero for i in 1:n)) for j in 1:n);
-      then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),true,matrix);
+      then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,matrix);
 
     // arcxxx(xxx(e)) => e; xxx(arcxxx(e)) => e
     case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("asin"),expLst={e})}))
