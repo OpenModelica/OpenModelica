@@ -872,6 +872,12 @@ function realAsin
 external "builtin" y=asin(x);
 end realAsin;
 
+function realTan
+  input Real x;
+  output Real y;
+external "builtin" y=tan(x);
+end realTan;
+
 function realAtan
   input Real x;
   output Real y;

@@ -1576,9 +1576,7 @@ algorithm
     // tangent function
     case("tan",DAE.CALL(expLst={e}))
       equation
-        v1 = realSin(Expression.toReal(e));
-        v2 = realCos(Expression.toReal(e));
-        r = v1 / v2;
+        r = realTan(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // DAE.Exp function

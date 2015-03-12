@@ -1262,7 +1262,7 @@ protected function cevalKnownExternalFuncs2 "Helper function to cevalKnownExtern
 algorithm
   outValue := match (id,inValuesValueLst,inMsg)
     local
-      Real rv_1,rv,rv1,rv2,sv,cv,r;
+      Real rv_1,rv,rv1,rv2,r;
       String str,fileName,re,str1,str2;
       Integer start, stop, i, lineNumber, n;
       Boolean b, extended, insensitive;
@@ -1332,9 +1332,7 @@ algorithm
         Values.REAL(rv_1);
     case ("tan",{Values.REAL(real = rv)},_)
       equation
-        sv = realSin(rv);
-        cv = realCos(rv);
-        rv_1 = sv / cv;
+        rv_1 = realTan(rv);
       then
         Values.REAL(rv_1);
     case ("tanh",{Values.REAL(real = rv)},_)
@@ -1430,7 +1428,7 @@ protected function cevalMatrixElt "Evaluates the expression of a matrix construc
   output list<Values.Value> outValues;
 algorithm
   (outCache, outValues) :=
-  match (inCache, inEnv, inMatrix, inBoolean, inMsg, numIter)
+  match (inCache, inEnv, inMatrix, inBoolean, inMsg)
     local
       Values.Value v;
       list<Values.Value> vl;
@@ -1440,14 +1438,14 @@ algorithm
       Boolean impl;
       Absyn.Msg msg;
       FCore.Cache cache;
-    case (cache,env,(expl :: expll),impl,msg,_)
+    case (cache,env,(expl :: expll),impl,msg)
       equation
         (cache,vl,_) = cevalList(cache,env,expl,impl,NONE(),msg,numIter);
         v = ValuesUtil.makeArray(vl);
         (cache,vl)= cevalMatrixElt(cache,env, expll, impl,msg,numIter);
       then
         (cache,v :: vl);
-    case (cache,_,{},_,_,_) then (cache,{});
+    case (cache,_,{},_,_) then (cache,{});
   end match;
 end cevalMatrixElt;
 
@@ -3194,19 +3192,17 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Real rv,sv,cv,rv_1;
+      Real rv,rv_1;
       FCore.Graph env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       FCore.Cache cache;
-    case (cache,env,{exp},impl,st,msg,_) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
+    case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        sv = realSin(rv);
-        cv = realCos(rv);
-        rv_1 = sv / cv;
+        rv_1 = realTan(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3235,7 +3231,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       FCore.Cache cache;
-    case (cache,env,{exp},impl,st,msg,_) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
+    case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
          rv_1 = realTanh(rv);
