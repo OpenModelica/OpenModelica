@@ -2845,6 +2845,7 @@ case "gcc" then
                 end match
             let CC = if (compileForMPI) then "mpicc" else '<%makefileParams.ccompiler%>'
             let CXX = if (compileForMPI) then "mpicxx" else '<%makefileParams.cxxcompiler%>'
+            let extraCppFlags = (getConfigStringList(CPP_FLAGS) |> flag => '<%flag%>'; separator=" ")
             let MPIEnvVars = if (compileForMPI)
                 then 'OMPI_MPICC=<%makefileParams.ccompiler%> <%\n%>OMPI_MPICXX=<%makefileParams.cxxcompiler%>' else ""
             <<
@@ -2867,7 +2868,7 @@ case "gcc" then
             LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS)
             LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -lOMCppModelicaUtilities -L"$(BOOST_LIBS)" $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%>
             LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS)
-            CPPFLAGS = $(CFLAGS)
+            CPPFLAGS = $(CFLAGS) <%extraCppFlags%>
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
             MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
