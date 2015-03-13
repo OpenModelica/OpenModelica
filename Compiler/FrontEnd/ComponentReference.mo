@@ -3017,7 +3017,7 @@ protected
 algorithm
   // Expand each subscript into a list of subscripts.
   subslst := List.threadMap(inSubscripts, inDimensions, Expression.expandSubscript);
-  
+
   subslst := List.combination(subslst);
   for subs in subslst loop
     outCrefs := makeCrefIdent(inId,inType,subs)::outCrefs;

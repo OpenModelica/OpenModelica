@@ -6265,7 +6265,7 @@ algorithm
       (basety,dims) = Types.flattenArrayTypeOpt(ty);
       ty = DAE.T_ARRAY(basety, dims, Types.getTypeSource(basety));
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
-      
+
       lhse = DAE.CREF(left,ty);
       // Expand the tmp cref and create the list of rhs vars
       // to update the original lhs vars
