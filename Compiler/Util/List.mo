@@ -6188,10 +6188,10 @@ public function combinationMap1<TI, TO, ArgT1>
     output TO outElement;
   end MapFunc;
 protected
-  list<list<TI>> elems;
+  list<TO> elems;
 algorithm
-  elems := listReverse(inElements);
-  outElements := combinationMap1_tail(elems, inMapFunc, inArg, {}, {});
+  elems := combinationMap1_tail(inElements, inMapFunc, inArg, {}, {});
+  outElements := listReverse(elems);
 end combinationMap1;
 
 protected function combinationMap1_tail<TI, TO, ArgT1>
@@ -6210,14 +6210,20 @@ protected function combinationMap1_tail<TI, TO, ArgT1>
 algorithm
   outElements := match(inElements)
     local
-      TO elem;
       list<TI> head;
       list<list<TI>> rest;
+      list<TO> acc;
 
     case head :: rest
-      then combinationMap1_tail2(head, rest, inMapFunc, inArg, inCombination, inAccumElems);
+      algorithm
+        acc := inAccumElems;
+        for e in head loop
+          acc := combinationMap1_tail(rest, inMapFunc, inArg, e :: inCombination, acc);
+        end for;
+      then
+        acc;
 
-    else inMapFunc(inCombination, inArg) :: inAccumElems;
+    else inMapFunc(listReverse(inCombination), inArg) :: inAccumElems;
 
   end match;
 end combinationMap1_tail;
