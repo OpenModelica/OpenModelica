@@ -4907,7 +4907,7 @@ algorithm
         cr1 = ComponentReference.crefPrefixDer(cr);
         e = Expression.crefExp(cr);
         ((e,_)) = Expression.replaceExp(Expression.expSub(e1,e2), DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), Expression.crefExp(cr1));
-        de = Differentiate.differentiateExpSolve(e, cr1, NONE());
+        de = getFactorForX(e, cr1, NONE());
         (de,_) = ExpressionSimplify.simplify(de);
         (_,crlst) = Expression.traverseExp(de, Expression.traversingComponentRefFinder, {});
         solvab = adjacencyRowEnhanced2(cr1,de,crlst,vars,kvars);
@@ -4921,7 +4921,7 @@ algorithm
         // de/dvar
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, rabs);
         e = Expression.expSub(e1,e2);
-        de = Differentiate.differentiateExpSolve(e, cr, NONE());
+        de = getFactorForX(e, cr, NONE());
         (de,_) = ExpressionSimplify.simplify(de);
         (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
         solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,kvars);
@@ -4932,6 +4932,26 @@ algorithm
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow);
   end matchcontinue;
 end adjacencyRowEnhanced1;
+
+protected function getFactorForX
+  input DAE.Exp e;
+  input DAE.ComponentRef cr "x";
+  input Option<DAE.FunctionTree> functions;
+  output DAE.Exp f;
+protected
+  DAE.Type tp = Expression.typeof(e);
+  Boolean unsafe = Flags.isSet(Flags.ADVANCE_TEARING);
+algorithm
+  f := matchcontinue(unsafe)
+    case true
+    equation
+      // 1*x = f(y)
+      _ = ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(-1));
+    then Expression.makeConstOne(tp);
+    else Differentiate.differentiateExpSolve(e, cr, functions);
+    end matchcontinue;
+end getFactorForX;
+
 
 protected function expCrefLstHasCref
   input list<DAE.Exp> iExpLst;
