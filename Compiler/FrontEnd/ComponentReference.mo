@@ -1253,7 +1253,11 @@ algorithm
       DAE.ComponentRef cr;
     case (cr)
       equation
-        ((subs as (_ :: _))) = crefSubs(cr);
+        if stringEqual(Config.simCodeTarget(), "Cpp") then
+          ((subs as (_ :: _))) = crefLastSubs(cr);
+        else
+          ((subs as (_ :: _))) = crefSubs(cr);
+        end if;
         // fails if any mapped functions returns false
       then List.mapAllValueBool(subs, Expression.subscriptIsFirst, true);
     else false;
@@ -1809,7 +1813,11 @@ algorithm
 
     case (_) equation
       true = crefIsFirstArrayElt(name);
-      arrayCrefInner = crefStripSubs(name);
+      if stringEqual(Config.simCodeTarget(), "Cpp") then
+        arrayCrefInner = crefStripLastSubs(name);
+      else
+        arrayCrefInner = crefStripSubs(name);
+      end if;
     then SOME(arrayCrefInner);
 
     else
