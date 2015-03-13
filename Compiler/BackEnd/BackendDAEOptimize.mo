@@ -166,7 +166,7 @@ algorithm
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"), {e}, attr));
-      (e, _) = Expression.traverseExp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
     then (e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
@@ -188,7 +188,7 @@ algorithm
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"), {e}, attr));
-      (e, _) = Expression.traverseExp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
     then (e, (knvars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
@@ -205,7 +205,7 @@ algorithm
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
       (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"), {e}, attr));
-      (e, _) = Expression.traverseExp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
+      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
     then (e, (knvars, aliasvars, true));
 
     else (inExp, inTpl);
@@ -296,7 +296,7 @@ algorithm
     then (listReverse(iAcc), inTypeA);
 
     case BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::whenClause equation
-      (condition, arg) = Expression.traverseExp(condition, func, inTypeA);
+      (condition, arg) = Expression.traverseExpBottomUp(condition, func, inTypeA);
       (whenClause, arg) = traverseWhenClauseExps(whenClause, func, arg, BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::iAcc);
     then (whenClause, arg);
   end match;
@@ -327,7 +327,7 @@ algorithm
     then (listReverse(iAcc), inTypeA);
 
     case BackendDAE.ZERO_CROSSING(relation_, occurEquLst, occurWhenLst)::zeroCrossing equation
-      (relation_, arg) = Expression.traverseExp(relation_, func, inTypeA);
+      (relation_, arg) = Expression.traverseExpBottomUp(relation_, func, inTypeA);
       (zeroCrossing, arg) = traverseZeroCrossingExps(zeroCrossing, func, arg, BackendDAE.ZERO_CROSSING(relation_, occurEquLst, occurWhenLst)::iAcc);
     then (zeroCrossing, arg);
   end match;
@@ -728,7 +728,7 @@ algorithm
 
     case (v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp)),(repl,vars))
       equation
-        (exp1, _) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
+        (exp1, _) = Expression.traverseExpBottomUp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1,NONE());
       then (v,(repl_1,vars));
 
@@ -1247,7 +1247,7 @@ algorithm
       BackendDAE.Variables vars,vars1;
     case (exp,(vars,vars1))
       equation
-         (_,(_,vars1)) = Expression.traverseExp(exp,checkUnusedParameterExp,(vars,vars1));
+         (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedParameterExp,(vars,vars1));
        then (exp,(vars,vars1));
     else (inExp,inTpl);
   end matchcontinue;
@@ -1283,7 +1283,7 @@ algorithm
     case (e as DAE.CREF(ty = DAE.T_ARRAY()),(vars,vars1))
       equation
         (e1,true) = Expression.extendArrExp(e,false);
-        (_,(vars,vars1)) = Expression.traverseExp(e1,checkUnusedParameterExp,(vars,vars1));
+        (_,(vars,vars1)) = Expression.traverseExpBottomUp(e1,checkUnusedParameterExp,(vars,vars1));
       then (e, (vars,vars1));
 
     // case for functionpointers
@@ -1362,7 +1362,7 @@ algorithm
       BackendDAE.Variables vars,vars1;
     case (exp,(vars,vars1))
       equation
-         (_,(_,vars1)) = Expression.traverseExp(exp,checkUnusedVariablesExp,(vars,vars1));
+         (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedVariablesExp,(vars,vars1));
        then (exp,(vars,vars1));
     else (inExp,inTpl);
   end matchcontinue;
@@ -1398,7 +1398,7 @@ algorithm
     case (e as DAE.CREF(ty = DAE.T_ARRAY()),(vars,vars1))
       equation
         (e1,true) = Expression.extendArrExp(e,false);
-        (_,(vars,vars1)) = Expression.traverseExp(e1,checkUnusedVariablesExp,(vars,vars1));
+        (_,(vars,vars1)) = Expression.traverseExpBottomUp(e1,checkUnusedVariablesExp,(vars,vars1));
       then (e, (vars,vars1));
 
     // case for functionpointers
@@ -1555,7 +1555,7 @@ protected function checkUnusedFunctions
   output DAE.Exp outExp;
   output DAE.FunctionTree outUsedFunctions;
 algorithm
-  (outExp, outUsedFunctions) := Expression.traverseExp(inExp,
+  (outExp, outUsedFunctions) := Expression.traverseExpBottomUp(inExp,
     function checkUnusedFunctionsExp(inFunctions = inFunctions), inUsedFunctions);
 end checkUnusedFunctions;
 
@@ -2032,7 +2032,7 @@ public function countOperationsExp
   output DAE.Exp outExp;
   output tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> outTpl;
 algorithm
-  (outExp,outTpl) := Expression.traverseExp(inExp,function traversecountOperationsExp(shared=shared),inTpl);
+  (outExp,outTpl) := Expression.traverseExpBottomUp(inExp,function traversecountOperationsExp(shared=shared),inTpl);
 end countOperationsExp;
 
 protected function traversecountOperationsExp
@@ -2355,7 +2355,7 @@ algorithm
       Boolean b,b1;
     case (e1 as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(knvars,b))
       equation
-        (cond,(_,b1)) = Expression.traverseExp(cond, simplifyEvaluatedParamter, (knvars,false));
+        (cond,(_,b1)) = Expression.traverseExpBottomUp(cond, simplifyEvaluatedParamter, (knvars,false));
         e2 = if b1 then DAE.IFEXP(cond,expThen,expElse) else e1;
         (e2,_) = ExpressionSimplify.condsimplify(b1,e2);
       then (e2,(knvars,b or b1));
@@ -3584,7 +3584,7 @@ protected function traverserreplaceEdgeChange "author: Frenkel TUD 2012-11"
   output DAE.Exp oe;
   output Boolean ob;
 algorithm
-  (oe,ob) := Expression.traverseExp(e,traverserExpreplaceEdgeChange,b);
+  (oe,ob) := Expression.traverseExpBottomUp(e,traverserExpreplaceEdgeChange,b);
 end traverserreplaceEdgeChange;
 
 protected function traverserExpreplaceEdgeChange "author: Frenkel TUD 2012-11"
@@ -3833,7 +3833,7 @@ algorithm
   e := inExp;
   (vars, shared, ops) := tpl;
   ext_arg := (vars, shared, false);
-  (e1, ext_arg) := Expression.traverseExp(e, expandDerExp, ext_arg);
+  (e1, ext_arg) := Expression.traverseExpBottomUp(e, expandDerExp, ext_arg);
   (vars, shared, b) := ext_arg;
   ops := List.consOnTrue(b, DAE.OP_DIFFERENTIATE(DAE.crefTime, e, e1), ops);
   outExp := e1;
@@ -3868,13 +3868,13 @@ algorithm
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_ARRAY())}), (vars, shared as BackendDAE.SHARED(), b))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
-        (e,tpl) = Expression.traverseExp(e2, expandDerExp, (vars, shared, b));
+        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, (vars, shared, b));
       then (e,tpl);
     // case for records
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}), (vars, shared as BackendDAE.SHARED(), b))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
-        (e,tpl) = Expression.traverseExp(e2, expandDerExp, (vars, shared, b));
+        (e,tpl) = Expression.traverseExpBottomUp(e2, expandDerExp, (vars, shared, b));
       then (e,tpl);
     case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}), (vars, shared, _))
       equation
@@ -3890,7 +3890,7 @@ algorithm
       equation
         (e2, shared) = Differentiate.differentiateExpTime(e1, vars, shared);
         (e2, _) = ExpressionSimplify.simplify(e2);
-        (_, vars) = Expression.traverseExp(e2, derCrefsExp, vars);
+        (_, vars) = Expression.traverseExpBottomUp(e2, derCrefsExp, vars);
       then (e2, (vars, shared, true));
     else (inExp,itpl);
   end matchcontinue;
@@ -4069,7 +4069,7 @@ algorithm
   e := inExp;
   (vars, eqnLst, shared, ops, addVars) := tpl;
   ext_arg := (vars, eqnLst, shared, addVars, false);
-  (e1, (vars, eqnLst, shared, _, b)) := Expression.traverseExp(e, introDerAlias, ext_arg);
+  (e1, (vars, eqnLst, shared, _, b)) := Expression.traverseExpBottomUp(e, introDerAlias, ext_arg);
   ops := List.consOnTrue(b, DAE.SUBSTITUTION({e1}, e), ops);
   outExp := e1;
   outTpl := (vars, eqnLst, shared, ops, addVars);
@@ -4173,7 +4173,7 @@ protected function traverserapplyRewriteRulesBackend
   output DAE.Exp outExp;
   output Boolean outB;
 algorithm
-  (outExp,outB) := Expression.traverseExp(inExp,traverserExpapplyRewriteRulesBackend,inB);
+  (outExp,outB) := Expression.traverseExpBottomUp(inExp,traverserExpapplyRewriteRulesBackend,inB);
 end traverserapplyRewriteRulesBackend;
 
 protected function traverserExpapplyRewriteRulesBackend

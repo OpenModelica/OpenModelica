@@ -3031,7 +3031,7 @@ algorithm
     case(NONE(), _) then iOExp;
     case(SOME(e), _)
       equation
-        (e, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e, _) = ExpressionSimplify.condsimplify(b, e);
       then
         SOME(e);
@@ -3064,7 +3064,7 @@ algorithm
         equalNonFreeStartValues(values, knVars, (NONE(), NONE(), cr));
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
@@ -3091,14 +3091,14 @@ algorithm
         equalFreeStartValues(values, knVars, iValue);
     case (((SOME(e), cr))::values, _, (NONE(), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
       then
         equalFreeStartValues(values, knVars, (SOME(e1), SOME(e), cr));
     // compare
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (knVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
@@ -3125,7 +3125,7 @@ algorithm
         false = BaseHashSet.has(cr, hs);
         ({BackendDAE.VAR(bindExp = SOME(e))}, _) = BackendVariable.getVar(cr, vars);
         hs = BaseHashSet.add(cr, hs);
-        (e, (_, _, hs)) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars, false, hs));
+        (e, (_, _, hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars, false, hs));
       then
         (e, (vars, true, hs));
     // true if crefs in expression

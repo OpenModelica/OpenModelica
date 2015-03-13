@@ -305,7 +305,7 @@ protected
   list<Integer> keys;
 algorithm
   bt := BinaryTreeInt.emptyBinTree;
-  (_, (_, bt)) := Expression.traverseExp(inExp, checkEquationsVarsExp, (inVars, bt));
+  (_, (_, bt)) := Expression.traverseExpBottomUp(inExp, checkEquationsVarsExp, (inVars, bt));
   (keys, _) := BinaryTreeInt.bintreeToList(bt);
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end expressionVars;
@@ -552,7 +552,7 @@ algorithm
     case (e as DAE.CREF(ty = DAE.T_ARRAY()), _)
       equation
         (e1, true) = Expression.extendArrExp(e, false);
-        (_, outTuple) = Expression.traverseExp(e1, checkEquationsUnknownCrefsExp, inTuple);
+        (_, outTuple) = Expression.traverseExpBottomUp(e1, checkEquationsUnknownCrefsExp, inTuple);
       then (e, outTuple);
 
     // case for function pointers

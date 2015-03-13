@@ -3956,7 +3956,7 @@ algorithm
         false = BaseHashSet.has(cr, hs);
         ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
         hs = BaseHashSet.add(cr,hs);
-        (e, (_,_,hs)) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false,hs));
+        (e, (_,_,hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars,false,hs));
       then (e, (vars,true,hs));
     // true if crefs in expression
     case (e as DAE.CREF(), (vars,_,hs))
@@ -4003,8 +4003,8 @@ algorithm
     case (_,_,_,_,_,_)
       equation
         // simple evaluation, by replace crefs with bind expressions recursivly
-        (exp1_1, (_,b1,_)) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
-        (exp2_1, (_,b2,_)) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        (exp1_1, (_,b1,_)) = Expression.traverseExpBottomUp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        (exp2_1, (_,b2,_)) = Expression.traverseExpBottomUp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
         (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
         (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
         true = Expression.expEqual(exp1_1, exp2_1);

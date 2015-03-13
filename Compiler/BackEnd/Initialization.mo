@@ -428,7 +428,7 @@ algorithm
 
     // active when equation during initialization
     case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right) equation
-      true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
+      true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExpBottomUp
       crexp = Expression.crefExp(left);
       eqn = BackendEquation.generateEquation(crexp, right, inSource, inEqAttr);
     then (eqn::inEqns, inVars);
@@ -643,17 +643,17 @@ algorithm
       list<DAE.Exp> explst;
     case (DAE.CALL(path=Absyn.IDENT(name="pre")), _)
       equation
-        (_, ohs) = Expression.traverseExp(e, collectPreVariablesTraverseExp2, hs);
+        (_, ohs) = Expression.traverseExpBottomUp(e, collectPreVariablesTraverseExp2, hs);
       then (e, ohs);
 
     case (DAE.CALL(path=Absyn.IDENT(name="change")), _)
       equation
-        (_, ohs) = Expression.traverseExp(e, collectPreVariablesTraverseExp2, hs);
+        (_, ohs) = Expression.traverseExpBottomUp(e, collectPreVariablesTraverseExp2, hs);
       then (e, ohs);
 
     case (DAE.CALL(path=Absyn.IDENT(name="edge")), _)
       equation
-        (_, ohs) = Expression.traverseExp(e, collectPreVariablesTraverseExp2, hs);
+        (_, ohs) = Expression.traverseExpBottomUp(e, collectPreVariablesTraverseExp2, hs);
       then (e, ohs);
 
     else (e,hs);
@@ -1080,7 +1080,7 @@ protected function simplifyInitialFunctions "author: Frenkel TUD 2012-12
   output DAE.Exp exp;
   output Boolean useHomotopy;
 algorithm
-  (exp, useHomotopy) := Expression.traverseExp(inExp, simplifyInitialFunctionsExp, inUseHomotopy);
+  (exp, useHomotopy) := Expression.traverseExpBottomUp(inExp, simplifyInitialFunctionsExp, inUseHomotopy);
 end simplifyInitialFunctions;
 
 protected function simplifyInitialFunctionsExp "author: Frenkel TUD 2012-12
@@ -1918,7 +1918,7 @@ algorithm
       (eqn as BackendDAE.EQUATION(scalar=exp)) = BackendEquation.solveEquation(eqn, x, SOME(funcs));
 
       varName = BackendVariable.varCref(var);
-      (exp1, _) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (inVars, varName));
+      (exp1, _) = Expression.traverseExpBottomUp(exp, BackendDAEUtil.replaceCrefsWithValues, (inVars, varName));
       repls = BackendVarTransform.addReplacement(inRepls, varName, exp1, NONE());
       repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, repls, inMapIncRowEqn, inME, inShared);
     then repls;
@@ -2075,7 +2075,7 @@ protected
   list<String> listParameter;
 algorithm
   (e, listParameter) := inExp;
-  (e, listParameter) := Expression.traverseExp(e, parameterCheck2, listParameter); // TODO: Was {}; why?
+  (e, listParameter) := Expression.traverseExpBottomUp(e, parameterCheck2, listParameter); // TODO: Was {}; why?
   outExp := (e, listParameter);
 end parameterCheck;
 

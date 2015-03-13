@@ -1123,7 +1123,7 @@ protected
   Boolean b;
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  (e,tpl as (_,b,_)) := Expression.traverseExp(inExp,replaceFinalVarsExp,inTpl);
+  (e,tpl as (_,b,_)) := Expression.traverseExpBottomUp(inExp,replaceFinalVarsExp,inTpl);
   (e,_) := ExpressionSimplify.condsimplify(b,e);
 end replaceFinalVarsEqn;
 
@@ -3963,7 +3963,7 @@ algorithm
 
     case (v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht)
       equation
-        (e1, _) = Expression.traverseExp(e, replaceDummyDerivativesExp, ht);
+        (e1, _) = Expression.traverseExpBottomUp(e, replaceDummyDerivativesExp, ht);
         v1 = BackendVariable.setBindExp(v, SOME(e1));
         (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
         v1 = BackendVariable.setVarAttributes(v1,attr);

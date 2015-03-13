@@ -436,7 +436,7 @@ protected
   Boolean b;
 algorithm
   (e,knvars) := itpl;
-  (e,(knvars,b)) := Expression.traverseExp(e,traverserExpreplaceFinalParameter,(knvars,false));
+  (e,(knvars,b)) := Expression.traverseExpBottomUp(e,traverserExpreplaceFinalParameter,(knvars,false));
   (e,_) := ExpressionSimplify.condsimplify(b, e);
   outTpl := (e,knvars);
 end replaceFinalParameter;

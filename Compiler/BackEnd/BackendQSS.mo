@@ -389,7 +389,7 @@ expout := match (exp,states,disc,algs)
     DAE.Exp e;
   case (_,_,_,_)
   equation
-    (e,_)=Expression.traverseExp(exp,replaceInExp,(states,disc,algs));
+    (e,_)=Expression.traverseExpBottomUp(exp,replaceInExp,(states,disc,algs));
     (e,_)=ExpressionSimplify.simplify(e);
   then e;
   end match;
@@ -662,7 +662,7 @@ algorithm
     case ({},_) then acc;
     case (e1 :: tail ,_)
     equation
-      (_,l) = Expression.traverseExp(e1,getExpCrefs,{});
+      (_,l) = Expression.traverseExpBottomUp(e1,getExpCrefs,{});
       then getCrefs(tail,listAppend(acc,l));
   end match;
 end getCrefs;
@@ -824,7 +824,7 @@ algorithm
       DAE.Exp e;
     case (_,_)
     equation
-      (e,_) = Expression.traverseExp(exp, replaceInExpInputs, inp);
+      (e,_) = Expression.traverseExpBottomUp(exp, replaceInExpInputs, inp);
       then replaceVars(e,{},{},{});
     end match;
 end replaceVarsInputs;
@@ -1075,7 +1075,7 @@ algorithm
     case (_,{},_) then exp;
     case (_,exp1::tail,_)
       equation
-        (e,_) = Expression.traverseExp(exp, replaceInExpZC, (exp1,indx));
+        (e,_) = Expression.traverseExpBottomUp(exp, replaceInExpZC, (exp1,indx));
       then replaceExpZC(e,tail,indx+1);
     end match;
 end replaceExpZC;

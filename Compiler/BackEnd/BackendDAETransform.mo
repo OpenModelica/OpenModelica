@@ -1380,7 +1380,7 @@ algorithm
 
       case BackendDAE.NORETCALL(exp, src)
         equation
-          (exp, outArg) = Expression.traverseExp(exp, func, outArg);
+          (exp, outArg) = Expression.traverseExpBottomUp(exp, func, outArg);
         then
           BackendDAE.NORETCALL(exp, src);
 

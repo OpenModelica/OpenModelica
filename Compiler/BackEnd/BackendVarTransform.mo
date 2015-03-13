@@ -2570,7 +2570,7 @@ algorithm
     then (InDivideByZero, 0, InIdent);
 
     case ((cr, exp) :: tplLst2, _, false, _, _) equation
-      (_, BooleanControlExp) = Expression.traverseExp(exp, controlExp, false);
+      (_, BooleanControlExp) = Expression.traverseExpBottomUp(exp, controlExp, false);
       false = BooleanControlExp;
 
       str = ComponentReference.printComponentRefStr(cr);

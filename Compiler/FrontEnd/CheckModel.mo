@@ -915,7 +915,7 @@ algorithm
 
     case(_, _, _)
       equation
-        (_, (_, _::{})) = Expression.traverseExp(Expression.expSub(e1, e2), traversingComponentRefFinder, (ihs, {}));
+        (_, (_, _::{})) = Expression.traverseExpBottomUp(Expression.expSub(e1, e2), traversingComponentRefFinder, (ihs, {}));
       then
         Expression.sizeOf(Expression.typeof(e1));
 

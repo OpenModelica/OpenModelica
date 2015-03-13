@@ -909,7 +909,7 @@ algorithm
       DAE.Exp exp;
     case DAE.STMT_NORETCALL(exp=exp)
       equation
-        (_,b) = Expression.traverseExp(exp,Expression.hasNoSideEffects,true);
+        (_,b) = Expression.traverseExpBottomUp(exp,Expression.hasNoSideEffects,true);
       then not b; // has side effects => this is an expression that could do something
     else true;
   end match;

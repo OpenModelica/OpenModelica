@@ -302,7 +302,7 @@ algorithm
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs,lstExpCrefs1;
     case (exp,(vars,lstExpCrefs))
       equation
-        (_,(_,crefs)) = Expression.traverseExp(exp,traversecheckBackendDAEExp,(vars,{}));
+        (_,(_,crefs)) = Expression.traverseExpBottomUp(exp,traversecheckBackendDAEExp,(vars,{}));
         lstExpCrefs1 = if not listEmpty(crefs) then (exp,crefs)::lstExpCrefs else lstExpCrefs;
        then (exp,(vars,lstExpCrefs1));
     else (inExp,inTpl);
@@ -341,7 +341,7 @@ algorithm
     case (e as DAE.CREF(ty = DAE.T_ARRAY()),(vars,crefs))
       equation
         (e1,true) = Expression.extendArrExp(e,false);
-        (_,(vars1,crefs1)) = Expression.traverseExp(e1,traversecheckBackendDAEExp,(vars,crefs));
+        (_,(vars1,crefs1)) = Expression.traverseExpBottomUp(e1,traversecheckBackendDAEExp,(vars,crefs));
       then (e, (vars1,crefs1));
 
     // case for Reductions
@@ -893,7 +893,7 @@ algorithm
         // wbraun: Evaluate parameter expressions only if they are
         //         constant at compile time otherwise we solve them
         //         much faster at runtime.
-        //((e, _)) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr_orign));
+        //((e, _)) = Expression.traverseExpBottomUp(e, replaceCrefsWithValues, (vars, cr_orign));
         true = Expression.isConst(e);
         (_, v, _) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
       then
@@ -917,7 +917,7 @@ algorithm
       equation
         false = ComponentReference.crefEqualNoStringCompare(cr, cr_orign);
         ({BackendDAE.VAR(bindExp = SOME(e))}, _) = BackendVariable.getVar(cr, vars);
-        (e, _) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr_orign));
+        (e, _) = Expression.traverseExpBottomUp(e, replaceCrefsWithValues, (vars, cr_orign));
       then (e, (vars,cr_orign));
     else (inExp,inTuple);
   end matchcontinue;
@@ -2234,7 +2234,7 @@ algorithm
       Option<DAE.FunctionTree> funcs;
     case ((e, x, funcs))
       equation
-       (e, (_, _)) = Expression.traverseExp(e, traversingcollateArrExpStmt, (x, funcs));
+       (e, (_, _)) = Expression.traverseExpBottomUp(e, traversingcollateArrExpStmt, (x, funcs));
       then ((e,funcs));
     case ((e, _, funcs)) then ((e,funcs));
   end matchcontinue;
@@ -2324,7 +2324,7 @@ Author: Frenkel TUD 2010-07"
   output DAE.Exp outExp;
   output Option<DAE.FunctionTree> outFuncs;
 algorithm
-  (outExp,outFuncs) := Expression.traverseExp(inExp, traversingcollateArrExp, inFuncs);
+  (outExp,outFuncs) := Expression.traverseExpBottomUp(inExp, traversingcollateArrExp, inFuncs);
 end collateArrExp;
 
 protected function traversingcollateArrExp
@@ -4909,7 +4909,7 @@ algorithm
         ((e,_)) = Expression.replaceExp(Expression.expSub(e1,e2), DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), Expression.crefExp(cr1));
         de = getFactorForX(e, cr1, NONE());
         (de,_) = ExpressionSimplify.simplify(de);
-        (_,crlst) = Expression.traverseExp(de, Expression.traversingComponentRefFinder, {});
+        (_,crlst) = Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
         solvab = adjacencyRowEnhanced2(cr1,de,crlst,vars,kvars);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,solvab)::inRow);
@@ -5028,7 +5028,7 @@ algorithm
       DAE.Exp e1;
     case(true,true,_,_,_,_,_)
       equation
-        (e1,_) = Expression.traverseExp(e, replaceVartraverser, kvars);
+        (e1,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, kvars);
         (e1,_) = ExpressionSimplify.simplify(e1);
         b = not Expression.isZero(e1);
       then
@@ -5040,7 +5040,7 @@ algorithm
         BackendDAE.SOLVABILITY_LINEAR(b);
     case(true,_,_,_,_,_,_)
       equation
-        (e1,_) = Expression.traverseExp(e, replaceVartraverser, kvars);
+        (e1,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, kvars);
         (e1,_) = ExpressionSimplify.simplify(e1);
         b = not Expression.isZero(e1);
         b_1 = Expression.isConst(e1);
@@ -5077,7 +5077,7 @@ algorithm
       equation
         (v::_,_) = BackendVariable.getVar(cr,vars);
         e = BackendVariable.varBindExp(v);
-        (e,_) = Expression.traverseExp(e, replaceVartraverser, vars);
+        (e,_) = Expression.traverseExpBottomUp(e, replaceVartraverser, vars);
       then (e, vars);
 
     else (inExp,inVars);
@@ -5187,8 +5187,8 @@ algorithm
       (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e3, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
       // mark all vars which are not in alle branches unsolvable
       (_, bt) = Expression.traverseExpTopDown(inExp, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
-      (_, (_, _, _, _)) = Expression.traverseExp(e1, markBranchVars, (mark, rowmark, vars, bt));
-      (_, (_, _, _, _)) = Expression.traverseExp(e2, markBranchVars, (mark, rowmark, vars, bt));
+      (_, (_, _, _, _)) = Expression.traverseExpBottomUp(e1, markBranchVars, (mark, rowmark, vars, bt));
+      (_, (_, _, _, _)) = Expression.traverseExpBottomUp(e2, markBranchVars, (mark, rowmark, vars, bt));
     then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
     case (DAE.RANGE(start=e1, step=NONE(), stop=e2), (vars, bs, (mark, rowmark), pa)) equation
@@ -6507,9 +6507,9 @@ algorithm
    case(SOME(DAE.DISTRIBUTION(name,arr,sarr)),_,_) equation
      (arr,_) = Expression.extendArrExp(arr,false);
      (sarr,_) = Expression.extendArrExp(sarr,false);
-     (name,outExtraArg) = Expression.traverseExp(name,func,extraArg);
-     (arr,outExtraArg) = Expression.traverseExp(arr,func,outExtraArg);
-     (sarr,outExtraArg) = Expression.traverseExp(sarr,func,outExtraArg);
+     (name,outExtraArg) = Expression.traverseExpBottomUp(name,func,extraArg);
+     (arr,outExtraArg) = Expression.traverseExpBottomUp(arr,func,outExtraArg);
+     (sarr,outExtraArg) = Expression.traverseExpBottomUp(sarr,func,outExtraArg);
     then (SOME(DAE.DISTRIBUTION(name,arr,sarr)),outExtraArg);
  end match;
 end traverseBackendDAEAttrDistribution;
@@ -6764,7 +6764,7 @@ algorithm
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
     case(BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::whenClause,_,_,_)
       equation
-        (condition,arg) = Expression.traverseExp(condition,func,inTypeA);
+        (condition,arg) = Expression.traverseExpBottomUp(condition,func,inTypeA);
         (whenClause,arg) = traverseWhenClauseExps(whenClause,func,arg,BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::iAcc);
       then
         (whenClause,arg);
@@ -6795,7 +6795,7 @@ algorithm
     case({},_,_,_) then (listReverse(iAcc),inTypeA);
     case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::zeroCrossing,_,_,_)
       equation
-        (relation_,arg) = Expression.traverseExp(relation_,func,inTypeA);
+        (relation_,arg) = Expression.traverseExpBottomUp(relation_,func,inTypeA);
         (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::iAcc);
       then
         (zeroCrossing,arg);

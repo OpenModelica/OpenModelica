@@ -8444,7 +8444,7 @@ protected function evaluateSlotExp
   input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
-  outExp := Expression.traverseExp(inExp, evaluateSlotExp_traverser, (inSlotArray, inInfo));
+  outExp := Expression.traverseExpBottomUp(inExp, evaluateSlotExp_traverser, (inSlotArray, inInfo));
 end evaluateSlotExp;
 
 protected function evaluateSlotExp_traverser

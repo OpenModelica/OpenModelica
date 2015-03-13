@@ -3029,14 +3029,14 @@ algorithm
     case (exp as DAE.CREF(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),(ht,i,j))
       equation
         (e1,true) = Expression.extendArrExp(exp,false);
-        (e1,(ht,i,k)) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        (e1,(ht,i,k)) = Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,(ht,i,j));
         true = intGt(k,j);
       then (e1,(ht,i,k));
     // Special Case for Arrays
     case (exp as DAE.CREF(ty = DAE.T_ARRAY()),(ht,i,j))
       equation
         (e1,true) = Expression.extendArrExp(exp,false);
-        (e1,(ht,i,k)) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        (e1,(ht,i,k)) = Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,(ht,i,j));
         true = intGt(k,j);
       then (e1,(ht,i,k));
 
@@ -3176,7 +3176,7 @@ algorithm
       then e;
     case (e,pv)
       equation
-        (e1,(_,i,_)) = Expression.traverseExp(e,evaluateAnnotationTraverse,(pv,0,0));
+        (e1,(_,i,_)) = Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(pv,0,0));
         true = intEq(i,0);
         e2 = evaluateParameter(e1,pv);
       then
@@ -3294,7 +3294,7 @@ algorithm
                   source=source,variableAttributesOption=variableAttributesOption,
                   comment=absynCommentOption,innerOuter=innerOuter),(ht,cache,env))
       equation
-        (e1,(_,i,j)) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
+        (e1,(_,i,j)) = Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(ht,0,0));
         (e2,ht1,cache) = evaluateAnnotation4(cache,env,cr,e1,i,j,ht);
       then
         (DAE.VAR(cr,DAE.PARAM(),direction,parallelism,protection,ty,SOME(e2),dims,ct,
@@ -3331,7 +3331,7 @@ algorithm
         // there are no other crefs
         true = intEq(i,0);
         // evalute expression
-        (e1,(ht,_,_)) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
+        (e1,(ht,_,_)) = Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(ht,0,0));
         (cache, value,_) = Ceval.ceval(inCache, env, e1, false,NONE(),Absyn.NO_MSG(),0);
          e1 = ValuesUtil.valueExp(value);
         // e1 = e;
@@ -3351,7 +3351,7 @@ algorithm
   (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, {}));
 end renameUniqueOuterVars;
 
-protected function removeUniqieIdentifierFromCref "Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
+protected function removeUniqieIdentifierFromCref "Function for Expression.traverseExpBottomUp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input DAE.Exp inExp;
   input Type_a oarg;
   output DAE.Exp outExp;
@@ -3385,7 +3385,7 @@ algorithm
 end nameUniqueOuterVars;
 
 protected function addUniqueIdentifierToCref "author: BZ, 2008-12
-  Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref."
+  Function for Expression.traverseExpBottomUp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref."
   input DAE.Exp inExp;
   input Type_a oarg;
   output DAE.Exp outExp;

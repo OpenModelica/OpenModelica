@@ -4612,7 +4612,7 @@ end containsInitialCall;
 /* traverse DAE.Exp */
 /***************************************************/
 
-public function traverseExp<T>
+public function traverseExpBottomUp<T>
 "Traverses all subexpressions of an expression.
   Takes a function and an extra argument passed through the traversal.
   The function can potentially change the expression. In such cases,
@@ -4696,47 +4696,47 @@ algorithm
 
     // unary
     case DAE.UNARY(operator=op, exp=e1) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.UNARY(op, e1_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     // binary
     case DAE.BINARY(exp1=e1, operator=op, exp2=e2) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.BINARY(e1_1, op, e2_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     // logical unary
     case DAE.LUNARY(operator=op, exp=e1) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.LUNARY(op, e1_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     // logical binary
     case DAE.LBINARY(exp1=e1, operator=op, exp2=e2) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.LBINARY(e1_1, op, e2_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     // relation
     case DAE.RELATION(exp1=e1, operator=op, exp2=e2, index=index_, optionExpisASUB=isExpisASUB) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RELATION(e1_1, op, e2_1, index_, isExpisASUB);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     // if expressions
     case DAE.IFEXP(expCond=e1, expThen=e2, expElse=e3) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
-      (e3_1, ext_arg) = traverseExp(e3, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
+      (e3_1, ext_arg) = traverseExpBottomUp(e3, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.IFEXP(e1_1, e2_1, e3_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -4772,16 +4772,16 @@ algorithm
     then (e, ext_arg);
 
     case DAE.RANGE(ty=tp, start=e1, step=NONE(), stop=e2) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RANGE(tp, e1_1, NONE(), e2_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.RANGE(ty=tp, start=e1, step=SOME(e2), stop=e3) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
-      (e3_1, ext_arg) = traverseExp(e3, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
+      (e3_1, ext_arg) = traverseExpBottomUp(e3, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.RANGE(tp, e1_1, SOME(e2_1), e3_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -4793,39 +4793,39 @@ algorithm
     then (e, ext_arg);
 
     case DAE.CAST(ty=tp, exp=e1) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.CAST(tp, e1_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.ASUB(exp=e1, sub=expl) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       (expl_1, ext_arg) = traverseExpList(expl, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(expl, expl_1) then inExp else makeASUB(e1_1, expl_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.TSUB(e1, i, tp) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.TSUB(e1_1, i, tp);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.SIZE(exp=e1, sz=NONE()) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.SIZE(e1_1, NONE());
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.SIZE(exp=e1, sz=SOME(e2)) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.SIZE(e1_1, SOME(e2_1));
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.REDUCTION(reductionInfo=reductionInfo, expr=e1, iterators=riters) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       (riters_1, ext_arg) = traverseReductionIterators(riters, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(riters, riters_1) then inExp else DAE.REDUCTION(reductionInfo, e1_1, riters_1);
       (e, ext_arg) = inFunc(e, ext_arg);
@@ -4833,8 +4833,8 @@ algorithm
 
     // MetaModelica list
     case DAE.CONS(e1, e2) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExp(e2, inFunc, ext_arg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
+      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.CONS(e1_1, e2_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -4856,19 +4856,19 @@ algorithm
     then (e, ext_arg);
 
     case DAE.META_OPTION(SOME(e1)) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.META_OPTION(SOME(e1_1));
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.BOX(e1) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.BOX(e1_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.UNBOX(e1, tp) equation
-      (e1_1, ext_arg) = traverseExp(e1, inFunc, inExtArg);
+      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.UNBOX(e1_1, tp);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -4901,13 +4901,13 @@ algorithm
 
     else equation
       str = ExpressionDump.printExpStr(inExp);
-      str = "Expression.traverseExp or one of the user-defined functions using it is not implemented correctly: " + str;
+      str = "Expression.traverseExpBottomUp or one of the user-defined functions using it is not implemented correctly: " + str;
       Error.addInternalError(str, sourceInfo());
     then fail();
   end match;
-end traverseExp;
+end traverseExpBottomUp;
 
-public function traverseExpDummy "Like traverseExp but passes a default 0 argument"
+public function traverseExpDummy "Like traverseExpBottomUp but passes a default 0 argument"
   replaceable type Type_a subtypeof Any;
   input DAE.Exp inExp;
   input FuncExpType func;
@@ -4917,10 +4917,10 @@ public function traverseExpDummy "Like traverseExp but passes a default 0 argume
     output DAE.Exp outExp;
   end FuncExpType;
 algorithm
-  (outExp,_) := traverseExp(inExp,traverseExpDummyHelper,func);
+  (outExp,_) := traverseExpBottomUp(inExp,traverseExpDummyHelper,func);
 end traverseExpDummy;
 
-public function traverseExpDummyHelper "Like traverseExp but does not use an extra argument"
+public function traverseExpDummyHelper "Like traverseExpBottomUp but does not use an extra argument"
   replaceable type Type_a subtypeof Any;
   input DAE.Exp inExp;
   input FuncExpType func;
@@ -4954,7 +4954,7 @@ protected
   Type_a ext_arg;
 algorithm
   (rel,ext_arg) := itpl;
-  (outExp,ext_arg) := traverseExp(inExp,rel,ext_arg);
+  (outExp,ext_arg) := traverseExpBottomUp(inExp,rel,ext_arg);
   otpl := (rel,ext_arg);
 end traverseSubexpressionsHelper;
 
@@ -4972,7 +4972,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
     output DAE.Exp outExp;
   end FuncExpType;
 algorithm
-  (outExp,outFunc) := traverseExp(inExp,traverseExpDummyHelper,inFunc);
+  (outExp,outFunc) := traverseExpBottomUp(inExp,traverseExpDummyHelper,inFunc);
 end traverseSubexpressionsDummyHelper;
 
 public function traverseSubexpressionsTopDownHelper
@@ -5016,7 +5016,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
     output Type_a outA;
   end FuncExpType;
 algorithm
-  // TODO: Implement flags to traverseExp to handle special cases like WithoutRelations or without updating the expressions?
+  // TODO: Implement flags to traverseExpBottomUp to handle special cases like WithoutRelations or without updating the expressions?
   (e,cont,otpl) := match (inExp,itpl)
     local
       FuncExpType f;
@@ -5037,7 +5037,7 @@ end traverseSubexpressionsWithoutRelations;
 
 protected function traverseExpMatrix
 "author: PA
-   Helper function to traverseExp, traverses matrix expressions."
+   Helper function to traverseExpBottomUp, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
   input list<list<DAE.Exp>> inMatrix;
   input FuncExpType func;
@@ -5070,7 +5070,7 @@ algorithm
   end match;
 end traverseExpMatrix;
 
-public function traverseExpList<ArgT> "Calls traverseExp for each element of list."
+public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each element of list."
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
   input ArgT iext_arg;
@@ -5087,7 +5087,7 @@ protected
   Boolean same = true;
 algorithm
   for e in inExpl loop
-    (e1, ext_arg) := traverseExp(e, rel, ext_arg);
+    (e1, ext_arg) := traverseExpBottomUp(e, rel, ext_arg);
     expl := e1 :: expl;
     same := same and referenceEq(e, e1);
   end for;
@@ -5392,7 +5392,7 @@ end traverseExpMatrixTopDown;
 
 public function traverseExpListTopDown
 " author PA:
- Calls traverseExp for each element of list."
+ Calls traverseExpBottomUp for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
@@ -5418,7 +5418,7 @@ algorithm
   end match;
 end traverseExpListTopDown;
 
-public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing for NONE"
+public function traverseExpOpt "Calls traverseExpBottomUp for SOME(exp) and does nothing for NONE"
   input Option<DAE.Exp> inExp;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -5439,7 +5439,7 @@ algorithm
       Option<DAE.Exp> oe;
     case (NONE(),_,a) then (inExp/*In case external functions create a copy of NONE()*/,a);
     case(oe as SOME(e),_,a) equation
-      (e1,a) = traverseExp(e,func,a);
+      (e1,a) = traverseExpBottomUp(e,func,a);
       oe = if referenceEq(e,e1) then oe else SOME(e1);
      then (oe,a);
   end match;
@@ -5607,7 +5607,7 @@ Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
   input DAE.Exp inExp;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
-  (_,ocrefs) := traverseExp(inExp, traversingComponentRefFinder, {});
+  (_,ocrefs) := traverseExpBottomUp(inExp, traversingComponentRefFinder, {});
 end extractCrefsFromExp;
 
 public function extractUniqueCrefsFromExp
@@ -6087,7 +6087,7 @@ algorithm
    local Type_a arg;
     case(_,_,_)
       equation
-        (_,(_,arg)) = traverseExp(inExp, traversingCrefFinder, (inFunc,inArg));
+        (_,(_,arg)) = traverseExpBottomUp(inExp, traversingCrefFinder, (inFunc,inArg));
       then
         arg;
   end match;
@@ -6127,7 +6127,7 @@ Author: Frenkel TUD 2010-02, Extracts all Division DAE.Exp from an Expression."
   input DAE.Exp inExp;
   output list<DAE.Exp> outExps;
 algorithm
-  (_,outExps) := traverseExp(inExp, traversingDivExpFinder, {});
+  (_,outExps) := traverseExpBottomUp(inExp, traversingDivExpFinder, {});
 end extractDivExpFromExp;
 
 protected function traversingDivExpFinder "
@@ -6527,7 +6527,7 @@ algorithm
 end traverseExpBidirCref;
 
 public function traverseExpCref
-  "Helper function to traverseExp. Traverses any expressions in a
+  "Helper function to traverseExpBottomUp. Traverses any expressions in a
   component reference (i.e. in it's subscripts)."
   input DAE.ComponentRef inCref;
   input FuncType rel;
@@ -6623,7 +6623,7 @@ algorithm
 
     case (DAE.SLICE(exp = sub_exp)::rest, _, arg)
       equation
-        (sub_exp_1,arg) = traverseExp(sub_exp, rel, arg);
+        (sub_exp_1,arg) = traverseExpBottomUp(sub_exp, rel, arg);
         (res,arg) = traverseExpSubs(rest,rel,arg);
         res = if referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res) then inSubscript else (DAE.SLICE(sub_exp_1)::res);
       then
@@ -6631,7 +6631,7 @@ algorithm
 
     case (DAE.INDEX(exp = sub_exp)::rest, _, arg)
       equation
-        (sub_exp_1,arg) = traverseExp(sub_exp, rel, arg);
+        (sub_exp_1,arg) = traverseExpBottomUp(sub_exp, rel, arg);
         (res,arg) = traverseExpSubs(rest,rel,arg);
         res = if referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res) then inSubscript else (DAE.INDEX(sub_exp_1)::res);
       then
@@ -6639,7 +6639,7 @@ algorithm
 
     case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _, arg)
       equation
-        (sub_exp_1,arg) = traverseExp(sub_exp, rel, arg);
+        (sub_exp_1,arg) = traverseExpBottomUp(sub_exp, rel, arg);
         (res,arg) = traverseExpSubs(rest,rel,arg);
         res = if referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res) then inSubscript else (DAE.WHOLE_NONEXP(sub_exp_1)::res);
       then
@@ -9382,7 +9382,7 @@ algorithm
 end subscriptContain2;
 
 public function hasNoSideEffects
-  "Returns true if the expression is free from side-effects. Use with traverseExp."
+  "Returns true if the expression is free from side-effects. Use with traverseExpBottomUp."
   input DAE.Exp inExp;
   input Boolean ib;
   output DAE.Exp outExp;
@@ -9580,7 +9580,7 @@ algorithm
 
     case (DAE.REDUCTIONITER(id,exp,gexp,ty),_,arg)
       equation
-        (exp1, arg) = traverseExp(exp, func, arg);
+        (exp1, arg) = traverseExpBottomUp(exp, func, arg);
         (gexp1, arg) = traverseExpOpt(gexp, func, arg);
         outIter = if referenceEq(exp,exp1) and referenceEq(gexp,gexp1) then iter else DAE.REDUCTIONITER(id,exp1,gexp1,ty);
       then (outIter, arg);
@@ -9641,7 +9641,7 @@ public function complexityTraverse
   output DAE.Exp outExp;
   output Integer outComplexity;
 algorithm
-  (outExp,outComplexity) := traverseExp(exp,complexityTraverse2,complexity);
+  (outExp,outComplexity) := traverseExpBottomUp(exp,complexityTraverse2,complexity);
 end complexityTraverse;
 
 protected function complexityTraverse2
@@ -10810,7 +10810,7 @@ public function replaceDerOpInExp
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  (outExp, _) := traverseExp(inExp, replaceDerOpInExpTraverser, NONE());
+  (outExp, _) := traverseExpBottomUp(inExp, replaceDerOpInExpTraverser, NONE());
 end replaceDerOpInExp;
 
 public function replaceDerOpInExpCond
@@ -10821,11 +10821,11 @@ public function replaceDerOpInExpCond
   output DAE.Exp outExp;
   output Option<DAE.ComponentRef> outCr;
 algorithm
-  (outExp, outCr) := traverseExp(e, replaceDerOpInExpTraverser, cr);
+  (outExp, outCr) := traverseExpBottomUp(e, replaceDerOpInExpTraverser, cr);
 end replaceDerOpInExpCond;
 
 public function replaceDerOpInExpTraverser
-  "Used with Expression.traverseExp to traverse an expression an replace calls to
+  "Used with Expression.traverseExpBottomUp to traverse an expression an replace calls to
   der(cref) with a component reference $DER.cref. If an optional component
   reference is supplied, then only that component reference is replaced.
   Otherwise all calls to der are replaced.
@@ -10950,7 +10950,7 @@ algorithm
 end isCrefListWithEqualIdents;
 
 protected function traverseExpDerPreStart
-" TODO: REPLACE THIS ABOMINATION WITH A BETTER traverseExp
+" TODO: REPLACE THIS ABOMINATION WITH A BETTER traverseExpBottomUp
 
   Traverses all subexpressions of an expression.
   Takes a function and an extra argument passed through the traversal.
@@ -11288,7 +11288,7 @@ algorithm
 end traverseExpDerPreStart;
 
 protected function traverseExpDerPreStartList
-" TODO: REPLACE THIS ABOMINATION WITH A BETTER traverseExp
+" TODO: REPLACE THIS ABOMINATION WITH A BETTER traverseExpBottomUp
 
   author mahge: Same as traverseExpList except:
   This function will not treat der(), pre() and start() as calls
@@ -11376,7 +11376,7 @@ algorithm
 
     case (outExp, _)
       equation
-        (exp, b) = traverseExp(inExp, traversingextendArrExp, false);
+        (exp, b) = traverseExpBottomUp(inExp, traversingextendArrExp, false);
       then
         (exp, b);
 
@@ -11423,7 +11423,7 @@ algorithm
         expl = List.map1(crlst,makeCrefExp,ty);
         mat = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,mat);
-        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
       then
         (e, b);
 
@@ -11440,7 +11440,7 @@ algorithm
         expl = List.map1(crlst,makeCrefExp,ty);
         mat = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,mat);
-        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
       then
         (e, b);
 
@@ -11456,7 +11456,7 @@ algorithm
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = List.map1(crlst,makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
-        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
       then
         (e, b);
 
@@ -11470,7 +11470,7 @@ algorithm
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = List.map1(crlst,makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
-        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
       then
         (e, b);
 
@@ -11481,7 +11481,7 @@ algorithm
         i = listLength(expl);
         true = intGt(i,0);
         e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(t,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-        (e, b) = traverseExp(e_new, traversingextendArrExp, true);
+        (e, b) = traverseExpBottomUp(e_new, traversingextendArrExp, true);
       then
         (e, b);
 

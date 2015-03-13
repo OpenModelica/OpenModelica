@@ -579,7 +579,7 @@ algorithm
     case (exp,options,0,_,_)
       equation
         str1 = ExpressionDump.printExpStr(exp);
-        (exp,_) = Expression.traverseExp(exp,simplifyWork,options);
+        (exp,_) = Expression.traverseExpBottomUp(exp,simplifyWork,options);
         str2 = ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.SIMPLIFY_FIXPOINT_MAXIMUM, {str1,str2});
       then (exp,hasChanged);
@@ -587,7 +587,7 @@ algorithm
       equation
         // print("simplify1 start: " + ExpressionDump.printExpStr(exp) + "\n");
         ErrorExt.setCheckpoint("ExpressionSimplify");
-        (expAfterSimplify,options) = Expression.traverseExp(exp,simplifyWork,options);
+        (expAfterSimplify,options) = Expression.traverseExpBottomUp(exp,simplifyWork,options);
         b = not referenceEq(expAfterSimplify, exp);
         if b then
           ErrorExt.rollBack("ExpressionSimplify");
@@ -5188,8 +5188,8 @@ algorithm
       equation
         foldName2 = Util.getTempVariableIndex();
         resultName2 = Util.getTempVariableIndex();
-        (foldExpr2,_) = Expression.traverseExp(foldExpr,Expression.renameExpCrefIdent,(foldName,foldName2));
-        (foldExpr2,_) = Expression.traverseExp(foldExpr2,Expression.renameExpCrefIdent,(resultName,resultName2));
+        (foldExpr2,_) = Expression.traverseExpBottomUp(foldExpr,Expression.renameExpCrefIdent,(foldName,foldName2));
+        (foldExpr2,_) = Expression.traverseExpBottomUp(foldExpr2,Expression.renameExpCrefIdent,(resultName,resultName2));
         expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty,defaultValue,foldName2,resultName2,SOME(foldExpr2)),expr,{iter});
         expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty,defaultValue,foldName,resultName,SOME(foldExpr)),expr,iterators);
       then expr;
@@ -5218,7 +5218,7 @@ protected function replaceIteratorWithExp
   input String name;
   output DAE.Exp outExp;
 algorithm
-  (outExp,(_,_,true)) := Expression.traverseExp(exp, replaceIteratorWithExpTraverser, (name,iterExp,true));
+  (outExp,(_,_,true)) := Expression.traverseExpBottomUp(exp, replaceIteratorWithExpTraverser, (name,iterExp,true));
 end replaceIteratorWithExp;
 
 protected function replaceIteratorWithExpTraverser

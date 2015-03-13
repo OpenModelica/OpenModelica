@@ -760,7 +760,7 @@ algorithm
     case (false,_,_,_,_,_)
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        (e2, (_,_,_)) = Expression.traverseExp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
+        (e2, (_,_,_)) = Expression.traverseExpBottomUp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
         msg = ComponentReference.printComponentRefStr(cr) + " has unevaluateable fixed attribute value \"" + ExpressionDump.printExpStr(e) + "\" use values from start attribute(s) \"" + ExpressionDump.printExpStr(e2) + "\"";
         Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
       then
@@ -790,7 +790,7 @@ algorithm
         ({v}, _) = BackendVariable.getVar(cr, vars);
         e = BackendVariable.varStartValueType(v);
         hs = BaseHashSet.add(cr,hs);
-        (e, (_,b,hs)) = Expression.traverseExp(e, replaceCrefWithBindStartExp, (vars,b,hs));
+        (e, (_,b,hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindStartExp, (vars,b,hs));
       then (e, (vars,b,hs));
     // true if crefs in expression
     case (e as DAE.CREF(), (vars,_,hs))

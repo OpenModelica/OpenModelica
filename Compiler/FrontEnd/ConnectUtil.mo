@@ -3068,7 +3068,7 @@ algorithm
 
     case (e, (has_stream, has_cardinality, sets, set_array))
       equation
-        (e, (_, _, sets, set_array, changed)) = Expression.traverseExp(e, evaluateConnectionOperatorsExp, (has_stream, has_cardinality, sets, set_array, false));
+        (e, (_, _, sets, set_array, changed)) = Expression.traverseExpBottomUp(e, evaluateConnectionOperatorsExp, (has_stream, has_cardinality, sets, set_array, false));
         // only apply simplify if the expression changed *AND* we have cardinality
         changed = boolAnd(changed, has_cardinality);
         (e, _) = ExpressionSimplify.condsimplify(changed, e);

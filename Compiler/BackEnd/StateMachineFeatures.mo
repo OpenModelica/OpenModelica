@@ -742,7 +742,7 @@ protected
   DAE.Exp exp;
 algorithm
   (i,exp) := inElement;
-  exp := Expression.traverseExp(exp,traversingInnerOuterByOuterSubs,(inFindExp,inReplaceExp));
+  exp := Expression.traverseExpBottomUp(exp,traversingInnerOuterByOuterSubs,(inFindExp,inReplaceExp));
   outElement := (i,exp);
 end mapReplaceInnerOuterByInner;
 
@@ -1872,7 +1872,7 @@ Helper function to subsOuterByInnerEq"
   output DAE.Exp outExp;
   output tuple<DAE.ComponentRef,DAE.ComponentRef> outOuterInner;
 algorithm
-  (outExp, outOuterInner) := Expression.traverseExp(inExp, subsOuterByInner, inOuterInner);
+  (outExp, outOuterInner) := Expression.traverseExpBottomUp(inExp, subsOuterByInner, inOuterInner);
 end subsOuterByInnerExp;
 
 protected function subsOuterByInner "
@@ -2549,7 +2549,7 @@ algorithm
     DAE.CREF(componentRef=left) := exp;
     BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex) := attr;
     // walk through scalar, replace previous(x) by pre(x)
-    scalar := Expression.traverseExp(scalar, subsPreForPrevious, NONE());
+    scalar := Expression.traverseExpBottomUp(scalar, subsPreForPrevious, NONE());
     // sample(0, samplingTime)
     expCond := DAE.ARRAY(DAE.T_ARRAY_BOOL_NODIM, true, {DAE.CALL(Absyn.IDENT("sample"), {DAE.ICONST(1), DAE.RCONST(0), DAE.RCONST(samplingTime)}, DAE.callAttrBuiltinImpureBool),DAE.CALL(Absyn.IDENT("initial"), {}, DAE.callAttrBuiltinImpureBool)});
     whenEquation := BackendDAE.WHEN_EQ(expCond, left, scalar, NONE());

@@ -1242,7 +1242,7 @@ protected function findLiteralsHelper
 algorithm
   exp := inExp;
   tpl := inTpl;
-  (exp, tpl) := Expression.traverseExp(exp, replaceLiteralExp, tpl);
+  (exp, tpl) := Expression.traverseExpBottomUp(exp, replaceLiteralExp, tpl);
   (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
 end findLiteralsHelper;
 
@@ -1321,7 +1321,7 @@ algorithm
     case (exp, t)
       equation
         exp = listToCons(exp);
-        (exp, t) = Expression.traverseExp(exp, replaceLiteralExp, t);
+        (exp, t) = Expression.traverseExpBottomUp(exp, replaceLiteralExp, t);
       then (exp, t); // All sublists should also be added as literals...
     case (exp, _)
       equation
@@ -3043,7 +3043,7 @@ algorithm
         failure((_, _) = ExpressionSolve.solve(e1, e2, varexp));
         prevarexp = Expression.makePureBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
         prevarexp = Expression.expSub(varexp, prevarexp);
-        (e2, _) = Expression.traverseExp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
+        (e2, _) = Expression.traverseExpBottomUp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
         eqn = BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
@@ -9669,7 +9669,7 @@ algorithm
     case(_, _)
       equation
         false = Expression.traverseCrefsFromExp(inExp, traversingXLOCExpFinder, false);
-        (exp, _) = Expression.traverseExp(inExp, traversingDivExpFinder, inSource);
+        (exp, _) = Expression.traverseExpBottomUp(inExp, traversingDivExpFinder, inSource);
       then exp;
   end match;
 end addDivExpErrorMsgtoExp;

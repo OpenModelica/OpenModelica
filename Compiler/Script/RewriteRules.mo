@@ -614,7 +614,7 @@ public function rewriteExpBackEnd
  input Binds inBinds;
  output DAE.Exp outExp;
 algorithm
-  (outExp, _) := Expression.traverseExp(inExp, replaceBindsBackEnd, inBinds);
+  (outExp, _) := Expression.traverseExpBottomUp(inExp, replaceBindsBackEnd, inBinds);
 end rewriteExpBackEnd;
 
 public function replaceBindsBackEnd

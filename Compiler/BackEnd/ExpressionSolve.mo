@@ -2046,8 +2046,8 @@ protected
   DAE.Exp con, e;
 algorithm
  con := Expression.makePureBuiltinCall("initial",{},tp);
- (e,_) := Expression.traverseExp(iExp2,makeIntialGuess2,(iExp3, "$_start",tp,true));
- (oExp,_) := Expression.traverseExp(iExp2,makeIntialGuess2,(iExp3, "$_initialGuess",tp,false));
+ (e,_) := Expression.traverseExpBottomUp(iExp2,makeIntialGuess2,(iExp3, "$_start",tp,true));
+ (oExp,_) := Expression.traverseExpBottomUp(iExp2,makeIntialGuess2,(iExp3, "$_initialGuess",tp,false));
  oExp := DAE.IFEXP(con,e,oExp);
 end makeIntialGuess;
 
