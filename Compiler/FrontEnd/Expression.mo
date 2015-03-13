@@ -2173,7 +2173,9 @@ algorithm
     case (DAE.CAST(ty = tp)) then tp;
     case (DAE.ASUB(exp = e,sub=explist))
       equation
-        tp = unliftArrayTypeWithSubs(List.map(explist,makeIndexSubscript) ,typeof(e));
+        // Count the number of scalar subscripts, and remove as many dimensions.
+        i = sum(1 for e guard(isScalar(e)) in explist);
+        tp = unliftArrayX(typeof(e), i);
       then
         tp;
     case (DAE.TSUB(ty = tp)) then tp;
@@ -12101,6 +12103,29 @@ algorithm
 
   end match;
 end expandRange;
+
+public function isScalar
+  input DAE.Exp inExp;
+  output Boolean outIsScalar;
+algorithm
+  outIsScalar := match inExp
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.SCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.CLKCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
+    case DAE.UNARY() then isScalar(inExp.exp);
+    case DAE.LUNARY() then isScalar(inExp.exp);
+    case DAE.RELATION() then true;
+    case DAE.ARRAY() then false;
+    case DAE.MATRIX() then false;
+    case DAE.RANGE() then false;
+    case DAE.CAST() then isScalar(inExp.exp);
+    case DAE.SIZE() then isSome(inExp.sz);
+    else Types.isSimpleType(typeof(inExp));
+  end match;
+end isScalar;
 
 annotation(__OpenModelica_Interface="frontend");
 end Expression;
