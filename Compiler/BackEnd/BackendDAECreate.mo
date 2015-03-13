@@ -1586,6 +1586,8 @@ algorithm
     local
       list<DAE.Exp> ea1, ea2;
       list<Integer> ds;
+      DAE.Type tp;
+      Integer i;
 
     case (_, _, _, _, _, _)
       equation
@@ -1594,6 +1596,19 @@ algorithm
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2);
       then generateEquations(ea1, ea2, source, inEqKind, iAcc);
+
+    // array type with record
+    case (_, _, _, _, _, _)
+      equation
+        tp = Expression.typeof(e1);
+        tp = DAEUtil.expTypeElementType(tp);
+        true = DAEUtil.expTypeComplex(tp);
+        i = Expression.sizeOf(tp);
+        ds = Expression.dimensionsSizes(dims);
+        ds = List.map1(ds, intMul, i);
+        //For COMPLEX_EQUATION
+        //i = List.fold(ds, intMul, 1);
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::iAcc;
 
     case (_, _, _, _, _, _)
       equation
