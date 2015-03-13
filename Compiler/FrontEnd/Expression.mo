@@ -11576,48 +11576,35 @@ public function expandSubscript
   input DAE.Dimension inDimension;
   output list<DAE.Subscript> outSubscripts;
 algorithm
-  outSubscripts := match(inSubscript, inDimension)
+  outSubscripts := match inSubscript
     local
       DAE.Exp exp;
 
     // An index subscript from range.
-    case (DAE.INDEX(exp = exp as DAE.RANGE()), _)
-      then getRangeContents(exp);
+    case DAE.INDEX(exp = DAE.RANGE())
+      then list(DAE.INDEX(e) for e in expandRange(inSubscript.exp));
 
     // An index subscript from array.
     // This really shouldn't be happening. But the backend creats things like this.
     // e.g. When finding Incidence Matrix entry for for-loops in Algorithm sections.
     // That whole creating IM should be done the way checkModel works. but it's not. :( so
     // we have this.
-    case (DAE.INDEX(exp = exp as DAE.ARRAY()), _)
-      then expandSlice(exp);
+    case DAE.INDEX(exp = DAE.ARRAY())
+      then expandSlice(inSubscript.exp);
 
     // An index subscript, return it as an array.
-    case (DAE.INDEX(), _) then {inSubscript};
+    case DAE.INDEX() then {inSubscript};
 
     // A : subscript, use the dimension to generate all subscripts.
-    case (DAE.WHOLEDIM(), _)
+    case DAE.WHOLEDIM()
       then expandDimension(inDimension);
 
     // A slice subscript.
-    case (DAE.SLICE(exp = exp), _)
-      then expandSlice(exp);
+    case DAE.SLICE()
+      then expandSlice(inSubscript.exp);
 
   end match;
 end expandSubscript;
-
-protected function getRangeContents
-  input DAE.Exp inExp;
-  output list<DAE.Subscript> outSubscripts;
-protected
-  Integer istart, istep, istop;
-  Option<DAE.Exp> iostep;
-algorithm
-  DAE.RANGE(DAE.T_INTEGER(), DAE.ICONST(istart), iostep,
-    DAE.ICONST(istop)) := inExp;
-  DAE.ICONST(istep) := Util.getOptionOrDefault(iostep, DAE.ICONST(1));
-  outSubscripts := intSubscripts(List.intRange3(istart, istep, istop));
-end getRangeContents;
 
 public function expandDimension
   "Generates a list of subscripts given an array dimension."
@@ -12052,6 +12039,8 @@ algorithm
 end typeCastElements;
 
 public function expandRange
+  "Expands a range expression into its elements:
+    expandRange(1:4) => {1, 2, 3, 4}"
   input DAE.Exp inRange;
   output list<DAE.Exp> outValues;
 protected
@@ -12066,6 +12055,7 @@ algorithm
   DAE.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := inRange;
 
   outValues := match (start_exp, stop_exp)
+    // An integer range, with or without a step value.
     case (DAE.ICONST(), DAE.ICONST())
       algorithm
         DAE.ICONST(istep) := Util.getOptionOrDefault(ostep_exp, DAE.ICONST(1));
@@ -12073,6 +12063,7 @@ algorithm
         list(DAE.ICONST(i) for i in
           List.intRange3(start_exp.integer, istep, stop_exp.integer));
 
+    // A real range, with or without a step value.
     case (DAE.RCONST(), DAE.RCONST())
       algorithm
         DAE.RCONST(rstep) := Util.getOptionOrDefault(ostep_exp, DAE.RCONST(1.0));
@@ -12080,15 +12071,19 @@ algorithm
         list(DAE.RCONST(r) for r in
           ExpressionSimplify.simplifyRangeReal(start_exp.real, rstep, stop_exp.real));
 
+    // false:true => {false, true}
     case (DAE.BCONST(false), DAE.BCONST(true))
       then {start_exp, stop_exp};
 
+    // true:false => {}
     case (DAE.BCONST(true), DAE.BCONST(false))
       then {};
 
+    // true:true => true, false:false => false
     case (DAE.BCONST(), DAE.BCONST())
       then {start_exp};
 
+    // An enumeration range, no step value allowed.
     case (DAE.ENUM_LITERAL(), DAE.ENUM_LITERAL())
       algorithm
         if start_exp.index > stop_exp.index then
