@@ -61,14 +61,12 @@ protected import Util;
 
 // =============================================================================
 // TODO:
-//
+// - evaluation of for-loops
+// - evaluation of while-loops
+// - evaluation of xOut := funcCall1(funcCall2(xIn[1]));  with funcCall2(xIn[1]) = xIn[1,2] for example have a look at Media.Examples.ReferenceAir.MoistAir
+// - evaluation of BackendDAE.ARRAY_EQUATION
 // =============================================================================
-/*
-- evaluation of for-loops
-- evaluation of while-loops
-- evaluation of xOut := funcCall1(funcCall2(xIn[1]));  with funcCall2(xIn[1]) = xIn[1,2] for example have a look at Media.Examples.ReferenceAir.MoistAir
-- evaluation of BackendDAE.ARRAY_EQUATION
-*/
+
 // =============================================================================
 // type definitions
 //
@@ -117,7 +115,7 @@ algorithm
   end matchcontinue;
 end evalFunctions;
 
-protected function evaluateShared"evaluate objects in the shared structure that could be dependent of a function. i.e. parameters
+protected function evaluateShared "evaluate objects in the shared structure that could be dependent of a function. i.e. parameters
 author:Waurich TUD 2014-04"
   input BackendDAE.Shared sharedIn;
   output BackendDAE.Shared sharedOut;
@@ -134,7 +132,7 @@ algorithm
   sharedOut := BackendDAEUtil.replaceKnownVarsInShared(sharedIn,knVars);
 end evaluateShared;
 
-protected function evaluateParameter"evaluates a parameter"
+protected function evaluateParameter "evaluates a parameter"
   input BackendDAE.Var varIn;
   input DAE.FunctionTree funcTree;
   output BackendDAE.Var varOut;
@@ -156,7 +154,7 @@ algorithm
   end matchcontinue;
 end evaluateParameter;
 
-protected function evalFunctions_main"traverses the eqSystems for function calls and tries to evaluate them"
+protected function evalFunctions_main "traverses the eqSystems for function calls and tries to evaluate them"
   input BackendDAE.EqSystem eqSysIn;
   input tuple<BackendDAE.Shared,Integer,Boolean> tplIn;
   output BackendDAE.EqSystem eqSysOut;
@@ -190,7 +188,7 @@ algorithm
   tplOut := (shared,sysIdx+1,changed);
 end evalFunctions_main;
 
-protected function evalFunctions_findFuncs"traverses the lhs and rhs exps of an equation and tries to evaluate function calls "
+protected function evalFunctions_findFuncs "traverses the lhs and rhs exps of an equation and tries to evaluate function calls "
   input BackendDAE.Equation eqIn;
   input tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer,Boolean> tplIn;
   output BackendDAE.Equation eqOut;
@@ -258,7 +256,7 @@ algorithm
   end matchcontinue;
 end evalFunctions_findFuncs;
 
-protected function evaluateConstantFunction"Analyses if the rhsExp is a function call. the constant inputs are inserted and it will be checked if the outputs can be evaluated to a constant.
+protected function evaluateConstantFunction "Analyses if the rhsExp is a function call. the constant inputs are inserted and it will be checked if the outputs can be evaluated to a constant.
 If the function can be completely evaluated, the function call will be removed.
 If its partially constant, the constant assignments are added as additional equations and the former function will be replaced with an updated new one.
 author: Waurich TUD 2014-04"
@@ -452,12 +450,7 @@ algorithm
   end matchcontinue;
 end evaluateConstantFunction;
 
-protected function listLengthStr<T>
-  input list<T> inList;
-  output String outLength = intString(listLength(inList));
-end listLengthStr;
-
-protected function expandComplexEpressions"gets the complex contents or if its not complex, then the exp itself
+protected function expandComplexEpressions "gets the complex contents or if its not complex, then the exp itself
 author:Waurich TUD 2014-05"
   input DAE.Exp e;
   output list<DAE.Exp> eLst;
@@ -476,7 +469,7 @@ algorithm
   end matchcontinue;
 end expandComplexEpressions;
 
-protected function expandComplexElementsToCrefs"gets the complex contents or if its not complex, then the element itself and converts them to crefs.
+protected function expandComplexElementsToCrefs "gets the complex contents or if its not complex, then the element itself and converts them to crefs.
 author:Waurich TUD 2014-05"
   input DAE.Element e;
   output list<DAE.ComponentRef> eLst;
@@ -498,7 +491,7 @@ algorithm
   end matchcontinue;
 end expandComplexElementsToCrefs;
 
-protected function hasAssertFold"fold function to check if a list of stmts has an assert.
+protected function hasAssertFold "fold function to check if a list of stmts has an assert.
 author:Waurich TUD 2014-04"
   input DAE.Element stmt;
   input Boolean bIn;
@@ -512,7 +505,7 @@ algorithm
   bOut := List.fold(bLst,boolOr,bIn);
 end hasAssertFold;
 
-protected function hasReturnFold"fold function to check if a list of stmts has an return stmt.
+protected function hasReturnFold "fold function to check if a list of stmts has an return stmt.
 author:Waurich TUD 2014-04"
   input DAE.Element stmt;
   input Boolean bIn;
@@ -540,21 +533,7 @@ algorithm
   bOut := List.fold(bLst,boolOr,bIn);
 end hasReinitFold;
 
-protected function hasTerminateFold"fold function to check if a list of stmts has an terminate stmt.
-author:Waurich TUD 2014-04"
-  input DAE.Element stmt;
-  input Boolean bIn;
-  output Boolean bOut;
-protected
-  list<Boolean> bLst;
-  list<DAE.Statement> stmtLst;
-algorithm
-  stmtLst := DAEUtil.getStatement(stmt);
-  bLst := List.map(stmtLst,DAEUtil.isStmtTerminate);
-  bOut := List.fold(bLst,boolOr,bIn);
-end hasTerminateFold;
-
-protected function setRecordTypes"This is somehow a hack for FourBitBinaryAdder because there are function calls in the daelow on the lhs of a function call and this leads to an error in simcode creation
+protected function setRecordTypes "This is somehow a hack for FourBitBinaryAdder because there are function calls in the daelow on the lhs of a function call and this leads to an error in simcode creation
 they are used a s a cast for record types, but they should be a cast instead of a call, aren't they?
  func1(x) = func2(y).
  this function removes the call and sets the type
@@ -586,7 +565,7 @@ algorithm
   end matchcontinue;
 end setRecordTypes;
 
-public function getCrefsForRecord"get all crefs of a record exp
+public function getCrefsForRecord "get all crefs of a record exp
 author:Waurich TUD 2014-04"
   input DAE.Exp e;
   output list<DAE.Exp> es;
@@ -608,7 +587,7 @@ algorithm
   end match;
 end getCrefsForRecord;
 
-protected function scalarRecExpForOneDimRec"if the record contains only 1 scalar value, replace the scalar type definition with the record definition.
+protected function scalarRecExpForOneDimRec "if the record contains only 1 scalar value, replace the scalar type definition with the record definition.
 author:Waurich TUD 2014-04"
   input DAE.Exp expIn;
   output DAE.Exp expOut;
@@ -635,7 +614,7 @@ algorithm
   end matchcontinue;
 end scalarRecExpForOneDimRec;
 
-protected function scalarRecCrefsForOneDimRec"replace a 1 dimensional record through its scalar value
+protected function scalarRecCrefsForOneDimRec "replace a 1 dimensional record through its scalar value
 author:Waurich TUD 2014-04"
   input DAE.ComponentRef crefIn;
   output DAE.ComponentRef crefOut;
@@ -771,7 +750,7 @@ algorithm
   end matchcontinue;
 end buildVariableFunctionParts;
 
-protected function buildConstFunctionCrefs  // builds the new crefs (for example the scalars from a record) for the constant functino outputs
+protected function buildConstFunctionCrefs "builds the new crefs (for example the scalars from a record) for the constant functino outputs"
   input list<DAE.ComponentRef> constScalarCrefs;
   input list<DAE.ComponentRef> constComplCrefs;
   input list<DAE.ComponentRef> allOutputCrefs;
@@ -806,12 +785,12 @@ algorithm
 end buildConstFunctionCrefs;
 
 protected function checkIfOutputIsEvaluatedConstant
-  input list<DAE.Element> elements;  // check this var
+  input list<DAE.Element> elements "check this var";
   input list<DAE.ComponentRef> constCrefs;
-  input list<DAE.ComponentRef> constComplexLstIn; // completely constant complex or 1d vars
-  input list<DAE.ComponentRef> varComplexLstIn; // variable complex or 1d vars
-  input list<DAE.ComponentRef> constScalarLstIn; // partially constant complex var parts
-  input list<DAE.ComponentRef> varScalarLstIn; // the variable part of the complex var
+  input list<DAE.ComponentRef> constComplexLstIn "completely constant complex or 1d vars";
+  input list<DAE.ComponentRef> varComplexLstIn "variable complex or 1d vars";
+  input list<DAE.ComponentRef> constScalarLstIn "partially constant complex var parts";
+  input list<DAE.ComponentRef> varScalarLstIn "the variable part of the complex var";
   output list<DAE.ComponentRef> constComplexLstOut;
   output list<DAE.ComponentRef> varComplexLstOut;
   output list<DAE.ComponentRef> constScalarLstOut;
@@ -976,7 +955,7 @@ algorithm
   end match;
 end generateProtectedElements;
 
-protected function updateFunctionBody"udpates the function with the new elementsm update the type and create a new path name.
+protected function updateFunctionBody "udpates the function with the new elementsm update the type and create a new path name.
 author:Waurich TUD 2014-04"
   input DAE.Function funcIn;
   input list<DAE.Element> body;
@@ -1025,7 +1004,7 @@ algorithm
   end match;
 end updateFunctionBody;
 
-protected function updateFunctionType"sets the resultTypes in the functionType
+protected function updateFunctionType "sets the resultTypes in the functionType
 author:Waurich TUD 2014-05"
   input DAE.Type typIn;
   input list<DAE.Element> outputs;  // the new outputs of the function
@@ -1123,7 +1102,7 @@ algorithm
   end matchcontinue;
 end stmtCanBeRemoved;
 
-protected function traverseStmtsAndUpdate"traverses all assign-statements. the stmts can be updated with the given function.
+protected function traverseStmtsAndUpdate "traverses all assign-statements. the stmts can be updated with the given function.
 the Boolean function says if the statement should be deleted"
   input list<DAE.Statement> stmtsIn;
   input FuncType func;
@@ -1173,40 +1152,7 @@ algorithm
   end matchcontinue;
 end traverseStmtsAndUpdate;
 
-protected function expLstIsConst"checks if a list of Expressions is completely constant"
-  input list<DAE.Exp> exps;
-  output Boolean b;
-algorithm
-  b := match(exps)
-    local
-      Boolean b1;
-      DAE.Exp exp;
-      list<DAE.Exp> rest;
-    case({exp})
-      equation
-        b1 = Expression.isConst(exp);
-      then
-        b1;
-    case({})
-      then
-        false;
-    case(exp::rest)
-      equation
-        b1 = Expression.isConst(exp);
-        b1 = if b1 then expLstIsConst(rest) else false;
-      then
-        b1;
-  end match;
-end expLstIsConst;
-
-protected function expLstIsNotConst
-  input list<DAE.Exp> exps;
-  output Boolean b;
-algorithm
-  b := not expLstIsConst(exps);
-end expLstIsNotConst;
-
-protected function makeIdentCref  "searches only for crefs"
+protected function makeIdentCref "searches only for crefs"
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inCrefs;
   output DAE.Exp outExp;
@@ -1229,8 +1175,7 @@ algorithm
   end match;
 end makeIdentCref;
 
-
-protected function makeIdentCref2"appends the crefs of a qualified crefs with the given delimiter
+protected function makeIdentCref2 "appends the crefs of a qualified crefs with the given delimiter
 author:Waurich TUD 2014-03"
   input DAE.ComponentRef crefIn;
   input list<DAE.ComponentRef> changeTheseCrefs;
@@ -1259,7 +1204,7 @@ algorithm
   end matchcontinue;
 end makeIdentCref2;
 
-protected function replaceCrefIdent  "replaces the ident of a cref
+protected function replaceCrefIdent "replaces the ident of a cref
 author:Waurich TUD 2014-03"
   input DAE.ComponentRef crefIn;
   input String ident;
@@ -1286,7 +1231,7 @@ algorithm
   end match;
 end replaceCrefIdent;
 
-protected function statementRHSIsNotConst"checks whether the rhs of a statement is not constant.
+protected function statementRHSIsNotConst "checks whether the rhs of a statement is not constant.
 author:Waurich TUD 2014-03"
   input DAE.Statement stmt;
   output Boolean notConst;
@@ -1307,7 +1252,7 @@ algorithm
   end match;
 end statementRHSIsNotConst;
 
-protected function generateConstEqs" generate a list of BackendDAE.EQUATION.
+protected function generateConstEqs "generate a list of BackendDAE.EQUATION.
 author:Waurich TUD 2014-03"
   input list<DAE.Exp> lhsLst;
   input list<DAE.Exp> rhsLst;
@@ -1337,7 +1282,7 @@ algorithm
   end match;
 end generateConstEqs;
 
-protected function addReplacementRuleForAssignment"add a replacement rule according to the simple assigment like cref = const."
+protected function addReplacementRuleForAssignment "add a replacement rule according to the simple assigment like cref = const."
   input DAE.Statement stmt;
   input BackendVarTransform.VariableReplacements replIn;
   output BackendVarTransform.VariableReplacements replOut;
@@ -1358,7 +1303,7 @@ algorithm
   end match;
 end addReplacementRuleForAssignment;
 
-protected function evaluateFunctions_updateAlgorithms"gets the statements from an algorithm in order to traverse them.
+protected function evaluateFunctions_updateAlgorithms "gets the statements from an algorithm in order to traverse them.
 author:Waurich TUD 2014-03"
   input DAE.Element algIn;
   input tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements,Integer> tplIn;
@@ -1376,7 +1321,7 @@ algorithm
   algOut := DAE.ALGORITHM(alg,source);
 end evaluateFunctions_updateAlgorithms;
 
-protected function evaluateFunctions_updateStatement"replaces the statements with regards to the given varReplacements and check for constant assignments.
+protected function evaluateFunctions_updateStatement "replaces the statements with regards to the given varReplacements and check for constant assignments.
 if there are constant assignments add this replacement rule
 author:Waurich TUD 2014-03"
   input list<DAE.Statement> algsIn;
@@ -1696,7 +1641,7 @@ algorithm
   end matchcontinue;
 end evaluateFunctions_updateStatement;
 
-protected function evaluateIfStatement"check if the cases are constant and if so evaluate them.
+protected function evaluateIfStatement "check if the cases are constant and if so evaluate them.
 author: Waurich TUD 2014-04"
   input DAE.Statement stmtIn;
   input FuncInfo info;
@@ -1765,7 +1710,7 @@ algorithm
   end matchcontinue;
 end evaluateIfStatement;
 
-protected function evaluateElse"checks if its one of the elseif cases.
+protected function evaluateElse "checks if its one of the elseif cases.
 author: Waurich TUD 2014-04"
   input DAE.Else elseIn;
   input FuncInfo info;
@@ -1864,7 +1809,7 @@ algorithm
   (expsOut,_) := List.map2_2(expsIn,BackendVarTransform.replaceExp,replIn,NONE());
 end replaceExps;
 
-protected function getStatementLHS"fold function to get the lhs expressions of a statement
+protected function getStatementLHS "fold function to get the lhs expressions of a statement
 author:Waurich TUD 2014-04"
   input DAE.Statement stmt;
   input list<DAE.Exp> expsIn;
@@ -1966,7 +1911,7 @@ algorithm
   end match;
 end getStatementLHS;
 
-protected function getStatementLHSScalar"fold function to get the assigned scalar lhs expressions of a statement
+protected function getStatementLHSScalar "fold function to get the assigned scalar lhs expressions of a statement
 TODO: move to getStatementLHS
 author:Waurich TUD 2014-04"
   input DAE.Statement stmt;
@@ -2017,7 +1962,7 @@ algorithm
   end matchcontinue;
 end getStatementLHSScalar;
 
-protected function getDAEelseStatemntLsts"get all statements for every else or elseif clause
+protected function getDAEelseStatemntLsts "get all statements for every else or elseif clause
 author:Waurich TUD 2014"
   input DAE.Else elseIn;
   input list<list<DAE.Statement>> stmtLstsIn;
@@ -2044,8 +1989,7 @@ algorithm
   end match;
 end getDAEelseStatemntLsts;
 
-protected function evaluateFunctions_updateStatementLst"
-author:Waurich TUD 2014-03"
+protected function evaluateFunctions_updateStatementLst "author:Waurich TUD 2014-03"
   input list<DAE.Statement> stmtsIn;
   input tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements,Integer> tplIn;
   output list<DAE.Statement> stmtsOut;
@@ -2086,7 +2030,7 @@ algorithm
   end matchcontinue;
 end evaluateConstantFunctionWrapper;
 
-protected function equationToStmt"transforms a backend equation into a statement"
+protected function equationToStmt "transforms a backend equation into a statement"
   input BackendDAE.Equation eqIn;
   output DAE.Statement stmtOut;
 algorithm
@@ -2107,7 +2051,7 @@ algorithm
   end matchcontinue;
 end equationToStmt;
 
-protected function expType"gets the type of an expression"
+protected function expType "gets the type of an expression"
   input DAE.Exp eIn;
   output DAE.Type tOut;
 algorithm
@@ -2125,68 +2069,7 @@ algorithm
   end matchcontinue;
 end expType;
 
-protected function simplifyElse "evaluates an else or elseIf.
-author:Waurich TUD 2014-03"
-  input DAE.Else elseIn;
-  input tuple<DAE.FunctionTree,BackendVarTransform.VariableReplacements,Integer> inTpl;
-  output list<DAE.Statement> stmtsOut;
-  output tuple<DAE.FunctionTree,BackendVarTransform.VariableReplacements,Integer,Boolean> outTpl;
-algorithm
-  (stmtsOut,outTpl) := matchcontinue(elseIn,inTpl)
-    local
-      Integer idx;
-      Boolean const;
-      Boolean isElseIf;
-      BackendVarTransform.VariableReplacements repl,replIn;
-      DAE.Else else_;
-      DAE.Exp exp;
-      DAE.FunctionTree funcs;
-      list<DAE.Statement> stmts;
-    case(DAE.NOELSE(),(funcs,replIn,idx))
-      equation
-        //print("NO ELSE\n");
-       then
-         ({},(funcs,replIn,idx,true));
-    case(DAE.ELSEIF(exp=exp, statementLst=stmts,else_=else_),(funcs,replIn,idx))
-        equation
-        // simplify the condition
-          //print("STMT_IF_EXP_IN_ELSEIF:\n");
-        (exp,(_,funcs,idx,_)) = Expression.traverseExpTopDown(exp,evaluateConstantFunctionWrapper,(exp,funcs,idx,{}));
-        (exp,_) = BackendVarTransform.replaceExp(exp,replIn,NONE());
-        (exp,_) = ExpressionSimplify.simplify(exp);
-
-          //print("STMT_IF_EXP_IN_ELSEIF SIMPLIFIED:\n");
-          //ExpressionDump.dumpExp(exp);
-        // check if this could be evaluated
-        const = Expression.isConst(exp);
-        isElseIf = if const then Expression.toBool(exp) else false;
-        //print("do we have to use the elseif: "+boolString(isElseIf)+"\n");
-        if const and isElseIf then
-          (stmts,(funcs,repl,idx)) = evaluateFunctions_updateStatement(stmts,(funcs,replIn,idx),{});  // is this elseif case
-        elseif not isElseIf then
-          (stmts,(funcs,repl,idx,isElseIf)) = simplifyElse(else_,(funcs,replIn,idx)); // is the another elseif case or the else case
-        else
-          repl = replIn;
-        end if;
-      then
-        (stmts,(funcs,repl,idx,isElseIf));
-    case(DAE.ELSE(statementLst=stmts),(funcs,repl,idx))
-        equation
-           //print("the STMT_ELSE before: "+stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+"\n");
-         repl = BackendVarTransform.emptyReplacements();
-         (stmts,(funcs,repl,idx)) = evaluateFunctions_updateStatementLst(stmts,(funcs,repl,idx));  // is this elseif case
-           //print("the STMT_ELSE simplified: "+stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+"\n");
-      then
-         (stmts,(funcs,repl,idx,false));
-    else
-    equation
-        print("simplifyElse failed\n");
-      then
-        fail();
-  end matchcontinue;
-end simplifyElse;
-
-protected function getScalarsForComplexVar"gets the list<ComponentRef> for the scalar values of complex vars and multidimensional vars (at least real) .
+protected function getScalarsForComplexVar "gets the list<ComponentRef> for the scalar values of complex vars and multidimensional vars (at least real) .
 author: Waurich TUD 2014-03"
   input DAE.Element inElem;
   output list<DAE.ComponentRef> crefsOut;
@@ -2258,7 +2141,7 @@ algorithm
   end matchcontinue;
 end getScalarsForComplexVar;
 
-protected function isNotComplexVar"returns true if the given var is one dimensional (no array,record...).
+protected function isNotComplexVar "returns true if the given var is one dimensional (no array,record...).
 author: Waurich TUD 2014-03"
   input DAE.Element inElem;
   output Boolean b;
@@ -2291,7 +2174,7 @@ algorithm
     threaded for cr in allCrefs, ty in types);
 end setTypesForScalarCrefs;
 
-public function getRecordScalars"gets all crefs from a record"
+public function getRecordScalars "gets all crefs from a record"
   input DAE.ComponentRef crefIn;
   output list<DAE.ComponentRef> crefsOut;
 algorithm
@@ -2356,7 +2239,7 @@ algorithm
   end match;
 end getScalarExpSize;
 
-protected function getVarLstFromType"gets the list of DAE.Var from a DAE.Type
+protected function getVarLstFromType "gets the list of DAE.Var from a DAE.Type
 author:Waurich TUD 2014-04"
   input DAE.Type tyIn;
   output list<DAE.Var> varsOut;
@@ -2401,7 +2284,7 @@ end getScalarVarSize;
 //
 // =============================================================================
 
-protected function evaluateFunctions_updateStatementEmptyRepl"replace and update the statements but start with an empty replacement.
+protected function evaluateFunctions_updateStatementEmptyRepl "replace and update the statements but start with an empty replacement.
 author:Waurich TUD 2014-03"
   input list<DAE.Statement> algsIn;
   input DAE.FunctionTree inFuncTree;
@@ -2420,7 +2303,7 @@ algorithm
   mapTplOut := (algsOut, repl);
 end evaluateFunctions_updateStatementEmptyRepl;
 
-protected function predictIfOutput"evaluate outputs for all if/elseif/else and check if its constant at any time
+protected function predictIfOutput "evaluate outputs for all if/elseif/else and check if its constant at any time
 author: Waurich TUD 2014-04"
   input DAE.Statement stmtIn;
   input FuncInfo infoIn;
@@ -2504,7 +2387,7 @@ algorithm
   end matchcontinue;
 end predictIfOutput;
 
-protected function collectReplacements"gathers replacement rules for a given set of statements without updating them
+protected function collectReplacements "gathers replacement rules for a given set of statements without updating them
 author:Waurich TUD 2014-04"
   input list<DAE.Statement> stmtsIn;
   output BackendVarTransform.VariableReplacements replOut;
@@ -2515,8 +2398,7 @@ algorithm
   replOut := collectReplacements1(stmtsIn,repl);
 end collectReplacements;
 
-protected function collectReplacements1"
-author:Waurich TUD 2014-04"
+protected function collectReplacements1 "author:Waurich TUD 2014-04"
   input list<DAE.Statement> stmtsIn;
   input BackendVarTransform.VariableReplacements replIn;
   output BackendVarTransform.VariableReplacements replOut;
@@ -2572,7 +2454,7 @@ algorithm
   end matchcontinue;
 end collectReplacements1;
 
-protected function getOnlyConstantReplacements"removes replacement rules that do not have a constant expression as value
+protected function getOnlyConstantReplacements "removes replacement rules that do not have a constant expression as value
 author:Waurich TUD 2014-04"
   input BackendVarTransform.VariableReplacements replIn;
   output BackendVarTransform.VariableReplacements replOut;
@@ -2587,7 +2469,7 @@ algorithm
   replOut := BackendVarTransform.addReplacements(repl,crefs,exps,NONE());
 end getOnlyConstantReplacements;
 
-protected function updateStatementsInIfStmt"replaces the statements in the if statement
+protected function updateStatementsInIfStmt "replaces the statements in the if statement
 author:Waurich TUD 2014-04"
   input list<list<DAE.Statement>> stmtLstIn;
   input DAE.Statement origIf;
@@ -2608,7 +2490,7 @@ algorithm
   end match;
 end updateStatementsInIfStmt;
 
-protected function updateStatementsInElse"replaces the statements in else
+protected function updateStatementsInElse "replaces the statements in else
 author:Waurich TUD 2014-04"
   input list<list<DAE.Statement>> stmtLstIn;
   input DAE.Else origElse;
@@ -2670,7 +2552,7 @@ algorithm
   posOut := if b1 and b2 then posLst else posIn;
 end compareConstantExps2;
 
-protected function makeAssignmentMap"mapping functino fo build the statements for a list of lhs and rhs exps.
+protected function makeAssignmentMap "mapping functino fo build the statements for a list of lhs and rhs exps.
 author:Waurich TUD 2014-04"
   input Integer idx;
   input list<DAE.Exp> lhs;
@@ -2684,7 +2566,7 @@ algorithm
   stmt := makeAssignment(e1,e2);
 end makeAssignmentMap;
 
-protected function makeAssignment"makes an DAE.STMT_ASSIGN of the 2 DAE.Exp"
+protected function makeAssignment "makes an DAE.STMT_ASSIGN of the 2 DAE.Exp"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
   output DAE.Statement stmtOut;
@@ -2700,7 +2582,7 @@ end makeAssignment;
 //
 // =============================================================================
 
-protected function updateVarKinds"if there is a variable declared as a state that is not longer present inside a der-call or selected as a state, change the status to VARIABLE
+protected function updateVarKinds "if there is a variable declared as a state that is not longer present inside a der-call or selected as a state, change the status to VARIABLE
 author:Waurich TUD 2014-04"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -2713,8 +2595,7 @@ algorithm
   outDAE := BackendDAE.DAE(systs,shared);
 end updateVarKinds;
 
-protected function updateVarKinds_eqSys"
-author:Waurich TUD 2014-04"
+protected function updateVarKinds_eqSys "author:Waurich TUD 2014-04"
   input BackendDAE.EqSystem sysIn;
   input BackendDAE.Shared shared;
   output BackendDAE.EqSystem sysOut;
@@ -2745,7 +2626,7 @@ algorithm
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
 end updateVarKinds_eqSys;
 
-protected function varSSisPreferOrHigher"outputs true if the stateSelect attribute is prefer or always
+protected function varSSisPreferOrHigher "outputs true if the stateSelect attribute is prefer or always
 author:Waurich TUD 2014-04"
   input BackendDAE.Var varIn;
   output Boolean ssOut;
@@ -2758,7 +2639,7 @@ algorithm
   ssOut := intGe(i,2);
 end varSSisPreferOrHigher;
 
-protected function setVarKindForStates"if a state var is a memeber of the list of state-crefs, it remains a state. otherwise it will be changed to VarKind.Variable
+protected function setVarKindForStates "if a state var is a memeber of the list of state-crefs, it remains a state. otherwise it will be changed to VarKind.Variable
 waurich TUD 2014-04"
   input BackendDAE.Var inVar;
   input list<DAE.ComponentRef> inCrefs;
