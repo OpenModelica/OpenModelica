@@ -6073,6 +6073,48 @@ algorithm
   outRest := rest_e1;
 end splitEqualPrefix;
 
+public function combination<TI>
+  "Takes a two-dimensional list and creates a list combinations
+   given by the cartesian product of the sublists.
+
+    Ex: combination({{1, 2}, {3}, {4, 5}}) =>
+      {{1, 3, 4}, {1, 3, 5}, {2, 3, 4}, {2, 3, 5}}
+  "
+  input list<list<TI>> inElements;
+  output list<list<TI>> outElements = {};
+protected
+  list<list<TI>> elems;
+algorithm
+  elems := combination_tail(inElements, {}, {});
+  outElements := listReverse(elems);
+end combination;
+
+protected function combination_tail<TI>
+  input list<list<TI>> inElements;
+  input list<TI> inCombination;
+  input list<list<TI>> inAccumElems;
+  output list<list<TI>> outElements;
+algorithm
+  outElements := match(inElements)
+    local
+      list<TI> head;
+      list<list<TI>> rest;
+      list<list<TI>> acc;
+
+    case head :: rest
+      algorithm
+        acc := inAccumElems;
+        for e in head loop
+          acc := combination_tail(rest, e :: inCombination, acc);
+        end for;
+      then
+        acc;
+
+    else listReverse(inCombination) :: inAccumElems;
+
+  end match;
+end combination_tail;
+
 public function combinationMap<TI, TO>
   "Takes a two-dimensional list and calls the given function on the combinations
    given by the cartesian product of the sublists.
@@ -6089,10 +6131,10 @@ public function combinationMap<TI, TO>
     output TO outElement;
   end MapFunc;
 protected
-  list<list<TI>> elems;
+  list<TO> elems;
 algorithm
-  elems := listReverse(inElements);
-  outElements := combinationMap_tail(elems, inMapFunc, {}, {});
+  elems := combinationMap_tail(inElements, inMapFunc, {}, {});
+  outElements  := listReverse(elems);
 end combinationMap;
 
 protected function combinationMap_tail<TI, TO>
@@ -6115,13 +6157,14 @@ algorithm
 
     case head :: rest
       algorithm
+        acc := inAccumElems;
         for e in head loop
-          acc := combinationMap_tail(rest, inMapFunc, e :: inCombination, inAccumElems);
+          acc := combinationMap_tail(rest, inMapFunc, e :: inCombination, acc);
         end for;
       then
         acc;
 
-    else inMapFunc(inCombination) :: inAccumElems;
+    else inMapFunc(listReverse(inCombination)) :: inAccumElems;
 
   end match;
 end combinationMap_tail;

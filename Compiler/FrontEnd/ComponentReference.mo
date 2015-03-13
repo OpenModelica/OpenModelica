@@ -3011,51 +3011,19 @@ protected function expandCref2
   input DAE.Type inType;
   input list<DAE.Subscript> inSubscripts;
   input list<DAE.Dimension> inDimensions;
-  output list<DAE.ComponentRef> outCrefs;
+  output list<DAE.ComponentRef> outCrefs = {};
 protected
-  list<list<DAE.Subscript>> subs;
+  list<list<DAE.Subscript>> subslst;
 algorithm
   // Expand each subscript into a list of subscripts.
-  subs := List.threadMap(inSubscripts, inDimensions, Expression.expandSubscript);
-  subs := listReverse(subs);
-  // Use expandCref3 to construct a cref for each combination of subscripts.
-  outCrefs := expandCref3(inId, inType, subs, {}, {});
+  subslst := List.threadMap(inSubscripts, inDimensions, Expression.expandSubscript);
+  
+  subslst := List.combination(subslst);
+  for subs in subslst loop
+    outCrefs := makeCrefIdent(inId,inType,subs)::outCrefs;
+  end for;
+  outCrefs := listReverse(outCrefs);
 end expandCref2;
-
-protected function expandCref3
-  input DAE.Ident inId;
-  input DAE.Type inType;
-  input list<list<DAE.Subscript>> inSubscripts;
-  input list<DAE.Subscript> inAccumSubs;
-  input list<DAE.ComponentRef> inAccumCrefs;
-  output list<DAE.ComponentRef> outCrefs;
-algorithm
-  outCrefs := match(inId, inType, inSubscripts, inAccumSubs, inAccumCrefs)
-    local
-      DAE.Subscript sub;
-      list<DAE.Subscript> subs, acc_subs;
-      list<list<DAE.Subscript>> rest_subs;
-      list<DAE.ComponentRef> crefs;
-      DAE.ComponentRef cref;
-
-    case (_, _, (sub :: subs) :: rest_subs, acc_subs, crefs)
-      equation
-        crefs = expandCref3(inId, inType, subs :: rest_subs, acc_subs, crefs);
-        crefs = expandCref3(inId, inType, rest_subs, sub :: acc_subs, crefs);
-      then
-        crefs;
-
-    case (_, _, _ :: _, _, _)
-      then inAccumCrefs;
-
-    else
-      equation
-        cref = DAE.CREF_IDENT(inId, inType, inAccumSubs);
-      then
-        cref :: inAccumCrefs;
-
-  end match;
-end expandCref3;
 
 public function replaceSubsWithString
   input DAE.ComponentRef inCref;

@@ -6240,13 +6240,13 @@ algorithm
       BackendDAE.Shared shared;
       Integer uniqueEqIndex;
       String str;
-      list<list<DAE.Subscript>> subslst;
+      list<DAE.Dimension> dims;
       list<SimCodeVar.SimVar> tempvars;
       BackendDAE.EquationKind eqKind;
       BackendDAE.Equation eq1;
       HashSet.HashSet ht;
       list<DAE.ComponentRef> crefs, crefstmp;
-      DAE.Type ty;
+      DAE.Type ty,basety;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
 
 
@@ -6262,7 +6262,10 @@ algorithm
       e2_1 = Expression.replaceDerOpInExp(e2);
       // create the lhs tmp var
       ty = Expression.typeof(e1);
+      (basety,dims) = Types.flattenArrayTypeOpt(ty);
+      ty = DAE.T_ARRAY(basety, dims, Types.getTypeSource(basety));
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
+      
       lhse = DAE.CREF(left,ty);
       // Expand the tmp cref and create the list of rhs vars
       // to update the original lhs vars
