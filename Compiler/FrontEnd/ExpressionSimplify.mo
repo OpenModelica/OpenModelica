@@ -1527,34 +1527,34 @@ algorithm
     // sqrt function
     case("sqrt",DAE.CALL(expLst={e}))
       equation
-        r = realSqrt(Expression.toReal(e));
+        r = sqrt(Expression.toReal(e));
       then
         DAE.RCONST(r);
 
     // abs on real
     case("abs",DAE.CALL(expLst={DAE.RCONST(r)}))
       equation
-        r = realAbs(r);
+        r = abs(r);
       then
         DAE.RCONST(r);
 
     // abs on integer
     case("abs",DAE.CALL(expLst={DAE.ICONST(i)}))
       equation
-        i = intAbs(i);
+        i = abs(i);
       then
         DAE.ICONST(i);
 
     // sin function
     case("sin",DAE.CALL(expLst={e}))
       equation
-        r = realSin(Expression.toReal(e));
+        r = sin(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // cos function
     case("cos",DAE.CALL(expLst={e}))
       equation
-        r = realCos(Expression.toReal(e));
+        r = cos(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // sin function
@@ -1562,7 +1562,7 @@ algorithm
       equation
         r = Expression.toReal(e);
         true = r >= -1.0 and r <= 1.0;
-        r = realAsin(r);
+        r = asin(r);
       then DAE.RCONST(r);
 
     // cos function
@@ -1570,19 +1570,19 @@ algorithm
       equation
         r = Expression.toReal(e);
         true = r >= -1.0 and r <= 1.0;
-        r = realAcos(Expression.toReal(e));
+        r = acos(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // tangent function
     case("tan",DAE.CALL(expLst={e}))
       equation
-        r = realTan(Expression.toReal(e));
+        r = tan(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // DAE.Exp function
     case("exp",DAE.CALL(expLst={e}))
       equation
-        r = realExp(Expression.toReal(e));
+        r = .exp(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // log function
@@ -1590,7 +1590,7 @@ algorithm
       equation
         r = Expression.toReal(e);
         true = r > 0;
-        r = realLn(r);
+        r = log(r);
       then
         DAE.RCONST(r);
 
@@ -1599,14 +1599,14 @@ algorithm
       equation
         r = Expression.toReal(e);
         true = r > 0;
-        r = realLog10(r);
+        r = log10(r);
       then
         DAE.RCONST(r);
 
     // min function on integers
     case("min",DAE.CALL(expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
-        i = intMin(i, j);
+        i = min(i, j);
       then DAE.ICONST(i);
 
     // min function on reals
@@ -1614,19 +1614,19 @@ algorithm
       equation
         v1 = Expression.toReal(e);
         v2 = Expression.toReal(e1);
-        r = realMin(v1, v2);
+        r = min(v1, v2);
       then DAE.RCONST(r);
 
     // min function on enumerations
     case("min",DAE.CALL(expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
       equation
-        e2 = if intLt(i,j) then e else e1;
+        e2 = if i<j then e else e1;
       then e2;
 
     // max function on integers
     case("max",DAE.CALL(expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
-        i = intMax(i, j);
+        i = max(i, j);
       then DAE.ICONST(i);
 
     // max function on reals
@@ -1634,13 +1634,13 @@ algorithm
       equation
         v1 = Expression.toReal(e);
         v2 = Expression.toReal(e1);
-        r = realMax(v1, v2);
+        r = max(v1, v2);
       then DAE.RCONST(r);
 
     // max function on enumerations
     case("max",DAE.CALL(expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
       equation
-        e2 = if intGt(i,j) then e else e1;
+        e2 = if i>j then e else e1;
       then e2;
 
     case("sign",DAE.CALL(expLst={DAE.RCONST(r)}))

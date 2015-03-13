@@ -1926,7 +1926,7 @@ algorithm
     case (e0 as DAE.BINARY(exp1 = DAE.RCONST(real=r),operator = DAE.POW(tp),exp2 = e1), _, _, _, _)
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        r = realLn(r);
+        r = log(r);
         e = DAE.BINARY(DAE.BINARY(e0,DAE.MUL(tp),DAE.RCONST(r)),DAE.MUL(tp),de1);
       then
         (e, funcs);

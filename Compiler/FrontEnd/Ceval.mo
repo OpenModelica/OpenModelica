@@ -1274,70 +1274,70 @@ algorithm
     case ("acos",{Values.REAL(real = rv)},_)
       equation
         true = rv >= -1.0 and rv <= 1.0;
-        rv_1 = realAcos(rv);
+        rv_1 = acos(rv);
       then
         Values.REAL(rv_1);
     case ("asin",{Values.REAL(real = rv)},_)
       equation
         true = rv >= -1.0 and rv <= 1.0;
-        rv_1 = realAsin(rv);
+        rv_1 = asin(rv);
       then
         Values.REAL(rv_1);
     case ("atan",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realAtan(rv);
+        rv_1 = atan(rv);
       then
         Values.REAL(rv_1);
     case ("atan2",{Values.REAL(real = rv1),Values.REAL(real = rv2)},_)
       equation
-        rv_1 = realAtan2(rv1, rv2);
+        rv_1 = atan2(rv1, rv2);
       then
         Values.REAL(rv_1);
     case ("cos",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realCos(rv);
+        rv_1 = cos(rv);
       then
         Values.REAL(rv_1);
     case ("cosh",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realCosh(rv);
+        rv_1 = cosh(rv);
       then
         Values.REAL(rv_1);
     case ("exp",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realExp(rv);
+        rv_1 = exp(rv);
       then
         Values.REAL(rv_1);
     case ("log",{Values.REAL(real = rv)},_)
       equation
         true = rv > 0;
-        rv_1 = realLn(rv);
+        rv_1 = log(rv);
       then
         Values.REAL(rv_1);
     case ("log10",{Values.REAL(real = rv)},_)
       equation
         true = rv > 0;
-        rv_1 = realLog10(rv);
+        rv_1 = log10(rv);
       then
         Values.REAL(rv_1);
     case ("sin",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realSin(rv);
+        rv_1 = sin(rv);
       then
         Values.REAL(rv_1);
     case ("sinh",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realSinh(rv);
+        rv_1 = sinh(rv);
       then
         Values.REAL(rv_1);
     case ("tan",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realTan(rv);
+        rv_1 = tan(rv);
       then
         Values.REAL(rv_1);
     case ("tanh",{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realTanh(rv);
+        rv_1 = tanh(rv);
       then
         Values.REAL(rv_1);
 
@@ -1754,7 +1754,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
-        rv_1 = realExp(rv);
+        rv_1 = .exp(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -2892,7 +2892,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        rv_1 = realFloor(rv);
+        rv_1 = floor(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -2928,7 +2928,7 @@ algorithm
       equation
         (cache,Values.REAL(rv),_) = ceval(cache, env, exp, impl, st, msg, numIter+1);
 
-        rv_1 = realFloor(rv);
+        rv_1 = floor(rv);
         ri = realInt(rv_1);
         rvt = intReal(ri);
         ri_1 = ri + 1;
@@ -2975,7 +2975,7 @@ algorithm
           Error.addSourceMessage(Error.NEGATIVE_SQRT, {}, info);
           fail();
         else
-          rv_1 = realSqrt(rv);
+          rv_1 = sqrt(rv);
         end if;
       then
         (cache,Values.REAL(rv_1),st);
@@ -3009,7 +3009,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        rv_1 = realSin(rv);
+        rv_1 = sin(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3041,7 +3041,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        rv_1 = realSinh(rv);
+        rv_1 = sinh(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3073,7 +3073,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        rv_1 = realCos(rv);
+        rv_1 = cos(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3105,7 +3105,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        rv_1 = realCosh(rv);
+        rv_1 = cosh(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3138,7 +3138,7 @@ algorithm
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         true = rv > 0; // TODO: Print error-message?
-        rv_1 = realLn(rv);
+        rv_1 = log(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3170,7 +3170,7 @@ algorithm
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         true = rv > 0; // TODO: Print error-message?
-        rv_1 = realLog10(rv);
+        rv_1 = log10(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3202,7 +3202,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        rv_1 = realTan(rv);
+        rv_1 = tan(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3234,7 +3234,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-         rv_1 = realTanh(rv);
+         rv_1 = tanh(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3267,7 +3267,7 @@ algorithm
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         true = rv >= -1.0 and rv <= 1.0;
-        rv_1 = realAsin(rv);
+        rv_1 = asin(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3300,7 +3300,7 @@ algorithm
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         true = rv >= -1.0 and rv <= 1.0;
-        rv_1 = realAcos(rv);
+        rv_1 = acos(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3332,7 +3332,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        rv_1 = realAtan(rv);
+        rv_1 = atan(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3364,7 +3364,7 @@ algorithm
       equation
         (cache,Values.REAL(rv_1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         (cache,Values.REAL(rv_2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
-        rv = realAtan2(rv_1,rv_2);
+        rv = atan2(rv_1,rv_2);
       then
         (cache,Values.REAL(rv),st);
   end match;
@@ -3403,7 +3403,7 @@ algorithm
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv_1 = rv1 / rv2;
         b = rv_1 < 0.0;
-        rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
+        rv_2 = if b then ceil(rv_1) else floor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3414,7 +3414,7 @@ algorithm
         Error.addInternalError("cevalBuiltinDiv got Integer and Real (type error)\n", sourceInfo());
         rv_1 = rv1 / rv2;
          b = rv_1 < 0.0;
-        rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
+        rv_2 = if b then ceil(rv_1) else floor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3425,7 +3425,7 @@ algorithm
         rv2 = intReal(ri);
         rv_1 = rv1 / rv2;
         b = rv_1 < 0.0;
-        rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
+        rv_2 = if b then ceil(rv_1) else floor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3500,7 +3500,7 @@ algorithm
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rva = rv1 / rv2;
-        rvb = realFloor(rva);
+        rvb = floor(rva);
         rvc = rvb * rv2;
         rvd = rv1 - rvc;
       then
@@ -3511,7 +3511,7 @@ algorithm
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rva = rv1 / rv2;
-        rvb = realFloor(rva);
+        rvb = floor(rva);
         rvc = rvb * rv2;
         rvd = rv1 - rvc;
       then
@@ -3522,7 +3522,7 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv2 = intReal(ri);
         rva = rv1 / rv2;
-        rvb = realFloor(rva);
+        rvb = floor(rva);
         rvc = rvb * rv2;
         rvd = rv1 - rvc;
       then
@@ -3534,10 +3534,10 @@ algorithm
         rv1 = intReal(ri1);
         rv2 = intReal(ri2);
         rva = rv1 / rv2;
-        rvb = realFloor(rva);
+        rvb = floor(rva);
         rvc = rvb * rv2;
         rvd = rv1 - rvc;
-        ri_1 = realInt(rvd);
+        ri_1 = integer(rvd);
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)

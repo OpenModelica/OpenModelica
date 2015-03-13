@@ -1554,8 +1554,8 @@ public function realRangeSize
   input Real inStop;
   output Integer outSize;
 algorithm
-  outSize := realInt(realFloor(((inStop - inStart) / inStep) + 5e-15)) + 1;
-  outSize := intMax(outSize, 0);
+  outSize := integer(floor(((inStop - inStart) / inStep) + 5e-15)) + 1;
+  outSize := max(outSize, 0);
 end realRangeSize;
 
 public function testsuiteFriendly "Testsuite friendly name (start after testsuite/ or build/)"

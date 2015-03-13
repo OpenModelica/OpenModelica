@@ -2661,11 +2661,11 @@ algorithm
         stopTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
         Values.INTEGER(numberOfIntervals) = Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
-        interval = if numberOfIntervals == 0 then interval else realDiv(realSub(stopTime,startTime),intReal(intMax(numberOfIntervals,1)));
-        r1 = realSub(stopTime,startTime);
-        r2 = realMax(interval,1e-30  /* TODO: Use real if-expressions to skip these things */);
-        r = if realGt(interval,0.0) then realDiv(r1, r2) else 0.0;
-        numberOfIntervals = if numberOfIntervals == 0 then (if realGt(interval,0.0) then realInt(realCeil(r)) else 0) else numberOfIntervals;
+        if numberOfIntervals == 0 then
+          numberOfIntervals = if interval > 0.0 then integer(ceil((stopTime - startTime)/interval)) else 0;
+        else
+          interval = (stopTime-startTime) / max(numberOfIntervals,1);
+        end if;
       then
         (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)}),st);
 

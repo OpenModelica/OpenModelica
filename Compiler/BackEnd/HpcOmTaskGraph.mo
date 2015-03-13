@@ -5581,9 +5581,9 @@ protected
   Integer int;
   Real real;
 algorithm
-  real := realMul(inReal,realPow(10.0,intReal(nIn)));
-  real := realFloor(real);
-  outReal := realDiv(real,realPow(10.0,intReal(nIn)));
+  real := inReal * (10.0 ^ nIn);
+  real := floor(real);
+  outReal := real / (10.0 ^ nIn);
 end roundReal;
 
 //--------------------------------------------------------

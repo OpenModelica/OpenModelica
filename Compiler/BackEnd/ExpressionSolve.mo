@@ -801,7 +801,7 @@ algorithm
          true = r1 > 0.0;
          false = Expression.isConstOne(e1);
          true = expHasCref(e2, inExp3);
-         r = realLn(r2) / realLn(r1);
+         r = log(r2) / log(r1);
          res = DAE.RCONST(r);
        then
          (e2, res, true);

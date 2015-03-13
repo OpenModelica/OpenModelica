@@ -3212,7 +3212,7 @@ algorithm
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
-        lim = realInt(realMul(0.1,realSqrt(intReal(arrayLength(ass1)))));
+        lim = integer(0.1 * sqrt(arrayLength(ass1)));
         unmatched1 = ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
         (i_1,unmatched1) = HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
         meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
