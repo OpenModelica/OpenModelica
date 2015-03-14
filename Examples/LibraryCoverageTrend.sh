@@ -1,14 +1,12 @@
 #!/bin/bash -e
 # script to generate trend.html with library coverage: https://test.openmodelica.org/libraries/trend.html
-# $1 path to CountClassUses.py, /var/lib/hudson/jobs/OpenModelica_TEST_ALL_LIBRARIES/workspace/OpenModelica/Examples/CountClassUses.py
-# $2 path to where the libraries coverages is, /var/www/libraries
-# $3 the generated file name (trend.html)
-# $4 the detailed generated file name (trend-detailed.html)
+# $1 path to where the libraries coverages is, /var/www/libraries
+# $2 the generated file name (trend.html)
+# $3 the detailed generated file name (trend-detailed.html)
 
-PY=$1
-WWW=$2
-TREND_FILE=$3
-TREND_FILE_DETAILED=$4
+WWW=$1
+TREND_FILE=$2
+TREND_FILE_DETAILED=$3
 
 cd "$WWW"
 OUT=a.html
@@ -55,9 +53,3 @@ echo "<p>Please contact the <a href="https://www.openmodelica.org/">OpenModelica
 echo "</center>" >> $OUT
 echo "</body></html>" >> $OUT
 mv $OUT $TREND_FILE_DETAILED
-
-(cd "$WWW" && "$PY" MSL_3.2.1 ModelicaTest_3.2.1 > "$WWW/MSL_3.2.1/Coverage.txt")
-(cd "$WWW" && "$PY" MSL_trunk ModelicaTest_trunk > "$WWW/MSL_trunk/Coverage.txt")
-for lib in ModelicaTest_3.2.1 ModelicaTest_trunk Annex60 BioChem Buildings OpenHydraulics Physiolibrary PlanarMechanics PowerSystems SiemensPower SystemDynamics ThermoPower ThermoSysPro; do
-  (cd "$WWW" && "$PY" $lib > "$WWW/$lib/Coverage.txt")
-done
