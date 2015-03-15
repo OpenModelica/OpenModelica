@@ -326,6 +326,20 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   setAllParamsToStart(comp->fmuData);
   read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
   modelInfoInit(&(comp->fmuData->modelData.modelDataXml));
+
+  /* read input vars */
+  //input_function(comp->fmuData);
+  /* initial sample and delay before initial the system */
+  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData);
+  /* allocate memory for non-linear system solvers */
+  initializeNonlinearSystems(comp->fmuData);
+  /* allocate memory for non-linear system solvers */
+  initializeLinearSystems(comp->fmuData);
+  /* allocate memory for mixed system solvers */
+  initializeMixedSystems(comp->fmuData);
+  /* allocate memory for state selection */
+  initializeStateSetJacobians(comp->fmuData);
+
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
 }
@@ -374,18 +388,6 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
 
   setStartValues(comp);
   copyStartValuestoInitValues(comp->fmuData);
-  /* read input vars */
-  //input_function(comp->fmuData);
-  /* initial sample and delay before initial the system */
-  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData);
-  /* allocate memory for non-linear system solvers */
-  initializeNonlinearSystems(comp->fmuData);
-  /* allocate memory for non-linear system solvers */
-  initializeLinearSystems(comp->fmuData);
-  /* allocate memory for mixed system solvers */
-  initializeMixedSystems(comp->fmuData);
-  /* allocate memory for state selection */
-  initializeStateSetJacobians(comp->fmuData);
 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -447,7 +449,7 @@ fmi2Status fmi2Terminate(fmi2Component c) {
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate")
 
-  /* deinitDelay(comp->fmuData); */
+  /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
   /* free nonlinear system data */
   freeNonlinearSystems(comp->fmuData);
@@ -457,6 +459,8 @@ fmi2Status fmi2Terminate(fmi2Component c) {
   freeLinearSystems(comp->fmuData);
   /* free stateset data */
   freeStateSetData(comp->fmuData);
+
+  /* free data struct */
   deInitializeDataStruc(comp->fmuData);
 
   comp->state = modelTerminated;

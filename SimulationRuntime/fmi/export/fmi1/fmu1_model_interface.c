@@ -186,6 +186,19 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   comp->loggingOn = loggingOn;
   comp->state = modelInstantiated;
 
+  /* read input vars */
+  //input_function(comp->fmuData);
+  /* initial sample and delay before initial the system */
+  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData);
+  /* allocate memory for non-linear system solvers */
+  initializeNonlinearSystems(comp->fmuData);
+  /* allocate memory for non-linear system solvers */
+  initializeLinearSystems(comp->fmuData);
+  /* allocate memory for mixed system solvers */
+  initializeMixedSystems(comp->fmuData);
+  /* allocate memory for state selection */
+  initializeStateSetJacobians(comp->fmuData);
+
   return comp;
 }
 
@@ -601,22 +614,6 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
 
   setStartValues(comp);
   copyStartValuestoInitValues(comp->fmuData);
-  /* read input vars */
-  //input_function(comp->fmuData);
-  /* initial sample and delay before initial the system */
-  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData);
-
-  /* allocate memory for non-linear system solvers */
-  initializeNonlinearSystems(comp->fmuData);
-
-  /* allocate memory for non-linear system solvers */
-  initializeLinearSystems(comp->fmuData);
-
-  /* allocate memory for mixed system solvers */
-  initializeMixedSystems(comp->fmuData);
-
-  /* allocate memory for state selection */
-  initializeStateSetJacobians(comp->fmuData);
 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -823,14 +820,15 @@ fmiStatus fmiTerminate(fmiComponent c)
       "fmiTerminate");
 
   comp->state = modelTerminated;
-  /* deinitDelay(comp->fmuData); */
-  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
   /* free nonlinear system data */
   freeNonlinearSystems(comp->fmuData);
   /* free mixed system data */
   freeMixedSystems(comp->fmuData);
   /* free linear system data */
   freeLinearSystems(comp->fmuData);
+
+  /* call external objects destructors */
+  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
   /* free stateset data */
   freeStateSetData(comp->fmuData);
   deInitializeDataStruc(comp->fmuData);
