@@ -625,6 +625,24 @@ algorithm
   end for;
 end setRange;
 
+public function getRange<T>
+  "Gets the elements between inStart and inEnd."
+  input Integer inStart;
+  input Integer inEnd;
+  input array<T> inArray;
+  output list<T> outList = {};
+protected
+  T value;
+algorithm
+  if inStart > arrayLength(inArray) then
+    fail();
+  end if;
+  for i in inStart:inEnd loop
+    value := arrayGet(inArray, i);
+    outList := value::outList;
+  end for;
+end getRange;
+
 public function position<T>
   "Returns the index of the given element in the array, or 0 if it wasn't found."
   input array<T> inArray;

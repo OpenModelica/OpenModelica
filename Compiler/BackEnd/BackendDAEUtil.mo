@@ -8157,5 +8157,14 @@ algorithm
   end match;
 end expInt;
 
+public function makeSingleEquationComp
+  input Integer eqIdx;
+  input Integer varIdx;
+  output BackendDAE.StrongComponent comp;
+algorithm
+  comp := BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
+end makeSingleEquationComp;
+
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

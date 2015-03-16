@@ -693,7 +693,7 @@ algorithm
         true = intLe(listLength(tVarsIn),3);
         // apply Cramers Rule to this equation system
         (resEqs,_,addEqs,addVars) = applyCramerRule(jacValuesIn,tVarsIn);
-        comps = List.threadMap(eqIdcsIn,varIdcsIn,makeSingleEquationComp);
+        comps = List.threadMap(eqIdcsIn,varIdcsIn,BackendDAEUtil.makeSingleEquationComp);
       then (comps,resEqs,tVarsIn,addEqs,addVars);
     else
       equation
@@ -705,14 +705,6 @@ algorithm
       then ({comp},resEqsIn,tVarsIn,{},{});
   end matchcontinue;
 end buildEqSystemComponent;
-
-protected function makeSingleEquationComp
-  input Integer eqIdx;
-  input Integer varIdx;
-  output BackendDAE.StrongComponent comp;
-algorithm
-  comp := BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
-end makeSingleEquationComp;
 
 
 protected function buildLinearJacobian "builds the jacobian out of the given jacobian-entries

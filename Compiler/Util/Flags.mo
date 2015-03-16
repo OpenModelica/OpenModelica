@@ -428,6 +428,8 @@ constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(129, "disablePartitioning", fals
   Util.gettext("Deactivates partitioning of entire equation system."));
 constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(130, "advanceTearing", false,
   Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
+constant DebugFlag CONSTJAC = DEBUG_FLAG(131, "constjac", false,
+  Util.gettext("solves linear systems with const jacobian and variable b-Vector symbolically"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -564,7 +566,8 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_COMSUBEXP,
   NO_START_CALC,
   NO_PARTITIONING,
-  ADVANCE_TEARING
+  ADVANCE_TEARING,
+  CONSTJAC
 };
 
 public
