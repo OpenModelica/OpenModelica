@@ -11831,7 +11831,7 @@ algorithm
         // false = Types.isUnknownType(t);
         // print("elabCrefSubs type of: " + id + " is " + Types.printTypeStr(t) + "\n");
         // Debug.traceln("    elabSucscriptsDims " + id + " got var");
-        _ = Types.simplifyType(t);
+        // _ = Types.simplifyType(t);
         id_ty = Types.simplifyType(id_ty);
         hasZeroSizeDim = Types.isZeroLengthArray(id_ty);
         sl = Types.getDimensions(id_ty);
@@ -11961,6 +11961,7 @@ protected
   DAE.Const const;
   Option<DAE.Properties> prop;
   String subl_str, diml_str, cref_str;
+  Integer nrdims, nrsubs;
 algorithm
   for asub in inSubscripts loop
     if listEmpty(rest_dims) then
@@ -11984,6 +11985,19 @@ algorithm
     outSubs := dsub :: outSubs;
   end for;
 
+  nrsubs := listLength(outSubs);
+  
+  // If there are subs and the number of subs is less than dims 
+  // then fill in whole dims for the missing subs. i.e. We have a slice.
+  // If there are no subs then it is a whole array so we do nothing.
+  if nrsubs > 0 then
+    nrdims := listLength(inDimensions);
+    while nrsubs < nrdims loop
+      outSubs := DAE.WHOLEDIM()::outSubs;
+      nrsubs := nrsubs + 1;
+    end while;
+  end if;
+  
   outSubs := listReverse(outSubs);
 end elabSubscriptsDims;
 

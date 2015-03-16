@@ -6964,10 +6964,17 @@ case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=RANGE(__), type_=t
 case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=e as CALL(__), type_=t) then
   let &preExp = buffer ""
   let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
+  let type = expTypeArray(t)
   if crefSubIsScalar(cr) then
+    let lhs = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction)
+    let freepararray =  match context
+                        case FUNCTION_CONTEXT(__) then
+                            if acceptParModelicaGrammar() then 'free_device_array(&<%lhs%>)' else ''
+                        else ''
     <<
     <%preExp%>
-    <%copyArrayDataAndFreeMemAfterCall(t, expPart, cr, context)%>
+    <%freepararray%>
+    copy_<%type%>_data(<%expPart%>, &<%lhs%>);
     >>
   else
     let assign = indexedAssign(lhs, expPart, context, &preExp, &varDecls, &auxFunction)
@@ -7054,24 +7061,6 @@ template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr, Context con
   else
     'copy_<%type%>_data_mem(<%exp%>, &<%cref%>);'
 end copyArrayData;
-
-template copyArrayDataAndFreeMemAfterCall(DAE.Type ty, String exp, DAE.ComponentRef cr,
-
-  Context context)
-::=
-  let type = expTypeArray(ty)
-  let cref = contextArrayCref(cr, context)
-  match context
-  case FUNCTION_CONTEXT(__) then
-    <<
-    <%if not acceptParModelicaGrammar() then  'copy_<%type%>_data(<%exp%>, &<%cref%>);'%>
-    <%if acceptParModelicaGrammar() then 'free_device_array(&<%cref%>); <%cref%> = <%exp%>;'%>
-    >>
-  case PARALLEL_FUNCTION_CONTEXT(__) then
-    'copy_<%type%>_data(<%exp%>, &<%cref%>);'
-  else
-    '/*that*/copy_<%type%>_data_mem(<%exp%>, &<%cref%>);'
-end copyArrayDataAndFreeMemAfterCall;
 
 template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls, Text &auxFunction)
  "Generates a tuple assigment algorithm statement."
