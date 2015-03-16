@@ -426,7 +426,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         name = defaultName;
       else
       {
-        name = getUniqueComponentName(name.toLower());
+        name = getUniqueComponentName(defaultName);
         // show the information to the user if we have changed the name of some inner component.
         if (defaultPrefix.contains("inner"))
         {
