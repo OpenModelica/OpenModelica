@@ -3933,7 +3933,7 @@ package '1.9.3' "Version 1.9.3 (2015-03-17)"
   <head><meta http-equiv=\"refresh\" content=\"0; url=https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.3\"></head>
   <body>Redirecting to the <a href=\"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.9.3\">on-line release notes</a>.</body>
 </html>"));
-end '1.9.2';
+end '1.9.3';
 annotation(Documentation(info="<html>
 This section summarizes the major releases of OpenModelica and what changed between the major versions.
 Note that OpenModelica is developed rapidly.
