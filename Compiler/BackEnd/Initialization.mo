@@ -55,7 +55,6 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashSet;
-protected import BaseHashTable;
 protected import CheckModel;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -65,8 +64,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
-protected import HashTable;
-protected import HashTable2;
 protected import List;
 protected import Matching;
 protected import SimCodeUtil;
@@ -362,8 +359,7 @@ algorithm
       list< BackendDAE.Equation> eqns;
       BackendDAE.WhenEquation weqn;
       list< DAE.ComponentRef> crefLst;
-      HashTable.HashTable leftCrs;
-      list<tuple<DAE.ComponentRef, Integer>> crintLst;
+      HashSet.HashSet leftCrs;
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes eqAttr;
 
@@ -375,13 +371,10 @@ algorithm
     // algorithm
     case BackendDAE.ALGORITHM(alg=alg, source=source,expand=crefExpand) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
-      (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(stmts, {}, HashTable.emptyHashTableSized(50));
+      (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(stmts, {}, HashSet.emptyHashSetSized(50));
       alg = DAE.ALGORITHM_STMTS(stmts);
       size = listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
-      crintLst = BaseHashTable.hashTableList(leftCrs);
-      crefLst = List.fold(crintLst, selectSecondZero, {});
-      // crefLst = List.uniqueOnTrue(crefLst, ComponentReference.crefEqual);
-      // print("LHS Crefs: " + stringDelimitList(List.map(crefLst, ComponentReference.printComponentRefStr), ", ") + "\n");
+      crefLst = BaseHashSet.hashSetList(leftCrs);
       eqns = generateInactiveWhenEquationForInitialization(crefLst, source, inAccEq);
       eqns = List.consOnTrue(not listEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), eqns);
     then eqns;
@@ -389,18 +382,6 @@ algorithm
     else inEq::inAccEq;
   end match;
 end inlineWhenForInitializationEquation;
-
-protected function selectSecondZero
-  input tuple<DAE.ComponentRef, Integer> inTpl;
-  input list<DAE.ComponentRef> iAcc;
-  output list<DAE.ComponentRef> oAcc;
-protected
-  DAE.ComponentRef cr;
-  Integer i;
-algorithm
-  (cr, i) := inTpl;
-  oAcc := List.consOnTrue(intEq(i, 0), cr, iAcc);
-end selectSecondZero;
 
 protected function inlineWhenForInitializationWhenEquation "author: lochel"
   input BackendDAE.WhenEquation inWEqn;
@@ -437,9 +418,9 @@ protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input list< DAE.Statement> inStmts;
   input list< DAE.Statement> inAcc "={}";
-  input HashTable.HashTable inLeftCrs;
+  input HashSet.HashSet inLeftCrs;
   output list< DAE.Statement> outStmts;
-  output HashTable.HashTable outLeftCrs;
+  output HashSet.HashSet outLeftCrs;
 algorithm
   (outStmts, outLeftCrs) := matchcontinue(inStmts)
     local
@@ -447,7 +428,7 @@ algorithm
       list< DAE.ComponentRef> crefLst;
       DAE.Statement stmt;
       list< DAE.Statement> stmts, rest;
-      HashTable.HashTable leftCrs;
+      HashSet.HashSet leftCrs;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
 
     case {}
@@ -471,10 +452,10 @@ end inlineWhenForInitializationWhenAlgorithm;
 protected function inlineWhenForInitializationWhenStmt "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input DAE.Statement inWhenStatement;
-  input HashTable.HashTable inLeftCrs;
+  input HashSet.HashSet inLeftCrs;
   input list< DAE.Statement> inAcc;
   output list< DAE.Statement> outStmts;
-  output HashTable.HashTable outLeftCrs;
+  output HashSet.HashSet outLeftCrs;
 algorithm
   (outStmts, outLeftCrs) := matchcontinue(inWhenStatement)
     local
@@ -482,30 +463,27 @@ algorithm
       list< DAE.ComponentRef> crefLst;
       DAE.Statement stmt;
       list< DAE.Statement> stmts;
-      HashTable.HashTable leftCrs;
+      HashSet.HashSet leftCrs;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
 
     // active when equation during initialization
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts) equation
       true = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      crintLst = List.map1(crefLst, Util.makeTuple, 1);
-      leftCrs = List.fold(crintLst, BaseHashTable.add, inLeftCrs);
       stmts = List.foldr(stmts, List.consr, inAcc);
-    then (stmts, leftCrs);
+    then (stmts, inLeftCrs);
 
     // inactive when equation during initialization
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()) equation
       false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs = List.fold(crefLst, addWhenLeftCr, inLeftCrs);
+      leftCrs = List.fold(crefLst, BaseHashSet.add, inLeftCrs);
     then (inAcc, leftCrs);
 
     // inactive when equation during initialization with elsewhen part
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)) equation
       false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs = List.fold(crefLst, addWhenLeftCr, inLeftCrs);
+      leftCrs = List.fold(crefLst, BaseHashSet.add, inLeftCrs);
       (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
     then (stmts, leftCrs);
 
@@ -515,23 +493,6 @@ algorithm
 
   end matchcontinue;
 end inlineWhenForInitializationWhenStmt;
-
-protected function addWhenLeftCr
-  input DAE.ComponentRef cr;
-  input HashTable.HashTable inLeftCrs;
-  output HashTable.HashTable outLeftCrs;
-algorithm
-  outLeftCrs := matchcontinue(cr, inLeftCrs)
-    local
-      HashTable.HashTable leftCrs;
-
-    case (_, _) equation
-      leftCrs = BaseHashTable.addUnique((cr, 0), inLeftCrs);
-    then leftCrs;
-
-    else inLeftCrs;
-  end matchcontinue;
-end addWhenLeftCr;
 
 protected function generateInactiveWhenEquationForInitialization "author: lochel"
   input list<DAE.ComponentRef> inCrLst;
