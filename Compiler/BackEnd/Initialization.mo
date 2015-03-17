@@ -341,7 +341,7 @@ algorithm
 
   ((orderedVars, eqnlst)) := BackendEquation.traverseEquationArray(orderedEqs, inlineWhenForInitializationEquation, (orderedVars, {}));
   //print("Before: " + intString(listLength(eqnlst)) + "\n");
-  eqnlst := List.uniqueOnTrue(eqnlst, BackendEquation.equationEqual);
+  eqnlst := List.uniqueOnTrue(eqnlst, BackendEquation.equationEqual) "hack for #3209";
   //print("After: " + intString(listLength(eqnlst)) + "\n");
   eqns := BackendEquation.listEquation(eqnlst);
 
@@ -463,22 +463,15 @@ algorithm
     case ({}, _, _, _)
     then (listReverse(inAcc), iLeftCrs);
 
-    // single inactive when equation during initialization
-    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()))::{}, true, _, _) equation
-      false = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
-    then ({}, leftCrs);
-
-    // when equation during initialization
+    // when statement
     case ((stmt as DAE.STMT_WHEN())::rest, _, _, _) equation
       // for when statements it is not necessary that all branches have the same left hand side variables
       // -> take care that for each left hand site an assigment is generated
-      (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, false, iLeftCrs, inAcc);
+      (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, iLeftCrs, inAcc);
       (stmts, leftCrs) = generateInitialWhenAlg(rest, false, stmts, leftCrs);
     then  (stmts, leftCrs);
 
-    // no when equation
+    // no when statement
     case (stmt::rest, _, _, _) equation
       (stmts, leftCrs) = generateInitialWhenAlg(rest, false, stmt::inAcc, iLeftCrs);
     then (stmts, leftCrs);
@@ -488,14 +481,13 @@ end generateInitialWhenAlg;
 protected function inlineWhenForInitializationWhenStmt "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
   This is a helper function for inlineWhenForInitialization3."
-  input DAE.Statement inWhen;
-  input Boolean foundAktiv;
+  input DAE.Statement inWhenStatement;
   input HashTable.HashTable iLeftCrs;
   input list< DAE.Statement> inAcc;
   output list< DAE.Statement> outStmts;
   output HashTable.HashTable oLeftCrs;
 algorithm
-  (outStmts, oLeftCrs) := matchcontinue(inWhen, foundAktiv, iLeftCrs, inAcc)
+  (outStmts, oLeftCrs) := matchcontinue(inWhenStatement)
     local
       DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
@@ -505,36 +497,27 @@ algorithm
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
 
     // active when equation during initialization
-    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()), _, _, _) equation
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts) equation
       true = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       crintLst = List.map1(crefLst, Util.makeTuple, 1);
       leftCrs = List.fold(crintLst, BaseHashTable.add, iLeftCrs);
       stmts = List.foldr(stmts, List.consr, inAcc);
-    then (stmts, leftCrs);
-
-    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)), false, _, _) equation
-      true = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      crintLst = List.map1(crefLst, Util.makeTuple, 1);
-      leftCrs = List.fold(crintLst, BaseHashTable.add, iLeftCrs);
-      stmts = List.foldr(stmts, List.consr, inAcc);
-      (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, true, leftCrs, stmts);
     then (stmts, leftCrs);
 
     // inactive when equation during initialization
-    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()), _, _, _) equation
-      false = Expression.containsInitialCall(condition, false) and not foundAktiv;
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()) equation
+      false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
     then (inAcc, leftCrs);
 
     // inactive when equation during initialization with elsewhen part
-    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)), _, _, _) equation
-      false = Expression.containsInitialCall(condition, false) and not foundAktiv;
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)) equation
+      false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
-      (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, foundAktiv, leftCrs, inAcc);
+      (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
     then (stmts, leftCrs);
 
     else equation
@@ -592,6 +575,38 @@ algorithm
     then (eqns, vars);
  end match;
 end generateInactiveWhenEquationForInitialization;
+
+protected function generateInactiveWhenAlgorithmForInitialization "author: lochel
+  This is a helper function for inlineWhenForInitialization3."
+  input list<DAE.ComponentRef> inCrLst;
+  input DAE.ElementSource inSource;
+  input list<BackendDAE.Equation> inEqns;
+  input BackendDAE.Variables iVars;
+  output list<BackendDAE.Equation> outEqns;
+  output BackendDAE.Variables oVars;
+algorithm
+  (outEqns, oVars) := match(inCrLst, inSource, inEqns, iVars)
+    local
+      DAE.Type identType;
+      DAE.Exp crefExp, crefPreExp;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> rest;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.Variables vars;
+
+    case ({}, _, _, _)
+    then (inEqns, iVars);
+
+    case (cr::rest, _, _, _) equation
+      identType = ComponentReference.crefTypeConsiderSubs(cr);
+      crefExp = DAE.CREF(cr, identType);
+      crefPreExp = Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
+      eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+      (eqns, vars) = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns, iVars);
+    then (eqns, vars);
+ end match;
+end generateInactiveWhenAlgorithmForInitialization;
 
 // =============================================================================
 // section for collecting all variables, of which the left limit is also used.
@@ -1430,7 +1445,7 @@ algorithm
   unassigned := Matching.getUnassigned(nVars+nAddVars, vec1, {});
   if 0 < listLength(unassigned) then
     Error.addCompilerNotification("The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
-    // BackendDump.dumpEqSystem(syst, "The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
+    //BackendDump.dumpEqSystem(syst, "The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
   end if;
   0 := listLength(unassigned); // if this fails, the system is singular (mixed-determined)
 
@@ -2150,6 +2165,7 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue));
 
+      // pre(v) = v.start
       eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
 
       vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
@@ -2165,6 +2181,7 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
+      // pre(v) = v
       eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
 
       vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
