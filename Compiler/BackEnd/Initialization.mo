@@ -273,7 +273,7 @@ end solveInitialSystem;
 // =============================================================================
 
 protected function solveInitialSystemEqSystem "author: lochel
-  This is a helper function of solveInitialSystem and solves the generated system."
+  This solves the generated system."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem osyst = isyst;
@@ -325,8 +325,7 @@ algorithm
   outDAE := BackendDAE.DAE(systs, shared);
 end inlineWhenForInitialization;
 
-protected function inlineWhenForInitializationSystem "author: lochel
-  This is a helper function for inlineWhenForInitialization."
+protected function inlineWhenForInitializationSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
 protected
@@ -339,7 +338,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
 
-  ((orderedVars, eqnlst)) := BackendEquation.traverseEquationArray(orderedEqs, inlineWhenForInitializationEquation, (orderedVars, {}));
+  eqnlst := BackendEquation.traverseEquationArray(orderedEqs, inlineWhenForInitializationEquation, {});
   //print("Before: " + intString(listLength(eqnlst)) + "\n");
   eqnlst := List.uniqueOnTrue(eqnlst, BackendEquation.equationEqual) "hack for #3209";
   //print("After: " + intString(listLength(eqnlst)) + "\n");
@@ -348,50 +347,46 @@ algorithm
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end inlineWhenForInitializationSystem;
 
-protected function inlineWhenForInitializationEquation "author: lochel
-  This is a helper function for inlineWhenForInitialization1."
+protected function inlineWhenForInitializationEquation "author: lochel"
   input BackendDAE.Equation inEq;
-  input tuple<BackendDAE.Variables, list<BackendDAE.Equation>> inTpl;
-  output BackendDAE.Equation outEq;
-  output tuple<BackendDAE.Variables, list<BackendDAE.Equation>> outTpl;
+  input list<BackendDAE.Equation> inAccEq;
+  output BackendDAE.Equation outEq = inEq;
+  output list<BackendDAE.Equation> outAccEq;
 algorithm
-  (outEq,outTpl) := match (inEq,inTpl)
+  outAccEq := match (inEq)
     local
       DAE.ElementSource source;
-      BackendDAE.Equation eqn;
       DAE.Algorithm alg;
       Integer size;
       list< DAE.Statement> stmts;
       list< BackendDAE.Equation> eqns;
       BackendDAE.WhenEquation weqn;
-      BackendDAE.Variables vars;
       list< DAE.ComponentRef> crefLst;
       HashTable.HashTable leftCrs;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes eqAttr;
 
-    // when equation during initialization
-    case (eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn, source=source, attr=eqAttr), (vars, eqns)) equation
-      (eqns, vars) = inlineWhenForInitializationWhenEquation(weqn, source, eqAttr, eqns, vars);
-    then (eqn, (vars, eqns));
+    // when equation
+    case BackendDAE.WHEN_EQUATION(whenEquation=weqn, source=source, attr=eqAttr) equation
+      eqns = inlineWhenForInitializationWhenEquation(weqn, source, eqAttr, inAccEq);
+    then eqns;
 
     // algorithm
-    case (eqn as BackendDAE.ALGORITHM(alg=alg, source=source,expand=crefExpand), (vars, eqns)) equation
+    case BackendDAE.ALGORITHM(alg=alg, source=source,expand=crefExpand) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
-      (stmts, leftCrs) = generateInitialWhenAlg(stmts, true, {}, HashTable.emptyHashTableSized(50));
+      (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(stmts, {}, HashTable.emptyHashTableSized(50));
       alg = DAE.ALGORITHM_STMTS(stmts);
       size = listLength(CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand));
       crintLst = BaseHashTable.hashTableList(leftCrs);
       crefLst = List.fold(crintLst, selectSecondZero, {});
       // crefLst = List.uniqueOnTrue(crefLst, ComponentReference.crefEqual);
       // print("LHS Crefs: " + stringDelimitList(List.map(crefLst, ComponentReference.printComponentRefStr), ", ") + "\n");
-      (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
+      eqns = generateInactiveWhenEquationForInitialization(crefLst, source, inAccEq);
       eqns = List.consOnTrue(not listEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), eqns);
-    then (eqn, (vars, eqns));
+    then eqns;
 
-    case (eqn, (vars, eqns))
-    then (eqn, (vars, eqn::eqns));
+    else inEq::inAccEq;
   end match;
 end inlineWhenForInitializationEquation;
 
@@ -407,17 +402,14 @@ algorithm
   oAcc := List.consOnTrue(intEq(i, 0), cr, iAcc);
 end selectSecondZero;
 
-protected function inlineWhenForInitializationWhenEquation "author: lochel
-  This is a helper function for inlineWhenForInitializationEquation."
+protected function inlineWhenForInitializationWhenEquation "author: lochel"
   input BackendDAE.WhenEquation inWEqn;
   input DAE.ElementSource inSource;
   input BackendDAE.EquationAttributes inEqAttr;
   input list<BackendDAE.Equation> inEqns;
-  input BackendDAE.Variables inVars;
   output list<BackendDAE.Equation> outEqns;
-  output BackendDAE.Variables outVars;
 algorithm
-  (outEqns, outVars) := matchcontinue(inWEqn)
+  outEqns := matchcontinue(inWEqn)
     local
       DAE.ComponentRef left;
       DAE.Exp condition, right, crexp;
@@ -431,27 +423,25 @@ algorithm
       true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExpBottomUp
       crexp = Expression.crefExp(left);
       eqn = BackendEquation.generateEquation(crexp, right, inSource, inEqAttr);
-    then (eqn::inEqns, inVars);
+    then eqn::inEqns;
 
     // inactive when equation during initialization
     case BackendDAE.WHEN_EQ(condition=condition, left=left) equation
       false = Expression.containsInitialCall(condition, false);
-      (eqns,_) = generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(left, true), inSource, inEqns, inVars);
-    then (eqns, inVars);
+      eqns = generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(left, true), inSource, inEqns);
+    then eqns;
   end matchcontinue;
 end inlineWhenForInitializationWhenEquation;
 
-protected function generateInitialWhenAlg "author: lochel
-  This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
-  This is a helper function for inlineWhenForInitialization3."
+protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
+  This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input list< DAE.Statement> inStmts;
-  input Boolean first;
-  input list< DAE.Statement> inAcc;
-  input HashTable.HashTable iLeftCrs;
+  input list< DAE.Statement> inAcc "={}";
+  input HashTable.HashTable inLeftCrs;
   output list< DAE.Statement> outStmts;
-  output HashTable.HashTable oLeftCrs;
+  output HashTable.HashTable outLeftCrs;
 algorithm
-  (outStmts, oLeftCrs) := matchcontinue(inStmts, first, inAcc, iLeftCrs)
+  (outStmts, outLeftCrs) := matchcontinue(inStmts)
     local
       DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
@@ -460,34 +450,33 @@ algorithm
       HashTable.HashTable leftCrs;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
 
-    case ({}, _, _, _)
-    then (listReverse(inAcc), iLeftCrs);
+    case {}
+    then (listReverse(inAcc), inLeftCrs);
 
     // when statement
-    case ((stmt as DAE.STMT_WHEN())::rest, _, _, _) equation
+    case (stmt as DAE.STMT_WHEN())::rest equation
       // for when statements it is not necessary that all branches have the same left hand side variables
-      // -> take care that for each left hand site an assigment is generated
-      (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, iLeftCrs, inAcc);
-      (stmts, leftCrs) = generateInitialWhenAlg(rest, false, stmts, leftCrs);
+      // -> take care that for each left hand side an assigment is generated
+      (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, inLeftCrs, inAcc);
+      (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(rest, stmts, leftCrs);
     then  (stmts, leftCrs);
 
     // no when statement
-    case (stmt::rest, _, _, _) equation
-      (stmts, leftCrs) = generateInitialWhenAlg(rest, false, stmt::inAcc, iLeftCrs);
+    case stmt::rest equation
+      (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(rest, stmt::inAcc, inLeftCrs);
     then (stmts, leftCrs);
   end matchcontinue;
-end generateInitialWhenAlg;
+end inlineWhenForInitializationWhenAlgorithm;
 
 protected function inlineWhenForInitializationWhenStmt "author: lochel
-  This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
-  This is a helper function for inlineWhenForInitialization3."
+  This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
   input DAE.Statement inWhenStatement;
-  input HashTable.HashTable iLeftCrs;
+  input HashTable.HashTable inLeftCrs;
   input list< DAE.Statement> inAcc;
   output list< DAE.Statement> outStmts;
-  output HashTable.HashTable oLeftCrs;
+  output HashTable.HashTable outLeftCrs;
 algorithm
-  (outStmts, oLeftCrs) := matchcontinue(inWhenStatement)
+  (outStmts, outLeftCrs) := matchcontinue(inWhenStatement)
     local
       DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
@@ -501,7 +490,7 @@ algorithm
       true = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       crintLst = List.map1(crefLst, Util.makeTuple, 1);
-      leftCrs = List.fold(crintLst, BaseHashTable.add, iLeftCrs);
+      leftCrs = List.fold(crintLst, BaseHashTable.add, inLeftCrs);
       stmts = List.foldr(stmts, List.consr, inAcc);
     then (stmts, leftCrs);
 
@@ -509,14 +498,14 @@ algorithm
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()) equation
       false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
+      leftCrs = List.fold(crefLst, addWhenLeftCr, inLeftCrs);
     then (inAcc, leftCrs);
 
     // inactive when equation during initialization with elsewhen part
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)) equation
       false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
+      leftCrs = List.fold(crefLst, addWhenLeftCr, inLeftCrs);
       (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
     then (stmts, leftCrs);
 
@@ -529,31 +518,28 @@ end inlineWhenForInitializationWhenStmt;
 
 protected function addWhenLeftCr
   input DAE.ComponentRef cr;
-  input HashTable.HashTable iLeftCrs;
-  output HashTable.HashTable oLeftCrs;
+  input HashTable.HashTable inLeftCrs;
+  output HashTable.HashTable outLeftCrs;
 algorithm
-  oLeftCrs := matchcontinue(cr, iLeftCrs)
+  outLeftCrs := matchcontinue(cr, inLeftCrs)
     local
       HashTable.HashTable leftCrs;
 
     case (_, _) equation
-      leftCrs = BaseHashTable.addUnique((cr, 0), iLeftCrs);
+      leftCrs = BaseHashTable.addUnique((cr, 0), inLeftCrs);
     then leftCrs;
 
-    else iLeftCrs;
+    else inLeftCrs;
   end matchcontinue;
 end addWhenLeftCr;
 
-protected function generateInactiveWhenEquationForInitialization "author: lochel
-  This is a helper function for inlineWhenForInitialization3."
+protected function generateInactiveWhenEquationForInitialization "author: lochel"
   input list<DAE.ComponentRef> inCrLst;
   input DAE.ElementSource inSource;
   input list<BackendDAE.Equation> inEqns;
-  input BackendDAE.Variables iVars;
   output list<BackendDAE.Equation> outEqns;
-  output BackendDAE.Variables oVars;
 algorithm
-  (outEqns, oVars) := match(inCrLst, inSource, inEqns, iVars)
+  outEqns := match (inCrLst)
     local
       DAE.Type identType;
       DAE.Exp crefExp, crefPreExp;
@@ -563,50 +549,18 @@ algorithm
       list<BackendDAE.Equation> eqns;
       BackendDAE.Variables vars;
 
-    case ({}, _, _, _)
-    then (inEqns, iVars);
+    case {}
+    then inEqns;
 
-    case (cr::rest, _, _, _) equation
+    case cr::rest equation
       identType = ComponentReference.crefTypeConsiderSubs(cr);
       crefExp = DAE.CREF(cr, identType);
       crefPreExp = Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
       eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-      (eqns, vars) = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns, iVars);
-    then (eqns, vars);
+      eqns = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns);
+    then eqns;
  end match;
 end generateInactiveWhenEquationForInitialization;
-
-protected function generateInactiveWhenAlgorithmForInitialization "author: lochel
-  This is a helper function for inlineWhenForInitialization3."
-  input list<DAE.ComponentRef> inCrLst;
-  input DAE.ElementSource inSource;
-  input list<BackendDAE.Equation> inEqns;
-  input BackendDAE.Variables iVars;
-  output list<BackendDAE.Equation> outEqns;
-  output BackendDAE.Variables oVars;
-algorithm
-  (outEqns, oVars) := match(inCrLst, inSource, inEqns, iVars)
-    local
-      DAE.Type identType;
-      DAE.Exp crefExp, crefPreExp;
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> rest;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqns;
-      BackendDAE.Variables vars;
-
-    case ({}, _, _, _)
-    then (inEqns, iVars);
-
-    case (cr::rest, _, _, _) equation
-      identType = ComponentReference.crefTypeConsiderSubs(cr);
-      crefExp = DAE.CREF(cr, identType);
-      crefPreExp = Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
-      eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-      (eqns, vars) = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns, iVars);
-    then (eqns, vars);
- end match;
-end generateInactiveWhenAlgorithmForInitialization;
 
 // =============================================================================
 // section for collecting all variables, of which the left limit is also used.
@@ -1088,8 +1042,7 @@ end selectInitializationVariables2;
 //
 // =============================================================================
 
-protected function simplifyInitialFunctions "author: Frenkel TUD 2012-12
-  simplify initial() with true and sample with false"
+protected function simplifyInitialFunctions
   input DAE.Exp inExp;
   input Boolean inUseHomotopy;
   output DAE.Exp exp;
@@ -1098,8 +1051,7 @@ algorithm
   (exp, useHomotopy) := Expression.traverseExpBottomUp(inExp, simplifyInitialFunctionsExp, inUseHomotopy);
 end simplifyInitialFunctions;
 
-protected function simplifyInitialFunctionsExp "author: Frenkel TUD 2012-12
-  helper for simplifyInitialFunctions"
+protected function simplifyInitialFunctionsExp
   input DAE.Exp inExp;
   input Boolean useHomotopy;
   output DAE.Exp outExp;
@@ -2505,8 +2457,7 @@ algorithm
   outTpl := (eqns, reeqns);
 end collectInitialEqns;
 
-protected function replaceDerPreCref "author: Frenkel TUD 2011-05
-  helper for replaceDerCref"
+protected function replaceDerPreCref
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
