@@ -50,7 +50,7 @@ set style line 4 linecolor rgb "orange"  pt 1 ps 1
 plot "${LIB}-trend.csv" using 1:2 title 'Target: $GOAL'   with lines ls 1, \
      "${LIB}-trend.csv" using 1:3 title 'Compile: $CURC'  with lines ls 2, \
      "${LIB}-trend.csv" using 1:4 title 'Simulate: $CURS' with lines ls 3, \
-     "${LIB}-trend.csv" using 1:4 title 'Verified: $CURS' with lines ls 4
+     "${LIB}-trend.csv" using 1:4 title 'Verified: $CURV' with lines ls 4
 EOF
 
 cat > "$HISTORY/${LIB}-trend-detailed.gnuplot" <<EOF
@@ -88,7 +88,7 @@ for f in `grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | cut -d: -f1` 
   BUILD=`grep "BuildModel Results:" "$f" | cut -d: -f2 | cut -d/ -f1 | tr -d \ `
   SIM=`grep "Simulation Results:" "$f" | cut -d: -f2`
   SIMSUC=`echo "$SIM" | cut -d/ -f1`
-  VER=`(grep "Verified Results:" "$f" | cut -d: -f2 | cut -d/ -f1 | tr -d) || echo 0`
+  VER=`(grep "Verified Results:" "$f" | cut -d: -f2 | cut -d/ -f1 | tr -d \ ) || echo 0`
   TOT=`echo "$SIM" | cut -d/ -f2 | cut -d" " -f1`
   REV=`grep -o "[(]r[0-9]*" "$f" | tr -d "("`
   echo "$DATE,$TOT,$BUILD,$SIMSUC,$VER" >> "$HISTORY/${LIB}-trend.csv"
