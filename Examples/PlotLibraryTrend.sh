@@ -50,7 +50,7 @@ set style line 4 linecolor rgb "orange"  pt 1 ps 1
 plot "${LIB}-trend.csv" using 1:2 title 'Target: $GOAL'   with lines ls 1, \
      "${LIB}-trend.csv" using 1:3 title 'Compile: $CURC'  with lines ls 2, \
      "${LIB}-trend.csv" using 1:4 title 'Simulate: $CURS' with lines ls 3, \
-     "${LIB}-trend.csv" using 1:4 title 'Verified: $CURV' with lines ls 4
+     "${LIB}-trend.csv" using 1:5 title 'Verified: $CURV' with lines ls 4
 EOF
 
 cat > "$HISTORY/${LIB}-trend-detailed.gnuplot" <<EOF
@@ -80,7 +80,7 @@ set style line 4 linecolor rgb "orange"  pt 1 ps 1
 plot "${LIB}-trend.csv" using 1:2 title 'Target: $GOAL'   with lines ls 1, \
      "${LIB}-trend.csv" using 1:3 title 'Compile: $CURC'  with lines ls 2, \
      "${LIB}-trend.csv" using 1:4 title 'Simulate: $CURS' with lines ls 3, \
-     "${LIB}-trend.csv" using 1:4 title 'Verified: $CURV' with lines ls 4
+     "${LIB}-trend.csv" using 1:5 title 'Verified: $CURV' with lines ls 4
 EOF
 rm -f "$HISTORY/${LIB}"-trend.csv
 for f in `grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | cut -d: -f1` ; do
