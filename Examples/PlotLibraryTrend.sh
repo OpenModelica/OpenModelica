@@ -22,7 +22,7 @@ fi
 GOAL=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,.*/,,`
 CURS=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,,`
 CURC=`grep -H "BuildModel Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,,`
-CURV=`(grep -H "Verified Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,, ) || 0`
+CURV=`(grep -H "Verified Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,, ) || echo 0`
 cat > "$HISTORY/${LIB}-trend.gnuplot" <<EOF
 set term png
 set datafile separator ","
@@ -88,7 +88,7 @@ for f in `grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | cut -d: -f1` 
   BUILD=`grep "BuildModel Results:" "$f" | cut -d: -f2 | cut -d/ -f1 | tr -d \ `
   SIM=`grep "Simulation Results:" "$f" | cut -d: -f2`
   SIMSUC=`echo "$SIM" | cut -d/ -f1`
-  VER=`(grep "Verified Results:" "$f" | cut -d: -f2 | cut -d/ -f1 | tr -d) || 0`
+  VER=`(grep "Verified Results:" "$f" | cut -d: -f2 | cut -d/ -f1 | tr -d) || echo 0`
   TOT=`echo "$SIM" | cut -d/ -f2 | cut -d" " -f1`
   REV=`grep -o "[(]r[0-9]*" "$f" | tr -d "("`
   echo "$DATE,$TOT,$BUILD,$SIMSUC,$VER" >> "$HISTORY/${LIB}-trend.csv"
