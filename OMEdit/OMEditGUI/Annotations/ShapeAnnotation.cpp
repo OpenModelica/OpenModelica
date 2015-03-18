@@ -483,21 +483,22 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
   qreal thicknessFactor = mLineThickness / 0.5;
   qreal thickness = thicknessFactor < 1 ? 1.0 : thicknessFactor;
   QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
-  /*
-    Ticket #2272, Ticket #2268.
-    if thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
-    */
-  if (thickness <= 2)
-  {
+  /* Ticket #3222
+   * Make all the shapes use cosmetic pens so that they perserve their pen widht when scaled i.e zoomed in/out.
+   * Only shapes with border patterns raised & sunken don't use cosmetic pens. We need better handling of border patterns.
+   */
+  if (mBorderPattern != StringHandler::BorderRaised && mBorderPattern != StringHandler::BorderSunken) {
     pen.setCosmetic(true);
   }
-  /* Set cosmetic pen for connection lines and lines drawn by individual shapes. */
-  if (dynamic_cast<LineAnnotation*>(this))
-  {
-    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-    if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType || pLineAnnotation->getLineType() == LineAnnotation::ShapeType)
-    {
+  Component *pComponent = dynamic_cast<Component*>(parentItem());
+  if (pComponent && pComponent->isLibraryComponent()) {
+    /* Ticket #2272, Ticket #2268.
+     * If thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
+     */
+    if (thickness <= 2) {
       pen.setCosmetic(true);
+    } else {
+      pen.setCosmetic(false);
     }
   }
   painter->setPen(pen);
