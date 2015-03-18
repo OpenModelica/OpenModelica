@@ -10,7 +10,7 @@ TREND_FILE_DETAILED=$3
 
 cd "$WWW"
 OUT=a.html
-SDATE=`date +"%Y-%m-%d %R week %U"`
+SDATE=`date +"%Y-%m-%d %R week %V"`
 echo "<html><head><title>OpenModelica - Library Coverage Trend Overview</title><body>" > $OUT
 echo "<center>" >> $OUT
 echo "<h2>OpenModelica Library Coverage Overview ran each night by <a href="/hudson/view/Library%20Testing/">Hudson</a></h2><br/><b>$SDATE</b>" >> $OUT
@@ -33,7 +33,7 @@ mv $OUT $TREND_FILE
 
 cd "$WWW"
 OUT=b.html
-SDATE=`date +"%Y-%m-%d %R week %U"`
+SDATE=`date +"%Y-%m-%d %R week %V"`
 echo "<html><head><title>OpenModelica - Detailed Library Coverage Trend Overview</title><body>" > $OUT
 echo "<center>" >> $OUT
 echo "<h2>OpenModelica Detailed Library Coverage Overview ran each night by <a href="/hudson/view/Library%20Testing/">Hudson</a></h2><br/><b>$SDATE</b>" >> $OUT
