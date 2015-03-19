@@ -165,7 +165,7 @@ algorithm
         // print("Mod.elabMod: calling elabExp on mod exp: " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
-        (e_val) = elabModValue(cache, env, e_1, prop, impl, info);
+        (e_val, cache) = elabModValue(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
         "Bug: will cause elaboration of parameters without value to fail,
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
@@ -411,6 +411,7 @@ protected function elabModValue
   input Boolean inImpl;
   input SourceInfo inInfo;
   output Option<Values.Value> outValue = NONE();
+  output FCore.Cache outCache = inCache;
 protected
   Integer err_count;
   Absyn.Msg msg;
@@ -616,7 +617,7 @@ algorithm
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
-        (e_val) = elabModValue(cache,env,e_1,prop,impl,info);
+        (e_val, cache) = elabModValue(cache,env,e_1,prop,impl,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         if Flags.isSet(Flags.UPDMOD) then
           Debug.trace("Updated mod: ");
