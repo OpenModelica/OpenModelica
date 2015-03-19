@@ -903,13 +903,17 @@ AC_MSG_CHECKING([for OpenModelica platform name])
 # We will just default to use the $host_cpu-$host_os (treating gnu-linux as linux).
 # We then patch it up a bit to look for Modelica/FMU standard locations as well.
 
+if test "$DARWIN" = "1"; then
+OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-darwin | sed "s/i@<:@3456@:>@86/i386/" | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
+else
 OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-$host_os | sed "s/linux-gnu/linux/" | sed "s/linux-gnu/linux/" | sed "s/i@<:@3456@:>@86/i386/" | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
+fi
 AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
 AC_MSG_CHECKING([for Modelica platform name])
 if test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-linux" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-linux"; then
   MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/x86_64-linux/linux64/" | sed "s/i.86-linux/linux32/"`
 elif echo "$OPENMODELICA_SPEC_PLATFORM" | grep -q darwin; then
-  MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/x86_64-apple-darwin.*/darwin64/" | sed "s/i.86-apple-darwin.*/darwin32/"`
+  MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/x86_64-darwin/darwin64/" | sed "s/i.86-darwin/darwin32/"`
 else
   MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
 fi
