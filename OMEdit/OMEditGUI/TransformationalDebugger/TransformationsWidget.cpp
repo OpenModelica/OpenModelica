@@ -239,10 +239,12 @@ Qt::ItemFlags TVariablesTreeModel::flags(const QModelIndex &index) const
   if (!index.isValid())
       return 0;
 
-  Qt::ItemFlags flags;
-  TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
-  if (pTVariablesTreeItem && pTVariablesTreeItem->getChildren().size() == 0)
-    flags |= Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  /* Ticket #3207. Make all the items enable and selectable.
+   */
+//  TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
+//  if (pTVariablesTreeItem && pTVariablesTreeItem->getChildren().size() == 0)
+//    flags |= Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
   return flags;
 }
@@ -1225,7 +1227,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     return;
   QModelIndex modelIndex = mpTVariableTreeProxyModel->mapToSource(index);
   TVariablesTreeItem *pTVariableTreeItem = static_cast<TVariablesTreeItem*>(modelIndex.internalPointer());
-  if (!pTVariableTreeItem || pTVariableTreeItem->getChildren().size() != 0)
+  if (!pTVariableTreeItem)
     return;
 
   const OMVariable &variable = mVariables[pTVariableTreeItem->getVariableName()];
@@ -1240,8 +1242,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     return;
   /* open the model with and go to the variable line */
   QFile file(variable.info.file);
-  if (file.exists())
-  {
+  if (file.exists()) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     file.open(QIODevice::ReadOnly);
