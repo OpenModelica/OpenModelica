@@ -1119,11 +1119,9 @@ void MainWindow::showOpenTransformationFileDialog()
 void MainWindow::loadSystemLibrary()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
-  if (pAction)
-  {
+  if (pAction) {
     /* check if library is already loaded. */
-    if (mpOMCProxy->existClass(pAction->text()))
-    {
+    if (mpOMCProxy->existClass(pAction->text())) {
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
@@ -1133,31 +1131,12 @@ void MainWindow::loadSystemLibrary()
                                       .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(pAction->text())));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
-    }
-    /* if library is not loaded then load it. */
-    else
-    {
+    } else {  /* if library is not loaded then load it. */
       mpProgressBar->setRange(0, 0);
       showProgressBar();
       mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(pAction->text()));
-      if (mpOMCProxy->loadModel(pAction->text()))
-      {
-        /* since few libraries load dependent libraries automatically. So if the dependent library is not loaded then load it. */
-        QStringList systemLibs = mpOMCProxy->getClassNames();
-        foreach (QString systemLib, systemLibs)
-        {
-          LibraryTreeNode* pLoadedLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(systemLib);
-          if (!pLoadedLibraryTreeNode)
-          {
-            LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(systemLib,
-                                                                                        mpOMCProxy->getClassRestriction(pAction->text()), "");
-            pLibraryTreeNode->setSystemLibrary(true);
-            /* since LibraryTreeWidget::addLibraryTreeNode clears the status bar message, so we should set it one more time. */
-            mpStatusBar->showMessage(tr("Parsing").append(": ").append(systemLib));
-            // create library tree nodes
-            mpLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
-          }
-        }
+      if (mpOMCProxy->loadModel(pAction->text())) {
+        mpLibraryTreeWidget->loadDependentLibraries(mpOMCProxy->getClassNames());
       }
       mpStatusBar->clearMessage();
       hideProgressBar();

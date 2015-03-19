@@ -1134,6 +1134,24 @@ bool LibraryTreeWidget::isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode)
     return false;
   }
 }
+/*!
+ * \brief Since few libraries load dependent libraries automatically. So if the dependent library is not added then add it.
+ * \param libraries
+ */
+void LibraryTreeWidget::loadDependentLibraries(QStringList libraries)
+{
+  foreach (QString library, libraries) {
+    LibraryTreeNode* pLoadedLibraryTreeNode = getLibraryTreeNode(library);
+    if (!pLoadedLibraryTreeNode) {
+      LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(library, mpMainWindow->getOMCProxy()->getClassRestriction(library), "");
+      pLibraryTreeNode->setSystemLibrary(true);
+      /* since LibraryTreeWidget::addLibraryTreeNode clears the status bar message, so we should set it one more time. */
+      mpMainWindow->getStatusBar()->showMessage(tr("Parsing").append(": ").append(library));
+      // create library tree nodes
+      createLibraryTreeNodes(pLibraryTreeNode);
+    }
+  }
+}
 
 bool LibraryTreeWidget::saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
 {

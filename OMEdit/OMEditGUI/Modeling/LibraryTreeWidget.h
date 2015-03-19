@@ -184,6 +184,7 @@ public:
   bool saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
   bool isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode);
+  void loadDependentLibraries(QStringList libraries);
 private:
   MainWindow *mpMainWindow;
   bool mIsSearchTree;
