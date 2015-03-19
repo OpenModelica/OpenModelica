@@ -530,6 +530,16 @@ void OMCProxy::exitApplication()
 }
 
 /*!
+ * \brief Writes the exception to MessagesWidget.
+ * \param exception
+ */
+void OMCProxy::showException(exception &exception)
+{
+  MessageItem *pMessageItem = new MessageItem("", false, 0, 0, 0, 0, QString(exception.what()), Helper::scriptingKind, Helper::errorLevel, 0);
+  mpMainWindow->getMessagesWidget()->addGUIMessage(pMessageItem);
+}
+
+/*!
   Returns the OMC error string.\n
   \return the error string.
   \deprecated Use printMessagesStringInternal(). Now used where we want to consume the error message without showing it to user.
@@ -1919,14 +1929,19 @@ QStringList OMCProxy::getSimulationOptions(QString className, double defaultTole
   */
 bool OMCProxy::translateModelFMU(QString className, double version, QString fileNamePrefix)
 {
-  fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
-  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), "me", fileNamePrefix);
-  if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
-    return true;
-  } else {
-    printMessagesStringInternal();
-    return false;
+  bool result = false;
+  try {
+    fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
+    QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), "me", fileNamePrefix);
+    if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
+      result = true;
+    } else {
+      printMessagesStringInternal();
+    }
+  } catch(std::exception &exception) {
+    showException(exception);
   }
+  return result;
 }
 
 /*!

@@ -94,6 +94,7 @@ public:
   QString getResult();
   void exitApplication();
   void removeObjectRefFile();
+  void showException(std::exception &exception);
   QString getErrorString(bool warningsAsErrors = false);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
