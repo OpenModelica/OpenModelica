@@ -436,7 +436,7 @@ algorithm
     end try;
   end if;
 end elabModValue;
-    
+
 public function unelabMod
 "Transforms Mod back to SCode.Mod, loosing type information."
   input DAE.Mod inMod;
