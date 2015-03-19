@@ -1940,6 +1940,7 @@ bool OMCProxy::translateModelFMU(QString className, double version, QString file
     }
   } catch(std::exception &exception) {
     showException(exception);
+    printMessagesStringInternal();
   }
   return result;
 }
