@@ -487,8 +487,8 @@ end traverserExpinputDerivativesForDynOpt;
 // section for postOptModule >>extendDynamicOptimization<<
 //
 // transform loops from DAE in constraints for optimizer
-// - bigger NLP 
-// - don't solve loop in each step 
+// - bigger NLP
+// - don't solve loop in each step
 // - cheaper jacobians
 // =============================================================================
 
@@ -643,7 +643,7 @@ algorithm
     ovars := BackendVariable.addNewVar(var, ovars);
     res := BackendDAEOptimize.makeEquationToResidualExp(eqn);
 
-    //oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);  
+    //oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
     oeqns := BackendEquation.setAtIndex(oeqns,ind, BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN));
     // new input(resvar)
     (cr,var) := makeVar("OMC$Input" + intString(ind));
@@ -651,11 +651,11 @@ algorithm
     var := BackendVariable.mergeAliasVars(var, var_, false, knvars);
     oshared := BackendVariable.addKnVarDAE(var, oshared);
     // resvar = new input(resvar)
-    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(Expression.crefExp(cr_var), Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);  
-    
+    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(Expression.crefExp(cr_var), Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
+
 
   end for;
-  
+
 
 end res2Con;
 
