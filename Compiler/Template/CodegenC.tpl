@@ -5719,7 +5719,7 @@ case KERNEL_FUNCTION(__) then
 
   <%undefines%>
   }
-  
+
   >>
 
 end functionBodyKernelFunctionInterface;
