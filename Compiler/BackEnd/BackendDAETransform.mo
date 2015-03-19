@@ -374,8 +374,9 @@ algorithm
       BackendDAE.Shared shared;
       String msg;
       list<DAE.ComponentRef> crlst;
+      list<DAE.Exp> expLst;
       list<String> slst;
-      Boolean jacConstant, mixedSystem;
+      Boolean jacConstant, mixedSystem, b1, b2;
 
     case (compelem::{}, BackendDAE.ALGORITHM()::{}, var_varindx_lst) equation
       varindxs = List.map(var_varindx_lst, Util.tuple22);
@@ -383,6 +384,17 @@ algorithm
 
     case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_varindx_lst) equation
       varindxs = List.map(var_varindx_lst, Util.tuple22);
+      var_lst = List.map(var_varindx_lst, Util.tuple21);
+      crlst = List.map(var_lst,BackendVariable.varCref);
+       // its only an array equation if all the solved variables belong to an array. Otherwise we have to handle it as a non-linear system
+      b1 =  List.fold(List.map(crlst,ComponentReference.isArrayElement),boolAnd,true);
+      if not b1 then
+        expLst = List.map(crlst, Expression.crefExp);
+        b2 = List.exist1(inEqnLst,crefsAreArray,expLst);
+      else
+        b2 = true;
+      end if;
+      true = b2;
     then BackendDAE.SINGLEARRAY(compelem, varindxs);
 
     case (compelem::{}, BackendDAE.IF_EQUATION()::{}, var_varindx_lst) equation
@@ -450,6 +462,28 @@ algorithm
     then fail();
   end matchcontinue;
 end analyseStrongComponentBlock;
+
+protected function crefsAreArray"checks if the crefs build an array on one side of the equation (sometimes used in FMUs)
+author:Waurich TUD 2015-03"
+  input BackendDAE.Equation eqIn;
+  input list<DAE.Exp> crefLst;
+  output Boolean isUnsolvable;
+algorithm
+  isUnsolvable := matchcontinue(eqIn,crefLst)
+    local
+      list<DAE.Exp> expLst;
+  case(BackendDAE.ARRAY_EQUATION(left=DAE.ARRAY(array=expLst)),_)
+    algorithm
+      (_,_,expLst) := List.intersection1OnTrue(expLst,crefLst,Expression.expEqual);
+    then List.isEmpty(expLst);
+  case(BackendDAE.ARRAY_EQUATION(right=DAE.ARRAY(array=expLst)),_)
+    algorithm
+      (_,_,expLst) := List.intersection1OnTrue(expLst,crefLst,Expression.expEqual);
+    then List.isEmpty(expLst);
+  else
+    then false;
+  end matchcontinue;
+end crefsAreArray;
 
 protected function analyzeConstantJacobian
   input Boolean jacConstant;
