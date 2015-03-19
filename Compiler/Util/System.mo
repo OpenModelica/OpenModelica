@@ -42,7 +42,7 @@ encapsulated package System
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
   input String inString;
-  input String charsToRemove;
+  input String charsToRemove = " \f\n\r\t\v";
   output String outString;
 
   external "C" outString=System_trim(inString,charsToRemove) annotation(Library = "omcruntime");
@@ -52,8 +52,8 @@ public function trimWhitespace
 "removes chars in ' \f\n\r\t\v' from begin and end of inString"
   input String inString;
   output String outString;
-
-  external "C" outString=System_trimWhitespace(inString) annotation(Library = "omcruntime");
+algorithm
+  outString := trim(inString);
 end trimWhitespace;
 
 public function trimChar

@@ -287,15 +287,15 @@ algorithm
     case DAE.FLATTEN(dae=SOME(elt))
       equation
         File.write(file,"{\"op\":\"before-after\",\"display\":\"flattening\",\"data\":[\"");
-        File.writeEscape(file,SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions),escape=File.Escape.JSON);
+        File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=File.Escape.JSON);
         File.write(file,"\",\"");
-        File.writeEscape(file,DAEDump.dumpEquationStr(elt),escape=File.Escape.JSON);
+        File.writeEscape(file,System.trim(DAEDump.dumpEquationStr(elt)),escape=File.Escape.JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.FLATTEN()
       equation
         File.write(file,"{\"op\":\"info\",\"display\":\"scode\",\"data\":[\"");
-        File.writeEscape(file,SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions),escape=File.Escape.JSON);
+        File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=File.Escape.JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.SIMPLIFY()
@@ -803,7 +803,7 @@ function serializeStatement
   input DAE.Statement stmt;
 algorithm
   File.write(file,"\"");
-  File.writeEscape(file, DAEDump.ppStatementStr(stmt), escape=File.Escape.JSON);
+  File.writeEscape(file, System.trim(DAEDump.ppStatementStr(stmt)), escape=File.Escape.JSON);
   File.write(file,"\"");
 end serializeStatement;
 
