@@ -6255,5 +6255,15 @@ algorithm
   end match;
 end elementArgEqualName;
 
+public function optMsg
+  "Creates a Msg based on a boolean value."
+  input Boolean inShowMessage;
+  input SourceInfo inInfo;
+  output Msg outMsg;
+algorithm
+  outMsg := if inShowMessage then MSG(inInfo) else NO_MSG();
+  annotation(__OpenModelica_EarlyInline = true);
+end optMsg;
+
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;

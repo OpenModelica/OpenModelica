@@ -165,7 +165,7 @@ algorithm
         // print("Mod.elabMod: calling elabExp on mod exp: " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_val) = elabModValue(cache, env, e_1, prop, impl, info);
+        (e_val) = elabModValue(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
         "Bug: will cause elaboration of parameters without value to fail,
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
@@ -403,40 +403,40 @@ algorithm
 end elabModQualifyTypespec;
 
 protected function elabModValue
-"author: PA
-  Helper function to elabMod. Builds values from modifier expressions if possible.
-  Tries to Constant evaluate an expressions an create a Value option for it."
+  "Helper function to elabMod. Tries to constant evaluate a modifier expression."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProp;
-  input Boolean impl;
+  input Boolean inImpl;
   input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output Option<Values.Value> outValuesValueOption;
+  output Option<Values.Value> outValue = NONE();
+protected
+  Integer err_count;
+  Absyn.Msg msg;
+  DAE.Const c;
+  Values.Value v;
 algorithm
-  (outCache,outValuesValueOption) :=
-  matchcontinue (inCache,inEnv,inExp,inProp,impl,inInfo)
-    local
-      Values.Value v;
-      Absyn.Msg msg;
-      FCore.Cache cache;
-      DAE.Const c;
-    case (_,_,_,_,_,_)
-      equation
-        c = Types.propAllConst(inProp);
-        // Don't ceval variables.
-        false = Types.constIsVariable(c);
-        // Show error messages from ceval only if the expression is a constant.
-        msg = if Types.constIsConst(c) and not impl then Absyn.MSG(inInfo) else Absyn.NO_MSG();
-        (_,v,_) = Ceval.ceval(inCache,inEnv,inExp,false,NONE(),msg,0);
-      then
-        (inCache /*Yeah; this makes sense :)*/,SOME(v));
-    // Constant evaluation failed, return no value.
-    else (inCache,NONE());
-  end matchcontinue;
-end elabModValue;
+  c := Types.propAllConst(inProp);
 
+  // If the expression is a parameter or constant expression:
+  if not Types.constIsVariable(c) then
+    // Show error messages from ceval only if the expression is constant.
+    msg := Absyn.optMsg(Types.constIsConst(c) and not inImpl, inInfo);
+    err_count := Error.getNumErrorMessages();
+
+    try
+      (_, v) := Ceval.ceval(inCache, inEnv, inExp, false, NONE(), msg, 0);
+      outValue := SOME(v);
+    else
+      // Fail if ceval gave an error.
+      if err_count <> Error.getNumErrorMessages() then
+        fail();
+      end if;
+    end try;
+  end if;
+end elabModValue;
+    
 public function unelabMod
 "Transforms Mod back to SCode.Mod, loosing type information."
   input DAE.Mod inMod;
@@ -616,7 +616,7 @@ algorithm
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_val) = elabModValue(cache,env,e_1,prop,impl,info);
+        (e_val) = elabModValue(cache,env,e_1,prop,impl,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         if Flags.isSet(Flags.UPDMOD) then
           Debug.trace("Updated mod: ");
