@@ -4795,7 +4795,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
     case FUNCTION(__) then
       <<
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc, visibility, false, isSimulation, staticPrototypes)%>
-      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
+      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, inFunc, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
       >>
     case KERNEL_FUNCTION(__) then
       <<
@@ -4804,14 +4804,14 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
       <<
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, visibility, true, isSimulation, staticPrototypes)%>
-      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), visibility, true, isSimulation, staticPrototypes)%>
+      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, inFunc, isBoxedFunction(fn), visibility, true, isSimulation, staticPrototypes)%>
 
       <%extFunDefDynamic(fn)%>
       >>
     case EXTERNAL_FUNCTION(__) then
       <<
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, visibility, false, isSimulation, staticPrototypes)%>
-      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
+      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, inFunc, isBoxedFunction(fn), visibility, false, isSimulation, staticPrototypes)%>
 
       <%extFunDef(fn)%>
       >>
@@ -4822,7 +4822,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
       <% match visibility case PUBLIC() then "DLLExport" %>
       <%fname%> omc_<%fname%>(threadData_t *threadData<%funArgsStr%>); /* record head */
 
-      <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, false, visibility, false, isSimulation, staticPrototypes)%>
+      <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, inFunc, false, visibility, false, isSimulation, staticPrototypes)%>
       >>
 end functionHeader;
 
@@ -4945,7 +4945,7 @@ template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable>
 ::=functionHeaderImpl(fname, fargs, outVars, inFunc, false, visibility, dynLoad, isSimulation, staticPrototypes)
 end functionHeaderNormal;
 
-template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars, Boolean isBoxed, SCode.Visibility visibility, Boolean dynLoad, Boolean isSimulation, Text &staticPrototypes)
+template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean isBoxed, SCode.Visibility visibility, Boolean dynLoad, Boolean isSimulation, Text &staticPrototypes)
 ::=
   let boxvar =
     <<
@@ -4953,7 +4953,7 @@ template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> 
     #define boxvar_<%fname%> MMC_REFSTRUCTLIT(boxvar_lit_<%fname%>)<%\n%>
     >>
   <<
-  <%if isBoxed then '#define boxptr_<%fname%> omc_<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, false, true, visibility, dynLoad, isSimulation, staticPrototypes)%>
+  <%if isBoxed then '#define boxptr_<%fname%> omc_<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, inFunc, true, visibility, dynLoad, isSimulation, staticPrototypes)%>
   <% match visibility
     case PROTECTED(__) then
       let &staticPrototypes += (if isSimulation then "" else boxvar)
