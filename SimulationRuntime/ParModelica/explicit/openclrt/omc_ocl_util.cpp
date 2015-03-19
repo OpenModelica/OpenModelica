@@ -292,7 +292,7 @@ void ocl_build_p_from_src(){
 
     char options[100];
     const char* flags = "-I\"";
-    const char* OMEXT = "/include/omc/\"";
+    const char* OMEXT = "/include/omc/c/\"";
 
 
     strcpy(options, flags);

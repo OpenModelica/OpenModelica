@@ -4779,13 +4779,13 @@ end externalFunctionIncludes;
 template functionHeaders(list<Function> functions, Boolean isSimulation, Text &staticPrototypes)
  "Generates function header part in function files."
 ::=
-  (functions |> fn => functionHeader(fn, false, isSimulation, staticPrototypes) ; separator="\n")
+  (functions |> fn => functionHeader(fn, false, isSimulation, staticPrototypes) ; separator="\n\n")
 end functionHeaders;
 
 template parallelFunctionHeadersImpl(list<Function> functions)
  "Generates function header part in function files."
 ::=
-  (functions |> fn => parallelFunctionHeader(fn, false) ; separator="\n")
+  (functions |> fn => parallelFunctionHeader(fn, false) ; separator="\n\n")
 end parallelFunctionHeadersImpl;
 
 template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text &staticPrototypes)
@@ -5013,29 +5013,29 @@ end functionPrototype;
 template functionHeaderKernelFunctionInterface(String fname, list<Variable> fargs, list<Variable> outVars)
  "Generates function header for a ParModelica Kernel function interface."
 ::=
-  let fargsStr = (fargs |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", ")
-
-  if outVars then <<
-  typedef struct <%fname%>_rettype_s {
-    <%outVars |> var hasindex i1 fromindex 1 =>
-      match var
-      case VARIABLE(__) then
-        let dimStr = match ty case T_ARRAY(__) then
-          '[<%dims |> dim => dimension(dim) ;separator=", "%>]'
-        let typeStr = varType(var)
-        '<%typeStr%> c<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
-      case FUNCTION_PTR(__) then
-        'modelica_fnptr c<%i1%>; /* <%name%> */'
-      ;separator="\n";empty
-    %>
-  } <%fname%>_rettype;
-
-  <%fname%>_rettype omc_<%fname%>(threadData_t *threadData, <%fargsStr%>);
-  >> else <<
-
-  void _<%fname%>(threadData_t *threadData, <%fargsStr%>);
-  >>
+  '<%functionHeaderKernelFunctionInterfacePrototype(fname, fargs, outVars)%>;'
 end functionHeaderKernelFunctionInterface;
+
+template functionHeaderKernelFunctionInterfacePrototype(String fname, list<Variable> fargs, list<Variable> outVars)
+ "Generates function header for a ParModelica Kernel function interface."
+::=
+  let fargsStr = 'threadData_t *threadData'
+  let &fargsStr += if fargs then ", " + (fargs |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", ")
+  // let &fargsStr += if outVars then ", " + (outVars |> var => tupleOutfunArgDefinitionKernelFunctionInterface(var) ;separator=", ")
+  // 'void omc_<%fname%>(<%fargsStr%>)'
+
+  match outVars
+    case {} then
+      'void omc_<%fname%>(<%fargsStr%>)'
+
+    case fvar::rest then
+      let rettype = functionArgTypeKernelInterface(fvar)
+      let &fargsStr += if rest then ", " + (rest |> var => tupleOutfunArgDefinitionKernelFunctionInterface(var) ;separator=", ")
+      '<%rettype%> omc_<%fname%>(<%fargsStr%>)'
+
+    else
+      error(sourceInfo(), 'functionHeaderKernelFunctionInterfacePrototype failed')
+end functionHeaderKernelFunctionInterfacePrototype;
 
 template funArgName(Variable var)
 ::=
@@ -5057,11 +5057,28 @@ template funArgDefinitionKernelFunctionInterface(Variable var)
 ::=
   let &auxFunction = buffer ""
   match var
-  case VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then 'device_<%varType(var)%> <%contextCref(name,contextFunction,&auxFunction)%>'
-  case VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then 'device_local_<%varType(var)%> <%contextCref(name,contextFunction,&auxFunction)%>'
-  case VARIABLE(__) then '<%varType(var)%> <%contextCref(name,contextFunction,&auxFunction)%>'
-  else 'Invalid function argument to Kernel function Interface.'
+  case VARIABLE(__) then
+    '<%functionArgTypeKernelInterface(var)%> <%funArgName(var)%>'
+  else error(sourceInfo(), 'funArgDefinitionKernelFunctionInterface : unsupported function argument type')
 end funArgDefinitionKernelFunctionInterface;
+
+template tupleOutfunArgDefinitionKernelFunctionInterface(Variable var)
+::=
+  let &auxFunction = buffer ""
+  match var
+  case VARIABLE(__) then
+    '<%functionArgTypeKernelInterface(var)%> *out<%funArgName(var)%>'
+  else error(sourceInfo(), 'tupleOutfunArgDefinitionKernelFunctionInterface : unsupported function argument type')
+end tupleOutfunArgDefinitionKernelFunctionInterface;
+
+template functionArgTypeKernelInterface(Variable var)
+::=
+  match var
+    case VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then 'device_<%varType(var)%>'
+    case VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then 'device_local_<%varType(var)%>'
+    case VARIABLE(__) then '<%varType(var)%>'
+    else 'Invalid function argument to Kernel function Interface.'
+end functionArgTypeKernelInterface;
 
 template funArgDefinitionKernelFunctionBody(Variable var)
  "Generates code to initialize variables.
@@ -5440,8 +5457,6 @@ case FUNCTION(__) then
       varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
   let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls, &auxFunction) ;separator="\n")
-  let &outVarInits = buffer ""
-  let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
   let _ = (List.restOrEmpty(outVars) |> var => varOutput(var, &outVarAssign))
   let freeConstructedExternalObjects = (variableDeclarations |> var as VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(path=path_ext))) => 'omc_<%underscorePath(path_ext)%>_destructor(threadData,<%contextCref(var.name,contextFunction,&auxFunction)%>);'; separator = "\n")
@@ -5456,11 +5471,9 @@ case FUNCTION(__) then
   {
     <%varDecls%>
     _tailrecursive: OMC_LABEL_UNUSED
-    <%outVarInits%>
     <%varInits%>
     <%bodyPart%>
     _return: OMC_LABEL_UNUSED
-    <%outVarCopy%>
     <%outVarAssign%>
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
@@ -5651,46 +5664,39 @@ case KERNEL_FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let fname = underscorePath(name)
-
-  let retType = if outVars then '<%fname%>_rettype' else "void"
+  let &auxFunction = buffer ""
 
   let &varDecls = buffer ""
   let &varInits = buffer ""
   let &varFrees = buffer ""
-  let &auxFunction = buffer ""
-  let retVar = if outVars then tempDecl(retType, &varDecls)
-
-  let &outVarInits = buffer ""
-  let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
-
-
-  let _1 = (outVars |> var hasindex i1 fromindex 1 =>
-      varOutputKernelInterface(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, &auxFunction)
-      ;separator="\n"; empty
+  let _ = (List.first(outVars) |> var hasindex i1 fromindex 1 =>
+      varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
 
+  let _ = (List.restOrEmpty(outVars) |> var => varOutput(var, &outVarAssign))
 
   let cl_kernelVar = tempDecl("cl_kernel", &varDecls)
-
   let kernel_arg_number = '<%fname%>_arg_nr'
 
   let &kernelArgSets = buffer ""
   let _ = (functionArguments |> var =>
       setKernelArg_ith(var, &cl_kernelVar, &kernel_arg_number, &kernelArgSets)
     )
-
   let _ = (outVars |> var =>
       setKernelArg_ith(var, &cl_kernelVar, &kernel_arg_number, &kernelArgSets)
     )
 
+  let defines = (List.restOrEmpty(outVars) |> var as VARIABLE(__) => '#define <%contextCref(name,contextFunction,&auxFunction)%> (*out<%contextCref(name,contextFunction,&auxFunction)%>)' ;separator="\n")
+  let undefines = (List.restOrEmpty(outVars) |> var as VARIABLE(__) => '#undef <%contextCref(name,contextFunction,&auxFunction)%>' ;separator="\n")
+
   <<
-  <%auxFunction%>
-  /* Interface function to <%fname%> defined in parallelFunctions.cl file. */
-  <%retType%> omc_<%fname%>(threadData_t *threadData, <%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
+
+  <%functionHeaderKernelFunctionInterfacePrototype(fname, functionArguments, outVars)%>
   {
+  <%defines%>
+
     <%varDecls%>
-    <%outVarInits%>
 
     <%varInits%>
 
@@ -5702,17 +5708,20 @@ case KERNEL_FUNCTION(__) then
     clReleaseKernel(<%cl_kernelVar%>);
     /*functionBodyKernelFunctionInterface : <%fname%> kernel execution ends here.*/
 
-
-    <%outVarCopy%>
     <%outVarAssign%>
 
-    /*mahge: Free unwanted meomory allocated*/
     <%varFrees%>
 
-    return<%if outVars then ' <%retVar%>' %>;
-  }
+    <%match outVars
+       case {} then 'return;'
+       case var::_ then 'return <%funArgName(var)%>;'
+    %>
 
+  <%undefines%>
+  }
+  
   >>
+
 end functionBodyKernelFunctionInterface;
 
 template setKernelArg_ith(Variable var, Text &KernelName, Text &argNr, Text &parVarList /*BUFPA*/)
@@ -6203,7 +6212,7 @@ else error(sourceInfo(), 'Unknown local variable type')
 end varInit;
 
 /* ParModelica Extension. */
-template parVarInit(Variable var, String outStruct, Text &varDecls, Text &varInits, Text varFrees, Text &auxFunction)
+template parVarInit(Variable var, String outStruct, Text &varDecls, Text &varInits, Text &varFrees, Text &auxFunction)
  "Generates code to initialize ParModelica variables.
   Does not return anything: just appends declarations to buffers."
 ::=

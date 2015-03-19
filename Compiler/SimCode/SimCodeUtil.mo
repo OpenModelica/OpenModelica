@@ -10592,6 +10592,8 @@ public function functionPath
 algorithm
   name := match fn
     case SimCode.FUNCTION(name=name) then name;
+    case SimCode.PARALLEL_FUNCTION(name=name) then name;
+    case SimCode.KERNEL_FUNCTION(name=name) then name;
     case SimCode.EXTERNAL_FUNCTION(name=name) then name;
     case SimCode.RECORD_CONSTRUCTOR(name=name) then name;
   end match;

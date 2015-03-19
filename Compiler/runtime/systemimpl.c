@@ -1354,7 +1354,7 @@ int SystemImpl__lookupFunction(int libIndex, const char *str)
   funcptr =  (int (*)(threadData_t*, type_description*, type_description*)) getFunctionPointerFromDLL(lib->data.lib, str);
 
   if (funcptr == NULL) {
-    /*fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());*/
+    fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());
     return -1;
   }
 
