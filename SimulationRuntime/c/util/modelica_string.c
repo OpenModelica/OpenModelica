@@ -286,7 +286,7 @@ extern char* omc__escapedString(const char* str, int nl)
       case '\b': res[i++] = '\\'; res[i++] = 'b'; break;
       case '\f': res[i++] = '\\'; res[i++] = 'f'; break;
       case '\v': res[i++] = '\\'; res[i++] = 'v'; break;
-      case '\r': if(nl) {res[i++] = '\\'; res[i++] = 'n'; if(str[1] == '\n') str++;} else {res[i++] = *str;} break;
+      case '\r': if(nl) {res[i++] = '\\'; res[i++] = 'r';} else {res[i++] = *str;} break;
       case '\n': if(nl) {res[i++] = '\\'; res[i++] = 'n';} else {res[i++] = *str;} break;
       default: res[i++] = *str;
     }
