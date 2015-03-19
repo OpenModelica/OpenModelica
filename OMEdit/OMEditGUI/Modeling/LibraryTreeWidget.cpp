@@ -1912,6 +1912,7 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
           if (showProgress) mpMainWindow->getProgressBar()->setValue(++progressvalue);
         }
         mpMainWindow->addRecentFile(fileName, encoding);
+        loadDependentLibraries(mpMainWindow->getOMCProxy()->getClassNames());
         if (showProgress) mpMainWindow->hideProgressBar();
       }
     }
