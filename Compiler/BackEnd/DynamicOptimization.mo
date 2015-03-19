@@ -39,6 +39,7 @@
 "
 public import DAE;
 public import BackendDAE;
+public import BackendDAEOptimize;
 
 protected import BackendDump;
 protected import ExpressionDump;
@@ -52,6 +53,7 @@ protected import ComponentReference;
 protected import Config;
 
 protected import Expression;
+protected import ExpressionSolve;
 protected import Error;
 protected import Flags;
 protected import List;
@@ -480,6 +482,182 @@ algorithm
   end matchcontinue;
 end traverserExpinputDerivativesForDynOpt;
 
+
+// =============================================================================
+// section for postOptModule >>extendDynamicOptimization<<
+//
+// transform loops from DAE in constraints for optimizer
+// - bigger NLP 
+// - don't solve loop in each step 
+// - cheaper jacobians
+// =============================================================================
+
+public function removeLoops
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  if Flags.isSet(Flags.EXTENDS_DYN_OPT) and Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+    //BackendDump.bltdump("***", inDAE);
+    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findLoops, false);
+    //BackendDump.bltdump("###", outDAE);
+  else
+    outDAE := inDAE;
+  end if;
+end removeLoops;
+
+protected function findLoops
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared outShared;
+  output Boolean outChanged;
+protected
+  BackendDAE.StrongComponents comps;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
+  (osyst, outShared, outChanged) := findLoops1(isyst, inShared, comps, inChanged);
+end findLoops;
+
+protected function findLoops1
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponents inComps;
+  input Boolean inchanged;
+  output BackendDAE.EqSystem osyst = isyst;
+  output BackendDAE.Shared oshared = ishared;
+  output Boolean changed = inchanged "not used";
+protected
+  Boolean b;
+  BackendDAE.StrongComponent c;
+  Integer i = 1;
+  BackendDAE.Variables vars;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EquationArray eqns;
+
+algorithm
+  for comp in inComps loop
+    (osyst,oshared) := removeLoopsWork(osyst,oshared,comp);
+  end for;
+
+end findLoops1;
+
+
+protected function removeLoopsWork
+"
+  author: Vitalij Ruge
+"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponent icomp;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared):=
+  matchcontinue (isyst,ishared,icomp)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      list<Integer> eindex,vindx;
+      Integer eindex_,vindx_;
+      BackendDAE.Shared shared;
+      DAE.Exp e1, e2, varexp;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      DAE.FunctionTree funcs;
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx)))
+    equation
+      (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
+    then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(residualequations=eindex,tearingvars=vindx)))
+    equation
+      (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
+    then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,BackendDAE.SINGLEEQUATION(eqn=eindex_,var=vindx_))
+    equation
+        BackendDAE.EQUATION(exp=e1, scalar=e2) = BackendEquation.equationNth1(eqns, eindex_);
+        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, vindx_);
+        varexp = Expression.crefExp(cr);
+        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
+        BackendDAE.SHARED(functionTree = funcs) = shared;
+        failure(ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE()));
+        (eqns,vars,shared) = res2Con(eqns, vars, {eindex_}, {vindx_},shared);
+    then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
+
+
+    else (isyst,ishared);
+
+  end matchcontinue;
+
+end removeLoopsWork;
+
+
+protected function res2Con
+"
+  author: Vitalij Ruge
+"
+  input BackendDAE.EquationArray ieqns;
+  input BackendDAE.Variables ivars;
+  input list<Integer> eindex;
+  input list<Integer> vindx;
+  input BackendDAE.Shared ishared;
+  output BackendDAE.EquationArray oeqns = ieqns;
+  output BackendDAE.Variables ovars = ivars;
+  output BackendDAE.Shared oshared = ishared;
+protected
+  list<BackendDAE.Equation> eqn_lst = BackendEquation.getEqns(eindex,ieqns);
+  BackendDAE.Equation eqn;
+  list<BackendDAE.Var> var_lst = List.map1r(vindx, BackendVariable.getVarAt, ivars);
+  BackendDAE.Var var, var_;
+  list<DAE.ComponentRef> cr_lst = List.map(var_lst, BackendVariable.varCref);
+  DAE.ComponentRef cr, cr_var;
+  list<String> name_lst = List.map(cr_lst,ComponentReference.crefStr);
+  DAE.Exp e, res;
+  Integer ind;
+  list<Integer> ind_lst = vindx;
+  BackendDAE.Variables knvars;
+algorithm
+  ({},_) := List.splitOnTrue(var_lst, BackendVariable.isStateVar);
+  BackendDAE.SHARED(knownVars=knvars) := oshared;
+  for name in name_lst loop
+
+    // res -> con
+    var_::var_lst := var_lst;
+    cr_var :: cr_lst := cr_lst;
+    eqn :: eqn_lst := eqn_lst;
+    ind :: ind_lst := ind_lst;
+
+    cr  := ComponentReference.makeCrefIdent("$OMC$con$"  + name, DAE.T_REAL_DEFAULT , {});
+    e := Expression.crefExp(cr);
+
+    var := BackendVariable.makeVar(cr);
+    var := BackendVariable.setVarMinMax(var, SOME(DAE.RCONST(0.0)), SOME(DAE.RCONST(0.0)));
+    var := BackendVariable.setVarKind(var, BackendDAE.OPT_CONSTR());
+
+    ovars := BackendVariable.addNewVar(var, ovars);
+    res := BackendDAEOptimize.makeEquationToResidualExp(eqn);
+
+    //oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);  
+    oeqns := BackendEquation.setAtIndex(oeqns,ind, BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN));
+    // new input(resvar)
+    (cr,var) := makeVar("OMC$Input" + intString(ind));
+    var := BackendVariable.setVarDirection(var, DAE.INPUT());
+    var := BackendVariable.mergeAliasVars(var, var_, false, knvars);
+    oshared := BackendVariable.addKnVarDAE(var, oshared);
+    // resvar = new input(resvar)
+    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(Expression.crefExp(cr_var), Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);  
+    
+
+  end for;
+  
+
+end res2Con;
 
 annotation(__OpenModelica_Interface="backend");
 end DynamicOptimization;

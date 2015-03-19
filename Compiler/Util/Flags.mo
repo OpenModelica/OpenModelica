@@ -430,6 +430,9 @@ constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(130, "advanceTearing", false,
   Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
 constant DebugFlag CONSTJAC = DEBUG_FLAG(131, "constjac", false,
   Util.gettext("solves linear systems with const jacobian and variable b-Vector symbolically"));
+constant DebugFlag EXTENDS_DYN_OPT = DEBUG_FLAG(132, "extendsDynOpt", false,
+  Util.gettext("generat extends NLP, move loops in the optimization problem as constraints. hint: using intial guess from file!"));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -567,7 +570,8 @@ constant list<DebugFlag> allDebugFlags = {
   NO_START_CALC,
   NO_PARTITIONING,
   ADVANCE_TEARING,
-  CONSTJAC
+  CONSTJAC,
+  EXTENDS_DYN_OPT
 };
 
 public
@@ -731,6 +735,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "partlintornsystem",
     "countOperations",
     "inputDerivativesUsed",
+    "extendDynamicOptimization", 
     "calculateStrongComponentJacobians",
     "calculateStateSetsJacobians",
     "detectJacobianSparsePattern",
@@ -756,6 +761,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
     ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
     ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),
+    ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
     ("tearingSystem",Util.notrans("For method selection use flag tearingMethod.")),
     ("partlintornsystem",Util.notrans("partitions linear torn systems.")),

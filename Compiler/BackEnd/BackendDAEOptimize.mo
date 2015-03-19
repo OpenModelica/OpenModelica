@@ -2879,7 +2879,7 @@ algorithm
   end match;
 end makeResidualIfExpLst;
 
-protected function makeEquationToResidualExp ""
+public function makeEquationToResidualExp ""
   input BackendDAE.Equation eq;
   output DAE.Exp oExp;
 algorithm

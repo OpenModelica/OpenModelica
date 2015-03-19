@@ -7573,6 +7573,7 @@ algorithm
                         (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
                         (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),
+                        (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
