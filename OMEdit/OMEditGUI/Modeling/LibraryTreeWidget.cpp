@@ -327,6 +327,7 @@ void SearchClassWidget::searchClasses()
                                               type, fileName, !mpLibraryTreeWidget->isFileWritAble(fileName), true, false, mpLibraryTreeWidget);
     bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(searchedClasses[j]);
     pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
+    pNewLibraryTreeNode->setIsPartial(info.find("partialPrefix") == info.end() ? false : info["partialPrefix"].toBool());
     mpLibraryTreeWidget->loadLibraryComponent(pNewLibraryTreeNode);
     mpLibraryTreeWidget->addTopLevelItem(pNewLibraryTreeNode);
     mpMainWindow->getProgressBar()->setValue(++progressValue);
@@ -355,6 +356,8 @@ LibraryTreeNode::LibraryTreeNode(LibraryType type, QString text, QString parentN
   setIsSaved(isSaved);
   setIsProtected(isProtected);
   setSaveContentsType(LibraryTreeNode::SaveUnspecified);
+  setIsPartial(false);
+  setIsDocumentationClass(false);
 }
 
 QIcon LibraryTreeNode::getModelicaNodeIcon()
@@ -675,8 +678,7 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
   QStringList systemLibs = mpMainWindow->getOMCProxy()->getClassNames();
   systemLibs.prepend("OpenModelica");
   systemLibs.sort();
-  foreach (QString lib, systemLibs)
-  {
+  foreach (QString lib, systemLibs) {
     QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
     StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info["restriction"].toString());
     QString fileName = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info["fileName"].toString();
@@ -685,6 +687,7 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
     pNewLibraryTreeNode->setSystemLibrary(true);
     bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(lib);
     pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
+    pNewLibraryTreeNode->setIsPartial(info.find("partialPrefix") == info.end() ? false : info["partialPrefix"].toBool());
     // get the Icon for Modelica tree node
     loadLibraryComponent(pNewLibraryTreeNode);
     addTopLevelItem(pNewLibraryTreeNode);
@@ -694,10 +697,10 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
   // load Modelica User Libraries.
   mpMainWindow->getOMCProxy()->loadUserLibraries(pSplashScreen);
   QStringList userLibs = mpMainWindow->getOMCProxy()->getClassNames();
-  foreach (QString lib, userLibs)
-  {
-    if (systemLibs.contains(lib))
+  foreach (QString lib, userLibs) {
+    if (systemLibs.contains(lib)) {
       continue;
+    }
     QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
     StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info["restriction"].toString());
     QString fileName = info.find("fileName") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info["fileName"].toString();
@@ -705,6 +708,7 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
                                                                fileName, !isFileWritAble(fileName), true, false, this);
     bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(lib);
     pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
+    pNewLibraryTreeNode->setIsPartial(info.find("partialPrefix") == info.end() ? false : info["partialPrefix"].toBool());
     // get the Icon for Modelica tree node
     loadLibraryComponent(pNewLibraryTreeNode);
     addTopLevelItem(pNewLibraryTreeNode);
@@ -733,15 +737,13 @@ void LibraryTreeWidget::createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode
                                                                fileName, !isFileWritAble(fileName), pLibraryTreeNode->isSaved(), false, this);
     pNewLibraryTreeNode->setSystemLibrary(pLibraryTreeNode->isSystemLibrary());
     LibraryTreeNode *pParentLibraryTreeNode = getLibraryTreeNode(parentName);
-    if (pParentLibraryTreeNode->isDocumentationClass())
-    {
+    if (pParentLibraryTreeNode->isDocumentationClass()) {
       pNewLibraryTreeNode->setIsDocumentationClass(true);
-    }
-    else
-    {
+    } else {
       bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(lib);
       pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
     }
+    pNewLibraryTreeNode->setIsPartial(info.find("partialPrefix") == info.end() ? false : info["partialPrefix"].toBool());
     nodes.append(pNewLibraryTreeNode);
     mLibraryTreeNodesList.append(pNewLibraryTreeNode);
   }
@@ -836,32 +838,29 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, StringHandl
   pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Modelica, name, parentName, className,
                                             StringHandler::createTooltip(info, name, className), type, fileName, !isFileWritAble(fileName),
                                             isSaved, false, this);
-  if (parentName.isEmpty())
-  {
-    if (insertIndex == 0)
+  if (parentName.isEmpty()) {
+    if (insertIndex == 0) {
       addTopLevelItem(pNewLibraryTreeNode);
-    else
+    } else {
       insertTopLevelItem(insertIndex, pNewLibraryTreeNode);
+    }
     bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(className);
     pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
-  }
-  else
-  {
+  } else {
     LibraryTreeNode *pLibraryTreeNode = getLibraryTreeNode(parentName);
-    if (insertIndex == 0)
+    if (insertIndex == 0) {
       pLibraryTreeNode->addChild(pNewLibraryTreeNode);
-    else
+    } else {
       pLibraryTreeNode->insertChild(insertIndex, pNewLibraryTreeNode);
-    if (pLibraryTreeNode->isDocumentationClass())
-    {
-      pNewLibraryTreeNode->setIsDocumentationClass(true);
     }
-    else
-    {
+    if (pLibraryTreeNode->isDocumentationClass()) {
+      pNewLibraryTreeNode->setIsDocumentationClass(true);
+    } else {
       bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(className);
       pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
     }
   }
+  pNewLibraryTreeNode->setIsPartial(info.find("partialPrefix") == info.end() ? false : info["partialPrefix"].toBool());
   // load the models icon
   loadLibraryComponent(pNewLibraryTreeNode);
   mLibraryTreeNodesList.append(pNewLibraryTreeNode);
@@ -875,13 +874,11 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, bool isSave
   QString fileName = "";
   LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Text, name, "", name, StringHandler::createTooltip(name, ""),
                                                              StringHandler::Model, fileName, !isFileWritAble(fileName), isSaved, false, this);
-  pNewLibraryTreeNode->setIsDocumentationClass(false);
-
-  if (insertIndex == 0)
+  if (insertIndex == 0) {
     addTopLevelItem(pNewLibraryTreeNode);
-  else
+  } else {
     insertTopLevelItem(insertIndex, pNewLibraryTreeNode);
-
+  }
   mLibraryTreeNodesList.append(pNewLibraryTreeNode);
   mpMainWindow->getStatusBar()->clearMessage();
   return pNewLibraryTreeNode;
@@ -1119,7 +1116,7 @@ bool LibraryTreeWidget::isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode)
 {
   if (pLibraryTreeNode) {
     // if the class is partial then return false.
-    if (mpMainWindow->getOMCProxy()->isPartial(pLibraryTreeNode->getNameStructure())) {
+    if (pLibraryTreeNode->isPartial()) {
       return false;
     }
     switch (pLibraryTreeNode->getModelicaType()) {

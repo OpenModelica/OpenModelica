@@ -125,6 +125,8 @@ public:
   bool isSaved();
   void setIsProtected(bool isProtected);
   bool isProtected();
+  void setIsPartial(bool isPartial) {mIsPartial = isPartial;}
+  bool isPartial() {return mIsPartial;}
   void setSaveContentsType(LibraryTreeNode::SaveContentsType saveContentsType);
   SaveContentsType getSaveContentsType();
   void setIsDocumentationClass(bool documentationClass);
@@ -145,6 +147,7 @@ private:
   bool mIsProtected;
   SaveContentsType mSaveContentsType;
   bool mDocumentationClass;
+  bool mIsPartial;
   ModelWidget *mpModelWidget;
 };
 
