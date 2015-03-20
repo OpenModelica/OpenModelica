@@ -546,7 +546,13 @@ void OMCProxy::showException(exception &exception)
   */
 QString OMCProxy::getErrorString(bool warningsAsErrors)
 {
-  return mpOMCInterface->getErrorString(warningsAsErrors);
+  QString result = "";
+  try {
+    result = mpOMCInterface->getErrorString(warningsAsErrors);
+  } catch (std::exception &exception) {
+    showException(exception);
+  }
+  return result;
 }
 
 /*!
@@ -690,7 +696,14 @@ QString OMCProxy::getErrorLevel()
   */
 QString OMCProxy::getVersion(QString className)
 {
-  return mpOMCInterface->getVersion(className);
+  QString result = "";
+  try {
+    result = mpOMCInterface->getVersion(className);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -799,7 +812,14 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
   */
 QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qualified, bool sort, bool builtin, bool showProtected)
 {
-  return mpOMCInterface->getClassNames(className, recursive, qualified, sort, builtin, showProtected);
+  QStringList result;
+  try {
+    result = mpOMCInterface->getClassNames(className, recursive, qualified, sort, builtin, showProtected);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -810,7 +830,14 @@ QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qual
   */
 QStringList OMCProxy::searchClassNames(QString searchText, bool findInText)
 {
-  return mpOMCInterface->searchClassNames(searchText, findInText);
+  QStringList result;
+  try {
+    result = mpOMCInterface->searchClassNames(searchText, findInText);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -820,26 +847,31 @@ QStringList OMCProxy::searchClassNames(QString searchText, bool findInText)
   */
 QVariantMap OMCProxy::getClassInformation(QString className)
 {
-  OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
-  QVariantMap res;
-  res["restriction"] = classInformation.restriction;
-  res["comment"] = classInformation.comment;
-  res["partialPrefix"] = classInformation.partialPrefix;
-  res["finalPrefix"] = classInformation.finalPrefix;
-  res["encapsulatedPrefix"] = classInformation.encapsulatedPrefix;
-  /*
-    Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
-    We only set the fileName field if returned value is really a file path.
-    */
-  res["fileName"] = classInformation.fileName.endsWith(".mo") ? classInformation.fileName : "";
-  res["fileReadOnly"] = classInformation.fileReadOnly;
-  res["lineNumberStart"] = (long long) classInformation.lineNumberStart;
-  res["columnNumberStart"] = (long long) classInformation.columnNumberStart;
-  res["lineNumberEnd"] = (long long) classInformation.lineNumberEnd;
-  res["columnNumberEnd"] = (long long) classInformation.columnNumberEnd;
-  res["dimensions"] = "";
-  //res["dimensions"] = classInformation.dimensions;
-  return res;
+  QVariantMap result;
+  try {
+    OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
+    result["restriction"] = classInformation.restriction;
+    result["comment"] = classInformation.comment;
+    result["partialPrefix"] = classInformation.partialPrefix;
+    result["finalPrefix"] = classInformation.finalPrefix;
+    result["encapsulatedPrefix"] = classInformation.encapsulatedPrefix;
+    /*
+      Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
+      We only set the fileName field if returned value is really a file path.
+      */
+    result["fileName"] = classInformation.fileName.endsWith(".mo") ? classInformation.fileName : "";
+    result["fileReadOnly"] = classInformation.fileReadOnly;
+    result["lineNumberStart"] = (long long) classInformation.lineNumberStart;
+    result["columnNumberStart"] = (long long) classInformation.columnNumberStart;
+    result["lineNumberEnd"] = (long long) classInformation.lineNumberEnd;
+    result["columnNumberEnd"] = (long long) classInformation.columnNumberEnd;
+    result["dimensions"] = "";
+    //res["dimensions"] = classInformation.dimensions;
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -849,7 +881,14 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   */
 bool OMCProxy::isPackage(QString className)
 {
-  return mpOMCInterface->isPackage(className);
+  bool result = false;
+  try {
+    result = mpOMCInterface->isPackage(className);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -869,8 +908,14 @@ bool OMCProxy::isBuiltinType(QString typeName)
   */
 QString OMCProxy::getBuiltinType(QString typeName)
 {
-  QString result = mpOMCInterface->getBuiltinType(typeName);
-  getErrorString();
+  QString result = "";
+  try {
+    result = mpOMCInterface->getBuiltinType(typeName);
+    getErrorString();
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -882,37 +927,56 @@ QString OMCProxy::getBuiltinType(QString typeName)
   */
 bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
 {
-  switch (type) {
-    case StringHandler::Model:
-      return mpOMCInterface->isModel(className);
-    case StringHandler::Class:
-      return mpOMCInterface->isClass(className);
-    case StringHandler::Connector:
-      return mpOMCInterface->isConnector(className);
-    case StringHandler::Record:
-      return mpOMCInterface->isRecord(className);
-    case StringHandler::Block:
-      return mpOMCInterface->isBlock(className);
-    case StringHandler::Function:
-      return mpOMCInterface->isFunction(className);
-    case StringHandler::Package:
-      return mpOMCInterface->isPackage(className);
-    case StringHandler::Type:
-      return mpOMCInterface->isType(className);
-    case StringHandler::Operator:
-      return mpOMCInterface->isOperator(className);
-    case StringHandler::OperatorRecord:
-      return mpOMCInterface->isOperatorRecord(className);
-    case StringHandler::OperatorFunction:
-      return mpOMCInterface->isOperatorFunction(className);
-    case StringHandler::Optimization:
-      return mpOMCInterface->isOptimization(className);
-    case StringHandler::Enumeration:
-      return mpOMCInterface->isEnumeration(className);
-    default:
-      return false;
+  bool result = false;
+  try {
+    switch (type) {
+      case StringHandler::Model:
+        result = mpOMCInterface->isModel(className);
+        break;
+      case StringHandler::Class:
+        result = mpOMCInterface->isClass(className);
+        break;
+      case StringHandler::Connector:
+        result = mpOMCInterface->isConnector(className);
+        break;
+      case StringHandler::Record:
+        result = mpOMCInterface->isRecord(className);
+        break;
+      case StringHandler::Block:
+        result = mpOMCInterface->isBlock(className);
+        break;
+      case StringHandler::Function:
+        result = mpOMCInterface->isFunction(className);
+        break;
+      case StringHandler::Package:
+        result = mpOMCInterface->isPackage(className);
+        break;
+      case StringHandler::Type:
+        result = mpOMCInterface->isType(className);
+        break;
+      case StringHandler::Operator:
+        result = mpOMCInterface->isOperator(className);
+        break;
+      case StringHandler::OperatorRecord:
+        result = mpOMCInterface->isOperatorRecord(className);
+        break;
+      case StringHandler::OperatorFunction:
+        result = mpOMCInterface->isOperatorFunction(className);
+        break;
+      case StringHandler::Optimization:
+        result = mpOMCInterface->isOptimization(className);
+        break;
+      case StringHandler::Enumeration:
+        result = mpOMCInterface->isEnumeration(className);
+        break;
+      default:
+        result = false;
+    }
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
   }
-  return StringHandler::unparseBool(getResult());
+  return result;
 }
 
 /*!
@@ -923,7 +987,14 @@ bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
   */
 bool OMCProxy::isProtectedClass(QString className, QString nestedClassName)
 {
-  return mpOMCInterface->isProtectedClass(className, nestedClassName);
+  bool result = false;
+  try {
+    result = mpOMCInterface->isProtectedClass(className, nestedClassName);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -933,7 +1004,14 @@ bool OMCProxy::isProtectedClass(QString className, QString nestedClassName)
   */
 bool OMCProxy::isPartial(QString className)
 {
-  return mpOMCInterface->isPartial(className);
+  bool result = false;
+  try {
+    result = mpOMCInterface->isPartial(className);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -943,7 +1021,13 @@ bool OMCProxy::isPartial(QString className)
   */
 StringHandler::ModelicaClasses OMCProxy::getClassRestriction(QString className)
 {
-  QString result = mpOMCInterface->getClassRestriction(className);
+  QString result = "";
+  try {
+    result = mpOMCInterface->getClassRestriction(className);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
 
   if (result.toLower().contains("model"))
     return StringHandler::Model;
@@ -981,7 +1065,14 @@ StringHandler::ModelicaClasses OMCProxy::getClassRestriction(QString className)
   */
 QString OMCProxy::getParameterValue(QString className, QString parameter)
 {
-  return mpOMCInterface->getParameterValue(className, parameter);
+  QString result = "";
+  try {
+    result = mpOMCInterface->getParameterValue(className, parameter);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -992,7 +1083,14 @@ QString OMCProxy::getParameterValue(QString className, QString parameter)
   */
 QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
 {
-  return mpOMCInterface->getComponentModifierNames(className, name);
+  QStringList result;
+  try {
+    result = mpOMCInterface->getComponentModifierNames(className, name);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -1229,7 +1327,13 @@ QStringList OMCProxy::getComponentAnnotations(QString className)
   */
 QString OMCProxy::getDocumentationAnnotation(QString className)
 {
-  QList<QString> docsList = mpOMCInterface->getDocumentationAnnotation(className);
+  QList<QString> docsList;
+  try {
+    docsList = mpOMCInterface->getDocumentationAnnotation(className);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
   // get the class comment and show it as the first line on the documentation page.
   QString doc = getClassComment(className);
   if (!doc.isEmpty()) doc.prepend("<h4>").append("</h4>");
@@ -1286,7 +1390,14 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
   */
 QString OMCProxy::getClassComment(QString className)
 {
-  return mpOMCInterface->getClassComment(className);
+  QString result = "";
+  try {
+    result = mpOMCInterface->getClassComment(className);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -1296,7 +1407,14 @@ QString OMCProxy::getClassComment(QString className)
   */
 QString OMCProxy::changeDirectory(QString directory)
 {
-  return mpOMCInterface->cd(directory);
+  QString result = "";
+  try {
+    result = mpOMCInterface->cd(directory);
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -1307,10 +1425,16 @@ QString OMCProxy::changeDirectory(QString directory)
   */
 bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify, QString languageStandard, bool requireExactVersion)
 {
+  bool result = false;
   QList<QString> priorityVersionList;
   priorityVersionList << priorityVersion;
-  bool result = mpOMCInterface->loadModel(className, priorityVersionList, notify, languageStandard, requireExactVersion);
-  printMessagesStringInternal();
+  try {
+    result = mpOMCInterface->loadModel(className, priorityVersionList, notify, languageStandard, requireExactVersion);
+    printMessagesStringInternal();
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -1321,9 +1445,15 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
   */
 bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
 {
+  bool result = false;
   fileName = fileName.replace('\\', '/');
-  bool result = mpOMCInterface->loadFile(fileName, encoding, uses);
-  printMessagesStringInternal();
+  try {
+    result = mpOMCInterface->loadFile(fileName, encoding, uses);
+    printMessagesStringInternal();
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -1334,8 +1464,14 @@ bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
   */
 bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool checkError)
 {
-  bool result = mpOMCInterface->loadString(value, fileName, encoding);
-  if (checkError) {
+  bool result = false;
+  try {
+    result = mpOMCInterface->loadString(value, fileName, encoding);
+    if (checkError) {
+      printMessagesStringInternal();
+    }
+  } catch (std::exception &exception) {
+    showException(exception);
     printMessagesStringInternal();
   }
   return result;
@@ -1348,12 +1484,18 @@ bool OMCProxy::loadString(QString value, QString fileName, QString encoding, boo
   */
 QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
 {
+  QList<QString> result;
   fileName = fileName.replace('\\', '/');
-  QList<QString> resultList = mpOMCInterface->parseFile(fileName, encoding);
-  if (resultList.isEmpty()) {
+  try {
+    result = mpOMCInterface->parseFile(fileName, encoding);
+    if (result.isEmpty()) {
+      printMessagesStringInternal();
+    }
+  } catch (std::exception &exception) {
+    showException(exception);
     printMessagesStringInternal();
   }
-  return resultList;
+  return result;
 }
 
 /*!
@@ -1363,9 +1505,15 @@ QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
   */
 QList<QString> OMCProxy::parseString(QString value, QString fileName)
 {
-  QList<QString> resultList = mpOMCInterface->parseString(value, fileName);
-  printMessagesStringInternal();
-  return resultList;
+  QList<QString> result;
+  try {
+    result = mpOMCInterface->parseString(value, fileName);
+    printMessagesStringInternal();
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -2238,8 +2386,16 @@ bool OMCProxy::setDebugFlags(QString debugFlags)
 
 bool OMCProxy::exportToFigaro(QString className, QString directory, QString database, QString mode, QString options, QString processor)
 {
-  bool result = mpOMCInterface->exportToFigaro(className, directory, database, mode, options, processor);
-  if (!result) printMessagesStringInternal();
+  bool result = false;
+  try {
+    result = mpOMCInterface->exportToFigaro(className, directory, database, mode, options, processor);
+    if (!result) {
+      printMessagesStringInternal();
+    }
+  } catch (std::exception &exception) {
+    showException(exception);
+    printMessagesStringInternal();
+  }
   return result;
 }
 

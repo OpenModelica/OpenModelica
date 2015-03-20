@@ -477,8 +477,7 @@ void ModelicaTextEditor::toggleCommentSelection()
 //! @param text the string to set.
 void ModelicaTextEditor::setPlainText(const QString &text)
 {
-  if (text != toPlainText())
-  {
+  if (text != toPlainText()) {
     mForceSetPlainText = true;
     QPlainTextEdit::setPlainText(text);
     mForceSetPlainText = false;

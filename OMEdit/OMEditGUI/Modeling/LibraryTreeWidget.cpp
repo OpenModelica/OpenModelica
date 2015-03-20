@@ -1210,10 +1210,7 @@ bool LibraryTreeWidget::saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTre
     if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile) {
       result = saveLibraryTreeNodeOneFileHelper(pLibraryTreeNode);
     }
-    /* A sub model contained inside some other model.
-     * Find its root model.
-     * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
-     * If mSaveContentsType is LibraryTreeNode::SaveFolderStructure then we save sub models in folder structure
+    /* If mSaveContentsType is LibraryTreeNode::SaveFolderStructure then we save sub models in folder structure
      */
     else if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) {
       result = saveLibraryTreeNodeFolderHelper(pLibraryTreeNode);
