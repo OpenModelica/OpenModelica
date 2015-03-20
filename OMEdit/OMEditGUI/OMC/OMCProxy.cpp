@@ -1477,24 +1477,14 @@ bool OMCProxy::setSourceFile(QString className, QString path)
   \param className - the name of the class.
   \return true on success.
   */
-bool OMCProxy::save(QString className, QString fileName)
+bool OMCProxy::save(QString className)
 {
   sendCommand("save(" + className + ")");
   bool result = StringHandler::unparseBool(getResult());
-  if (result)
-  {
-    /* We need to load the file again so that the line number information for model_info.xml is correct.
-       Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
-       In order to get rid of it save API should update omc with new line information.
-      */
-    loadFile(fileName);
-    return true;
-  }
-  else
-  {
+  if (!result) {
     printMessagesStringInternal();
-    return false;
   }
+  return result;
 }
 
 bool OMCProxy::saveModifiedModel(QString modelText)

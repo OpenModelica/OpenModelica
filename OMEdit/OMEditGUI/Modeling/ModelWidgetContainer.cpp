@@ -2634,6 +2634,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     refresh();
     /* if class has children then create them. */
     pLibraryTreeWidget->createLibraryTreeNodes(mpLibraryTreeNode);
+    setModelModified();
   }
   /*
     if user has changed the class name then delete this class.
@@ -3099,8 +3100,7 @@ void ModelWidgetContainer::saveModelWidget()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();
   // if pModelWidget = 0
-  if (!pModelWidget)
-  {
+  if (!pModelWidget) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                              GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
     return;

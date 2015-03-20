@@ -155,7 +155,7 @@ public:
   bool deleteClass(QString className);
   QString getSourceFile(QString className);
   bool setSourceFile(QString className, QString path);
-  bool save(QString className, QString fileName);
+  bool save(QString className);
   bool saveModifiedModel(QString modelText);
   bool saveTotalSCode(QString fileName, QString className);
   QString list(QString className);
