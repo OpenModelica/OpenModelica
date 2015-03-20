@@ -430,8 +430,11 @@ algorithm
       (_, v) := Ceval.ceval(inCache, inEnv, inExp, false, NONE(), msg, 0);
       outValue := SOME(v);
     else
-      // Fail if ceval gave an error.
-      if err_count <> Error.getNumErrorMessages() then
+      // Fail if ceval gave an error. Except if the expression contains a
+      // function call, because we don't handle function parameter modifiers
+      // correctly which causes issues with CevalFunction.
+      if err_count <> Error.getNumErrorMessages() and not
+          Expression.containsAnyCall(inExp) then
         fail();
       end if;
     end try;

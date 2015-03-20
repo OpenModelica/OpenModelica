@@ -12127,5 +12127,29 @@ algorithm
   end match;
 end isScalar;
 
+public function containsAnyCall
+  "Returns true if the given expression contains any function calls,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outContainsCall;
+algorithm
+  (_, outContainsCall) := traverseExpTopDown(inExp, containsAnyCall_traverser, false);
+end containsAnyCall;
+
+protected function containsAnyCall_traverser
+  input DAE.Exp inExp;
+  input Boolean inContainsCall;
+  output DAE.Exp outExp = inExp;
+  output Boolean outContinue;
+  output Boolean outContainsCall;
+algorithm
+  outContainsCall := match inExp
+    case DAE.CALL() then true;
+    else inContainsCall;
+  end match;
+
+  outContinue := not outContainsCall;
+end containsAnyCall_traverser;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;
