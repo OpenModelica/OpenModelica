@@ -4370,5 +4370,24 @@ algorithm
   exp := Expression.crefExp(cref);
 end varExp;
 
+public function varExp2"same as varExp but adds a der()-call for state derivatives"
+  input BackendDAE.Var var;
+  output DAE.Exp exp;
+algorithm
+  exp := match(var)
+  local
+    DAE.ComponentRef cref;
+    DAE.Exp exp1;
+  case(BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(index=1)))
+    algorithm
+      exp1 := Expression.crefExp(cref);
+  then Expression.expDer(exp1);
+  else
+    algorithm
+      BackendDAE.VAR(varName=cref) := var;
+    then Expression.crefExp(cref);
+  end match;
+end varExp2;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendVariable;

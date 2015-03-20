@@ -509,8 +509,8 @@ protected
   list<Real> coeffs;
   BackendDAE.Equation eq;
 algorithm
-   xExps := List.map(xVars,BackendVariable.varExp);
-   bExps := List.map(bVars,BackendVariable.varExp);
+   xExps := List.map(xVars,BackendVariable.varExp2);
+   bExps := List.map(bVars,BackendVariable.varExp2);
   for i in 1:n loop
     row := arrayGet(order,i);
     coeffs := Array.getRange((row-1)*n+1,(row*n),A);
@@ -794,6 +794,7 @@ algorithm
       then (syst,shared,true,sysIdxIn,compIdxIn+1);
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets, partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_LINEAR())),_,_)
       equation
+        true = BackendDAEUtil.isSimulationDAE(ishared);
         //only the A-matrix is constant, apply Gaussian Elimination
         eqn_lst = BackendEquation.getEqns(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
