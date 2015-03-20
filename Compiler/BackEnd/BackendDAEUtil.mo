@@ -132,6 +132,16 @@ algorithm
   end match;
 end isInitializationDAE;
 
+public function isSimulationDAE
+  input BackendDAE.Shared inShared;
+  output Boolean res;
+algorithm
+  res := match(inShared)
+    case (BackendDAE.SHARED(backendDAEType=BackendDAE.SIMULATION())) then true;
+    else false;
+  end match;
+end isSimulationDAE;
+
 /*************************************************
  * checkBackendDAE and stuff
  ************************************************/
