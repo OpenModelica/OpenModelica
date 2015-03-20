@@ -538,8 +538,6 @@ QString GUIMessages::getMessage(int type)
       return tr("You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.");
     case FILE_FORMAT_NOT_SUPPORTED:
       return tr("The file <b>%1</b> is not a valid Modelica file. The file format is not supported. You can only open <b>%2</b>.");
-    case ENTER_VALID_INTEGER:
-      return tr("Enter a valid positive integer index value for <b>%1</b>.");
     case ENTER_VALID_NUMBER:
       return tr("Enter a valid number value for <b>%1</b>.");
     case ITEM_DROPPED_ON_ITSELF:
