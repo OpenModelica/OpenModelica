@@ -4129,6 +4129,17 @@ algorithm
   end matchcontinue;
 end makeConstZero;
 
+public function makeConstZeroE
+"Generates a zero constant, using type from inExp"
+  input DAE.Exp iExp;
+  output DAE.Exp const;
+protected
+  DAE.Type tp = typeof(iExp);
+algorithm
+  const := makeConstZero(tp);
+end makeConstZeroE;
+
+
 public function makeListOfZeros
   input Integer inDimension;
   output list<DAE.Exp> outList;
@@ -11948,18 +11959,21 @@ algorithm
     case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(0.0))
       then (e1,iExp2,true);
     // sqrt(f(x)) = c -> f(x) = c^2
-    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST())
+    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), e2)
+      guard(Expression.isConst(e2))
       equation
        e = Expression.expPow(iExp2, DAE.RCONST(2.0));
       then (e1,e,true);
     // log(f(x)) = c -> f(x) = exp(c)
-    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST())
+    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), e2)
+      guard(Expression.isConst(e2))
       equation
        tp = Expression.typeof(iExp2);
        e = Expression.makePureBuiltinCall("exp", {iExp2}, tp);
       then (e1,e,true);
     // log10(f(x)) = c -> f(x) = 10^(c)
-    case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.RCONST())
+    case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), e2)
+      guard(Expression.isConst(e2))
       equation
        e = Expression.expPow(DAE.RCONST(10.0),iExp2);
       then (e1,e,true);

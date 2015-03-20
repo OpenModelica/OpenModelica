@@ -54,6 +54,7 @@ protected import Config;
 
 protected import Expression;
 protected import ExpressionSolve;
+protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
 protected import List;
@@ -619,21 +620,24 @@ protected
   DAE.ComponentRef cr, cr_var;
   list<String> name_lst = List.map(cr_lst,ComponentReference.crefStr);
   DAE.Exp e, res;
-  Integer ind;
-  list<Integer> ind_lst = vindx;
+  Integer ind_e, ind_v;
+  list<Integer> ind_lst_v = List.map(vindx,intAbs);
+  list<Integer> ind_lst_e = eindex;
   BackendDAE.Variables knvars;
 algorithm
-  ({},_) := List.splitOnTrue(var_lst, BackendVariable.isStateVar);
+
   BackendDAE.SHARED(knownVars=knvars) := oshared;
+
   for name in name_lst loop
 
     // res -> con
     var_::var_lst := var_lst;
     cr_var :: cr_lst := cr_lst;
     eqn :: eqn_lst := eqn_lst;
-    ind :: ind_lst := ind_lst;
+    ind_e :: ind_lst_e := ind_lst_e;
+    ind_v :: ind_lst_v := ind_lst_v;
 
-    cr  := ComponentReference.makeCrefIdent("$OMC$con$"  + name, DAE.T_REAL_DEFAULT , {});
+    cr  := ComponentReference.makeCrefIdent("$OMC$con$Loop$"  + intString(ind_e), DAE.T_REAL_DEFAULT , {});
     e := Expression.crefExp(cr);
 
     var := BackendVariable.makeVar(cr);
@@ -642,17 +646,20 @@ algorithm
 
     ovars := BackendVariable.addNewVar(var, ovars);
     res := BackendDAEOptimize.makeEquationToResidualExp(eqn);
+    res := Expression.createResidualExp(res, Expression.makeConstZeroE(res));    
 
     //oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
-    oeqns := BackendEquation.setAtIndex(oeqns,ind, BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN));
+    oeqns := BackendEquation.setAtIndex(oeqns,ind_e, BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN));
     // new input(resvar)
-    (cr,var) := makeVar("OMC$Input" + intString(ind));
+    (cr,var) := makeVar("OMC$Input" + intString(ind_v));
     var := BackendVariable.setVarDirection(var, DAE.INPUT());
     var := BackendVariable.mergeAliasVars(var, var_, false, knvars);
     oshared := BackendVariable.addKnVarDAE(var, oshared);
     // resvar = new input(resvar)
+    if BackendVariable.isStateVar(var) then
+      cr_var := ComponentReference.crefPrefixDer(cr);
+    end if;
     oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(Expression.crefExp(cr_var), Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
-
 
   end for;
 
