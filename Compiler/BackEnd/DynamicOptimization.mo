@@ -646,7 +646,7 @@ algorithm
 
     ovars := BackendVariable.addNewVar(var, ovars);
     res := BackendDAEOptimize.makeEquationToResidualExp(eqn);
-    res := Expression.createResidualExp(res, Expression.makeConstZeroE(res));    
+    res := Expression.createResidualExp(res, Expression.makeConstZeroE(res));
 
     //oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
     oeqns := BackendEquation.setAtIndex(oeqns,ind_e, BackendDAE.EQUATION(e, res, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN));
