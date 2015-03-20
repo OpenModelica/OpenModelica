@@ -1139,9 +1139,9 @@ void GraphicsView::addClassAnnotation()
       pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
     }
   } else {
-    pMainWindow->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
-                                                                    tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
-                                                                    Helper::scriptingKind, Helper::errorLevel, 0));
+    pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0,
+                                                                tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
+                                                                Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2607,7 +2607,7 @@ bool ModelWidget::modelicaEditorTextChanged()
   if (classNames.size() == 0) {
     if (!errorString.isEmpty()) {
       MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel, 0));
+      pMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel));
     }
     return false;
   }

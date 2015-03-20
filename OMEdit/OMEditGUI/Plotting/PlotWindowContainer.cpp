@@ -112,9 +112,8 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
   }
-  catch (PlotException &e)
-  {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel, 0));
+  catch (PlotException &e) {
+    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -136,9 +135,8 @@ void PlotWindowContainer::addParametricPlotWindow()
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
     pPlotWindow->show();
   }
-  catch (PlotException &e)
-  {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel, 0));
+  catch (PlotException &e) {
+    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

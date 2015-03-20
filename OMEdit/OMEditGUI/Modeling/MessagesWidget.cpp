@@ -54,10 +54,9 @@
   \param message - the error message.
   \param kind - the error kind.
   \param level - the error level.
-  \param id - the error id.
   */
 MessageItem::MessageItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message,
-                         QString errorKind, QString errorType, int id)
+                         QString errorKind, QString errorType)
 {
   mTime = QTime::currentTime().toString();
   mFileName = filename;
@@ -69,7 +68,6 @@ MessageItem::MessageItem(QString filename, bool readOnly, int lineStart, int col
   mMessage = message;
   mErrorKind = StringHandler::getErrorKind(errorKind);
   mErrorType = StringHandler::getErrorType(errorType);
-  mId = id;
 }
 
 /*!
@@ -165,7 +163,7 @@ void MessagesWidget::applyMessagesSettings()
   Adds the error message.\n
   Moves to the most recent error message in the view.
   */
-void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
+void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
   // move the cursor down before adding message.
   QTextCursor textCursor = mpMessagesTextBrowser->textCursor();
@@ -173,7 +171,7 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
   mpMessagesTextBrowser->setTextCursor(textCursor);
   // set the CSS class depending on message type
   QString messageCSSClass;
-  switch (pMessageItem->getErrorType()) {
+  switch (messageItem.getErrorType()) {
     case StringHandler::Warning:
       messageCSSClass = "warning";
       break;
@@ -186,21 +184,21 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
       break;
   }
   QString message;
-  if (pMessageItem->getFileName().isEmpty()) { // if custom error message
-    message = pMessageItem->getMessage();
-  } else if (mpMainWindow->getOMCProxy()->existClass(pMessageItem->getFileName())) {
+  if (messageItem.getFileName().isEmpty()) { // if custom error message
+    message = messageItem.getMessage();
+  } else if (mpMainWindow->getOMCProxy()->existClass(messageItem.getFileName())) {
     // If the class is only loaded in AST then create link for the error message otherwise display filename to user where error occurred.
     message = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>")
-        .arg(pMessageItem->getFileName())
-        .arg(pMessageItem->getLocation())
-        .arg(pMessageItem->getFileName())
-        .arg(pMessageItem->getLineStart())
-        .arg(pMessageItem->getMessage());
+        .arg(messageItem.getFileName())
+        .arg(messageItem.getLocation())
+        .arg(messageItem.getFileName())
+        .arg(messageItem.getLineStart())
+        .arg(messageItem.getMessage());
   } else {
     message = QString("[%1: %2]: %3")
-        .arg(pMessageItem->getFileName())
-        .arg(pMessageItem->getLocation())
-        .arg(pMessageItem->getMessage());
+        .arg(messageItem.getFileName())
+        .arg(messageItem.getLocation())
+        .arg(messageItem.getMessage());
   }
   QString errorString = QString("<div class=\"%1\">"
                                 "<b>[%2] %3 %4 %5</b><br />"
@@ -209,8 +207,8 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
       .arg(messageCSSClass)
       .arg(QString::number(mMessageNumber))
       .arg(QTime::currentTime().toString())
-      .arg(StringHandler::getErrorKindString(pMessageItem->getErrorKind()))
-      .arg(StringHandler::getErrorTypeDisplayString(pMessageItem->getErrorType()))
+      .arg(StringHandler::getErrorKindString(messageItem.getErrorKind()))
+      .arg(StringHandler::getErrorTypeDisplayString(messageItem.getErrorType()))
       .arg(message);
   mpMessagesTextBrowser->insertHtml(errorString);
   mMessageNumber++;
@@ -218,8 +216,6 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
   textCursor.movePosition(QTextCursor::End);
   mpMessagesTextBrowser->setTextCursor(textCursor);
   emit MessageAdded();
-  // remove the MessageItem
-  pMessageItem->deleteLater();
 }
 
 /*!

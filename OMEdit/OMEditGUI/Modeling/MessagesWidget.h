@@ -46,9 +46,8 @@ class StringHandler;
 
 class MessagesWidget;
 
-class MessageItem : public QObject
+class MessageItem
 {
-  Q_OBJECT
 public:
   QString mTime;
   QString mFileName;
@@ -61,10 +60,9 @@ public:
   QString mKind;
   StringHandler::OpenModelicaErrorKinds mErrorKind;
   StringHandler::OpenModelicaErrors mErrorType;
-  int mId;
 public:
   MessageItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString errorKind,
-              QString errorType, int id);
+              QString errorType);
   QString getTime() {return mTime;}
   QString getFileName() {return mFileName;}
   QString getLineStart() {return QString::number(mLineStart);}
@@ -89,7 +87,7 @@ public:
   void resetMessagesNumber() {mMessageNumber = 1;}
   QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
   void applyMessagesSettings();
-  void addGUIMessage(MessageItem *pMessageItem);
+  void addGUIMessage(MessageItem messageItem);
 signals:
   void MessageAdded();
 private slots:

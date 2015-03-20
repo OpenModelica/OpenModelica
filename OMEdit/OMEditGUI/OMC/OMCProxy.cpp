@@ -535,8 +535,8 @@ void OMCProxy::exitApplication()
  */
 void OMCProxy::showException(exception &exception)
 {
-  MessageItem *pMessageItem = new MessageItem("", false, 0, 0, 0, 0, QString(exception.what()), Helper::scriptingKind, Helper::errorLevel, 0);
-  mpMainWindow->getMessagesWidget()->addGUIMessage(pMessageItem);
+  MessageItem messageItem("", false, 0, 0, 0, 0, QString(exception.what()), Helper::scriptingKind, Helper::errorLevel);
+  mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
 }
 
 /*!
@@ -561,13 +561,11 @@ bool OMCProxy::printMessagesStringInternal()
   int errorsSize = getMessagesStringInternal();
   bool returnValue = errorsSize > 0 ? true : false;
 
-  for (int i = 1; i <= errorsSize ; i++)
-  {
+  for (int i = 1; i <= errorsSize ; i++) {
     setCurrentError(i);
-    MessageItem *pMessageItem = new MessageItem(getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(),
-                                                getErrorLineEnd(), getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel(),
-                                                getErrorId());
-    mpMainWindow->getMessagesWidget()->addGUIMessage(pMessageItem);
+    MessageItem messageItem(getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
+                            getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
+    mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
   }
   return returnValue;
 }
@@ -684,16 +682,6 @@ QString OMCProxy::getErrorLevel()
 {
   sendCommand("currentError.level");
   return getResult();
-}
-
-/*!
-  Gets the error id from current error.
-  \return the error id
-  */
-int OMCProxy::getErrorId()
-{
-  sendCommand("currentError.id");
-  return getResult().toInt();
 }
 
 /*!
@@ -2164,8 +2152,8 @@ QString OMCProxy::uriToFilename(QString uri)
   if (results.size() > 1 && !results.at(1).isEmpty())
   {
     QString errorString = results.at(1);
-    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
-                                                                     Helper::errorLevel, 0));
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
+                                                                 Helper::errorLevel));
   }
   if (results.size() > 0)
     return results.first();

@@ -108,7 +108,6 @@ public:
   QString getErrorMessage();
   QString getErrorKind();
   QString getErrorLevel();
-  int getErrorId();
   QString getVersion(QString className = QString("OpenModelica"));
   void loadSystemLibraries(QSplashScreen *pSplashScreen);
   void loadUserLibraries(QSplashScreen *pSplashScreen);
