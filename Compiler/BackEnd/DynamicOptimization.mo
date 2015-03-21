@@ -636,7 +636,6 @@ algorithm
     eqn :: eqn_lst := eqn_lst;
     ind_e :: ind_lst_e := ind_lst_e;
     ind_v :: ind_lst_v := ind_lst_v;
-
     cr  := ComponentReference.makeCrefIdent("$OMC$con$Loop$"  + intString(ind_e), DAE.T_REAL_DEFAULT , {});
     e := Expression.crefExp(cr);
 
@@ -656,10 +655,11 @@ algorithm
     var := BackendVariable.mergeAliasVars(var, var_, false, knvars);
     oshared := BackendVariable.addKnVarDAE(var, oshared);
     // resvar = new input(resvar)
-    if BackendVariable.isStateVar(var) then
-      cr_var := ComponentReference.crefPrefixDer(cr);
+    e := Expression.crefExp(cr_var);
+    if BackendVariable.isStateVar(var_) then
+      e := Expression.expDer(e);
     end if;
-    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(Expression.crefExp(cr_var), Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
+    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
 
   end for;
 
