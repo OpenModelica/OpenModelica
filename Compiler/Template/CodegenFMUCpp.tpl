@@ -52,7 +52,7 @@ import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenFMU.*;
 
-template translateModel(SimCode simCode)
+template translateModel(SimCode simCode, String FMUVersion, String FMUType)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
@@ -71,7 +71,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFunctionsFile(simCode, extraFuncs ,extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
   let()= textFile(simulationTypesHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(fmuModelWrapperFile(simCode, extraFuncs ,extraFuncsDecl, "",guid,name), 'OMCpp<%name%>FMU.cpp')
-  let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs ,extraFuncsDecl, "",guid), 'modelDescription.xml')
+  let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs ,extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
   let()= textFile(simulationInitHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
   let()= textFile(simulationFactoryFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
@@ -97,15 +97,17 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
    // Return empty result since result written to files directly
 end translateModel;
 
-template fmuModelDescriptionFileCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,String guid)
+template fmuModelDescriptionFileCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,String guid, String FMUVersion, String FMUType)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
-  <%fmiModelDescriptionCpp(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace,guid)%>
-
+  <%
+    if isFMIVersion20(FMUVersion) then fmi2ModelDescription(simCode, guid)
+    else fmiModelDescriptionCpp(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace,guid)
+  %>
   >>
 end fmuModelDescriptionFileCpp;
 

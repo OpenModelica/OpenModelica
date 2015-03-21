@@ -587,7 +587,7 @@ algorithm
       then ();
     case (_,"Cpp")
       equation
-        Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
+        Tpl.tplNoret3(CodegenFMUCpp.translateModel, simCode, FMUVersion, FMUType);
       then ();
     else
       equation
