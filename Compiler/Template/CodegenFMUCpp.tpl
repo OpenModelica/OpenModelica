@@ -53,46 +53,24 @@ import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when
 import CodegenFMU.*;
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType)
- "Generates C code and Makefile for compiling a FMU of a
-  Modelica model."
+ "Generates C++ code and Makefile for compiling an FMU of a Modelica model.
+  Calls CodegenCpp.translateModel for the actual model code."
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
   let name = lastIdentOfPath(modelInfo.name)
-  let preVarsCount = getPreVarsCount(simCode)
   let stateDerVectorName = "__zDot"
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
-  let()= textFile(simulationHeaderFile(simCode,contextFMI, extraFuncs ,extraFuncsDecl,"","","","",MemberVariable(modelInfo, false),false), 'OMCpp<%name%>.h')
-  let()= textFile(simulationCppFile(simCode, contextFMI,extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%name%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, extraFuncs ,extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
-  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs ,extraFuncsDecl, "",guid, name, FMUVersion), 'OMCpp<%name%>FMU.cpp')
-  let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs ,extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
-  let()= textFile(simulationInitHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  let()= textFile(simulationInitCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
-  let()= textFile(simulationFactoryFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
-  let()= textFile(simulationExtensionHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
-  let()= textFile(simulationExtensionCppFile(simCode, extraFuncs ,extraFuncsDecl, "", preVarsCount),'OMCpp<%fileNamePrefix%>Extension.cpp')
-  let()= textFile(simulationJacobianHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-  let()= textFile(simulationJacobianCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
-  let()= textFile(simulationWriteOutputHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,false), "", preVarsCount, false),'OMCpp<%fileNamePrefix%>PreVariables.h')
-  let()= textFile(simulationWriteOutputCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-  let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
-  let()= textFile(simulationStateSelectionCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
-  let()= textFile(simulationStateSelectionHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
-  let()= textFile(fmudeffile(simCode,"1.0"), '<%name%>.def')
-  let()= textFile(fmuMakefile(target,simCode, extraFuncs ,extraFuncsDecl, ""), '<%fileNamePrefix%>_FMU.makefile')
-  let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_)  =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode, extraFuncs ,extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, false) ;separator="")
-         ;separator="")
-  let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode, extraFuncs ,extraFuncsDecl, "",contextAlgloop, stateDerVectorName, false)
-  let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode, extraFuncs ,extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
-  let()= textFile(calcHelperMainfile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
+  let cpp = CodegenCpp.translateModel(simCode)
+  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs, extraFuncsDecl, "",guid, name, FMUVersion), 'OMCpp<%name%>FMU.cpp')
+  let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
+  let()= textFile(simulationHeaderFile(simCode,contextFMI, extraFuncs, extraFuncsDecl,"","","","",MemberVariable(modelInfo, false),false), 'OMCpp<%name%>.h')
+  let()= textFile(simulationCppFile(simCode, contextFMI, extraFuncs, extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%name%>.cpp')
+  let()= textFile(fmudeffile(simCode, FMUVersion), '<%name%>.def')
+  let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, ""), '<%fileNamePrefix%>_FMU.makefile')
  ""
    // Return empty result since result written to files directly
 end translateModel;
@@ -548,6 +526,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SRC=OMCpp<%modelName%>.cpp
   SRC+= OMCpp<%modelName%>FMU.cpp
   SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
+  SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp
+  SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp
+  SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp
+  SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain5.cpp
   SRC+= OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
   LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory $(BASE_LIB)
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
