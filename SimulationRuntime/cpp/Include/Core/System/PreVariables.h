@@ -3,11 +3,11 @@
 class  PreVariables
 {
 public:
-  PreVariables(int numOfPreVars) : _pre_real_vars_idx(), _pre_int_vars_idx(), _pre_bool_vars_idx(), __z(NULL), __zDot(NULL)
+ PreVariables(int numOfPreVars) : /*_pre_real_vars_idx(), _pre_int_vars_idx(), _pre_bool_vars_idx(),*/ __z(NULL), __zDot(NULL)
   {
       _pre_vars = new double[numOfPreVars];
   }
-  PreVariables() : _pre_real_vars_idx(), _pre_int_vars_idx(), _pre_bool_vars_idx(), __z(NULL), __zDot(NULL)
+ PreVariables() : /*_pre_real_vars_idx(), _pre_int_vars_idx(), _pre_bool_vars_idx(),*/ __z(NULL), __zDot(NULL)
   {
       _pre_vars = new double[0];
   }

@@ -1,0 +1,79 @@
+#pragma once
+/*
+ * Define default global settings for FMI 2.0.
+ *
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+#include <Core/SimulationSettings/IGlobalSettings.h>
+
+class FMU2GlobalSettings : public IGlobalSettings
+{
+ public:
+  virtual  ~FMU2GlobalSettings() {}
+  ///< Start time of integration (default: 0.0)
+  virtual double          getStartTime() { return 0.0; }
+  virtual void            setStartTime(double) {}
+  ///< End time of integraiton (default: 1.0)
+  virtual double          getEndTime() { return 1.0; }
+  virtual void            setEndTime(double) {}
+  ///< Output step size (default: 20 ms)
+  virtual double          gethOutput() { return 20; }
+  virtual void            sethOutput(double) {}
+  ///< Write out results ([false,true]; default: true)
+  virtual bool            getResultsOutput() { return false; }
+  virtual void            setResultsOutput(bool) {}
+  virtual bool            useEndlessSim() {return true; }
+  virtual void            useEndlessSim(bool) {}
+  ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
+  virtual bool            getInfoOutput() { return false; }
+  virtual void            setInfoOutput(bool) {}
+  virtual string          getOutputPath() { return "./"; }
+  virtual OutputFormat    getOutputFormat() { return CSV; }
+  virtual LogType         getLogType() { return OFF; }
+  virtual void            setLogType(LogType) {}
+  virtual OutputPointType getOutputPointType() { return ALL; };
+  virtual void            setOutputPointType(OutputPointType) {};
+  virtual void            setOutputFormat(OutputFormat) {}
+  virtual void            setOutputPath(string) {}
+  virtual string          getSelectedSolver() { return "Euler"; }
+  virtual void            setSelectedSolver(string) {}
+  virtual string          getSelectedLinSolver() { return "Newton"; }
+  virtual void            setSelectedLinSolver(string) {}
+  virtual string          getSelectedNonLinSolver() { return "Newton"; }
+  virtual void            setSelectedNonLinSolver(string) {}
+  virtual void            load(std::string xml_file) {};
+  virtual void            setResultsFileName(string) {}
+  virtual string          getResultsFileName() { return "fmuresults.csv"; }
+  virtual void            setRuntimeLibrarypath(string) {}
+  virtual string          getRuntimeLibrarypath() { return ""; }
+  virtual void            setAlarmTime(unsigned int) {}
+  virtual unsigned int    getAlarmTime() { return 0; }
+};
