@@ -70,7 +70,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFunctionsHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, extraFuncs ,extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
   let()= textFile(simulationTypesHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
-  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs ,extraFuncsDecl, "",guid,name), 'OMCpp<%name%>FMU.cpp')
+  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs ,extraFuncsDecl, "",guid, name, FMUVersion), 'OMCpp<%name%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs ,extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
   let()= textFile(simulationInitHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
@@ -160,7 +160,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributesCpp;
 
-template fmuModelWrapperFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String name)
+template fmuModelWrapperFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String name, String FMUVersion)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -174,22 +174,32 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include <Core/Modelica.h>
   #include <Core/ModelicaDefine.h>
   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+  #include <SimulationSettings/IGlobalSettings.h>
+  #include <System/IAlgLoopSolverFactory.h>
+  #include <System/IMixedSystem.h>
+  #include <System/IAlgLoop.h>
+  #include <Solver/IAlgLoopSolver.h>
+  #include <System/IAlgLoopSolverFactory.h>
+  #include <SimController/ISimData.h>
   #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Extension.h"
 
   <%ModelDefineData(modelInfo)%>
   #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
 
-  #include "FMU/FMUWrapper.cpp"
+  <%if isFMIVersion20(FMUVersion) then
+    '#include "FMU2/FMU2Wrapper.cpp"'
+  else
+    '#include "FMU/FMUWrapper.cpp"'%>
+    
+  <%if isFMIVersion20(FMUVersion) then
+    '#define OBJECTCONSTRUCTOR (new FMU2Wrapper(instanceName, GUID, functions, loggingOn))'
+  else
+    '#define OBJECTCONSTRUCTOR (new FMUWrapper(instanceName, GUID, functions, loggingOn))'%>
 
-  #define OBJECTCONSTRUCTOR (new FMUWrapper(instanceName, GUID, functions, loggingOn))
-  #include "FMU/FMULibInterface.cpp"
+  <%if isFMIVersion20(FMUVersion) then
+    '#include "FMU2/FMU2Interface.cpp"'
+  else
+    '#include "FMU/FMULibInterface.cpp"'%>
 
   #if 0
   <%setDefaultStartValues(modelInfo)%>
