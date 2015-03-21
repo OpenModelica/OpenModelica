@@ -4039,9 +4039,9 @@ algorithm
         (cache,env_1,ih) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), crefs, ci_state, impl) "m" ;
         (cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl, Mod.COMPONENT(n1), info);
         (cache,old_m_1) = Mod.elabMod(cache, env_1, ih, pre, old_mod, impl, Mod.COMPONENT(n2), info);
-        m_2 = Mod.merge(m_1, rmod, env_1, pre);
+        m_2 = Mod.merge(rmod, m_1, env_1, pre);
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
-        m_3 = Mod.merge(m_3,cmod,env_1,pre);
+        m_3 = Mod.merge(cmod, m_3 ,env_1,pre);
 
         redecl = NFSCodeFlattenRedeclare.propagateAttributesVar(comp, redComp);
         redecl = SCode.setComponentMod(redecl, mod);

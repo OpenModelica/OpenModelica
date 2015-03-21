@@ -1831,7 +1831,7 @@ algorithm
                        tplSCodeElementModLst = {(celm as SCode.COMPONENT(),cm)}),
           icm as DAE.MOD(),env,pre)
       equation
-        cm = merge(icm,cm,env,pre);
+        cm = merge(cm,icm,env,pre);
       then
         DAE.REDECL(f1,each1,{(celm,cm)});
 

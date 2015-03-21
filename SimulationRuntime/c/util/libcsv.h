@@ -41,7 +41,7 @@ extern "C" {
 struct csv_parser {
   int pstate;         /* Parser state */
   int quoted;         /* Is the current field a quoted field? */
-  size_t spaces;      /* Number of continious spaces after quote or in a non-quoted field */
+  size_t spaces;      /* Number of continuous spaces after quote or in a non-quoted field */
   unsigned char * entry_buf;   /* Entry buffer */
   size_t entry_pos;   /* Current position in entry_buf (and current size of entry) */
   size_t entry_size;  /* Size of entry buffer */
