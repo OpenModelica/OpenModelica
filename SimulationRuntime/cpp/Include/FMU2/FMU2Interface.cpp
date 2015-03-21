@@ -58,12 +58,12 @@ extern "C"
   //
 
   fmi2Component fmi2Instantiate(fmi2String instanceName,
-        fmi2Type fmuType,
-        fmi2String GUID,
-        fmi2String fmuResourceLocation,
-        const fmi2CallbackFunctions *functions,
-        fmi2Boolean visible,
-        fmi2Boolean loggingOn)
+                                fmi2Type fmuType,
+                                fmi2String GUID,
+                                fmi2String fmuResourceLocation,
+                                const fmi2CallbackFunctions *functions,
+                                fmi2Boolean visible,
+                                fmi2Boolean loggingOn)
   {
     return reinterpret_cast<fmi2Component>(OBJECTCONSTRUCTOR);
   }
@@ -74,9 +74,9 @@ extern "C"
   }
 
   fmi2Status fmi2SetDebugLogging(fmi2Component c,
-         fmi2Boolean loggingOn,
-         size_t nCategories,
-         const fmi2String categories[])
+                                 fmi2Boolean loggingOn,
+                                 size_t nCategories,
+                                 const fmi2String categories[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->setDebugLogging(loggingOn);
@@ -87,15 +87,15 @@ extern "C"
   //
 
   fmi2Status fmi2SetupExperiment(fmi2Component c,
-         fmi2Boolean toleranceDefined,
-         fmi2Real tolerance,
-         fmi2Real startTime,
-         fmi2Boolean stopTimeDefined,
-         fmi2Real stopTime)
+                                 fmi2Boolean toleranceDefined,
+                                 fmi2Real tolerance,
+                                 fmi2Real startTime,
+                                 fmi2Boolean stopTimeDefined,
+                                 fmi2Real stopTime)
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->setupExperiment(toleranceDefined, tolerance, startTime,
-         stopTimeDefined, stopTime);
+                           stopTimeDefined, stopTime);
   }
 
   fmi2Status fmi2EnterInitializationMode(fmi2Component c)
@@ -126,64 +126,64 @@ extern "C"
   //
 
   fmi2Status fmi2GetReal(fmi2Component c,
-       const fmi2ValueReference vr[], size_t nvr,
-       fmi2Real value[])
+                         const fmi2ValueReference vr[], size_t nvr,
+                         fmi2Real value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getReal(vr, nvr, value);
   }
 
   fmi2Status fmi2GetInteger(fmi2Component c,
-          const fmi2ValueReference vr[], size_t nvr,
-          fmi2Integer value[])
+                            const fmi2ValueReference vr[], size_t nvr,
+                            fmi2Integer value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getInteger(vr, nvr, value);
   }
 
   fmi2Status fmi2GetBoolean(fmi2Component c,
-          const fmi2ValueReference vr[], size_t nvr,
-          fmi2Boolean value[])
+                            const fmi2ValueReference vr[], size_t nvr,
+                            fmi2Boolean value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getBoolean(vr, nvr, value);
   }
 
   fmi2Status fmi2GetString(fmi2Component c,
-         const fmi2ValueReference vr[], size_t nvr,
-         fmi2String  value[])
+                           const fmi2ValueReference vr[], size_t nvr,
+                           fmi2String  value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getString(vr, nvr, value);
   }
 
   fmi2Status fmi2SetReal(fmi2Component c,
-       const fmi2ValueReference vr[], size_t nvr,
-       const fmi2Real value[])
+                         const fmi2ValueReference vr[], size_t nvr,
+                         const fmi2Real value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->setReal(vr, nvr, value);
   }
 
   fmi2Status fmi2SetInteger(fmi2Component c,
-          const fmi2ValueReference vr[], size_t nvr,
-          const fmi2Integer value[])
+                            const fmi2ValueReference vr[], size_t nvr,
+                            const fmi2Integer value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->setInteger(vr, nvr, value);
   }
 
   fmi2Status fmi2SetBoolean(fmi2Component c,
-          const fmi2ValueReference vr[], size_t nvr,
-          const fmi2Boolean value[])
+                            const fmi2ValueReference vr[], size_t nvr,
+                            const fmi2Boolean value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->setBoolean(vr, nvr, value);
   }
 
   fmi2Status fmi2SetString(fmi2Component c,
-         const fmi2ValueReference vr[], size_t nvr,
-         const fmi2String value[])
+                           const fmi2ValueReference vr[], size_t nvr,
+                           const fmi2String value[])
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->setString(vr, nvr, value);
@@ -209,20 +209,20 @@ extern "C"
   }
 
   fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate,
-          size_t *size)
+                                        size_t *size)
   {
     return fmi2Error; // not implemented
   }
 
   fmi2Status fmi2SerializeFMUstate(fmi2Component c, fmi2FMUstate FMUstate,
-           fmi2Byte serializedState[], size_t size)
+                                   fmi2Byte serializedState[], size_t size)
   {
     return fmi2Error; // not implemented
   }
 
   fmi2Status fmi2DeSerializeFMUstate(fmi2Component c,
-             const fmi2Byte serializedState[],
-             size_t size, fmi2FMUstate* FMUstate)
+                                     const fmi2Byte serializedState[],
+                                     size_t size, fmi2FMUstate* FMUstate)
   {
     return fmi2Error; // not implemented
   }
@@ -232,12 +232,12 @@ extern "C"
   //
 
   fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
-            const fmi2ValueReference vUnknown_ref[],
-            size_t nUnknown,
-            const fmi2ValueReference vKnown_ref[],
-            size_t nKnown,
-            const fmi2Real dvKnown[],
-            fmi2Real dvUnknown[])
+                                          const fmi2ValueReference vUnknown_ref[],
+                                          size_t nUnknown,
+                                          const fmi2ValueReference vKnown_ref[],
+                                          size_t nKnown,
+                                          const fmi2Real dvKnown[],
+                                          fmi2Real dvUnknown[])
   {
     return fmi2Error; // not implemented
   }
@@ -267,13 +267,13 @@ extern "C"
   }
 
   fmi2Status fmi2CompletedIntegratorStep(fmi2Component c,
-           fmi2Boolean noSetFMUStatePriorToCurrentPoint,
-           fmi2Boolean* enterEventMode,
-           fmi2Boolean* terminateSimulation)
+                                         fmi2Boolean noSetFMUStatePriorToCurrentPoint,
+                                         fmi2Boolean* enterEventMode,
+                                         fmi2Boolean* terminateSimulation)
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->completedIntegratorStep(noSetFMUStatePriorToCurrentPoint,
-           enterEventMode, terminateSimulation);
+                                   enterEventMode, terminateSimulation);
   }
 
   //
@@ -287,7 +287,7 @@ extern "C"
   }
 
   fmi2Status fmi2SetContinuousStates(fmi2Component c,
-             const fmi2Real x[], size_t nx)
+                                     const fmi2Real x[], size_t nx)
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->setContinuousStates(x, nx);
@@ -298,28 +298,28 @@ extern "C"
   //
 
   fmi2Status fmi2GetDerivatives(fmi2Component c,
-        fmi2Real derivatives[], size_t nx)
+                                fmi2Real derivatives[], size_t nx)
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getDerivatives(derivatives, nx);
   }
 
   fmi2Status fmi2GetEventIndicators(fmi2Component c,
-            fmi2Real eventIndicators[], size_t ni)
+                                    fmi2Real eventIndicators[], size_t ni)
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getEventIndicators(eventIndicators, ni);
   }
 
   fmi2Status fmi2GetContinuousStates(fmi2Component c,
-             fmi2Real states[], size_t nx)
+                                     fmi2Real states[], size_t nx)
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getContinuousStates(states, nx);
   }
 
   fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c,
-                 fmi2Real x_nominal[], size_t nx)
+                                               fmi2Real x_nominal[], size_t nx)
   {
     return reinterpret_cast<FMU2Wrapper*>
       (c)->getNominalsOfContinuousStates(x_nominal, nx);

@@ -45,45 +45,45 @@ class FMU2Wrapper
  public:
   // Creation and destruction of FMU instances and setting logging status
   FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
-        const fmi2CallbackFunctions *functions, fmi2Boolean loggingOn);
+              const fmi2CallbackFunctions *functions, fmi2Boolean loggingOn);
   virtual ~FMU2Wrapper();
 
   virtual fmi2Status setDebugLogging(fmi2Boolean loggingOn);
 
   // Enter and exit initialization mode, terminate and reset
   virtual fmi2Status setupExperiment(fmi2Boolean toleranceDefined,
-             fmi2Real tolerance,
-             fmi2Real startTime,
-             fmi2Boolean stopTimeDefined,
-             fmi2Real stopTime);
+                                     fmi2Real tolerance,
+                                     fmi2Real startTime,
+                                     fmi2Boolean stopTimeDefined,
+                                     fmi2Real stopTime);
   virtual fmi2Status initialize     ();
   virtual fmi2Status terminate      ();
   virtual fmi2Status reset          ();
 
   // Getting and setting variable values
   virtual fmi2Status getReal   (const fmi2ValueReference vr[], size_t nvr,
-        fmi2Real    value[]);
+                                fmi2Real    value[]);
   virtual fmi2Status getInteger(const fmi2ValueReference vr[], size_t nvr,
-        fmi2Integer value[]);
+                                fmi2Integer value[]);
   virtual fmi2Status getBoolean(const fmi2ValueReference vr[], size_t nvr,
-        fmi2Boolean value[]);
+                                fmi2Boolean value[]);
   virtual fmi2Status getString (const fmi2ValueReference vr[], size_t nvr,
-        fmi2String  value[]);
+                                fmi2String  value[]);
 
   virtual fmi2Status setReal   (const fmi2ValueReference vr[], size_t nvr,
-        const fmi2Real    value[]);
+                                const fmi2Real    value[]);
   virtual fmi2Status setInteger(const fmi2ValueReference vr[], size_t nvr,
-        const fmi2Integer value[]);
+                                const fmi2Integer value[]);
   virtual fmi2Status setBoolean(const fmi2ValueReference vr[], size_t nvr,
-        const fmi2Boolean value[]);
+                                const fmi2Boolean value[]);
   virtual fmi2Status setString (const fmi2ValueReference vr[], size_t nvr,
-        const fmi2String  value[]);
+                                const fmi2String  value[]);
 
   // Enter and exit the different modes for Model Exchange
   virtual fmi2Status newDiscreteStates      (fmi2EventInfo *eventInfo);
   virtual fmi2Status completedIntegratorStep(fmi2Boolean noSetFMUStatePriorToCurrentPoint,
-               fmi2Boolean *enterEventMode,
-               fmi2Boolean *terminateSimulation);
+                                             fmi2Boolean *enterEventMode,
+                                             fmi2Boolean *terminateSimulation);
 
   // Providing independent variables and re-initialization of caching
   virtual fmi2Status setTime                (fmi2Real time);
