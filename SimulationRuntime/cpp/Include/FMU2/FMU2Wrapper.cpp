@@ -120,8 +120,8 @@ void FMU2Wrapper::updateModel()
 }
 
 fmi2Status FMU2Wrapper::completedIntegratorStep(fmi2Boolean noSetFMUStatePriorToCurrentPoint,
-						fmi2Boolean *enterEventMode,
-						fmi2Boolean *terminateSimulation)
+            fmi2Boolean *enterEventMode,
+            fmi2Boolean *terminateSimulation)
 {
   _model->saveAll();
   *enterEventMode = false;
