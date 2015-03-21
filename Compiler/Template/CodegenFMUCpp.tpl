@@ -531,7 +531,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"$(SUITESPARSE_INCLUDE)" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB)
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)"
   PLATFORM="<%platformstr%>"
   SRC=OMCpp<%modelName%>.cpp
   SRC+= OMCpp<%modelName%>FMU.cpp
@@ -539,6 +539,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SRC+= OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
   LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory $(BASE_LIB)
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
+  LIBS+= $(BOOST_PROGRAM_OPTIONS_LIB)
   LIBS+= $(LINUX_LIB_DL)
 
   <%modelName%>.fmu: $(SRC)
