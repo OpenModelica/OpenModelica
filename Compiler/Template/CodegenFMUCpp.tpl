@@ -190,7 +190,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     '#include "FMU2/FMU2Wrapper.cpp"'
   else
     '#include "FMU/FMUWrapper.cpp"'%>
-    
+
   <%if isFMIVersion20(FMUVersion) then
     '#define OBJECTCONSTRUCTOR (new FMU2Wrapper(instanceName, GUID, functions, loggingOn))'
   else
