@@ -55,9 +55,15 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ;
-     po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();
      po::variables_map vm;
-     po::store(po::parse_command_line(argc, argv, desc), vm);
+     po::parsed_options parsed = po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();
+     vector<string> unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
+     if (unrecognized.size() > 0) {
+         std::cerr << "Warning: unrecognized command line options ";
+         std::copy(unrecognized.begin(), unrecognized.end(), std::ostream_iterator<string>(std::cerr, " "));
+         std::cerr << std::endl;
+     }
+     po::store(parsed, vm);
      po::notify(vm);
 
      string runtime_lib_path;
