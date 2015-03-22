@@ -145,14 +145,13 @@ static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
       if(data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[jacIndex].seedVars[ii] = 1;
 
-    /*
     if(ACTIVE_STREAM(LOG_DSS_JAC))
     {
-      infoStreamPrint(LOG_DSS_JAC, "Caluculate one col:");
+      infoStreamPrint(LOG_DSS_JAC, 1, "Caluculate one col:");
       for(l=0; l < data->simulationInfo.analyticJacobians[jacIndex].sizeCols; l++)
-        infoStreamPrint(LOG_DSS_JAC, "seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f", l, data->simulationInfo.analyticJacobians[jacIndex].seedVars[l]);
+        infoStreamPrint(LOG_DSS_JAC, 0, "seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f", l, data->simulationInfo.analyticJacobians[jacIndex].seedVars[l]);
+      messageClose(LOG_DSS_JAC);
     }
-    */
 
     (data->simulationInfo.stateSetData[index].analyticalJacobianColumn)(data);
 
@@ -165,14 +164,14 @@ static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
         else
           ii = data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.leadindex[j-1];
 
-        /* infoStreamPrint(LOG_DSS_JAC, "take for %d -> %d\n", j, ii); */
+        /* infoStreamPrint(LOG_DSS_JAC, 0, "take for %d -> %d\n", j, ii); */
 
         while(ii < data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.leadindex[j])
         {
           l  = data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.index[ii];
           k  = j*data->simulationInfo.analyticJacobians[jacIndex].sizeRows + l;
           jac[k] = data->simulationInfo.analyticJacobians[jacIndex].resultVars[l];
-          /* infoStreamPrint(LOG_DSS_JAC, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, data->simulationInfo.analyticJacobians[jacIndex].resultVars[l]); */
+          /* infoStreamPrint(LOG_DSS_JAC, 0, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, data->simulationInfo.analyticJacobians[jacIndex].resultVars[l]); */
           ii++;
         };
       }
