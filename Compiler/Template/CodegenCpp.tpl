@@ -8629,7 +8629,7 @@ then
     _dimBoolean = <%vi.numBoolAlgVars%> + <%vi.numBoolParams%>;
     _dimInteger = <%vi.numIntAlgVars%>  + <%vi.numIntParams%>;
     _dimString = <%vi.numStringAlgVars%> + <%vi.numStringParamVars%>;
-    _dimReal = <%vi.numAlgVars%> + <%vi.numDiscreteReal%> + <%vi.numParams%>;
+    _dimReal = <%vi.numStateVars%> + <%vi.numStateVars%> + <%vi.numAlgVars%> + <%vi.numAlgAliasVars%> + <%vi.numDiscreteReal%> + <%vi.numParams%>;
     >>
 end dimension1;
 
