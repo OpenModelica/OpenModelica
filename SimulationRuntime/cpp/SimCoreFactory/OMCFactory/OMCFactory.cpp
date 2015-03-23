@@ -28,6 +28,17 @@ void OMCFactory::UnloadAllLibs(void)
         UnloadLibrary(iter->second);
     }
 }
+
+// parse a long option that starts with one dash, like -port=12345
+static pair<string, string> checkOMEditOption(const string &s)
+{
+    int sep = s.find("=");
+    if (sep > 2 && s[0] == '-' && s[1] != '-')
+        return make_pair(string("OMEdit"), s);
+    else
+        return make_pair(string(), string());
+}
+
 SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
@@ -54,17 +65,28 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats,nls,ode,off")
           ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
+          ("OMEdit", po::value<vector<string> >(), "OMEdit options")
           ;
      po::variables_map vm;
-     po::parsed_options parsed = po::command_line_parser(argc, argv).options(desc).allow_unregistered().run();
+     po::parsed_options parsed = po::command_line_parser(argc, argv)
+         .options(desc)
+         .extra_parser(checkOMEditOption)
+         .allow_unregistered()
+         .run();
+     po::store(parsed, vm);
+     po::notify(vm);
+
+     // warn about unrecognized command line options, including OMEdit for now
      vector<string> unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
+     if (vm.count("OMEdit")) {
+         vector<string> opts = vm["OMEdit"].as<vector<string> >();
+         unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
+     }
      if (unrecognized.size() > 0) {
          std::cerr << "Warning: unrecognized command line options ";
          std::copy(unrecognized.begin(), unrecognized.end(), std::ostream_iterator<string>(std::cerr, " "));
          std::cerr << std::endl;
      }
-     po::store(parsed, vm);
-     po::notify(vm);
 
      string runtime_lib_path;
      string modelica_lib_path;
