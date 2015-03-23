@@ -7,11 +7,12 @@
 # SUITESPARSE_UMFPACK_INCLUDE_DIR_OMC                - This variable contains either the absolute path to the include dir, if the system version is used or the relative path to $(OMHOME) of the OMC-Version is used
 # SUITESPARSE_UMFPACK_LIBRARIES                      - The umfpack libraries including the amd library
 # SUITESPARSE_UMFPACK_LIBRARIES_OMC                  - This variable contains either the absolute path to umfpack libraries, if the system version is used or the relative path to $(OMHOME) of the OMC-Version is used
-# SUITESPARSE_UMFPACK_LIBS
+# SUITESPARSE_UMFPACK_LIBS                           - The directory containing the umfpack libraries
 
 SET(SUITESPARSE_UMFPACK_FOUND false)
 SET(SUITESPARSE_UMFPACK_USE_OMC false)
 
+SET(SUITESPARSE_UMFPACK_INCLUDE_DIR_OMC "")
 
 MESSAGE(STATUS "Searching for umfpack.h of OpenModelica")
 FIND_FILE(UMFPACK_H_OMC umfpack.h HINTS "${CMAKE_SOURCE_DIR}/../../build/include/omc/c/suitesparse/Include" NO_DEFAULT_PATH)
