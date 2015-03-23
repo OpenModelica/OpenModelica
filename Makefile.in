@@ -238,3 +238,5 @@ emcc: msl-external-libs-emcc emcc-simulationruntime
 emcc-simulationruntime:
 	mkdir -p build/lib/omc/emcc/
 	$(MAKE) -C SimulationRuntime/c emcc
+	
+copycppheader:
