@@ -60,17 +60,16 @@ match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
-  let name = lastIdentOfPath(modelInfo.name)
   let stateDerVectorName = "__zDot"
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
   let cpp = CodegenCpp.translateModel(simCode)
-  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs, extraFuncsDecl, "",guid, name, FMUVersion), 'OMCpp<%name%>FMU.cpp')
+  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
-  let()= textFile(simulationHeaderFile(simCode,contextFMI, extraFuncs, extraFuncsDecl,"","","","",MemberVariable(modelInfo, false),false), 'OMCpp<%name%>.h')
-  let()= textFile(simulationCppFile(simCode, contextFMI, extraFuncs, extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%name%>.cpp')
-  let()= textFile(fmudeffile(simCode, FMUVersion), '<%name%>.def')
-  let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, ""), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(simulationHeaderFile(simCode,contextFMI, extraFuncs, extraFuncsDecl,"","","","",MemberVariable(modelInfo, false),false), 'OMCpp<%fileNamePrefix%>.h')
+  let()= textFile(simulationCppFile(simCode, contextFMI, extraFuncs, extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
+  let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
+  let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
  ""
    // Return empty result since result written to files directly
 end translateModel;
@@ -138,15 +137,17 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributesCpp;
 
-template fmuModelWrapperFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String name, String FMUVersion)
+template fmuModelWrapperFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String FMUVersion)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
-  let modelName = lastIdentOfPath(modelInfo.name)
+  let modelName = dotPath(modelInfo.name)
+  let modelShortName = lastIdentOfPath(modelInfo.name)
+  let modelIdentifier = System.stringReplace(modelName, ".", "_")
   <<
   // define class name and unique id
-  #define MODEL_IDENTIFIER <%System.stringReplace(fileNamePrefix,".", "_")%>Extension
+  #define MODEL_IDENTIFIER <%modelShortName%>Extension
   #define MODEL_GUID "{<%guid%>}"
 
   #include <Core/Modelica.h>
@@ -159,7 +160,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include <Solver/IAlgLoopSolver.h>
   #include <System/IAlgLoopSolverFactory.h>
   #include <SimController/ISimData.h>
-  #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Extension.h"
+  #include "OMCpp<%fileNamePrefix%>Extension.h"
 
   <%ModelDefineData(modelInfo)%>
   #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
@@ -435,7 +436,7 @@ match platform
   >>
 end getPlatformString2;
 
-template fmuMakefile(String target,SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, String FMUVersion)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
 match target
@@ -505,7 +506,8 @@ case "gcc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
-  let modelName = '<%lastIdentOfPath(modelInfo.name)%>'
+  // Note: FMI 1.0 did not distinguish modelIdentifier from fileNamePrefix
+  let modelName = if isFMIVersion20(FMUVersion) then dotPath(modelInfo.name) else fileNamePrefix
   let platformstr = match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>'
   let mkdir = match makefileParams.platform case "win32" then '"mkdir.exe"' else 'mkdir'
   <<
@@ -523,8 +525,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"$(SUITESPARSE_INCLUDE)" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)"
   PLATFORM="<%platformstr%>"
-  SRC=OMCpp<%modelName%>.cpp
-  SRC+= OMCpp<%modelName%>FMU.cpp
+  SRC=OMCpp<%fileNamePrefix%>.cpp
+  SRC+= OMCpp<%fileNamePrefix%>FMU.cpp
   SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp
   SRC+= OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp
