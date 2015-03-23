@@ -66,8 +66,6 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let cpp = CodegenCpp.translateModel(simCode)
   let()= textFile(fmuModelWrapperFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
-  let()= textFile(simulationHeaderFile(simCode,contextFMI, extraFuncs, extraFuncsDecl,"","","","",MemberVariable(modelInfo, false),false), 'OMCpp<%fileNamePrefix%>.h')
-  let()= textFile(simulationCppFile(simCode, contextFMI, extraFuncs, extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
  ""
