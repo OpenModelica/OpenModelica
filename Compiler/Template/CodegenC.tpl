@@ -6979,7 +6979,7 @@ template algStmtAssignArr(DAE.Statement stmt, Context context,
 match stmt
 case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=RANGE(__), type_=t) then
   fillArrayFromRange(t,exp,cr,context,&varDecls,&auxFunction)
-  
+
 case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=e, type_=t) then
   let &preExp = buffer ""
   let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
@@ -6995,7 +6995,7 @@ template algStmtAssignWithRhsExpStr(DAE.Exp lhsexp, Text &rhsExpStr, Context con
  "Generates an array assigment algorithm statement."
 ::=
 match lhsexp
-  case CREF(componentRef=WILD(__)) then 
+  case CREF(componentRef=WILD(__)) then
     '<%rhsExpStr%>;'
   case CREF(componentRef=cr, ty = T_ARRAY(ty=basety, dims=dims)) then
     algStmtAssignArrWithRhsExpStr(lhsexp, rhsExpStr, context, &preExp, &varDecls, &auxFunction)
@@ -7004,7 +7004,7 @@ match lhsexp
   case CREF(__) then
     let lhsStr = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction)
     '<%lhsStr%> = <%rhsExpStr%>;'
-  
+
   /*This CALL on left hand side case shouldn't have been created by the compiler. It only comes because of alias eliminations. On top of that
   at least it should have been a record_constractor not a normal call. sigh. */
   case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
@@ -7127,11 +7127,11 @@ match stmt
   case STMT_TUPLE_ASSIGN(expExpLst = firstexp::_, exp = CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
     let &preExp = buffer ""
     let &postExp = buffer ""
-    
+
     let lhsCrefs = (List.rest(expExpLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
     // The tuple expressions might take fewer variables than the number of outputs. No worries.
     let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expExpLst))))
-    
+
     let call = daeExpCallTuple(exp, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
     let callassign = algStmtAssignWithRhsExpStr(firstexp, call, context, &preExp, &postExp, &varDecls, &auxFunction)
     <<
