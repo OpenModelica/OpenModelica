@@ -58,6 +58,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   strcpy(FMI2ME->FMIWorkingDirectory, working_directory);
   FMI2ME->FMIImportInstance = fmi2_import_parse_xml(FMI2ME->FMIImportContext, FMI2ME->FMIWorkingDirectory, NULL);
   if(!FMI2ME->FMIImportInstance) {
+    FMI2ME->FMISolvingMode = fmi2_none_mode;
     ModelicaFormatError("Error parsing the XML file contained in %s\n", FMI2ME->FMIWorkingDirectory);
     return 0;
   }
@@ -69,6 +70,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   /* Load the binary (dll/so) */
   status = fmi2_import_create_dllfmu(FMI2ME->FMIImportInstance, fmi2_import_get_fmu_kind(FMI2ME->FMIImportInstance), &FMI2ME->FMICallbackFunctions);
   if (status == jm_status_error) {
+    FMI2ME->FMISolvingMode = fmi2_none_mode;
     ModelicaFormatError("Loading of FMU dynamic link library failed with status : %s\n", jm_log_level_to_string(status));
     return 0;
   }
@@ -77,6 +79,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->FMIDebugLogging = debugLogging;
   instantiateModelStatus = fmi2_import_instantiate(FMI2ME->FMIImportInstance, FMI2ME->FMIInstanceName, fmi2_model_exchange, NULL, fmi2_false);
   if (instantiateModelStatus == jm_status_error) {
+    FMI2ME->FMISolvingMode = fmi2_none_mode;
     ModelicaFormatError("fmi2InstantiateModel failed with status : %s\n", jm_log_level_to_string(instantiateModelStatus));
     return 0;
   }
@@ -84,8 +87,8 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   if (FMI2ME->FMIDebugLogging) {
     int i;
     size_t categoriesSize = 0;
-  fmi2_status_t debugLoggingStatus;
-  fmi2_string_t *categories;
+    fmi2_status_t debugLoggingStatus;
+    fmi2_string_t *categories;
     /* Read the log categories size */
     categoriesSize = fmi2_import_get_log_categories_num(FMI2ME->FMIImportInstance);
     categories = (fmi2_string_t*)malloc(categoriesSize*sizeof(fmi2_string_t));
@@ -100,7 +103,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->FMIToleranceControlled = fmi2_true;
   FMI2ME->FMIRelativeTolerance = 0.001;
   FMI2ME->FMIEventInfo = malloc(sizeof(fmi2_event_info_t));
-  FMI2ME->FMISolvingMode = fmi2_none_mode;
+  FMI2ME->FMISolvingMode = fmi2_instantiated_mode;
   return FMI2ME;
 }
 
@@ -147,16 +150,15 @@ void fmi2ExitInitializationModel_OMC(void* in_fmi2me)
  * Wrapper for the FMI function fmi2SetTime.
  * Returns status.
  */
-double fmi2SetTime_OMC(void* in_fmi2me, double time)
+void fmi2SetTime_OMC(void* in_fmi2me, double time)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  if (FMI2ME->FMISolvingMode != fmi2_initialization_mode){
+  if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_status_t status = fmi2_import_set_time(FMI2ME->FMIImportInstance, time);
     if (status != fmi1_status_ok && status != fmi1_status_warning) {
       ModelicaFormatError("fmi2SetTime failed with status : %s\n", fmi2_status_to_string(status));
     }
   }
-  return time;
 }
 
 /*
@@ -181,9 +183,11 @@ void fmi2GetContinuousStates_OMC(void* in_fmi2me, int numberOfContinuousStates, 
 double fmi2SetContinuousStates_OMC(void* in_fmi2me, int numberOfContinuousStates, double flowParams, double* states)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_status_t status = fmi2_import_set_continuous_states(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
-  if (status != fmi1_status_ok && status != fmi1_status_warning) {
-    ModelicaFormatError("fmi2SetContinuousStates failed with status : %s\n", fmi2_status_to_string(status));
+  if (numberOfContinuousStates > 0) {
+    fmi2_status_t status = fmi2_import_set_continuous_states(FMI2ME->FMIImportInstance, (fmi2_real_t*)states, numberOfContinuousStates);
+    if (status != fmi1_status_ok && status != fmi1_status_warning) {
+      ModelicaFormatError("fmi2SetContinuousStates failed with status : %s\n", fmi2_status_to_string(status));
+    }
   }
   return flowParams;
 }
@@ -220,10 +224,9 @@ void fmi2GetDerivatives_OMC(void* in_fmi2me, int numberOfContinuousStates, doubl
 
 /*
  * Wrapper for the FMI function fmi2NewDiscreteStates.
- * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns valuesOfContinuousStatesChanged
  */
-int fmi2EventUpdate_OMC(void* in_fmi2me, double flowStates)
+int fmi2EventUpdate_OMC(void* in_fmi2me)
 {
   FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
   fmi2_event_info_t *eventInfo = FMI2ME->FMIEventInfo;

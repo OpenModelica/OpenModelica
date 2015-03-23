@@ -129,7 +129,6 @@ const char* getFMI2ModelVariableVariability(fmi2_import_variable_t* variable)
     case fmi2_variability_enu_constant:
       return "constant";
     case fmi2_variability_enu_tunable:
-      return "parameter";
     case fmi2_variability_enu_discrete:
     case fmi2_variability_enu_continuous:
     case fmi2_variability_enu_unknown:
@@ -169,6 +168,7 @@ const char* getFMI2ModelVariableCausality(fmi2_import_variable_t* variable)
     case fmi2_causality_enu_output:
       return "output";
     case fmi2_causality_enu_parameter:
+      return "parameter";
     case fmi2_causality_enu_local:
     case fmi2_causality_enu_unknown:
     default:
@@ -668,14 +668,16 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     }
     void* variable_description = mmc_mk_scon_check_null(description);
     const char* base_type = getFMI2ModelVariableBaseType(model_variable);
-    void* variable_base_type = mmc_mk_scon_check_null(base_type);
+    char* base_type_safe = makeStringFMISafe(base_type);
+    void* variable_base_type = mmc_mk_scon_check_null(base_type_safe);
+    free(base_type_safe);
     void* variable_variability = mmc_mk_scon_check_null(getFMI2ModelVariableVariability(model_variable));
     const char* causality = getFMI2ModelVariableCausality(model_variable);
     void* variable_causality = mmc_mk_scon_check_null(causality);
     int hasStartValue = fmi2_import_get_variable_has_start(model_variable);
     void* variable_has_start_value = mmc_mk_bcon(hasStartValue);
     void* variable_start_value = getFMI2ModelVariableStartValue(model_variable, hasStartValue);
-    void* variable_is_fixed = mmc_mk_bcon(0);
+    void* variable_is_fixed = (fmi2_import_get_variability(model_variable) == fmi2_variability_enu_fixed) ? mmc_mk_bcon(1) : mmc_mk_bcon(0);
     void* variable_value_reference = mmc_mk_rcon((double)model_variables_value_reference_list[i]);
     void* variable_x1_placement = mmc_mk_icon(0);
     void* variable_x2_placement = mmc_mk_icon(0);

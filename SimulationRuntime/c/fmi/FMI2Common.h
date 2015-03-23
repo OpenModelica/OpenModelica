@@ -37,6 +37,7 @@
  * type to separate the different solving stages.
  */
 typedef enum {
+  fmi2_instantiated_mode,
   fmi2_initialization_mode,
   fmi2_continuousTime_mode,
   fmi2_event_mode,
