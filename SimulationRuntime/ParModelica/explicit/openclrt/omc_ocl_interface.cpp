@@ -80,10 +80,46 @@ static inline modelica_integer *integer_ptrget(integer_array_t *a, size_t i){
 }
 
 
+int array_shape_eq(const base_array_t *a, const device_array *b)
+{
+    int i;
 
-//the original one of tis function defined in basearray.h was giving linkage errors
-//(for a reason i don't know) so i copied it here with a new name (ocl_)
-//it is needed in real/int_array_element_addr_c99_1/2/3
+    if(a->ndims != b->info[0]) {
+        fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->ndims, b->info[0]);
+        return 0;
+    }
+
+    for(i = 0; i < a->ndims; ++i) {
+        if(a->dim_size[i] != b->info[i+1]) {
+            fprintf(stderr, "a->dim_size[%d] != b->dim_size[%d], %d != %d\n",
+                    i, i, (int) a->dim_size[i], (int) b->info[i+1]);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+int array_shape_eq(const device_array *a, const device_array *b)
+{
+    int i;
+
+    if(a->info[0] != b->info[0]) {
+        fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->info[0], b->info[0]);
+        return 0;
+    }
+
+    for(i = 0; i < a->info[0]; ++i) {
+        if(a->info[i+1] != b->info[i+1]) {
+            fprintf(stderr, "a->dim_size[%d] != b->dim_size[%d], %d != %d\n",
+                    i, i, (int) a->info[i+1], (int) b->info[i+1]);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 
 /* One based index*/
 size_t ocl_calc_base_index_va(base_array_t *source, int ndims, va_list ap){
@@ -181,95 +217,79 @@ void free_device_array(base_array_t* dest){
 
 
 
-void copy_real_array(device_real_array* dev_array_ptr, real_array_t* host_array_ptr){
-
-    //Assert size of device array (dev array should be changed to struct later)
-    int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
-    ocl_copy_back_to_host_real(dev_array_ptr->data, (modelica_real* )host_array_ptr->data, nr_of_elm);
-
+void copy_real_array_data(device_real_array dev_array, real_array_t* host_array_ptr){
+    assert(array_shape_eq(host_array_ptr, &dev_array));
+    int nr_of_elm = device_array_nr_of_elements(&dev_array);
+    ocl_copy_back_to_host_real(dev_array.data, (modelica_real* )host_array_ptr->data, nr_of_elm);
 }
 
-void copy_real_array(real_array_t* host_array_ptr, device_real_array* dev_array_ptr){
-
-    //Assert size of device array (dev array should be changed to struct later)
-    //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
-    int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
-    ocl_copy_to_device_real(dev_array_ptr->data, (modelica_real* )host_array_ptr->data, nr_of_elm);
-
+void copy_real_array_data(real_array_t host_array, device_real_array* dev_array_ptr){
+    assert(array_shape_eq(&host_array, dev_array_ptr));
+    int nr_of_elm = modelica_array_nr_of_elements(&host_array);
+    ocl_copy_to_device_real(dev_array_ptr->data, (modelica_real* )host_array.data, nr_of_elm);
 }
 
-void copy_real_array(device_real_array* dev_array_ptr1, device_real_array* dev_array_ptr2){
-
-    //Assert size of device array (dev array should be changed to struct later)
-    //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
-    int nr_of_elm = device_array_nr_of_elements(dev_array_ptr1);
-    ocl_copy_device_to_device_real(dev_array_ptr1->data, dev_array_ptr2->data, nr_of_elm);
-
+void copy_real_array_data(device_real_array dev_array1, device_real_array* dev_array_ptr2){
+    assert(array_shape_eq(&dev_array1, dev_array_ptr2));
+    int nr_of_elm = device_array_nr_of_elements(&dev_array1);
+    ocl_copy_device_to_device_real(dev_array1.data, dev_array_ptr2->data, nr_of_elm);
 }
 
-void copy_integer_array(device_integer_array* dev_array_ptr, integer_array_t* host_array_ptr){
-
-    //Assert size of device array (dev array should be changed to struct later)
-    int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
-    ocl_copy_back_to_host_integer(dev_array_ptr->data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
-
+void copy_integer_array_data(device_integer_array dev_array, integer_array_t* host_array_ptr){
+    assert(array_shape_eq(host_array_ptr, &dev_array));
+    int nr_of_elm = device_array_nr_of_elements(&dev_array);
+    ocl_copy_back_to_host_integer(dev_array.data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
 }
 
-void copy_integer_array(integer_array_t* host_array_ptr, device_integer_array* dev_array_ptr){
-
-    //Assert size of device array
-    //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
-    int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
-    ocl_copy_to_device_integer(dev_array_ptr->data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
-
+void copy_integer_array_data(integer_array_t host_array, device_integer_array* dev_array_ptr){
+    assert(array_shape_eq(&host_array, dev_array_ptr));
+    int nr_of_elm = modelica_array_nr_of_elements(&host_array);
+    ocl_copy_to_device_integer(dev_array_ptr->data, (modelica_integer* )host_array.data, nr_of_elm);
 }
 
 
-void copy_integer_array(device_integer_array* dev_array_ptr1, device_integer_array* dev_array_ptr2){
-
-    //Assert size of device array (dev array should be changed to struct later)
-    //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
-    int nr_of_elm = device_array_nr_of_elements(dev_array_ptr1);
-    ocl_copy_device_to_device_integer(dev_array_ptr1->data, dev_array_ptr2->data, nr_of_elm);
-
+void copy_integer_array_data(device_integer_array dev_array1, device_integer_array* dev_array_ptr2){
+    assert(array_shape_eq(&dev_array1, dev_array_ptr2));
+    int nr_of_elm = device_array_nr_of_elements(&dev_array1);
+    ocl_copy_device_to_device_integer(dev_array1.data, dev_array_ptr2->data, nr_of_elm);
 }
 
 
 
-//functions used for copying scalars. Scalars in the normal(serial C) code genertation
-//of modelica are copied by assignment (a = b). However to be able to copy them b'n
-//GPU and host CPU we need to change the assignments to copy functions.
-void copy_assignment_helper_integer(modelica_integer* v1, modelica_integer* v2){
-    *v1 = *v2;
-}
+// //functions used for copying scalars. Scalars in the normal(serial C) code genertation
+// //of modelica are copied by assignment (a = b). However to be able to copy them b'n
+// //GPU and host CPU we need to change the assignments to copy functions.
+// void copy_assignment_helper_integer(modelica_integer* v1, modelica_integer* v2){
+    // *v1 = *v2;
+// }
 
-void copy_assignment_helper_integer(device_integer* v1, modelica_integer* v2){
-    ocl_copy_to_device_integer(*v1, (modelica_integer* )v2, 1);
-}
+// void copy_assignment_helper_integer(device_integer* v1, modelica_integer* v2){
+    // ocl_copy_to_device_integer(*v1, (modelica_integer* )v2, 1);
+// }
 
-void copy_assignment_helper_integer(modelica_integer* v1, device_integer* v2){
-    ocl_copy_back_to_host_integer(*v2, (modelica_integer* )v1, 1);
-}
+// void copy_assignment_helper_integer(modelica_integer* v1, device_integer* v2){
+    // ocl_copy_back_to_host_integer(*v2, (modelica_integer* )v1, 1);
+// }
 
-void copy_assignment_helper_integer(device_integer* v1, device_integer* v2){
-    ocl_copy_device_to_device_integer(*v2, *v1, 1);
-}
+// void copy_assignment_helper_integer(device_integer* v1, device_integer* v2){
+    // ocl_copy_device_to_device_integer(*v2, *v1, 1);
+// }
 
-void copy_assignment_helper_real(modelica_real* v1, modelica_real* v2){
-    *v1 = *v2;
-}
+// void copy_assignment_helper_real(modelica_real* v1, modelica_real* v2){
+    // *v1 = *v2;
+// }
 
-void copy_assignment_helper_real(device_real* v1, modelica_real* v2){
-    ocl_copy_to_device_real(*v1, (modelica_real* )v2, 1);
-}
+// void copy_assignment_helper_real(device_real* v1, modelica_real* v2){
+    // ocl_copy_to_device_real(*v1, (modelica_real* )v2, 1);
+// }
 
-void copy_assignment_helper_real(modelica_real* v1, device_real* v2){
-    ocl_copy_back_to_host_real(*v2, (modelica_real* )v1, 1);
-}
+// void copy_assignment_helper_real(modelica_real* v1, device_real* v2){
+    // ocl_copy_back_to_host_real(*v2, (modelica_real* )v1, 1);
+// }
 
-void copy_assignment_helper_real(device_real* v1, device_real* v2){
-    ocl_copy_device_to_device_real(*v2, *v1, 1);
-}
+// void copy_assignment_helper_real(device_real* v1, device_real* v2){
+    // ocl_copy_device_to_device_real(*v2, *v1, 1);
+// }
 
 
 

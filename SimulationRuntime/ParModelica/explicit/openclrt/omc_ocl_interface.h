@@ -57,13 +57,6 @@
 
 
 
-
-size_t modelica_array_nr_of_elements(base_array_t *a);
-
-size_t device_array_nr_of_elements(device_array *a);
-
-
-
 // Just to stick to  OpenModelica's function naming pattern
 #define oclSetNumThreadsOnlyGlobal(...) ocl_set_num_threads( __VA_ARGS__ )
 #define oclSetNumThreadsGlobalLocal(...) ocl_set_num_threads( __VA_ARGS__ )
@@ -108,37 +101,37 @@ void alloc_real_array(device_integer_array *dest, int ndims, ...);
 
 void alloc_device_local_real_array(device_local_real_array *dest, int ndims, ...);
 
-void copy_real_array(device_real_array* dev_array_ptr, real_array_t* host_array_ptr);
+void copy_real_array_data(device_real_array dev_array_ptr, real_array_t* host_array_ptr);
 
-void copy_real_array(real_array_t* host_array_ptr, device_real_array* dev_array_ptr);
+void copy_real_array_data(real_array_t host_array_ptr, device_real_array* dev_array_ptr);
 
-void copy_real_array(device_real_array* dev_array_ptr1, device_real_array* dev_array_ptr2);
+void copy_real_array_data(device_real_array dev_array_ptr1, device_real_array* dev_array_ptr2);
 
-void copy_integer_array(device_integer_array* dev_array_ptr, integer_array_t* host_array_ptr);
+void copy_integer_array_data(device_integer_array dev_array_ptr, integer_array_t* host_array_ptr);
 
-void copy_integer_array(integer_array_t* host_array_ptr, device_integer_array* dev_array_ptr);
+void copy_integer_array_data(integer_array_t host_array_ptr, device_integer_array* dev_array_ptr);
 
-void copy_integer_array(device_integer_array* dev_array_ptr1, device_integer_array* dev_array_ptr2);
+void copy_integer_array_data(device_integer_array dev_array_ptr1, device_integer_array* dev_array_ptr2);
 
 
-//functions used for copying scalars. Scalars in the normal(serial C) code genertation
-//of modelica are copied by assignment (a = b). However to be able to copy them b'n
-//GPU and host CPU we need to change the assignments to copy functions.
-void copy_assignment_helper_integer(modelica_integer* i1, modelica_integer* i2);
+// //functions used for copying scalars. Scalars in the normal(serial C) code genertation
+// //of modelica are copied by assignment (a = b). However to be able to copy them b'n
+// //GPU and host CPU we need to change the assignments to copy functions.
+// void copy_assignment_helper_integer(modelica_integer* i1, modelica_integer* i2);
 
-void copy_assignment_helper_integer(device_integer* i1, modelica_integer* i2);
+// void copy_assignment_helper_integer(device_integer* i1, modelica_integer* i2);
 
-void copy_assignment_helper_integer(modelica_integer* i1, device_integer* i2);
+// void copy_assignment_helper_integer(modelica_integer* i1, device_integer* i2);
 
-void copy_assignment_helper_integer(device_integer* i1, device_integer* i2);
+// void copy_assignment_helper_integer(device_integer* i1, device_integer* i2);
 
-void copy_assignment_helper_real(modelica_real* i1, modelica_real* i2);
+// void copy_assignment_helper_real(modelica_real* i1, modelica_real* i2);
 
-void copy_assignment_helper_real(device_real* i1, modelica_real* i2);
+// void copy_assignment_helper_real(device_real* i1, modelica_real* i2);
 
-void copy_assignment_helper_real(modelica_real* i1, device_real* i2);
+// void copy_assignment_helper_real(modelica_real* i1, device_real* i2);
 
-void copy_assignment_helper_real(device_real* i1, device_real* i2);
+// void copy_assignment_helper_real(device_real* i1, device_real* i2);
 
 //these functions are added to solve a problem with a memory leak when returning arrays
 //from functions. Arrays used to be assigned just like normal scalar variables. Which causes the

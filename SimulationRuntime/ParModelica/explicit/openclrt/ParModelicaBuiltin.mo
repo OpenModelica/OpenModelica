@@ -124,6 +124,7 @@ end oclSetNumThreadsGlobalLocalError;
 
 function oclSetNumThreads = $overload(
   oclSetNumThreadsOnlyGlobal,
+  oclSetNumThreadsGlobalLocal,
   oclSetNumThreadsGlobalLocal1D,
   oclSetNumThreadsGlobalLocal2D,
   oclSetNumThreadsGlobalLocal3D
