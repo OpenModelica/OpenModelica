@@ -2527,7 +2527,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       end fmi2SetReal;
 
       function fmi2SetRealParameter
-        input FMI1ModelExchange fmi2me;
+        input FMI2ModelExchange fmi2me;
         input Real realValueReferences[:];
         input Real realValues[size(realValueReferences, 1)];
         output Real out_Value = 1;
