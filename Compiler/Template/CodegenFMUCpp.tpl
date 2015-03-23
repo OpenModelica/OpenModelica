@@ -522,7 +522,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/Core" -I"$(OMHOME)/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
-  CPPFLAGS = $(CFLAGS) 
+  CPPFLAGS = $(CFLAGS)
   LDFLAGS=-L"$(OMHOME)/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)"
   PLATFORM="<%platformstr%>"
 
