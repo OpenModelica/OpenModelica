@@ -5457,8 +5457,8 @@ case FUNCTION(__) then
       varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
   let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls, &auxFunction) ;separator="\n")
-  let &outVarAssign = buffer ""
-  let _ = (List.restOrEmpty(outVars) |> var => varOutput(var, &outVarAssign))
+  let outVarAssign = (List.restOrEmpty(outVars) |> var => varOutput(var))
+
   let freeConstructedExternalObjects = (variableDeclarations |> var as VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(path=path_ext))) => 'omc_<%underscorePath(path_ext)%>_destructor(threadData,<%contextCref(var.name,contextFunction,&auxFunction)%>);'; separator = "\n")
   /* Needs to be done last as it messes with the tmp ticks :) */
   let &varDecls += addRootsTempArray()
@@ -5669,12 +5669,11 @@ case KERNEL_FUNCTION(__) then
   let &varDecls = buffer ""
   let &varInits = buffer ""
   let &varFrees = buffer ""
-  let &outVarAssign = buffer ""
   let _ = (List.first(outVars) |> var hasindex i1 fromindex 1 =>
       varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
 
-  let _ = (List.restOrEmpty(outVars) |> var => varOutput(var, &outVarAssign))
+  let outVarAssign = (List.restOrEmpty(outVars) |> var => varOutput(var))
 
   let cl_kernelVar = tempDecl("cl_kernel", &varDecls)
   let kernel_arg_number = '<%fname%>_arg_nr'
@@ -5787,8 +5786,9 @@ case efn as EXTERNAL_FUNCTION(__) then
   let _ = ( outVars |> var =>
             varInit(var, "", &varDecls, &outputAlloc, &varFrees, &auxFunction)
             ; empty /* increase the counter! */ )
-  let &outVarAssign = buffer ""
-  let _ = (List.restOrEmpty(outVars) |> var => varOutput(var, &outVarAssign))
+
+  let outVarAssign = (List.restOrEmpty(outVars) |> var => varOutput(var))
+
   let &varDecls += addRootsTempArray()
   let boxedFn = functionBodyBoxed(fn, isSimulation)
   let fnBody = <<
@@ -6337,12 +6337,21 @@ case var as VARIABLE(__) then
     ""
 end varAllocDefaultValue;
 
-template varOutput(Variable var, Text &varAssign)
+template varOutput(Variable var)
  "Generates code to copy result value from a function to dest."
 ::=
-  let cast = match var case FUNCTION_PTR(__) then "(modelica_fnptr)"
-  let &varAssign += 'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = <%cast%><%funArgName(var)%>; }<%\n%>'
-  ""
+  match var
+  case FUNCTION_PTR(__) then
+    'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = (modelica_fnptr)<%funArgName(var)%>; }<%\n%>'
+  case VARIABLE(ty=T_ARRAY(__)) then
+    'if (out<%funArgName(var)%>) { copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>); }<%\n%>'
+  case VARIABLE(__) then
+    /*Seems like we still get an array var with the wrong type here. It have instdims though >_<. TODO I guess*/
+    if instDims then
+      'if (out<%funArgName(var)%>) { copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>); }<%\n%>'
+    else
+    'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = <%funArgName(var)%>; }<%\n%>'
+  else error(sourceInfo(), 'varOutput:error Unknown variable type as output')
 end varOutput;
 
 template varOutputParallel(Variable var, String dest, Integer ix, Text &varDecls,
@@ -6970,45 +6979,82 @@ template algStmtAssignArr(DAE.Statement stmt, Context context,
 match stmt
 case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=RANGE(__), type_=t) then
   fillArrayFromRange(t,exp,cr,context,&varDecls,&auxFunction)
-case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=e as CALL(__), type_=t) then
-  let &preExp = buffer ""
-  let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
-  let type = expTypeArray(t)
-  if crefSubIsScalar(cr) then
-    let lhs = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction)
-    let freepararray =  match context
-                        case FUNCTION_CONTEXT(__) then
-                            if acceptParModelicaGrammar() then 'free_device_array(&<%lhs%>)' else ''
-                        else ''
-    <<
-    <%preExp%>
-    <%freepararray%>
-    copy_<%type%>_data(<%expPart%>, &<%lhs%>);
-    >>
-  else
-    let assign = indexedAssign(lhs, expPart, context, &preExp, &varDecls, &auxFunction)
-    <<
-    <%preExp%>
-    <%assign%>
-    >>
-
+  
 case STMT_ASSIGN_ARR(lhs=lhsexp as CREF(componentRef=cr), exp=e, type_=t) then
   let &preExp = buffer ""
   let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
-  let type = expTypeArray(t)
-  if crefSubIsScalar(cr) then
-    let lhs = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction)
+  let assign = algStmtAssignArrWithRhsExpStr(lhsexp, expPart, context, &preExp, &varDecls, &auxFunction)
+  <<
+  <%preExp%>
+  <%assign%>
+  >>
+end algStmtAssignArr;
+
+template algStmtAssignWithRhsExpStr(DAE.Exp lhsexp, Text &rhsExpStr, Context context,
+                 Text &preExp, Text &postExp, Text &varDecls, Text &auxFunction)
+ "Generates an array assigment algorithm statement."
+::=
+match lhsexp
+  case CREF(componentRef=WILD(__)) then 
+    '<%rhsExpStr%>;'
+  case CREF(componentRef=cr, ty = T_ARRAY(ty=basety, dims=dims)) then
+    algStmtAssignArrWithRhsExpStr(lhsexp, rhsExpStr, context, &preExp, &varDecls, &auxFunction)
+  case CREF(componentRef = cr, ty=DAE.T_COMPLEX(complexClassType=RECORD(__))) then
+    algStmtAssignRecordWithRhsExpStr(lhsexp, rhsExpStr, context, &preExp, &varDecls, &auxFunction)
+  case CREF(__) then
+    let lhsStr = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction)
+    '<%lhsStr%> = <%rhsExpStr%>;'
+  
+  /*This CALL on left hand side case shouldn't have been created by the compiler. It only comes because of alias eliminations. On top of that
+  at least it should have been a record_constractor not a normal call. sigh. */
+  case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
+    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
+    /*TODO handle array record memebers. see algStmtAssign*/
     <<
     <%preExp%>
-    copy_<%type%>_data(<%expPart%>, &<%lhs%>);
+    <%tmp%> = <%rhsExpStr%>;
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+      let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
+      '<%re%> = <%tmp%>._<%var.name%>;'
+    ; separator="\n"
+    %>
     >>
   else
-    let assign = indexedAssign(lhs, expPart, context, &preExp, &varDecls, &auxFunction)
+    error(sourceInfo(), 'algStmtAssignWithRhsExpStr: Unhandled lhs expression. <%ExpressionDump.printExpStr(lhsexp)%>')
+end algStmtAssignWithRhsExpStr;
+
+template algStmtAssignRecordWithRhsExpStr(DAE.Exp lhsexp, Text &rhsExpStr, Context context,
+                 Text &preExp, Text &varDecls, Text &auxFunction)
+ "Generates an array assigment algorithm statement."
+::=
+match lhsexp
+  case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
+    let lhsStr = contextCref(cr, context, &auxFunction)
+    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
+    /*TODO handle array record memebers. see algStmtAssign*/
     <<
     <%preExp%>
-    <%assign%>
+    <%tmp%> = <%rhsExpStr%>;
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
+      '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "._" else "$P"%><%var.name%> = <%tmp%>._<%var.name%>;'
+    ; separator="\n"
+    %>
     >>
-end algStmtAssignArr;
+end algStmtAssignRecordWithRhsExpStr;
+
+template algStmtAssignArrWithRhsExpStr(DAE.Exp lhsexp, Text &rhsExpStr, Context context,
+                 Text &preExp, Text &varDecls, Text &auxFunction)
+ "Generates an array assigment algorithm statement."
+::=
+match lhsexp
+  case CREF(componentRef=cr, ty = T_ARRAY(ty=basety, dims=dims)) then
+    let type = expTypeArray(ty)
+    if crefSubIsScalar(cr) then
+      let lhsStr = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction)
+      'copy_<%type%>_data(<%rhsExpStr%>, &<%lhsStr%>);'
+    else
+      indexedAssign(lhsexp, rhsExpStr, context, &preExp, &varDecls, &auxFunction)
+end algStmtAssignArrWithRhsExpStr;
 
 template fillArrayFromRange(DAE.Type ty, Exp exp, DAE.ComponentRef cr, Context context,
                             Text &varDecls, Text &auxFunction)
@@ -7081,24 +7127,17 @@ match stmt
   case STMT_TUPLE_ASSIGN(expExpLst = firstexp::_, exp = CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
     let &preExp = buffer ""
     let &postExp = buffer ""
-    let lhsCrefs = (List.rest(expExpLst) |> e =>
-      match e
-        case CREF(componentRef=WILD(__)) then ", NULL"
-        else ", &" + tupleReturnVariableUpdates(e, context, varDecls, postExp, &auxFunction)
-      end match)
-
+    
+    let lhsCrefs = (List.rest(expExpLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
     // The tuple expressions might take fewer variables than the number of outputs. No worries.
     let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expExpLst))))
+    
     let call = daeExpCallTuple(exp, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
-    let &preExp +=
-      match firstexp
-        case CREF(componentRef=WILD(__)) then '<%call%>;<%\n%>'
-        else '<%tupleReturnVariableUpdates(firstexp, context, varDecls, postExp, auxFunction)%> = <%call%>;<%\n%>'
-      end match
-
+    let callassign = algStmtAssignWithRhsExpStr(firstexp, call, context, &preExp, &postExp, &varDecls, &auxFunction)
     <<
     /* tuple assignment <%expExpLst |> e => Util.escapeModelicaStringToCString(printExpStr(e)) ; separator=", "%>*/
     <%preExp%>
+    <%callassign%>
     <%postExp%>
     >>
 
@@ -7128,47 +7167,26 @@ match stmt
 
 end algStmtTupleAssign;
 
-template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, Text &varCopy, Text &auxFunction)
+template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, Text &preExp, Text &varCopy, Text &auxFunction)
  "Generates code for updating variables  returned from fuctions that return tuples.
   Generates copies depending on what kind of variable is returned."
 ::=
   match inExp
-  case CREF(componentRef = cr,  ty = t as DAE.T_ARRAY(__)) then
-    let &preExp = buffer ""
-    let rhsStr = tempDecl("base_array_t", &varDecls)
-    let lhsStr = daeExpCrefLhs(inExp, context, &preExp, &varDecls, &auxFunction)
-    let &varCopy +=
-      match context
-      case SIMULATION_CONTEXT(__) then
-        <<
-        <%preExp%>
-        copy_<%expTypeShort(t)%>_array_data(<%rhsStr%>, &<%lhsStr%>);
-        >>
-      else
-        /*TODO make this copy*/
-        <<
-        <%preExp%>
-        <%lhsStr%> = <%rhsStr%>;
-        >>
-        // let &varCopy += 'copy_<%expType(ty, true)%>_data_mem(<%lhsStr%>,&<%contextCref(cr,context,&auxFunction)%>);<%\n%>'
-      end match
-    rhsStr
+  case CREF(componentRef=WILD(__)) then
+    'NULL'
   case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
-    let &preExp = buffer ""
     let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
     let lhsStr = contextCref(cr, context, &auxFunction)
-    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
     let &varCopy +=
       /*TODO handle array record memebers. see algStmtAssign*/
       <<
       <%preExp%>
-      <%tmp%> = <%rhsStr%>;
       <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-        '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "._" else "$P"%><%var.name%> = <%tmp%>._<%var.name%>;'
+        '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "._" else "$P"%><%var.name%> = <%rhsStr%>._<%var.name%>;'
       ; separator="\n"
       %>
       >> /*varCopy end*/
-    rhsStr
+    '&<%rhsStr%>'
 
   /*This CALL case shouldn't have been created by the compiler. It only comes because of alias eliminations. On top of that
   at least it should have been a record_constractor not a normal call. sigh. */
@@ -7180,20 +7198,15 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
       /*TODO handle array record memebers. see algStmtAssign*/
       <<
       <%preExp%>
-      <%tmp%> = <%rhsStr%>;
       <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
         let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
-        '<%re%> = <%tmp%>._<%var.name%>;'
+        '<%re%> = <%rhsStr%>._<%var.name%>;'
       ; separator="\n"
       %>
       >> /*varCopy end*/
-    rhsStr
-
-  case CREF(componentRef=WILD(__)) then
-    ''
+    '&<%rhsStr%>'
   case CREF(__) then
-    let &preExp = buffer ""
-    daeExpCrefLhs(inExp, context, &preExp, &varDecls, &auxFunction)
+    '&<%daeExpCrefLhs(inExp, context, &preExp, &varDecls, &auxFunction)%>'
   else
     error(sourceInfo(), 'tupleReturnVariableUpdates: Unhandled expression. <%ExpressionDump.printExpStr(inExp)%>')
 end tupleReturnVariableUpdates;
