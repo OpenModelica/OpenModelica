@@ -1583,7 +1583,7 @@ template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Te
   let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
 
   let &additionalLinkerFlags_GCC = buffer ""
-  let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then " $(INTEL_TBB_LIBS) " else ""
+  let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then " $(INTEL_TBB_LIBRARIES) " else ""
 
   let &additionalLinkerFlags_MSVC = buffer ""
 
