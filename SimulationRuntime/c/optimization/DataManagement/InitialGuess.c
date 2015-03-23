@@ -44,8 +44,8 @@
 
 static int initial_guess_ipopt_cflag(OptData *optData, char* cflags);
 static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const double tstop);
-static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, const short o);
-static inline void init_ipopt_data(OptData *optData);
+static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, const short o);
+static inline void init_ipopt_data(OptData *optData, const short o);
 
 /*!
  *  create initial guess
@@ -74,9 +74,9 @@ inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
   }
 
   if(opt > 0)
-    initial_guess_ipopt_sim(optData, solverInfo, opt);
+    opt = initial_guess_ipopt_sim(optData, solverInfo, opt);
 
-  init_ipopt_data(optData);
+  init_ipopt_data(optData, opt);
 }
 
 
@@ -84,7 +84,7 @@ inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
  *  create initial guess dasslColorSymJac
  *  author: Vitalij Ruge
  **/
-static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, const short o)
+static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, const short o)
 {
   double *u0;
   int i,j,k,l;
@@ -227,6 +227,7 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
   data->simulationInfo.tolerance = tol;
 
   externalInputFree(data);
+  return op;
 }
 
 
@@ -272,7 +273,7 @@ static int initial_guess_ipopt_cflag(OptData *optData, char* cflags)
  *  init ipopt data struct
  *  author: Vitalij Ruge
  **/
-static inline void init_ipopt_data(OptData *optData){
+static inline void init_ipopt_data(OptData *optData, const short op){
   OptDataIpopt* ipop = &optData->ipop;
   DATA * data = optData->data;
   const int NV = optData->dim.NV;
@@ -301,7 +302,7 @@ static inline void init_ipopt_data(OptData *optData){
   for(i = 0, shift = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j, shift+=nv){
       memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-      optData->data->callback->setInputData(optData->data);
+      optData->data->callback->setInputData(optData->data, op == 2);
       for(l = 0; l<nx; ++l){
         ipop->vopt[l + shift] = optData->v[i][j][l]*optData->bounds.scalF[l];
       }

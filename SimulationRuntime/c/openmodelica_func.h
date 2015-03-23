@@ -276,7 +276,7 @@ int (*pickUpBoundsForInputsInOptimization)(DATA* data, modelica_real* min, model
  * and set simulationInfo.inputVars. In case it's not present
  * a dummy function is added which return -1.
  */
-int (*setInputData)(DATA* data);
+int (*setInputData)(DATA* data, const modelica_boolean file);
 
 
 /*

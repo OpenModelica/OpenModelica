@@ -2302,6 +2302,7 @@ algorithm
     case BackendDAE.OPT_INPUT_WITH_DER()  then "OPT_INPUT_WITH_DER";
     case BackendDAE.OPT_INPUT_DER()  then "OPT_INPUT_DER";
     case BackendDAE.OPT_TGRID()  then "OPT_TGRID";
+    case BackendDAE.OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT";
   end match;
 end kindString;
 

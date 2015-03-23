@@ -766,6 +766,10 @@ algorithm
       equation
         File.write(file,"time grid for optimization");
       then ();
+    case BackendDAE.OPT_LOOP_INPUT()
+      equation
+        File.write(file,"variable for transform loop in constraint");
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});

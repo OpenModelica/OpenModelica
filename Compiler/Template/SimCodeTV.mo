@@ -945,6 +945,9 @@ package BackendDAE
     record OPT_INPUT_WITH_DER end OPT_INPUT_WITH_DER;
     record OPT_INPUT_DER end OPT_INPUT_DER;
     record OPT_TGRID end OPT_TGRID;
+    record OPT_LOOP_INPUT 
+      DAE.ComponentRef replaceExp; 
+    end OPT_LOOP_INPUT;
   end VarKind;
 
   uniontype ZeroCrossing

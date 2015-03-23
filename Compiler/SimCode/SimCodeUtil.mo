@@ -10004,6 +10004,11 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
     then SOME(e);
 
+    case (BackendDAE.VAR(values = dae_var_attr))
+    guard(BackendVariable.isVarNonDiscreteAlg(daelowVar))
+    then SOME(DAEUtil.getStartAttrFail(dae_var_attr));
+
+
     else NONE();
   end matchcontinue;
 end getStartValue;

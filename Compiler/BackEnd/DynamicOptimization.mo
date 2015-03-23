@@ -201,7 +201,7 @@ protected function makeVar "author: Vitalij Ruge"
 
 algorithm
   cr := ComponentReference.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
-  v :=  BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+  v :=  BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
 end makeVar;
 
 protected function addOptimizationVarsEqns1
@@ -652,13 +652,17 @@ algorithm
     // new input(resvar)
     (cr,var) := makeVar("OMC$Input" + intString(ind_v));
     var := BackendVariable.setVarDirection(var, DAE.INPUT());
-    var := BackendVariable.mergeAliasVars(var, var_, false, knvars);
-    oshared := BackendVariable.addKnVarDAE(var, oshared);
     // resvar = new input(resvar)
     e := Expression.crefExp(cr_var);
     if BackendVariable.isStateVar(var_) then
       e := Expression.expDer(e);
+      var := BackendVariable.setVarKind(var, BackendDAE.OPT_LOOP_INPUT(ComponentReference.crefPrefixDer(cr_var)));
+    else
+      // don't merge der(x) with x
+      var := BackendVariable.mergeAliasVars(var, var_, false, knvars);
+      var := BackendVariable.setVarKind(var, BackendDAE.OPT_LOOP_INPUT(cr_var));
     end if;
+    oshared := BackendVariable.addKnVarDAE(var, oshared);
     oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
 
   end for;

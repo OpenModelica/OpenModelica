@@ -862,6 +862,7 @@ algorithm
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_WITH_DER())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT())) then ();
   end match;
 end failIfNonState;
 
@@ -973,6 +974,7 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_WITH_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT()) :: _)) then true;
     case ((_ :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;
@@ -991,11 +993,20 @@ algorithm
     /* Real non discrete variable */
     case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_))) equation
       kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE(), BackendDAE.OPT_INPUT_WITH_DER(), BackendDAE.OPT_INPUT_DER()};
-    then listMember(kind, kind_lst);
+    then listMember(kind, kind_lst) or isOptLoopInput(kind);
 
     else false;
   end match;
 end isVarNonDiscreteAlg;
+
+protected function isOptLoopInput
+  input BackendDAE.VarKind kind;
+  output Boolean b;
+algorithm
+  b := match(kind) case(BackendDAE.OPT_LOOP_INPUT()) then true;
+                   else false;
+       end match;
+end isOptLoopInput;
 
 public function isVarDiscreteAlg
   input BackendDAE.Var var;
