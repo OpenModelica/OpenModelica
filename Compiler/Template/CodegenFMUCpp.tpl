@@ -533,7 +533,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE5=OMCpp<%fileNamePrefix%>CalcHelperMain5.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
-  LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory $(BASE_LIB) $(LINUX_LIB_DL)
+  LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
 
   CPPFILES=OMCpp<%fileNamePrefix%>.cpp OMCpp<%fileNamePrefix%>FMU.cpp $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE4) $(CALCHELPERMAINFILE5) $(ALGLOOPSMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
