@@ -7229,7 +7229,7 @@ algorithm
   if not Flags.isSet(Flags.NO_START_CALC) then
     systs := List.map1(systs,preCalculateStartValues,knvars);
   end if;
-  
+
   /* Extract from variable list */
   ((outVars, _, _)) := List.fold1(List.map(systs, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars, knvars));
 
