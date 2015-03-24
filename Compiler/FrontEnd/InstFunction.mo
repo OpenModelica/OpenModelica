@@ -568,14 +568,16 @@ algorithm
         cache = FCore.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
-
-    // The function type can be determined without the body. Annotations need to be preserved though.
+        
+    // The function type can be determined without the body. Annotations, restrictions and external decls need 
+    // to be preserved though (e.g parallel external functions have restrictions parallel_function not external function)
+    // Maybe we need one more restriction type for those.    
     case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
                                    encapsulatedPrefix = e,partialPrefix = p, restriction=r,
-                                   classDef = SCode.PARTS(elementLst = elts),cmt=cmt, info = info))
+                                   classDef = SCode.PARTS(elementLst = elts, externalDecl = extDecl),cmt=cmt, info = info))
       equation
         elts = List.select(elts,isElementImportantForFunction);
-        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
+        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
         (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
         // Only external functions are valid without an algorithm section...
         // cache = FCore.addDaeExtFunction(cache, funs);
