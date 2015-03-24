@@ -33,6 +33,15 @@
 
 #include "FMU2Wrapper.h"
 
+#define LOG_CALL(w, ...) \
+  FMU2_LOG(w, fmi2OK, logFmi2Call, __VA_ARGS__)
+
+#define CATCH_EXCEPTION(w) \
+  catch (std::exception &e) { \
+    FMU2_LOG(w, fmi2Error, logStatusError, e.what()); \
+    return fmi2Error; \
+  }
+
 // ---------------------------------------------------------------------------
 // Common Functions
 // ---------------------------------------------------------------------------
@@ -65,12 +74,16 @@ extern "C"
                                 fmi2Boolean visible,
                                 fmi2Boolean loggingOn)
   {
-    return reinterpret_cast<fmi2Component>(OBJECTCONSTRUCTOR);
+    FMU2Wrapper *w = OBJECTCONSTRUCTOR;
+    LOG_CALL(w, "fmi2Instantiate");
+    return reinterpret_cast<fmi2Component>(w);
   }
 
   void fmi2FreeInstance(fmi2Component c)
   {
-    delete reinterpret_cast<FMU2Wrapper*>(c);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2FreeInstance");
+    delete w;
   }
 
   fmi2Status fmi2SetDebugLogging(fmi2Component c,
@@ -78,8 +91,13 @@ extern "C"
                                  size_t nCategories,
                                  const fmi2String categories[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setDebugLogging(loggingOn);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetDebugLogging(%s, nCategories = %d)",
+             loggingOn? "true": "false", nCategories);
+    try {
+      return w->setDebugLogging(loggingOn, nCategories, categories);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   //
@@ -93,32 +111,50 @@ extern "C"
                                  fmi2Boolean stopTimeDefined,
                                  fmi2Real stopTime)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setupExperiment(toleranceDefined, tolerance, startTime,
-                           stopTimeDefined, stopTime);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetupExperiment(startTime = %g)", startTime);
+    try {
+      return w->setupExperiment(toleranceDefined, tolerance, startTime,
+                                stopTimeDefined, stopTime);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2EnterInitializationMode(fmi2Component c)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->initialize();
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2EnterInitializationMode");
+    try {
+      return w->initialize();
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   {
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2ExitInitializationMode");
     return fmi2OK;
   }
 
   fmi2Status fmi2Terminate(fmi2Component c)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->terminate();
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2Terminate");
+    try {
+      return w->terminate();
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2Reset(fmi2Component c)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->reset();
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2Reset");
+    try {
+      return w->reset();
+    }
+    CATCH_EXCEPTION(w);
   }
 
   //
@@ -129,64 +165,96 @@ extern "C"
                          const fmi2ValueReference vr[], size_t nvr,
                          fmi2Real value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getReal(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetReal(nvr = %d)", nvr);
+    try {
+      return w->getReal(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2GetInteger(fmi2Component c,
                             const fmi2ValueReference vr[], size_t nvr,
                             fmi2Integer value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getInteger(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetInteger(nvr = %d)", nvr);
+    try {
+      return w->getInteger(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2GetBoolean(fmi2Component c,
                             const fmi2ValueReference vr[], size_t nvr,
                             fmi2Boolean value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getBoolean(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetBoolean(nvr = %d)", nvr);
+    try {
+      return w->getBoolean(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2GetString(fmi2Component c,
                            const fmi2ValueReference vr[], size_t nvr,
                            fmi2String  value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getString(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetString(nvr = %d)", nvr);
+    try {
+      return w->getString(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2SetReal(fmi2Component c,
                          const fmi2ValueReference vr[], size_t nvr,
                          const fmi2Real value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setReal(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetReal(nvr = %d)", nvr);
+    try {
+      return w->setReal(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2SetInteger(fmi2Component c,
                             const fmi2ValueReference vr[], size_t nvr,
                             const fmi2Integer value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setInteger(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetInteger(nvr = %d)", nvr);
+    try {
+      return w->setInteger(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2SetBoolean(fmi2Component c,
                             const fmi2ValueReference vr[], size_t nvr,
                             const fmi2Boolean value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setBoolean(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetBoolean(nvr = %d)", nvr);
+    try {
+      return w->setBoolean(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2SetString(fmi2Component c,
                            const fmi2ValueReference vr[], size_t nvr,
                            const fmi2String value[])
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setString(vr, nvr, value);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetString(nvr = %d)", nvr);
+    try {
+      return w->setString(vr, nvr, value);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   //
@@ -195,36 +263,48 @@ extern "C"
 
   fmi2Status fmi2GetFMUstate (fmi2Component c, fmi2FMUstate* FMUstate)
   {
-    return fmi2Error; // not implemented
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetFMUstate not implemented");
+    return fmi2Error;
   }
 
   fmi2Status fmi2SetFMUstate (fmi2Component c, fmi2FMUstate  FMUstate)
   {
-    return fmi2Error; // not implemented
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetFMUstate not implemented");
+    return fmi2Error;
   }
 
   fmi2Status fmi2FreeFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   {
-    return fmi2Error; // not implemented
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2FreeFMUstate not implemented");
+    return fmi2Error;
   }
 
   fmi2Status fmi2SerializedFMUstateSize(fmi2Component c, fmi2FMUstate FMUstate,
                                         size_t *size)
   {
-    return fmi2Error; // not implemented
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SerializedFMUstateSize not implemented");
+    return fmi2Error;
   }
 
   fmi2Status fmi2SerializeFMUstate(fmi2Component c, fmi2FMUstate FMUstate,
                                    fmi2Byte serializedState[], size_t size)
   {
-    return fmi2Error; // not implemented
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SerializeFMUstate not implemented");
+    return fmi2Error;
   }
 
   fmi2Status fmi2DeSerializeFMUstate(fmi2Component c,
                                      const fmi2Byte serializedState[],
                                      size_t size, fmi2FMUstate* FMUstate)
   {
-    return fmi2Error; // not implemented
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2DeSerializeFMUstate not implemented");
+    return fmi2Error;
   }
 
   //
@@ -239,7 +319,9 @@ extern "C"
                                           const fmi2Real dvKnown[],
                                           fmi2Real dvUnknown[])
   {
-    return fmi2Error; // not implemented
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetDirectionalDerivative not implemented");
+    return fmi2Error;
   }
 
   // ---------------------------------------------------------------------------
@@ -252,17 +334,25 @@ extern "C"
 
   fmi2Status fmi2EnterEventMode(fmi2Component c)
   {
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2EnterEventMode");
     return fmi2OK;
   }
 
   fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo *eventInfo)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->newDiscreteStates(eventInfo);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2NewDiscreteStates");
+    try {
+      return w->newDiscreteStates(eventInfo);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2EnterContinuousTimeMode(fmi2Component c)
   {
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2EnterContinuousTimeMode");
     return fmi2OK;
   }
 
@@ -271,9 +361,13 @@ extern "C"
                                          fmi2Boolean* enterEventMode,
                                          fmi2Boolean* terminateSimulation)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->completedIntegratorStep(noSetFMUStatePriorToCurrentPoint,
-                                   enterEventMode, terminateSimulation);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2CompletedIntegratorStep");
+    try {
+      return w->completedIntegratorStep(noSetFMUStatePriorToCurrentPoint,
+                                        enterEventMode, terminateSimulation);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   //
@@ -282,15 +376,23 @@ extern "C"
 
   fmi2Status fmi2SetTime(fmi2Component c, fmi2Real time)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setTime(time);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetTime(%g)", time);
+    try {
+      return w->setTime(time);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2SetContinuousStates(fmi2Component c,
                                      const fmi2Real x[], size_t nx)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->setContinuousStates(x, nx);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2SetContinuousStates(nx = %d)", nx);
+    try {
+      return w->setContinuousStates(x, nx);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   //
@@ -300,28 +402,44 @@ extern "C"
   fmi2Status fmi2GetDerivatives(fmi2Component c,
                                 fmi2Real derivatives[], size_t nx)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getDerivatives(derivatives, nx);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetDerivatives(nx = %d)", nx);
+    try {
+      return w->getDerivatives(derivatives, nx);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2GetEventIndicators(fmi2Component c,
                                     fmi2Real eventIndicators[], size_t ni)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getEventIndicators(eventIndicators, ni);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetEventIndicators(ni = %d)", ni);
+    try {
+      return w->getEventIndicators(eventIndicators, ni);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2GetContinuousStates(fmi2Component c,
                                      fmi2Real states[], size_t nx)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getContinuousStates(states, nx);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetContinuousStates(nx = %d)", nx);
+    try {
+      return w->getContinuousStates(states, nx);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component c,
                                                fmi2Real x_nominal[], size_t nx)
   {
-    return reinterpret_cast<FMU2Wrapper*>
-      (c)->getNominalsOfContinuousStates(x_nominal, nx);
+    FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
+    LOG_CALL(w, "fmi2GetNominalsOfContinuousStates(nx = %d)", nx);
+    try {
+      return w->getNominalsOfContinuousStates(x_nominal, nx);
+    }
+    CATCH_EXCEPTION(w);
   }
 }

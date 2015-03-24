@@ -40,6 +40,25 @@
 #include "fmi2Functions.h"
 #include "FMU2GlobalSettings.h"
 
+// define logger as macro that passes through variadic args
+#define FMU2_LOG(w, status, category, ...) \
+  if ((w)->logCategories & (1 << (category))) \
+    (w)->logger((w)->componentEnvironment, (w)->instanceName, \
+                status, (w)->logCategoryName(category), __VA_ARGS__)
+
+enum LogCategory {
+  logEvents = 0,
+  logSingularLinearSystems,
+  logNonlinearSystems,
+  logDynamicStateSelection,
+  logStatusWarning,
+  logStatusDiscard,
+  logStatusError,
+  logStatusFatal,
+  logStatusPending,
+  logFmi2Call
+};
+
 class FMU2Wrapper
 {
  public:
@@ -48,7 +67,15 @@ class FMU2Wrapper
               const fmi2CallbackFunctions *functions, fmi2Boolean loggingOn);
   virtual ~FMU2Wrapper();
 
-  virtual fmi2Status setDebugLogging(fmi2Boolean loggingOn);
+  // Debug logging
+  virtual fmi2Status setDebugLogging(fmi2Boolean loggingOn,
+                                     size_t nCategories,
+                                     const fmi2String categories[]);
+  const uint &logCategories;
+  const fmi2CallbackLogger &logger;
+  const fmi2ComponentEnvironment &componentEnvironment;
+  const fmi2String &instanceName;
+  fmi2String logCategoryName(LogCategory);
 
   // Enter and exit initialization mode, terminate and reset
   virtual fmi2Status setupExperiment(fmi2Boolean toleranceDefined,
@@ -114,6 +141,7 @@ class FMU2Wrapper
     Fatal              = 1 << 6
   } ModelState;
 
+  uint _logCategories;
   fmi2String _instanceName;
   fmi2String _GUID;
   fmi2CallbackFunctions _functions;

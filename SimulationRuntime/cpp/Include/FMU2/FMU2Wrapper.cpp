@@ -44,15 +44,39 @@
 /*end workarround*/
 #include <System/AlgLoopSolverFactory.h>
 
+static fmi2String const _logCategoryNames[] = {
+  "logEvents",
+  "logSingularLinearSystems",
+  "logNonlinearSystems",
+  "logDynamicStateSelection",
+  "logStatusWarning",
+  "logStatusDiscard",
+  "logStatusError",
+  "logStatusFatal",
+  "logStatusPending",
+  "logFmi2Call"
+};
+
+fmi2String FMU2Wrapper::logCategoryName(LogCategory category) {
+  return _logCategoryNames[category];
+}
+
 FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
-     const fmi2CallbackFunctions *functions, fmi2Boolean loggingOn) :
-  _instanceName(instanceName), _GUID(GUID), _functions(*functions),
-  _global_settings()
+                         const fmi2CallbackFunctions *functions,
+                         fmi2Boolean loggingOn) :
+  _global_settings(), _functions(*functions), logger(_functions.logger),
+  componentEnvironment(_functions.componentEnvironment),
+  instanceName(_instanceName), logCategories(_logCategories)
 {
+  _instanceName = instanceName;
+  _GUID = GUID;
+  _logCategories = loggingOn? 0xFFFF: 0x0000;
   boost::shared_ptr<IAlgLoopSolverFactory>
-      solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
+    solver_factory(new AlgLoopSolverFactory(&_global_settings,
+                                            PATH(""), PATH("")));
   _model = boost::shared_ptr<MODEL_IDENTIFIER>
-      (new MODEL_IDENTIFIER(&_global_settings, solver_factory,boost::shared_ptr<ISimData>(new SimData())));
+    (new MODEL_IDENTIFIER(&_global_settings, solver_factory,
+                          boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
   _model->initialize(); // set default start values
   _tmp_real_buffer.resize(_model->getDimContinuousStates() + _model->getDimRHS() + _model->getDimReal());
@@ -64,9 +88,41 @@ FMU2Wrapper::~FMU2Wrapper()
 {
 }
 
-fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn)
+fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
+                                        size_t nCategories,
+                                        const fmi2String categories[])
 {
-  return fmi2OK;
+  fmi2Status ret = fmi2OK;
+  if (nCategories == 0)
+    _logCategories = loggingOn? 0xFFFF: 0x0000;
+  else {
+    int i, j, nSupported = sizeof(_logCategoryNames) / sizeof(char *);
+    for (i = 0; i < nCategories; i++) {
+      if (strcmp(categories[i], "logAll") == 0) {
+        _logCategories = loggingOn? 0xFFFF: 0x0000;
+        continue;
+      }
+      for (j = 0; j < nSupported; j++) {
+        if (strcmp(categories[i], _logCategoryNames[j]) == 0) {
+          if (loggingOn)
+            _logCategories |= (1 << j);
+          else
+            _logCategories &= ~(1 << j);
+          break;
+        }
+      }
+      // warn about unsupported log category
+      if (j == nSupported) {
+        uint logCategories_bak = _logCategories;
+        _logCategories = 0xFFFF;
+        FMU2_LOG(this, fmi2Warning, logStatusWarning,
+                 "Unsupported log category \"%s\"", categories[i]);
+        _logCategories = logCategories_bak;
+        ret = fmi2Warning;
+      }
+    }
+  }
+  return ret;
 }
 
 /*  independent variables and re-initialization of caching */
