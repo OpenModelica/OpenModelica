@@ -14794,8 +14794,8 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let &stringFuncCalls = buffer ""
 
       let stateVarCount = listLength(vars.stateVars)
-      let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context,stateDerVectorName, useFlatArrayNotation)
-      let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.aliasVars, vars.paramVars))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &setRealFuncCalls, listLength(listAppend(vars.stateVars, vars.derivativeVars)), context,stateDerVectorName, useFlatArrayNotation)
+      let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.paramVars, vars.aliasVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context,stateDerVectorName, useFlatArrayNotation)
+      let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.paramVars, vars.aliasVars))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &setRealFuncCalls, listLength(listAppend(vars.stateVars, vars.derivativeVars)), context,stateDerVectorName, useFlatArrayNotation)
 
       let getStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => getStateVariables(var, i0, "z", i0) ;separator="\n")
       let setStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => setStateVariables(var, i0, "z", i0) ;separator="\n")
