@@ -228,7 +228,8 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(dasslData->simulationData, &tmpSimData);
   }
-  dasslData->localData = (SIMULATION_DATA**) GC_malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA*));
+  dasslData->localData = (SIMULATION_DATA**) GC_malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA));
+  memset(dasslData->localData, 0, SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   rotateRingBuffer(dasslData->simulationData, 0, (void**) dasslData->localData);
 
   /* end setup internal ring buffer for dassl */
