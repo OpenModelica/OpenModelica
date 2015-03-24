@@ -96,7 +96,7 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
   if (nCategories == 0)
     _logCategories = loggingOn? 0xFFFF: 0x0000;
   else {
-    int i, j, nSupported = sizeof(_logCategoryNames) / sizeof(char *);
+    int i, j, nSupported = sizeof(_logCategoryNames) / sizeof(fmi2String);
     for (i = 0; i < nCategories; i++) {
       if (strcmp(categories[i], "logAll") == 0) {
         _logCategories = loggingOn? 0xFFFF: 0x0000;
