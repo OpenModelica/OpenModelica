@@ -568,10 +568,10 @@ algorithm
         cache = FCore.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
-        
-    // The function type can be determined without the body. Annotations, restrictions and external decls need 
+
+    // The function type can be determined without the body. Annotations, restrictions and external decls need
     // to be preserved though (e.g parallel external functions have restrictions parallel_function not external function)
-    // Maybe we need one more restriction type for those.    
+    // Maybe we need one more restriction type for those.
     case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
                                    encapsulatedPrefix = e,partialPrefix = p, restriction=r,
                                    classDef = SCode.PARTS(elementLst = elts, externalDecl = extDecl),cmt=cmt, info = info))
