@@ -3141,19 +3141,19 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   mpOptionsDialog = pOptionsDialog;
   mpFigaroGroupBox = new QGroupBox(Helper::figaro);
   // Figaro database file
-  mpFigaroDatabaseFileLabel = new Label(tr("Figaro Database File:"));
+  mpFigaroDatabaseFileLabel = new Label(tr("Figaro Library:"));
   mpFigaroDatabaseFileTextBox = new QLineEdit;
   mpBrowseFigaroDatabaseFileButton = new QPushButton(Helper::browse);
   mpBrowseFigaroDatabaseFileButton->setAutoDefault(false);
   connect(mpBrowseFigaroDatabaseFileButton, SIGNAL(clicked()), SLOT(browseFigaroLibraryFile()));
   // Figaro options file
-  mpFigaroOptionsFileLabel = new Label(tr("Figaro Options File:"));
+  mpFigaroOptionsFileLabel = new Label(tr("Tree generation options:"));
   mpFigaroOptionsFileTextBox = new QLineEdit;
   mpBrowseFigaroOptionsFileButton = new QPushButton(Helper::browse);
   mpBrowseFigaroOptionsFileButton->setAutoDefault(false);
   connect(mpBrowseFigaroOptionsFileButton, SIGNAL(clicked()), SLOT(browseFigaroOptionsFile()));
   // figaro process
-  mpFigaroProcessLabel = new Label(tr("Figaro Process:"));
+  mpFigaroProcessLabel = new Label(tr("Figaro Processor:"));
   mpFigaroProcessTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/share/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe"));
   mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
   mpBrowseFigaroProcessButton->setAutoDefault(false);
