@@ -2355,7 +2355,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean callEventUpdate;
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
-    Real nextEventTime;
+    Real nextEventTime(fixed = true);
   initial equation
     flowStartTime = fmi2Functions.fmi2SetTime(fmi2me, time, 1);
     flowEnterInitialization = fmi2Functions.fmi2EnterInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime);
@@ -2389,25 +2389,27 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     for i in 1:size(fmi_z,1) loop
       fmi_z_positive[i] = if not terminal() then fmi_z[i] > 0 else pre(fmi_z_positive[i]);
     end for;
-    callEventUpdate = fmi2Functions.fmi2CompletedIntegratorStep(fmi2me, flowStatesInputs);
+    
     triggerDSSEvent = noEvent(if callEventUpdate then flowStatesInputs+1.0 else flowStatesInputs-1.0);
-    nextEventTime = fmi2Functions.fmi2nextEventTime(fmi2me, flowStatesInputs);
+    
     <%if not boolAnd(stringEq(realOutputVariablesNames, ""), stringEq(realOutputVariablesVRs, "")) then "{"+realOutputVariablesNames+"} = fmi2Functions.fmi2GetReal(fmi2me, {"+realOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(integerOutputVariablesNames, ""), stringEq(integerOutputVariablesVRs, "")) then "{"+integerOutputVariablesNames+"} = fmi2Functions.fmi2GetInteger(fmi2me, {"+integerOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(booleanOutputVariablesNames, ""), stringEq(booleanOutputVariablesVRs, "")) then "{"+booleanOutputVariablesNames+"} = fmi2Functions.fmi2GetBoolean(fmi2me, {"+booleanOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(stringOutputVariablesNames, ""), stringEq(stringOutputVariablesVRs, "")) then "{"+stringOutputVariablesNames+"} = fmi2Functions.fmi2GetString(fmi2me, {"+stringOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%dumpOutputGetEnumerationVariables(fmiModelVariablesList, fmiTypeDefinitionsList, "fmi2Functions.fmi2GetInteger", "fmi2me")%>
+    callEventUpdate = fmi2Functions.fmi2CompletedIntegratorStep(fmi2me, flowStatesInputs+flowTime);
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
-    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, nextEventTime < time, terminal()} then
+    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
   >>
   else
   <<
-    when {not initial(), triggerDSSEvent > flowStatesInputs, nextEventTime < time, terminal()} then
+    when {not initial(), triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
   >>
   %>
       newStatesAvailable := fmi2Functions.fmi2EventUpdate(fmi2me);
+      nextEventTime := fmi2Functions.fmi2nextEventTime(fmi2me, flowStatesInputs);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
       if newStatesAvailable then
