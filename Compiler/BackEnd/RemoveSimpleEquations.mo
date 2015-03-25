@@ -135,6 +135,30 @@ protected type VarSetAttributes =
 protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}, (NONE(), NONE()));
 
 // =============================================================================
+// Starting point for preOpt and postOpt removeSimpleEquations module
+//
+// =============================================================================
+
+public function removeSimpleEquations "author: Frenkel TUD 2012-12
+  This Function remove with a linear scaling with respect to the number of
+  equations in an acausal system as much as possible simple equations."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+ Boolean b;
+algorithm
+  b := BackendDAEUtil.hasDAEMatching(inDAE);
+  outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
+    case "default" then if b then causal(inDAE) else fastAcausal(inDAE);
+    case "causal" then causal(inDAE);  
+    case "fastAcausal" then fastAcausal(inDAE);
+    case "allAcausal" then allAcausal(inDAE);
+    else inDAE;
+  end match;
+end removeSimpleEquations;
+
+
+// =============================================================================
 // section for fastAcausal
 //
 // =============================================================================

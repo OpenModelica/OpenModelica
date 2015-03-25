@@ -650,7 +650,6 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
     ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
-    ("removeAllSimpleEquations", removeSimpleEquationDesc),
     ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")),
     ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are evalutated and replaced with their value in other vars. They may no longer be changed in the init file.")),
     ("evaluateEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
@@ -750,7 +749,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   SOME(STRING_DESC_OPTION({
     ("encapsulateWhenConditions", Util.gettext("Replace each condition/relation with a boolean variable.")),
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
-    ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("evaluateEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
@@ -1015,6 +1013,20 @@ constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(66, "cppFlags",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
   Util.gettext("Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)"));
 
+  constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquations",
+  NONE(), EXTERNAL(), STRING_FLAG("default"),
+  SOME(STRING_DESC_OPTION({
+    ("none", Util.gettext("Disables module")),
+    ("default", Util.gettext("Performs alias elimination and removes constant variables. Dafault case uses in preOpt phase the fastAcausal and in postOpt phase the causal implementation.")),
+    ("causal", Util.gettext("Performs alias elimination and removes constant variables. Causal implementation.")),
+    ("fastAcausal", Util.gettext("Performs alias elimination and removes constant variables. fastImplementation fastAcausal.")),
+    ("allAcausal", Util.gettext("Performs alias elimination and removes constant variables. Implementation allAcausal."))
+    /*("new", Util.gettext("New implementation (experimental)")) */
+    })),
+    Util.gettext("Specifies method that removes simple equations."));
+
+  
+  
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1085,7 +1097,8 @@ constant list<ConfigFlag> allConfigFlags = {
   CSE_BINARY,
   CSE_EACHCALL,
   MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM,
-  CPP_FLAGS
+  CPP_FLAGS,
+  REMOVE_SIMPLE_EQUATIONS
 };
 
 public function new

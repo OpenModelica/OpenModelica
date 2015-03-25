@@ -1418,7 +1418,6 @@ algorithm
   size := List.fold(sizes,intAdd,0);
 end daeSize;
 
-
 public function systemSize
 "author: Frenkel TUD
   Returns the size of the dae system, the size of the equations in an BackendDAE.EquationArray,
@@ -1497,6 +1496,30 @@ algorithm
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n)) then n;
   end match;
 end equationArraySize;
+
+public function hasDAEMatching
+"Returns  true if all system have already a matching, otherwise return false."
+  input BackendDAE.BackendDAE dae;
+  output Boolean b;
+protected
+  list<BackendDAE.EqSystem> systs;
+  list<Boolean> boollst;
+algorithm
+  BackendDAE.DAE(eqs=systs) := dae;
+  boollst := List.map(systs, hasEqSystemMatching);
+  b := List.fold(boollst,boolAnd,true);
+end hasDAEMatching;
+
+public function hasEqSystemMatching
+"Returns true if EqSystem has a matching."
+  input BackendDAE.EqSystem dae;
+  output Boolean b;
+algorithm
+  b  := match(dae)
+  case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING()) then true;
+  case BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()) then false;
+  end match;
+end hasEqSystemMatching;
 
 protected function generateArrayElements
   "Takes a list of identical CREF or ASUB expressions, a list of ICONST indices
@@ -7503,8 +7526,7 @@ protected
   list<tuple<BackendDAEFunc.preOptimizationDAEModule,String,Boolean>> allPreOptModules;
   list<String> strPreOptModules;
 algorithm
-  allPreOptModules := {(RemoveSimpleEquations.fastAcausal, "removeSimpleEquations", false),
-                       (RemoveSimpleEquations.allAcausal, "removeAllSimpleEquations", false),
+  allPreOptModules := {(RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", false),
                        (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
                        (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", false),
                        (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", false),
@@ -7556,8 +7578,7 @@ protected
 algorithm
   allpostOptModules := {(FindZeroCrossings.encapsulateWhenConditions, "encapsulateWhenConditions", true),
                         (BackendInline.lateInlineFunction, "lateInlineFunction", false),
-                        (RemoveSimpleEquations.causal, "removeSimpleEquations", false),
-                        (RemoveSimpleEquations.fastAcausal, "removeSimpleEquationsFast", false),
+                        (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", false),
                         (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
                         (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", false),
                         (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", false),
