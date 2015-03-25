@@ -4588,7 +4588,7 @@ algorithm
       Absyn.Msg msg;
       FCore.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize;
-      String errorMsg,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
+      String errorMsg,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
       Boolean strEmpty;
       Absyn.Restriction restriction;
       Absyn.Class c;
@@ -4604,9 +4604,8 @@ algorithm
         simpleEqnSizeStr = intString(simpleEqnSize);
 
         classNameStr = Absyn.pathString(className);
-        warnings = Error.printMessagesStr(false);
-        retStr = stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
-          varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
+        retStr = stringAppendList({"Check of ",classNameStr," completed successfully.","\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+          varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s)."});
       then
         (cache,Values.STRING(retStr),st);
 
@@ -4617,11 +4616,8 @@ algorithm
         true = Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction);
         (cache,env,_,st) = runFrontEnd(cache,env,className,st,true);
         classNameStr = Absyn.pathString(className);
-        warnings = Error.printMessagesStr(false);
-        // TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
-        retStr = stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
       then
-        (cache,Values.STRING(retStr),st);
+        (cache,Values.STRING(""),st);
 
     case (cache,_,_,st as GlobalScript.SYMBOLTABLE(ast=p), _)
       equation
