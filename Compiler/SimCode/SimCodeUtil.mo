@@ -135,8 +135,19 @@ public function crefNoSub
   input DAE.ComponentRef cref;
   output Boolean noSub;
 algorithm
-  noSub := boolNot(ComponentReference.crefHaveSubs(cref));
+  noSub := not ComponentReference.crefHaveSubs(cref);
 end crefNoSub;
+
+public function inFunctionContext
+  input SimCode.Context inContext;
+  output Boolean outInFunction;
+algorithm
+  outInFunction := match inContext
+    case SimCode.FUNCTION_CONTEXT() then true;
+    case SimCode.PARALLEL_FUNCTION_CONTEXT() then true;
+    else false;
+  end match;
+end inFunctionContext;
 
 public function crefIsScalar
   "Whether a component reference is a scalar depends on what context we are in.
@@ -148,25 +159,11 @@ public function crefIsScalar
   input SimCode.Context context;
   output Boolean isScalar;
 algorithm
-  isScalar := matchcontinue(cref, context)
-    local
-      Boolean res;
-    case (_, SimCode.FUNCTION_CONTEXT())
-      equation
-        res = crefNoSub(cref);
-      then
-        res;
-    case (_, SimCode.PARALLEL_FUNCTION_CONTEXT())
-      equation
-        res = crefNoSub(cref);
-      then
-        res;
-    case (_, _)
-      equation
-        res = ComponentReference.crefHasScalarSubscripts(cref);
-      then
-        res;
-  end matchcontinue;
+  if inFunctionContext(context) then
+    isScalar := listEmpty(ComponentReference.crefLastSubs(cref));
+  else
+    isScalar := ComponentReference.crefHasScalarSubscripts(cref);
+  end if;
 end crefIsScalar;
 
 public function buildCrefExpFromAsub
