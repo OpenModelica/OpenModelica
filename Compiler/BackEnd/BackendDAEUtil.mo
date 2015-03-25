@@ -2164,7 +2164,7 @@ algorithm
   funcs := getFunctions(shared);
   (_, m, _, _, mapIncRowEqn) := getIncidenceMatrixScalar(iSyst, BackendDAE.SPARSE(), SOME(funcs));
 
- 
+
   indx_arr := markStateEquationsWork(indx_lst_e, {},  m, ass1, indx_arr);
   ind_mark := arrayList(indx_arr);
 
@@ -2186,9 +2186,9 @@ algorithm
 
   vl := BackendEquation.equationsVars(arrEqs, v);
   vars := BackendVariable.listVar1(vl);
-  
+
   oSyst := BackendDAE.EQSYSTEM(vars, arrEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, partitionKind);
-  
+
 end reduceEqSystem;
 
 
@@ -7677,7 +7677,7 @@ algorithm
                         (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
-                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false), 
+                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),

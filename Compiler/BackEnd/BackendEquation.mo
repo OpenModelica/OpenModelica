@@ -1337,7 +1337,7 @@ algorithm
   end match;
 end requationsAddDAE;
 
-public function removeRemovedEqs 
+public function removeRemovedEqs
 "
 remove removedEqs
 "
@@ -1359,7 +1359,7 @@ protected
       Integer n;
 algorithm
   (BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)) := inShared;
-  BackendDAE.EQUATION_ARRAY(numberOfElement=n) := remeqns; 
+  BackendDAE.EQUATION_ARRAY(numberOfElement=n) := remeqns;
   for ind in 1:n loop
     remeqns := equationRemove(ind, remeqns);
   end for;

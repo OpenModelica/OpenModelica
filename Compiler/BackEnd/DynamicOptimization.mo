@@ -687,7 +687,7 @@ public function reduceDynamicOptimization
 protected
   list<BackendDAE.Var> varlst, opt_varlst, conVarsList, fconVarsList, objMayer = {}, objLagrange = {};
   list<BackendDAE.EqSystem> systlst, newsyst = {};
-  BackendDAE.EqSystem tmpsyst; 
+  BackendDAE.EqSystem tmpsyst;
   BackendDAE.Variables v;
   BackendDAE.Shared shared;
 algorithm
@@ -696,7 +696,7 @@ algorithm
     //BackendDump.bltdump("START:reduceDynamicOptimization", inDAE);
     BackendDAE.DAE(systlst, shared) := inDAE;
     // ToDo
-    shared := BackendEquation.removeRemovedEqs(shared); 
+    shared := BackendEquation.removeRemovedEqs(shared);
     shared := BackendVariable.removeAliasVars(shared);
 
     for syst in systlst loop
