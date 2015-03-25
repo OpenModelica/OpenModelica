@@ -4596,19 +4596,16 @@ algorithm
     // handle normal models
     case (cache,env,_,(st as GlobalScript.SYMBOLTABLE()),_)
       equation
-        Error.clearMessages() "Clear messages";
-        Print.clearErrorBuf() "Clear error buffer";
         (cache,env,dae,st) = runFrontEnd(cache,env,className,st,false);
 
         (varSize,eqnSize,simpleEqnSize) = CheckModel.checkModel(dae);
-
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);
 
         classNameStr = Absyn.pathString(className);
         warnings = Error.printMessagesStr(false);
-        retStr=stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+        retStr = stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
           varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
       then
         (cache,Values.STRING(retStr),st);
@@ -4618,18 +4615,11 @@ algorithm
       equation
         (Absyn.CLASS(restriction=restriction)) = Interactive.getPathedClassInProgram(className, p);
         true = Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction);
-        Error.clearMessages() "Clear messages";
-        Print.clearErrorBuf() "Clear error buffer";
         (cache,env,_,st) = runFrontEnd(cache,env,className,st,true);
-
-        //UnitParserExt.clear();
-        //UnitAbsynBuilder.registerUnits(ptot);
-        //UnitParserExt.commit();
-
         classNameStr = Absyn.pathString(className);
         warnings = Error.printMessagesStr(false);
         // TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
-        retStr=stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
+        retStr = stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
       then
         (cache,Values.STRING(retStr),st);
 
@@ -4637,19 +4627,21 @@ algorithm
       equation
         classNameStr = Absyn.pathString(className);
         false = Interactive.existClass(Absyn.pathToCref(className), p);
-        errorMsg = "Unknown model in checkModel: " + classNameStr + "\n";
+        Error.addMessage(Error.LOOKUP_ERROR, {classNameStr,"<TOP>"});
       then
-        (cache,Values.STRING(errorMsg),st);
+        (cache,Values.STRING(""),st);
 
     // errors
     case (cache,_,_,st,_)
       equation
-      classNameStr = Absyn.pathString(className);
-      errorMsg = Error.printMessagesStr(false);
-      strEmpty = (stringCompare("",errorMsg)==0);
-      errorMsg = if strEmpty then "Internal error! Check of: " + classNameStr + " failed with no error message." else errorMsg;
-    then
-      (cache,Values.STRING(errorMsg),st);
+        classNameStr = Absyn.pathString(className);
+        strEmpty = Error.getNumMessages() == 0;
+        errorMsg = "Check of " + classNameStr + " failed with no error message";
+        if strEmpty then
+          Error.addMessage(Error.INTERNAL_ERROR, {errorMsg,"<TOP>"});
+        end if;
+      then
+        (cache,Values.STRING(""),st);
 
   end matchcontinue;
 end checkModel;
