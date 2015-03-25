@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8.6)
 
 project(${ExtensionUtilitiesName})
 IF(RUNTIME_STATIC_LINKING)

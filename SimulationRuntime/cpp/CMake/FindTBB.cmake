@@ -156,7 +156,7 @@ endif (_TBB_DEFAULT_INSTALL_DIR)
 endif (NOT _TBB_INSTALL_DIR)
 # sanity check
 if (NOT _TBB_INSTALL_DIR)
-message ("ERROR: Unable to find Intel TBB install directory. ${_TBB_INSTALL_DIR}")
+message (STATUS "Unable to find Intel TBB install directory. ${_TBB_INSTALL_DIR}")
 else (NOT _TBB_INSTALL_DIR)
 # finally: set the cached CMake variable TBB_INSTALL_DIR
 if (NOT TBB_INSTALL_DIR)
