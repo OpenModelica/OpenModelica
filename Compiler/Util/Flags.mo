@@ -432,6 +432,8 @@ constant DebugFlag CONSTJAC = DEBUG_FLAG(131, "constjac", false,
   Util.gettext("solves linear systems with const jacobian and variable b-Vector symbolically"));
 constant DebugFlag EXTENDS_DYN_OPT = DEBUG_FLAG(132, "extendsDynOpt", false,
   Util.gettext("generat extends NLP, move loops in the optimization problem as constraints. hint: using intial guess from file!"));
+constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(133, "reduceDynOpt", false,
+  Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -571,7 +573,8 @@ constant list<DebugFlag> allDebugFlags = {
   NO_PARTITIONING,
   ADVANCE_TEARING,
   CONSTJAC,
-  EXTENDS_DYN_OPT
+  EXTENDS_DYN_OPT,
+  REDUCE_DYN_OPT
 };
 
 public
@@ -735,6 +738,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "countOperations",
     "inputDerivativesUsed",
     "extendDynamicOptimization",
+    "reduceDynamicOptimization",
     "calculateStrongComponentJacobians",
     "calculateStateSetsJacobians",
     "detectJacobianSparsePattern",

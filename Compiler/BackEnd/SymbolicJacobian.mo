@@ -58,6 +58,7 @@ protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
 protected import Differentiate;
+protected import DynamicOptimization;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -1633,7 +1634,7 @@ algorithm
         // Differentiate the System w.r.t states&inputs for matrices B
 
         optimizer_vars = BackendVariable.addVariables(statesarr, BackendVariable.copyVariables(conVars));
-        object = checkObjectIsSet(outputvarsarr,"$OMC$objectLagrangeTerm");
+        object = DynamicOptimization.checkObjectIsSet(outputvarsarr,"$OMC$objectLagrangeTerm");
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B");
@@ -1645,7 +1646,7 @@ algorithm
         end if;
 
         // Differentiate the System w.r.t states for matrices C
-        object = checkObjectIsSet(outputvarsarr,"$OMC$objectMayerTerm");
+        object = DynamicOptimization.checkObjectIsSet(outputvarsarr,"$OMC$objectMayerTerm");
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C");
@@ -2151,27 +2152,6 @@ algorithm
 
   end match;
 end deriveAllHelper;
-
-protected function checkObjectIsSet
-"check: mayer or lagrange term are set"
-  input BackendDAE.Variables inVars;
-  input String CrefName;
-  output list<BackendDAE.Var> outVars;
-protected
-  DAE.ComponentRef leftcref;
-  BackendDAE.Var dummy_var;
-algorithm
-  leftcref := ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
-
-  try
-    BackendVariable.getVar(leftcref, inVars);
-    outVars := {BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(),
-                   DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {},
-                   DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER())};
-  else
-    outVars := {};
-  end try;
-end checkObjectIsSet;
 
 public function getJacobianMatrixbyName
   input BackendDAE.SymbolicJacobians injacobianMatrixes;

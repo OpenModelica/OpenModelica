@@ -2774,6 +2774,32 @@ algorithm
   end match;
 end removeVarDAE;
 
+public function removeAliasVars
+"
+remove alias Vars
+"
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
+protected
+      BackendDAE.Variables knvars, exobj, aliasVars;
+      BackendDAE.EquationArray remeqns, inieqns;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      FCore.Cache cache;
+      FCore.Graph env;
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.ExtraInfo ei;
+algorithm
+  (BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)) := inShared;
+  aliasVars := emptyVars();
+  outShared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei);
+
+end removeAliasVars;
+
 public function removeVar
   "Removes a var from the vararray but does not scaling down the array"
   input Integer inIndex;

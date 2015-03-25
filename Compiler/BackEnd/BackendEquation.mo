@@ -259,6 +259,7 @@ algorithm
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationsLstVars;
 
+
 public function equationsVars
 "author: Frenkel TUD 2011-05
   From the equations and a variable array return all
@@ -1335,6 +1336,37 @@ algorithm
     then BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei);
   end match;
 end requationsAddDAE;
+
+public function removeRemovedEqs 
+"
+remove removedEqs
+"
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
+protected
+      BackendDAE.Variables knvars, exobj, aliasVars;
+      BackendDAE.EquationArray remeqns, inieqns;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      FCore.Cache cache;
+      FCore.Graph env;
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.ExtraInfo ei;
+      Integer n;
+algorithm
+  (BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)) := inShared;
+  BackendDAE.EQUATION_ARRAY(numberOfElement=n) := remeqns; 
+  for ind in 1:n loop
+    remeqns := equationRemove(ind, remeqns);
+  end for;
+
+  outShared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei);
+
+end removeRemovedEqs;
 
 public function setAtIndex "author: lochel
   Sets the n-th array element of an EquationArray.

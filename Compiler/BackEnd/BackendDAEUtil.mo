@@ -1882,6 +1882,7 @@ algorithm
   end matchcontinue;
 end markStateEquationsWork;
 
+
 protected function consNotMarked
 "author Frenkel TUD 2012-12
   if mark[e]=0 then e::iQueue else iQueue"
@@ -2118,6 +2119,78 @@ public function getExtraInfo
 algorithm
   BackendDAE.SHARED(info=einfo) := shared;
 end getExtraInfo;
+
+public function reduceEqSystem
+"
+  reduce EqSystem for iVarlst
+
+Author: wbraun
+"
+  input BackendDAE.EqSystem iSyst;
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.Var> iVarlst;
+  output BackendDAE.EqSystem oSyst;
+
+protected
+   BackendDAE.BaseClockPartitionKind partitionKind;
+   array<Integer> ass1, ass2;
+   BackendDAE.Variables v;
+   BackendDAE.Variables vars;
+   BackendDAE.Variables iVars = BackendVariable.listVar(iVarlst);
+   BackendDAE.EquationArray ordererdEqs, arrEqs;
+   list<Integer> indx_lst_v, indx_lst_e, ind_mark, statevarindx_lst;
+   Integer ind;
+   array<Integer> indx_arr;
+   array<Integer> mapIncRowEqn;
+   list<BackendDAE.Equation> el;
+   list<BackendDAE.Var> vl;
+
+   DAE.FunctionTree funcs;
+   BackendDAE.IncidenceMatrix m;
+   BackendDAE.BackendDAE backendDAE2;
+   BackendDAE.EqSystem syst;
+algorithm
+
+   BackendDAE.EQSYSTEM(orderedEqs = ordererdEqs, orderedVars = v, matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2), partitionKind = partitionKind) := iSyst;
+
+  (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
+
+  indx_lst_v := List.appendNoCopy(indx_lst_v, statevarindx_lst) "overestimate";
+  indx_lst_e := List.map1r(indx_lst_v,arrayGet,ass1);
+
+
+  indx_arr := arrayCreate(equationArraySizeDAE(iSyst), 0);
+  funcs := getFunctions(shared);
+  (_, m, _, _, mapIncRowEqn) := getIncidenceMatrixScalar(iSyst, BackendDAE.SPARSE(), SOME(funcs));
+
+ 
+  indx_arr := markStateEquationsWork(indx_lst_e, {},  m, ass1, indx_arr);
+  ind_mark := arrayList(indx_arr);
+
+
+  indx_lst_e := {};
+  ind := 1;
+
+  for mark in ind_mark loop
+    if mark == 1 then
+      indx_lst_e := ind :: indx_lst_e;
+    end if;
+    ind := ind + 1;
+  end for;
+
+  indx_lst_e := List.map1r(indx_lst_e,arrayGet,mapIncRowEqn);
+
+  el := BackendEquation.getEqns(indx_lst_e, ordererdEqs);
+  arrEqs := BackendEquation.listEquation(el);
+
+  vl := BackendEquation.equationsVars(arrEqs, v);
+  vars := BackendVariable.listVar1(vl);
+  
+  oSyst := BackendDAE.EQSYSTEM(vars, arrEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, partitionKind);
+  
+end reduceEqSystem;
+
 
 public function removeDiscreteAssignments "
 Author: wbraun
@@ -7548,7 +7621,6 @@ algorithm
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
                        (ResolveLoops.resolveLoops, "resolveLoops", false),
-                       (ResolveLoops.resolveLoops, "resolveLoops", false),
                        (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt", false),
                        (EvaluateFunctions.evalFunctions, "evalFunc", false),
                        (UnitCheck.unitChecking, "unitChecking", true),
@@ -7605,6 +7677,7 @@ algorithm
                         (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
+                        (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false), 
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),

@@ -670,5 +670,88 @@ algorithm
 
 end res2Con;
 
+
+// =============================================================================
+// section for postOptModule >>reduceDynamicOptimization<<
+//
+// remove eqs which not need for the calculations of cost and constraints
+// =============================================================================
+
+
+public function reduceDynamicOptimization
+"
+  author: vitalij
+"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  list<BackendDAE.Var> varlst, opt_varlst, conVarsList, fconVarsList, objMayer = {}, objLagrange = {};
+  list<BackendDAE.EqSystem> systlst, newsyst = {};
+  BackendDAE.EqSystem tmpsyst; 
+  BackendDAE.Variables v;
+  BackendDAE.Shared shared;
+algorithm
+  if Flags.isSet(Flags.REDUCE_DYN_OPT) and Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+
+    //BackendDump.bltdump("START:reduceDynamicOptimization", inDAE);
+    BackendDAE.DAE(systlst, shared) := inDAE;
+    // ToDo
+    shared := BackendEquation.removeRemovedEqs(shared); 
+    shared := BackendVariable.removeAliasVars(shared);
+
+    for syst in systlst loop
+
+      BackendDAE.EQSYSTEM(orderedVars = v) := syst;
+      varlst := BackendVariable.varList(v);
+
+      opt_varlst := {};
+
+      conVarsList := List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
+      fconVarsList := List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars);
+      objMayer := checkObjectIsSet(v,"$OMC$objectMayerTerm");
+      objLagrange := checkObjectIsSet(v,"$OMC$objectLagrangeTerm");
+
+      opt_varlst := List.appendNoCopy(opt_varlst, conVarsList);
+      opt_varlst := List.appendNoCopy(fconVarsList, conVarsList);
+      opt_varlst := List.appendNoCopy(objMayer, conVarsList);
+      opt_varlst := List.appendNoCopy(objLagrange, conVarsList);
+
+      if not List.isEmpty(opt_varlst) then
+        try
+          tmpsyst := BackendDAEUtil.reduceEqSystem(syst, shared, opt_varlst);
+          //BackendDump.dumpEqSystem(syst,"IN_TMP:reduceDynamicOptimization");
+          //BackendDump.dumpEqSystem(tmpsyst,"OUT_TMP:reduceDynamicOptimization");
+          newsyst := tmpsyst :: newsyst;
+        else
+          //BackendDump.dumpEqSystem(syst,"TMP:reduceDynamicOptimization fail!");
+          newsyst := syst :: newsyst;
+        end try;
+      end if;
+    end for;
+
+    outDAE := BackendDAE.DAE(newsyst, shared);
+    //BackendDump.bltdump("END:reduceDynamicOptimization", outDAE);
+  else
+    outDAE := inDAE;
+  end if;
+end reduceDynamicOptimization;
+
+public function checkObjectIsSet
+"check: mayer or lagrange term are set"
+  input BackendDAE.Variables inVars;
+  input String CrefName;
+  output list<BackendDAE.Var> outVars;
+protected
+  DAE.ComponentRef leftcref;
+algorithm
+  leftcref := ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
+
+  try
+    outVars := BackendVariable.getVar(leftcref, inVars);
+  else
+    outVars := {};
+  end try;
+end checkObjectIsSet;
+
 annotation(__OpenModelica_Interface="backend");
 end DynamicOptimization;
