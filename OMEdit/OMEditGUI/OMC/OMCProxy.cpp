@@ -567,7 +567,8 @@ bool OMCProxy::printMessagesStringInternal()
   int errorsSize = getMessagesStringInternal();
   bool returnValue = errorsSize > 0 ? true : false;
 
-  for (int i = 1; i <= errorsSize ; i++) {
+  /* Loop in reverse order since getMessagesStringInternal returns error messages in reverse order. */
+  for (int i = errorsSize; i > 0 ; i--) {
     setCurrentError(i);
     MessageItem messageItem(getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
                             getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
