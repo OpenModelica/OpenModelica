@@ -769,11 +769,12 @@ void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  bool instantiateModelSuccess = false;
-  QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeNode->getNameStructure(), &instantiateModelSuccess);
-  QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeNode->getName());
-  InformationDialog *pInformationDialog = new InformationDialog(windowTitle, instantiateModelResult, instantiateModelSuccess, this);
-  pInformationDialog->show();
+  QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeNode->getNameStructure());
+  if (!instantiateModelResult.isEmpty()) {
+    QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeNode->getName());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, instantiateModelResult, true, this);
+    pInformationDialog->show();
+  }
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
@@ -795,9 +796,11 @@ void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeNode->getNameStructure());
-  QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeNode->getName());
-  InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
-  pInformationDialog->show();
+  if (!checkModelResult.isEmpty()) {
+    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeNode->getName());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
+    pInformationDialog->show();
+  }
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
@@ -818,14 +821,10 @@ void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  QString checkModelResult = mpOMCProxy->checkAllModelsRecursive(pLibraryTreeNode->getNameStructure());
-  if (checkModelResult.length()) {
-    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeNode->getName());
-    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
-    pInformationDialog->show();
-  } else {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, "Check of " + pLibraryTreeNode->getName() + " failed.",
-                                                Helper::scriptingKind, Helper::notificationLevel));
+  QString checkAllModelsResult = mpOMCProxy->checkAllModelsRecursive(pLibraryTreeNode->getNameStructure());
+  if (!checkAllModelsResult.isEmpty()) {
+    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, checkAllModelsResult, Helper::scriptingKind,
+                                                Helper::notificationLevel));
   }
   // hide progress bar
   hideProgressBar();

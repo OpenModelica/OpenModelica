@@ -1980,7 +1980,11 @@ bool OMCProxy::closeSimulationResultFile()
 QString OMCProxy::checkModel(QString className)
 {
   sendCommand("checkModel(" + className + ")");
-  return getResult();
+  QString result = StringHandler::unparse(getResult());
+  if (result.isEmpty()) {
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!
@@ -2004,7 +2008,9 @@ bool OMCProxy::ngspicetoModelica(QString fileName)
 QString OMCProxy::checkAllModelsRecursive(QString className)
 {
   sendCommand("checkAllModelsRecursive(" + className + ")");
-  return getResult();
+  QString result = StringHandler::unparse(getResult());
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
@@ -2012,17 +2018,14 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
   \param className - the name of the class.
   \return the instantiated model
   */
-QString OMCProxy::instantiateModel(QString className, bool *instantiateModelSuccess)
+QString OMCProxy::instantiateModel(QString className)
 {
   sendCommand("instantiateModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   if (result.isEmpty()) {
-    *instantiateModelSuccess = false;
-    return getErrorString();
-  } else {
-    *instantiateModelSuccess = true;
-    return result;
+    printMessagesStringInternal();
   }
+  return result;
 }
 
 /*!
