@@ -559,5 +559,12 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/FMU/IFMUInterface.h
         Include/FMU/FMULibInterface.cpp
         Include/FMU/FMUWrapper.cpp
-        Include/FMU/FMUWrapper.h)
+        Include/FMU/FMUWrapper.h
+        Include/FMU2/fmi2Functions.h
+        Include/FMU2/fmi2FunctionTypes.h
+        Include/FMU2/fmi2TypesPlatform.h
+        Include/FMU2/FMU2GlobalSettings.h
+        Include/FMU2/FMU2Interface.cpp
+        Include/FMU2/FMU2Wrapper.cpp
+        Include/FMU2/FMU2Wrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
