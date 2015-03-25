@@ -150,7 +150,7 @@ algorithm
   b := BackendDAEUtil.hasDAEMatching(inDAE);
   outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
     case "default" then if b then causal(inDAE) else fastAcausal(inDAE);
-    case "causal" then causal(inDAE);  
+    case "causal" then causal(inDAE);
     case "fastAcausal" then fastAcausal(inDAE);
     case "allAcausal" then allAcausal(inDAE);
     else inDAE;

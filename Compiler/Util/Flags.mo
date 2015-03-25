@@ -1025,8 +1025,8 @@ constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(66, "cppFlags",
     })),
     Util.gettext("Specifies method that removes simple equations."));
 
-  
-  
+
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
