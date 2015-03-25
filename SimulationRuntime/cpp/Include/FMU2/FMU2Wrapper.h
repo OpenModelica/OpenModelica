@@ -71,7 +71,7 @@ class FMU2Wrapper
   virtual fmi2Status setDebugLogging(fmi2Boolean loggingOn,
                                      size_t nCategories,
                                      const fmi2String categories[]);
-  const uint &logCategories;
+  const unsigned int &logCategories;
   const fmi2CallbackLogger &logger;
   const fmi2ComponentEnvironment &componentEnvironment;
   const fmi2String &instanceName;
@@ -141,7 +141,7 @@ class FMU2Wrapper
     Fatal              = 1 << 6
   } ModelState;
 
-  uint _logCategories;
+  unsigned int _logCategories;
   fmi2String _instanceName;
   fmi2String _GUID;
   fmi2CallbackFunctions _functions;

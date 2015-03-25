@@ -113,7 +113,7 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
       }
       // warn about unsupported log category
       if (j == nSupported) {
-        uint logCategories_bak = _logCategories;
+        unsigned int logCategories_bak = _logCategories;
         _logCategories = 0xFFFF;
         FMU2_LOG(this, fmi2Warning, logStatusWarning,
                  "Unsupported log category \"%s\"", categories[i]);
