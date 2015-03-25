@@ -52,7 +52,7 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpMainWindow = pMainWindow;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
-  mpModelicaTextSettings = new ModelicaTextSettings();
+  mpModelicaTextSettings = new ModelicaTextSettings(this);
   mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
@@ -1681,7 +1681,8 @@ void AddUserLibraryDialog::addUserLibrary()
 //! @brief Defines the settings like font, style, keywords colors etc. for the Modelica Text.
 
 //! Constructor
-ModelicaTextSettings::ModelicaTextSettings()
+ModelicaTextSettings::ModelicaTextSettings(OptionsDialog *pOptionsDialog)
+  : QObject(pOptionsDialog), mpOptionsDialog(pOptionsDialog)
 {
   // set default values, will be handy if we are unable to create the xml file
   setFontFamily(Helper::monospacedFontInfo.family());
@@ -1918,10 +1919,10 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
   mpPreviewPlainTextBox->setPlainText(getPreviewText());
   // highlight preview textbox
-  ModelicaTextHighlighter *highlighter;
-  highlighter = new ModelicaTextHighlighter(mpOptionsDialog->getModelicaTextSettings(), 0, mpPreviewPlainTextBox->document());
-  connect(this, SIGNAL(updatePreview()), highlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog, SIGNAL(modelicaTextSettingsChanged()), highlighter, SLOT(settingsChanged()));
+  mpModelicaTextHighlighter = new ModelicaTextHighlighter(mpOptionsDialog->getModelicaTextSettings(), mpPreviewPlainTextBox->document());
+  connect(this, SIGNAL(updatePreview()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), mpModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(mpLineWrappingCheckbox, SIGNAL(toggled(bool)), this, SLOT(setLineWrapping()));
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
@@ -2137,6 +2138,20 @@ void ModelicaTextEditorPage::pickColor()
   // change the color of item
   item->setForeground(color);
   emit updatePreview();
+}
+
+/*!
+ * \brief ModelicaTextEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void ModelicaTextEditorPage::setLineWrapping()
+{
+  if (mpLineWrappingCheckbox->isChecked()) {
+    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
 }
 
 GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)

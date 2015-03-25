@@ -958,10 +958,9 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   mpMainWindow = pMainWindow;
   // instantiate the model
   QPlainTextEdit *pPlainTextEdit = new QPlainTextEdit(informationText);
-  if (modelicaTextHighlighter)
-  {
+  if (modelicaTextHighlighter) {
     ModelicaTextHighlighter *pModelicaHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextSettings(),
-                                                                                mpMainWindow, pPlainTextEdit->document());
+                                                                                pPlainTextEdit->document());
     Q_UNUSED(pModelicaHighlighter);
   }
   // Create the button

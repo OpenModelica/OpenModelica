@@ -296,8 +296,7 @@ public:
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
-  ModelicaTextEditor* getModelicaTextEditor() {return mpModelicaTextEditor;}
-  TextEditor* getTextEditor() {return mpTextEditor;}
+  BaseEditor* getEditor() {return mpEditor;}
   TLMEditor* getTLMEditor() {return mpTLMEditor;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
@@ -331,9 +330,8 @@ private:
   GraphicsScene *mpDiagramGraphicsScene;
   GraphicsView *mpIconGraphicsView;
   GraphicsScene *mpIconGraphicsScene;
-  ModelicaTextEditor *mpModelicaTextEditor;
+  BaseEditor *mpEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
-  TextEditor *mpTextEditor;
   TLMEditor *mpTLMEditor;
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;

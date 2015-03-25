@@ -54,11 +54,10 @@ void TLMEditor::setLineWrapping()
 //! @brief A syntax highlighter for TLMEditor.
 
 //! Constructor
-TLMHighlighter::TLMHighlighter(ModelicaTextSettings *pSettings, MainWindow *pMainWindow, QTextDocument *pParent)
+TLMHighlighter::TLMHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent)
   : QSyntaxHighlighter(pParent)
 {
   mpModelicaTextSettings = pSettings;
-  mpMainWindow = pMainWindow;
   initializeSettings();
 }
 

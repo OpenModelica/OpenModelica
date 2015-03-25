@@ -710,10 +710,11 @@ void MainWindow::openResultFiles(QStringList fileNames)
 void MainWindow::simulate(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   mpSimulationDialog->directSimulate(pLibraryTreeNode, false, false);
 }
@@ -721,10 +722,11 @@ void MainWindow::simulate(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::simulateWithTransformationalDebugger(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   mpSimulationDialog->directSimulate(pLibraryTreeNode, true, false);
 }
@@ -732,10 +734,11 @@ void MainWindow::simulateWithTransformationalDebugger(LibraryTreeNode *pLibraryT
 void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   mpSimulationDialog->directSimulate(pLibraryTreeNode, false, true);
 }
@@ -743,10 +746,11 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNo
 void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   mpSimulationDialog->show(pLibraryTreeNode, false, SimulationOptions());
 }
@@ -754,10 +758,11 @@ void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   // set the status message.
   mpStatusBar->showMessage(QString(Helper::instantiateModel).append(" ").append(pLibraryTreeNode->getNameStructure()));
@@ -778,10 +783,11 @@ void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   // set the status message.
   mpStatusBar->showMessage(QString(Helper::checkModel).append(" ").append(pLibraryTreeNode->getNameStructure()));
@@ -801,10 +807,11 @@ void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   // set the status message.
   mpStatusBar->showMessage(QString(Helper::checkModel).append(" ").append(pLibraryTreeNode->getNameStructure()));
@@ -812,14 +819,11 @@ void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   QString checkModelResult = mpOMCProxy->checkAllModelsRecursive(pLibraryTreeNode->getNameStructure());
-  if (checkModelResult.length())
-  {
+  if (checkModelResult.length()) {
     QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeNode->getName());
     InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
     pInformationDialog->show();
-  }
-  else
-  {
+  } else {
     mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, "Check of " + pLibraryTreeNode->getName() + " failed.",
                                                 Helper::scriptingKind, Helper::notificationLevel));
   }
@@ -832,10 +836,11 @@ void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   // set the status message.
   mpStatusBar->showMessage(tr("Exporting model as FMU"));
@@ -859,18 +864,18 @@ void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   // set the status message.
   mpStatusBar->showMessage(tr("Exporting model as XML"));
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  if (mpOMCProxy->translateModelXML(pLibraryTreeNode->getNameStructure()))
-  {
+  if (mpOMCProxy->translateModelXML(pLibraryTreeNode->getNameStructure())) {
     mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
                                                 .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
@@ -885,7 +890,8 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget()) {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
     }
   }
@@ -896,16 +902,18 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return;
+    }
   }
   QString omnotebookFileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::exportToOMNotebook),
                                                               NULL, Helper::omnotebookFileTypes, NULL, "onb", &pLibraryTreeNode->getName());
   // if user cancels the operation. or closes the export dialog box.
-  if (omnotebookFileName.isEmpty())
+  if (omnotebookFileName.isEmpty()) {
     return;
+  }
   // create a progress bar
   int endtime = 6;    // since in total we do six things while exporting to OMNotebook
   int value = 1;
@@ -1153,9 +1161,8 @@ void MainWindow::focusSearchClassWidget(bool visible)
 void MainWindow::showFindReplaceDialog()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget)
-  {
-    mpFindReplaceDialog->setTextEdit(pModelWidget->getModelicaTextEditor());
+  if (pModelWidget) {
+    mpFindReplaceDialog->setTextEdit(pModelWidget->getEditor());
     mpFindReplaceDialog->show();
     mpFindReplaceDialog->raise();
     mpFindReplaceDialog->activateWindow();
@@ -1165,9 +1172,8 @@ void MainWindow::showFindReplaceDialog()
 void MainWindow::showGotoLineNumberDialog()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget)
-  {
-    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(pModelWidget->getModelicaTextEditor(), this);
+  if (pModelWidget) {
+    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(pModelWidget->getEditor(), this);
     pGotoLineWidget->show();
   }
 }
@@ -1176,8 +1182,7 @@ void MainWindow::showGotoLineNumberDialog()
 void MainWindow::openRecentFile()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
-  if (pAction)
-  {
+  if (pAction) {
     QStringList dataList = pAction->data().toStringList();
     mpLibraryTreeWidget->openFile(dataList.at(0), dataList.at(1), true, true);
   }

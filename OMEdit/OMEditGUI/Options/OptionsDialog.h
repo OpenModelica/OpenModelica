@@ -46,6 +46,7 @@
 class MainWindow;
 class GeneralSettingsPage;
 class LibrariesPage;
+class ModelicaTextHighlighter;
 class ModelicaTextSettings;
 class ModelicaTextEditorPage;
 class GraphicalViewsPage;
@@ -283,10 +284,12 @@ private slots:
   void addUserLibrary();
 };
 
-class ModelicaTextSettings
+class ModelicaTextSettings : public QObject
 {
+  Q_OBJECT
 public:
-  ModelicaTextSettings();
+  ModelicaTextSettings(OptionsDialog *pOptionsDialog);
+  OptionsDialog *getOptionsDialog() {return mpOptionsDialog;}
   void setFontFamily(QString fontFamily);
   QString getFontFamily();
   void setFontSize(double fontSize);
@@ -312,6 +315,7 @@ public:
   void setTLMQuotesRuleColor(QColor color);
   QColor getTLMQuotesRuleColor();
 private:
+  OptionsDialog *mpOptionsDialog;
   QString mFontFamily;
   double mFontSize;
   QColor mTextRuleColor;
@@ -352,6 +356,7 @@ private:
   QPushButton *mpItemColorPickButton;
   Label *mpPreviewLabel;
   QPlainTextEdit *mpPreviewPlainTextBox;
+  ModelicaTextHighlighter *mpModelicaTextHighlighter;
   QListWidgetItem *mpTextItem;
   QListWidgetItem *mpNumberItem;
   QListWidgetItem *mpKeywordItem;
@@ -368,6 +373,7 @@ public slots:
   void fontFamilyChanged(QFont font);
   void fontSizeChanged(double newValue);
   void pickColor();
+  void setLineWrapping();
 };
 
 class GraphicalViewsPage : public QWidget

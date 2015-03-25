@@ -990,11 +990,12 @@ void SimulationDialog::saveSimulationOptions()
   // send the simulations options annotation to OMC
   mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
   // make the model modified
-  if (mpLibraryTreeNode->getModelWidget())
-  {
+  if (mpLibraryTreeNode->getModelWidget()) {
     mpLibraryTreeNode->getModelWidget()->setModelModified();
-    if (mpLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->isVisible())
-      mpLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
+    if (mpLibraryTreeNode->getModelWidget()->getEditor()->isVisible()) {
+      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpLibraryTreeNode->getModelWidget()->getEditor());
+      pModelicaTextEditor->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
+    }
   }
 }
 

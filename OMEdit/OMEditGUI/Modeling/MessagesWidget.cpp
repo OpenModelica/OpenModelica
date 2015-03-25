@@ -238,10 +238,10 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
   if (pLibraryTreeNode) {
     mpMainWindow->getLibraryTreeWidget()->showModelWidget(pLibraryTreeNode);
     ModelWidget *pModelWidget = pLibraryTreeNode->getModelWidget();
-    if (pModelWidget && pModelWidget->getModelicaTextEditor()) {
+    if (pModelWidget && pModelWidget->getEditor()) {
       int lineNumber = url.queryItemValue("lineNumber").toInt();
       pModelWidget->showModelicaTextView(true);
-      pModelWidget->getModelicaTextEditor()->goToLineNumber(lineNumber);
+      pModelWidget->getEditor()->goToLineNumber(lineNumber);
     }
   }
 }

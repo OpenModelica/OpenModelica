@@ -549,11 +549,10 @@ void ModelicaTextEditor::setLineWrapping()
 //! @brief A syntax highlighter for ModelicaEditor.
 
 //! Constructor
-ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextSettings *pSettings, MainWindow *pMainWindow, QTextDocument *pParent)
+ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent)
   : QSyntaxHighlighter(pParent)
 {
   mpModelicaTextSettings = pSettings;
-  mpMainWindow = pMainWindow;
   initializeSettings();
 }
 
@@ -737,17 +736,15 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (mpMainWindow) /* mpMainWindow is 0 for the ModelicaTextHighlighter used by ModelicaTextEditorPage in OptionsDialog */
-    if (!mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage()->getSyntaxHighlightingCheckbox()->isChecked())
-      return;
+  if (!mpModelicaTextSettings->getOptionsDialog()->getModelicaTextEditorPage()->getSyntaxHighlightingCheckbox()->isChecked()) {
+    return;
+  }
   setCurrentBlockState(0);
   setFormat(0, text.length(), mpModelicaTextSettings->getTextRuleColor());
-  foreach (const HighlightingRule &rule, mHighlightingRules)
-  {
+  foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);
-    while (index >= 0)
-    {
+    while (index >= 0) {
       int length = expression.matchedLength();
       setFormat(index, length, rule.mFormat);
       index = expression.indexIn(text, index + length);

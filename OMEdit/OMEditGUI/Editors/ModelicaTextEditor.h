@@ -106,14 +106,13 @@ class ModelicaTextHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  ModelicaTextHighlighter(ModelicaTextSettings *pSettings, MainWindow *pMainWindow, QTextDocument *pParent = 0);
+  ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
   ModelicaTextSettings *mpModelicaTextSettings;
-  MainWindow *mpMainWindow;
   struct HighlightingRule
   {
     QRegExp mPattern;

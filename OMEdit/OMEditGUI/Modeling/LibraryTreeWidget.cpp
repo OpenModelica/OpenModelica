@@ -1247,7 +1247,7 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
     QTextStream textStream(&file);
     textStream.setCodec(Helper::utf8.toStdString().data());
     textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeNode->getModelWidget()->getTextEditor()->toPlainText();
+    textStream << pLibraryTreeNode->getModelWidget()->getEditor()->toPlainText();
     file.close();
     /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);
@@ -1308,32 +1308,29 @@ bool LibraryTreeWidget::saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeN
 {
   mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeNode->getNameStructure()));
   QString fileName;
-  if (pLibraryTreeNode->getFileName().isEmpty())
-  {
+  if (pLibraryTreeNode->getFileName().isEmpty()) {
     QString name = pLibraryTreeNode->getName();
     fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
                                               Helper::omFileTypes, NULL, "mo", &name);
-    if (fileName.isEmpty())   // if user press ESC
+    if (fileName.isEmpty()) { // if user press ESC
       return false;
-  }
-  else
-  {
+    }
+  } else {
     fileName = pLibraryTreeNode->getFileName();
   }
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return false;
+    }
   }
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
   // save the model through OMC
-  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
-  {
+  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure())) {
     pLibraryTreeNode->setIsSaved(true);
     pLibraryTreeNode->setFileName(fileName);
-    if (pLibraryTreeNode->getModelWidget())
-    {
+    if (pLibraryTreeNode->getModelWidget()) {
       pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
       pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
     }
@@ -1382,7 +1379,8 @@ bool LibraryTreeWidget::setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibr
 {
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeNode->getModelWidget()) {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return false;
     }
   }
@@ -1394,7 +1392,8 @@ bool LibraryTreeWidget::setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibr
     } else {
       /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
       if (pChildLibraryTreeNode->getModelWidget()) {
-        if (!pChildLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText()) {
+        ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeNode->getModelWidget()->getEditor());
+        if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
           return false;
         }
       }
@@ -1441,7 +1440,8 @@ bool LibraryTreeWidget::saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibrar
   }
   /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
   if (pLibraryTreeNode->getModelWidget()) {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText()) {
+    ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
       return false;
     }
   }
@@ -1470,7 +1470,8 @@ bool LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeN
     LibraryTreeNode *pChildLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(pLibraryTreeNode->child(i));
     /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
     if (pChildLibraryTreeNode->getModelWidget()) {
-      if (!pChildLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText()) {
+      ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pChildLibraryTreeNode->getModelWidget()->getEditor());
+      if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
         return false;
       }
     }

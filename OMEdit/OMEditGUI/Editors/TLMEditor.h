@@ -56,14 +56,13 @@ class TLMHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  TLMHighlighter(ModelicaTextSettings *pSettings, MainWindow *pMainWindow, QTextDocument *pParent = 0);
+  TLMHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
   ModelicaTextSettings *mpModelicaTextSettings;
-  MainWindow *mpMainWindow;
   struct HighlightingRule
   {
     QRegExp mPattern;
