@@ -725,6 +725,18 @@ algorithm
   BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(DAE.RCONST(outReal))))) := inVar;
 end varNominal;
 
+public function varHasNominalValue "author: BB"
+  input BackendDAE.Var inVar;
+  output Boolean outBool;
+algorithm
+  try
+    BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(DAE.RCONST())))) := inVar;
+    outBool := true;
+  else
+    outBool :=false;
+  end try;
+end varHasNominalValue;
+
 public function varCref "author: PA
   extracts the ComponentRef of a variable"
   input BackendDAE.Var inVar;
@@ -923,6 +935,18 @@ algorithm
     else false;
   end match;
 end isVarDiscrete;
+
+public function isDiscrete
+"This functions checks if BackendDAE.Var is discrete"
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  output Boolean outBoolean;
+protected
+  BackendDAE.Var v;
+algorithm
+  ({v},_) := getVar(cr,vars);
+  outBoolean := isVarDiscrete(v);
+end isDiscrete;
 
 public function isVarNonDiscrete
   input BackendDAE.Var inVar;
@@ -1525,6 +1549,21 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end isOutputVar;
+
+public function isOutput
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inVars;
+  output Boolean outBool;
+algorithm
+  outBool:=
+  matchcontinue(inCref, inVars)
+    case(_, _) equation
+      ((BackendDAE.VAR(varDirection = DAE.OUTPUT()) :: _),_) = getVar(inCref, inVars);
+    then true;
+
+    else false;
+  end matchcontinue;
+end isOutput;
 
 public function isProtectedVar
 "author: Frenkel TUD 2013-01
