@@ -4179,7 +4179,7 @@ algorithm
   outDAE := BackendDAEUtil.mapEqSystem(inDAE, eliminateTrivialEquations);
   outDAE := BackendDAEUtil.mapEqSystem(outDAE, getAliasAttributes);
 end performAliasEliminationBB;
-  
+
 protected function eliminateTrivialEquations "BB,
 main module for eliminating trivial equations
 "
@@ -4196,7 +4196,7 @@ algorithm
       BackendDAE.EquationArray inieqns;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      
+
       list<BackendDAE.Var> varList;
       list<BackendDAE.Equation> eqList;
       list<BackendDAE.Equation> initEqList, remEqList;
@@ -4206,7 +4206,7 @@ algorithm
       HashTableCrToCrEqLst.HashTable HTCrToCrEqLst, HTAliasLst;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplExp;
       list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqLst, tplAliasLst;
-	  
+
       Integer countAliasEquations, countSimpleEquations, size;
       Boolean b;
 
@@ -4234,12 +4234,12 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
 
     case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets,partitionKind),
-          BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei))	equation
+          BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei))  equation
 
       // sizes of Hash tables are system dependent!!!!
       size = BackendVariable.varsSize(orderedVars);
       size = intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
-      HTCrToExp = HashTableCrToExp.emptyHashTableSized(size);  
+      HTCrToExp = HashTableCrToExp.emptyHashTableSized(size);
       HTCrToCrEqLst = HashTableCrToCrEqLst.emptyHashTableSized(size);
       repl = BackendVarTransform.emptyReplacementsSized(size);
 
@@ -4250,23 +4250,23 @@ algorithm
       (tplExp) = BaseHashTable.hashTableList(HTCrToExp);
 //    (knvars, orderedVars) = moveVars(tplExp, knvars, orderedVars);
       //SimCodeUtil.execStat("FINDSIMPLE1: ");
-      
-      
+
+
       //Find Alias variables and move variables to shared object!!!
       (tplCrEqLst) = BaseHashTable.hashTableList(HTCrToCrEqLst);
       HTCrToExp = addRestCrefs(tplCrEqLst, HTCrToExp, HTCrToCrEqLst);
       (tplExp) = BaseHashTable.hashTableList(HTCrToExp);
       (aliasVars, orderedVars) = moveVars(tplExp, aliasVars, orderedVars);
-      
+
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
       // Necessary, since no update of variable size is done so far !!!!
-      varList = BackendVariable.varList(orderedVars); 
-      // Necessary since no pdate is done for stateDerInfo, this information should be collected afterwards      
+      varList = BackendVariable.varList(orderedVars);
+      // Necessary since no pdate is done for stateDerInfo, this information should be collected afterwards
       varList = removeStateDerInfo(varList);
       orderedVars = BackendVariable.listVar1(varList);
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
       //SimCodeUtil.execStat("FINDSIMPLE2: ");
-      
+
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
       //Insert known simplifications at all relevant places!!!!
       //This should be changed to traverseEquationArray_WithUpdate or traverseExpsOfEquationArray
@@ -4281,7 +4281,7 @@ algorithm
       remEqList = BackendEquation.equationList(remeqns);
       (remEqList,_) = BackendEquation.traverseExpsOfEquationList(remEqList, traverseExpTopDown, HTCrToExp);
       remeqns = BackendEquation.listEquation(remEqList);
-      
+
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
       repl = addVarReplacements(tplExp,repl);
       // Update Alias variables, some might be moved to known variables!!!
@@ -4302,7 +4302,7 @@ algorithm
        remeqns = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns), assertWithCondTrue));
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
       //SimCodeUtil.execStat("FINDSIMPLE4: ");
-    
+
       if Flags.isSet(Flags.DUMP_REPL) then
         (tplExp) = BaseHashTable.hashTableList(HTCrToExp);
         countAliasEquations = listLength(tplExp);
@@ -4312,7 +4312,7 @@ algorithm
         print("Number of Alias Equations:   " +  intString(countAliasEquations) + "\n");
         print("Number of Simple Equations:   " +  intString(countSimpleEquations) + "\n");
         print("\nAliases:\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-      end if; 
+      end if;
       //SimCodeUtil.execStat("FINDSIMPLE6: ");
 
       outSystem = BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
@@ -4373,7 +4373,7 @@ algorithm
     (cr,e) := cr_exp;
     // add to replacements
     outRepl := BackendVarTransform.addReplacement(outRepl, cr, e, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-  end for;       
+  end for;
 end addVarReplacements;
 
 protected function traverseExpTopDown "BB,
@@ -4385,7 +4385,7 @@ traverse top down, when inserting
   output HashTableCrToExp.HashTable outHTCrToExp = inHTCrToExp;
 algorithm
   (outExp, _) := Expression.traverseExpTopDown(inExp, insertReplacementsInEquations, inHTCrToExp);
-  (outExp,_) := ExpressionSimplify.simplify(outExp); 
+  (outExp,_) := ExpressionSimplify.simplify(outExp);
 end traverseExpTopDown;
 
 protected function insertReplacementsInEquations "BB,
@@ -4404,17 +4404,17 @@ algorithm
        DAE.Type ty;
     case DAE.CREF(componentRef=cr) equation
       if BaseHashTable.hasKey(cr, inHTCrToExp) then
-        value = BaseHashTable.get(cr, inHTCrToExp); 
+        value = BaseHashTable.get(cr, inHTCrToExp);
       else
         value = inE1;
       end if;
     then (value, true, inHTCrToExp);
     else (inE1, true, inHTCrToExp);
-  end matchcontinue;    
+  end matchcontinue;
 end insertReplacementsInEquations;
 
 protected function removeStateDerInfo "BB,
-remove stateDerInfo! This information should be collected after removeSimpleEquations 
+remove stateDerInfo! This information should be collected after removeSimpleEquations
 "
   input list<BackendDAE.Var> inVarList;
   output list<BackendDAE.Var> outVarList;
@@ -4434,7 +4434,7 @@ algorithm
     then (var::outVarList);
     else equation
       print("\n++++++++++ Error in RemoveSimpleEquations.removeStateDerInfo ++++++++++\n");
-    then inVarList; 
+    then inVarList;
   end matchcontinue;
 end removeStateDerInfo;
 
@@ -4479,7 +4479,7 @@ algorithm
           false = BackendVariable.isOutput(cr,vars);
           false = BackendVariable.isDiscrete(cr,vars);
           eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,Expression.crefExp(cr),NONE());
-		      true = isSimple(res);
+          true = isSimple(res);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation knw1: " + BackendDump.equationString(eq) + "\n");
           end if;
@@ -4492,7 +4492,7 @@ algorithm
           end if;
           {cr2, cr1} = cr_lst;
           // Be careful, when replacing states!!!
-          // if BackendVariable.isState(cr1,vars) then  
+          // if BackendVariable.isState(cr1,vars) then
             // true = BackendVariable.isState(cr2,vars);
           // end if;
           false = BackendVariable.isState(cr1,vars) or BackendVariable.isState(cr2,vars);
@@ -4500,16 +4500,16 @@ algorithm
           false = BackendVariable.isDiscrete(cr1,vars) or BackendVariable.isDiscrete(cr2,vars);
 
           eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,Expression.crefExp(cr2),NONE());
-		      true = isSimple(res);
+          true = isSimple(res);
           eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,Expression.crefExp(cr1),NONE());
-		      true = isSimple(res);
+          true = isSimple(res);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
             print("Found Equation al1: "  + BackendDump.equationString(eq) + "\n");
           end if;
 
           HTCrToCrEqLst = addToCrAndEqLists(cr2, cr1, inEq, HTCrToCrEqLst);
           HTCrToCrEqLst = addToCrAndEqLists(cr1, cr2, inEq, HTCrToCrEqLst);
-  
+
           if (BaseHashTable.hasKey(cr2, HTCrToExp)) then
             value = BaseHashTable.get(cr2, HTCrToExp);
             BackendDAE.EQUATION(scalar=res, source=source, attr=eqAttr) = BackendEquation.solveEquation(eq, Expression.crefExp(cr1),NONE());
@@ -4555,10 +4555,10 @@ algorithm
     (outE1, cont, outTuple) := matchcontinue(inE1,inTuple)
     local
       DAE.ComponentRef cr;
-	    list<DAE.ComponentRef> cr_lst;
-	    Integer count, paramCount;
-		  BackendDAE.VarKind kind;
-		  BackendDAE.Variables vars;
+      list<DAE.ComponentRef> cr_lst;
+      Integer count, paramCount;
+      BackendDAE.VarKind kind;
+      BackendDAE.Variables vars;
     case(_,(_,vars,count,_,_)) guard(count<0) then(inE1, false, ({},vars,-1,-1,false));
     case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReference.crefEqual(cr,DAE.crefTime))) equation
       (_,_) = BackendVariable.getVar(cr, vars);
@@ -4576,7 +4576,7 @@ algorithm
     case (DAE.RECORD(),(_,vars,_,_,_))
     then (inE1, false, ({},vars,-1,-1,false));
     else (inE1, true, inTuple);
-  end matchcontinue;    
+  end matchcontinue;
 end findCrefs;
 
 protected function addToCrAndEqLists "BB,
@@ -4600,7 +4600,7 @@ algorithm
     if (BaseHashTable.hasKey(cr1, HTCrToCrEqLst)) then
       cr_eq_lst = BaseHashTable.get(cr1, HTCrToCrEqLst);
       cr_eq_lst = (cr2,eqSolved)::cr_eq_lst;
-    else 
+    else
       cr_eq_lst = {(cr2,eqSolved)};
     end if;
     HTCrToCrEqLst = BaseHashTable.add((cr1, cr_eq_lst), HTCrToCrEqLst);
@@ -4610,7 +4610,7 @@ algorithm
       BackendDump.printEquation(eq);
       print("Solve for:" + ComponentReference.debugPrintComponentRefTypeStr(cr1) + "\n");
   then fail();
-end match;  
+end match;
 end addToCrAndEqLists;
 
 protected function addToCrToExp "BB,
@@ -4649,7 +4649,7 @@ if an entry with cr = exp is added to HTCrToExp, all depending
 variables will be added, too
 "
   input DAE.ComponentRef cr;
-  input DAE.Exp value;  
+  input DAE.Exp value;
   input HashTableCrToExp.HashTable inHTCrToExp;
   input HashTableCrToCrEqLst.HashTable inHTCrToCrEqLst;
   output HashTableCrToExp.HashTable outHTCrToExp;
@@ -4673,9 +4673,9 @@ end solveAllCrefs;
 protected function solveAllCrefs1 "BB,
   helper function for solveAllCrefs
 "
-  input DAE.ComponentRef cr; 
+  input DAE.ComponentRef cr;
   input DAE.Exp value;
-  input list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst; 
+  input list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst;
   input HashTableCrToExp.HashTable inHTCrToExp;
   input HashTableCrToCrEqLst.HashTable inHTCrToCrEqLst;
   output HashTableCrToExp.HashTable outHTCrToExp;
@@ -4734,7 +4734,7 @@ algorithm
     HashTableCrToExp.HashTable HTCrToExp;
     list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqRest;
     list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst;
-    
+
     case ({},HTCrToExp) then HTCrToExp;
     case ((cr1,cr_eq_lst)::tplCrEqRest, HTCrToExp) equation
       if (not BaseHashTable.hasKey(cr1, HTCrToExp)) then
@@ -4765,8 +4765,8 @@ algorithm
     HashTableCrToExp.HashTable HTCrToExp;
     list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_rest;
     DAE.ElementSource source;
-	BackendDAE.EquationAttributes eqAttr;
-	
+  BackendDAE.EquationAttributes eqAttr;
+
     case ({},HTCrToExp) then HTCrToExp;
     case ((cr1,eq)::cr_eq_rest, HTCrToExp) equation
        if (not BaseHashTable.hasKey(cr1, HTCrToExp)) then
@@ -4783,7 +4783,7 @@ end addThisCrefs;
 protected function isSimple "BB
 start module for detecting simple equation/expressions
 "
-  input DAE.Exp inExp; 
+  input DAE.Exp inExp;
   output Boolean outIsSimple;
   protected
       DAE.Exp outExp;
@@ -4924,7 +4924,7 @@ protected
   BackendDAE.BackendDAEType btp;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ExtraInfo ei;
-  
+
   HashTableCrToCrEqLst.HashTable HTAliasLst;
   list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplAliasLst;
   Integer size;
@@ -4935,7 +4935,7 @@ algorithm
    size := BackendVariable.varsSize(orderedVars);
    size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
    HTAliasLst := HashTableCrToCrEqLst.emptyHashTableSized(size);
-   
+
    HTAliasLst := determineAliasLst(aliasVars, orderedVars, HTAliasLst);
    (tplAliasLst) := BaseHashTable.hashTableList(HTAliasLst);
    orderedVars := setAttributes(tplAliasLst, orderedVars, aliasVars);
@@ -4962,10 +4962,10 @@ algorithm
     Integer i, j;
     list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplCrEqRest;
     list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_lst;
-		HashTableExpToIndex.HashTable HTStartExpToInt;
-		HashTableExpToIndex.HashTable HTNominalExpToInt;
+    HashTableExpToIndex.HashTable HTStartExpToInt;
+    HashTableExpToIndex.HashTable HTNominalExpToInt;
     list<tuple<DAE.Exp,Integer>> tplExpIndList;
-    
+
     case ({}) then (inVars);
     case (cr1,cr_eq_lst)::tplCrEqRest equation
         HTStartExpToInt = HashTableExpToIndex.emptyHashTableSized(100);
@@ -5045,8 +5045,8 @@ algorithm
     list<tuple<DAE.ComponentRef,BackendDAE.Equation>> cr_eq_rest;
     Integer j, j1;
     DAE.ElementSource source;
-	  BackendDAE.EquationAttributes eqAttr;
-	
+    BackendDAE.EquationAttributes eqAttr;
+
     case ({}) then (outHTStartExpToInt,outHTNominalExpToInt);
     case (cr1,eq)::cr_eq_rest equation
       ({v},_) = BackendVariable.getVar(cr1,inAliasVars);
@@ -5067,7 +5067,7 @@ algorithm
           if (j1<j) then
             j = j1;
           end if;
-        end if;          
+        end if;
         outHTStartExpToInt = BaseHashTable.add((e2, j), outHTStartExpToInt);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print("START: " + ComponentReference.printComponentRefStr(cr) + " = " + ExpressionDump.printExpStr(e1) + " = " + ExpressionDump.printExpStr(e2) + "\n");
@@ -5083,7 +5083,7 @@ algorithm
           if (j1<j) then
             j = j1;
           end if;
-        end if;          
+        end if;
         outHTNominalExpToInt = BaseHashTable.add((e2, j), outHTNominalExpToInt);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print("NOMINAL: " + ComponentReference.printComponentRefStr(cr) + " = " + ExpressionDump.printExpStr(e1) + " = " + ExpressionDump.printExpStr(e2) + "\n");
@@ -5097,7 +5097,7 @@ algorithm
   end matchcontinue;
 end getThisAttributes;
 
-function getDominantAttributeValue "BB, 
+function getDominantAttributeValue "BB,
 pick the expression with lowest integer value, if two
 integer values are equal, take the first occurring one.
 "

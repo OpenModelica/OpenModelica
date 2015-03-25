@@ -1021,7 +1021,7 @@ constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(66, "cppFlags",
     ("causal", Util.gettext("Performs alias elimination and removes constant variables. Causal implementation.")),
     ("fastAcausal", Util.gettext("Performs alias elimination and removes constant variables. fastImplementation fastAcausal.")),
     ("allAcausal", Util.gettext("Performs alias elimination and removes constant variables. Implementation allAcausal.")),
-    ("new", Util.gettext("New implementation (experimental)")) 
+    ("new", Util.gettext("New implementation (experimental)"))
     })),
     Util.gettext("Specifies method that removes simple equations."));
 

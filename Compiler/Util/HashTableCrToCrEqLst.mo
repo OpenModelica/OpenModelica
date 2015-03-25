@@ -109,7 +109,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -233,7 +233,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -357,7 +357,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -481,7 +481,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -605,7 +605,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -729,7 +729,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -853,7 +853,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -977,7 +977,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -1101,7 +1101,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
@@ -1225,7 +1225,7 @@ algorithm
   res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
 end printTupleComponentRefEqListStr;
 
-public function printTupleComponentRefEqStr   
+public function printTupleComponentRefEqStr
   input tuple<DAE.ComponentRef, BackendDAE.Equation> cr_eq;
   output String res;
 protected
