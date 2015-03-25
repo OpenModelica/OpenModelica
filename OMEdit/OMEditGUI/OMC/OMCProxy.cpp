@@ -1982,9 +1982,7 @@ QString OMCProxy::checkModel(QString className)
 {
   sendCommand("checkModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
-  if (result.isEmpty()) {
-    printMessagesStringInternal();
-  }
+  printMessagesStringInternal();
   return result;
 }
 
@@ -2023,9 +2021,7 @@ QString OMCProxy::instantiateModel(QString className)
 {
   sendCommand("instantiateModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
-  if (result.isEmpty()) {
-    printMessagesStringInternal();
-  }
+  printMessagesStringInternal();
   return result;
 }
 
