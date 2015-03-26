@@ -19,6 +19,7 @@
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON
 #     if the lapack functions and data structurs of sundials should be used        -DSUNDIALS_LAPACK=ON
+#     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON
 #
 #     Example: "cmake -DRUNTIME_STATIC_LINKING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
@@ -80,7 +81,13 @@ SET(OMC_BUILD ON)
 SET(SIMSTER_BUILD OFF)
 
 SET(Boost_USE_MULTITHREADED ON)
-#SET(Boost_REALPATH ON)
+
+IF(USE_BOOST_REALPATHS)
+  MESSAGE(STATUS "Using boost real paths")
+  SET(Boost_REALPATH ON)
+ELSE(USE_BOOST_REALPATHS)
+  MESSAGE(STATUS "Boost real paths disabled")
+ENDIF(USE_BOOST_REALPATHS)
 
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
