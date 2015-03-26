@@ -240,7 +240,7 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
     ModelWidget *pModelWidget = pLibraryTreeNode->getModelWidget();
     if (pModelWidget && pModelWidget->getEditor()) {
       int lineNumber = url.queryItemValue("lineNumber").toInt();
-      pModelWidget->showModelicaTextView(true);
+      pModelWidget->getTextViewToolButton()->setChecked(true);
       pModelWidget->getEditor()->goToLineNumber(lineNumber);
     }
   }

@@ -1991,7 +1991,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
   if (mpLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
     connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
     connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
-    connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showModelicaTextView(bool)));
+    connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
     connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
     pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
     pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
@@ -2488,22 +2488,11 @@ void ModelWidget::refresh()
   QApplication::restoreOverrideCursor();
 }
 
-void ModelWidget::makeFileWritAble()
-{
-  const QString &fileName = mpLibraryTreeNode->getFileName();
-  const bool permsOk = QFile::setPermissions(fileName, QFile::permissions(fileName) | QFile::WriteUser);
-  if (!permsOk)
-    QMessageBox::warning(this, tr("Cannot Set Permissions"),  tr("Cannot set permissions to writable."));
-  else
-  {
-    mpLibraryTreeNode->setReadOnly(false);
-    mpFileLockToolButton->setText(tr("File is writable"));
-    mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
-    mpFileLockToolButton->setEnabled(false);
-    mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
-  }
-}
-
+/*!
+ * \brief ModelWidget::showIconView
+ * \param checked
+ * Slot activated when mpIconViewToolButton toggled SIGNAL is raised. Shows the icon view.
+ */
 void ModelWidget::showIconView(bool checked)
 {
   // validate the modelica text before switching to icon view
@@ -2531,6 +2520,11 @@ void ModelWidget::showIconView(bool checked)
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
 }
 
+/*!
+ * \brief ModelWidget::showDiagramView
+ * \param checked
+ * Slot activated when mpDiagramViewToolButton toggled SIGNAL is raised. Shows the diagram view.
+ */
 void ModelWidget::showDiagramView(bool checked)
 {
   // validate the modelica text before switching to diagram view
@@ -2558,7 +2552,12 @@ void ModelWidget::showDiagramView(bool checked)
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
 }
 
-void ModelWidget::showModelicaTextView(bool checked)
+/*!
+ * \brief ModelWidget::showTextView
+ * \param checked
+ * Slot activated when mpTextViewToolButton toggled SIGNAL is raised. Shows the text view.
+ */
+void ModelWidget::showTextView(bool checked)
 {
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   if (pSubWindow) {
@@ -2581,6 +2580,22 @@ void ModelWidget::showModelicaTextView(bool checked)
   mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(true);
   mpEditor->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
+}
+
+void ModelWidget::makeFileWritAble()
+{
+  const QString &fileName = mpLibraryTreeNode->getFileName();
+  const bool permsOk = QFile::setPermissions(fileName, QFile::permissions(fileName) | QFile::WriteUser);
+  if (!permsOk)
+    QMessageBox::warning(this, tr("Cannot Set Permissions"),  tr("Cannot set permissions to writable."));
+  else
+  {
+    mpLibraryTreeNode->setReadOnly(false);
+    mpFileLockToolButton->setText(tr("File is writable"));
+    mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
+    mpFileLockToolButton->setEnabled(false);
+    mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
+  }
 }
 
 void ModelWidget::showDocumentationView()

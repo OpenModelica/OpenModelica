@@ -335,11 +335,12 @@ private:
   TLMEditor *mpTLMEditor;
   TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
-public slots:
-  void makeFileWritAble();
+private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
-  void showModelicaTextView(bool checked);
+  void showTextView(bool checked);
+public slots:
+  void makeFileWritAble();
   void showDocumentationView();
   bool modelicaEditorTextChanged();
 protected:
