@@ -182,15 +182,14 @@ algorithm
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
       //Initial System
       //--------------
-      (initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
-      removedInitialEquations = {};
-      createAndExportInitialSystemTaskGraph(initDAE, filenamePrefix);
+      //(initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
+      //removedInitialEquations = {};
+      //createAndExportInitialSystemTaskGraph(initDAE, filenamePrefix);
 
       //Setup
       //-----
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
-
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, _, crefToSimVarHT, backendMapping) = simCode;
@@ -219,11 +218,9 @@ algorithm
       //Get complete DAE System
       //-----------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE);
-
-      fileName = ("taskGraph"+filenamePrefix+".graphml");
-      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
-
+      //HpcOmTaskGraph.printTaskGraph(taskGraph);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
+      
       //taskGraphDAE = arrayCopy(taskGraph);
       //taskGraphDataDAE = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       //(taskGraphDAE,taskGraphDataDAE) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDAE,taskGraphDataDAE);
@@ -233,7 +230,7 @@ algorithm
       //daeSccMapping = arrayAppend(sccSimEqMapping,daeSccMapping);
       //schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
       //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
-      SimCodeUtil.execStat("hpcom create and dump DAE TaskGraph");
+      SimCodeUtil.execStat("hpcom create DAE TaskGraph");
 
       //print("DAE\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphDAE);
@@ -254,11 +251,13 @@ algorithm
       HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
       _ = List.map(eventSystemTasks, Util.tuple21);
 
+      //Mark all event nodes in the DAE Task Graph
+      taskGraphData = HpcOmTaskGraph.markSystemComponents(taskGraphEvent, taskGraphDataEvent, (true, false, false), taskGraphData);
+
       //Create Costs
       //------------
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix + "_eqs_prof" , simeqCompMapping, taskGraphData);
       SimCodeUtil.execStat("hpcom create costs");
-
       //print cost estimation infos
       //outputTimeBenchmark(taskGraphData,inBackendDAE);
 
@@ -272,11 +271,21 @@ algorithm
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
       taskGraphMetaMessage = if taskGraphMetaValid then "TaskgraphMeta valid\n" else "TaskgraphMeta invalid\n";
       print(taskGraphMetaMessage);
+      SimCodeUtil.execStat("hpcom validate TaskGraph");
 
       //print("ODE Task Graph Informations\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);
+      
+      //Mark all ODE nodes in the DAE Task Graph
+      taskGraphData = HpcOmTaskGraph.markSystemComponents(taskGraphOde, taskGraphDataOde, (false, true, false), taskGraphData);
 
+      //Dump DAE Task Graph
+      //-------------------
+      fileName = ("taskGraph"+filenamePrefix+".graphml");
+      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, inBackendDAE, fileName, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
+      SimCodeUtil.execStat("hpcom dump DAE TaskGraph");
 
       //Get critical path
       //----------------------------------
@@ -298,7 +307,7 @@ algorithm
       // Analyse Systems of Equations
       //-----------------------------
       (scheduledTasks,_) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
-
+      
       //Apply filters
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
@@ -352,7 +361,6 @@ algorithm
       //------------------------------
       optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, BackendDAEUtil.transposeMatrix(taskGraphSimplified,arrayLength(taskGraphSimplified)), taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
       SimCodeUtil.execStat("hpcom create memory map");
-
       equationsForConditions = allEquations; //getSimCodeEqsByTaskList(eventSystemTaskList, simEqIdxSimEqMapping);
 
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
@@ -848,7 +856,7 @@ algorithm
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "sbs");
-        print("Using Single Block Schedule\n");
+        print("Using Single Block Scheduling\n");
         schedule = HpcOmEqSystems.createSingleBlockSchedule(iTaskGraph,iTaskGraphMeta,scheduledTasks,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_,_,_)

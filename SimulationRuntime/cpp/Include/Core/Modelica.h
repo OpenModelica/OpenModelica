@@ -16,6 +16,19 @@
   #endif
 #endif
 
+#ifndef VAR_ALIGN_PRE
+  #ifdef __GNUC__
+    #define VAR_ALIGN_PRE
+    #define VAR_ALIGN_POST __attribute__((aligned(0x40)))
+  #elif defined _MSC_VER
+    #define VAR_ALIGN_PRE __declspec(align(64))
+    #define VAR_ALIGN_POST
+  #else
+    #define VAR_ALIGN_PRE
+    #define VAR_ALIGN_POST
+  #endif
+#endif
+
 #include <string>
 //#include <vector>
 #include <algorithm>

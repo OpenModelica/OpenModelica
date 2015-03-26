@@ -1,23 +1,24 @@
 # This script will build and install all required libraries of the C++ Simulation-runtime
 #
 # The following conditional defines are passed to the c++ compiler:
-#     if the Boost_log and Boost_setup_log libraries were found        -DUSE_BOOST_LOG
-#     if the Boost_thread library was found                            -DUSE_BOOST_THREAD
-#     if the UMFPack library of SuiteSparse was found                  -DUSE_UMFPACK
-#     if the PAPI library was found                                    -DUSE_PAPI
-#     if the Sundials libraries were found                             -DPMC_USE_SUNDIALS
-#     if the runtime is build for the OMC                              -DOMC_BUILD
-#     if the write-output functionality should be handled in parallel  -DUSE_PARALLEL_OUTPUT
-#     if ScoreP should be used for performance analysis                -DUSE_SCOREP
-#     if the Intel TBB library was found                               -DUSE_INTEL_TBB
-#     if the Pugi XML library was found                                -DUSE_PUGI_XML
-#     if profiling for the simulation runtime should be enabled        -DRUNTIME_PROFILING
+#     if the Boost_log and Boost_setup_log libraries were found                    -DUSE_BOOST_LOG
+#     if the Boost_thread library was found                                        -DUSE_BOOST_THREAD
+#     if the UMFPack library of SuiteSparse was found                              -DUSE_UMFPACK
+#     if the PAPI library was found                                                -DUSE_PAPI
+#     if the Sundials libraries were found                                         -DPMC_USE_SUNDIALS
+#     if the runtime is build for the OMC                                          -DOMC_BUILD
+#     if the write-output functionality should be handled in parallel              -DUSE_PARALLEL_OUTPUT
+#     if ScoreP should be used for performance analysis                            -DUSE_SCOREP
+#     if the Intel TBB library was found                                           -DUSE_INTEL_TBB
+#     if the Pugi XML library was found                                            -DUSE_PUGI_XML
+#     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
 #
 # Some of these options can be controlled by passing arguments to CMAKE
-#     if all runtime libraries should be built and linked statically   -DRUNTIME_STATIC_LINKING=ON
-#     if write output should be handled in parallel                    -DUSE_PARALLEL_OUTPUT=ON
-#     if ScoreP should be used for performance analysis                -DUSE_SCOREP=ON
-#     if the boost libraries should be linked statically               -DBOOST_STATIC_LINKING=ON
+#     if all runtime libraries should be built and linked statically               -DRUNTIME_STATIC_LINKING=ON
+#     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
+#     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON
+#     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON
+#     if the lapack functions and data structurs of sundials should be used        -DSUNDIALS_LAPACK=ON
 #
 #     Example: "cmake -DRUNTIME_STATIC_LINKING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
@@ -99,7 +100,15 @@ IF(NOT RUNTIME_STATIC_LINKING)
 ELSE(NOT RUNTIME_STATIC_LINKING)
   MESSAGE(STATUS "Build and linking runtime statically")
   ADD_DEFINITIONS(-DRUNTIME_STATIC_LINKING)
-ENDIF(NOT RUNTIME_STATIC_LINKING )
+ENDIF(NOT RUNTIME_STATIC_LINKING)
+
+# Handle sundials lapack
+IF(NOT SUNDIALS_LAPACK)
+  MESSAGE(STATUS "Sundials lapack functions disabled")
+ELSE(NOT SUNDIALS_LAPACK)
+  MESSAGE(STATUS "Using Sundials lapack functions")
+  ADD_DEFINITIONS(-DUSE_SUNDIALS_LAPACK)
+ENDIF(NOT SUNDIALS_LAPACK)
 
 # Handle parallel output
 IF(USE_PARALLEL_OUTPUT)

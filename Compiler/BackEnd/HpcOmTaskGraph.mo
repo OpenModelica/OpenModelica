@@ -378,7 +378,7 @@ algorithm
   commCosts2 := Array.map1(commCosts2,updateCommCosts,idxOffset);
   commCosts2 := arrayAppend(commCosts1,commCosts2);
   nodeMark2 := arrayAppend(nodeMark1,nodeMark2);
-  compInformations2 := arrayAppend(compInformations1, compInformations1);
+  compInformations2 := arrayAppend(compInformations1, compInformations2);
   graphDataOut := TASKGRAPHMETA(inComps2,varCompMapping2,eqCompMapping2,compParamMapping2,compNames2,compDescs2,exeCosts2,commCosts2,nodeMark2,compInformations2);
 end taskGraphAppend;
 
@@ -2559,7 +2559,7 @@ protected
   GraphML.GraphInfo graphInfo;
   Integer nameAttIdx, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, taskIdAttIdx, commCostAttIdx,
           commVarsAttIdx, commVarsIntAttIdx, commVarsFloatAttIdx, commVarsBoolAttIdx, critPathAttIdx,
-          simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotAttIdx, compsIdAttIdx;
+          simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotAttIdx, compsIdAttIdx, partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx;
   list<Integer> nodeIdc;
 algorithm
   oGraphInfo := match(iGraph, iGraphData, iCriticalPathInfo, iCriticalPath, iCriticalPathWoC, iSccSimEqMapping, iSchedulerInfo, iAnnotationInfo, iGraphIdx, iGraphDumpOptions, iGraphInfo)
@@ -2579,14 +2579,18 @@ algorithm
         (graphInfo,(_,commVarsIntAttIdx)) = GraphML.addAttribute("-1", "CommVarsInt", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
         (graphInfo,(_,commVarsFloatAttIdx)) = GraphML.addAttribute("-1", "CommVarsFloat", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
         (graphInfo,(_,commVarsBoolAttIdx)) = GraphML.addAttribute("-1", "CommVarsBool", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,annotAttIdx)) = GraphML.addAttribute("annotation", "annotations", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,annotAttIdx)) = GraphML.addAttribute("annotation", "Annotations", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
         (graphInfo,(_,critPathAttIdx)) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
+        (graphInfo,(_,partOfEventAttIdx)) = GraphML.addAttribute("false", "IsPartOfEventSystem", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,partOfOdeAttIdx)) = GraphML.addAttribute("false", "IsPartOfOdeSystem", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,removedCompAttIdx)) = GraphML.addAttribute("false", "IsRemovedComponent", GraphML.TYPE_BOOLEAN(), GraphML.TARGET_NODE(), graphInfo);
         graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, iCriticalPathInfo), iGraphIdx, graphInfo);
         nodeIdc = List.intRange(arrayLength(iGraph));
         ((graphInfo,_)) = List.fold(nodeIdc, function addNodeToGraphML(
                                      tGraphDataTuple=(iGraph, iGraphData),
                                      attIdc=(nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,compsIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx,
-                                      commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx),
+                                      commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx, 
+                                      partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx),
                                      sccSimEqMapping=iSccSimEqMapping,
                                      iSchedulerInfoCritPath=(iCriticalPath,iCriticalPathWoC,iSchedulerInfo, iAnnotationInfo),
                                      iGraphDumpOptions=iGraphDumpOptions),
@@ -2599,8 +2603,9 @@ protected function addNodeToGraphML "author: marcusw, waurich
   Adds the given node to the given graph."
   input Integer nodeIdx;
   input tuple<TaskGraph, TaskGraphMeta> tGraphDataTuple;
-  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> attIdc;
-  //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx>
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> attIdc;
+  //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, 
+  //                     commVarsAttFloatIdx, commVarsAttBoolIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx, partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx>
   input array<list<Integer>> sccSimEqMapping;
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,array<tuple<Integer,Integer,Real>>,array<String>> iSchedulerInfoCritPath; //<criticalPath,criticalPathWoC,schedulerInfo,annotationInfo>
   input GraphDumpOptions iGraphDumpOptions; //Options to specify the output
@@ -2611,7 +2616,9 @@ protected
   TaskGraphMeta tGraphDataIn;
   GraphML.GraphInfo tmpGraph;
   Integer graphIdx;
-  Integer opCount, nameAttIdx, calcTimeAttIdx, opCountAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx, yCoord, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx;
+  Integer opCount, nameAttIdx, calcTimeAttIdx, opCountAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx;
+  Integer commVarsAttFloatIdx, commVarsAttBoolIdx, yCoord, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx;
+  Integer partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx;
   Real calcTime, taskFinishTime, taskStartTime;
   Integer primalComp;
   list<Integer> childNodes;
@@ -2640,16 +2647,19 @@ protected
   list<tuple<Integer,Integer>> criticalPath, criticalPathWoC;
   Boolean visualizeTaskStartAndFinishTime;
   Boolean visualizeTaskCalcTime;
+  Boolean isPartOfODESystem, isPartOfEventSystem, isRemovedComponent;
+  array<ComponentInfo> compInformations;
 algorithm
   (tmpGraph,graphIdx) := iGraph;
   if(intGt(nodeIdx, 0)) then
     (tGraphIn, tGraphDataIn) := tGraphDataTuple;
-    TASKGRAPHMETA(inComps=inComps, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, nodeMark=nodeMark) := tGraphDataIn;
-    (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx,annotationAttIdx) := attIdc;
+    TASKGRAPHMETA(inComps=inComps, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, nodeMark=nodeMark, compInformations=compInformations) := tGraphDataIn;
+    (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx, partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx) := attIdc;
     (criticalPath,criticalPathWoC,schedulerInfo,annotationInfo) := iSchedulerInfoCritPath;
     GRAPHDUMPOPTIONS(visualizeTaskStartAndFinishTime=visualizeTaskStartAndFinishTime, visualizeTaskCalcTime=visualizeTaskCalcTime) := iGraphDumpOptions;
     components := arrayGet(inComps,nodeIdx);
-
+    ((isPartOfODESystem, isPartOfEventSystem, isRemovedComponent)) := getNodeMembershipByComponents(components, compInformations);
+    
     if(intNe(listLength(components), 1)) then
       primalComp := List.last(components);
       simCodeEqs := List.flatten(List.map1(components, Array.getIndexFirst, sccSimEqMapping));
@@ -2684,13 +2694,16 @@ algorithm
     nodeLabels := {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN())};
     nodeLabels := if visualizeTaskCalcTime then GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se")::nodeLabels else nodeLabels;
     nodeLabels := if visualizeTaskStartAndFinishTime then listAppend(nodeLabels, {GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")}) else nodeLabels;
-    //print("Node " + intString(nodeIdx) + " has child nodes " + stringDelimitList(List.map(childNodes,intString),", ") + "\n");
     (tmpGraph,(_,_)) := GraphML.addNode("Node" + intString(nodeIdx),
                                       GraphML.COLOR_ORANGE,
                                       nodeLabels,
                                       GraphML.RECTANGLE(),
                                       SOME(nodeDesc),
-                                      {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((compsIdAttIdx,compsText)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
+                                      {
+                                        ((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((compsIdAttIdx,compsText)),
+                                        ((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),
+                                        ((annotationAttIdx,annotationString)), ((partOfEventAttIdx, boolString(isPartOfODESystem))), ((partOfOdeAttIdx, boolString(isPartOfEventSystem))), ((removedCompAttIdx, boolString(isRemovedComponent)))
+                                      },
                                       graphIdx,
                                       tmpGraph);
     tmpGraph := List.fold(childNodes, function addDepToGraph(
@@ -2780,6 +2793,24 @@ algorithm
                                           iGraph);
   oGraph := tmpGraph;
 end addDepToGraph;
+
+protected function getNodeMembershipByComponents "author: marcusw
+  Get the information of a node was removed or belongs to the ode or event-system."
+  input list<Integer> iNodeComponents;
+  input array<ComponentInfo> iCompInformations;
+  output tuple<Boolean, Boolean, Boolean> oMembership; //<isPartOfODESystem, isPartOfEventSystem, isRemovedComponent>
+protected
+  Boolean isPartOfODESystem, isPartOfEventSystem, isRemovedComponent;
+  Integer compIdx;
+  ComponentInfo tmpComponentInformation;
+algorithm
+  tmpComponentInformation := COMPONENTINFO(false, false, false);
+  for compIdx in iNodeComponents loop
+    tmpComponentInformation := combineComponentInformations(arrayGet(iCompInformations, compIdx), tmpComponentInformation);
+  end for;
+  COMPONENTINFO(isPartOfODESystem, isPartOfEventSystem, isRemovedComponent) := tmpComponentInformation;
+  oMembership := (isPartOfODESystem, isPartOfEventSystem, isRemovedComponent);
+end getNodeMembershipByComponents;
 
 //-----------------
 //  Print functions
@@ -3413,6 +3444,58 @@ algorithm
     else iMergedNodes;
   end matchcontinue;
 end mergeParentNodes0;
+
+public function markSystemComponents "author: marcusw
+  Mark all components that are part of the given Task Graph in the target task graph meta with (ComponentInfo OR iComponentInfo)"
+  input TaskGraph iTaskGraph;
+  input TaskGraphMeta iTaskGraphMeta;
+  input tuple<Boolean, Boolean, Boolean> iComponentMarks; //<isPartOfODESystem, isPartOfEventSystem, isRemovedComponent>
+  input TaskGraphMeta iTargetTaskGraphMeta;
+  output TaskGraphMeta oTargetTaskGraphMeta;
+protected
+  array<list<Integer>> odeInComps;
+  list<Integer> nodeComps;
+  Integer nodeIdx, compIdx;
+  
+  array<list<Integer>> inComps;
+  array<tuple<Integer,Integer,Integer>> varCompMapping;
+  array<tuple<Integer,Integer,Integer>> eqCompMapping;
+  array<list<Integer>> compParamMapping;
+  array<String> compNames;
+  array<String> compDescs;
+  array<tuple<Integer,Real>> exeCosts;
+  array<Communications> commCosts;
+  array<Integer> nodeMark;
+  array<ComponentInfo> compInformations;
+  ComponentInfo componentInformation, iComponentInformation;
+algorithm
+  iComponentInformation := COMPONENTINFO(Util.tuple31(iComponentMarks), Util.tuple32(iComponentMarks), Util.tuple33(iComponentMarks));
+  TASKGRAPHMETA(inComps=odeInComps) := iTaskGraphMeta;
+  TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations) := iTargetTaskGraphMeta; 
+  for nodeIdx in 1:arrayLength(iTaskGraph) loop
+    nodeComps := arrayGet(odeInComps, nodeIdx);
+    for compIdx in nodeComps loop
+      componentInformation := combineComponentInformations(arrayGet(compInformations, compIdx), iComponentInformation);
+      compInformations := arrayUpdate(compInformations, compIdx, componentInformation);
+    end for;
+  end for;
+  oTargetTaskGraphMeta := TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
+end markSystemComponents;
+
+protected function combineComponentInformations "author: marcusw
+  Return all boolean values of iComponentInfo OR iComponentInfo2"
+  input ComponentInfo iComponentInfo;
+  input ComponentInfo iComponentInfo2;
+  output ComponentInfo oComponentInfo;
+protected
+  Boolean isPartOfODESystem, iIsPartOfODESystem;
+  Boolean isPartOfEventSystem, iIsPartOfEventSystem;
+  Boolean isRemovedComponent, iIsRemovedComponent;
+algorithm
+  COMPONENTINFO(isPartOfODESystem, isPartOfEventSystem, isRemovedComponent) := iComponentInfo;
+  COMPONENTINFO(iIsPartOfODESystem, iIsPartOfEventSystem, iIsRemovedComponent) := iComponentInfo2;
+  oComponentInfo := COMPONENTINFO(boolOr(isPartOfODESystem, iIsPartOfODESystem), boolOr(isPartOfEventSystem, iIsPartOfEventSystem), boolOr(isRemovedComponent, iIsRemovedComponent));
+end combineComponentInformations;
 
 protected function addUpExeCosts
   input tuple<Integer,Real> iExeCost1;

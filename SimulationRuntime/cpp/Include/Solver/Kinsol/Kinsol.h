@@ -2,10 +2,14 @@
 #pragma once
 
 #include "FactoryExport.h"
-#include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
-#include <kinsol/kinsol_dense.h>
-#include <kinsol/kinsol_spgmr.h>
+#include <kinsol/kinsol.h>
+#ifdef USE_SUNDIALS_LAPACK
+  #include <kinsol/kinsol_lapack.h>
+#else
+  #include <kinsol/kinsol_spgmr.h>
+  #include <kinsol/kinsol_dense.h>
+#endif //USE_SUNDIALS_LAPACK
 #include <kinsol/kinsol_spbcgs.h>
 #include <kinsol/kinsol_sptfqmr.h>
 #include <boost/math/special_functions/fpclassify.hpp>

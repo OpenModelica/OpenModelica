@@ -230,7 +230,7 @@ template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
           <<
           >>
         else
-          let headers = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadFunctionHeaderDecl(i0); separator="\n"
+          let headers = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadFunctionHeaderDecl(i0); separator="\n"
           <<
           <%headers%>
           >>
@@ -289,9 +289,9 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
       end match
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
       let locks = hpcOmSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "lock", type); separator="\n"
-      let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
       match type
         case ("openmp") then
+          let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
           <<
           <%locks%>
           <%threadDecl%>
@@ -301,8 +301,9 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
           //MF Todo BLABLUB
           >>
         else
-          let thLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => createLockByLockName(i0, "th_lock", type); separator="\n"
-          let thLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => createLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadDecl = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadHeaderDecl(i0, type); separator="\n"
+          let thLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock", type); separator="\n"
+          let thLocks1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock1", type); separator="\n"
           <<
           bool terminateThreads;
           UPDATETYPE command;
@@ -350,10 +351,7 @@ template generateHpcomSpecificIncludes(SimCode simCode, Text& extraFuncs, Text& 
     case ("pthreads")
     case ("pthreads_spin") then
       <<
-      #include <boost/smart_ptr/detail/spinlock.hpp>
-      #include <boost/thread/mutex.hpp>
       #include <boost/thread.hpp>
-      #include <boost/thread/barrier.hpp>
       #include <Core/Utils/extension/busywaiting_barrier.hpp>
       >>
     case ("tbb") then
@@ -600,9 +598,9 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
       let initlocks = hpcOmSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "lock", type); separator="\n"
       let assignLocks = hpcOmSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "lock", type); separator="\n"
-      let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
       match type
         case ("openmp") then
+          let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
           <<
           <%threadFuncs%>
           <%initlocks%>
@@ -612,10 +610,11 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
           //MF: Initialize MPI related stuff - nothing todo?
           >>
         else
-          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadFuncs = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+          let threadLocksInit = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksInit1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadAssignLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
           <<
           terminateThreads = false;
           command = IContinuous::UNDEF_UPDATE;
@@ -662,7 +661,6 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
         else ""
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
       let destroylocks = hpcOmSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "lock", type); separator="\n"
-      let destroyThreads = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_destroyThread(i0, type); separator="\n"
       match type
         case ("openmp") then
           <<
@@ -673,13 +671,18 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
           //MF: Destruct MPI related stuff - nothing at the moment.
           >>
         else
-          let joinThreads = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_joinThread(i0, type); separator="\n"
-          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
+          let destroyThreads = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_destroyThread(i0, type); separator="\n"
+          let threadLocksDel = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksDel1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock1", type); separator="\n"
+          let joinThreads = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_joinThread(i0, type); separator="\n"
+          let threadReleaseLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
           terminateThreads = true;
           <%threadReleaseLocks%>
           <%joinThreads%>
           <%destroylocks%>
+          <%threadLocksDel%>
+          <%threadLocksDel1%>
           <%destroyThreads%>
           >>
     case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
@@ -833,9 +836,10 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
           }
           >>
         else
-          let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadFunc(allEquationsPlusWhen, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
-          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
+          let &mainThreadCode = buffer "" /*BUFD*/
+          let threadFuncs = List.intRange(arrayLength(hpcOmSchedule.threadTasks)) |> threadIdx => generateThreadFunc(allEquationsPlusWhen, arrayGet(hpcOmSchedule.threadTasks, threadIdx), type, intSub(threadIdx, 1), modelNamePrefixStr, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
+          let threadAssignLocks1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadReleaseLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
           <%threadFuncs%>
 
@@ -844,6 +848,7 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
           {
             this->command = command;
             <%threadReleaseLocks%>
+            <%mainThreadCode%>
             <%threadAssignLocks1%>
           }
           >>
@@ -1140,28 +1145,33 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
   end match
 end function_HPCOM_Thread;
 
-template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasks, String iType, Integer idx,
-                            String modelNamePrefixStr, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTasks, String iType, Integer iThreadIdx, String modelNamePrefixStr, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& mainThreadCode, Boolean useFlatArrayNotation)
 ::=
   let &varDeclsLoc = buffer "" /*BUFD*/
-  let taskEqs = function_HPCOM_Thread0(allEquationsPlusWhen, arrayGet(threadTasks,intAdd(idx,1)), idx, iType, &varDeclsLoc, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
-  let assLock = assignLockByLockName(idx, "th_lock", iType); separator="\n"
-  let relLock = releaseLockByLockName(idx, "th_lock1", iType); separator="\n"
-  <<
-  void <%modelNamePrefixStr%>::evaluateThreadFunc<%idx%>()
-  {
-    <%&varDeclsLoc%>
-    while(1)
+  let taskEqs = function_HPCOM_Thread0(allEquationsPlusWhen, threadTasks, iThreadIdx, iType, &varDeclsLoc, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+  let assLock = assignLockByLockName(iThreadIdx, "th_lock", iType); separator="\n"
+  let relLock = releaseLockByLockName(iThreadIdx, "th_lock1", iType); separator="\n"
+  if (intGt(iThreadIdx, 0)) then
+    <<
+    void <%modelNamePrefixStr%>::evaluateThreadFunc<%iThreadIdx%>()
     {
-      <%assLock%>
-      if(terminateThreads)
-         return;
+      <%&varDeclsLoc%>
+      while(1)
+      {
+        <%assLock%>
+        if(terminateThreads)
+           return;
 
-      <%taskEqs%>
-      <%relLock%>
+        <%taskEqs%>
+        <%relLock%>
+      }
     }
-  }
-  >>
+    >>
+  else
+    let &mainThreadCode += &varDeclsLoc
+    let &mainThreadCode += taskEqs
+    <<
+    >>
 end generateThreadFunc;
 
 template function_HPCOM_assignThreadLocks(list<Task> iThreadTasks, String iLockPrefix, Integer iThreadNum, String iType)
@@ -1363,9 +1373,11 @@ template initializeLockByLockName(String lockName, String lockPrefix, String iTy
       >>
     case ("pthreads") then
       <<
+      <%lockPrefix%>_<%lockName%> = new alignedLock();
       >>
     case ("pthreads_spin") then
       <<
+      <%lockPrefix%>_<%lockName%> = new alignedSpinlock();
       >>
   end match
 end initializeLockByLockName;
@@ -1398,11 +1410,11 @@ template createLockByLockName(String lockName, String lockPrefix, String iType)
       >>
     case ("pthreads") then
       <<
-      boost::mutex <%lockPrefix%>_<%lockName%>;
+      alignedLock* <%lockPrefix%>_<%lockName%>;
       >>
     case ("pthreads_spin") then
       <<
-      spinlock <%lockPrefix%>_<%lockName%>;
+      alignedSpinlock* <%lockPrefix%>_<%lockName%>;
       >>
   end match
 end createLockByLockName;
@@ -1432,6 +1444,11 @@ template destroyLockByLockName(String lockName, String lockPrefix, String iType)
     case ("openmp") then
       <<
       omp_destroy_lock(&<%lockPrefix%>_<%lockName%>);
+      >>
+    case ("pthreads")
+    case ("pthreads_spin") then
+      <<
+      delete <%lockPrefix%>_<%lockName%>;
       >>
     else
       <<
@@ -1477,11 +1494,11 @@ template assignLockByLockName(String lockName, String lockPrefix, String iType)
       >>
     case ("pthreads") then
       <<
-      <%lockPrefix%>_<%lockName%>.lock();
+      <%lockPrefix%>_<%lockName%>->lock();
       >>
     case ("pthreads_spin") then
       <<
-      <%lockPrefix%>_<%lockName%>.lock();
+      <%lockPrefix%>_<%lockName%>->lock();
       >>
   end match
 end assignLockByLockName;
@@ -1504,11 +1521,11 @@ template releaseLockByLockName(String lockName, String lockPrefix, String iType)
       >>
     case ("pthreads") then
       <<
-      <%lockPrefix%>_<%lockName%>.unlock();
+      <%lockPrefix%>_<%lockName%>->unlock();
       >>
     case ("pthreads_spin") then
       <<
-      <%lockPrefix%>_<%lockName%>.unlock();
+      <%lockPrefix%>_<%lockName%>->unlock();
       >>
   end match
 end releaseLockByLockName;

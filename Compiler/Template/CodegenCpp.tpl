@@ -6027,17 +6027,6 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
 
   #include "System/SystemDefaultImplementation.h"
 
-  #ifdef __GNUC__
-    #define VAR_ALIGN_PRE
-    #define VAR_ALIGN_POST __attribute__((aligned(0x40)))
-  #elif defined _MSC_VER
-    #define VAR_ALIGN_PRE __declspec(align(64))
-    #define VAR_ALIGN_POST
-  #else
-    #define VAR_ALIGN_PRE
-    #define VAR_ALIGN_POST
-  #endif
-
   #ifdef RUNTIME_STATIC_LINKING
     #include <boost/shared_ptr.hpp>
     #include <boost/weak_ptr.hpp>
@@ -9985,9 +9974,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
     <%preExp%>
     <%assignDerArray(context,expPart,lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     >>
- end equationArrayCallAssign;
-  /*<%cref1(lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, useFlatArrayNotation)%>=<%expPart%>;*/
-
+end equationArrayCallAssign;
 
 template assignDerArray(Context context, String arr, ComponentRef c,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
@@ -10114,41 +10101,7 @@ end preCallForArray;
 template whenAssign(ComponentRef left, Type ty, Exp right, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates assignment for when."
-::= /*
-match ty
-
-  case T_ARRAY(__) then
-   let &preExp = buffer ""
-    let expPart = daeExp(right, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    match expTypeFromExpShort(right)
-    case "boolean" then
-      let tvar = tempDecl("boolean_array", &varDecls )
-      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
-      <<
-      <%preExp%>
-      copy_boolean_array_data_mem(&<%expPart%>, &<%cref(left, useFlatArrayNotation)%>);
-      >>
-    case "integer" then
-      let tvar = tempDecl("integer_array", &varDecls )
-      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
-      <<
-      <%preExp%>
-      copy_integer_array_data_mem(&<%expPart%>, &<%cref(left, useFlatArrayNotation)%>);
-      >>
-    case "real" then
-      <<
-      <%preExp%>
-      copy_real_array_data_mem(&<%expPart%>, &<%cref(left, useFlatArrayNotation)%>);
-      >>
-    case "string" then
-      <<
-      <%preExp%>
-      copy_string_array_data_mem(&<%expPart%>, &<%cref(left, useFlatArrayNotation)%>);
-      >>
-    else
-      error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left, useFlatArrayNotation)%> = <%printExpStr(right)%>')
-    end match
-  else*/
+::=
     let &preExp = buffer "" /*BUFD*/
     let exp = daeExp(right, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
@@ -12184,30 +12137,29 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
     case STATE_DER(__)   then
         << <%representationCref2(inCref,var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, stateDerVectorName)%> >>
     case VARIABLE(__) then
-     match var
+      match var
         case SIMVAR(index=-2) then
           match context
             case JACOBIAN_CONTEXT() then
-                  '_<%crefToCStr(inCref,false)%>'
-                 else
-                    '<%localcref(inCref, useFlatArrayNotation)%>'
-            end match
-    else
-        match context
-            case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false)
-                then  '_system-><%cref(inCref, useFlatArrayNotation)%>'
-            case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=true)
-                then  '_system->_<%crefToCStr(inCref,false)%>'
+              '_<%crefToCStr(inCref,false)%>'
+            else
+              '<%localcref(inCref, useFlatArrayNotation)%>'
+          end match
         else
-            '<%varToString(inCref,context, useFlatArrayNotation)%>'
-  else
-    match context
-    case ALGLOOP_CONTEXT(genInitialisation = false)
-        then
-        let &varDecls += '//_system-><%cref(inCref, useFlatArrayNotation)%>; definition of global variable<%\n%>'
-        '_system-><%cref(inCref, useFlatArrayNotation)%>'
-    else
-        '<%cref(inCref, useFlatArrayNotation)%>'
+          match context
+            case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false) then
+              '_system-><%cref(inCref, useFlatArrayNotation)%>'
+            case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=true) then
+              '_system->_<%crefToCStr(inCref,false)%>'
+            else
+              '<%varToString(inCref,context, useFlatArrayNotation)%>'
+      else
+        match context
+          case ALGLOOP_CONTEXT(genInitialisation = false) then
+            let &varDecls += '//_system-><%cref(inCref, useFlatArrayNotation)%>; definition of global variable<%\n%>'
+            '_system-><%cref(inCref, useFlatArrayNotation)%>'
+          else
+            '<%cref(inCref, useFlatArrayNotation)%>'
 end representationCref;
 
 
@@ -12706,7 +12658,6 @@ case ecr as CREF(ty= t as DAE.T_ARRAY(__)) then
           '<%contextCref(crefLocal, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> = (<%rhsStr%>)(<%i0%>);'; separator="\n"
     <<
     <%expressions%>
-    /* blubb blubb */
     >>
   else
     <<

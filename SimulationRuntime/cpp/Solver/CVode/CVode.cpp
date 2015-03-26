@@ -254,7 +254,11 @@ void Cvode::initialize()
       throw ModelicaSimulationError(SOLVER,/*_idid,_tCurrent,*/"Cvode::initialize()");
 
     // Initialize linear solver
-  _idid = CVDense(_cvodeMem, _dimSys);
+    #ifdef USE_SUNDIALS_LAPACK 
+      _idid = CVLapackDense(_cvodeMem, _dimSys);
+    #else
+      _idid = CVDense(_cvodeMem, _dimSys);
+    #endif
     if (_idid < 0)
       throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
 

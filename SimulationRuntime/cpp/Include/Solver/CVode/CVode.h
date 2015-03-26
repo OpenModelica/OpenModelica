@@ -4,15 +4,18 @@
 #include "FactoryExport.h"
 
 #include <Core/Solver/SolverDefaultImplementation.h>
-//#include <cvodes/cvodes.h>
 #include <cvode/cvode.h>
+#ifdef USE_SUNDIALS_LAPACK
+  #include <cvode/cvode_lapack.h>
+#else
+  #include <cvode/cvode_spgmr.h>
+  #include <cvode/cvode_dense.h>
+#endif //USE_SUNDIALS_LAPACK
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_direct.h>
-#include <cvode/cvode_dense.h>
-#include <cvode/cvode_spgmr.h>
 
 #ifdef RUNTIME_PROFILING
-#include <Core/Utils/extension/measure_time.hpp>
+  #include <Core/Utils/extension/measure_time.hpp>
 #endif
 
 #ifdef USE_BOOST_LOG

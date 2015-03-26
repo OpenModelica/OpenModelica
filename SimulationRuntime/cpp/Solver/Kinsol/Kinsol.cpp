@@ -2,8 +2,11 @@
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 
+
+extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
+
 #if defined(__TRICORE__)
-#include <include/kinsol/kinsol.h>
+  #include <include/kinsol/kinsol.h>
 #endif
 
 Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
@@ -215,38 +218,44 @@ void Kinsol::solve()
         for(int i=0;i<_dimSys;i++) // Reset Scaling
           _fScale[i] = 1.0;
 
-
-        KINDense(_kinMem, _dimSys);
+        #ifdef USE_SUNDIALS_LAPACK 
+          KINLapackDense(_kinMem, _dimSys);
+        #else
+          KINDense(_kinMem, _dimSys);
+        #endif //USE_SUNDIALS_LAPACK
         solveNLS();
         if(_iterationStatus == DONE)
-        return;
-    else  // Try Scaling
-    {
-      _iterationStatus = CONTINUE;
-      _algLoop->setReal(_y0);
-      _algLoop->evaluate();
-      _algLoop->getRHS(_fScale);
-      for(int i=0;i<_dimSys;i++)
-      {
-        if(abs(_fScale[i]) >1.0)
-          _fScale[i] = abs(1/_fScale[i]);
-        else
-          _fScale[i] = 1;
-      }
-       solveNLS();
-    }
+          return;
+        else  // Try Scaling
+        {
+          _iterationStatus = CONTINUE;
+          _algLoop->setReal(_y0);
+          _algLoop->evaluate();
+          _algLoop->getRHS(_fScale);
+          for(int i=0;i<_dimSys;i++)
+          {
+            if(abs(_fScale[i]) >1.0)
+              _fScale[i] = abs(1/_fScale[i]);
+            else
+              _fScale[i] = 1;
+          }
+          solveNLS();
+        }
+    
+/*
     if(_iterationStatus == DONE)
       return;
 
-  //Try iterative Solvers
-  /////////////////////////////////////
+    //Try iterative Solvers
+    /////////////////////////////////////
     for(int i=0;i<_dimSys;i++) // Reset Scaling
       _fScale[i] = 1.0;
 
     KINSpgmr(_kinMem,_dimSys);
-        _iterationStatus = CONTINUE;
-        solveNLS();
-        if(_iterationStatus == DONE)
+    _iterationStatus = CONTINUE;
+    solveNLS();
+    
+    if(_iterationStatus == DONE)
       return;
     else  // Try Scaling
     {
@@ -266,13 +275,13 @@ void Kinsol::solve()
     if(_iterationStatus == DONE)
       return;
 
-   for(int i=0;i<_dimSys;i++) // Reset Scaling
+    for(int i=0;i<_dimSys;i++) // Reset Scaling
       _fScale[i] = 1.0;
 
     KINSpbcg(_kinMem,_dimSys);
-        _iterationStatus = CONTINUE;
-        solveNLS();
-        if(_iterationStatus == DONE)
+    _iterationStatus = CONTINUE;
+    solveNLS();
+    if(_iterationStatus == DONE)
       return;
     else  // Try Scaling
     {
@@ -292,31 +301,17 @@ void Kinsol::solve()
     if(_iterationStatus == DONE)
       return;
 
-    /*
-        // Try Sptfqmr
-    KINSptfqmr(_kinMem, _dimSys);
-        _iterationStatus = CONTINUE;
-        solveNLS();
-        if(_iterationStatus == DONE)
-        {
-      //_firstCall = false;
-       return;
-       }
-     */
-
-        if(_eventRetry)
-        {
-            memcpy(_y, _helpArray ,_dimSys*sizeof(double));
-            _iterationStatus = CONTINUE;
-            return;
-        }
-
-
-        if(_iterationStatus == SOLVERERROR && !_eventRetry)
-            throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
-
+    if(_eventRetry)
+    {
+      memcpy(_y, _helpArray ,_dimSys*sizeof(double));
+      _iterationStatus = CONTINUE;
+      return;
     }
 
+    if(_iterationStatus == SOLVERERROR && !_eventRetry)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
+*/
+    }
 }
 
 IAlgLoopSolver::ITERATIONSTATUS Kinsol::getIterationStatus()
