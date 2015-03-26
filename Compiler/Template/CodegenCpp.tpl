@@ -14745,7 +14745,7 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let &stringFuncCalls = buffer ""
 
       let stateVarCount = listLength(vars.stateVars)
-      let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.paramVars, vars.aliasVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context,stateDerVectorName, useFlatArrayNotation)
+      let getrealvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.paramVars, vars.aliasVars))), listLength(listAppend(vars.stateVars, vars.derivativeVars)), simCode, &extraFuncs, &extraFuncsDecl, &realFuncCalls, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
       let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.paramVars, vars.aliasVars))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &setRealFuncCalls, listLength(listAppend(vars.stateVars, vars.derivativeVars)), context,stateDerVectorName, useFlatArrayNotation)
 
       let getStateVariables = (vars.stateVars |> var hasindex i0 fromindex 0 => getStateVariables(var, i0, "z", i0) ;separator="\n")
@@ -14754,10 +14754,10 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let getStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => getStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
       let setStateDerVariables = (vars.derivativeVars |> var hasindex i0 fromindex 0 => setStateDerivativeVariables(var, i0, "z", i0, stringInt(stateVarCount)) ;separator="\n")
 
-      let getintvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &intFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
-      let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, &boolFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
+      let getintvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl, &intFuncCalls, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+      let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl, &boolFuncCalls, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
 
-      let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &stringFuncCalls, context,stateDerVectorName, useFlatArrayNotation)
+      let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, &stringFuncCalls, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
 
       let &varDeclsInt = buffer "" /*BUFD*/
       let setIntVariables = (listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
