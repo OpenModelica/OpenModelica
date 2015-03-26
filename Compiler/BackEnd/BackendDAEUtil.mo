@@ -2180,7 +2180,7 @@ algorithm
   end for;
 
   indx_lst_e := List.map1r(indx_lst_e,arrayGet,mapIncRowEqn);
-
+  indx_lst_e := List.unique(indx_lst_e);
   el := BackendEquation.getEqns(indx_lst_e, ordererdEqs);
   arrEqs := BackendEquation.listEquation(el);
 
