@@ -79,7 +79,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
                           boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
   _model->initialize(); // set default start values
-  _tmp_real_buffer.resize(_model->getDimContinuousStates() + _model->getDimRHS() + _model->getDimReal());
+  _tmp_real_buffer.resize(_model->getDimReal());
   _tmp_int_buffer.resize(_model->getDimInteger());
   _tmp_bool_buffer.resize(_model->getDimBoolean());
 }

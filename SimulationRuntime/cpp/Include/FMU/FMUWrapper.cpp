@@ -22,7 +22,7 @@ FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
   _model = boost::shared_ptr<MODEL_IDENTIFIER>
       (new MODEL_IDENTIFIER(&_global_settings, solver_factory,boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
-  _tmp_real_buffer.resize(_model->getDimContinuousStates() + _model->getDimRHS() + _model->getDimReal());
+  _tmp_real_buffer.resize(_model->getDimReal());
   _tmp_int_buffer.resize(_model->getDimInteger());
   _tmp_bool_buffer.resize(_model->getDimBoolean());
 }
@@ -87,10 +87,10 @@ fmiStatus FMUWrapper::completedIntegratorStep(fmiBoolean& callEventUpdate)
 fmiStatus FMUWrapper::setReal(const fmiValueReference vr[], size_t nvr,
     const fmiReal value[])
 {
-  _model->getReal(&_tmp_real_buffer[_model->getDimContinuousStates() + _model->getDimRHS()]);
+  _model->getReal(&_tmp_real_buffer[0]);
   for(size_t i = 0; i < nvr; ++i)
-    _tmp_int_buffer[vr[i]] = value[i];
-  _model->setReal(&_tmp_real_buffer[_model->getDimContinuousStates() + _model->getDimRHS()]);
+    _tmp_real_buffer[vr[i]] = value[i];
+  _model->setReal(&_tmp_real_buffer[0]);
   _need_update = true;
   return fmiOK;
 }
@@ -171,9 +171,7 @@ fmiStatus FMUWrapper::getEventIndicators(fmiReal eventIndicators[], size_t ni)
 fmiStatus FMUWrapper::getReal(const fmiValueReference vr[], size_t nvr, fmiReal value[])
 {
   updateModel();
-  _model->getContinuousStates(&_tmp_real_buffer[0]);
-  _model->getRHS(&_tmp_real_buffer[_model->getDimContinuousStates()]);
-  _model->getReal(&_tmp_real_buffer[_model->getDimContinuousStates() + _model->getDimRHS()]);
+  _model->getReal(&_tmp_real_buffer[0]);
   for(size_t i = 0; i < nvr; ++i)
     value[i] = _tmp_real_buffer[vr[i]];
   return fmiOK;
