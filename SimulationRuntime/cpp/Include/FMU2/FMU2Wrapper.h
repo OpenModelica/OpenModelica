@@ -75,7 +75,7 @@ class FMU2Wrapper
   const fmi2CallbackLogger &logger;
   const fmi2ComponentEnvironment &componentEnvironment;
   const fmi2String &instanceName;
-  fmi2String logCategoryName(LogCategory);
+  static fmi2String logCategoryName(LogCategory);
 
   // Enter and exit initialization mode, terminate and reset
   virtual fmi2Status setupExperiment(fmi2Boolean toleranceDefined,

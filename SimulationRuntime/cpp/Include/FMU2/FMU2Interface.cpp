@@ -74,7 +74,18 @@ extern "C"
                                 fmi2Boolean visible,
                                 fmi2Boolean loggingOn)
   {
-    FMU2Wrapper *w = OBJECTCONSTRUCTOR;
+    FMU2Wrapper *w;
+    try {
+      w = OBJECTCONSTRUCTOR;
+    }
+    catch (std::exception &e) {
+      if (functions && functions->logger)
+        functions->logger(functions->componentEnvironment,
+                          instanceName, fmi2Error,
+                          FMU2Wrapper::logCategoryName(logStatusError),
+                          e.what());
+      return NULL;
+    }
     LOG_CALL(w, "fmi2Instantiate");
     return reinterpret_cast<fmi2Component>(w);
   }
