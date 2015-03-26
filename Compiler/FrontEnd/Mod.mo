@@ -3332,6 +3332,40 @@ algorithm
   end match;
 end isRedeclareMod;
 
+
+public function getClassModifier
+"return the modifier present in the environment for this class or DAE.NOMOD if ther is none"
+  input FCore.Graph inEnv;
+  input FCore.Name inName;
+  output DAE.Mod outMod;
+protected
+  FCore.Node n;
+  DAE.Mod mod;
+algorithm
+   outMod := matchcontinue(inEnv, inName)
+
+     case (_, _)
+       equation
+         n = FNode.fromRef(FNode.child(FGraph.lastScopeRef(inEnv), inName));
+         if (not FNode.isInstance(FNode.fromRef(FGraph.lastScopeRef(inEnv)))) then
+           FCore.N(data=FCore.CL(mod = mod)) = n;
+           mod = Mod.removeMod(mod, inName);
+           /*
+           if not isEmptyMod(mod)
+           then
+             print("Env: " + FGraph.printGraphPathStr(inEnv) + " " + inName + "(" + printModStr(mod) + ")" + "\n");
+           end if;
+           */
+         else
+           mod = DAE.NOMOD();
+         end if;
+       then mod;
+
+     else DAE.NOMOD();
+
+  end matchcontinue;
+end getClassModifier;
+
 annotation(__OpenModelica_Interface="frontend");
 end Mod;
 

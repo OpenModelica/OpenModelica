@@ -3576,18 +3576,14 @@ algorithm
           = redeclareType(cache, env2, ih, mod, comp, pre, ci_state, impl, DAE.NOMOD());
 
         (cache, cls, cenv) = Lookup.lookupClass(cache, env2 /* env */, t, true);
-        node = FNode.fromRef(FNode.child(FGraph.lastScopeRef(cenv), SCode.className(cls)));
-        if (not FNode.isInstance(FNode.fromRef(FGraph.lastScopeRef(cenv)))) then
-          FCore.N(data=FCore.CL(mod = class_mod)) = node;
-          cls_mod = Mod.removeMod(class_mod, SCode.className(cls));
-          if not Mod.isEmptyMod(cls_mod)
+        cls_mod = Mod.getClassModifier(cenv, SCode.className(cls));
+        if not Mod.isEmptyMod(cls_mod)
+        then
+          if not listEmpty(ad) // add each if needed
           then
-            if not listEmpty(ad) // add each if needed
-            then
-              cls_mod = Mod.addEachIfNeeded(cls_mod, {DAE.DIM_INTEGER(1)});
-            end if;
-            mod_1 = Mod.merge(mod_1, cls_mod, env2, pre);
+            cls_mod = Mod.addEachIfNeeded(cls_mod, {DAE.DIM_INTEGER(1)});
           end if;
+          mod_1 = Mod.merge(mod_1, cls_mod, env2, pre);
         end if;
         attr = SCode.mergeAttributesFromClass(attr, cls);
 

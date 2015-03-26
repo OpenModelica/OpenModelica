@@ -194,6 +194,7 @@ algorithm
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
       DAE.TypeSource ts;
+      DAE.Mod mod;
 
     // Record constructors
     case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_RECORD(_)))
@@ -208,10 +209,11 @@ algorithm
         env_2 = FGraph.openScope(env_1, encflag, SOME(id), SOME(FCore.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env_2));
         // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
+        mod = Mod.getClassModifier(env_1, id);
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(),
+          mod, Prefix.NOPRE(),
           ci_state, c, SCode.PUBLIC(), {}, false, InstTypes.INNER_CALL(),
           ConnectionGraph.EMPTY, Connect.emptySet, NONE());
         // build names
@@ -589,6 +591,7 @@ algorithm
       String id;
       SCode.Element c;
       FCore.Ref r;
+      DAE.Mod mod;
 
     case (cache,env,_,_,SOME(frame),prevFrames,_,_)
       equation
@@ -612,10 +615,11 @@ algorithm
         env = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env));
         // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " + FGraph.printGraphPathStr(env) + " path: " + Absyn.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
+        mod = Mod.getClassModifier(inEnv, id);
         (cache,env,_,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(),
+          mod, Prefix.NOPRE(),
           ci_state, inC, SCode.PUBLIC(), {}, 0);
         // Was 2 cases for package/non-package - all they did was fail or succeed on this
         // If we comment it out, we get faster code, and less of it to maintain
@@ -878,6 +882,7 @@ algorithm
       list<Absyn.Import> rest;
       FCore.Cache cache;
       FCore.Ref r;
+      DAE.Mod mod;
 
     // Not found, instantiate
     case (cache,Absyn.UNQUAL_IMPORT(path = path) :: _,env,ident)
@@ -887,7 +892,8 @@ algorithm
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
-        (cache, env, _,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+        mod = Mod.getClassModifier(env_1, id);
+        (cache, env, _,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         r = FGraph.lastScopeRef(env);
         env = FGraph.setScope(env, {r});
         (cache,_,_) = lookupClass(cache, env, Absyn.IDENT(ident), false);
@@ -934,6 +940,7 @@ algorithm
       list<Absyn.Import> rest;
       FCore.Cache cache;
       Absyn.Ident firstIdent;
+      DAE.Mod mod;
 
     // Not in cache, instantiate, unique
     case (cache,Absyn.UNQUAL_IMPORT(path = path) :: rest,env,ident)
@@ -944,9 +951,10 @@ algorithm
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
+        mod = Mod.getClassModifier(env_1, id);
         (cache,env2,_,_,_) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+          mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
         (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
@@ -1280,6 +1288,7 @@ algorithm
       Boolean unique;
       FCore.Children ht;
       list<Absyn.Import> qimports, uqimports;
+      DAE.Mod mod;
 
     // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x.
     // Must do like this to ensure finite recursion
@@ -1314,9 +1323,10 @@ algorithm
                 env3 = FGraph.openScope(env2, encflag, SOME(n), FGraph.restrictionToScopeType(r));
                 ci_state = ClassInf.start(r, FGraph.getGraphName(env3));
                 // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReference.printComponentRefStr(cref));
+                mod = Mod.getClassModifier(env2, n);
                 (cache,env5,_,_,_,_,_,_,_,_,_,_) =
                   Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-                    DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
+                    mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
                     /*true*/false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY,
                     Connect.emptySet, NONE());
               end if;
@@ -1707,6 +1717,7 @@ algorithm
       FCore.Ref r;
       FCore.Scope rs;
       FCore.Cache cache;
+      DAE.Mod mod;
 
     // Simple name, search frame
     case (cache, FCore.G(scope = r::_),Absyn.IDENT(name = str),_,_)
@@ -1749,10 +1760,11 @@ algorithm
           env2 = FGraph.openScope(env_1, encflag, SOME(str), FGraph.restrictionToScopeType(restr));
           ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
           // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " + FGraph.printGraphPathStr(env2) + "." + str);
+          mod = Mod.getClassModifier(env_1, str);
           (cache,env2,_,_,_) =
             Inst.partialInstClassIn(
               cache, env2, InnerOuter.emptyInstHierarchy,
-              DAE.NOMOD(), Prefix.NOPRE(),
+              mod, Prefix.NOPRE(),
               ci_state, c, SCode.PUBLIC(), {}, 0);
         end if;
         (cache,res) = lookupFunctionsInEnv2(cache, env2, path, true, info);
