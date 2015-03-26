@@ -712,9 +712,9 @@ algorithm
       objLagrange := checkObjectIsSet(v,"$OMC$objectLagrangeTerm");
 
       opt_varlst := List.appendNoCopy(opt_varlst, conVarsList);
-      opt_varlst := List.appendNoCopy(fconVarsList, conVarsList);
-      opt_varlst := List.appendNoCopy(objMayer, conVarsList);
-      opt_varlst := List.appendNoCopy(objLagrange, conVarsList);
+      opt_varlst := List.appendNoCopy(opt_varlst, fconVarsList);
+      opt_varlst := List.appendNoCopy(opt_varlst, objMayer);
+      opt_varlst := List.appendNoCopy(opt_varlst, objLagrange);
 
       if not List.isEmpty(opt_varlst) then
         try

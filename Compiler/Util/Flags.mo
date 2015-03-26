@@ -733,12 +733,12 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeSimpleEquations",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",
+    "reduceDynamicOptimization", // before tearing
     "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
     "partlintornsystem",
     "countOperations",
     "inputDerivativesUsed",
     "extendDynamicOptimization",
-    "reduceDynamicOptimization",
     "calculateStrongComponentJacobians",
     "calculateStateSetsJacobians",
     "detectJacobianSparsePattern",
