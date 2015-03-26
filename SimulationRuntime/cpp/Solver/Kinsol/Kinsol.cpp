@@ -218,7 +218,7 @@ void Kinsol::solve()
         for(int i=0;i<_dimSys;i++) // Reset Scaling
           _fScale[i] = 1.0;
 
-        #ifdef USE_SUNDIALS_LAPACK 
+        #ifdef USE_SUNDIALS_LAPACK
           KINLapackDense(_kinMem, _dimSys);
         #else
           KINDense(_kinMem, _dimSys);
@@ -241,7 +241,7 @@ void Kinsol::solve()
           }
           solveNLS();
         }
-    
+
 /*
     if(_iterationStatus == DONE)
       return;
@@ -254,7 +254,7 @@ void Kinsol::solve()
     KINSpgmr(_kinMem,_dimSys);
     _iterationStatus = CONTINUE;
     solveNLS();
-    
+
     if(_iterationStatus == DONE)
       return;
     else  // Try Scaling

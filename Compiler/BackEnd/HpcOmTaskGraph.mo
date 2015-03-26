@@ -2589,7 +2589,7 @@ algorithm
         ((graphInfo,_)) = List.fold(nodeIdc, function addNodeToGraphML(
                                      tGraphDataTuple=(iGraph, iGraphData),
                                      attIdc=(nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,compsIdAttIdx,yCoordAttIdx,commCostAttIdx,commVarsAttIdx,
-                                      commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx, 
+                                      commVarsIntAttIdx,commVarsFloatAttIdx,commVarsBoolAttIdx,simCodeEqAttIdx,threadIdAttIdx,taskNumberAttIdx,annotAttIdx,
                                       partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx),
                                      sccSimEqMapping=iSccSimEqMapping,
                                      iSchedulerInfoCritPath=(iCriticalPath,iCriticalPathWoC,iSchedulerInfo, iAnnotationInfo),
@@ -2604,7 +2604,7 @@ protected function addNodeToGraphML "author: marcusw, waurich
   input Integer nodeIdx;
   input tuple<TaskGraph, TaskGraphMeta> tGraphDataTuple;
   input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> attIdc;
-  //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, 
+  //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, compsIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx,
   //                     commVarsAttFloatIdx, commVarsAttBoolIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx, partOfEventAttIdx, partOfOdeAttIdx, removedCompAttIdx>
   input array<list<Integer>> sccSimEqMapping;
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,array<tuple<Integer,Integer,Real>>,array<String>> iSchedulerInfoCritPath; //<criticalPath,criticalPathWoC,schedulerInfo,annotationInfo>
@@ -2659,7 +2659,7 @@ algorithm
     GRAPHDUMPOPTIONS(visualizeTaskStartAndFinishTime=visualizeTaskStartAndFinishTime, visualizeTaskCalcTime=visualizeTaskCalcTime) := iGraphDumpOptions;
     components := arrayGet(inComps,nodeIdx);
     ((isPartOfODESystem, isPartOfEventSystem, isRemovedComponent)) := getNodeMembershipByComponents(components, compInformations);
-    
+
     if(intNe(listLength(components), 1)) then
       primalComp := List.last(components);
       simCodeEqs := List.flatten(List.map1(components, Array.getIndexFirst, sccSimEqMapping));
@@ -3456,7 +3456,7 @@ protected
   array<list<Integer>> odeInComps;
   list<Integer> nodeComps;
   Integer nodeIdx, compIdx;
-  
+
   array<list<Integer>> inComps;
   array<tuple<Integer,Integer,Integer>> varCompMapping;
   array<tuple<Integer,Integer,Integer>> eqCompMapping;
@@ -3471,7 +3471,7 @@ protected
 algorithm
   iComponentInformation := COMPONENTINFO(Util.tuple31(iComponentMarks), Util.tuple32(iComponentMarks), Util.tuple33(iComponentMarks));
   TASKGRAPHMETA(inComps=odeInComps) := iTaskGraphMeta;
-  TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations) := iTargetTaskGraphMeta; 
+  TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations) := iTargetTaskGraphMeta;
   for nodeIdx in 1:arrayLength(iTaskGraph) loop
     nodeComps := arrayGet(odeInComps, nodeIdx);
     for compIdx in nodeComps loop

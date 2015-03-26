@@ -220,7 +220,7 @@ algorithm
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE);
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
-      
+
       //taskGraphDAE = arrayCopy(taskGraph);
       //taskGraphDataDAE = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       //(taskGraphDAE,taskGraphDataDAE) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDAE,taskGraphDataDAE);
@@ -276,7 +276,7 @@ algorithm
       //print("ODE Task Graph Informations\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);
-      
+
       //Mark all ODE nodes in the DAE Task Graph
       taskGraphData = HpcOmTaskGraph.markSystemComponents(taskGraphOde, taskGraphDataOde, (false, true, false), taskGraphData);
 
@@ -307,7 +307,7 @@ algorithm
       // Analyse Systems of Equations
       //-----------------------------
       (scheduledTasks,_) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
-      
+
       //Apply filters
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
