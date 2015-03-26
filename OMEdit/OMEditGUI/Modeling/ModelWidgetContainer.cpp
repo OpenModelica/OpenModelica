@@ -379,112 +379,89 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   LibraryTreeNode *pLibraryTreeNode;
   pLibraryTreeNode = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getLibraryTreeWidget()->getLibraryTreeNode(className);
-  if (!pLibraryTreeNode)
+  if (!pLibraryTreeNode) {
     return false;
+  }
   StringHandler::ModelicaClasses type = pLibraryTreeNode->getModelicaType();
   QString name = pLibraryTreeNode->getName();
   OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   // item not to be dropped on itself; if dropping an item on itself
-  if (mpModelWidget->getLibraryTreeNode()->getNameStructure().compare(pLibraryTreeNode->getNameStructure()) == 0)
-  {
-    if (pOptionsDialog->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->isChecked())
-    {
+  if (mpModelWidget->getLibraryTreeNode()->getNameStructure().compare(pLibraryTreeNode->getNameStructure()) == 0) {
+    if (pOptionsDialog->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->isChecked()) {
       NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ItemDroppedOnItself,
                                                                           NotificationsDialog::InformationIcon,
                                                                           mpModelWidget->getModelWidgetContainer()->getMainWindow());
       pNotificationsDialog->exec();
     }
     return false;
-  }
-  else
-  {
-    // check if the model is partial
-    if (pMainWindow->getOMCProxy()->isPartial(className))
-    {
-      if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked())
-      {
+  } else { // check if the model is partial
+    if (pMainWindow->getOMCProxy()->isPartial(className)) {
+      if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
         NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial,
                                                                             NotificationsDialog::InformationIcon,
                                                                             mpModelWidget->getModelWidgetContainer()->getMainWindow());
         pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
                                                          .arg(StringHandler::getModelicaClassType(type).toLower()).arg(name));
-        if (!pNotificationsDialog->exec())
+        if (!pNotificationsDialog->exec()) {
           return false;
+        }
       }
     }
     // get the model defaultComponentPrefixes
     QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(className);
     // get the model defaultComponentName
     QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(className);
-    if (defaultName.isEmpty())
-    {
+    if (defaultName.isEmpty()) {
       name = getUniqueComponentName(name.toLower());
-    }
-    else
-    {
-      if (checkComponentName(defaultName))
+    } else {
+      if (checkComponentName(defaultName)) {
         name = defaultName;
-      else
-      {
+      } else {
         name = getUniqueComponentName(defaultName);
         // show the information to the user if we have changed the name of some inner component.
-        if (defaultPrefix.contains("inner"))
-        {
-          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked())
-          {
+        if (defaultPrefix.contains("inner")) {
+          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
             NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
                                                                                 NotificationsDialog::InformationIcon,
                                                                                 mpModelWidget->getModelWidgetContainer()->getMainWindow());
             pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
                                                              .arg(defaultName).arg(name));
-            if (!pNotificationsDialog->exec())
+            if (!pNotificationsDialog->exec()) {
               return false;
+            }
           }
         }
       }
     }
     // if dropping an item on the diagram layer
-    if (mViewType == StringHandler::Diagram)
-    {
+    if (mViewType == StringHandler::Diagram) {
       // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
-      if ((type == StringHandler::Class) or (type == StringHandler::Model) or (type == StringHandler::Block) or
-          (type == StringHandler::Connector) or (type == StringHandler::Record))
-      {
-        if (type == StringHandler::Connector)
-        {
+      if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
+          (type == StringHandler::Connector) || (type == StringHandler::Record)) {
+        if (type == StringHandler::Connector) {
           addComponentToView(name, className, "", position, 0, type, false);
           mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, 0, type);
           /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
           pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
-        }
-        else
-        {
+        } else {
           addComponentToView(name, className, "", position, 0, type);
         }
         return true;
-      }
-      else
-      {
+      } else {
         QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                  GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(className)
                                  .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
         return false;
       }
-    }
-    // if dropping an item on the icon layer
-    else if (mViewType == StringHandler::Icon)
-    {
+    } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
       // if item is a connector. then we can drop it to the graphicsview
-      if (type == StringHandler::Connector)
-      {
+      if (type == StringHandler::Connector) {
         addComponentToView(name, className, "", position, 0, type, false);
         mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, 0, type);
         /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
         pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
         return true;
-      }
-      else
-      {
+      } else {
         QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                  GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(className)
                                  .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
@@ -2508,7 +2485,7 @@ void ModelWidget::showIconView(bool checked)
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/model.svg"));
   }
   mpIconGraphicsView->setFocus();
-  if (!checked or (checked and mpIconGraphicsView->isVisible())) {
+  if (!checked || (checked && mpIconGraphicsView->isVisible())) {
     return;
   }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Icon));
@@ -2540,7 +2517,7 @@ void ModelWidget::showDiagramView(bool checked)
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   }
   mpDiagramGraphicsView->setFocus();
-  if (!checked or (checked and mpDiagramGraphicsView->isVisible())) {
+  if (!checked || (checked && mpDiagramGraphicsView->isVisible())) {
     return;
   }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));

@@ -203,38 +203,33 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
 }
 
-//! Slot activated when linkClicked signal of webview is raised.
-//! Handles the link processing. Sends all the http starting links to the QDesktopServices and process all Modelica starting links.
+/*!
+ * \brief DocumentationViewer::processLinkClick
+ * \param url
+ * Slot activated when linkClicked signal of webview is raised.
+ * Handles the link processing. Sends all the http starting links to the QDesktopServices and process all Modelica starting links.
+ */
 void DocumentationViewer::processLinkClick(QUrl url)
 {
   // Send all http requests to desktop services for now.
   // if url contains http or mailto: send it to desktop services
-  if ((url.toString().startsWith("http")) or (url.toString().startsWith("mailto:")))
-  {
+  if ((url.toString().startsWith("http")) || (url.toString().startsWith("mailto:"))) {
     QDesktopServices::openUrl(url);
-  }
-  // if the user has clicked on some Modelica Links like modelica://
-  else if (url.scheme().compare("modelica") == 0)
-  {
+  } else if (url.scheme().compare("modelica") == 0) { // if the user has clicked on some Modelica Links like modelica://
     // remove modelica:/// from Qurl
     QString resourceLink = url.toString().mid(12);
     /* if the link is a resource e.g .html, .txt or .pdf */
-    if (resourceLink.endsWith(".html") || resourceLink.endsWith(".txt") || resourceLink.endsWith(".pdf"))
-    {
+    if (resourceLink.endsWith(".html") || resourceLink.endsWith(".txt") || resourceLink.endsWith(".pdf")) {
       QString resourceAbsoluteFileName = mpDocumentationWidget->getMainWindow()->getOMCProxy()->uriToFilename("modelica://" + resourceLink);
       QDesktopServices::openUrl("file:///" + resourceAbsoluteFileName);
-    }
-    else
-    {
+    } else {
       LibraryTreeNode *pLibraryTreeNode = mpDocumentationWidget->getMainWindow()->getLibraryTreeWidget()->getLibraryTreeNode(resourceLink);
       // send the new className to DocumentationWidget
-      if (pLibraryTreeNode)
+      if (pLibraryTreeNode) {
         mpDocumentationWidget->showDocumentation(pLibraryTreeNode->getNameStructure());
+      }
     }
-  }
-  // if it is normal http request then check if its not redirected to https
-  else
-  {
+  } else { // if it is normal http request then check if its not redirected to https
     QNetworkAccessManager* accessManager = page()->networkAccessManager();
     QNetworkRequest request(url);
     QNetworkReply* reply = accessManager->get(request);
