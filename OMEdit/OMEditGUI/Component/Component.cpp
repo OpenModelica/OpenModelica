@@ -316,13 +316,11 @@ void Component::parseAnnotationString(QString annotation)
     else if (shape.startsWith("Bitmap"))
     {
       /* get the class file path */
-      QString classFileName;
-      QVariantMap classInformation = mpOMCProxy->getClassInformation(mClassName);
-      classFileName = classInformation["fileName"].toString();
+      OMCInterface::getClassInformation_res classInformation = mpOMCProxy->getClassInformation(mClassName);
       /* create the bitmap shape */
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(classFileName, shape, this);
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(classInformation.fileName, shape, this);
       mShapesList.append(pBitmapAnnotation);
     }
   }
