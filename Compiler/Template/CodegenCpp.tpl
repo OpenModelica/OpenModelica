@@ -2934,7 +2934,6 @@ case "gcc" then
             <%if boolNot(stringEq(makefileParams.platform, "win32")) then
                 <<
                 <%\t%>chmod +x <%fileNamePrefix%>.sh
-                <%\t%>ln -sf <%fileNamePrefix%>.sh <%fileNamePrefix%>
                 >>
             %>
             >>
