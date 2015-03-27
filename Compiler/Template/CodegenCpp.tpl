@@ -2047,7 +2047,15 @@ return 0;
 end match
 else
 match simCode
-case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
+case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+  let start     = settings.startTime
+  let end       = settings.stopTime
+  let stepsize  = settings.stepSize
+  let intervals = settings.numberOfIntervals
+  let tol       = settings.tolerance
+  let solver    = settings.method
+  let moLib     = makefileParams.compileDir
+  let home      = makefileParams.omhome
   <<
   #include <Core/Modelica.h>
   #include <Core/ModelicaDefine.h>
@@ -2096,6 +2104,33 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   int main(int argc, const char* argv[])
   #endif
   {
+      // merge provided options with defaults
+      std::map<std::string, std::string> opts;
+      std::map<std::string, std::string>::const_iterator it;
+      opts["-s"] = "<%start%>";
+      opts["-e"] = "<%end%>";
+      opts["-f"] = "<%stepsize%>";
+      opts["-v"] = "<%intervals%>";
+      opts["-y"] = "<%tol%>";
+      opts["-i"] = "<%solver%>";
+      opts["-r"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-m"] = "<%moLib%>";
+      opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-o"] = "<%settings.outputFormat%>";
+      const char *optv[argc + 2 * opts.size()];
+      optv[0] = argv[0];
+      int optc = 1;
+      for (int i = 1; i < argc; i++) {
+          if ((it = opts.find(argv[i])) != opts.end() && i < argc - 1)
+              opts[it->first] = argv[++i]; // override
+          else
+              optv[optc++] = argv[i];      // pass through
+      }
+      for (it = opts.begin(); it != opts.end(); it++) {
+          optv[optc++] = it->first.c_str();
+          optv[optc++] = it->second.c_str();
+      }
+
       <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
@@ -2147,7 +2182,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             #endif
             //SimController to start simulation
 
-            std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
+            std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(optc, optv);
 
 
             //create Modelica system
