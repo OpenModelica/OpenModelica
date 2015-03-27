@@ -2097,6 +2097,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     }
   #endif
 
+  #include <boost/algorithm/string.hpp>
+
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -2120,9 +2122,39 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       const char *optv[argc + 2 * opts.size()];
       optv[0] = argv[0];
       int optc = 1;
+      std::string override;                // OMEdit override option
       for (int i = 1; i < argc; i++) {
           if ((it = opts.find(argv[i])) != opts.end() && i < argc - 1)
-              opts[it->first] = argv[++i]; // override
+              opts[it->first] = argv[++i]; // regular override
+          else if (strncmp(argv[i], "-override=", 10) == 0) {
+              override = "-override=";
+              std::vector<std::string> strs;
+              boost::split(strs, argv[i], boost::is_any_of(",="));
+              for (int j = 1; j < strs.size(); j++) {
+                  if (strs[j] == "startTime" && j < strs.size() - 1)
+                      opts["-s"] = strs[++j];
+                  else if (strs[j] == "stopTime" && j < strs.size() - 1)
+                      opts["-e"] = strs[++j];
+                  else if (strs[j] == "stepSize" && j < strs.size() - 1)
+                      opts["-f"] = strs[++j];
+                  else if (strs[j] == "tolerance" && j < strs.size() - 1)
+                      opts["-y"] = strs[++j];
+                  else if (strs[j] == "solver" && j < strs.size() - 1)
+                      opts["-i"] = strs[++j];
+                  else if (strs[j] == "outputFormat" && j < strs.size() - 1)
+                      opts["-o"] = strs[++j];
+                  else {
+                      // leave untreated overrides
+                      if (override.size() > 10)
+                          override += ",";
+                      override += strs[j];
+                      if (j < strs.size() - 1)
+                          override += "=" + strs[++j];
+                  }
+              }
+              if (override.size() > 10)
+                  optv[optc++] = override.c_str();
+          }
           else
               optv[optc++] = argv[i];      // pass through
       }
