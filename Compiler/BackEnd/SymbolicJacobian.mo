@@ -1634,7 +1634,7 @@ algorithm
         // Differentiate the System w.r.t states&inputs for matrices B
 
         optimizer_vars = BackendVariable.addVariables(statesarr, BackendVariable.copyVariables(conVars));
-        object = DynamicOptimization.checkObjectIsSet(outputvarsarr,"$OMC$objectLagrangeTerm");
+        object = DynamicOptimization.checkObjectIsSet(outputvarsarr, BackendDAE.optimizationLagrangeTermName);
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B");
@@ -1646,7 +1646,7 @@ algorithm
         end if;
 
         // Differentiate the System w.r.t states for matrices C
-        object = DynamicOptimization.checkObjectIsSet(outputvarsarr,"$OMC$objectMayerTerm");
+        object = DynamicOptimization.checkObjectIsSet(outputvarsarr, BackendDAE.optimizationMayerTermName);
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C");

@@ -708,8 +708,8 @@ algorithm
 
       conVarsList := List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
       fconVarsList := List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars);
-      objMayer := checkObjectIsSet(v,"$OMC$objectMayerTerm");
-      objLagrange := checkObjectIsSet(v,"$OMC$objectLagrangeTerm");
+      objMayer := checkObjectIsSet(v,BackendDAE.optimizationMayerTermName);
+      objLagrange := checkObjectIsSet(v,BackendDAE.optimizationLagrangeTermName);
 
       opt_varlst := List.appendNoCopy(opt_varlst, conVarsList);
       opt_varlst := List.appendNoCopy(opt_varlst, fconVarsList);
