@@ -149,7 +149,7 @@ void FindReplaceDialog::readFindTextFromSettings()
   int numFindTexts = qMin(findTexts.size(), (int)MaxFindTexts);
   for (int i = 0; i < numFindTexts; ++i)
   {
-    FindText findText = qvariant_cast<FindText>(findTexts[i]);
+    FindTextOM findText = qvariant_cast<FindTextOM>(findTexts[i]);
     mpFindComboBox->addItem(findText.text);
   }
 }
@@ -165,11 +165,11 @@ void FindReplaceDialog::saveFindTextToSettings(QString textToFind)
   // remove the already present text from the list.
   foreach (QVariant text, texts)
   {
-    FindText findText = qvariant_cast<FindText>(text);
+    FindTextOM findText = qvariant_cast<FindTextOM>(text);
     if (findText.text.compare(textToFind) == 0)
       texts.removeOne(text);
   }
-  FindText findText;
+  FindTextOM findText;
   findText.text = textToFind;
   texts.prepend(QVariant::fromValue(findText));
   while (texts.size() > MaxFindTexts)

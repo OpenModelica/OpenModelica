@@ -101,54 +101,53 @@ public:
     SaveFolderStructure,
     SaveUnspecified
   };
-  LibraryTreeNode(LibraryType type, QString text, QString parentName, QString nameStructure, QString tooltip,
-                  StringHandler::ModelicaClasses modelicaType, QString fileName, bool readOnly, bool isSaved, bool isProtected,
-                  LibraryTreeWidget *pParent);
-  QIcon getModelicaNodeIcon();
+  LibraryTreeNode(LibraryType type, QString text, QString parentName, QString nameStructure,
+                  OMCInterface::getClassInformation_res classInformation, QString fileName, bool isSaved, LibraryTreeWidget *pParent);
   LibraryType getLibraryType() {return mLibraryType;}
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
-  void setModelicaType(StringHandler::ModelicaClasses type);
-  StringHandler::ModelicaClasses getModelicaType();
-  void setName(QString name);
-  const QString& getName() const;
-  void setParentName(QString parentName);
-  const QString& getParentName();
-  void setNameStructure(QString nameStructure);
-  const QString& getNameStructure();
+  void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
+  bool isSystemLibrary() {return mSystemLibrary;}
+  void setModelWidget(ModelWidget *pModelWidget) {mpModelWidget = pModelWidget;}
+  ModelWidget* getModelWidget() {return mpModelWidget;}
+  void setName(QString name) {mName = name;}
+  const QString& getName() const {return mName;}
+  void setParentName(QString parentName) {mParentName = parentName;}
+  const QString& getParentName() {return mParentName;}
+  void setNameStructure(QString nameStructure) {mNameStructure = nameStructure;}
+  const QString& getNameStructure() {return mNameStructure;}
+  void setClassInformation(OMCInterface::getClassInformation_res classInformation);
+  OMCInterface::getClassInformation_res getClassInformation() {return mClassInformation;}
   void setFileName(QString fileName);
-  const QString& getFileName();
-  void setReadOnly(bool readOnly);
-  bool isReadOnly();
-  void setSystemLibrary(bool systemLibrary);
-  bool isSystemLibrary();
-  void setIsSaved(bool isSaved);
-  bool isSaved();
-  void setIsProtected(bool isProtected);
-  bool isProtected();
-  void setIsPartial(bool isPartial) {mIsPartial = isPartial;}
-  bool isPartial() {return mIsPartial;}
-  void setSaveContentsType(LibraryTreeNode::SaveContentsType saveContentsType);
-  SaveContentsType getSaveContentsType();
-  void setIsDocumentationClass(bool documentationClass);
-  bool isDocumentationClass();
-  void setModelWidget(ModelWidget *pModelWidget);
-  ModelWidget* getModelWidget();
+  const QString& getFileName() {return mFileName;}
+  void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
+  bool isReadOnly() {return mReadOnly;}
+  void setIsSaved(bool isSaved) {mIsSaved = isSaved;}
+  bool isSaved() {return mIsSaved;}
+  void setIsProtected(bool isProtected) {mIsProtected = isProtected;}
+  bool isProtected() {return mIsProtected;}
+  void setIsDocumentationClass(bool documentationClass) {mDocumentationClass = documentationClass;}
+  bool isDocumentationClass() {return mDocumentationClass;}
+  void setSaveContentsType(LibraryTreeNode::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
+  StringHandler::ModelicaClasses getRestriction() {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
+  bool isPartial() {return mClassInformation.partialPrefix;}
+  SaveContentsType getSaveContentsType() {return mSaveContentsType;}
+  void updateAttributes();
+  QIcon getModelicaNodeIcon();
 private:
-  LibraryTreeWidget *mpLibraryTreeWidget;
   LibraryType mLibraryType;
-  StringHandler::ModelicaClasses mModelicaType;
+  bool mSystemLibrary;
+  ModelWidget *mpModelWidget;
+  LibraryTreeWidget *mpLibraryTreeWidget;
   QString mName;
   QString mParentName;
   QString mNameStructure;
+  OMCInterface::getClassInformation_res mClassInformation;
   QString mFileName;
   bool mReadOnly;
-  bool mSystemLibrary;
   bool mIsSaved;
   bool mIsProtected;
-  SaveContentsType mSaveContentsType;
   bool mDocumentationClass;
-  bool mIsPartial;
-  ModelWidget *mpModelWidget;
+  SaveContentsType mSaveContentsType;
 };
 
 class LibraryTreeWidget : public QTreeWidget
@@ -170,8 +169,7 @@ public:
   void addLibraryTreeNodes(QList<LibraryTreeNode*> libraryTreeNodes);
   bool isLibraryTreeNodeExpanded(QTreeWidgetItem *item);
   static bool sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2);
-  LibraryTreeNode* addLibraryTreeNode(QString name, StringHandler::ModelicaClasses type, QString parentName=QString(),
-                                      bool isSaved = true, int insertIndex = 0);
+  LibraryTreeNode* addLibraryTreeNode(QString name, QString parentName = QString(""), bool isSaved = true, int insertIndex = 0);
   LibraryTreeNode* addLibraryTreeNode(QString name, bool isSaved, int insertIndex = 0);
   LibraryTreeNode* getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive);
   QList<LibraryTreeNode*> getLibraryTreeNodesList();

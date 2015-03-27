@@ -54,13 +54,13 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   QFont monospaceFont("Monospace");
   monospaceFont.setStyleHint(QFont::TypeWriter);
   Helper::monospacedFontInfo = QFontInfo(monospaceFont);
-  /*! @note Register the RecentFile, FindText and DebuggerConfiguration struct in the Qt's meta system
+  /*! @note Register the RecentFile, FindTextOM and DebuggerConfiguration struct in the Qt's meta system
    * Don't remove/move the following lines.
-   * Because RecentFile, FindText and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindText and
+   * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
      DebuggerConfiguration section respectively from the settings file.
    */
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
-  qRegisterMetaTypeStreamOperators<FindText>("FindText");
+  qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
   setObjectName("MainWindow");

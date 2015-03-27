@@ -382,7 +382,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   if (!pLibraryTreeNode) {
     return false;
   }
-  StringHandler::ModelicaClasses type = pLibraryTreeNode->getModelicaType();
+  StringHandler::ModelicaClasses type = pLibraryTreeNode->getRestriction();
   QString name = pLibraryTreeNode->getName();
   OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   // item not to be dropped on itself; if dropping an item on itself
@@ -1974,7 +1974,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
     pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
     pViewButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
-    mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(pLibraryTreeNode->getModelicaType()));
+    mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(pLibraryTreeNode->getRestriction()));
     mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
     // icon graphics framework
     mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
@@ -2289,8 +2289,9 @@ void ModelWidget::getModelIconDiagramShapes(QString className, QString annotatio
     {
       /* get the class file path */
       QString classFileName;
-      QVariantMap classInformation = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getClassInformation(className);
-      classFileName = classInformation["fileName"].toString();
+      OMCInterface::getClassInformation_res classInformation;
+      classInformation = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getClassInformation(className);
+      classFileName = classInformation.fileName;
       /* create the bitmap shape */
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2440,13 +2441,10 @@ void ModelWidget::refresh()
   pOMCProxy->removeCachedOMCCommand(mpLibraryTreeNode->getNameStructure());
   /* set the LibraryTreeNode filename, type & tooltip */
   pOMCProxy->setSourceFile(mpLibraryTreeNode->getNameStructure(), mpLibraryTreeNode->getFileName());
-  QVariantMap info = pOMCProxy->getClassInformation(mpLibraryTreeNode->getNameStructure());
-  StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? pOMCProxy->getClassRestriction(mpLibraryTreeNode->getNameStructure()) : StringHandler::getModelicaClassType(info["restriction"].toString());
-  mpLibraryTreeNode->setModelicaType(type);
-  mpLibraryTreeNode->setToolTip(0, StringHandler::createTooltip(info, mpLibraryTreeNode->getName(), mpLibraryTreeNode->getNameStructure()));
-  /* set the LibraryTreeNode icon */
+  mpLibraryTreeNode->setClassInformation(pOMCProxy->getClassInformation(mpLibraryTreeNode->getNameStructure()));
   bool isDocumentationClass = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getDocumentationClassAnnotation(mpLibraryTreeNode->getNameStructure());
   mpLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
+  mpLibraryTreeNode->updateAttributes();
   mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget()->loadLibraryComponent(mpLibraryTreeNode);
   /* remove everything from the icon view */
   mpIconGraphicsView->removeAllComponents();
@@ -2698,7 +2696,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     if (modelName.compare(parentName) == 0)
       parentName = "";
     LibraryTreeNode *pLibraryTreeNode;
-    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(modelName, pOMCProxy->getClassRestriction(modelName), parentName, false);
+    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(modelName, parentName, false);
     pLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
   }
   return true;

@@ -164,13 +164,13 @@ inline QDataStream& operator>>(QDataStream& in, RecentFile& recentFile)
   return in;
 }
 
-//! @struct FindText
+//! @struct FindTextOM
 /*! \brief It contains the recently searched text from find/replace dialog .
  * We must register this struct as a meta type since we need to use it as a QVariant.
  * This is used to store the recent texts information in omedit.ini file.
  * The QDataStream also needed to be defined for this struct.
  */
-struct FindText
+struct FindTextOM
 {
   QString text;
   operator QVariant() const
@@ -178,15 +178,15 @@ struct FindText
     return QVariant::fromValue(*this);
   }
 };
-Q_DECLARE_METATYPE(FindText)
+Q_DECLARE_METATYPE(FindTextOM)
 
-inline QDataStream& operator<<(QDataStream& out, const FindText& findText)
+inline QDataStream& operator<<(QDataStream& out, const FindTextOM& findText)
 {
   out << findText.text;
   return out;
 }
 
-inline QDataStream& operator>>(QDataStream& in, FindText& findText)
+inline QDataStream& operator>>(QDataStream& in, FindTextOM& findText)
 {
   in >> findText.text;
   return in;

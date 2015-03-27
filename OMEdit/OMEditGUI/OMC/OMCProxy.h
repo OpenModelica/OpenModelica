@@ -39,6 +39,7 @@
 #ifndef OMCPROXY_H
 #define OMCPROXY_H
 
+#include "OpenModelicaScriptingAPIQt.h"
 #include "MainWindow.h"
 #include "Component.h"
 #include "StringHandler.h"
@@ -114,7 +115,7 @@ public:
   QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = "false",
                             bool sort = false, bool builtin = false, bool showProtected = "true");
   QStringList searchClassNames(QString searchText, bool findInText = "false");
-  QVariantMap getClassInformation(QString className);
+  OMCInterface::getClassInformation_res getClassInformation(QString className);
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);
   QString getBuiltinType(QString typeName);

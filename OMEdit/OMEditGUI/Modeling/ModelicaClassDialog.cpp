@@ -406,9 +406,7 @@ void ModelicaClassDialog::createModelicaClass()
   }
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text().trimmed(),
-                                                            StringHandler::getModelicaClassType(mpSpecializationComboBox->currentText()),
-                                                            mpParentClassTextBox->text().trimmed(), false);
+  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text().trimmed(), mpParentClassTextBox->text().trimmed(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
   pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true, !mpExtendsClassTextBox->text().isEmpty());
@@ -643,7 +641,7 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pPar
   // create save contents of package in one file checkbox
   mpSaveContentsInOneFileCheckBox = new QCheckBox(tr("Save contents in one file"));
   mpSaveContentsInOneFileCheckBox->setChecked(true);
-  if (pModelWidget->getLibraryTreeNode()->getModelicaType() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
+  if (pModelWidget->getLibraryTreeNode()->getRestriction() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
     mpSaveContentsInOneFileCheckBox->setVisible(true);
   else
     mpSaveContentsInOneFileCheckBox->setVisible(false);
@@ -681,7 +679,7 @@ QComboBox* SaveAsClassDialog::getParentClassComboBox()
   */
 void SaveAsClassDialog::saveAsModelicaClass()
 {
-  QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeNode()->getModelicaType());
+  QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeNode()->getRestriction());
   if (mpNameTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
@@ -753,8 +751,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
   }
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(), mpModelWidget->getLibraryTreeNode()->getModelicaType(),
-                                                            mpParentClassComboBox->currentText(), false);
+  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(), mpParentClassComboBox->currentText(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
   pLibraryTreeWidget->showModelWidget(pLibraryTreeNode);
@@ -763,7 +760,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
 
 void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 {
-  if (text.isEmpty() && mpModelWidget->getLibraryTreeNode()->getModelicaType() == StringHandler::Package)
+  if (text.isEmpty() && mpModelWidget->getLibraryTreeNode()->getRestriction() == StringHandler::Package)
     mpSaveContentsInOneFileCheckBox->setVisible(true);
   else
     mpSaveContentsInOneFileCheckBox->setVisible(false);
@@ -851,8 +848,7 @@ void CopyClassDialog::copyClass()
     LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
     LibraryTreeNode *pLibraryTreeNode;
     QString className = mpNameTextBox->text().trimmed();
-    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(className, mpMainWindow->getOMCProxy()->getClassRestriction(className),
-                                                              mpPathTextBox->text().trimmed(), false);
+    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(className, mpPathTextBox->text().trimmed(), false);
     pLibraryTreeNode->setSaveContentsType(mpLibraryTreeNode->getSaveContentsType());
     pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
   }

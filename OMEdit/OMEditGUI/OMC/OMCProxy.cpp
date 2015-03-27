@@ -51,8 +51,6 @@ void* omc_Main_init(void *threadData, void *args);
 void* omc_Main_readSettings(void *threadData, void *args);
 }
 
-#include "OpenModelicaScriptingAPIQt.h"
-
 #include <stdexcept>
 #include <stdlib.h>
 #include <iostream>
@@ -846,33 +844,16 @@ QStringList OMCProxy::searchClassNames(QString searchText, bool findInText)
   \param className - is the name of the class whose information is retrieved.
   \return the class information list.
   */
-QVariantMap OMCProxy::getClassInformation(QString className)
+OMCInterface::getClassInformation_res OMCProxy::getClassInformation(QString className)
 {
-  QVariantMap result;
+  OMCInterface::getClassInformation_res classInformation;
   try {
-    OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
-    result["restriction"] = classInformation.restriction;
-    result["comment"] = classInformation.comment;
-    result["partialPrefix"] = classInformation.partialPrefix;
-    result["finalPrefix"] = classInformation.finalPrefix;
-    result["encapsulatedPrefix"] = classInformation.encapsulatedPrefix;
-    /*
-      Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
-      We only set the fileName field if returned value is really a file path.
-      */
-    result["fileName"] = classInformation.fileName.endsWith(".mo") ? classInformation.fileName : "";
-    result["fileReadOnly"] = classInformation.fileReadOnly;
-    result["lineNumberStart"] = (long long) classInformation.lineNumberStart;
-    result["columnNumberStart"] = (long long) classInformation.columnNumberStart;
-    result["lineNumberEnd"] = (long long) classInformation.lineNumberEnd;
-    result["columnNumberEnd"] = (long long) classInformation.columnNumberEnd;
-    result["dimensions"] = "";
-    //res["dimensions"] = classInformation.dimensions;
+    classInformation = mpOMCInterface->getClassInformation(className);
   } catch (std::exception &exception) {
     showException(exception);
     printMessagesStringInternal();
   }
-  return result;
+  return classInformation;
 }
 
 /*!
