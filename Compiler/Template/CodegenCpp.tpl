@@ -1676,7 +1676,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
         <<
         #!/bin/sh
         <%preRunCommandLinux%>
-        <%execCommandLinux%> ./OMCpp<%fileNamePrefixx%>Main <%execParameters%> $*
+        <%execCommandLinux%> ./<%fileNamePrefixx%> <%execParameters%> $*
         >>
       case  "win32"
       case  "win64" then
@@ -1685,7 +1685,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
         <%preRunCommandWindows%>
         REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
-        <%moLib%>/OMCpp<%fileNamePrefixx%>Main.exe <%execParameters%>
+        <%moLib%>/<%fileNamePrefixx%>.exe <%execParameters%>
         >>
     end match
   end match
@@ -2810,7 +2810,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PREVARSFILE=OMCpp<%fileNamePrefix%>PreVariables.cpp
   SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
-  MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
+  MAINOBJ=<%fileNamePrefix%>$(EXEEXT)
   SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
@@ -2870,7 +2870,7 @@ case "gcc" then
             CPPFLAGS = $(CFLAGS) <%extraCppFlags%>
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
-            MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
+            MAINOBJ=<%fileNamePrefix%>$(EXEEXT)
             SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
             CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
