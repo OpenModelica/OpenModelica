@@ -1016,6 +1016,7 @@ protected
   Boolean addFunctions;
   FCore.Graph env;
   Absyn.Exp exp;
+  list<Absyn.Exp> dimensions;
 algorithm
   fn_name := getApiFunctionNameInfo(inStatements);
   GlobalScript.SYMBOLTABLE(ast = old_p) := inSymbolTable;
@@ -1036,6 +1037,15 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = crident), exp} := args;
         (p, outResult) := setParameterValue(class_, crident, exp, p);
+      then
+        outResult;
+
+    case "setComponentDimensions"
+      algorithm
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = cr),
+         Absyn.ARRAY(dimensions)} := args;
+        (p, outResult) := setComponentDimensions(class_, cr, dimensions, p);
       then
         outResult;
 
@@ -17621,6 +17631,93 @@ algorithm
       Connect.emptySet, NONE());
   end try;
 end getClassEnvNoElaboration;
+
+protected function setComponentDimensions
+  "Sets a component dimensions."
+  input Absyn.ComponentRef inClass;
+  input Absyn.ComponentRef inComponentName;
+  input list<Absyn.Exp> inDimensions;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+  output String outResult;
+protected
+  Absyn.Path p_class;
+  Absyn.Within within_;
+  Absyn.Class cls;
+algorithm
+  try
+    p_class := Absyn.crefToPath(inClass);
+    within_ := buildWithin(p_class);
+    cls := getPathedClassInProgram(p_class, inProgram);
+    cls := setComponentDimensionsInClass(cls, inComponentName, inDimensions);
+    outProgram := updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
+    outResult := "Ok";
+  else
+    outProgram := inProgram;
+    outResult := "Error";
+  end try;
+end setComponentDimensions;
+
+protected function setComponentDimensionsInClass
+" Sets the dimensions on a component in a class."
+  input Absyn.Class inClass;
+  input Absyn.ComponentRef inComponentName;
+  input list<Absyn.Exp> inDimensions;
+  output Absyn.Class outClass = inClass;
+algorithm
+  (outClass, true) := Absyn.traverseClassComponents(inClass,
+    function setComponentDimensionsInCompitems(inComponentName = inComponentName, inDimensions = inDimensions), false);
+end setComponentDimensionsInClass;
+
+protected function setComponentDimensionsInCompitems
+"Helper function to setComponentDimensions.
+ Sets the dimensions in a ComponentItem."
+  input list<Absyn.ComponentItem> inComponents;
+  input Boolean inFound;
+  input Absyn.ComponentRef inComponentName;
+  input list<Absyn.Exp> inDimensions;
+  output list<Absyn.ComponentItem> outComponents = {};
+  output Boolean outFound;
+  output Boolean outContinue;
+protected
+  Absyn.ComponentItem item;
+  list<Absyn.ComponentItem> rest_items = inComponents;
+  Absyn.Component comp;
+  list<Absyn.ElementArg> args_old, args_new;
+  Absyn.EqMod eqmod_old, eqmod_new;
+  String comp_id;
+algorithm
+  comp_id := Absyn.crefFirstIdent(inComponentName);
+
+  // Try to find the component we're looking for.
+  while not listEmpty(rest_items) loop
+    item :: rest_items := rest_items;
+
+    if Absyn.componentName(item) == comp_id then
+      // Found component, propagate the modifier to it.
+      _ := match item
+        case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
+          algorithm
+            comp.arrayDim := List.map(inDimensions, Absyn.makeSubscript);
+            item.component := comp;
+          then
+            ();
+      end match;
+
+      // Reassemble the item list and return.
+      outComponents := listAppend(listReverse(outComponents), item :: rest_items);
+      outFound := true;
+      outContinue := false;
+      return;
+    end if;
+    outComponents := item :: outComponents;
+  end while;
+
+  // Component not found, continue looking.
+  outComponents := inComponents;
+  outFound := false;
+  outContinue := true;
+end setComponentDimensionsInCompitems;
 
 annotation(__OpenModelica_Interface="backend");
 end Interactive;

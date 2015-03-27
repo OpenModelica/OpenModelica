@@ -6265,5 +6265,12 @@ algorithm
   annotation(__OpenModelica_EarlyInline = true);
 end optMsg;
 
+public function makeSubscript
+  input Exp inExp;
+  output Subscript outSubscript;
+algorithm
+  outSubscript := SUBSCRIPT(inExp);
+end makeSubscript;
+
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;
