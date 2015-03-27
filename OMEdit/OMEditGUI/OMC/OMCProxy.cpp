@@ -1844,6 +1844,24 @@ bool OMCProxy::setComponentComment(QString className, QString componentName, QSt
 }
 
 /*!
+ * \brief OMCProxy::setComponentDimensions
+ * Sets the component dimensions
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \param dimensions - the component dimensions.
+ * \return true on success
+ */
+bool OMCProxy::setComponentDimensions(QString className, QString componentName, QString dimensions)
+{
+  sendCommand("setComponentDimensions(" + className + "," + componentName + "," + dimensions + ")");
+  if (getResult().contains("Ok")) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/*!
   Adds a connection
   \param from - the connection start component name.
   \param to - the connection end component name.

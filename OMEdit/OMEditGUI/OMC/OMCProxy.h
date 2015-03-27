@@ -173,6 +173,7 @@ public:
   bool setComponentProperties(QString className, QString componentName, QString isFinal, QString isFlow, QString isProtected,
                               QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality);
   bool setComponentComment(QString className, QString componentName, QString comment);
+  bool setComponentDimensions(QString className, QString componentName, QString dimensions);
   bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
   bool simulate(QString className, QString simualtionParameters);

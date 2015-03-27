@@ -221,6 +221,7 @@ public:
   bool getInner();
   bool getOuter();
   QString getCasuality();
+  void setArrayIndex(QString arrayIndex);
   QString getArrayIndex();
   bool isArray();
 private:

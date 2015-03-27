@@ -939,16 +939,22 @@ void ComponentAttributes::setUpDialog()
   QGridLayout *pTypeGroupBoxLayout = new QGridLayout;
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
+  // dimensions
+  mpDimensionsLabel = new Label(tr("Dimensions:"));
+  mpDimensionsTextBox = new QLineEdit;
+  mpDimensionsTextBox->setToolTip(tr("Array of dimensions e.g {1, 5, 2}"));
   mpCommentLabel = new Label(Helper::comment);
   mpCommentTextBox = new QLineEdit;
   mpPathLabel = new Label(Helper::path);
   mpPathTextBox = new Label;
   pTypeGroupBoxLayout->addWidget(mpNameLabel, 0, 0);
   pTypeGroupBoxLayout->addWidget(mpNameTextBox, 0, 1);
-  pTypeGroupBoxLayout->addWidget(mpCommentLabel, 1, 0);
-  pTypeGroupBoxLayout->addWidget(mpCommentTextBox, 1, 1);
-  pTypeGroupBoxLayout->addWidget(mpPathLabel, 2, 0);
-  pTypeGroupBoxLayout->addWidget(mpPathTextBox, 2, 1);
+  pTypeGroupBoxLayout->addWidget(mpDimensionsLabel, 1, 0);
+  pTypeGroupBoxLayout->addWidget(mpDimensionsTextBox, 1, 1);
+  pTypeGroupBoxLayout->addWidget(mpCommentLabel, 2, 0);
+  pTypeGroupBoxLayout->addWidget(mpCommentTextBox, 2, 1);
+  pTypeGroupBoxLayout->addWidget(mpPathLabel, 3, 0);
+  pTypeGroupBoxLayout->addWidget(mpPathTextBox, 3, 1);
   mpTypeGroupBox->setLayout(pTypeGroupBoxLayout);
   // create Variablity Group Box
   mpVariabilityGroupBox = new QGroupBox("Variability");
@@ -1008,8 +1014,9 @@ void ComponentAttributes::setUpDialog()
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
-  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || mpComponent->isInheritedComponent())
+  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || mpComponent->isInheritedComponent()) {
     mpOkButton->setDisabled(true);
+  }
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -1031,47 +1038,50 @@ void ComponentAttributes::setUpDialog()
 void ComponentAttributes::initializeDialog()
 {
   QString className;
-  if (mpComponent->isInheritedComponent())
+  if (mpComponent->isInheritedComponent()) {
     className = mpComponent->getInheritedClassName();
-  else
+  } else {
     className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  }
   /* get the components of the class */
   QList<ComponentInfo*> componentInfoList = mpComponent->getOMCProxy()->getComponents(className);
   /* read the components */
-  foreach (ComponentInfo *pComponentInfo, componentInfoList)
-  {
-    if (pComponentInfo->getName() == mpComponent->getName())
-    {
+  foreach (ComponentInfo *pComponentInfo, componentInfoList) {
+    if (pComponentInfo->getName() == mpComponent->getName()) {
       mpComponentInfo = pComponentInfo;
       // get Class Name
       mpNameTextBox->setText(pComponentInfo->getName());
       mpNameTextBox->setCursorPosition(0);
+      // get dimensions
+      mpDimensionsTextBox->setText(pComponentInfo->getArrayIndex());
       // get Comment
       mpCommentTextBox->setText(pComponentInfo->getComment());
       mpCommentTextBox->setCursorPosition(0);
       // get classname
       mpPathTextBox->setText(pComponentInfo->getClassName());
       // get Variability
-      if (pComponentInfo->getVariablity() == "constant")
+      if (pComponentInfo->getVariablity() == "constant") {
         mpConstantRadio->setChecked(true);
-      else if (pComponentInfo->getVariablity() == "parameter")
+      } else if (pComponentInfo->getVariablity() == "parameter") {
         mpParameterRadio->setChecked(true);
-      else if (pComponentInfo->getVariablity() == "discrete")
+      } else if (pComponentInfo->getVariablity() == "discrete") {
         mpDiscreteRadio->setChecked(true);
-      else
+      } else {
         mpDefaultRadio->setChecked(true);
+      }
       // get Properties
       mpFinalCheckBox->setChecked(pComponentInfo->getFinal());
       mpProtectedCheckBox->setChecked(pComponentInfo->getProtected());
       mpReplaceAbleCheckBox->setChecked(pComponentInfo->getReplaceable());
       mIsFlow = pComponentInfo->getFlow() ? "true" : "false";
       // get Casuality
-      if (pComponentInfo->getCasuality() == "input")
+      if (pComponentInfo->getCasuality() == "input") {
         mpInputRadio->setChecked(true);
-      else if (pComponentInfo->getCasuality() == "output")
+      } else if (pComponentInfo->getCasuality() == "output") {
         mpOutputRadio->setChecked(true);
-      else
+      } else {
         mpNoneRadio->setChecked(true);
+      }
       // get InnerOuter
       mpInnerCheckBox->setChecked(pComponentInfo->getInner());
       mpOuterCheckBox->setChecked(pComponentInfo->getOuter());
@@ -1086,17 +1096,14 @@ void ComponentAttributes::initializeDialog()
   */
 void ComponentAttributes::updateComponentAttributes()
 {
-  if (!mpComponentInfo)
-  {
+  if (!mpComponentInfo) {
     accept();
     return;
   }
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   /* Check the same component name problem before setting any attributes. */
-  if (mpComponentInfo->getName().compare(mpNameTextBox->text()) != 0)
-  {
-    if (!mpComponent->getGraphicsView()->checkComponentName(mpNameTextBox->text()))
-    {
+  if (mpComponentInfo->getName().compare(mpNameTextBox->text()) != 0) {
+    if (!mpComponent->getGraphicsView()->checkComponentName(mpNameTextBox->text())) {
       QMessageBox::information(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                                QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME), Helper::ok);
@@ -1108,54 +1115,58 @@ void ComponentAttributes::updateComponentAttributes()
   QString isProtected = mpProtectedCheckBox->isChecked() ? "true" : "false";
   QString isReplaceAble = mpReplaceAbleCheckBox->isChecked() ? "true" : "false";
   QString variability;
-  if (mpConstantRadio->isChecked())
+  if (mpConstantRadio->isChecked()) {
     variability = "constant";
-  else if (mpParameterRadio->isChecked())
+  } else if (mpParameterRadio->isChecked()) {
     variability = "parameter";
-  else if (mpDiscreteRadio->isChecked())
+  } else if (mpDiscreteRadio->isChecked()) {
     variability = "discrete";
-  else
+  } else {
     variability = "";
+  }
   QString isInner = mpInnerCheckBox->isChecked() ? "true" : "false";
   QString isOuter = mpOuterCheckBox->isChecked() ? "true" : "false";
   QString causality;
-  if (mpInputRadio->isChecked())
+  if (mpInputRadio->isChecked()) {
     causality = "input";
-  else if (mpOutputRadio->isChecked())
+  } else if (mpOutputRadio->isChecked()) {
     causality = "output";
-  else
+  } else {
     causality = "";
-
+  }
   OMCProxy *pOMCProxy = pModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   // update component attributes
   if (!pOMCProxy->setComponentProperties(modelName, mpComponentInfo->getName(), isFinal, mIsFlow, isProtected, isReplaceAble, variability,
-                                         isInner, isOuter, causality))
-  {
+                                         isInner, isOuter, causality)) {
     QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                           QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
     pOMCProxy->printMessagesStringInternal();
   }
   // update the component comment only if its changed.
-  if (mpComponentInfo->getComment().compare(mpCommentTextBox->text()) != 0)
-  {
+  if (mpComponentInfo->getComment().compare(mpCommentTextBox->text()) != 0) {
     QString comment = StringHandler::escapeString(mpCommentTextBox->text());
-    if (!pOMCProxy->setComponentComment(modelName, mpComponentInfo->getName(), comment))
-    {
+    if (!pOMCProxy->setComponentComment(modelName, mpComponentInfo->getName(), comment)) {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
   }
   // update the component name only if its changed.
-  if (mpComponentInfo->getName().compare(mpNameTextBox->text()) != 0)
-  {
+  if (mpComponentInfo->getName().compare(mpNameTextBox->text()) != 0) {
     // if renameComponentInClass command is successful update the component with new name
-    if (pOMCProxy->renameComponentInClass(modelName, mpComponentInfo->getName(), mpNameTextBox->text()))
-    {
+    if (pOMCProxy->renameComponentInClass(modelName, mpComponentInfo->getName(), mpNameTextBox->text())) {
       mpComponent->componentNameHasChanged(mpNameTextBox->text());
+    } else {
+      QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+      pOMCProxy->printMessagesStringInternal();
     }
-    else
-    {
+  }
+  // update the component dimensions
+  if (mpComponentInfo->getArrayIndex().compare(mpDimensionsTextBox->text()) != 0) {
+    if (pOMCProxy->setComponentDimensions(modelName, mpComponentInfo->getName(), mpDimensionsTextBox->text())) {
+      mpComponent->getComponentInfo()->setArrayIndex(mpDimensionsTextBox->text());
+    } else {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();

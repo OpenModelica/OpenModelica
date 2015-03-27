@@ -754,8 +754,7 @@ QString Component::getParameterDisplayString(QString parameterName)
 void Component::duplicateHelper(GraphicsView *pGraphicsView)
 {
   Component *pComponent = pGraphicsView->getComponentList().last();
-  if (pComponent)
-  {
+  if (pComponent) {
     /* set the original component transformation to the duplicated one. */
     pComponent->getTransformation()->setExtent1(mpTransformation->getExtent1());
     pComponent->getTransformation()->setExtent2(mpTransformation->getExtent2());
@@ -764,10 +763,8 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
     /* get the original component attributes */
     QString className = pGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure();
     QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(className);
-    foreach (ComponentInfo *pComponentInfo, componentInfoList)
-    {
-      if (pComponentInfo->getName() == mName)
-      {
+    foreach (ComponentInfo *pComponentInfo, componentInfoList) {
+      if (pComponentInfo->getName() == mName) {
         QString isFinal = pComponentInfo->getFinal() ? "true" : "false";
         QString isFlow = pComponentInfo->getFlow() ? "true" : "false";
         QString isProtected = pComponentInfo->getProtected() ? "true" : "false";
@@ -778,8 +775,15 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
         QString causality = pComponentInfo->getCasuality();
         // update duplicated component attributes
         if (!mpOMCProxy->setComponentProperties(className, pComponent->getName(), isFinal, isFlow, isProtected, isReplaceAble,
-                                                variability, isInner, isOuter, causality))
-        {
+                                                variability, isInner, isOuter, causality)) {
+          QMessageBox::critical(pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
+                                QString(Helper::applicationName).append(" - ").append(Helper::error), mpOMCProxy->getResult(),
+                                Helper::ok);
+          mpOMCProxy->printMessagesStringInternal();
+        }
+        if (mpOMCProxy->setComponentDimensions(className, pComponent->getName(), pComponentInfo->getArrayIndex())) {
+          pComponent->getComponentInfo()->setArrayIndex(pComponentInfo->getArrayIndex());
+        } else {
           QMessageBox::critical(pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
                                 QString(Helper::applicationName).append(" - ").append(Helper::error), mpOMCProxy->getResult(),
                                 Helper::ok);
@@ -1569,9 +1573,9 @@ void ComponentInfo::parseComponentInfoString(QString value)
     }
   }
   // read the array index value
-  mArrayIndex = StringHandler::removeFirstLastCurlBrackets(list.at(11));
-  if (!mArrayIndex.isEmpty())
-    mIsArray = true;
+  if (list.size() > 11) {
+    setArrayIndex(list.at(11));
+  }
 }
 
 QString ComponentInfo::getClassName()
@@ -1632,6 +1636,16 @@ bool ComponentInfo::getOuter()
 QString ComponentInfo::getCasuality()
 {
   return mCasuality;
+}
+
+void ComponentInfo::setArrayIndex(QString arrayIndex)
+{
+  mArrayIndex = arrayIndex;
+  if (mArrayIndex.compare("{}") != 0) {
+    mIsArray = true;
+  } else {
+    mIsArray = false;
+  }
 }
 
 QString ComponentInfo::getArrayIndex()

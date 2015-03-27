@@ -439,12 +439,12 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
           (type == StringHandler::Connector) || (type == StringHandler::Record)) {
         if (type == StringHandler::Connector) {
-          addComponentToView(name, className, "", position, 0, type, false);
-          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, 0, type);
+          addComponentToView(name, className, "", position, new ComponentInfo(""), type, false);
+          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
           /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
           pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
         } else {
-          addComponentToView(name, className, "", position, 0, type);
+          addComponentToView(name, className, "", position, new ComponentInfo(""), type);
         }
         return true;
       } else {
@@ -456,8 +456,8 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
       // if item is a connector. then we can drop it to the graphicsview
       if (type == StringHandler::Connector) {
-        addComponentToView(name, className, "", position, 0, type, false);
-        mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, 0, type);
+        addComponentToView(name, className, "", position, new ComponentInfo(""), type, false);
+        mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
         /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
         pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
         return true;

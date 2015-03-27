@@ -164,6 +164,8 @@ private:
   QGroupBox *mpTypeGroupBox;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
+  Label *mpDimensionsLabel;
+  QLineEdit *mpDimensionsTextBox;
   Label *mpCommentLabel;
   QLineEdit *mpCommentTextBox;
   Label *mpPathLabel;
