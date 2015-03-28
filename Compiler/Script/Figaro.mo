@@ -54,7 +54,7 @@ algorithm
   callFigaroProcessor(inFigaroProcessorFile, argumentFile);
 
   // Temporary (or maybe permanent) fix because the Figaro processor works in an asynchronous way.
-  System.systemCall("sleep 3");
+  System.systemCall("sleep 10");
 
   // Result from the Figaro processor.
   xml2 := System.readFile(resultFile);
