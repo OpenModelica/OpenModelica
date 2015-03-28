@@ -2127,26 +2127,22 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
           if ((it = opts.find(argv[i])) != opts.end() && i < argc - 1)
               opts[it->first] = argv[++i]; // regular override
           else if (strncmp(argv[i], "-override=", 10) == 0) {
-              override = "-override=";
+              std::map<std::string, std::string> supported = map_list_of
+                  ("startTime", "-s")("stopTime", "-e")("stepSize", "-f")
+                  ("tolerance", "-y")("solver", "-i")("outputFormat", "-o");
               std::vector<std::string> strs;
               boost::split(strs, argv[i], boost::is_any_of(",="));
               for (int j = 1; j < strs.size(); j++) {
-                  if (strs[j] == "startTime" && j < strs.size() - 1)
-                      opts["-s"] = strs[++j];
-                  else if (strs[j] == "stopTime" && j < strs.size() - 1)
-                      opts["-e"] = strs[++j];
-                  else if (strs[j] == "stepSize" && j < strs.size() - 1)
-                      opts["-f"] = strs[++j];
-                  else if (strs[j] == "tolerance" && j < strs.size() - 1)
-                      opts["-y"] = strs[++j];
-                  else if (strs[j] == "solver" && j < strs.size() - 1)
-                      opts["-i"] = strs[++j];
-                  else if (strs[j] == "outputFormat" && j < strs.size() - 1)
-                      opts["-o"] = strs[++j];
+                  if ((it = supported.find(strs[j])) != supported.end()
+                      && j < strs.size() - 1) {
+                      opts[it->second] = strs[++j];
+                  }
                   else {
                       // leave untreated overrides
-                      if (override.size() > 10)
+                      if (override.size() > 0)
                           override += ",";
+                      else
+                          override = "-override=";
                       override += strs[j];
                       if (j < strs.size() - 1)
                           override += "=" + strs[++j];
