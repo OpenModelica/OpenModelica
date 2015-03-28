@@ -11,7 +11,7 @@ LIB="$2"
 test -d "$HISTORY"
 
 FIRST_DATE=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | head -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
-FIRST_DATE_DETAILED=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n14 | head -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
+FIRST_DATE_DETAILED=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n8 | head -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
 LAST_DATE=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
 if test "$FIRST_DATE" = "$LAST_DATE"; then
   FIRST_DATE="1970-01-01"
