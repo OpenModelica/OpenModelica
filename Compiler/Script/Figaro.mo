@@ -54,7 +54,7 @@ algorithm
   callFigaroProcessor(inFigaroProcessorFile, argumentFile);
 
   // Temporary (or maybe permanent) fix because the Figaro processor works in an asynchronous way.
- 
+
  if System.os() == "Windows_NT" then
      System.systemCall("timeout 5");
  else
