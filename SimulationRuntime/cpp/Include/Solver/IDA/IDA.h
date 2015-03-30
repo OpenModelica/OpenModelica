@@ -181,6 +181,7 @@ private:
     *_zWrite,                   ///< Temp      - Zustand den das System rausschreibt
     *_absTol,          ///         - Vektor für absolute Toleranzen
   *_delta,
+  *_deltaInv,
   *_ysave;
 
 
@@ -213,19 +214,14 @@ double
     _CV_absTol;
 
   // Variables for Coloured Jacobians
-  int  _sizeof_sparsePattern_colorCols;
-  int* _sparsePattern_colorCols;
-
-  int  _sizeof_sparsePattern_leadindex;
-  int* _sparsePattern_leadindex;
-
-
-  int  _sizeof_sparsePattern_index;
-  int* _sparsePattern_index;
-
-
-  int  _sparsePattern_maxColors;
-
+  int* _sparsePatternColorCols;
+  int  _sparsePatternMaxColors;
+  SparseMatrix _jacobianA;
+  int _jacobianANonzeros;
+  int const* _jacobianAIndex;
+  int const* _jacobianALeadindex;
+  
+  
   bool _ida_initialized;
 
 

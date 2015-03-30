@@ -15,7 +15,7 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 /// typedef for sparse matrices
 typedef double* SparsityPattern;
-typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
 
 class IMixedSystem
 {
@@ -30,12 +30,14 @@ public:
   //virtual void saveAll() = 0;
 
   virtual string getModelName() = 0;
-
+/*
   virtual void getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size) = 0;
   virtual int getA_sizeof_sparsePattern_leadindex() = 0;
   virtual void getA_sparsePattern_index(int* A_sparsePattern_index, int size) = 0;
   virtual int getA_sizeof_sparsePattern_index() = 0;
-  virtual void getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size) = 0;
-  virtual int getA_sizeof_sparsePattern_colorCols() = 0;
-  virtual int getA_sparsePattern_maxColors() = 0;
+  */
+  
+  virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size) = 0;
+ 
+  virtual int getAMaxColors() = 0;
 };

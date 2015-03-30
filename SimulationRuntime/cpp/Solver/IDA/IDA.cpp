@@ -2,6 +2,9 @@
 #include <Solver/IDA/IDA.h>
 #include <Core/Math/Functions.h>
 
+#include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
+#include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
+
 Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _idasettings(dynamic_cast<ISolverSettings*>(_settings)),
@@ -28,10 +31,11 @@ Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
       _mixed_system(NULL),
       _time_system(NULL),
     _delta(NULL),
+	_deltaInv(NULL),
     _ysave(NULL),
-  _sparsePattern_leadindex (NULL),
-  _sparsePattern_colorCols (NULL),
-  _sparsePattern_index (NULL)
+    _sparsePatternColorCols (NULL),
+    _jacobianAIndex(NULL),
+    _jacobianALeadindex(NULL)
 
 
 {
@@ -84,14 +88,12 @@ Ida::~Ida()
   }
 
 
-  if (_sparsePattern_leadindex)
-    delete [] _sparsePattern_leadindex;
-  if (_sparsePattern_colorCols)
-    delete [] _sparsePattern_colorCols;
-  if(_sparsePattern_index)
-    delete [] _sparsePattern_index;
+  if (_sparsePatternColorCols)
+    delete [] _sparsePatternColorCols;
   if(_delta)
     delete [] _delta;
+  if(_deltaInv)
+    delete [] _deltaInv;
   if(_ysave)
     delete [] _ysave;
 
@@ -151,8 +153,9 @@ void Ida::initialize()
     _zWrite = new double[_dimSys];
     _zeroSign = new int[_dimZeroFunc];
     _absTol = new double[_dimSys];
-  _delta =new double[_dimSys];
-  _ysave =new double[_dimSys];
+    _delta =new double[_dimSys];
+    _deltaInv =new double[_dimSys];
+    _ysave =new double[_dimSys];
 
     memset(_z, 0, _dimSys * sizeof(double));
     memset(_zInit, 0, _dimSys * sizeof(double));
@@ -751,7 +754,7 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 {
   try
   {
-    int j,k,l;
+  int l,g;
   double fnorm, minInc, *f_data, *fHelp_data, *errorWeight_data, h, srur, delta_inv;
 
   f_data = NV_DATA_S(fy);
@@ -779,54 +782,49 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
   minInc = (fnorm != 0.0) ?
            (1000.0 * abs(h) * UROUND * N * fnorm) : 1.0;
 
-  for(j=0;j<N;j++)
+  for(int j=0;j<N;j++)
   {
     _delta[j] = max(srur*abs(y[j]), minInc/errorWeight_data[j]);
   }
+    for(int j=0;j<N;j++)
+  {
+    _deltaInv[j] = 1/_delta[j];
+  }
 
   // Calculation of the jacobian
-  for(int i=0; i < _sparsePattern_maxColors; i++)
-  {
-    for(int ii=0; ii < _dimSys; ii++)
-    {
-      if((_sparsePattern_colorCols[ii] - 1) == i)
-      {
-        _ysave[ii] = y[ii];
-        y[ii]+= _delta[ii];
-      }
 
+ if (_jacobianANonzeros != 0)
+ {
+  for(int color=0; color < _sparsePatternMaxColors; color++)
+  {
+      for(int k=0; k < _dimSys; k++)
+	  {
+      if((_sparsePatternColorCols[k] - 1) == color)
+      {
+        _ysave[k] = y[k];
+        y[k]+= _delta[k];
+      }
     }
 
     calcFunction(t, y, fHelp_data);
 
-    for(int ii = 0; ii < _dimSys; ii++)
-    {
-      if((_sparsePattern_colorCols[ii] - 1) == i)
-      {
+	for (int k = 0; k < _dimSys; k++)
+   {
+	   	if((_sparsePatternColorCols[k] - 1) == color)
+	   {
+        y[k] = _ysave[k];
 
-        y[ii] = _ysave[ii];
-
-        if(ii==0)
-        {
-          j = 0;
-        }
-        else
-        {
-          j = _sparsePattern_leadindex[ii-1];
-
-        }
-        while(j <_sparsePattern_leadindex[ii])
-        {
-          l = _sparsePattern_index[j];
-          k = l + ii * _dimSys;
-          //Jac->data[k] = (fHelp_data[l] - f_data[l])/_delta[l];
-          delta_inv = 1.0/_delta[ii];
-          Jac->data[k] = (fHelp_data[l] - f_data[l])*delta_inv;
-          j++;
-        }
-      }
-    }
+		int startOfColumn = k * _dimSys; 
+		for (int j = _jacobianALeadindex[k]; j < _jacobianALeadindex[k+1];j++)	
+			{
+				l = _jacobianAIndex[j];
+				g = l + startOfColumn;
+				Jac->data[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
+			}
+		}
+	}
   }
+ }
 
   /*
   //Calculation of J without colouring
@@ -870,21 +868,14 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 
 void Ida::initializeColoredJac()
 {
-  _sizeof_sparsePattern_colorCols = _system->getA_sizeof_sparsePattern_colorCols();
-  _sparsePattern_colorCols = new int[_sizeof_sparsePattern_colorCols];
-  _system->getA_sparsePattern_colorCols( _sparsePattern_colorCols, _sizeof_sparsePattern_colorCols);
+  _sparsePatternColorCols = new int[_dimSys];
+  _system->getAColorOfColumn( _sparsePatternColorCols, _dimSys);
+  _sparsePatternMaxColors = _system->getAMaxColors();
 
-  _sizeof_sparsePattern_leadindex = _system->getA_sizeof_sparsePattern_leadindex();
-  _sparsePattern_leadindex = new int[_sizeof_sparsePattern_leadindex];
-  _system->getA_sparsePattern_leadindex( _sparsePattern_leadindex, _sizeof_sparsePattern_leadindex);
-
-
-  _sizeof_sparsePattern_index = _system->getA_sizeof_sparsePattern_index();
-  _sparsePattern_index = new int[_sizeof_sparsePattern_index];
-  _system->getA_sparsePattern_index( _sparsePattern_index, _sizeof_sparsePattern_index);
-
-
-  _sparsePattern_maxColors = _system->getA_sparsePattern_maxColors();
+  _system->getJacobian(_jacobianA);
+  _jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA); 
+  _jacobianAIndex     = boost::numeric::bindings::traits::spmatrix_index2_storage(_jacobianA);
+  _jacobianALeadindex = boost::numeric::bindings::traits::spmatrix_index1_storage(_jacobianA); 
 }
 
 int Ida::reportErrorMessage(ostream& messageStream)
