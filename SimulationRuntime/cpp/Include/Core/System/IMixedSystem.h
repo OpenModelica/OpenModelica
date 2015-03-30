@@ -36,8 +36,8 @@ public:
   virtual void getA_sparsePattern_index(int* A_sparsePattern_index, int size) = 0;
   virtual int getA_sizeof_sparsePattern_index() = 0;
   */
-  
+
   virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size) = 0;
- 
+
   virtual int getAMaxColors() = 0;
 };

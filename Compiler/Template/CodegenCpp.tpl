@@ -13599,7 +13599,7 @@ case _ then
           delete [] _AColorOfColumn;
         _AColorOfColumn = new int[<%index_%>];
         _AMaxColors = <%maxColor%>;
-    
+
         /* write color array */
         <%colorArray%>
       }

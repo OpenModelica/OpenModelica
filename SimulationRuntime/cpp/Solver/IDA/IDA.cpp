@@ -31,7 +31,7 @@ Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
       _mixed_system(NULL),
       _time_system(NULL),
     _delta(NULL),
-	_deltaInv(NULL),
+  _deltaInv(NULL),
     _ysave(NULL),
     _sparsePatternColorCols (NULL),
     _jacobianAIndex(NULL),
@@ -798,7 +798,7 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
   for(int color=0; color < _sparsePatternMaxColors; color++)
   {
       for(int k=0; k < _dimSys; k++)
-	  {
+    {
       if((_sparsePatternColorCols[k] - 1) == color)
       {
         _ysave[k] = y[k];
@@ -808,21 +808,21 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 
     calcFunction(t, y, fHelp_data);
 
-	for (int k = 0; k < _dimSys; k++)
+  for (int k = 0; k < _dimSys; k++)
    {
-	   	if((_sparsePatternColorCols[k] - 1) == color)
-	   {
+       if((_sparsePatternColorCols[k] - 1) == color)
+     {
         y[k] = _ysave[k];
 
-		int startOfColumn = k * _dimSys; 
-		for (int j = _jacobianALeadindex[k]; j < _jacobianALeadindex[k+1];j++)	
-			{
-				l = _jacobianAIndex[j];
-				g = l + startOfColumn;
-				Jac->data[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
-			}
-		}
-	}
+    int startOfColumn = k * _dimSys;
+    for (int j = _jacobianALeadindex[k]; j < _jacobianALeadindex[k+1];j++)
+      {
+        l = _jacobianAIndex[j];
+        g = l + startOfColumn;
+        Jac->data[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
+      }
+    }
+  }
   }
  }
 
@@ -873,9 +873,9 @@ void Ida::initializeColoredJac()
   _sparsePatternMaxColors = _system->getAMaxColors();
 
   _system->getJacobian(_jacobianA);
-  _jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA); 
+  _jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA);
   _jacobianAIndex     = boost::numeric::bindings::traits::spmatrix_index2_storage(_jacobianA);
-  _jacobianALeadindex = boost::numeric::bindings::traits::spmatrix_index1_storage(_jacobianA); 
+  _jacobianALeadindex = boost::numeric::bindings::traits::spmatrix_index1_storage(_jacobianA);
 }
 
 int Ida::reportErrorMessage(ostream& messageStream)

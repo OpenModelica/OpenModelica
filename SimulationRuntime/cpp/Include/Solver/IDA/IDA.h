@@ -220,8 +220,8 @@ double
   int _jacobianANonzeros;
   int const* _jacobianAIndex;
   int const* _jacobianALeadindex;
-  
-  
+
+
   bool _ida_initialized;
 
 
