@@ -188,7 +188,7 @@ win32 {
     -L../../build/lib/omc -lOMPlot -lomqwtd \
     -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L../../Parser -lantlr3 \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lgc -lpthread
+    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
   } else {
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
     # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
@@ -201,7 +201,7 @@ win32 {
       -L../../Parser -lantlr3 \
       # required for backtrace
       -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp \
-      -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lgc -lpthread
+      -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
   }
   INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
     ../../3rdParty/qwt/build/include \

@@ -7,7 +7,7 @@ QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
-LIBS += -L ../../build/lib/omc -lOMPlot -lomqwt -L../OMEditGUI/Debugger/Parser -lGDBMIParser -L../../Parser -lantlr3 @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lgc
+LIBS += -L ../../build/lib/omc -lOMPlot -lomqwt -L../OMEditGUI/Debugger/Parser -lGDBMIParser -L../../Parser -lantlr3 @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc
 INCLUDEPATH += ../../3rdParty/qwt/src ../../OMPlot/OMPlotGUI ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include ../../build/include/omc/c
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
