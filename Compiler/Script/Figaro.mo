@@ -26,7 +26,7 @@ protected
   String bdfFile = workingDir + "/FigaroObjects.fi" "Figaro code to the Figaro processor";
   String figaroFile = workingDir + "/Figaro0.fi" "Figaro code from the Figaro processor";
   String argumentFile = workingDir + "/figp_commands.xml" "instructions to the Figaro processor";
-  String resultFile = "result.xml" "status from the Figaro processor"; // File name cannot be changed.
+  String resultFile = System.pwd() + "result.xml" "status from the Figaro processor"; // File name cannot be changed.
   SCode.Element program;
   String figaro, database, xml, xml2;
   list<String> sl;
@@ -65,7 +65,9 @@ algorithm
   xml2 := System.readFile(resultFile);
   sl := interpret(xml2);
   if reportErrors(sl)
-    then fail();
+    then 
+   /* Error.addMessage(Error.FIGARO_ERROR, {"For more information see" + System.pwd() + "/result.xml"}); */
+    fail();
   end if;
 end run;
 
