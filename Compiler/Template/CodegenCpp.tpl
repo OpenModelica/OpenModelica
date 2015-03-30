@@ -2119,9 +2119,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-m"] = "<%moLib%>";
       opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-o"] = "<%settings.outputFormat%>";
-      const char *optv[argc + 2 * opts.size()];
-      optv[0] = argv[0];
-      int optc = 1;
+      std::vector<const char *> optv;
+      optv.push_back(argv[0]);
       std::string override;                // OMEdit override option
       for (int i = 1; i < argc; i++) {
           if ((it = opts.find(argv[i])) != opts.end() && i < argc - 1)
@@ -2149,14 +2148,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
                   }
               }
               if (override.size() > 10)
-                  optv[optc++] = override.c_str();
+                  optv.push_back(override.c_str());
           }
           else
-              optv[optc++] = argv[i];      // pass through
+              optv.push_back(argv[i]);     // pass through
       }
       for (it = opts.begin(); it != opts.end(); it++) {
-          optv[optc++] = it->first.c_str();
-          optv[optc++] = it->second.c_str();
+          optv.push_back(it->first.c_str());
+          optv.push_back(it->second.c_str());
       }
 
       <%
@@ -2210,7 +2209,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             #endif
             //SimController to start simulation
 
-            std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(optc, optv);
+            std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(optv.size(), &optv[0]);
 
 
             //create Modelica system
