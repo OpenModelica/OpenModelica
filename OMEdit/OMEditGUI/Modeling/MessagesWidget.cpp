@@ -183,22 +183,34 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
       messageCSSClass = "notification";
       break;
   }
+  QString linkFormat = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>");
   QString message;
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     message = messageItem.getMessage();
   } else if (mpMainWindow->getOMCProxy()->existClass(messageItem.getFileName())) {
-    // If the class is only loaded in AST then create link for the error message otherwise display filename to user where error occurred.
-    message = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>")
-        .arg(messageItem.getFileName())
+    // If the class is only loaded in AST via loadString then create link for the error message.
+    message = linkFormat.arg(messageItem.getFileName())
         .arg(messageItem.getLocation())
         .arg(messageItem.getFileName())
         .arg(messageItem.getLineStart())
         .arg(messageItem.getMessage());
   } else {
-    message = QString("[%1: %2]: %3")
-        .arg(messageItem.getFileName())
-        .arg(messageItem.getLocation())
-        .arg(messageItem.getMessage());
+    // Find the class name using the file name and line number.
+    LibraryTreeNode *pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNodeFromFile(messageItem.getFileName(),
+                                                                                                         messageItem.getLineStart().toInt());
+    if (pLibraryTreeNode) {
+      message = linkFormat.arg(pLibraryTreeNode->getNameStructure())
+          .arg(messageItem.getLocation())
+          .arg(pLibraryTreeNode->getNameStructure())
+          .arg(messageItem.getLineStart())
+          .arg(messageItem.getMessage());
+    } else {
+      // otherwise display filename to user where error occurred.
+      message = QString("[%1: %2]: %3")
+          .arg(messageItem.getFileName())
+          .arg(messageItem.getLocation())
+          .arg(messageItem.getMessage());
+    }
   }
   QString errorString = QString("<div class=\"%1\">"
                                 "<b>[%2] %3 %4 %5</b><br />"

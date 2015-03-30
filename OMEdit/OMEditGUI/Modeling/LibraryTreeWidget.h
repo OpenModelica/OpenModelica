@@ -133,6 +133,7 @@ public:
   SaveContentsType getSaveContentsType() {return mSaveContentsType;}
   void updateAttributes();
   QIcon getModelicaNodeIcon();
+  bool inRange(int lineNumber) {return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);}
 private:
   LibraryType mLibraryType;
   bool mSystemLibrary;
@@ -186,6 +187,7 @@ public:
   LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
   bool isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode);
   void loadDependentLibraries(QStringList libraries);
+  LibraryTreeNode* getLibraryTreeNodeFromFile(QString fileName, int lineNumber);
 private:
   MainWindow *mpMainWindow;
   bool mIsSearchTree;

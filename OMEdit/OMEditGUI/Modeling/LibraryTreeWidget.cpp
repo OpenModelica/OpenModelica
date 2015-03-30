@@ -1041,6 +1041,34 @@ void LibraryTreeWidget::loadDependentLibraries(QStringList libraries)
   }
 }
 
+/*!
+ * \brief LibraryTreeWidget::getLibraryTreeNodeFromFile
+ * Search the LibraryTreeNode using the file name and line number.
+ * \param fileName
+ * \param lineNumber
+ * \return LibraryTreeNode
+ */
+LibraryTreeNode* LibraryTreeWidget::getLibraryTreeNodeFromFile(QString fileName, int lineNumber)
+{
+  /* In order to make the search a bit quicker we search in toplevel items first.
+   * If no item is found then we search inside the items.
+   */
+  LibraryTreeNode *pLibraryTreeNode;
+  for (int i = 0 ; i < topLevelItemCount(); i++) {
+    pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(topLevelItem(i));
+    if (pLibraryTreeNode && pLibraryTreeNode->getFileName().compare(fileName) == 0 && pLibraryTreeNode->inRange(lineNumber)) {
+      return pLibraryTreeNode;
+    }
+  }
+  // search all items
+  for (int i = 0 ; i < mLibraryTreeNodesList.size() ; i++) {
+    if (mLibraryTreeNodesList[i]->getFileName().compare(fileName) == 0 && mLibraryTreeNodesList[i]->inRange(lineNumber)) {
+      return mLibraryTreeNodesList[i];
+    }
+  }
+  return 0;
+}
+
 bool LibraryTreeWidget::saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
 {
   bool result = false;
