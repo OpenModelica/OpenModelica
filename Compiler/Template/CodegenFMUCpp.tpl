@@ -541,16 +541,16 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   .PHONY: <%modelName%>.fmu $(CPPFILES) clean
 
   <%modelName%>.fmu: $(OFILES)
-  <%\t%>$(CXX) -shared -I. -o <%modelName%>$(DLLEXT) $(OFILES) $(CFLAGS) $(LDFLAGS) $(LIBS)
+  <%\t%>$(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(CFLAGS) $(LDFLAGS) $(LIBS)
   <%\t%>rm -rf binaries
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
-  <%\t%>cp <%modelName%>$(DLLEXT) "binaries/$(PLATFORM)/"
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) "binaries/$(PLATFORM)/"
   <%\t%>rm -f <%modelName%>.fmu
   <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries binaries/$(PLATFORM) binaries/$(PLATFORM)/<%modelName%>$(DLLEXT)
   <%\t%>rm -rf binaries
 
   clean:
-  <%\t%>rm $(SRC) <%modelName%>$(DLLEXT)
+  <%\t%>rm $(SRC) <%fileNamePrefix%>$(DLLEXT)
 
   >>
 end fmuMakefile;
