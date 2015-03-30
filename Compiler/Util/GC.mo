@@ -32,42 +32,42 @@
 encapsulated package GC
 
 function gcollect
-external "C" GC_gcollect() annotation(Library = {"gc"});
+external "C" GC_gcollect() annotation(Library = {"omcgc"});
 end gcollect;
 
 function gcollectAndUnmap
-external "C" GC_gcollect_and_unmap() annotation(Library = {"gc"});
+external "C" GC_gcollect_and_unmap() annotation(Library = {"omcgc"});
 end gcollectAndUnmap;
 
 function enable
-external "C" GC_enable() annotation(Library = {"gc"});
+external "C" GC_enable() annotation(Library = {"omcgc"});
 end enable;
 
 function disable
-external "C" GC_disable() annotation(Library = {"gc"});
+external "C" GC_disable() annotation(Library = {"omcgc"});
 end disable;
 
 function expandHeap
   input Real sz "To avoid the 32-bit signed limit on sizes";
   output Boolean success;
-external "C" success=GC_expand_hp_dbl(sz) annotation(Include="#define GC_expand_hp_dbl(sz) GC_expand_hp(sz)",Library = {"gc"});
+external "C" success=GC_expand_hp_dbl(sz) annotation(Include="#define GC_expand_hp_dbl(sz) GC_expand_hp(sz)",Library = {"omcgc"});
 end expandHeap;
 
 function setFreeSpaceDivisor
   input Integer divisor = 3;
-external "C" GC_set_free_space_divisor(divisor) annotation(Include="#define GC_set_free_space_divisor_int(divisor) GC_set_free_space_divisor(divisor)",Library = {"gc"},Documentation(info="<html>
+external "C" GC_set_free_space_divisor(divisor) annotation(Include="#define GC_set_free_space_divisor_int(divisor) GC_set_free_space_divisor(divisor)",Library = {"omcgc"},Documentation(info="<html>
 <p>NOTE: Do not set <3 as that seems to interfere with parallel threads.</p>
 </html>"));
 end setFreeSpaceDivisor;
 
 function getForceUnmapOnGcollect
   output Boolean res;
-  external "C" res=GC_get_force_unmap_on_gcollect() annotation(Library = {"gc"});
+  external "C" res=GC_get_force_unmap_on_gcollect() annotation(Library = {"omcgc"});
 end getForceUnmapOnGcollect;
 
 function setForceUnmapOnGcollect
   input Boolean forceUnmap;
-  external "C" GC_set_force_unmap_on_gcollect(forceUnmap) annotation(Library = {"gc"});
+  external "C" GC_set_force_unmap_on_gcollect(forceUnmap) annotation(Library = {"omcgc"});
 end setForceUnmapOnGcollect;
 
 uniontype ProfStats // TODO: Support regular records in the bootstrapped compiler to avoid allocation to return the stats in the GC...
@@ -140,7 +140,7 @@ static inline modelica_metatype GC_get_prof_stats_modelica()
 #endif
 }
 
-",Library = {"gc"});
+",Library = {"omcgc"});
   end GC_get_prof_stats_modelica;
 algorithm
   (heapsize_full, free_bytes_full, unmapped_bytes, bytes_allocd_since_gc, allocd_bytes_before_gc, non_gc_bytes, gc_no, markers_m1, bytes_reclaimed_since_gc, reclaimed_bytes_before_gc) := GC_get_prof_stats_modelica();
