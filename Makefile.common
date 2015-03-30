@@ -88,10 +88,10 @@ libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
 boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/c/gc.h build/include/omc/c/gc_config_macros.h build/include/omc/c/gc_version.h build/include/omc/c/gc_pthread_redirects.h
-build/lib/omc/libgc.a: 3rdParty/gc/.libs/libgc.a mkbuilddirs
+build/lib/omc/libomcgc.a: 3rdParty/gc/.libs/libomcgc.a mkbuilddirs
 	cp -p $< $@
-3rdParty/gc/.libs/libgc.a: 3rdParty/gc/Makefile
-	$(MAKE) -C 3rdParty/gc/
+3rdParty/gc/.libs/libomcgc.a: 3rdParty/gc/Makefile
+	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 build/include/omc/c/gc.h: 3rdParty/gc/include/gc.h mkbuilddirs
 	cp -pPR $< $@
 build/include/omc/c/gc_config_macros.h: 3rdParty/gc/include/gc_config_macros.h mkbuilddirs

@@ -61,11 +61,11 @@ settings:
 omc: omc-bootstrapped
 
 boehm-gc-lib: @LIBGC@
-build/lib/omc/libgc.so: 3rdParty/gc/.libs/libgc.so
+build/lib/omc/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	mkdir -p build/lib/omc/
 	cp -pPR $< $<.* build/lib/omc/
-3rdParty/gc/.libs/libgc.so: 3rdParty/gc/Makefile
-	$(MAKE) -C 3rdParty/gc/
+3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
+	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
 qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
@@ -238,5 +238,5 @@ emcc: msl-external-libs-emcc emcc-simulationruntime
 emcc-simulationruntime:
 	mkdir -p build/lib/omc/emcc/
 	$(MAKE) -C SimulationRuntime/c emcc
-	
+
 copycppheader:
