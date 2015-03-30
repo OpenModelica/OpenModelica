@@ -26,7 +26,7 @@ protected
   String bdfFile = workingDir + "/FigaroObjects.fi" "Figaro code to the Figaro processor";
   String figaroFile = workingDir + "/Figaro0.fi" "Figaro code from the Figaro processor";
   String argumentFile = workingDir + "/figp_commands.xml" "instructions to the Figaro processor";
-  String resultFile = workingDir + "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
+  String resultFile = "result.xml" "status from the Figaro processor"; // File name cannot be changed.
   SCode.Element program;
   String figaro, database, xml, xml2;
   list<String> sl;
