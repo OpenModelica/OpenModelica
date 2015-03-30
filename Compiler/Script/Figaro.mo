@@ -65,7 +65,7 @@ algorithm
   xml2 := System.readFile(resultFile);
   sl := interpret(xml2);
   if reportErrors(sl)
-    then 
+    then
    /* Error.addMessage(Error.FIGARO_ERROR, {"For more information see" + System.pwd() + "/result.xml"}); */
     fail();
   end if;
