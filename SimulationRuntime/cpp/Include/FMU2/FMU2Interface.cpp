@@ -76,7 +76,7 @@ extern "C"
   {
     FMU2Wrapper *w;
     try {
-      w = OBJECTCONSTRUCTOR;
+      w = new FMU2Wrapper(instanceName, GUID, functions, loggingOn);
     }
     catch (std::exception &e) {
       if (functions && functions->logger)

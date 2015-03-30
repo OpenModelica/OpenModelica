@@ -57,7 +57,8 @@ extern "C" fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GU
     fmiCallbackFunctions functions, fmiBoolean loggingOn)
 {
   //LOG_FMI() << "Entry: fmiInstantiateModel" << endl;
-  return reinterpret_cast<fmiComponent> (OBJECTCONSTRUCTOR);
+  return reinterpret_cast<fmiComponent>
+    (new FMUWrapper(instanceName, GUID, functions, loggingOn));
 }
 
 extern "C" fmiStatus fmiSetDebugLogging(fmiComponent c, fmiBoolean loggingOn) {
