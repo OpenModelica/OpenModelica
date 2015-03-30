@@ -19,8 +19,8 @@ FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
 {
   boost::shared_ptr<IAlgLoopSolverFactory>
       solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
-  _model = boost::shared_ptr<MODEL_IDENTIFIER>
-      (new MODEL_IDENTIFIER(&_global_settings, solver_factory,boost::shared_ptr<ISimData>(new SimData())));
+  _model = boost::shared_ptr<MODEL_CLASS>
+      (new MODEL_CLASS(&_global_settings, solver_factory, boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
   _tmp_real_buffer.resize(_model->getDimReal());
   _tmp_int_buffer.resize(_model->getDimInteger());

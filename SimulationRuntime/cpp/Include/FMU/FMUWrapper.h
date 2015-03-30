@@ -6,6 +6,11 @@
 #include "FMU/IFMUInterface.h"
 #include "FMU/FMUGlobalSettings.h"
 
+// build MODEL_CLASS from MODEL_IDENTIFIER
+#define FMU_PASTER(a, b) a ## b
+#define FMU_CONCAT(a, b) FMU_PASTER(a, b)
+#define MODEL_CLASS FMU_CONCAT(MODEL_IDENTIFIER, Extension)
+
 class FMUWrapper : public IFMUInterface
 {
 public:
@@ -41,7 +46,7 @@ public:
     virtual fmiStatus setExternalFunction       (fmiValueReference vr[], size_t nvr, const void* value[]);
 private:
     FMUGlobalSettings _global_settings;
-    boost::shared_ptr<MODEL_IDENTIFIER> _model;
+    boost::shared_ptr<MODEL_CLASS> _model;
     std::vector<fmiReal> _tmp_real_buffer;
     std::vector<fmiInteger> _tmp_int_buffer;
     std::vector<fmiBoolean> _tmp_bool_buffer;

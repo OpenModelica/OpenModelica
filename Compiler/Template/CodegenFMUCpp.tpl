@@ -144,8 +144,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelIdentifier = System.stringReplace(modelName, ".", "_")
   <<
-  // define class name and unique id
-  #define MODEL_IDENTIFIER <%modelShortName%>Extension
+  // define model identifier and unique id
+  #define MODEL_IDENTIFIER <%modelShortName%>
   #define MODEL_GUID "{<%guid%>}"
 
   #include <Core/Modelica.h>
