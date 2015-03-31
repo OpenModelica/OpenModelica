@@ -372,6 +372,9 @@ def getGraphicsWithPortsForClass(modelicaClass):
                 # fallback to diagram annotations
                 index_delta = 0
 
+            for i in [1,2,7]:
+              if comp_annotation[i + index_delta] == "-":
+                comp_annotation[i + index_delta] = 0
             origin_x = comp_annotation[1 + index_delta]
             origin_y = comp_annotation[2 + index_delta]
             x0 = comp_annotation[3 + index_delta]
