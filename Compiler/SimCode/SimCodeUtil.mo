@@ -8468,7 +8468,7 @@ algorithm
 end addSimVarToHashTable;
 
 protected function getArraySimVars "author: marcusw
-  store the array-cref of the variable in the hash table and add the variable-index as value. The variable is handled as array-variable, 
+  store the array-cref of the variable in the hash table and add the variable-index as value. The variable is handled as array-variable,
   if it has more than one element as numArrayElement."
   input SimCodeVar.SimVar iSimVar;
   input HashTableCrILst.HashTable iArrayMapping;
@@ -12276,7 +12276,7 @@ algorithm
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
       list<SimCodeVar.SimVar> mixedArrayVars;
-      
+
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations,
                           useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
@@ -13475,7 +13475,7 @@ protected
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
-      list<SimCodeVar.SimVar> mixedArrayVars; 
+      list<SimCodeVar.SimVar> mixedArrayVars;
 algorithm
   simCodeOut := match(simEqSys,sysIdx,simCodeIn)
     case (_,_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
@@ -13589,7 +13589,7 @@ protected
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
-      list<SimCodeVar.SimVar> mixedArrayVars; 
+      list<SimCodeVar.SimVar> mixedArrayVars;
 algorithm
   simCodeOut := match(allEqs,odeEqs,simCodeIn)
     case (_,_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,

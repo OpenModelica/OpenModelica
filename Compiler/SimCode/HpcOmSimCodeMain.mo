@@ -180,7 +180,7 @@ algorithm
       array<list<SimCodeVar.SimVar>> simVarMapping; //maps each backend variable to a list of simVars
       Option<SimCode.FmiModelStructure> modelStruct;
       list<SimCodeVar.SimVar> mixedArrayVars;
-      
+
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
       //Initial System
       //--------------
