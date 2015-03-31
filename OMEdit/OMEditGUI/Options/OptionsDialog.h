@@ -47,6 +47,7 @@ class MainWindow;
 class GeneralSettingsPage;
 class LibrariesPage;
 class ModelicaTextHighlighter;
+class ModelicaTabSettings;
 class ModelicaTextSettings;
 class ModelicaTextEditorPage;
 class GraphicalViewsPage;
@@ -65,10 +66,10 @@ class OptionsDialog : public QDialog
   Q_OBJECT
 public:
   OptionsDialog(MainWindow *pMainWindow);
-  ~OptionsDialog();
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();
+  void readModelicaTabSettings();
   void readModelicaTextSettings();
   void readGraphicalViewsSettings();
   void readSimulationSettings();
@@ -82,6 +83,7 @@ public:
   void readFMISettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
+  void saveModelicaTabSettings();
   void saveModelicaTextSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
@@ -98,6 +100,7 @@ public:
   void createPages();
   MainWindow* getMainWindow() {return mpMainWindow;}
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
+  ModelicaTabSettings* getModelicaTabSettings() {return mpModelicaTabSettings;}
   ModelicaTextSettings* getModelicaTextSettings() {return mpModelicaTextSettings;}
   ModelicaTextEditorPage* getModelicaTextEditorPage() {return mpModelicaTextEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
@@ -123,6 +126,7 @@ private:
   MainWindow *mpMainWindow;
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
+  ModelicaTabSettings *mpModelicaTabSettings;
   ModelicaTextSettings *mpModelicaTextSettings;
   ModelicaTextEditorPage *mpModelicaTextEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
@@ -284,6 +288,35 @@ private slots:
   void addUserLibrary();
 };
 
+class ModelicaTabSettings : public QObject
+{
+  Q_OBJECT
+public:
+  enum TabPolicy {
+    SpacesOnlyTabPolicy = 0,
+    TabsOnlyTabPolicy = 1
+  };
+  ModelicaTabSettings(OptionsDialog *pOptionsDialog);
+  void setTabPolicy(int tabPolicy) {mTabPolicy = (TabPolicy)tabPolicy;}
+  TabPolicy getTabPolicy() {return mTabPolicy;}
+  void setTabSize(int tabSize) {mTabSize = tabSize;}
+  int getTabSize() {return mTabSize;}
+  void setIndentSize(int indentSize) {mIndentSize = indentSize;}
+  int getIndentSize() {return mIndentSize;}
+
+  int lineIndentPosition(const QString &text) const;
+  int columnAt(const QString &text, int position) const;
+  int indentedColumn(int column, bool doIndent = true) const;
+  QString indentationString(int startColumn, int targetColumn) const;
+
+  static int firstNonSpace(const QString &text);
+  static int spacesLeftFromPosition(const QString &text, int position);
+private:
+  TabPolicy mTabPolicy;
+  int mTabSize;
+  int mIndentSize;
+};
+
 class ModelicaTextSettings : public QObject
 {
   Q_OBJECT
@@ -342,7 +375,14 @@ public:
   QCheckBox* getLineWrappingCheckbox();
 private:
   OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpGeneralGroupBox;
+  QGroupBox *mpTabsAndIndentation;
+  Label *mpTabPolicyLabel;
+  QComboBox *mpTabPolicyComboBox;
+  Label *mpTabSizeLabel;
+  QSpinBox *mpTabSizeSpinBox;
+  Label *mpIndentSizeLabel;
+  QSpinBox *mpIndentSpinBox;
+  QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
   QCheckBox *mpSyntaxHighlightingCheckbox;
   QCheckBox *mpLineWrappingCheckbox;
   QGroupBox *mpFontColorsGroupBox;
@@ -370,6 +410,9 @@ private:
 signals:
   void updatePreview();
 public slots:
+  void tabPolicyChanged(int index);
+  void tabSizeChanged(int value);
+  void indentSizeChanged(int value);
   void fontFamilyChanged(QFont font);
   void fontSizeChanged(double newValue);
   void pickColor();

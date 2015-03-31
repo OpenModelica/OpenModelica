@@ -52,6 +52,7 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpMainWindow = pMainWindow;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
+  mpModelicaTabSettings = new ModelicaTabSettings(this);
   mpModelicaTextSettings = new ModelicaTextSettings(this);
   mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
@@ -70,17 +71,13 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   setUpDialog();
 }
 
-OptionsDialog::~OptionsDialog()
-{
-  delete mpModelicaTextSettings;
-}
-
 //! Reads the settings from omedit.ini file.
 void OptionsDialog::readSettings()
 {
   mpSettings->sync();
   readGeneralSettings();
   readLibrariesSettings();
+  readModelicaTabSettings();
   readModelicaTextSettings();
   mpModelicaTextEditorPage->initializeFields();
   emit modelicaTextSettingsChanged();
@@ -194,6 +191,23 @@ void OptionsDialog::readLibrariesSettings()
     mpLibrariesPage->getUserLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
   mpSettings->endGroup();
+}
+
+/*!
+ * \brief OptionsDialog::readModelicaTabSettings
+ * Reads the Modelica text tab settings from omedit.ini
+ */
+void OptionsDialog::readModelicaTabSettings()
+{
+  if (mpSettings->contains("ModelicaTabSettings/tabPolicy")) {
+    mpModelicaTabSettings->setTabPolicy(mpSettings->value("ModelicaTabSettings/tabPolicy").toInt());
+  }
+  if (mpSettings->contains("ModelicaTabSettings/tabSize")) {
+    mpModelicaTabSettings->setTabSize(mpSettings->value("ModelicaTabSettings/tabSize").toInt());
+  }
+  if (mpSettings->contains("ModelicaTabSettings/indentSize")) {
+    mpModelicaTabSettings->setIndentSize(mpSettings->value("ModelicaTabSettings/indentSize").toInt());
+  }
 }
 
 //! Reads the ModelicaText settings from omedit.ini
@@ -580,6 +594,17 @@ void OptionsDialog::saveLibrariesSettings()
   mpSettings->endGroup();
 }
 
+/*!
+ * \brief OptionsDialog::saveModelicaTabSettings
+ * Saves the Modelica text tab settings to omedit.ini
+ */
+void OptionsDialog::saveModelicaTabSettings()
+{
+  mpSettings->setValue("ModelicaTabSettings/tabPolicy", mpModelicaTabSettings->getTabPolicy());
+  mpSettings->setValue("ModelicaTabSettings/tabSize", mpModelicaTabSettings->getTabSize());
+  mpSettings->setValue("ModelicaTabSettings/indentSize", mpModelicaTabSettings->getIndentSize());
+}
+
 //! Saves the ModelicaText settings to omedit.ini
 void OptionsDialog::saveModelicaTextSettings()
 {
@@ -899,6 +924,7 @@ void OptionsDialog::saveSettings()
 {
   saveGeneralSettings();
   saveLibrariesSettings();
+  saveModelicaTabSettings();
   saveModelicaTextSettings();
   // emit the signal so that all syntax highlighters are updated
   emit modelicaTextSettingsChanged();
@@ -1677,6 +1703,135 @@ void AddUserLibraryDialog::addUserLibrary()
   accept();
 }
 
+/*!
+ * \class ModelicaTabSettings
+ * \brief Defines the tabs and indentation settings for the Modelica Text.
+ */
+ModelicaTabSettings::ModelicaTabSettings(OptionsDialog *pOptionsDialog)
+  : QObject(pOptionsDialog), mTabPolicy(SpacesOnlyTabPolicy), mTabSize(4), mIndentSize(2)
+{
+
+}
+
+/*!
+ * \brief ModelicaTabSettings::lineIndentPosition
+ * Returns the lines indent position.
+ * \param text
+ * \return
+ */
+int ModelicaTabSettings::lineIndentPosition(const QString &text) const
+{
+  int i = 0;
+  while (i < text.size()) {
+    if (!text.at(i).isSpace()) {
+      break;
+    }
+    ++i;
+  }
+  int column = columnAt(text, i);
+  return i - (column % mIndentSize);
+}
+
+/*!
+ * \brief ModelicaTabSettings::columnAt
+ * \param text
+ * \param position
+ * \return
+ */
+int ModelicaTabSettings::columnAt(const QString &text, int position) const
+{
+  int column = 0;
+  for (int i = 0; i < position; ++i) {
+    if (text.at(i) == QLatin1Char('\t')) {
+      column = column - (column % mTabSize) + mTabSize;
+    } else {
+      ++column;
+    }
+  }
+  return column;
+}
+
+/*!
+ * \brief ModelicaTabSettings::indentedColumn
+ * \param column
+ * \param doIndent
+ * \return
+ */
+int ModelicaTabSettings::indentedColumn(int column, bool doIndent) const
+{
+  int aligned = (column / mIndentSize) * mIndentSize;
+  if (doIndent) {
+    return aligned + mIndentSize;
+  }
+  if (aligned < column) {
+    return aligned;
+  }
+  return qMax(0, aligned - mIndentSize);
+}
+
+/*!
+ * \brief ModelicaTabSettings::indentationString
+ * \param startColumn
+ * \param targetColumn
+ * \param block
+ * \return
+ */
+QString ModelicaTabSettings::indentationString(int startColumn, int targetColumn) const
+{
+  targetColumn = qMax(startColumn, targetColumn);
+  if (mTabPolicy == SpacesOnlyTabPolicy) {
+    return QString(targetColumn - startColumn, QLatin1Char(' '));
+  }
+
+  QString s;
+  int alignedStart = startColumn - (startColumn % mTabSize) + mTabSize;
+  if (alignedStart > startColumn && alignedStart <= targetColumn) {
+    s += QLatin1Char('\t');
+    startColumn = alignedStart;
+  }
+  if (int columns = targetColumn - startColumn) {
+    int tabs = columns / mTabSize;
+    s += QString(tabs, QLatin1Char('\t'));
+    s += QString(columns - tabs * mTabSize, QLatin1Char(' '));
+  }
+  return s;
+}
+
+/*!
+ * \brief ModelicaTabSettings::firstNonSpace
+ * \param text
+ * \return
+ */
+int ModelicaTabSettings::firstNonSpace(const QString &text)
+{
+  int i = 0;
+  while (i < text.size()) {
+    if (!text.at(i).isSpace()) {
+      return i;
+    }
+    ++i;
+  }
+  return i;
+}
+
+/*!
+ * \brief ModelicaTabSettings::spacesLeftFromPosition
+ * \param text
+ * \param position
+ * \return
+ */
+int ModelicaTabSettings::spacesLeftFromPosition(const QString &text, int position)
+{
+  int i = position;
+  while (i > 0) {
+    if (!text.at(i-1).isSpace()) {
+      break;
+    }
+    --i;
+  }
+  return position - i;
+}
+
 //! @class ModelicaTextSettings
 //! @brief Defines the settings like font, style, keywords colors etc. for the Modelica Text.
 
@@ -1875,14 +2030,48 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  // general groupbox
-  mpGeneralGroupBox = new QGroupBox(Helper::general);
+  // tabs and indentation groupbox
+  mpTabsAndIndentation = new QGroupBox(tr("Tabs and Indentation"));
+  // tab policy
+  mpTabPolicyLabel = new Label(tr("Tab Policy:"));
+  mpTabPolicyComboBox = new QComboBox;
+  mpTabPolicyComboBox->addItem(tr("Spaces Only"), 0);
+  mpTabPolicyComboBox->addItem(tr("Tabs Only"), 1);
+  connect(mpTabPolicyComboBox, SIGNAL(currentIndexChanged(int)), SLOT(tabPolicyChanged(int)));
+  // tab size
+  mpTabSizeLabel = new Label(tr("Tab Size:"));
+  mpTabSizeSpinBox = new QSpinBox;
+  mpTabSizeSpinBox->setRange(1, 20);
+  mpTabSizeSpinBox->setValue(4);
+  connect(mpTabSizeSpinBox, SIGNAL(valueChanged(int)), SLOT(tabSizeChanged(int)));
+  // indent size
+  mpIndentSizeLabel = new Label(tr("Indent Size:"));
+  mpIndentSpinBox = new QSpinBox;
+  mpIndentSpinBox->setRange(1, 20);
+  mpIndentSpinBox->setValue(2);
+  connect(mpIndentSpinBox, SIGNAL(valueChanged(int)), SLOT(indentSizeChanged(int)));
+  // set Syntax Highlight & Text Wrapping groupbox layout
+  QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyComboBox, 0, 1);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeLabel, 1, 0);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeSpinBox, 1, 1);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSizeLabel, 2, 0);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSpinBox, 2, 1);
+  mpTabsAndIndentation->setLayout(pTabsAndIndentationGroupBoxLayout);
+  // syntax highlight and text wrapping groupbox
+  mpSyntaxHighlightAndTextWrappingGroupBox = new QGroupBox(tr("Syntax Highlight and Text Wrapping"));
   // syntax highlighting checkbox
   mpSyntaxHighlightingCheckbox = new QCheckBox(tr("Enable Syntax Highlighting"));
   mpSyntaxHighlightingCheckbox->setChecked(true);
   // line wrap checkbox
   mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
   mpLineWrappingCheckbox->setChecked(true);
+  // set Syntax Highlight & Text Wrapping groupbox layout
+  QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 1, 0);
+  mpSyntaxHighlightAndTextWrappingGroupBox->setLayout(pSyntaxHighlightAndTextWrappingGroupBoxLayout);
   // fonts & colors groupbox
   mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
   // font family combobox
@@ -1923,11 +2112,6 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   connect(this, SIGNAL(updatePreview()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), mpModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpLineWrappingCheckbox, SIGNAL(toggled(bool)), this, SLOT(setLineWrapping()));
-  // set general groupbox layout
-  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
-  pGeneralGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
-  pGeneralGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 1, 0);
-  mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // set fonts & colors groupbox layout
   QGridLayout *pFontsColorsGroupBoxLayout = new QGridLayout;
   pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
@@ -1942,11 +2126,12 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   pFontsColorsGroupBoxLayout->addWidget(mpPreviewPlainTextBox, 5, 0, 1, 2);
   mpFontColorsGroupBox->setLayout(pFontsColorsGroupBoxLayout);
   // set the layout
-  QVBoxLayout *layout = new QVBoxLayout;
-  layout->setContentsMargins(0, 0, 0, 0);
-  layout->addWidget(mpGeneralGroupBox);
-  layout->addWidget(mpFontColorsGroupBox);
-  setLayout(layout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpTabsAndIndentation);
+  pMainLayout->addWidget(mpSyntaxHighlightAndTextWrappingGroupBox);
+  pMainLayout->addWidget(mpFontColorsGroupBox);
+  setLayout(pMainLayout);
 }
 
 //! Adds the Modelica Text settings rules to the mpItemsList.
@@ -2025,6 +2210,13 @@ QString ModelicaTextEditorPage::getPreviewText()
 void ModelicaTextEditorPage::initializeFields()
 {
   int currentIndex;
+  // tab policy
+  currentIndex = mpTabPolicyComboBox->findData(mpOptionsDialog->getModelicaTabSettings()->getTabPolicy());
+  mpTabPolicyComboBox->setCurrentIndex(currentIndex);
+  // tab size
+  mpTabSizeSpinBox->setValue(mpOptionsDialog->getModelicaTabSettings()->getTabSize());
+  // indent size
+  mpIndentSpinBox->setValue(mpOptionsDialog->getModelicaTabSettings()->getIndentSize());
   // select font family item
   currentIndex = mpFontFamilyComboBox->findText(mpOptionsDialog->getModelicaTextSettings()->getFontFamily(), Qt::MatchExactly);
   mpFontFamilyComboBox->setCurrentIndex(currentIndex);
@@ -2052,6 +2244,36 @@ QCheckBox* ModelicaTextEditorPage::getSyntaxHighlightingCheckbox()
 QCheckBox* ModelicaTextEditorPage::getLineWrappingCheckbox()
 {
   return mpLineWrappingCheckbox;
+}
+
+/*!
+ * \brief ModelicaTextEditorPage::tabPolicyChanged
+ * Slot activated when mpTabPolicyLabel currentIndexChanged SIGNAL is raised.
+ * \param index
+ */
+void ModelicaTextEditorPage::tabPolicyChanged(int index)
+{
+  mpOptionsDialog->getModelicaTabSettings()->setTabPolicy(mpTabPolicyComboBox->itemData(index).toInt());
+}
+
+/*!
+ * \brief ModelicaTextEditorPage::tabSizeChanged
+ * Slot activated when mpTabSizeSpinBox valueChanged SIGNAL is raised.
+ * \param value
+ */
+void ModelicaTextEditorPage::tabSizeChanged(int value)
+{
+  mpOptionsDialog->getModelicaTabSettings()->setTabSize(value);
+}
+
+/*!
+ * \brief ModelicaTextEditorPage::indentSizeChanged
+ * Slot activated when mpIndentSpinBox valueChanged SIGNAL is raised.
+ * \param value
+ */
+void ModelicaTextEditorPage::indentSizeChanged(int value)
+{
+  mpOptionsDialog->getModelicaTabSettings()->setIndentSize(value);
 }
 
 //! Changes the font family when mpFontFamilyComboBox currentFontChanged signal is raised.

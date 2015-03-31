@@ -39,9 +39,7 @@
 #ifndef MODELICATEXTEDITOR_H
 #define MODELICATEXTEDITOR_H
 
-#include <QToolButton>
 #include <QSyntaxHighlighter>
-#include <QSettings>
 
 #include "MainWindow.h"
 #include "Helper.h"
@@ -99,6 +97,7 @@ public slots:
   void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   void setLineWrapping();
   void toggleCommentSelection();
+  void indentOrUnindent(bool doIndent);
 };
 
 class ModelicaTextSettings;

@@ -38,8 +38,6 @@
 #include "BreakpointMarker.h"
 #include "ModelicaTextEditor.h"
 #include "Helper.h"
-#include <QtGui>
-#include <QSettings>
 
 /*!
   \class CommentDefinition
@@ -251,8 +249,10 @@ bool ModelicaTextEditor::validateModelicaText()
 
 void ModelicaTextEditor::keyPressEvent(QKeyEvent *pEvent)
 {
-  if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_K)
-  {
+  if (pEvent->key() == Qt::Key_Tab || pEvent->key() == Qt::Key_Backtab) {
+    indentOrUnindent(pEvent->key() == Qt::Key_Tab);
+    return;
+  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_K) {
     toggleCommentSelection();
     return;
   }
@@ -470,6 +470,62 @@ void ModelicaTextEditor::toggleCommentSelection()
     setTextCursor(cursor);
   }
   cursor.endEditBlock();
+}
+
+/*!
+ * \brief ModelicaTextEditor::indentOrUnindent
+ * Indents or unindents the code.
+ * \param doIndent
+ */
+void ModelicaTextEditor::indentOrUnindent(bool doIndent)
+{
+  const ModelicaTabSettings *pModelicaTabSettings;
+  pModelicaTabSettings = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
+  QTextCursor cursor = textCursor();
+  cursor.beginEditBlock();
+  // Indent or unindent the selected lines
+  if (cursor.hasSelection()) {
+    int pos = cursor.position();
+    int anchor = cursor.anchor();
+    int start = qMin(anchor, pos);
+    int end = qMax(anchor, pos);
+    QTextDocument *doc = document();
+    QTextBlock startBlock = doc->findBlock(start);
+    QTextBlock endBlock = doc->findBlock(end-1).next();
+    // Only one line partially selected.
+    if (startBlock.next() == endBlock && (start > startBlock.position() || end < endBlock.position() - 1)) {
+      cursor.removeSelectedText();
+    } else {
+      for (QTextBlock block = startBlock; block != endBlock; block = block.next()) {
+        QString text = block.text();
+        int indentPosition = pModelicaTabSettings->lineIndentPosition(text);
+        if (!doIndent && !indentPosition) {
+          indentPosition = pModelicaTabSettings->firstNonSpace(text);
+        }
+        int targetColumn = pModelicaTabSettings->indentedColumn(pModelicaTabSettings->columnAt(text, indentPosition), doIndent);
+        cursor.setPosition(block.position() + indentPosition);
+        cursor.insertText(pModelicaTabSettings->indentationString(0, targetColumn));
+        cursor.setPosition(block.position());
+        cursor.setPosition(block.position() + indentPosition, QTextCursor::KeepAnchor);
+        cursor.removeSelectedText();
+      }
+      cursor.endEditBlock();
+      return;
+    }
+  }
+  // Indent or unindent at cursor position
+  QTextBlock block = cursor.block();
+  QString text = block.text();
+  int indentPosition = cursor.positionInBlock();
+  int spaces = pModelicaTabSettings->spacesLeftFromPosition(text, indentPosition);
+  int startColumn = pModelicaTabSettings->columnAt(text, indentPosition - spaces);
+  int targetColumn = pModelicaTabSettings->indentedColumn(pModelicaTabSettings->columnAt(text, indentPosition), doIndent);
+  cursor.setPosition(block.position() + indentPosition);
+  cursor.setPosition(block.position() + indentPosition - spaces, QTextCursor::KeepAnchor);
+  cursor.removeSelectedText();
+  cursor.insertText(pModelicaTabSettings->indentationString(startColumn, targetColumn));
+  cursor.endEditBlock();
+  setTextCursor(cursor);
 }
 
 //! Reimplementation of QPlainTextEdit::setPlainText method.
