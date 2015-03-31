@@ -49,7 +49,7 @@ class ModelicaSimulationError : public std::runtime_error
  //Helper functions to convert the error id to a readable format
 #if defined (__vxworks) || defined (__TRICORE__)
 #else
-#define BOOST_EXTENSION_EXPORT_DECL 
+#define BOOST_EXTENSION_EXPORT_DECL
 #endif
 //Helper functions to convert the error id to a readable format
 BOOST_EXTENSION_EXPORT_DECL string error_id_string(SIMULATION_ERROR id);
