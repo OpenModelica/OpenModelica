@@ -48,7 +48,7 @@ class ModelicaSimulationError : public std::runtime_error
 
  //Helper functions to convert the error id to a readable format
 #if defined (__vxworks) || defined (__TRICORE__)
-#else
+/* adrpo: undefine BOOST_EXTENSION_EXPORT_DECL for these targets */
 #define BOOST_EXTENSION_EXPORT_DECL
 #endif
 //Helper functions to convert the error id to a readable format
