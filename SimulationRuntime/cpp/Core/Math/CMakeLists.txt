@@ -2,12 +2,14 @@ cmake_minimum_required (VERSION 2.8.6)
 
 project(${MathName})
 # add the solver default implementation library
+
+add_library(${MathName}_static STATIC ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
+IF(UNIX)
+	set_target_properties(${MathName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+ENDIF(UNIX)
+install (TARGETS ${MathName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
+
 IF(RUNTIME_STATIC_LINKING)
-	add_library(${MathName}_static STATIC ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
-	IF(UNIX)
-		set_target_properties(${MathName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-	ENDIF(UNIX)
-	install (TARGETS ${MathName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${MathName} SHARED ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
 	target_link_libraries (${MathName} ${Boost_LIBRARIES} ${UMFPACK_LIB} ${LAPACK_LIBRARIES})
