@@ -446,7 +446,7 @@ case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numA
         <%accessVars(simCode, direction, vars.discreteAlgVars, intAdd(stringInt(statesOffset), numAlgVars))%>
         <%accessVars(simCode, direction, vars.paramVars, intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal))%>
         <%accessVars(simCode, direction, vars.aliasVars, intAdd(intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal), numParams))%>
-        default: 
+        default:
           std::ostringstream message;
           message << "<%direction%>Real with wrong value reference " << vr[i];
           throw std::invalid_argument(message.str());
