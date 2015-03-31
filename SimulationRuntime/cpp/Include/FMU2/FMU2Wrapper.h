@@ -43,7 +43,7 @@
 // build MODEL_CLASS from MODEL_IDENTIFIER
 #define FMU2_PASTER(a, b) a ## b
 #define FMU2_CONCAT(a, b) FMU2_PASTER(a, b)
-#define MODEL_CLASS FMU2_CONCAT(MODEL_IDENTIFIER, Extension)
+#define MODEL_CLASS FMU2_CONCAT(MODEL_IDENTIFIER, FMU)
 
 // define logger as macro that passes through variadic args
 #define FMU2_LOG(w, status, category, ...) \
@@ -130,9 +130,7 @@ class FMU2Wrapper
  private:
   FMU2GlobalSettings _global_settings;
   boost::shared_ptr<MODEL_CLASS> _model;
-  std::vector<fmi2Real> _tmp_real_buffer;
-  std::vector<fmi2Integer> _tmp_int_buffer;
-  std::vector<fmi2Boolean> _tmp_bool_buffer;
+  std::vector<string> _string_buffer;
   double _need_update;
   void updateModel();
 

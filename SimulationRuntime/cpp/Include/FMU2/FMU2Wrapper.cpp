@@ -79,9 +79,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
                      boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
   _model->initialize(); // set default start values
-  _tmp_real_buffer.resize(_model->getDimReal());
-  _tmp_int_buffer.resize(_model->getDimInteger());
-  _tmp_bool_buffer.resize(_model->getDimBoolean());
+  _string_buffer.resize(_model->getDimString());
 }
 
 FMU2Wrapper::~FMU2Wrapper()
@@ -189,10 +187,7 @@ fmi2Status FMU2Wrapper::completedIntegratorStep(fmi2Boolean noSetFMUStatePriorTo
 fmi2Status FMU2Wrapper::setReal(const fmi2ValueReference vr[], size_t nvr,
                                 const fmi2Real value[])
 {
-  _model->getReal(&_tmp_real_buffer[0]);
-  for(size_t i = 0; i < nvr; ++i)
-    _tmp_real_buffer[vr[i]] = value[i];
-  _model->setReal(&_tmp_real_buffer[0]);
+  _model->setReal(vr, nvr, value);
   _need_update = true;
   return fmi2OK;
 }
@@ -200,10 +195,7 @@ fmi2Status FMU2Wrapper::setReal(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::setInteger(const fmi2ValueReference vr[], size_t nvr,
                                    const fmi2Integer value[])
 {
-  _model->getInteger(&_tmp_int_buffer[0]);
-  for(size_t i = 0; i < nvr; ++i)
-    _tmp_int_buffer[vr[i]] = value[i];
-  _model->setInteger(&_tmp_int_buffer[0]);
+  _model->setInteger(vr, nvr, value);
   _need_update = true;
   return fmi2OK;
 }
@@ -211,10 +203,7 @@ fmi2Status FMU2Wrapper::setInteger(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::setBoolean(const fmi2ValueReference vr[], size_t nvr,
                                    const fmi2Boolean value[])
 {
-  _model->getBoolean((bool*) &_tmp_bool_buffer[0]);
-  for(size_t i = 0; i < nvr; ++i)
-    _tmp_bool_buffer[vr[i]] = value[i];
-  _model->setBoolean((bool*) &_tmp_bool_buffer[0]);
+  _model->setBoolean(vr, nvr, value);
   _need_update = true;
   return fmi2OK;
 }
@@ -222,7 +211,15 @@ fmi2Status FMU2Wrapper::setBoolean(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::setString(const fmi2ValueReference vr[], size_t nvr,
                                   const fmi2String  value[])
 {
-  // TODO implement strings
+  if (nvr > _string_buffer.size()) {
+    FMU2_LOG(this, fmi2Error, logStatusError,
+             "Attempt to set %d fmi2String; FMU only has %d",
+             nvr, _string_buffer.size());
+    return fmi2Error;
+  }
+  for (size_t i = 0; i < nvr; i++)
+    _string_buffer[i] = string(value[i]); // convert to string
+  _model->setString(vr, nvr, &_string_buffer[0]);
   _need_update = true;
   return fmi2OK;
 }
@@ -264,14 +261,12 @@ fmi2Status FMU2Wrapper::getEventIndicators(fmi2Real eventIndicators[], size_t ni
   return fmi2OK;
 }
 
-// Funktions for reading the values of variables that have a reference by the modelDescription.xml
+// Functions for reading the values of variables
 fmi2Status FMU2Wrapper::getReal(const fmi2ValueReference vr[], size_t nvr,
                                 fmi2Real value[])
 {
   updateModel();
-  _model->getReal(&_tmp_real_buffer[0]);
-  for(size_t i = 0; i < nvr; ++i)
-    value[i] = _tmp_real_buffer[vr[i]];
+  _model->getReal(vr, nvr, value);
   return fmi2OK;
 }
 
@@ -279,9 +274,7 @@ fmi2Status FMU2Wrapper::getInteger(const fmi2ValueReference vr[], size_t nvr,
                                    fmi2Integer value[])
 {
   updateModel();
-  _model->getInteger(&_tmp_int_buffer[0]);
-  for(size_t i = 0; i < nvr; ++i)
-    value[i] = _tmp_int_buffer[vr[i]];
+  _model->getInteger(vr, nvr, value);
   return fmi2OK;
 }
 
@@ -289,18 +282,23 @@ fmi2Status FMU2Wrapper::getBoolean(const fmi2ValueReference vr[], size_t nvr,
                                    fmi2Boolean value[])
 {
   updateModel();
-  _model->getBoolean((bool*) &_tmp_bool_buffer[0]);
-  for(size_t i = 0; i < nvr; ++i)
-    value[i] = _tmp_bool_buffer[vr[i]];
+  _model->getBoolean(vr, nvr, value);
   return fmi2OK;
 }
 
 fmi2Status FMU2Wrapper::getString(const fmi2ValueReference vr[], size_t nvr,
                                   fmi2String value[])
 {
+  if (nvr > _string_buffer.size()) {
+    FMU2_LOG(this, fmi2Error, logStatusError,
+             "Attempt to get %d fmi2String; FMU only has %d",
+             nvr, _string_buffer.size());
+    return fmi2Error;
+  }
   updateModel();
-//  for(size_t i = 0; i < nvr; ++i)
-//TODO    _model->getString(vr[i], value[i]);
+  _model->getString(vr, nvr, &_string_buffer[0]);
+  for (size_t i = 0; i < nvr; i++)
+    value[i] = _string_buffer[i].c_str(); // convert to fmi2String
   return fmi2OK;
 }
 

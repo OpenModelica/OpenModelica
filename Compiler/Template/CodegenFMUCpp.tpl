@@ -64,7 +64,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
   let cpp = CodegenCpp.translateModel(simCode)
-  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
+  let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
+  let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
@@ -135,17 +136,51 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributesCpp;
 
-template fmuModelWrapperFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String FMUVersion)
- "Generates code for ModelDescription file for FMU target."
+template fmuModelHeaderFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String FMUVersion)
+ "Generates declaration for FMU target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  let modelIdentifier = lastIdentOfPath(modelInfo.name)
+  //let modelIdentifier = System.stringReplace(dotPath(modelInfo.name), ".", "_")
+  <<
+  // declaration for Cpp FMU target
+  #include "OMCpp<%fileNamePrefix%>Extension.h"
+
+  class <%modelIdentifier%>FMU: public <%modelIdentifier%>Extension {
+   public:
+    // constructor
+    <%modelIdentifier%>FMU(IGlobalSettings* globalSettings,
+        boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
+        boost::shared_ptr<ISimData> simData);
+
+    // getters for given value references
+    virtual void getReal(const unsigned int vr[], int nvr, double value[]);
+    virtual void getInteger(const unsigned int vr[], int nvr, int value[]);
+    virtual void getBoolean(const unsigned int vr[], int nvr, int value[]);
+    virtual void getString(const unsigned int vr[], int nvr, string value[]);
+
+    // setters for given value references
+    virtual void setReal(const unsigned int vr[], int nvr, const double value[]);
+    virtual void setInteger(const unsigned int vr[], int nvr, const int value[]);
+    virtual void setBoolean(const unsigned int vr[], int nvr, const int value[]);
+    virtual void setString(const unsigned int vr[], int nvr, const string value[]);
+  };
+  >>
+end fmuModelHeaderFile;
+
+template fmuModelCppFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String FMUVersion)
+ "Generates code for FMU target."
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelName = dotPath(modelInfo.name)
   let modelShortName = lastIdentOfPath(modelInfo.name)
-  let modelIdentifier = System.stringReplace(modelName, ".", "_")
+  //let modelIdentifier = System.stringReplace(modelName, ".", "_")
+  let modelIdentifier = modelShortName
   <<
   // define model identifier and unique id
-  #define MODEL_IDENTIFIER <%modelShortName%>
+  #define MODEL_IDENTIFIER <%modelIdentifier%>
   #define MODEL_GUID "{<%guid%>}"
 
   #include <Core/Modelica.h>
@@ -158,7 +193,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include <Solver/IAlgLoopSolver.h>
   #include <System/IAlgLoopSolverFactory.h>
   #include <SimController/ISimData.h>
-  #include "OMCpp<%fileNamePrefix%>Extension.h"
+  #include "OMCpp<%fileNamePrefix%>FMU.h"
 
   <%ModelDefineData(modelInfo)%>
   #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
@@ -167,20 +202,30 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     '#include "FMU2/FMU2Wrapper.cpp"'
   else
     '#include "FMU/FMUWrapper.cpp"'%>
-
   <%if isFMIVersion20(FMUVersion) then
     '#include "FMU2/FMU2Interface.cpp"'
   else
     '#include "FMU/FMULibInterface.cpp"'%>
 
-  #if 0
-  <%setDefaultStartValues(modelInfo)%>
-  <%setStartValues(modelInfo)%>
-  <%setExternalFunction(modelInfo)%>
-  #endif
+  // constructor
+  <%modelIdentifier%>FMU::<%modelIdentifier%>FMU(IGlobalSettings* globalSettings,
+      boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
+      boost::shared_ptr<ISimData> simData):
+    PreVariables(<%getPreVarsCount(simCode)%>),
+    <%modelIdentifier%>(globalSettings, nonLinSolverFactory, simData),
+    <%modelIdentifier%>Extension(globalSettings, nonLinSolverFactory, simData) {
+  }
 
+  // getters
+  <%accessFunctions(simCode, "get", modelIdentifier, modelInfo)%>
+  // setters
+  <%accessFunctions(simCode, "set", modelIdentifier, modelInfo)%>
   >>
-end fmuModelWrapperFile;
+  // TODO:
+  // <%setDefaultStartValues(modelInfo)%>
+  // <%setStartValues(modelInfo)%>
+  // <%setExternalFunction(modelInfo)%>
+end fmuModelCppFile;
 
 template ModelDefineData(ModelInfo modelInfo)
  "Generates global data in simulation file."
@@ -370,6 +415,118 @@ template setExternalFunctionSwitch(Function fn)
       case $P<%fname%> : ptr_<%fname%>=(ptrT_<%fname%>)value; break;
       >>
 end setExternalFunctionSwitch;
+
+template accessFunctions(SimCode simCode, String direction, String modelIdentifier, ModelInfo modelInfo)
+ "Generates getters and setters for Real, Integer, Boolean, and String."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  <%accessRealFunction(simCode, direction, modelIdentifier, modelInfo)%>
+  <%accessVarsFunction(simCode, direction, modelIdentifier, "Integer", "int", vars.intAlgVars, vars.intParamVars, vars.intAliasVars)%>
+  <%accessVarsFunction(simCode, direction, modelIdentifier, "Boolean", "int", vars.boolAlgVars, vars.boolParamVars, vars.boolAliasVars)%>
+  <%accessVarsFunction(simCode, direction, modelIdentifier, "String", "string", vars.stringAlgVars, vars.stringParamVars, vars.stringAliasVars)%>
+  >>
+end accessFunctions;
+
+template accessRealFunction(SimCode simCode, String direction, String modelIdentifier, ModelInfo modelInfo)
+ "Generates getReal and setReal functions."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numParams=numParams)) then
+  let qualifier = if stringEq(direction, "set") then "const"
+  let statesOffset = intMul(2, stringInt(numFMUStateVars(vars.stateVars)))
+  <<
+  void <%modelIdentifier%>FMU::<%direction%>Real(const unsigned int vr[], int nvr, <%qualifier%> double value[]) {
+    for (int i = 0; i < nvr; i++)
+      switch (vr[i]) {
+        <%vars.stateVars |> var => accessVecVar(direction, var, 0, "__z"); separator="\n"%>
+        <%vars.derivativeVars |> var => accessVecVar(direction, var, numStateVars, "__zDot"); separator="\n"%>
+        <%accessVars(simCode, direction, vars.algVars, stringInt(statesOffset))%>
+        <%accessVars(simCode, direction, vars.discreteAlgVars, intAdd(stringInt(statesOffset), numAlgVars))%>
+        <%accessVars(simCode, direction, vars.paramVars, intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal))%>
+        <%accessVars(simCode, direction, vars.aliasVars, intAdd(intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal), numParams))%>
+        default: 
+          std::ostringstream message;
+          message << "<%direction%>Real with wrong value reference " << vr[i];
+          throw std::invalid_argument(message.str());
+      }
+  }
+
+  >>
+end accessRealFunction;
+
+template numFMUStateVars(list<SimVar> stateVars)
+ "Return number of states without dummy state"
+::=
+ if intGt(listLength(stateVars), 1) then listLength(stateVars) else (stateVars |> var => match var case SIMVAR(__) then if stringEq(crefStr(name), "$dummy") then 0 else 1)
+end numFMUStateVars;
+
+template accessVarsFunction(SimCode simCode, String direction, String modelIdentifier, String typeName, String typeImpl, list<SimVar> algVars, list<SimVar> paramVars, list<SimVar> aliasVars)
+ "Generates get<%typeName%> and set<%typeName%> functions."
+::=
+  let qualifier = if stringEq(direction, "set") then "const"
+  <<
+  void <%modelIdentifier%>FMU::<%direction%><%typeName%>(const unsigned int vr[], int nvr, <%qualifier%> <%typeImpl%> value[]) {
+    for (int i = 0; i < nvr; i++)
+      switch (vr[i]) {
+        <%accessVars(simCode, direction, algVars, 0)%>
+        <%accessVars(simCode, direction, paramVars, listLength(algVars))%>
+        <%accessVars(simCode, direction, aliasVars, intAdd(listLength(algVars), listLength(paramVars)))%>
+        default:
+          std::ostringstream message;
+          message << "<%direction%><%typeName%> with wrong value reference " << vr[i];
+          throw std::invalid_argument(message.str());
+      }
+  }
+
+  >>
+end accessVarsFunction;
+
+template accessVars(SimCode simCode, String direction, list<SimVar> varsList, Integer offset)
+ "Generates list of case statements in get functions of Cpp file."
+::=
+  <<
+  <%varsList |> var => accessVar(simCode, direction, var, offset); separator="\n"%>
+  >>
+end accessVars;
+
+template accessVar(SimCode simCode, String direction, SimVar simVar, Integer offset)
+ "Generates code for accessing variables in Cpp file for FMU target."
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// <%comment%>'
+  let varname = cref1(name, simCode, "", "", "", contextOther, "", "", false)
+  if stringEq(direction, "get") then
+  <<
+  case <%intAdd(offset, index)%>: value[i] = <%varname%>; break; <%description%>
+  >>
+  else
+  <<
+  case <%intAdd(offset, index)%>: <%varname%> = value[i]; break; <%description%>
+  >>
+end accessVar;
+
+template accessVecVar(String direction, SimVar simVar, Integer offset, String vecName)
+ "Generates code for accessing vector variables, neglecting $dummy states."
+::=
+match simVar
+  case SIMVAR(__) then
+  let description = if comment then '// <%comment%>'
+  if stringEq(crefStr(name), "$dummy") then
+  <<>>
+  else if stringEq(crefStr(name), "der($dummy)") then
+  <<>>
+  else if stringEq(direction, "get") then
+  <<
+  case <%intAdd(offset, index)%>: value[i] = <%vecName%>[<%index%>]; break; <%description%>
+  >>
+  else
+  <<
+  case <%intAdd(offset, index)%>: <%vecName%>[<%index%>] = value[i]; break; <%description%>
+  >>
+end accessVecVar;
 
 template getPlatformString2(String platform, String fileNamePrefix, String dirExtra, String libsPos1, String libsPos2, String omhome)
  "returns compilation commands for the platform. "
