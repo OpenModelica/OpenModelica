@@ -33,9 +33,9 @@ Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
     _delta(NULL),
   _deltaInv(NULL),
     _ysave(NULL),
-    _sparsePatternColorCols (NULL),
-    _jacobianAIndex(NULL),
-    _jacobianALeadindex(NULL)
+  _colorOfColumn (NULL),
+  _jacobianAIndex(NULL),
+  _jacobianALeadindex(NULL)
 
 
 {
@@ -88,8 +88,9 @@ Ida::~Ida()
   }
 
 
-  if (_sparsePatternColorCols)
-    delete [] _sparsePatternColorCols;
+
+  if (_colorOfColumn)
+    delete [] _colorOfColumn;
   if(_delta)
     delete [] _delta;
   if(_deltaInv)
@@ -145,6 +146,8 @@ void Ida::initialize()
       delete[] _absTol;
   if(_delta)
     delete [] _delta;
+    if(_deltaInv)
+    delete [] _deltaInv;
     if(_ysave)
     delete [] _ysave;
 
@@ -795,11 +798,11 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 
  if (_jacobianANonzeros != 0)
  {
-  for(int color=0; color < _sparsePatternMaxColors; color++)
+  for(int color=1; color <= _maxColors; color++)
   {
       for(int k=0; k < _dimSys; k++)
     {
-      if((_sparsePatternColorCols[k] - 1) == color)
+      if((_colorOfColumn[k] ) == color)
       {
         _ysave[k] = y[k];
         y[k]+= _delta[k];
@@ -810,7 +813,7 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 
   for (int k = 0; k < _dimSys; k++)
    {
-       if((_sparsePatternColorCols[k] - 1) == color)
+       if((_colorOfColumn[k]) == color)
      {
         y[k] = _ysave[k];
 
@@ -868,9 +871,8 @@ int Ida::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight
 
 void Ida::initializeColoredJac()
 {
-  _sparsePatternColorCols = new int[_dimSys];
-  _system->getAColorOfColumn( _sparsePatternColorCols, _dimSys);
-  _sparsePatternMaxColors = _system->getAMaxColors();
+  _colorOfColumn = new int[_dimSys];
+  _system->getAColorOfColumn( _colorOfColumn, _dimSys);
 
   _system->getJacobian(_jacobianA);
   _jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA);

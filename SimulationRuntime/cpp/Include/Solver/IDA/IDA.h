@@ -214,8 +214,8 @@ double
     _CV_absTol;
 
   // Variables for Coloured Jacobians
-  int* _sparsePatternColorCols;
-  int  _sparsePatternMaxColors;
+  int* _colorOfColumn;
+  int  _maxColors;
   SparseMatrix _jacobianA;
   int _jacobianANonzeros;
   int const* _jacobianAIndex;

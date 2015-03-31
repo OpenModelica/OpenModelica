@@ -5,9 +5,6 @@
 #include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
 #include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
 
-  typedef SparseMatrix::iterator1 it1_t;
-  typedef SparseMatrix::iterator2 it2_t;
-
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _cvodesettings(dynamic_cast<ISolverSettings*>(_settings)),
@@ -36,7 +33,7 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     _delta(NULL),
   _deltaInv(NULL),
     _ysave(NULL),
-  _sparsePatternColorCols (NULL),
+  _colorOfColumn (NULL),
   _jacobianAIndex(NULL),
   _jacobianALeadindex(NULL)
 
@@ -91,8 +88,8 @@ Cvode::~Cvode()
 
 
 
-  if (_sparsePatternColorCols)
-    delete [] _sparsePatternColorCols;
+  if (_colorOfColumn)
+    delete [] _colorOfColumn;
   if(_delta)
     delete [] _delta;
     if(_deltaInv)
@@ -274,8 +271,8 @@ void Cvode::initialize()
   // Use own jacobian matrix
   // Check if Colored Jacobians are worth to use
    #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-    _sparsePatternMaxColors = _system->getAMaxColors();
-    if(_sparsePatternMaxColors < _dimSys)
+    _maxColors = _system->getAMaxColors();
+    if(_maxColors < _dimSys)
     {
     _idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
     initializeColoredJac();
@@ -821,11 +818,11 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
 
  if (_jacobianANonzeros != 0)
  {
-  for(int color=0; color < _sparsePatternMaxColors; color++)
+  for(int color=1; color <= _maxColors; color++)
   {
       for(int k=0; k < _dimSys; k++)
     {
-      if((_sparsePatternColorCols[k] - 1) == color)
+      if((_colorOfColumn[k] ) == color)
       {
         _ysave[k] = y[k];
         y[k]+= _delta[k];
@@ -836,7 +833,7 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
 
   for (int k = 0; k < _dimSys; k++)
    {
-       if((_sparsePatternColorCols[k] - 1) == color)
+       if((_colorOfColumn[k]) == color)
      {
         y[k] = _ysave[k];
 
@@ -905,8 +902,8 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
 
 void Cvode::initializeColoredJac()
 {
-  _sparsePatternColorCols = new int[_dimSys];
-  _system->getAColorOfColumn( _sparsePatternColorCols, _dimSys);
+  _colorOfColumn = new int[_dimSys];
+  _system->getAColorOfColumn( _colorOfColumn, _dimSys);
 
   _system->getJacobian(_jacobianA);
   _jacobianANonzeros  = boost::numeric::bindings::traits::spmatrix_num_nonzeros (_jacobianA);
