@@ -302,6 +302,7 @@ package SimCode
       Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimEqSystem> equationsForConditions;
+      list<SimCodeVar.SimVar> mixedArrayVars;
       Option<FmiModelStructure> modelStructure;
     end SIMCODE;
 

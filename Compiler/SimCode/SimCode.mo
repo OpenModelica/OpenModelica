@@ -118,6 +118,7 @@ uniontype SimCode
     Option<HpcOmSimCode.Schedule> hpcOmSchedule;
     Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
     list<SimEqSystem> equationsForConditions;
+    list<SimCodeVar.SimVar> mixedArrayVars; //all arrays that contain state or state derivative variables, together with other variables
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
     Option<BackendMapping> backendMapping;

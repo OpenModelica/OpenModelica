@@ -47,6 +47,7 @@ import DAE;
 import FCore;
 import FGraph;
 import HashTable;
+import HashTableCrILst;
 import HashTableExpToIndex;
 import HashTableStringToPath;
 import SCode;
@@ -1548,6 +1549,7 @@ algorithm
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
 
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars;
 
     case (dlow, class_, _, fileDir, _,_, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -1690,7 +1692,7 @@ algorithm
       if Flags.isSet(Flags.EXEC_HASH) then
         print("*** SimCode -> generate cref2simVar hastable: " + realString(clock()) + "\n");
       end if;
-      crefToSimVarHT = createCrefToSimVarHT(modelInfo);
+      (crefToSimVarHT,mixedArrayVars) = createCrefToSimVarHT(modelInfo);
       if Flags.isSet(Flags.EXEC_HASH) then
         print("*** SimCode -> generate cref2simVar hastable done!: " + realString(clock()) + "\n");
       end if;
@@ -1737,6 +1739,7 @@ algorithm
                                 NONE(),
                                 NONE(),
                                 {},
+                                mixedArrayVars,
                                 crefToSimVarHT,
                                 SOME(backendMapping),
                                 modelStruct);
@@ -8365,13 +8368,18 @@ algorithm
   end match;
 end setVariableIndexHelper2;
 
-public function createCrefToSimVarHT
+public function createCrefToSimVarHT "author: unknown and marcusw
+  create a hash table that maps all variable names (crefs) to the simVar-objects. Additionally, all array names are returned, that
+  contain state or state derivative variables, together with other variables."
   input SimCode.ModelInfo modelInfo;
   output SimCode.HashTableCrefToSimVar outHT;
+  output list<SimCodeVar.SimVar> oMixedArrayVars; //all arrays that contain state or state derivative variables, together with other variables
 algorithm
-  outHT :=  matchcontinue (modelInfo)
+  (outHT,oMixedArrayVars) :=  matchcontinue (modelInfo)
     local
       SimCode.HashTableCrefToSimVar ht;
+      HashTableCrILst.HashTable arraySimVars;
+      list<SimCodeVar.SimVar> mixedArrayVars;
       list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, aliasVars,
                             intAliasVars, boolAliasVars, stringAliasVars, paramVars, intParamVars, boolParamVars,
                             stringAlgVars, stringParamVars, extObjVars, constVars, intConstVars, boolConstVars,
@@ -8391,16 +8399,21 @@ algorithm
                numBoolAliasVars+numParams+numIntParams+numBoolParams+numOutVars+numInVars + numOptimizeConstraints + numOptimizeFinalConstraints;
         size = intMax(size,1000);
         ht = emptyHashTableSized(size);
+        arraySimVars = HashTableCrILst.emptyHashTableSized(size);
         ht = List.fold(stateVars, addSimVarToHashTable, ht);
+        //true = intLt(size, -1);
         ht = List.fold(derivativeVars, addSimVarToHashTable, ht);
         ht = List.fold(algVars, addSimVarToHashTable, ht);
+        arraySimVars = List.fold(algVars, getArraySimVars, arraySimVars);
         ht = List.fold(discreteAlgVars, addSimVarToHashTable, ht);
         ht = List.fold(intAlgVars, addSimVarToHashTable, ht);
         ht = List.fold(boolAlgVars, addSimVarToHashTable, ht);
         ht = List.fold(paramVars, addSimVarToHashTable, ht);
+        arraySimVars = List.fold(paramVars, getArraySimVars, arraySimVars);
         ht = List.fold(intParamVars, addSimVarToHashTable, ht);
         ht = List.fold(boolParamVars, addSimVarToHashTable, ht);
         ht = List.fold(aliasVars, addSimVarToHashTable, ht);
+        arraySimVars = List.fold(aliasVars, getArraySimVars, arraySimVars);
         ht = List.fold(intAliasVars, addSimVarToHashTable, ht);
         ht = List.fold(boolAliasVars, addSimVarToHashTable, ht);
         ht = List.fold(stringAlgVars, addSimVarToHashTable, ht);
@@ -8414,7 +8427,8 @@ algorithm
         ht = List.fold(jacobianVars, addSimVarToHashTable, ht);
         ht = List.fold(realOptimizeConstraintsVars, addSimVarToHashTable, ht);
         ht = List.fold(realOptimizeFinalConstraintsVars, addSimVarToHashTable, ht);
-      then ht;
+        mixedArrayVars = List.fold(listAppend(stateVars, derivativeVars), function getMixedArrayVars(iArraySimVars=arraySimVars), {});
+      then (ht,mixedArrayVars);
 
     else equation
       Error.addInternalError("function createCrefToSimVarHT failed", sourceInfo());
@@ -8435,11 +8449,13 @@ algorithm
 
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
       equation
+        //print("addSimVarToHashTable: handling variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
         outHT = add((cr, sv), inHT);
       then outHT;
         // add the whole array crefs to the hashtable, too
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
       equation
+        //print("addSimVarToHashTable: handling array variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
         outHT = add((acr, sv), inHT);
         outHT = add((cr, sv), outHT);
       then outHT;
@@ -8451,6 +8467,57 @@ algorithm
   end matchcontinue;
 end addSimVarToHashTable;
 
+protected function getArraySimVars "author: marcusw
+  store the array-cref of the variable in the hash table and add the variable-index as value. The variable is handled as array-variable, 
+  if it has more than one element as numArrayElement."
+  input SimCodeVar.SimVar iSimVar;
+  input HashTableCrILst.HashTable iArrayMapping;
+  output HashTableCrILst.HashTable oArrayMapping;
+protected
+  DAE.ComponentRef name;
+  DAE.ComponentRef arrayCref;
+  HashTableCrILst.HashTable tmpArrayMapping = iArrayMapping;
+  list<Integer> arrayVars;
+  Integer index;
+algorithm
+  oArrayMapping := match(iSimVar)
+    case(SimCodeVar.SIMVAR(name=name, index=index, numArrayElement=_::_))
+      equation
+        arrayCref = ComponentReference.crefStripLastSubs(name);
+        if(BaseHashTable.hasKey(arrayCref, iArrayMapping)) then
+          arrayVars = BaseHashTable.get(arrayCref, iArrayMapping);
+          tmpArrayMapping = BaseHashTable.add((arrayCref, index::arrayVars), tmpArrayMapping);
+        else
+          tmpArrayMapping = BaseHashTable.add((arrayCref, {index}), tmpArrayMapping);
+        end if;
+        //print("markSimVarArrays: " + ComponentReference.printComponentRefStr(name) + " for " + ComponentReference.printComponentRefStr(ComponentReference.crefStripLastSubs(name)) + "\n");
+      then tmpArrayMapping;
+    else
+      then iArrayMapping;
+  end match;
+end getArraySimVars;
+
+protected function getMixedArrayVars "author: marcusw
+  get the names of all arrays, that contain state or state derivative variables, together with other variables."
+  input SimCodeVar.SimVar iSimVar;
+  input HashTableCrILst.HashTable iArraySimVars; //all array variables of non state and non state derivative variables
+  input list<SimCodeVar.SimVar> iMixedArrayVars;
+  output list<SimCodeVar.SimVar> oMixedArrayVars;
+protected
+  DAE.ComponentRef cr;
+  list<SimCodeVar.SimVar> tmpMixedArrayVars;
+algorithm
+  oMixedArrayVars := match(iSimVar, iArraySimVars, iMixedArrayVars)
+    case(SimCodeVar.SIMVAR(arrayCref=SOME(cr)),_,tmpMixedArrayVars)
+      equation
+        if(BaseHashTable.hasKey(cr, iArraySimVars)) then
+          tmpMixedArrayVars = iSimVar::tmpMixedArrayVars;
+        end if;
+      then tmpMixedArrayVars;
+    else
+      then iMixedArrayVars;
+  end match;
+end getMixedArrayVars;
 
 protected function getAliasVar
   input BackendDAE.Var inVar;
@@ -11663,6 +11730,7 @@ algorithm
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars;
     case _
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -11670,7 +11738,7 @@ algorithm
 
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct)
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct)
       equation
         SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels) = modelInfo;
         files = {};
@@ -11686,7 +11754,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT,backendMapping, modelStruct);
 
     else
       equation
@@ -11983,6 +12051,7 @@ algorithm
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars;
 
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations,
@@ -11991,7 +12060,7 @@ algorithm
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                          hpcOmSchedule,hpcOmMemory,equationsForConditions,crefToSimVarHT,backendMapping,modelStruct), _, a)
+                          hpcOmSchedule,hpcOmMemory,equationsForConditions,mixedArrayVars,crefToSimVarHT,backendMapping,modelStruct), _, a)
       equation
         (literals, a) = List.mapFold(literals, func, a);
         (allEquations, a) = traverseExpsEqSystems(allEquations, func, a, {});
@@ -12019,7 +12088,7 @@ algorithm
                             jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                             relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                             hpcOmSchedule,hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping,modelStruct), a);
+                             hpcOmSchedule,hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping,modelStruct), a);
   end match;
 end traverseExpsSimCode;
 
@@ -12206,21 +12275,22 @@ algorithm
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
-
+      list<SimCodeVar.SimVar> mixedArrayVars;
+      
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations,
                           useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                           parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
-                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct), _)
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations,
                            useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                            parameterEquations, removedEquations, algorithmAndEquationAsserts,equationsForZeroCrossings,
                            jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                            relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
-                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct);
+                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct);
   end match;
 end setSimCodeLiterals;
 
@@ -13343,11 +13413,12 @@ protected
       list<SimCode.SimEqSystem> equationsForConditions;
       list<SimCodeVar.SimVar> stateVars,derivativeVars,algVars,discreteAlgVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars,jacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars;
 algorithm
   simCodeOut := match(simVar,simCodeIn)
     case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct))
       equation
         SimCode.MODELINFO(name=name, description=description, directory=directory, varInfo=varInfo, vars=vars, functions=functions, labels=labels) = modelInfo;
         SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,
@@ -13359,7 +13430,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct);
   end match;
 end addSimVarToAlgVars;
 
@@ -13404,11 +13475,12 @@ protected
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars; 
 algorithm
   simCodeOut := match(simEqSys,sysIdx,simCodeIn)
     case (_,_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct))
       equation
         odes = listGet(odeEquations,sysIdx);
         odes = listAppend({simEqSys},odes);
@@ -13417,7 +13489,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end addSimEqSysToODEquations;
 
@@ -13461,17 +13533,18 @@ protected
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars;
 algorithm
   simCodeOut := match(simEqSys,simCodeIn)
     case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct))
       equation
         initialEquations = listAppend(initialEquations,{simEqSys});
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct);
   end match;
 end addSimEqSysToInitialEquations;
 
@@ -13516,15 +13589,16 @@ protected
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars; 
 algorithm
   simCodeOut := match(allEqs,odeEqs,simCodeIn)
     case (_,_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct))
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEqs, odeEqs, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end replaceODEandALLequations;
 
@@ -13570,13 +13644,14 @@ algorithm
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars;
     case (_,SimCode.SIMCODE(_, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT, backendMapping, modelStruct))
       then
         SimCode.SIMCODE(modelInfoIn, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, mixedArrayVars, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end replaceModelInfo;
 
@@ -13977,7 +14052,7 @@ protected
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
-    crefSimVarHT := createCrefToSimVarHT(inModelInfo);
+    (crefSimVarHT,_) := createCrefToSimVarHT(inModelInfo);
     // combine the transposed sparse pattern of matrix A and B
     // to obtain dependencies for the derivatives
     SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "A");

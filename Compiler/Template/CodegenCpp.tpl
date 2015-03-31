@@ -40,7 +40,7 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
         let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", preVarsCount),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,false), "", preVarsCount, false),'OMCpp<%fileNamePrefix%>PreVariables.h')
+        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,mixedArrayVars,false), "", preVarsCount, false),'OMCpp<%fileNamePrefix%>PreVariables.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
         let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
@@ -6697,14 +6697,10 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.extObjVars |> var =>
     MemberVariableDefine("void*",var, "extObjVars", useFlatArrayNotation)
   ;separator="\n"%>
-
   >>
 end MemberVariable;
 
-
-
-
-template MemberVariablePreVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+template MemberVariablePreVariables(ModelInfo modelInfo, list<SimCodeVar.SimVar> mixedArrayVars, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
@@ -6737,6 +6733,10 @@ case MODELINFO(vars=SIMVARS(__)) then
     /*alias bool vars*/
    <%vars.boolAliasVars |> var =>
     MemberVariableDefine("bool ",var, "boolVariables.AliasVars", useFlatArrayNotation)
+   ;separator="\n"%>
+   /*mixed array variables*/
+   <%mixedArrayVars |> arrVar =>
+    MemberVariableDefine2(arrVar, "mixed", useFlatArrayNotation)
    ;separator="\n"%>
   >>
 end MemberVariablePreVariables;
@@ -8473,6 +8473,7 @@ template initAliasValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode
                         Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
   varsLst |> sv as SIMVAR(__) =>
        let &preExp = buffer ""
+       let &varDeclsCref = buffer ""
        let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         '<%preExp%>
          set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>,<%initval%>);'

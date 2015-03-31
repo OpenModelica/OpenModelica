@@ -1021,12 +1021,13 @@ algorithm
       Option<HpcOmSimCode.MemoryMap> hpOmMemoryMap;
       list<SimCode.SimEqSystem> equationsForConditions;
       Option<SimCode.FmiModelStructure> modelStruct;
+      list<SimCodeVar.SimVar> mixedArrayVars;
 
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,useSymbolicInitialization,useHomotopy,initialEquations,removedInitialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,removedEquations,algorithmAndEquationAsserts,equationsForZeroCrossings,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
           timeEvents,whenClauses,discreteModelVars,extObjInfo,makefileParams,
-          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,hpcOmSchedule,hpOmMemoryMap,equationsForConditions,crefToSimVarHT,backendMapping, modelStruct),_)
+          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,hpcOmSchedule,hpOmMemoryMap,equationsForConditions,mixedArrayVars,crefToSimVarHT,backendMapping, modelStruct),_)
     equation
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
@@ -1035,7 +1036,7 @@ algorithm
                          initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations,
                          removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
-                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpOmMemoryMap, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpOmMemoryMap, equationsForConditions, mixedArrayVars, crefToSimVarHT,backendMapping, modelStruct);
 
   end match;
 end replaceDiscontsInOde;
