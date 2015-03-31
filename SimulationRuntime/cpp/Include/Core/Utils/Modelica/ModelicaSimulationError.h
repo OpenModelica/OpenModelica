@@ -29,19 +29,19 @@ class ModelicaSimulationError : public std::runtime_error
     , _error_id(error_id)
     {
     }
-   
+
     const char* what()
     {
       std::stringstream ss;
       ss << "simulation error message : " << std::runtime_error::what();
       return strdup(ss.str().c_str());
     }
-   
+
     SIMULATION_ERROR getErrorID()
     {
       return _error_id;
     }
-  
+
   private:
     SIMULATION_ERROR _error_id;
 };

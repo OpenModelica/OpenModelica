@@ -1,7 +1,7 @@
 #pragma once
 
 #if defined(__vxworks) || defined(__TRICORE__)
-	#define BOOST_EXTENSION_EXPORT_DECL
+  #define BOOST_EXTENSION_EXPORT_DECL
 #elif defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #else
     error "operating system not supported"
