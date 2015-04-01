@@ -2810,14 +2810,12 @@ end equationNamesArrayFormat;
 template functionXXX_systems_arrayFormat(list<list<SimEqSystem>> eqlstlst, String name, Text &fncalls, Text &nrfuncs, Text &varDecls, String modelNamePrefixStr)
 ::=
 match eqlstlst
-  case ({}) then
-  <<
-  /* no <%name%> systems */
-  >>
-
+  case ({})
   case ({{}}) then
+  let &nrfuncs += "0"
   <<
   /* no <%name%> systems */
+  static void (**function<%name%>_systems)(DATA *) = NULL;
   >>
 
   case eqlstlst as ({eqlst}) then
@@ -2836,9 +2834,7 @@ match eqlstlst
     >>
 
   case eqlstlst as ({eqlst::_}) then
-  <<
-  /* TODO more than ODE list in <%name%> systems */
-  >>
+  error(sourceInfo(), 'TODO more than ODE list in <%name%> systems')
 end functionXXX_systems_arrayFormat;
 
 template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmSimCode.Schedule> hpcOmSchedule, String modelNamePrefix)

@@ -29,11 +29,11 @@ template tasksystemdump_dispatch(SimCode code, Boolean withOperations)
   <dae-equations size="<%listLength(allEquations)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(allEquations),0,withOperations)%>
   </dae-equations>
-  <ode-equations size="<%listLength(listGet(odeEquations,1))%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(odeEquations,1)),0,withOperations)%>
+  <ode-equations size="<%if odeEquations then listLength(listGet(odeEquations,1)) else 0%>">
+    <%if odeEquations then dumpEqs(SimCodeUtil.sortEqSystems(listGet(odeEquations,1)),0,withOperations)%>
   </ode-equations>
-  <alg-equations size="<%listLength(listGet(algebraicEquations,1))%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(listGet(algebraicEquations,1)),0,withOperations)%>
+  <alg-equations size="<%if algebraicEquations then listLength(listGet(algebraicEquations,1)) else 0%>">
+    <%if algebraicEquations then dumpEqs(SimCodeUtil.sortEqSystems(listGet(algebraicEquations,1)),0,withOperations)%>
   </alg-equations>
   <start-equations size="<%listLength(startValueEquations)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(startValueEquations),0,withOperations)%>

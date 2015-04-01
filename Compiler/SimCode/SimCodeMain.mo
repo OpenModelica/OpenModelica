@@ -538,14 +538,9 @@ end callTargetTemplates;
 protected function dumpTaskSystemIfFlag
   input SimCode.SimCode simCode;
 algorithm
-  _ := matchcontinue(simCode)
-    case(_)
-      equation
-        true = Flags.isSet(Flags.PARMODAUTO);
-        Tpl.tplNoret2(TaskSystemDump.dumpTaskSystem, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-      then ();
-    else ();
-   end matchcontinue;
+  if Flags.isSet(Flags.PARMODAUTO) then
+    Tpl.tplNoret2(TaskSystemDump.dumpTaskSystem, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+  end if;
 end dumpTaskSystemIfFlag;
 
 protected function callTargetTemplatesCPP

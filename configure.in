@@ -949,6 +949,8 @@ OMOptimBasis/build/Makefile.unix \
 OMOptimBasis/build/OMOptimBasis.config \
 OMVisualize/OMVisualizeGUI/OMVisualizeGUI.config \
 SimulationRuntime/c/Makefile \
+SimulationRuntime/ParModelica/Makefile \
+SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
 mosh/src/Makefile \
 Compiler/boot/Makefile \
