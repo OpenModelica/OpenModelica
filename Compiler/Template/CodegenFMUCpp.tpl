@@ -417,7 +417,7 @@ template setExternalFunctionSwitch(Function fn)
 end setExternalFunctionSwitch;
 
 template accessFunctions(SimCode simCode, String direction, String modelIdentifier, ModelInfo modelInfo)
- "Generates getters and setters for Real, Integer, Boolean, and String."
+ "Generates getters or setters for Real, Integer, Boolean, and String."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -430,7 +430,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 end accessFunctions;
 
 template accessRealFunction(SimCode simCode, String direction, String modelIdentifier, ModelInfo modelInfo)
- "Generates getReal and setReal functions."
+ "Generates getReal or setReal function."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numParams=numParams)) then
@@ -442,10 +442,10 @@ case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numA
       switch (vr[i]) {
         <%vars.stateVars |> var => accessVecVar(direction, var, 0, "__z"); separator="\n"%>
         <%vars.derivativeVars |> var => accessVecVar(direction, var, numStateVars, "__zDot"); separator="\n"%>
-        <%accessVars(simCode, direction, vars.algVars, stringInt(statesOffset))%>
-        <%accessVars(simCode, direction, vars.discreteAlgVars, intAdd(stringInt(statesOffset), numAlgVars))%>
-        <%accessVars(simCode, direction, vars.paramVars, intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal))%>
-        <%accessVars(simCode, direction, vars.aliasVars, intAdd(intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal), numParams))%>
+        <%vars.algVars |> var => accessVar(simCode, direction, var, stringInt(statesOffset)); separator="\n"%>
+        <%vars.discreteAlgVars |> var => accessVar(simCode, direction, var, intAdd(stringInt(statesOffset), numAlgVars)); separator="\n"%>
+        <%vars.paramVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal)); separator="\n"%>
+        <%vars.aliasVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal), numParams)); separator="\n"%>
         default:
           std::ostringstream message;
           message << "<%direction%>Real with wrong value reference " << vr[i];
@@ -463,16 +463,16 @@ template numFMUStateVars(list<SimVar> stateVars)
 end numFMUStateVars;
 
 template accessVarsFunction(SimCode simCode, String direction, String modelIdentifier, String typeName, String typeImpl, list<SimVar> algVars, list<SimVar> paramVars, list<SimVar> aliasVars)
- "Generates get<%typeName%> and set<%typeName%> functions."
+ "Generates get<%typeName%> or set<%typeName%> function."
 ::=
   let qualifier = if stringEq(direction, "set") then "const"
   <<
   void <%modelIdentifier%>FMU::<%direction%><%typeName%>(const unsigned int vr[], int nvr, <%qualifier%> <%typeImpl%> value[]) {
     for (int i = 0; i < nvr; i++)
       switch (vr[i]) {
-        <%accessVars(simCode, direction, algVars, 0)%>
-        <%accessVars(simCode, direction, paramVars, listLength(algVars))%>
-        <%accessVars(simCode, direction, aliasVars, intAdd(listLength(algVars), listLength(paramVars)))%>
+        <%algVars |> var => accessVar(simCode, direction, var, 0); separator="\n"%>
+        <%paramVars |> var => accessVar(simCode, direction, var, listLength(algVars)); separator="\n"%>
+        <%aliasVars |> var => accessVar(simCode, direction, var, intAdd(listLength(algVars), listLength(paramVars))); separator="\n"%>
         default:
           std::ostringstream message;
           message << "<%direction%><%typeName%> with wrong value reference " << vr[i];
@@ -483,16 +483,8 @@ template accessVarsFunction(SimCode simCode, String direction, String modelIdent
   >>
 end accessVarsFunction;
 
-template accessVars(SimCode simCode, String direction, list<SimVar> varsList, Integer offset)
- "Generates list of case statements in get functions of Cpp file."
-::=
-  <<
-  <%varsList |> var => accessVar(simCode, direction, var, offset); separator="\n"%>
-  >>
-end accessVars;
-
 template accessVar(SimCode simCode, String direction, SimVar simVar, Integer offset)
- "Generates code for accessing variables in Cpp file for FMU target."
+ "Generates a case statement accessing one variable."
 ::=
 match simVar
   case SIMVAR(__) then
@@ -509,7 +501,7 @@ match simVar
 end accessVar;
 
 template accessVecVar(String direction, SimVar simVar, Integer offset, String vecName)
- "Generates code for accessing vector variables, neglecting $dummy states."
+ "Generates a case statement accessing one variable of a vector, neglecting $dummy state."
 ::=
 match simVar
   case SIMVAR(__) then
