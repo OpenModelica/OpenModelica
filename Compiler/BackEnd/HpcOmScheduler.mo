@@ -2453,6 +2453,13 @@ protected
   list<HpcOmSimCode.Task> nodeList;
   array<HpcOmTaskGraph.Communications> commCosts;
   array<list<Integer>> inComps;
+
+  array<Integer> priorityArr;
+  list<list<Integer>> levelNodes;
+  array<list<Integer>> procAss;
+  list<Integer> priorityTasks,otherTasks;
+  list<Integer> order;
+  list<HpcOmSimCode.Task> removeLocks;
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping,iSimVarMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
@@ -2465,23 +2472,43 @@ algorithm
           extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
           extInfoArr = listArray(extInfo);
         else
-          extInfoArr = arrayCreate(arrayLength(iTaskGraph), 1);
+          extInfoArr = arrayCreate(arrayLength(iTaskGraph), -1);
         end if;
 
         //print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
-
         taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
+
+        //sort the tasks in the partitions, always the tasks that are predecessors of other partitions first.
+        priorityArr = arrayCreate(arrayLength(iTaskGraph),0);
+        createMetisSchedule1(List.intRange(arrayLength(iTaskGraph)),extInfoArr,iTaskGraph,taskGraphT,priorityArr);
+        levelNodes = HpcOmTaskGraph.getLevelNodes(iTaskGraph);
         allCalcTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
-        nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allCalcTasks);
-        nodeList = List.map(nodeList_refCount, Util.tuple21);
-        nodeList = List.sort(nodeList, compareTasksByWeighting);
+        (priorityTasks,otherTasks) = createMetisSchedule2(levelNodes,priorityArr,{},{});
+        order = listAppend(priorityTasks,otherTasks);
+
+        //create schedule
+        procAss = arrayCreate(iNumberOfThreads,{});
+        List.map2_0(List.intRange(arrayLength(iTaskGraph)),getProcAss,extInfoArr,procAss);
         threadTasks = arrayCreate(iNumberOfThreads,{});
+        removeLocks = {};
         tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
-        tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
-        tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
-        //printSchedule(tmpSchedule);
+
+        (tmpSchedule,removeLocks) = createScheduleFromAssignments(extInfoArr,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,commCosts,inComps,iSimVarMapping,tmpSchedule);
+        // remove superfluous locks
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("number of removed superfluous locks: "+intString(intDiv(listLength(removeLocks),2))+"\n");
+        end if;
+        tmpSchedule = traverseAndUpdateThreadsInSchedule(tmpSchedule,removeLocksFromThread,removeLocks);
+        tmpSchedule = updateLockIdcsInThreadschedule(tmpSchedule,removeLocksFromLockList,removeLocks);
+
+        //nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allCalcTasks);
+        //nodeList = List.map(nodeList_refCount, Util.tuple21);
+        //nodeList = List.sort(nodeList, compareTasksByWeighting);
+        //tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
+        //tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
+        //tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
       then tmpSchedule;
     else
       equation
@@ -2490,7 +2517,107 @@ algorithm
   end matchcontinue;
 end createMetisSchedule;
 
-public function createHMetisSchedule "function createExtSchedule
+protected function getProcAss
+  input Integer idx;
+  input array<Integer> taskAss;
+  input array<list<Integer>> procAss;
+protected
+  Integer thread;
+algorithm
+  thread := arrayGet(taskAss,idx);
+  Array.updateElementListAppend(thread,{idx},procAss);
+end getProcAss;
+
+protected function createMetisSchedule2"sorts the tasks in 2 causal lists. one prioritylist and another one that is appended to this one.
+author: Waurich TUD 03-2015"
+  input list<list<Integer>> levelNodes;
+  input array<Integer> priorityArr;
+  input list<Integer> prioLstIn;
+  input list<Integer> otherLstIn;
+  output list<Integer> prioLstOut;
+  output list<Integer> otherLstOut;
+algorithm
+  (prioLstOut,otherLstOut) := matchcontinue(levelNodes,priorityArr,prioLstIn,otherLstIn)
+    local
+      list<Integer> level, prioLst, otherLst;
+      list<list<Integer>> rest;
+    case({},_,_,_)
+      algorithm
+    then (prioLstIn,otherLstIn);
+    case(level::rest,_,_,_)
+      algorithm
+        (prioLst,otherLst) := List.split1OnTrue(level,isPrioNode,priorityArr);
+        //prioTaskLst := List.map(List.map1(prioLst,Array.getIndexFirst,allCalcTasks),Util.tuple21);
+        //otherTaskLst := List.map(List.map1(otherLst,Array.getIndexFirst,allCalcTasks),Util.tuple21);
+        prioLst := listAppend(prioLstIn,prioLst);
+        otherLst := listAppend(otherLstIn,otherLst);
+        (prioLst,otherLst) := createMetisSchedule2(rest,priorityArr,prioLst,otherLst);
+    then (prioLst,otherLst);
+  end matchcontinue;
+end createMetisSchedule2;
+
+protected function isPrioNode"
+author: Waurich TUD 03-2015"
+  input Integer idx;
+  input array<Integer> prioArr;
+  output Boolean isPrio;
+algorithm
+  isPrio := intEq(1,arrayGet(prioArr,idx));
+end isPrioNode;
+
+protected function createMetisSchedule1"builds a priority array to mark tasks that have to be solved as early as possible
+author: Waurich TUD 03-2015"
+  input list<Integer> taskIdcs;
+  input array<Integer> threadIds; // the assigned thread for each task
+  input array<list<Integer>> taskGraph;
+  input array<list<Integer>> taskGraphT;
+  input array<Integer> priorityArr;
+algorithm
+  _ := matchcontinue(taskIdcs,threadIds,taskGraph,taskGraphT,priorityArr)
+  local
+    Integer threadId, taskIdx;
+    list<Integer> preds, predThreads, rest;
+  case({},_,_,_,_)
+    then ();
+  case(taskIdx::rest,_,_,_,_)
+    algorithm // this task is already prioritized, add the predecessors as well
+      true := intEq(1,arrayGet(priorityArr,taskIdx));
+      preds := arrayGet(taskGraphT,taskIdx);
+      preds := List.filter1OnTrue(preds,arrayIntIsNotOne,priorityArr);// are not prioritized
+      List.map2_0(preds,Array.updateIndexFirst,1,priorityArr);
+      //print("priority: "+stringDelimitList(List.map(preds,intString),", ")+"\n");
+      rest := listAppend(preds,rest);
+      createMetisSchedule1(rest,threadIds,taskGraph,taskGraphT,priorityArr);
+   then ();
+  case(taskIdx::rest,_,_,_,_)
+    algorithm// check if this task is a successor of a differently threaded task
+      //true := intLe(0,arrayGet(priorityArr,taskIdx));
+      threadId := arrayGet(threadIds,taskIdx);
+      preds := arrayGet(taskGraphT,taskIdx);
+      predThreads := List.map1(preds,Array.getIndexFirst,threadIds);
+      (predThreads,preds) := List.filter1OnTrueSync(predThreads,intNe,threadId,preds);
+      if List.isNotEmpty(predThreads) then
+        //print("priority: "+stringDelimitList(List.map(preds,intString),", ")+"\n");
+        List.map2_0(preds,Array.updateIndexFirst,1,priorityArr);
+        rest := listAppend(preds,rest);
+      else
+        arrayUpdate(priorityArr,taskIdx,0);
+      end if;
+      createMetisSchedule1(rest,threadIds,taskGraph,taskGraphT,priorityArr);
+   then ();
+  end matchcontinue;
+end createMetisSchedule1;
+
+protected function arrayIntIsNotOne"
+author: Waurich TUD 03-2015"
+  input Integer idx;
+  input array<Integer> arr;
+  output Boolean isOne;
+algorithm
+  isOne := intNe(1,arrayGet(arr,idx));
+end arrayIntIsNotOne;
+
+public function createHMetisSchedule "function createHMetisSchedule
   author: marcusw
   Creates a scheduling by passing the arguments to hmetis."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
@@ -5529,6 +5656,12 @@ algorithm
           print("the parallelCosts: "+realString(parTime)+"\n");
           print("the cpCosts: "+realString(cpCostsWoC)+"\n");
         end if;
+        if realLe(speedUpMax,2.0) then
+          print("There is no parallel potential for this model!\n");
+        end if;
+        if realLe(serTime,20000.0) then
+          print("This model is not big enough to perform an effective parallel simulation!\n");
+        end if;
         printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProcIn);
       then
         criticalPathInfo;
@@ -5755,7 +5888,7 @@ algorithm
           if speedUp > speedUpMax then
             print("Something is weird. The predicted SpeedUp is "+ System.snprintff("%.2f", 25, speedUp)+" and the theoretical maximum speedUp is "+ System.snprintff("%.2f", 25, speedUpMax)+"\n");
           elseif speedUp <= speedUpMax then
-            print("The predicted SpeedUp with "+intString(numProc)+" processors is: "+ System.snprintff("%.2f", 25, speedUp)+" With a theoretical maxmimum speedUp of: "+ System.snprintff("%.2f", 25, speedUpMax)+"\n");
+            print("The predicted SpeedUp with "+intString(numProc)+" processors is: "+ System.snprintff("%.2f", 25, speedUp)+" With a theoretical maximmum speedUp of: "+ System.snprintff("%.2f", 25, speedUpMax)+"\n");
           end if;
         end if;
       then

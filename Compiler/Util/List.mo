@@ -5069,7 +5069,7 @@ public function filterOnFalse<T>
   "Takes a list of values and a filter function over the values and returns a
    sub list of values for which the matching function returns false.
      Example:
-       filter1OnFalse({1, 2, 3, 1, 5}, isEven) => {1, 3, 1, 5}"
+       filterOnFalse({1, 2, 3, 1, 5}, isEven) => {1, 3, 1, 5}"
   input list<T> inList;
   input FilterFunc inFilterFunc;
   output list<T> outList;
