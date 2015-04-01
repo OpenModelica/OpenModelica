@@ -226,7 +226,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 
     /*testmaessig aus der Cruntime*/
-	void initializeColoredJacobianA();
+  void initializeColoredJacobianA();
 
     };
     >>
@@ -719,7 +719,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    //testmaessig aus der cruntime
    /* Jacobians */
 
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA()
    {
    <%functionAnalyticJacobians2(jacobianMatrixes, lastIdentOfPath(modelInfo.name),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -13610,7 +13610,7 @@ case _ then
    end match
    end match
 
-   
+
 end match
 end initialAnalyticJacobians2;
 
