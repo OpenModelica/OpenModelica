@@ -488,35 +488,66 @@ template accessVar(SimCode simCode, String direction, SimVar simVar, Integer off
 ::=
 match simVar
   case SIMVAR(__) then
-  let description = if comment then '// <%comment%>'
-  let varname = cref1(name, simCode, "", "", "", contextOther, "", "", false)
+  let descName = System.stringReplace(crefStrNoUnderscore(name), "$", "_D_")
+  let description = if comment then '// <%descName%> "<%comment%>"' else '// <%descName%>'
+  let cppName = getCppName(simCode, simVar)
+  let cppSign = getCppSign(simCode, simVar)
   if stringEq(direction, "get") then
   <<
-  case <%intAdd(offset, index)%>: value[i] = <%varname%>; break; <%description%>
+  case <%intAdd(offset, index)%>: <%description%>
+    value[i] = <%cppSign%><%cppName%>; break;
   >>
   else
   <<
-  case <%intAdd(offset, index)%>: <%varname%> = value[i]; break; <%description%>
+  case <%intAdd(offset, index)%>: <%description%>
+    <%cppName%> = <%cppSign%>value[i]; break;
   >>
 end accessVar;
+
+template getCppName(SimCode simCode, SimVar simVar)
+  "Get name of variable in Cpp runtime, resolving aliases"
+::=
+match simVar
+  case SIMVAR(__) then
+    let actualName = cref1(name, simCode, "", "", "", contextOther, "", "", false)
+    match aliasvar
+      case ALIAS(__) 
+      case NEGATEDALIAS(__) then
+        '<%cref1(varName, simCode, "", "", "", contextOther, "", "", false)%>'
+      else
+        '<%actualName%>'
+end getCppName;
+
+template getCppSign(SimCode simCode, SimVar simVar)
+  "Get sign of variable in Cpp runtime, resolving aliases"
+::=
+match simVar
+  case SIMVAR(__) then
+    match aliasvar
+      case NEGATEDALIAS(__) then '-'
+      else ''
+end getCppSign;
 
 template accessVecVar(String direction, SimVar simVar, Integer offset, String vecName)
  "Generates a case statement accessing one variable of a vector, neglecting $dummy state."
 ::=
 match simVar
   case SIMVAR(__) then
-  let description = if comment then '// <%comment%>'
+  let descName = System.stringReplace(crefStrNoUnderscore(name), "$", "_D_")
+  let description = if comment then '// <%descName%> "<%comment%>"' else '// <%descName%>'
   if stringEq(crefStr(name), "$dummy") then
   <<>>
   else if stringEq(crefStr(name), "der($dummy)") then
   <<>>
   else if stringEq(direction, "get") then
   <<
-  case <%intAdd(offset, index)%>: value[i] = <%vecName%>[<%index%>]; break; <%description%>
+  case <%intAdd(offset, index)%>: <%description%>
+    value[i] = <%vecName%>[<%index%>]; break;
   >>
   else
   <<
-  case <%intAdd(offset, index)%>: <%vecName%>[<%index%>] = value[i]; break; <%description%>
+  case <%intAdd(offset, index)%>: <%description%>
+    <%vecName%>[<%index%>] = value[i]; break; 
   >>
 end accessVecVar;
 
