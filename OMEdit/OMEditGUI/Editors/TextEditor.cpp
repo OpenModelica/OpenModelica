@@ -40,17 +40,18 @@
 TextEditor::TextEditor(ModelWidget *pParent)
   : BaseEditor(pParent)
 {
-  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
-  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateCursorPosition()));
-  updateCursorPosition();
+
 }
 
-void TextEditor::setLineWrapping()
+/*!
+ * \brief TextEditor::showContextMenu
+ * Create a context menu.
+ * \param point
+ */
+void TextEditor::showContextMenu(QPoint point)
 {
-  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
-  if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked())
-    setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  else
-    setLineWrapMode(QPlainTextEdit::NoWrap);
+  QMenu *pMenu = createStandardContextMenu();
+  BaseEditor::addDefaultContextMenuActions(pMenu);
+  pMenu->exec(mapToGlobal(point));
+  delete pMenu;
 }

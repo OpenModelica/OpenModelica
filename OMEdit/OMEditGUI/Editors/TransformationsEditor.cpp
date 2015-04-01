@@ -46,13 +46,22 @@
   \param pTransformationsWidget - pointer to TransformationsWidget
   */
 TransformationsEditor::TransformationsEditor(TransformationsWidget *pTransformationsWidget)
-  : BaseEditor(pTransformationsWidget)
+  : BaseEditor(pTransformationsWidget->getMainWindow())
 {
   mpTransformationsWidget = pTransformationsWidget;
-  setLineWrapping();
-  OptionsDialog *pOptionsDialog = mpTransformationsWidget->getMainWindow()->getOptionsDialog();
-  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
-  connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
+}
+
+/*!
+ * \brief TransformationsEditor::showContextMenu
+ * Create a context menu.
+ * \param point
+ */
+void TransformationsEditor::showContextMenu(QPoint point)
+{
+  QMenu *pMenu = createStandardContextMenu();
+  BaseEditor::addDefaultContextMenuActions(pMenu);
+  pMenu->exec(mapToGlobal(point));
+  delete pMenu;
 }
 
 //! Slot activated when TSourceEditor's QTextDocument contentsChanged SIGNAL is raised.
@@ -64,13 +73,4 @@ void TransformationsEditor::contentsHasChanged(int position, int charsRemoved, i
 
   InfoBar *pInfoBar = mpTransformationsWidget->getTSourceEditorInfoBar();
   pInfoBar->showMessage(Helper::debuggingFileNotSaveInfo);
-}
-
-void TransformationsEditor::setLineWrapping()
-{
-  OptionsDialog *pOptionsDialog = mpTransformationsWidget->getMainWindow()->getOptionsDialog();
-  if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked())
-    setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  else
-    setLineWrapMode(QPlainTextEdit::NoWrap);
 }

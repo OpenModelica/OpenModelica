@@ -136,7 +136,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   createToolbars();
   createMenus();
   // Create find/replace dialog
-  mpFindReplaceDialog = new FindReplaceDialog(this);
+  mpFindReplaceDialog = new FindReplaceDialog;
   // Create simulation dialog
   mpSimulationDialog = new SimulationDialog(this);
   // Create an object of PlotWindowContainer
@@ -593,8 +593,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 int MainWindow::askForExit()
 {
-  if (!mpOptionsDialog->getNotificationsPage()->getQuitApplicationCheckBox()->isChecked())
-  {
+  if (!mpOptionsDialog->getNotificationsPage()->getQuitApplicationCheckBox()->isChecked()) {
     NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::QuitApplication,
                                                                         NotificationsDialog::QuestionIcon, this);
     return pNotificationsDialog->exec();
@@ -608,6 +607,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
   delete mpDebuggerMainWindow;
+  delete mpFindReplaceDialog;
   delete mpSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -1168,12 +1168,19 @@ void MainWindow::showFindReplaceDialog()
   }
 }
 
+void MainWindow::clearFindReplaceTexts()
+{
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->remove("findReplaceDialog/textsToFind");
+  mpFindReplaceDialog->readFindTextFromSettings();
+}
+
 void MainWindow::showGotoLineNumberDialog()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(pModelWidget->getEditor(), this);
-    pGotoLineWidget->show();
+    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(pModelWidget->getEditor());
+    pGotoLineWidget->exec();
   }
 }
 
@@ -1193,13 +1200,6 @@ void MainWindow::clearRecentFilesList()
   pSettings->remove("recentFilesList/files");
   updateRecentFileActions();
   mpWelcomePageWidget->addRecentFilesListItems();
-}
-
-void MainWindow::clearFindReplaceTexts()
-{
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
-  pSettings->remove("findReplaceDialog/textsToFind");
-  mpFindReplaceDialog->readFindTextFromSettings();
 }
 
 void MainWindow::setShowGridLines(bool showLines)

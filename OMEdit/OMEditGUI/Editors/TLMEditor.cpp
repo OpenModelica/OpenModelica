@@ -35,19 +35,20 @@
 TLMEditor::TLMEditor(ModelWidget *pParent)
   : BaseEditor(pParent)
 {
-  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
-  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateCursorPosition()));
-  updateCursorPosition();
+
 }
 
-void TLMEditor::setLineWrapping()
+/*!
+ * \brief TLMEditor::showContextMenu
+ * Create a context menu.
+ * \param point
+ */
+void TLMEditor::showContextMenu(QPoint point)
 {
-  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
-  if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked())
-    setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  else
-    setLineWrapMode(QPlainTextEdit::NoWrap);
+  QMenu *pMenu = createStandardContextMenu();
+  BaseEditor::addDefaultContextMenuActions(pMenu);
+  pMenu->exec(mapToGlobal(point));
+  delete pMenu;
 }
 
 //! @class TLMHighlighter

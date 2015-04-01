@@ -49,9 +49,11 @@ public:
   TransformationsEditor(TransformationsWidget *pTransformationsWidget);
 private:
   TransformationsWidget *mpTransformationsWidget;
+private slots:
+  virtual void showContextMenu(QPoint point);
 public slots:
-  void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  void setLineWrapping();
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
+  virtual void toggleCommentSelection() {}
 };
 
 #endif // TRANSFORMATIONSEDITOR_H

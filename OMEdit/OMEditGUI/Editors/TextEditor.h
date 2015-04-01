@@ -51,8 +51,11 @@ class TextEditor : public BaseEditor
   Q_OBJECT
 public:
   TextEditor(ModelWidget *pParent);
+private slots:
+  virtual void showContextMenu(QPoint point);
 public slots:
-  void setLineWrapping();
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) {}
+  virtual void toggleCommentSelection() {}
 };
 
 #endif // TEXTEDITOR_H

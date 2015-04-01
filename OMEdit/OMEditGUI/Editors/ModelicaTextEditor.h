@@ -76,7 +76,6 @@ class ModelicaTextEditor : public BaseEditor
   Q_OBJECT
 public:
   ModelicaTextEditor(ModelWidget *pParent);
-  void createActions();
   void setLastValidText(QString validText);
   QStringList getClassNames(QString *errorString);
   bool validateModelicaText();
@@ -85,19 +84,14 @@ private:
   QString mLastValidText;
   bool mTextChanged;
   bool mForceSetPlainText;
-  QAction *mpToggleCommentSelectionAction;
-protected:
-  virtual void keyPressEvent(QKeyEvent *pEvent);
 signals:
   bool focusOut();
 private slots:
-  void showContextMenu(QPoint point);
+  virtual void showContextMenu(QPoint point);
 public slots:
   void setPlainText(const QString &text);
-  void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  void setLineWrapping();
-  void toggleCommentSelection();
-  void indentOrUnindent(bool doIndent);
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
+  virtual void toggleCommentSelection();
 };
 
 class ModelicaTextSettings;

@@ -129,28 +129,11 @@ bool isComment(const QString &text,
 ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false), mForceSetPlainText(false)
 {
-  setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   setCanHaveBreakpoints(true);
-  createActions();
-  setLineWrapping();
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(document());
   setModelicaTextDocument(document());
-  /* set the options for the editor */
-  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
-  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
   connect(this, SIGNAL(focusOut()), mpModelWidget, SLOT(modelicaEditorTextChanged()));
-  connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateCursorPosition()));
-  updateCursorPosition();
-}
-
-void ModelicaTextEditor::createActions()
-{
-  mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
-  mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
-  connect(mpToggleCommentSelectionAction, SIGNAL(triggered()), SLOT(toggleCommentSelection()));
 }
 
 void ModelicaTextEditor::setLastValidText(QString validText)
@@ -162,7 +145,7 @@ void ModelicaTextEditor::setLastValidText(QString validText)
 //! @return QStringList a list of class names
 QStringList ModelicaTextEditor::getClassNames(QString *errorString)
 {
-  OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+  OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
   QStringList classNames;
   LibraryTreeNode *pLibraryTreeNode = mpModelWidget->getLibraryTreeNode();
   if (toPlainText().isEmpty()) {
@@ -208,13 +191,10 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
 //! When user make some changes in the ModelicaEditor text then this method validates the text and show text correct options.
 bool ModelicaTextEditor::validateModelicaText()
 {
-  if (mTextChanged)
-  {
+  if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
-    if (!emit focusOut())
-    {
-      MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-      QMessageBox *pMessageBox = new QMessageBox(pMainWindow);
+    if (!emit focusOut()) {
+      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
@@ -223,8 +203,7 @@ bool ModelicaTextEditor::validateModelicaText()
       pMessageBox->addButton(tr("Revert from previous"), QMessageBox::AcceptRole);
       pMessageBox->addButton(tr("Fix errors manually"), QMessageBox::RejectRole);
       int answer = pMessageBox->exec();
-      switch (answer)
-      {
+      switch (answer) {
         case QMessageBox::AcceptRole:
           mTextChanged = false;
           // revert back to last valid block
@@ -238,45 +217,11 @@ bool ModelicaTextEditor::validateModelicaText()
           mTextChanged = true;
           return false;
       }
-    }
-    else
-    {
+    } else {
       mTextChanged = false;
     }
   }
   return true;
-}
-
-void ModelicaTextEditor::keyPressEvent(QKeyEvent *pEvent)
-{
-  if (pEvent->key() == Qt::Key_Tab || pEvent->key() == Qt::Key_Backtab) {
-    indentOrUnindent(pEvent->key() == Qt::Key_Tab);
-    return;
-  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_K) {
-    toggleCommentSelection();
-    return;
-  }
-  /* Ticket #2273. Change shift+enter to enter. */
-  else if (pEvent->modifiers().testFlag(Qt::ShiftModifier) && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return))
-  {
-    pEvent->setModifiers(Qt::NoModifier);
-  }
-  BaseEditor::keyPressEvent(pEvent);
-}
-
-void ModelicaTextEditor::showContextMenu(QPoint point)
-{
-  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  QMenu *pMenu = createStandardContextMenu();
-  /* Add custom actions here */
-  pMenu->addSeparator();
-  pMenu->addAction(pMainWindow->getFindReplaceAction());
-  pMenu->addAction(pMainWindow->getClearFindReplaceTextsAction());
-  pMenu->addAction(pMainWindow->getGotoLineNumberAction());
-  pMenu->addSeparator();
-  pMenu->addAction(mpToggleCommentSelectionAction);
-  pMenu->exec(mapToGlobal(point));
-  delete pMenu;
 }
 
 void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
@@ -295,14 +240,83 @@ void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
 }
 
 /*!
+ * \brief ModelicaTextEditor::showContextMenu
+ * Create a context menu.
+ * \param point
+ */
+void ModelicaTextEditor::showContextMenu(QPoint point)
+{
+  QMenu *pMenu = createStandardContextMenu();
+  BaseEditor::addDefaultContextMenuActions(pMenu);
+  pMenu->addSeparator();
+  pMenu->addAction(mpToggleCommentSelectionAction);
+  pMenu->exec(mapToGlobal(point));
+  delete pMenu;
+}
+
+//! Reimplementation of QPlainTextEdit::setPlainText method.
+//! Makes sure we dont update if the passed text is same.
+//! @param text the string to set.
+void ModelicaTextEditor::setPlainText(const QString &text)
+{
+  if (text != toPlainText()) {
+    mForceSetPlainText = true;
+    QPlainTextEdit::setPlainText(text);
+    mForceSetPlainText = false;
+    updateLineNumberAreaWidth(0);
+  }
+}
+
+//! Slot activated when ModelicaTextEdit's QTextDocument contentsChanged SIGNAL is raised.
+//! Sets the model as modified so that user knows that his current model is not saved.
+void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+{
+  Q_UNUSED(position);
+  if (mpModelWidget->isVisible()) {
+    if (charsRemoved == 0 && charsAdded == 0) {
+      return;
+    }
+    /* if user is changing the system library class. */
+    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary() && !mForceSetPlainText) {
+      mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
+    } else if (mpModelWidget->getLibraryTreeNode()->isReadOnly() && !mForceSetPlainText) {
+      /* if user is changing the read-only class. */
+      mpMainWindow->getInfoBar()->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
+    } else {
+      /* if user is changing the normal class. */
+      if (!mForceSetPlainText) {
+        mpModelWidget->setModelModified();
+        mTextChanged = true;
+      }
+      /* Keep the line numbers and the block information for the line breakpoints updated */
+      if (charsRemoved != 0) {
+        mpDocumentMarker->updateBreakpointsLineNumber();
+        mpDocumentMarker->updateBreakpointsBlock(document()->findBlock(position));
+      } else {
+        const QTextBlock posBlock = document()->findBlock(position);
+        const QTextBlock nextBlock = document()->findBlock(position + charsAdded);
+        if (posBlock != nextBlock) {
+          mpDocumentMarker->updateBreakpointsLineNumber();
+          mpDocumentMarker->updateBreakpointsBlock(posBlock);
+          mpDocumentMarker->updateBreakpointsBlock(nextBlock);
+        } else {
+          mpDocumentMarker->updateBreakpointsBlock(posBlock);
+        }
+      }
+    }
+  }
+}
+
+/*!
   Slot activated when toggle comment selection is seleteted from context menu or ctrl+k is pressed.
   The implementation and logic is inspired from Qt Creator sources.
   */
 void ModelicaTextEditor::toggleCommentSelection()
 {
   CommentDefinition definition;
-  if (!definition.hasSingleLineStyle() && !definition.hasMultiLineStyle())
+  if (!definition.hasSingleLineStyle() && !definition.hasMultiLineStyle()) {
     return;
+  }
 
   QTextCursor cursor = textCursor();
   QTextDocument *doc = cursor.document();
@@ -470,135 +484,6 @@ void ModelicaTextEditor::toggleCommentSelection()
     setTextCursor(cursor);
   }
   cursor.endEditBlock();
-}
-
-/*!
- * \brief ModelicaTextEditor::indentOrUnindent
- * Indents or unindents the code.
- * \param doIndent
- */
-void ModelicaTextEditor::indentOrUnindent(bool doIndent)
-{
-  const ModelicaTabSettings *pModelicaTabSettings;
-  pModelicaTabSettings = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
-  QTextCursor cursor = textCursor();
-  cursor.beginEditBlock();
-  // Indent or unindent the selected lines
-  if (cursor.hasSelection()) {
-    int pos = cursor.position();
-    int anchor = cursor.anchor();
-    int start = qMin(anchor, pos);
-    int end = qMax(anchor, pos);
-    QTextDocument *doc = document();
-    QTextBlock startBlock = doc->findBlock(start);
-    QTextBlock endBlock = doc->findBlock(end-1).next();
-    // Only one line partially selected.
-    if (startBlock.next() == endBlock && (start > startBlock.position() || end < endBlock.position() - 1)) {
-      cursor.removeSelectedText();
-    } else {
-      for (QTextBlock block = startBlock; block != endBlock; block = block.next()) {
-        QString text = block.text();
-        int indentPosition = pModelicaTabSettings->lineIndentPosition(text);
-        if (!doIndent && !indentPosition) {
-          indentPosition = pModelicaTabSettings->firstNonSpace(text);
-        }
-        int targetColumn = pModelicaTabSettings->indentedColumn(pModelicaTabSettings->columnAt(text, indentPosition), doIndent);
-        cursor.setPosition(block.position() + indentPosition);
-        cursor.insertText(pModelicaTabSettings->indentationString(0, targetColumn));
-        cursor.setPosition(block.position());
-        cursor.setPosition(block.position() + indentPosition, QTextCursor::KeepAnchor);
-        cursor.removeSelectedText();
-      }
-      cursor.endEditBlock();
-      return;
-    }
-  }
-  // Indent or unindent at cursor position
-  QTextBlock block = cursor.block();
-  QString text = block.text();
-  int indentPosition = cursor.positionInBlock();
-  int spaces = pModelicaTabSettings->spacesLeftFromPosition(text, indentPosition);
-  int startColumn = pModelicaTabSettings->columnAt(text, indentPosition - spaces);
-  int targetColumn = pModelicaTabSettings->indentedColumn(pModelicaTabSettings->columnAt(text, indentPosition), doIndent);
-  cursor.setPosition(block.position() + indentPosition);
-  cursor.setPosition(block.position() + indentPosition - spaces, QTextCursor::KeepAnchor);
-  cursor.removeSelectedText();
-  cursor.insertText(pModelicaTabSettings->indentationString(startColumn, targetColumn));
-  cursor.endEditBlock();
-  setTextCursor(cursor);
-}
-
-//! Reimplementation of QPlainTextEdit::setPlainText method.
-//! Makes sure we dont update if the passed text is same.
-//! @param text the string to set.
-void ModelicaTextEditor::setPlainText(const QString &text)
-{
-  if (text != toPlainText()) {
-    mForceSetPlainText = true;
-    QPlainTextEdit::setPlainText(text);
-    mForceSetPlainText = false;
-    updateLineNumberAreaWidth(0);
-  }
-}
-
-//! Slot activated when ModelicaTextEdit's QTextDocument contentsChanged SIGNAL is raised.
-//! Sets the model as modified so that user knows that his current model is not saved.
-void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
-{
-  Q_UNUSED(position);
-  if (mpModelWidget->isVisible())
-  {
-    if (charsRemoved == 0 && charsAdded == 0)
-      return;
-    /* if user is changing the system library class. */
-    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary() && !mForceSetPlainText)
-    {
-      InfoBar *pInfoBar = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getInfoBar();
-      pInfoBar->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
-    }
-    /* if user is changing the read-only class. */
-    else if (mpModelWidget->getLibraryTreeNode()->isReadOnly() && !mForceSetPlainText)
-    {
-      InfoBar *pInfoBar = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getInfoBar();
-      pInfoBar->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
-    }
-    /* if user is changing the normal class. */
-    else
-    {
-      if (!mForceSetPlainText) {
-        mpModelWidget->setModelModified();
-        mTextChanged = true;
-      }
-      /* Keep the line numbers and the block information for the line breakpoints updated */
-      if (charsRemoved != 0)
-      {
-        mpDocumentMarker->updateBreakpointsLineNumber();
-        mpDocumentMarker->updateBreakpointsBlock(document()->findBlock(position));
-      }
-      else
-      {
-        const QTextBlock posBlock = document()->findBlock(position);
-        const QTextBlock nextBlock = document()->findBlock(position + charsAdded);
-        if (posBlock != nextBlock)
-        {
-          mpDocumentMarker->updateBreakpointsLineNumber();
-          mpDocumentMarker->updateBreakpointsBlock(posBlock);
-          mpDocumentMarker->updateBreakpointsBlock(nextBlock);
-        }
-        else
-          mpDocumentMarker->updateBreakpointsBlock(posBlock);
-      }
-    }
-  }
-}
-
-void ModelicaTextEditor::setLineWrapping()
-{
-  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
-  if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked())
-    setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  else
-    setLineWrapMode(QPlainTextEdit::NoWrap);
 }
 
 //! @class ModelicaTextHighlighter

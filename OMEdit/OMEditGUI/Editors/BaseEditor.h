@@ -49,11 +49,9 @@ class BaseEditor : public QPlainTextEdit
 {
   Q_OBJECT
 public:
-  BaseEditor(QWidget *pParent);
-  BaseEditor(ModelWidget *pParent);
+  BaseEditor(MainWindow *pMainWindow);
+  BaseEditor(ModelWidget *pModelWidget);
 private:
-  QAction *mpToggleBreakpointAction;
-
   void initialize();
   void createActions();
 public:
@@ -66,19 +64,35 @@ public:
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
   void toggleBreakpoint(const QString fileName, int lineNumber);
 protected:
-  LineNumberArea *mpLineNumberArea;
   ModelWidget *mpModelWidget;
+  MainWindow *mpMainWindow;
   bool mCanHaveBreakpoints;
+  LineNumberArea *mpLineNumberArea;
+  QAction *mpFindReplaceAction;
+  QAction *mpClearFindReplaceTextsAction;
+  QAction *mpGotoLineNumberAction;
+  QAction *mpToggleBreakpointAction;
+  QAction *mpToggleCommentSelectionAction;
   DocumentMarker *mpDocumentMarker;
-protected:
+
   virtual void resizeEvent(QResizeEvent *pEvent);
   virtual void keyPressEvent(QKeyEvent *pEvent);
+  void addDefaultContextMenuActions(QMenu *pMenu);
+private slots:
+  virtual void showContextMenu(QPoint point) = 0;
 public slots:
-  void updateCursorPosition();
   void updateLineNumberAreaWidth(int newBlockCount);
   void updateLineNumberArea(const QRect &rect, int dy);
   void highlightCurrentLine();
+  void updateCursorPosition();
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) = 0;
+  void setLineWrapping();
+  void showFindReplaceDialog();
+  void clearFindReplaceTexts();
+  void showGotoLineNumberDialog();
   void toggleBreakpoint();
+  virtual void toggleCommentSelection() = 0;
+  void indentOrUnindent(bool doIndent);
 };
 
 class LineNumberArea : public QWidget
@@ -114,14 +128,14 @@ class GotoLineDialog : public QDialog
 {
   Q_OBJECT
 public:
-  GotoLineDialog(BaseEditor *pBaseEditor, QWidget *pParent = 0);
-  void show();
-
-  BaseEditor *mpBaseEditor;
+  GotoLineDialog(BaseEditor *pBaseEditor);
 private:
+  BaseEditor *mpBaseEditor;
   Label *mpLineNumberLabel;
   QLineEdit *mpLineNumberTextBox;
   QPushButton *mpOkButton;
+public slots:
+  int exec();
 private slots:
   void goToLineNumber();
 };

@@ -98,6 +98,7 @@ public:
   QDockWidget* getDocumentationDockWidget();
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
+  FindReplaceDialog* getFindReplaceDialog() {return mpFindReplaceDialog;}
   SimulationDialog* getSimulationDialog();
   PlotWindowContainer* getPlotWindowContainer();
   //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
@@ -305,7 +306,6 @@ public slots:
   void focusSearchClassWidget(bool visible);
   void openRecentFile();
   void clearRecentFilesList();
-  void clearFindReplaceTexts();
   void setShowGridLines(bool On);
   void resetZoom();
   void zoomIn();
@@ -323,6 +323,7 @@ public slots:
   void openSimulationDialog();
   void openInteractiveSimulation();
   void showFindReplaceDialog();
+  void clearFindReplaceTexts();
   void showGotoLineNumberDialog();
   void exportModelFMU();
   void importModelFMU();
