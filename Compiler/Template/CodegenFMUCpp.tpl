@@ -511,7 +511,7 @@ match simVar
   case SIMVAR(__) then
     let actualName = cref1(name, simCode, "", "", "", contextOther, "", "", false)
     match aliasvar
-      case ALIAS(__) 
+      case ALIAS(__)
       case NEGATEDALIAS(__) then
         '<%cref1(varName, simCode, "", "", "", contextOther, "", "", false)%>'
       else
@@ -547,7 +547,7 @@ match simVar
   else
   <<
   case <%intAdd(offset, index)%>: <%description%>
-    <%vecName%>[<%index%>] = value[i]; break; 
+    <%vecName%>[<%index%>] = value[i]; break;
   >>
 end accessVecVar;
 
