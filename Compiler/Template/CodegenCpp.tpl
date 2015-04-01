@@ -226,7 +226,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 
     /*testmaessig aus der Cruntime*/
-    <%functionAnalyticJacobiansHeader(jacobianMatrixes, modelNamePrefix(simCode))%>
+	void initializeColoredJacobianA();
+
     };
     >>
 end simulationJacobianHeaderFile;
@@ -718,7 +719,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    //testmaessig aus der cruntime
    /* Jacobians */
 
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Jacobian::initializeColoredJacobianA()
+   {
    <%functionAnalyticJacobians2(jacobianMatrixes, lastIdentOfPath(modelInfo.name),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+   }
    <%\n%>
    >>
 end simulationJacobianCppFile;
@@ -13594,8 +13599,6 @@ case _ then
       ;separator="\n")
       let index_ = listLength(seedVars)
       <<
-      void <%modelNamePrefix%>Jacobian::initializeColoredJacobian<%matrixname%>()
-      {
         if(_AColorOfColumn)
           delete [] _AColorOfColumn;
         _AColorOfColumn = new int[<%index_%>];
@@ -13603,10 +13606,11 @@ case _ then
 
         /* write color array */
         <%colorArray%>
-      }
       >>
    end match
    end match
+
+   
 end match
 end initialAnalyticJacobians2;
 
@@ -13644,34 +13648,21 @@ case {} then
 <<
 >>
 case _ then
-  match sparsepattern
+let help =  match sparsepattern
 
   case _ then
   match matrixname
   case "A" then
-      let &eachCrefParts = buffer ""
-
-
-      let colorArray = (colorList |> (indexes) hasindex index0 =>
-        let colorCol = ( indexes |> i_index =>
-        '_<%matrixname%>ColorOfColumn[<%i_index%>] = <%intAdd(index0,1)%>; '
-        ;separator="\n")
-      '<%colorCol%>'
-      ;separator="\n")
-      let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
-      let index_ = listLength(seedVars)
-      let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
-      let sizeleadindex = listLength(sparsepattern)
-
-
       <<
       public:
-        <%eachCrefParts%>
         void initializeColoredJacobian<%matrixname%>();
       >>
    end match
    end match
-
+<<
+<%help%>
+>>
+   end match
 
 end initialAnalyticJacobiansHeader;
 
