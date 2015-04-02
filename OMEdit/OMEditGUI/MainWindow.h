@@ -58,7 +58,6 @@
 #include "SimulationDialog.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
-#include "FindReplaceDialog.h"
 #include "DebuggerMainWindow.h"
 #include "ImportFMUDialog.h"
 #include "NotificationsDialog.h"
@@ -78,7 +77,6 @@ class DebuggerMainWindow;
 class InfoBar;
 class WelcomePageWidget;
 class AboutOMEditWidget;
-class FindReplaceDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -98,10 +96,8 @@ public:
   QDockWidget* getDocumentationDockWidget();
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
-  FindReplaceDialog* getFindReplaceDialog() {return mpFindReplaceDialog;}
   SimulationDialog* getSimulationDialog();
   PlotWindowContainer* getPlotWindowContainer();
-  //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
   ModelWidgetContainer* getModelWidgetContainer();
   DebuggerMainWindow* getDebuggerMainWindow() {return mpDebuggerMainWindow;}
   WelcomePageWidget* getWelcomePageWidget();
@@ -142,9 +138,6 @@ public:
   QAction* getImportFromOMNotebookAction();
   QAction* getImportNgspiceNetlistAction();
   QAction* getConnectModeAction();
-  QAction* getFindReplaceAction();
-  QAction* getClearFindReplaceTextsAction();
-  QAction* getGotoLineNumberAction();
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
   void closeEvent(QCloseEvent *event);
@@ -182,12 +175,10 @@ private:
   QDockWidget *mpDocumentationDockWidget;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
-  FindReplaceDialog *mpFindReplaceDialog;
   SimulationDialog *mpSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
   QList<Qt::WindowStates> mPlotWindowsStatesList;
   QList<QByteArray> mPlotWindowsGeometriesList;
-  //InteractiveSimulationTabWidget *mpInteractiveSimualtionTabWidget;
   ModelWidgetContainer *mpModelWidgetContainer;
   DebuggerMainWindow *mpDebuggerMainWindow;
   WelcomePageWidget *mpWelcomePageWidget;
@@ -220,9 +211,6 @@ private:
   QAction *mpCutAction;
   QAction *mpCopyAction;
   QAction *mpPasteAction;
-  QAction *mpFindReplaceAction;
-  QAction *mpClearFindReplaceTextsAction;
-  QAction *mpGotoLineNumberAction;
   // View Menu
   QAction *mpShowGridLinesAction;
   QAction *mpResetZoomAction;
@@ -321,10 +309,6 @@ public slots:
   void simulateModelWithTransformationalDebugger();
   void simulateModelWithAlgorithmicDebugger();
   void openSimulationDialog();
-  void openInteractiveSimulation();
-  void showFindReplaceDialog();
-  void clearFindReplaceTexts();
-  void showGotoLineNumberDialog();
   void exportModelFMU();
   void importModelFMU();
   void exportModelXML();

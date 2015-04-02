@@ -1166,7 +1166,7 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
     QTextStream textStream(&file);
     textStream.setCodec(Helper::utf8.toStdString().data());
     textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeNode->getModelWidget()->getEditor()->toPlainText();
+    textStream << pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
     file.close();
     /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);
@@ -1205,7 +1205,7 @@ bool LibraryTreeWidget::saveXMLLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode
     QTextStream textStream(&file);
     textStream.setCodec(Helper::utf8.toStdString().data());
     textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeNode->getModelWidget()->getTLMEditor()->toPlainText();
+    textStream << pLibraryTreeNode->getModelWidget()->getTLMEditor()->getPlainTextEdit()->toPlainText();
     file.close();
     /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);

@@ -44,30 +44,55 @@
 
 class ModelWidget;
 class LineNumberArea;
+class FindReplaceWidget;
 
-class BaseEditor : public QPlainTextEdit
+class BaseEditor : public QWidget
 {
   Q_OBJECT
+private:
+  class PlainTextEdit : public QPlainTextEdit
+  {
+  public:
+    PlainTextEdit(BaseEditor *pBaseEditor);
+    LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
+    int lineNumberAreaWidth();
+    void lineNumberAreaPaintEvent(QPaintEvent *event);
+    void lineNumberAreaMouseEvent(QMouseEvent *event);
+    void goToLineNumber(int lineNumber);
+    void updateLineNumberAreaWidth(int newBlockCount);
+    void updateLineNumberArea(const QRect &rect, int dy);
+    void highlightCurrentLine();
+    void updateCursorPosition();
+    void setLineWrapping();
+    void toggleBreakpoint(const QString fileName, int lineNumber);
+    void indentOrUnindent(bool doIndent);
+  private:
+    BaseEditor *mpBaseEditor;
+    LineNumberArea *mpLineNumberArea;
+  protected:
+    virtual void resizeEvent(QResizeEvent *pEvent);
+    virtual void keyPressEvent(QKeyEvent *pEvent);
+  };
 public:
   BaseEditor(MainWindow *pMainWindow);
   BaseEditor(ModelWidget *pModelWidget);
+  ModelWidget *getModelWidget() {return mpModelWidget;}
+  MainWindow* getMainWindow() {return mpMainWindow;}
+  PlainTextEdit *getPlainTextEdit() {return mpPlainTextEdit;}
+  bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
+  void setCanHaveBreakpoints(bool canHaveBreakpoints);
+  QAction *getToggleBreakpointAction() {return mpToggleBreakpointAction;}
+  DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
+  void goToLineNumber(int lineNumber);
 private:
   void initialize();
   void createActions();
-public:
-  int lineNumberAreaWidth();
-  void lineNumberAreaPaintEvent(QPaintEvent *event);
-  void lineNumberAreaMouseEvent(QMouseEvent *event);
-  void goToLineNumber(int lineNumber);
-  bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
-  void setCanHaveBreakpoints(bool canHaveBreakpoints);
-  DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
-  void toggleBreakpoint(const QString fileName, int lineNumber);
 protected:
   ModelWidget *mpModelWidget;
   MainWindow *mpMainWindow;
+  PlainTextEdit *mpPlainTextEdit;
+  FindReplaceWidget *mpFindReplaceWidget;
   bool mCanHaveBreakpoints;
-  LineNumberArea *mpLineNumberArea;
   QAction *mpFindReplaceAction;
   QAction *mpClearFindReplaceTextsAction;
   QAction *mpGotoLineNumberAction;
@@ -75,9 +100,7 @@ protected:
   QAction *mpToggleCommentSelectionAction;
   DocumentMarker *mpDocumentMarker;
 
-  virtual void resizeEvent(QResizeEvent *pEvent);
-  virtual void keyPressEvent(QKeyEvent *pEvent);
-  void addDefaultContextMenuActions(QMenu *pMenu);
+  QMenu* createStandardContextMenu();
 private slots:
   virtual void showContextMenu(QPoint point) = 0;
 public slots:
@@ -87,7 +110,7 @@ public slots:
   void updateCursorPosition();
   virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) = 0;
   void setLineWrapping();
-  void showFindReplaceDialog();
+  void showFindReplaceWidget();
   void clearFindReplaceTexts();
   void showGotoLineNumberDialog();
   void toggleBreakpoint();
@@ -98,30 +121,66 @@ public slots:
 class LineNumberArea : public QWidget
 {
 public:
-  LineNumberArea(BaseEditor *pEditor)
-    : QWidget(pEditor)
+  LineNumberArea(BaseEditor *pBaseEditor)
+    : QWidget(pBaseEditor)
   {
-    mpEditor = pEditor;
+    mpBaseEditor = pBaseEditor;
   }
   QSize sizeHint() const
   {
-    return QSize(mpEditor->lineNumberAreaWidth(), 0);
+    return QSize(mpBaseEditor->getPlainTextEdit()->lineNumberAreaWidth(), 0);
   }
 protected:
   virtual void paintEvent(QPaintEvent *event)
   {
-    mpEditor->lineNumberAreaPaintEvent(event);
+    mpBaseEditor->getPlainTextEdit()->lineNumberAreaPaintEvent(event);
   }
   virtual void mouseMoveEvent(QMouseEvent *event)
   {
-    mpEditor->lineNumberAreaMouseEvent(event);
+    mpBaseEditor->getPlainTextEdit()->lineNumberAreaMouseEvent(event);
   }
   virtual void mousePressEvent(QMouseEvent *event)
   {
-    mpEditor->lineNumberAreaMouseEvent(event);
+    mpBaseEditor->getPlainTextEdit()->lineNumberAreaMouseEvent(event);
   }
 private:
-  BaseEditor *mpEditor;
+  BaseEditor *mpBaseEditor;
+};
+
+class FindReplaceWidget : public QWidget
+{
+  Q_OBJECT
+public:
+  FindReplaceWidget(BaseEditor *pBaseEditor);
+  enum {MaxFindTexts = 20};
+  void show();
+  void readFindTextFromSettings();
+  void saveFindTextToSettings(QString textToFind);
+private:
+  BaseEditor *mpBaseEditor;
+  Label *mpFindLabel;
+  QComboBox *mpFindComboBox;
+  QPushButton *mpFindPreviousButton;
+  QPushButton *mpFindNextButton;
+  QPushButton *mpCloseButton;
+  Label *mpReplaceWithLabel;
+  QLineEdit *mpReplaceWithTextBox;
+  QCheckBox *mpCaseSensitiveCheckBox;
+  QCheckBox *mpWholeWordCheckBox;
+  QCheckBox *mpRegularExpressionCheckBox;
+  QPushButton *mpReplaceButton;
+  QPushButton *mpReplaceAllButton;
+
+  void findText(bool next);
+public slots:
+  void findPrevious();
+  void findNext();
+  void replace();
+  void replaceAll();
+protected slots:
+  void validateRegularExpression(const QString &text);
+  void regularExpressionSelected(bool selected);
+  void textToFindChanged();
 };
 
 class GotoLineDialog : public QDialog

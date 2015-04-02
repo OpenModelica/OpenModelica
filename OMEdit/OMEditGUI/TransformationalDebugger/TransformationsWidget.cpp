@@ -627,7 +627,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpTransformationsEditor = new TransformationsEditor(this);
   ModelicaTextHighlighter *pModelicaTextHighlighter;
   pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextSettings(),
-                                                         mpTransformationsEditor->document());
+                                                         mpTransformationsEditor->getPlainTextEdit()->document());
   connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);
@@ -1084,7 +1084,7 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     file.open(QIODevice::ReadOnly);
-    mpTransformationsEditor->setPlainText(QString(file.readAll()));
+    mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
     mpTransformationsEditor->goToLineNumber(equation->info.lineStart);
@@ -1197,7 +1197,7 @@ void TransformationsWidget::reloadTransformations()
   /* clear TSourceEditor */
   mpTSourceEditorFileLabel->setText("");
   mpTSourceEditorFileLabel->hide();
-  mpTransformationsEditor->clear();
+  mpTransformationsEditor->getPlainTextEdit()->clear();
   mpTSourceEditorInfoBar->hide();
   /* Clear the equations tree. */
   clearTreeWidgetItems(mpEquationsTreeWidget);
@@ -1246,7 +1246,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     file.open(QIODevice::ReadOnly);
-    mpTransformationsEditor->setPlainText(QString(file.readAll()));
+    mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
     mpTransformationsEditor->goToLineNumber(variable.info.lineStart);

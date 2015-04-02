@@ -2003,7 +2003,8 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     // modelica text editor
     mpEditor = new ModelicaTextEditor(this);
     MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), mpEditor->document());
+    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(),
+                                                            mpEditor->getPlainTextEdit()->document());
     mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
     connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
     mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -2024,7 +2025,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpDiagramGraphicsScene = 0;
     mpDiagramGraphicsView = 0;
     mpEditor = new TextEditor(this);
-    mpEditor->setPlainText(text);
+    mpEditor->getPlainTextEdit()->setPlainText(text);
     mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
     mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
     mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
@@ -2042,9 +2043,9 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpDiagramGraphicsView->hide();
     // create an xml editor for TLM
     mpEditor = new TLMEditor(this);
-    mpEditor->setPlainText(text);
+    mpEditor->getPlainTextEdit()->setPlainText(text);
     MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-    mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), mpEditor->document());
+    mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), mpEditor->getPlainTextEdit()->document());
     mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
     connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
     mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -2489,8 +2490,6 @@ void ModelWidget::showIconView(bool checked)
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Icon));
   mpDiagramGraphicsView->hide();
   mpEditor->hide();
-  mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(false);
-  mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(false);
   mpIconGraphicsView->show();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
 }
@@ -2521,8 +2520,6 @@ void ModelWidget::showDiagramView(bool checked)
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
   mpIconGraphicsView->hide();
   mpEditor->hide();
-  mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(false);
-  mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(false);
   mpDiagramGraphicsView->show();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
 }
@@ -2546,14 +2543,12 @@ void ModelWidget::showTextView(bool checked)
   ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
   if (pModelicaTextEditor) {
     pModelicaTextEditor->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(getLibraryTreeNode()->getNameStructure()));
-    pModelicaTextEditor->setLastValidText(pModelicaTextEditor->toPlainText());
+    pModelicaTextEditor->setLastValidText(pModelicaTextEditor->getPlainTextEdit()->toPlainText());
   }
   mpIconGraphicsView->hide();
   mpDiagramGraphicsView->hide();
   mpEditor->show();
-  mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(true);
-  mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(true);
-  mpEditor->setFocus();
+  mpEditor->getPlainTextEdit()->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
 }
 
@@ -2600,7 +2595,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     return false;
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
-  QString modelicaText = pModelicaTextEditor->toPlainText();
+  QString modelicaText = pModelicaTextEditor->getPlainTextEdit()->toPlainText();
   if (mpLibraryTreeNode->getParentName().isEmpty()) {
     if (!pOMCProxy->loadString(modelicaText, classNames.at(0)))
       return false;
@@ -3082,8 +3077,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   } else {
     enabled = false;
   }
-  getMainWindow()->getFindReplaceAction()->setEnabled(enabled);
-  getMainWindow()->getGotoLineNumberAction()->setEnabled(enabled);
 }
 
 void ModelWidgetContainer::saveModelWidget()
@@ -3182,12 +3175,12 @@ void ModelWidgetContainer::printModel()
     if (pModelWidget->getEditor()->isVisible()) {
       ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(pModelWidget->getEditor());
       // set print options if text is selected
-      if (pModelicaTextEditor->textCursor().hasSelection()) {
+      if (pModelicaTextEditor->getPlainTextEdit()->textCursor().hasSelection()) {
         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
       }
       // open print dialog
       if (pPrintDialog->exec() == QDialog::Accepted) {
-        pModelicaTextEditor->print(&printer);
+        pModelicaTextEditor->getPlainTextEdit()->print(&printer);
       }
     } else {
       // print the model Diagram/Icon

@@ -58,8 +58,7 @@ TransformationsEditor::TransformationsEditor(TransformationsWidget *pTransformat
  */
 void TransformationsEditor::showContextMenu(QPoint point)
 {
-  QMenu *pMenu = createStandardContextMenu();
-  BaseEditor::addDefaultContextMenuActions(pMenu);
+  QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }

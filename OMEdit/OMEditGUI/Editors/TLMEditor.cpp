@@ -45,8 +45,7 @@ TLMEditor::TLMEditor(ModelWidget *pParent)
  */
 void TLMEditor::showContextMenu(QPoint point)
 {
-  QMenu *pMenu = createStandardContextMenu();
-  BaseEditor::addDefaultContextMenuActions(pMenu);
+  QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }

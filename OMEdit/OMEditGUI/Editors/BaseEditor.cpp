@@ -39,80 +39,42 @@
 #include "ModelWidgetContainer.h"
 #include "Helper.h"
 
-BaseEditor::BaseEditor(MainWindow *pMainWindow)
-  : QPlainTextEdit(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false)
-{
-  initialize();
-}
-
-BaseEditor::BaseEditor(ModelWidget *pModelWidget)
-  : QPlainTextEdit(pModelWidget), mpModelWidget(pModelWidget), mCanHaveBreakpoints(false)
-{
-  mpMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
-  initialize();
-}
-
-void BaseEditor::initialize()
+BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
+  : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
   document()->setDocumentMargin(2);
   // line numbers widget
-  mpLineNumberArea = new LineNumberArea(this);
+  mpLineNumberArea = new LineNumberArea(mpBaseEditor);
   updateLineNumberAreaWidth(0);
   highlightCurrentLine();
   updateCursorPosition();
-  createActions();
   setLineWrapping();
-  connect(this, SIGNAL(blockCountChanged(int)), SLOT(updateLineNumberAreaWidth(int)));
-  connect(this, SIGNAL(updateRequest(QRect,int)), SLOT(updateLineNumberArea(QRect,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), SLOT(highlightCurrentLine()));
-  connect(this, SIGNAL(cursorPositionChanged()), SLOT(updateCursorPosition()));
-  connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
-  OptionsDialog *pOptionsDialog = mpMainWindow->getOptionsDialog();
-  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
+  connect(this, SIGNAL(blockCountChanged(int)), mpBaseEditor, SLOT(updateLineNumberAreaWidth(int)));
+  connect(this, SIGNAL(updateRequest(QRect,int)), mpBaseEditor, SLOT(updateLineNumberArea(QRect,int)));
+  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(highlightCurrentLine()));
+  connect(this, SIGNAL(cursorPositionChanged()), mpBaseEditor, SLOT(updateCursorPosition()));
+  connect(document(), SIGNAL(contentsChange(int,int,int)), mpBaseEditor, SLOT(contentsHasChanged(int,int,int)));
+  OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
+  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), mpBaseEditor, SLOT(setLineWrapping()));
   setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-}
-
-void BaseEditor::createActions()
-{
-  // find replace class action
-  mpFindReplaceAction = new QAction(QString(Helper::findReplaceModelicaText), this);
-  mpFindReplaceAction->setStatusTip(tr("Shows the Find/Replace window"));
-  mpFindReplaceAction->setShortcut(QKeySequence("Ctrl+f"));
-  connect(mpFindReplaceAction, SIGNAL(triggered()), SLOT(showFindReplaceDialog()));
-  // clear find/replace texts action
-  mpClearFindReplaceTextsAction = new QAction(tr("Clear Find/Replace Texts"), this);
-  mpClearFindReplaceTextsAction->setStatusTip(tr("Clears the Find/Replace text items"));
-  connect(mpClearFindReplaceTextsAction, SIGNAL(triggered()), SLOT(clearFindReplaceTexts()));
-  // goto line action
-  mpGotoLineNumberAction = new QAction(tr("Go to Line"), this);
-  mpGotoLineNumberAction->setStatusTip(tr("Shows the Go to Line Number window"));
-  mpGotoLineNumberAction->setShortcut(QKeySequence("Ctrl+l"));
-  connect(mpGotoLineNumberAction, SIGNAL(triggered()), SLOT(showGotoLineNumberDialog()));
-  /* Toggle breakpoint action */
-  mpToggleBreakpointAction = new QAction(tr("Toggle Breakpoint"), this);
-  connect(mpToggleBreakpointAction, SIGNAL(triggered()), SLOT(toggleBreakpoint()));
-  // toggle comment action
-  mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
-  mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
-  connect(mpToggleCommentSelectionAction, SIGNAL(triggered()), SLOT(toggleCommentSelection()));
+  connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
 }
 
 //! Calculate appropriate width for LineNumberArea.
 //! @return int width of LineNumberArea.
-int BaseEditor::lineNumberAreaWidth()
+int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
 {
   int digits = 2;
   int max = qMax(1, document()->blockCount());
-  while (max >= 10)
-  {
+  while (max >= 10) {
     max /= 10;
     ++digits;
   }
   int space = 10 + fontMetrics().width(QLatin1Char('9')) * digits;
-  if (canHaveBreakpoints())
+  if (mpBaseEditor->canHaveBreakpoints()) {
     space += 16;  /* the breakpoint enable/disable svg is 16*16. */
+  }
   return space;
 }
 
@@ -120,7 +82,7 @@ int BaseEditor::lineNumberAreaWidth()
   Activated whenever LineNumberArea Widget paint event is raised.
   Writes the line numbers for the visible blocks and draws the breakpoint markers.
   */
-void BaseEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
+void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
   QPainter painter(mpLineNumberArea);
   painter.fillRect(event->rect(), QColor(240, 240, 240));
@@ -132,28 +94,25 @@ void BaseEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
   const QFontMetrics fm(mpLineNumberArea->font());
   int fmLineSpacing = fm.lineSpacing();
 
-  while (block.isValid() && top <= event->rect().bottom())
-  {
+  while (block.isValid() && top <= event->rect().bottom()) {
     /* paint line numbers */
-    if (block.isVisible() && bottom >= event->rect().top())
-    {
+    if (block.isVisible() && bottom >= event->rect().top()) {
       QString number = QString::number(blockNumber + 1);
       // make the current highlighted line number darker
-      if (blockNumber == textCursor().blockNumber())
+      if (blockNumber == textCursor().blockNumber()) {
         painter.setPen(QColor(64, 64, 64));
-      else
+      } else {
         painter.setPen(Qt::gray);
+      }
       painter.setFont(document()->defaultFont());
       QFontMetrics fontMetrics (document()->defaultFont());
       painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
     }
     /* paint breakpoints */
     TextBlockUserData *pTextBlockUserData = static_cast<TextBlockUserData*>(block.userData());
-    if (pTextBlockUserData && canHaveBreakpoints())
-    {
+    if (pTextBlockUserData && mpBaseEditor->canHaveBreakpoints()) {
       int xoffset = 0;
-      foreach (ITextMark *mk, pTextBlockUserData->marks())
-      {
+      foreach (ITextMark *mk, pTextBlockUserData->marks()) {
         int x = 0;
         int radius = fmLineSpacing + 2;
         QRect r(x + xoffset, top, radius, radius);
@@ -171,10 +130,10 @@ void BaseEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 /**
  * Activated whenever LineNumberArea Widget mouse press event is raised.
  */
-void BaseEditor::lineNumberAreaMouseEvent(QMouseEvent *event)
+void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
 {
   /* if breakpoints are not enabled for this editor then return. */
-  if (!canHaveBreakpoints()) {
+  if (!mpBaseEditor->canHaveBreakpoints()) {
     return;
   }
 
@@ -191,18 +150,18 @@ void BaseEditor::lineNumberAreaMouseEvent(QMouseEvent *event)
     }
   } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick) {
     /* Do not allow breakpoints if file is not saved. */
-    if (!mpModelWidget->getLibraryTreeNode()->isSaved()) {
-      mpMainWindow->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
+    if (!mpBaseEditor->getModelWidget()->getLibraryTreeNode()->isSaved()) {
+      mpBaseEditor->getMainWindow()->getInfoBar()->showMessage(tr("<b>Information: </b>Breakpoints are only allowed on saved classes."));
       return;
     }
-    QString fileName = mpModelWidget->getLibraryTreeNode()->getFileName();
+    QString fileName = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getFileName();
     int lineNumber = cursor.blockNumber() + 1;
     if (event->button() == Qt::LeftButton) {  //! left clicked: add/remove breakpoint
       toggleBreakpoint(fileName, lineNumber);
     } else if (event->button() == Qt::RightButton) {  //! right clicked: show context menu
       QMenu menu(this);
-      mpToggleBreakpointAction->setData(QStringList() << fileName << QString::number(lineNumber));
-      menu.addAction(mpToggleBreakpointAction);
+      mpBaseEditor->getToggleBreakpointAction()->setData(QStringList() << fileName << QString::number(lineNumber));
+      menu.addAction(mpBaseEditor->getToggleBreakpointAction());
       menu.exec(event->globalPos());
     }
   }
@@ -212,7 +171,7 @@ void BaseEditor::lineNumberAreaMouseEvent(QMouseEvent *event)
   Takes the cursor to the specific line.
   \param lineNumber - the line number to go.
   */
-void BaseEditor::goToLineNumber(int lineNumber)
+void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
 {
   const QTextBlock &block = document()->findBlockByNumber(lineNumber - 1); // -1 since text index start from 0
   if (block.isValid()) {
@@ -223,85 +182,12 @@ void BaseEditor::goToLineNumber(int lineNumber)
   }
 }
 
-void BaseEditor::setCanHaveBreakpoints(bool canHaveBreakpoints)
-{
-  mCanHaveBreakpoints = canHaveBreakpoints;
-  mpLineNumberArea->setMouseTracking(canHaveBreakpoints);
-}
-
-void BaseEditor::toggleBreakpoint(const QString fileName, int lineNumber)
-{
-  BreakpointsTreeModel *pBreakpointsTreeModel = mpMainWindow->getDebuggerMainWindow()->getBreakpointsWidget()->getBreakpointsTreeModel();
-  BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
-  if (!pBreakpointMarker) {
-    /* create a breakpoint marker */
-    pBreakpointMarker = new BreakpointMarker(fileName, lineNumber, pBreakpointsTreeModel);
-    pBreakpointMarker->setEnabled(true);
-    /* Add the marker to document marker */
-    mpDocumentMarker->addMark(pBreakpointMarker, lineNumber);
-    /* insert the breakpoint in BreakpointsWidget */
-    pBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, mpModelWidget->getLibraryTreeNode(), pBreakpointsTreeModel->getRootBreakpointTreeItem());
-  } else {
-    mpDocumentMarker->removeMark(pBreakpointMarker);
-    pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
-  }
-}
-
-//! Reimplementation of resize event.
-//! Resets the size of LineNumberArea.
-void BaseEditor::resizeEvent(QResizeEvent *pEvent)
-{
-  QPlainTextEdit::resizeEvent(pEvent);
-
-  QRect cr = contentsRect();
-  mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
-}
-
-/*!
- * \brief BaseEditor::keyPressEvent
- * Reimplementation of keyPressEvent.
- * \param pEvent
- */
-void BaseEditor::keyPressEvent(QKeyEvent *pEvent)
-{
-  if (pEvent->key() == Qt::Key_Tab || pEvent->key() == Qt::Key_Backtab) {
-    // tab or backtab is pressed.
-    indentOrUnindent(pEvent->key() == Qt::Key_Tab);
-    return;
-  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_L) {
-    // ctrl+l is pressed.
-    showGotoLineNumberDialog();
-    return;
-  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_K) {
-    // ctrl+k is pressed.
-    toggleCommentSelection();
-    return;
-  } else if (pEvent->modifiers().testFlag(Qt::ShiftModifier) && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
-    /* Ticket #2273. Change shift+enter to enter. */
-    pEvent->setModifiers(Qt::NoModifier);
-  }
-  QPlainTextEdit::keyPressEvent(pEvent);
-}
-
-/*!
- * \brief BaseEditor::addDefaultContextMenuActions
- * Adds the default contextmenu actions.
- * \param pMenu
- */
-void BaseEditor::addDefaultContextMenuActions(QMenu *pMenu)
-{
-  pMenu->addSeparator();
-  pMenu->addAction(mpFindReplaceAction);
-  pMenu->addAction(mpClearFindReplaceTextsAction);
-  pMenu->addAction(mpGotoLineNumberAction);
-}
-
 /*!
  * \brief BaseEditor::updateLineNumberAreaWidth
  * Updates the width of LineNumberArea.
  * \param newBlockCount
  */
-void BaseEditor::updateLineNumberAreaWidth(int newBlockCount)
+void BaseEditor::PlainTextEdit::updateLineNumberAreaWidth(int newBlockCount)
 {
   Q_UNUSED(newBlockCount);
   setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
@@ -313,7 +199,7 @@ void BaseEditor::updateLineNumberAreaWidth(int newBlockCount)
  * \param rect
  * \param dy
  */
-void BaseEditor::updateLineNumberArea(const QRect &rect, int dy)
+void BaseEditor::PlainTextEdit::updateLineNumberArea(const QRect &rect, int dy)
 {
   if (dy) {
     mpLineNumberArea->scroll(0, dy);
@@ -331,7 +217,7 @@ void BaseEditor::updateLineNumberArea(const QRect &rect, int dy)
  * Slot activated when editor's cursorPositionChanged signal is raised.
  * Hightlights the current line.
  */
-void BaseEditor::highlightCurrentLine()
+void BaseEditor::PlainTextEdit::highlightCurrentLine()
 {
   QList<QTextEdit::ExtraSelection> extraSelections;
   QTextEdit::ExtraSelection selection;
@@ -349,13 +235,13 @@ void BaseEditor::highlightCurrentLine()
  * Slot activated when editor's cursorPositionChanged signal is raised.
  * Updates the cursorPostionLabel i.e Line: 12, Col:123.
  */
-void BaseEditor::updateCursorPosition()
+void BaseEditor::PlainTextEdit::updateCursorPosition()
 {
-  if (mpModelWidget) {
+  if (mpBaseEditor->getModelWidget()) {
     const QTextBlock block = textCursor().block();
     const int line = block.blockNumber() + 1;
     const int column = textCursor().columnNumber();
-    Label *pCursorPositionLabel = mpModelWidget->getCursorPositionLabel();
+    Label *pCursorPositionLabel = mpBaseEditor->getModelWidget()->getCursorPositionLabel();
     pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
   }
 }
@@ -364,9 +250,9 @@ void BaseEditor::updateCursorPosition()
  * \brief BaseEditor::setLineWrapping
  * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
  */
-void BaseEditor::setLineWrapping()
+void BaseEditor::PlainTextEdit::setLineWrapping()
 {
-  OptionsDialog *pOptionsDialog = mpMainWindow->getOptionsDialog();
+  OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
   if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
   } else {
@@ -374,37 +260,21 @@ void BaseEditor::setLineWrapping()
   }
 }
 
-void BaseEditor::showFindReplaceDialog()
+void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
-  FindReplaceDialog *pFindReplaceDialog = mpMainWindow->getFindReplaceDialog();
-  pFindReplaceDialog->setTextEdit(this);
-  pFindReplaceDialog->show();
-  pFindReplaceDialog->raise();
-  pFindReplaceDialog->activateWindow();
-}
-
-void BaseEditor::clearFindReplaceTexts()
-{
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
-  pSettings->remove("findReplaceDialog/textsToFind");
-  mpMainWindow->getFindReplaceDialog()->readFindTextFromSettings();
-}
-
-void BaseEditor::showGotoLineNumberDialog()
-{
-  GotoLineDialog *pGotoLineWidget = new GotoLineDialog(this);
-  pGotoLineWidget->exec();
-}
-
-/**
- * Slot activated when set breakpoint is seleteted from line number area context menu.
- */
-void BaseEditor::toggleBreakpoint()
-{
-  QAction *pAction = qobject_cast<QAction*>(sender());
-  if (pAction) {
-    QStringList list = pAction->data().toStringList();
-    toggleBreakpoint(list.at(0), list.at(1).toInt());
+  BreakpointsTreeModel *pBreakpointsTreeModel = mpBaseEditor->getMainWindow()->getDebuggerMainWindow()->getBreakpointsWidget()->getBreakpointsTreeModel();
+  BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
+  if (!pBreakpointMarker) {
+    /* create a breakpoint marker */
+    pBreakpointMarker = new BreakpointMarker(fileName, lineNumber, pBreakpointsTreeModel);
+    pBreakpointMarker->setEnabled(true);
+    /* Add the marker to document marker */
+    mpBaseEditor->getDocumentMarker()->addMark(pBreakpointMarker, lineNumber);
+    /* insert the breakpoint in BreakpointsWidget */
+    pBreakpointsTreeModel->insertBreakpoint(pBreakpointMarker, mpBaseEditor->getModelWidget()->getLibraryTreeNode(), pBreakpointsTreeModel->getRootBreakpointTreeItem());
+  } else {
+    mpBaseEditor->getDocumentMarker()->removeMark(pBreakpointMarker);
+    pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
   }
 }
 
@@ -414,10 +284,10 @@ void BaseEditor::toggleBreakpoint()
  * \param doIndent
  * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
  */
-void BaseEditor::indentOrUnindent(bool doIndent)
+void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 {
   const ModelicaTabSettings *pModelicaTabSettings;
-  pModelicaTabSettings = mpMainWindow->getOptionsDialog()->getModelicaTabSettings();
+  pModelicaTabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   // Indent or unindent the selected lines
@@ -465,6 +335,501 @@ void BaseEditor::indentOrUnindent(bool doIndent)
   setTextCursor(cursor);
 }
 
+//! Reimplementation of resize event.
+//! Resets the size of LineNumberArea.
+void BaseEditor::PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
+{
+  QPlainTextEdit::resizeEvent(pEvent);
+
+  QRect cr = contentsRect();
+  mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+}
+
+/*!
+ * \brief BaseEditor::keyPressEvent
+ * Reimplementation of keyPressEvent.
+ * \param pEvent
+ */
+void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
+{
+  if (pEvent->key() == Qt::Key_Tab || pEvent->key() == Qt::Key_Backtab) {
+    // tab or backtab is pressed.
+    indentOrUnindent(pEvent->key() == Qt::Key_Tab);
+    return;
+  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_F) {
+    // ctrl+f is pressed.
+    mpBaseEditor->showFindReplaceWidget();
+    return;
+  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_L) {
+    // ctrl+l is pressed.
+    mpBaseEditor->showGotoLineNumberDialog();
+    return;
+  } else if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_K) {
+    // ctrl+k is pressed.
+    mpBaseEditor->toggleCommentSelection();
+    return;
+  } else if (pEvent->modifiers().testFlag(Qt::ShiftModifier) && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
+    /* Ticket #2273. Change shift+enter to enter. */
+    pEvent->setModifiers(Qt::NoModifier);
+  }
+  QPlainTextEdit::keyPressEvent(pEvent);
+}
+
+BaseEditor::BaseEditor(MainWindow *pMainWindow)
+  : QWidget(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false)
+{
+  initialize();
+}
+
+BaseEditor::BaseEditor(ModelWidget *pModelWidget)
+  : QWidget(pModelWidget), mpModelWidget(pModelWidget), mCanHaveBreakpoints(false)
+{
+  mpMainWindow = pModelWidget->getModelWidgetContainer()->getMainWindow();
+  initialize();
+}
+
+/*!
+ * \brief BaseEditor::setCanHaveBreakpoints
+ * Sets whether editor supports breakpoints or not. Also sets/unsets the editor's LineNumberArea mouse tracking.
+ * \param canHaveBreakpoints
+ */
+void BaseEditor::setCanHaveBreakpoints(bool canHaveBreakpoints)
+{
+  mCanHaveBreakpoints = canHaveBreakpoints;
+  mpPlainTextEdit->getLineNumberArea()->setMouseTracking(canHaveBreakpoints);
+}
+
+/*!
+  Takes the cursor to the specific line.
+  \param lineNumber - the line number to go.
+  */
+void BaseEditor::goToLineNumber(int lineNumber)
+{
+  mpPlainTextEdit->goToLineNumber(lineNumber);
+}
+
+/*!
+ * \brief BaseEditor::initialize
+ * Initializes the editor with default values.
+ */
+void BaseEditor::initialize()
+{
+  mpPlainTextEdit = new PlainTextEdit(this);
+  mpFindReplaceWidget = new FindReplaceWidget(this);
+  mpFindReplaceWidget->hide();
+  createActions();
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpPlainTextEdit, 1);
+  pMainLayout->addWidget(mpFindReplaceWidget, 0, Qt::AlignBottom);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief BaseEditor::createActions
+ * Creates the actions for editor's context menu.
+ */
+void BaseEditor::createActions()
+{
+  // find replace class action
+  mpFindReplaceAction = new QAction(QString(Helper::findReplaceModelicaText), this);
+  mpFindReplaceAction->setStatusTip(tr("Shows the Find/Replace window"));
+  mpFindReplaceAction->setShortcut(QKeySequence("Ctrl+f"));
+  connect(mpFindReplaceAction, SIGNAL(triggered()), SLOT(showFindReplaceWidget()));
+  // clear find/replace texts action
+  mpClearFindReplaceTextsAction = new QAction(tr("Clear Find/Replace Texts"), this);
+  mpClearFindReplaceTextsAction->setStatusTip(tr("Clears the Find/Replace text items"));
+  connect(mpClearFindReplaceTextsAction, SIGNAL(triggered()), SLOT(clearFindReplaceTexts()));
+  // goto line action
+  mpGotoLineNumberAction = new QAction(tr("Go to Line"), this);
+  mpGotoLineNumberAction->setStatusTip(tr("Shows the Go to Line Number window"));
+  mpGotoLineNumberAction->setShortcut(QKeySequence("Ctrl+l"));
+  connect(mpGotoLineNumberAction, SIGNAL(triggered()), SLOT(showGotoLineNumberDialog()));
+  /* Toggle breakpoint action */
+  mpToggleBreakpointAction = new QAction(tr("Toggle Breakpoint"), this);
+  connect(mpToggleBreakpointAction, SIGNAL(triggered()), SLOT(toggleBreakpoint()));
+  // toggle comment action
+  mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
+  mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
+  connect(mpToggleCommentSelectionAction, SIGNAL(triggered()), SLOT(toggleCommentSelection()));
+}
+
+/*!
+ * \brief BaseEditor::createStandardContextMenu
+ * Creates a standard context menu for ediotr.
+ * \return
+ */
+QMenu* BaseEditor::createStandardContextMenu()
+{
+  QMenu *pMenu = mpPlainTextEdit->createStandardContextMenu();
+  pMenu->addSeparator();
+  pMenu->addAction(mpFindReplaceAction);
+  pMenu->addAction(mpClearFindReplaceTextsAction);
+  pMenu->addAction(mpGotoLineNumberAction);
+  return pMenu;
+}
+
+/*!
+ * \brief BaseEditor::updateLineNumberAreaWidth
+ * Updates the width of LineNumberArea.
+ * \param newBlockCount
+ */
+void BaseEditor::updateLineNumberAreaWidth(int newBlockCount)
+{
+  mpPlainTextEdit->updateLineNumberAreaWidth(newBlockCount);
+}
+
+/*!
+ * \brief BaseEditor::updateLineNumberArea
+ * Scrolls the LineNumberArea Widget and also updates its width if required.
+ * \param rect
+ * \param dy
+ */
+void BaseEditor::updateLineNumberArea(const QRect &rect, int dy)
+{
+  mpPlainTextEdit->updateLineNumberArea(rect, dy);
+}
+
+/*!
+ * \brief BaseEditor::highlightCurrentLine
+ * Slot activated when editor's cursorPositionChanged signal is raised.
+ * Hightlights the current line.
+ */
+void BaseEditor::highlightCurrentLine()
+{
+  mpPlainTextEdit->highlightCurrentLine();
+}
+
+/*!
+ * \brief BaseEditor::updateCursorPosition
+ * Slot activated when editor's cursorPositionChanged signal is raised.
+ * Updates the cursorPostionLabel i.e Line: 12, Col:123.
+ */
+void BaseEditor::updateCursorPosition()
+{
+  mpPlainTextEdit->updateCursorPosition();
+}
+
+/*!
+ * \brief BaseEditor::setLineWrapping
+ * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
+ */
+void BaseEditor::setLineWrapping()
+{
+  mpPlainTextEdit->setLineWrapping();
+}
+
+/*!
+ * \brief BaseEditor::showFindReplaceWidget
+ * Shows the FindReplaceWidget
+ */
+void BaseEditor::showFindReplaceWidget()
+{
+  mpFindReplaceWidget->show();
+}
+
+void BaseEditor::clearFindReplaceTexts()
+{
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  pSettings->remove("FindReplaceDialog/textsToFind");
+}
+
+/*!
+ * \brief BaseEditor::showGotoLineNumberDialog
+ * Shows the GotoLineDialog
+ */
+void BaseEditor::showGotoLineNumberDialog()
+{
+  GotoLineDialog *pGotoLineWidget = new GotoLineDialog(this);
+  pGotoLineWidget->exec();
+}
+
+/**
+ * Slot activated when set breakpoint is seleteted from line number area context menu.
+ */
+void BaseEditor::toggleBreakpoint()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    QStringList list = pAction->data().toStringList();
+    mpPlainTextEdit->toggleBreakpoint(list.at(0), list.at(1).toInt());
+  }
+}
+
+/*!
+ * \brief BaseEditor::indentOrUnindent
+ * Indents or unindents the code.
+ * \param doIndent
+ * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
+ */
+void BaseEditor::indentOrUnindent(bool doIndent)
+{
+  mpPlainTextEdit->indentOrUnindent(doIndent);
+}
+
+FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
+  : QWidget(pBaseEditor), mpBaseEditor(pBaseEditor)
+{
+  // Find Label and text box
+  mpFindLabel = new Label(tr("Find:"));
+  mpFindComboBox = new QComboBox;
+  mpFindComboBox->setEditable(true);
+  connect(mpFindComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(textToFindChanged()));
+  connect(mpFindComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(validateRegularExpression(QString)));
+  connect(mpFindComboBox->lineEdit(), SIGNAL(returnPressed()), SLOT(findNext()));
+  /* Since the default QCompleter for QComboBox is case insenstive. */
+  QCompleter *pFindComboBoxCompleter = mpFindComboBox->completer();
+  pFindComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
+  mpFindComboBox->setCompleter(pFindComboBoxCompleter);
+  // previous, next & close buttons
+  mpFindPreviousButton = new QPushButton(Helper::previous);
+  connect(mpFindPreviousButton, SIGNAL(clicked()), this, SLOT(findPrevious()));
+  mpFindNextButton = new QPushButton(Helper::next);
+  connect(mpFindNextButton, SIGNAL(clicked()), this, SLOT(findNext()));
+  mpCloseButton = new QPushButton(Helper::close);
+  connect(mpCloseButton, SIGNAL(clicked()), this, SLOT(close()));
+  // buttons layout
+  QHBoxLayout *pFindButtonsHorizontalLayout = new QHBoxLayout;
+  pFindButtonsHorizontalLayout->addWidget(mpFindPreviousButton);
+  pFindButtonsHorizontalLayout->addWidget(mpFindNextButton);
+  pFindButtonsHorizontalLayout->addWidget(mpCloseButton);
+  // Find replace and text box
+  mpReplaceWithLabel = new Label(tr("Replace With:"));
+  mpReplaceWithTextBox = new QLineEdit;
+  connect(mpReplaceWithTextBox, SIGNAL(returnPressed()), SLOT(replace()));
+  // Find Options
+  mpCaseSensitiveCheckBox = new QCheckBox(tr("Case Sensitive"));
+  mpWholeWordCheckBox = new QCheckBox(tr("Whole Words"));
+  mpRegularExpressionCheckBox = new QCheckBox(tr("Regular Expressions"));
+  // Replace & replace all buttons
+  mpReplaceButton = new QPushButton(tr("Replace"));
+  connect(mpReplaceButton, SIGNAL(clicked()), this, SLOT(replace()));
+  mpReplaceAllButton = new QPushButton(tr("Replace All"));
+  connect(mpReplaceAllButton, SIGNAL(clicked()), this, SLOT(replaceAll()));
+  // options layout
+  QHBoxLayout *pOptionsHorizontalLayout = new QHBoxLayout;
+  pOptionsHorizontalLayout->addWidget(mpCaseSensitiveCheckBox);
+  pOptionsHorizontalLayout->addWidget(mpWholeWordCheckBox);
+  pOptionsHorizontalLayout->addWidget(mpRegularExpressionCheckBox);
+  pOptionsHorizontalLayout->addWidget(mpReplaceButton);
+  pOptionsHorizontalLayout->addWidget(mpReplaceAllButton);
+  // set main layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addWidget(mpFindLabel, 0, 0);
+  pMainLayout->addWidget(mpFindComboBox, 0, 1);
+  pMainLayout->addLayout(pFindButtonsHorizontalLayout, 0, 2);
+  pMainLayout->addWidget(mpReplaceWithLabel, 1, 0);
+  pMainLayout->addWidget(mpReplaceWithTextBox, 1, 1);
+  pMainLayout->addLayout(pOptionsHorizontalLayout, 1, 2);
+  setLayout(pMainLayout);
+  // set tab order
+  setTabOrder(mpFindComboBox, mpReplaceWithTextBox);
+  setTabOrder(mpReplaceWithTextBox, mpFindPreviousButton);
+}
+
+void FindReplaceWidget::show()
+{
+  QTextCursor currentTextCursor = mpBaseEditor->getPlainTextEdit()->textCursor();
+  if (currentTextCursor.hasSelection()) {
+    QString selectedText = currentTextCursor.selectedText();
+    saveFindTextToSettings(selectedText);
+    readFindTextFromSettings();
+  } else {
+    readFindTextFromSettings();
+  }
+  mpFindComboBox->setFocus();
+  mpFindComboBox->lineEdit()->selectAll();
+  setVisible(true);
+}
+
+/*!
+  Reads the list of find texts from the settings file.
+  */
+void FindReplaceWidget::readFindTextFromSettings()
+{
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  mpFindComboBox->clear();
+  QList<QVariant> findTexts = pSettings->value("FindReplaceDialog/textsToFind").toList();
+  int numFindTexts = qMin(findTexts.size(), (int)MaxFindTexts);
+  for (int i = 0; i < numFindTexts; ++i) {
+    FindTextOM findText = qvariant_cast<FindTextOM>(findTexts[i]);
+    mpFindComboBox->addItem(findText.text);
+  }
+}
+
+/*!
+  Saves the find text to the settings file.
+  \param textToFind - the text to find
+  */
+void FindReplaceWidget::saveFindTextToSettings(QString textToFind)
+{
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QList<QVariant> texts = pSettings->value("FindReplaceDialog/textsToFind").toList();
+  // remove the already present text from the list.
+  foreach (QVariant text, texts) {
+    FindTextOM findText = qvariant_cast<FindTextOM>(text);
+    if (findText.text.compare(textToFind) == 0)
+      texts.removeOne(text);
+  }
+  FindTextOM findText;
+  findText.text = textToFind;
+  texts.prepend(QVariant::fromValue(findText));
+  while (texts.size() > MaxFindTexts) {
+    texts.removeLast();
+  }
+  pSettings->setValue("FindReplaceDialog/textsToFind", texts);
+}
+
+/*!
+ * \brief FindReplaceWidget::findText
+ * Finds the text
+ * \param forward - direction flag.
+ */
+void FindReplaceWidget::findText(bool forward)
+{
+  QTextCursor currentTextCursor = mpBaseEditor->getPlainTextEdit()->textCursor();
+  bool backward = !forward;
+
+  if (currentTextCursor.hasSelection()) {
+    currentTextCursor.setPosition(forward ? currentTextCursor.position() : currentTextCursor.anchor(), QTextCursor::MoveAnchor);
+  }
+  const QString &textToFind = mpFindComboBox->currentText();
+  // save the find text in settings
+  saveFindTextToSettings(textToFind);
+  QTextDocument::FindFlags flags;
+  if (backward) {
+    flags |= QTextDocument::FindBackward;
+  }
+  if (mpCaseSensitiveCheckBox->isChecked()) {
+    flags |= QTextDocument::FindCaseSensitively;
+  }
+  if (mpWholeWordCheckBox->isChecked()) {
+    flags |= QTextDocument::FindWholeWords;
+  }
+
+  if (mpRegularExpressionCheckBox->isChecked()) {
+    QRegExp reg(textToFind, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+    currentTextCursor = mpBaseEditor->getPlainTextEdit()->document()->find(reg, currentTextCursor, flags);
+    mpBaseEditor->getPlainTextEdit()->setTextCursor(currentTextCursor);
+  }
+
+  QTextCursor newTextCursor = mpBaseEditor->getPlainTextEdit()->document()->find(textToFind, currentTextCursor, flags);
+  if (newTextCursor.isNull()) {
+    QTextCursor ac(mpBaseEditor->getPlainTextEdit()->document());
+    ac.movePosition(flags & QTextDocument::FindBackward ? QTextCursor::End : QTextCursor::Start);
+    newTextCursor = mpBaseEditor->getPlainTextEdit()->document()->find(textToFind, ac, flags);
+    if (newTextCursor.isNull()) {
+      newTextCursor = currentTextCursor;
+    }
+  }
+  mpBaseEditor->getPlainTextEdit()->setTextCursor(newTextCursor);
+}
+
+/*!
+ * \brief FindReplaceWidget::findPrevious
+ * Finds the text in backward direction.
+ */
+void FindReplaceWidget::findPrevious()
+{
+  findText(false);
+}
+
+/*!
+ * \brief FindReplaceWidget::findNext
+ * Finds the text in forward direction.
+ */
+void FindReplaceWidget::findNext()
+{
+  findText(true);
+}
+
+/*!
+  Replaces the found occurrences and goes to the next occurrence
+  */
+void FindReplaceWidget::replace()
+{
+  int compareString(0);
+  if(mpCaseSensitiveCheckBox->isChecked()) {
+    compareString = Qt::CaseSensitive;
+  } else {
+    compareString = Qt::CaseInsensitive;
+  }
+  int same = mpBaseEditor->getPlainTextEdit()->textCursor().selectedText().compare(mpFindComboBox->currentText(),( Qt::CaseSensitivity)compareString );
+  if (mpBaseEditor->getPlainTextEdit()->textCursor().hasSelection() && same == 0) {
+    mpBaseEditor->getPlainTextEdit()->textCursor().insertText(mpReplaceWithTextBox->text());
+    findNext();
+  } else {
+    findNext();
+  }
+}
+
+/*!
+  Replaces all the found occurrences
+  */
+void FindReplaceWidget::replaceAll()
+{
+  // move cursor to start of text
+  QTextCursor cursor = mpBaseEditor->getPlainTextEdit()->textCursor();
+  cursor.movePosition(QTextCursor::Start);
+  mpBaseEditor->getPlainTextEdit()->setTextCursor(cursor);
+
+  QTextDocument::FindFlags flags;
+  if (mpCaseSensitiveCheckBox->isChecked()) {
+    flags |= QTextDocument::FindCaseSensitively;
+  }
+  if (mpWholeWordCheckBox->isChecked()) {
+    flags |= QTextDocument::FindWholeWords;
+  }
+  // save the find text in settings
+  saveFindTextToSettings(mpFindComboBox->currentText());
+  // replace all
+  int i=0;
+  mpBaseEditor->getPlainTextEdit()->textCursor().beginEditBlock();
+  while (mpBaseEditor->getPlainTextEdit()->find(mpFindComboBox->currentText(), flags)) {
+    mpBaseEditor->getPlainTextEdit()->textCursor().insertText(mpReplaceWithTextBox->text());
+    i++;
+  }
+  mpBaseEditor->getPlainTextEdit()->textCursor().endEditBlock();
+}
+
+/*!
+  Checks whether the passed text is a valid regular expression
+  */
+void FindReplaceWidget::validateRegularExpression(const QString &text)
+{
+  if (!mpRegularExpressionCheckBox->isChecked() || text.size() == 0) {
+    return; // nothing to validate
+  }
+  QRegExp reg(text, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+  if (!reg.isValid()) {
+    QMessageBox::critical( this, "Find", reg.errorString());
+  }
+}
+
+/*!
+  The regular expression checkbox was selected
+  */
+void FindReplaceWidget::regularExpressionSelected(bool selected)
+{
+  if (selected) {
+    validateRegularExpression(mpFindComboBox->currentText());
+  } else {
+    validateRegularExpression("");
+  }
+}
+
+/*!
+  When the text edit contents changed
+  */
+void FindReplaceWidget::textToFindChanged()
+{
+  mpFindNextButton->setEnabled(mpFindComboBox->currentText().size() > 0);
+}
+
 //! @class GotoLineWidget
 //! @brief An interface to goto a specific line in BaseEditor.
 
@@ -491,9 +856,9 @@ GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
 //! Reimplementation of QDialog::exec
 int GotoLineDialog::exec()
 {
-  mpLineNumberLabel->setText(QString("Enter line number (1 to ").append(QString::number(mpBaseEditor->blockCount())).append("):"));
+  mpLineNumberLabel->setText(tr("Enter line number (1 to %1):").arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount())));
   QIntValidator *intValidator = new QIntValidator(this);
-  intValidator->setRange(1, mpBaseEditor->blockCount());
+  intValidator->setRange(1, mpBaseEditor->getPlainTextEdit()->blockCount());
   mpLineNumberTextBox->setValidator(intValidator);
   return QDialog::exec();
 }

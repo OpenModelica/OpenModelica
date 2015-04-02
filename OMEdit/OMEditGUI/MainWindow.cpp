@@ -135,8 +135,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   createActions();
   createToolbars();
   createMenus();
-  // Create find/replace dialog
-  mpFindReplaceDialog = new FindReplaceDialog;
   // Create simulation dialog
   mpSimulationDialog = new SimulationDialog(this);
   // Create an object of PlotWindowContainer
@@ -144,8 +142,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   // create an object of VariablesWidget
   mpVariablesWidget = new VariablesWidget(this);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
-  // Create an object of InteractiveSimulationTabWidget
-  //mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
   /* Debugger MainWindow */
   /* Important. Create the instance of DebuggerMainWindow before ModelWidgetContainer otherwise the ctrl+tab changer does not work. */
   mpDebuggerMainWindow = new DebuggerMainWindow(this);
@@ -329,11 +325,6 @@ PlotWindowContainer* MainWindow::getPlotWindowContainer()
   return mpPlotWindowContainer;
 }
 
-//InteractiveSimulationTabWidget* MainWindow::getInteractiveSimulationTabWidget()
-//{
-//  return mpInteractiveSimualtionTabWidget;
-//}
-
 ModelWidgetContainer* MainWindow::getModelWidgetContainer()
 {
   return mpModelWidgetContainer;
@@ -504,21 +495,6 @@ QAction* MainWindow::getConnectModeAction()
   return mpConnectModeAction;
 }
 
-QAction* MainWindow::getFindReplaceAction()
-{
-  return mpFindReplaceAction;
-}
-
-QAction* MainWindow::getClearFindReplaceTextsAction()
-{
-  return mpClearFindReplaceTextsAction;
-}
-
-QAction* MainWindow::getGotoLineNumberAction()
-{
-  return mpGotoLineNumberAction;
-}
-
 //! Adds the currently opened file to the recentFilesList settings.
 void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
 {
@@ -607,7 +583,6 @@ void MainWindow::beforeClosingMainWindow()
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
   delete mpDebuggerMainWindow;
-  delete mpFindReplaceDialog;
   delete mpSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -1157,33 +1132,6 @@ void MainWindow::focusSearchClassWidget(bool visible)
     mpSearchClassWidget->getSearchClassTextBox()->setFocus();
 }
 
-void MainWindow::showFindReplaceDialog()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    mpFindReplaceDialog->setTextEdit(pModelWidget->getEditor());
-    mpFindReplaceDialog->show();
-    mpFindReplaceDialog->raise();
-    mpFindReplaceDialog->activateWindow();
-  }
-}
-
-void MainWindow::clearFindReplaceTexts()
-{
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
-  pSettings->remove("findReplaceDialog/textsToFind");
-  mpFindReplaceDialog->readFindTextFromSettings();
-}
-
-void MainWindow::showGotoLineNumberDialog()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    GotoLineDialog *pGotoLineWidget = new GotoLineDialog(pModelWidget->getEditor());
-    pGotoLineWidget->exec();
-  }
-}
-
 //! Opens the recent file.
 void MainWindow::openRecentFile()
 {
@@ -1423,12 +1371,6 @@ void MainWindow::openSimulationDialog()
       simulationSetup(pLibraryTreeNode);
     }
   }
-}
-
-//! Open Interactive Simulation Window
-void MainWindow::openInteractiveSimulation()
-{
-  //mpSimulationDialog->show(true);
 }
 
 //! Exports the current model to FMU
@@ -2004,22 +1946,6 @@ void MainWindow::createActions()
   // paste action
   mpPasteAction = new QAction(QIcon(":/Resources/icons/paste.svg"), tr("Paste"), this);
   mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));
-  // find replace class action
-  mpFindReplaceAction = new QAction(QString(Helper::findReplaceModelicaText), this);
-  mpFindReplaceAction->setStatusTip(tr("Shows the Find/Replace window"));
-  mpFindReplaceAction->setShortcut(QKeySequence("Ctrl+f"));
-  mpFindReplaceAction->setEnabled(false);
-  connect(mpFindReplaceAction, SIGNAL(triggered()), SLOT(showFindReplaceDialog()));
-  // clear find/replace texts action
-  mpClearFindReplaceTextsAction = new QAction(tr("Clear Find/Replace Texts"), this);
-  mpClearFindReplaceTextsAction->setStatusTip(tr("Clears the Find/Replace text items"));
-  connect(mpClearFindReplaceTextsAction, SIGNAL(triggered()), SLOT(clearFindReplaceTexts()));
-  // goto line action
-  mpGotoLineNumberAction = new QAction(tr("Go to Line"), this);
-  mpGotoLineNumberAction->setStatusTip(tr("Shows the Go to Line Number window"));
-  mpGotoLineNumberAction->setShortcut(QKeySequence("Ctrl+l"));
-  mpGotoLineNumberAction->setEnabled(false);
-  connect(mpGotoLineNumberAction, SIGNAL(triggered()), SLOT(showGotoLineNumberDialog()));
   // View Menu
   // show/hide gridlines action
   mpShowGridLinesAction = new QAction(QIcon(":/Resources/icons/grid.svg"), tr("Grid Lines"), this);
@@ -2308,14 +2234,9 @@ void MainWindow::createMenus()
   pEditMenu->addAction(mpCopyAction);
   pEditMenu->addAction(mpPasteAction);
   pEditMenu->addSeparator();
-  pEditMenu->addAction(mpFindReplaceAction);
-  pEditMenu->addAction(mpClearFindReplaceTextsAction);
-  pEditMenu->addSeparator();
   QAction *pSearchClassAction = mpSearchClassDockWidget->toggleViewAction();
   pSearchClassAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
   pEditMenu->addAction(pSearchClassAction);
-  pEditMenu->addSeparator();
-  pEditMenu->addAction(mpGotoLineNumberAction);
   // add Edit menu to menu bar
   menuBar()->addAction(pEditMenu->menuAction());
   // View menu

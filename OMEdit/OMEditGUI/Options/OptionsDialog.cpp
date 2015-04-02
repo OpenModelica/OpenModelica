@@ -2050,7 +2050,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   mpIndentSpinBox->setRange(1, 20);
   mpIndentSpinBox->setValue(2);
   connect(mpIndentSpinBox, SIGNAL(valueChanged(int)), SLOT(indentSizeChanged(int)));
-  // set Syntax Highlight & Text Wrapping groupbox layout
+  // set tabs & indentation groupbox layout
   QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyComboBox, 0, 1);

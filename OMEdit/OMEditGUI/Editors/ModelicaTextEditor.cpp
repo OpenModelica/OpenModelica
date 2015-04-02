@@ -131,8 +131,8 @@ ModelicaTextEditor::ModelicaTextEditor(ModelWidget *pParent)
 {
   setCanHaveBreakpoints(true);
   /* set the document marker */
-  mpDocumentMarker = new DocumentMarker(document());
-  setModelicaTextDocument(document());
+  mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+  setModelicaTextDocument(mpPlainTextEdit->document());
   connect(this, SIGNAL(focusOut()), mpModelWidget, SLOT(modelicaEditorTextChanged()));
 }
 
@@ -148,14 +148,14 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
   OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
   QStringList classNames;
   LibraryTreeNode *pLibraryTreeNode = mpModelWidget->getLibraryTreeNode();
-  if (toPlainText().isEmpty()) {
+  if (mpPlainTextEdit->toPlainText().isEmpty()) {
     *errorString = tr("Start and End modifiers are different");
     return QStringList();
   } else {
     if (pLibraryTreeNode->getParentName().isEmpty()) {
-      classNames = pOMCProxy->parseString(toPlainText(), pLibraryTreeNode->getNameStructure());
+      classNames = pOMCProxy->parseString(mpPlainTextEdit->toPlainText(), pLibraryTreeNode->getNameStructure());
     } else {
-      classNames = pOMCProxy->parseString("within " + pLibraryTreeNode->getParentName() + ";" + toPlainText(), pLibraryTreeNode->getNameStructure());
+      classNames = pOMCProxy->parseString("within " + pLibraryTreeNode->getParentName() + ";" + mpPlainTextEdit->toPlainText(), pLibraryTreeNode->getNameStructure());
     }
   }
   // if user is defining multiple top level classes.
@@ -236,7 +236,7 @@ void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
     docLayout = new ModelicaTextDocumentLayout(doc);
     doc->setDocumentLayout(docLayout);
   }
-  setDocument(doc);
+  mpPlainTextEdit->setDocument(doc);
 }
 
 /*!
@@ -246,8 +246,7 @@ void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
  */
 void ModelicaTextEditor::showContextMenu(QPoint point)
 {
-  QMenu *pMenu = createStandardContextMenu();
-  BaseEditor::addDefaultContextMenuActions(pMenu);
+  QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
   pMenu->exec(mapToGlobal(point));
@@ -259,11 +258,11 @@ void ModelicaTextEditor::showContextMenu(QPoint point)
 //! @param text the string to set.
 void ModelicaTextEditor::setPlainText(const QString &text)
 {
-  if (text != toPlainText()) {
+  if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
-    QPlainTextEdit::setPlainText(text);
+    mpPlainTextEdit->setPlainText(text);
     mForceSetPlainText = false;
-    updateLineNumberAreaWidth(0);
+    //updateLineNumberAreaWidth(0);
   }
 }
 
@@ -291,10 +290,10 @@ void ModelicaTextEditor::contentsHasChanged(int position, int charsRemoved, int 
       /* Keep the line numbers and the block information for the line breakpoints updated */
       if (charsRemoved != 0) {
         mpDocumentMarker->updateBreakpointsLineNumber();
-        mpDocumentMarker->updateBreakpointsBlock(document()->findBlock(position));
+        mpDocumentMarker->updateBreakpointsBlock(mpPlainTextEdit->document()->findBlock(position));
       } else {
-        const QTextBlock posBlock = document()->findBlock(position);
-        const QTextBlock nextBlock = document()->findBlock(position + charsAdded);
+        const QTextBlock posBlock = mpPlainTextEdit->document()->findBlock(position);
+        const QTextBlock nextBlock = mpPlainTextEdit->document()->findBlock(position + charsAdded);
         if (posBlock != nextBlock) {
           mpDocumentMarker->updateBreakpointsLineNumber();
           mpDocumentMarker->updateBreakpointsBlock(posBlock);
@@ -318,7 +317,7 @@ void ModelicaTextEditor::toggleCommentSelection()
     return;
   }
 
-  QTextCursor cursor = textCursor();
+  QTextCursor cursor = mpPlainTextEdit->textCursor();
   QTextDocument *doc = cursor.document();
   cursor.beginEditBlock();
 
@@ -470,7 +469,7 @@ void ModelicaTextEditor::toggleCommentSelection()
   }
   // adjust selection when commenting out
   if (hasSelection && !doMultiLineStyleUncomment && !doSingleLineStyleUncomment) {
-    cursor = textCursor();
+    cursor = mpPlainTextEdit->textCursor();
     if (!doMultiLineStyleComment)
       start = startBlock.position(); // move the comment into the selection
     int lastSelPos = anchorIsStart ? cursor.position() : cursor.anchor();
@@ -481,7 +480,7 @@ void ModelicaTextEditor::toggleCommentSelection()
       cursor.setPosition(lastSelPos);
       cursor.setPosition(start, QTextCursor::KeepAnchor);
     }
-    setTextCursor(cursor);
+    mpPlainTextEdit->setTextCursor(cursor);
   }
   cursor.endEditBlock();
 }

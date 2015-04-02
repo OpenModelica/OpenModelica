@@ -41,14 +41,14 @@ TextEditor::TextEditor(ModelWidget *pModelWidget)
   : BaseEditor(pModelWidget)
 {
   //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
-  setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
 }
 
 TextEditor::TextEditor(MainWindow *pMainWindow)
   : BaseEditor(pMainWindow)
 {
   //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
-  setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
 }
 
 /*!
@@ -58,8 +58,7 @@ TextEditor::TextEditor(MainWindow *pMainWindow)
  */
 void TextEditor::showContextMenu(QPoint point)
 {
-  QMenu *pMenu = createStandardContextMenu();
-  BaseEditor::addDefaultContextMenuActions(pMenu);
+  QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
 }

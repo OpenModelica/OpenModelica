@@ -95,10 +95,12 @@ void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate
 }
 
 /*!
-  Directly simulates the model without showing the simulation dialog.
-  \param pLibraryTreeNode - pointer to LibraryTreeNode
-  \param isInteractive - true indicates that the simulation is interactive.
-  */
+ * \brief SimulationDialog::directSimulate
+ * Directly simulates the model without showing the simulation dialog.
+ * \param pLibraryTreeNode
+ * \param launchTransformationalDebugger
+ * \param launchAlgorithmicDebugger
+ */
 void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger)
 {
   mpLibraryTreeNode = pLibraryTreeNode;

@@ -317,7 +317,7 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
   if (file.exists()) {
     file.open(QIODevice::ReadOnly);
     TextEditor *pTextEditor = new TextEditor(mpMainWindow);
-    pTextEditor->setPlainText(QString(file.readAll()));
+    pTextEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpGeneratedFilesTabWidget->addTab(pTextEditor, fileInfo.fileName());
     file.close();
   }

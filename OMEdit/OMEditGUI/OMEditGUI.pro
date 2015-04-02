@@ -68,7 +68,6 @@ SOURCES += main.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
-  Editors/FindReplaceDialog.cpp \
   Editors/ModelicaTextEditor.cpp \
   Editors/TransformationsEditor.cpp \
   Editors/DebuggerSourceEditor.cpp \
@@ -126,7 +125,6 @@ HEADERS  += Util/backtrace.h \
   Modeling/ModelicaClassDialog.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
-  Editors/FindReplaceDialog.h \
   Editors/ModelicaTextEditor.h \
   Editors/TransformationsEditor.h \
   Editors/DebuggerSourceEditor.h \
