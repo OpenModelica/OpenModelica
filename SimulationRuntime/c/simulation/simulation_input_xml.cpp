@@ -836,13 +836,32 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     /* read override values */
     infoStreamPrint(LOG_SOLVER, 0, "read override values: %s", overrideStr);
     char *p = strtok(overrideStr, ",");
+    int skip = 0;
     while(p)
     {
-      std::string *key_val = new string(p);
+      std::string key_val(p);
+      // bug: #3261
+      // if the string is not quoted and we find [ inside the
+      // string, we need to append the next token until we find ]
+      if ((key_val[0] != '\'') && (key_val.find("[") != std::string::npos))
+      {
+          std::string next;
+          int done = 0;
+          do {
+            p = strtok(NULL, ",");
+            skip = 1;
+            // break if we somehow reached NULL!
+            if (p == NULL) break;
+            next = string(p);
+            key_val += "," + next;
+            // stop if we have ] and = inside next
+            done = ((next.find("]") != std::string::npos) && (next.find("=") != std::string::npos));
+          } while (done);
+      }
       // split it key = value => map[key]=value
-      size_t pos = key_val->find("=");
-      key = key_val->substr(0,pos);
-      value = key_val->substr(pos + 1,key_val->length() - pos - 1);
+      size_t pos = key_val.find("=");
+      key = key_val.substr(0,pos);
+      value = key_val.substr(pos + 1,key_val.length() - pos - 1);
 
       /* un-quote key and value
       if(key[0] == '"')
@@ -862,7 +881,11 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
       infoStreamPrint(LOG_SOLVER, 0, "override %s = %s", key.c_str(), value.c_str());
 
       // move to next
-      p = strtok(NULL, ",");
+      if (!skip)
+      {
+          p = strtok(NULL, ",");
+          skip = 0;
+      }
     }
 
     free(overrideStr);
