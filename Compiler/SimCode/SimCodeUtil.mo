@@ -8198,7 +8198,7 @@ algorithm
       list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
       list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
       list<SimCodeVar.SimVar> mixedArrayVars;
-      
+
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars,jacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, mixedArrayVars))
