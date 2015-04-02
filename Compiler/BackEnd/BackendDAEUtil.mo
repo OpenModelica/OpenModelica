@@ -2120,11 +2120,52 @@ algorithm
   BackendDAE.SHARED(info=einfo) := shared;
 end getExtraInfo;
 
-public function reduceEqSystem
-"
-  reduce EqSystem for iVarlst
 
-Author: wbraun
+public function reduceEqSystemsInDAE
+"Function reduces BackendDAE system by filtering
+the equation and select only the one that are needed
+to calculate the given varibales.
+"
+  input BackendDAE.BackendDAE inDAE;
+  input list<BackendDAE.Var> iVarlst;
+  input Boolean makeMatching = true;
+  output BackendDAE.BackendDAE outDAE;
+
+protected
+  BackendDAE.Shared shared;
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.EqSystem tmpsyst;
+algorithm
+  BackendDAE.DAE(systs, shared) := inDAE;
+  outDAE := BackendDAE.DAE(list(tryReduceEqSystem(syst, shared, iVarlst) for syst in systs), shared);
+  if makeMatching then
+    outDAE := BackendDAEUtil.transformBackendDAE(outDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+  end if;
+end reduceEqSystemsInDAE;
+
+public function tryReduceEqSystem
+" Helpfunction to reduceEqSystemsInDAE.
+"
+  input BackendDAE.EqSystem iSyst;
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.Var> iVarlst;
+  output BackendDAE.EqSystem oSyst;
+algorithm
+  try
+    //BackendDump.dumpEqSystem(iSyst,"IN: tryReduceEqSystem");
+    oSyst := reduceEqSystem(iSyst, shared, iVarlst);
+    //BackendDump.dumpEqSystem(oSyst,"OUT: tryReduceEqSystem");
+  else
+    oSyst := iSyst;
+  end try;
+end tryReduceEqSystem;
+
+
+public function reduceEqSystem
+"Function reduces BackendDAE.EqSystem system by filtering
+the equation and select only the one that are needed
+to calculate the given varibales. Shared object is used
+only to get the functionsTree.
 "
   input BackendDAE.EqSystem iSyst;
   input BackendDAE.Shared shared;
@@ -2139,16 +2180,12 @@ protected
    BackendDAE.Variables iVars = BackendVariable.listVar(iVarlst);
    BackendDAE.EquationArray ordererdEqs, arrEqs;
    list<Integer> indx_lst_v, indx_lst_e, ind_mark, statevarindx_lst;
-   Integer ind;
    array<Integer> indx_arr;
-   array<Integer> mapIncRowEqn;
    list<BackendDAE.Equation> el;
    list<BackendDAE.Var> vl;
 
    DAE.FunctionTree funcs;
    BackendDAE.IncidenceMatrix m;
-   BackendDAE.BackendDAE backendDAE2;
-   BackendDAE.EqSystem syst;
 algorithm
 
    BackendDAE.EQSYSTEM(orderedEqs = ordererdEqs, orderedVars = v, matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2), partitionKind = partitionKind) := iSyst;
@@ -2159,28 +2196,14 @@ algorithm
   indx_lst_v := List.appendNoCopy(indx_lst_v, statevarindx_lst) "overestimate";
   indx_lst_e := List.map1r(indx_lst_v,arrayGet,ass1);
 
-
   indx_arr := arrayCreate(equationArraySizeDAE(iSyst), 0);
   funcs := getFunctions(shared);
-  (_, m, _, _, mapIncRowEqn) := getIncidenceMatrixScalar(iSyst, BackendDAE.SPARSE(), SOME(funcs));
-
-
+  (_, m, _) := getIncidenceMatrix(iSyst, BackendDAE.SPARSE(), SOME(funcs));
+  
   indx_arr := markStateEquationsWork(indx_lst_e, {},  m, ass1, indx_arr);
-  ind_mark := arrayList(indx_arr);
+  
+  indx_lst_e := Array.foldIndex(indx_arr, translateArrayList, {});
 
-
-  indx_lst_e := {};
-  ind := 1;
-
-  for mark in ind_mark loop
-    if mark == 1 then
-      indx_lst_e := ind :: indx_lst_e;
-    end if;
-    ind := ind + 1;
-  end for;
-
-  indx_lst_e := List.map1r(indx_lst_e,arrayGet,mapIncRowEqn);
-  indx_lst_e := List.unique(indx_lst_e);
   el := BackendEquation.getEqns(indx_lst_e, ordererdEqs);
   arrEqs := BackendEquation.listEquation(el);
 
@@ -2188,9 +2211,16 @@ algorithm
   vars := BackendVariable.listVar1(vl);
 
   oSyst := BackendDAE.EQSYSTEM(vars, arrEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, partitionKind);
-
 end reduceEqSystem;
 
+protected function translateArrayList
+  input Integer inElement;
+  input Integer inIndex;
+  input list<Integer> inFoldArg;
+  output list<Integer> outFoldArg;
+algorithm
+  outFoldArg := if intEq(inElement, 1) then inIndex::inFoldArg else inFoldArg;
+end translateArrayList;
 
 public function removeDiscreteAssignments "
 Author: wbraun

@@ -405,6 +405,30 @@ algorithm
   end for;
 end fold6;
 
+public function foldIndex<T, FoldT>
+"Takes an array, a function, and a start value. The function is applied to
+   each array element, and the start value is passed to the function and
+   updated, additional the index of the passed element is also passed to the function."
+  input array<T> inArray;
+  input FoldFunc inFoldFunc;
+  input FoldT inStartValue;
+  output FoldT outResult = inStartValue;
+
+  partial function FoldFunc
+    input T inElement;
+    input Integer inIndex;
+   input FoldT inFoldArg;
+    output FoldT outFoldArg;
+  end FoldFunc;
+protected 
+  T e;
+algorithm
+  for i in 1:arrayLength(inArray) loop
+    e := arrayGet(inArray, i);
+    outResult := inFoldFunc(e, i, outResult);
+  end for;
+end foldIndex;
+
 public function reduce<T>
   "Takes a list and a function operating on two elements of the array.
    The function performs a reduction of the array to a single value using the

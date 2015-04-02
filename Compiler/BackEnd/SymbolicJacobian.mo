@@ -1696,7 +1696,7 @@ algorithm
   (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) :=
   matchcontinue (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inName)
     local
-      BackendDAE.BackendDAE backendDAE;
+      BackendDAE.BackendDAE backendDAE, reduceDAE;
 
       list<DAE.ComponentRef> comref_vars, comref_seedVars, comref_differentiatedVars;
 
@@ -1717,6 +1717,8 @@ algorithm
         s =  intString(listLength(diffedVars));
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
 
+        reduceDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
+
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
         seedlst = List.map1(comref_vars, createSeedVars, inName);
         s1 =  intString(listLength(inVars));
@@ -1724,7 +1726,7 @@ algorithm
         SimCodeUtil.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:" + s + " diffed equations: " +  s1);
 
         // Differentiate the ODE system w.r.t states for jacobian
-        (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(inBackendDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(reduceDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
@@ -1755,7 +1757,7 @@ algorithm
         SimCodeUtil.execStat("analytical Jacobians -> generated optimized jacobians");
 
         // generate sparse pattern
-        (sparsepattern,colsColors) = generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
+        (sparsepattern,colsColors) = generateSparsePattern(reduceDAE, inDiffVars, diffedVars);
         SimCodeUtil.execStat("analytical Jacobians -> generated generateSparsePattern");
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars), sparsepattern, colsColors, funcs);

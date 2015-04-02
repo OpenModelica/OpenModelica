@@ -4993,60 +4993,24 @@ public function traverseSubexpressionsTopDownHelper
 The extra argument is a tuple of the actul function to call on each subexpression and the extra argument."
   replaceable type Type_a subtypeof Any;
   input DAE.Exp inExp;
-  input tuple<FuncExpType,Type_a> itpl;
+  input tuple<FuncExpType2,Type_a> itpl;
   output DAE.Exp outExp;
-  output tuple<FuncExpType,Type_a> otpl;
-  partial function FuncExpType
+  output tuple<FuncExpType2,Type_a> otpl;
+  partial function FuncExpType2
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
     output Boolean cont;
     output Type_a outA;
-  end FuncExpType;
+  end FuncExpType2;
 protected
-  FuncExpType rel;
-      Type_a ext_arg;
+  FuncExpType2 rel;
+  Type_a ext_arg;
 algorithm
   (rel,ext_arg) := itpl;
   (outExp,ext_arg) := traverseExpTopDown(inExp,rel,ext_arg);
   otpl := (rel,ext_arg);
 end traverseSubexpressionsTopDownHelper;
-
-public function traverseSubexpressionsWithoutRelations
-"This function is used as input to a traverse function that does not traverse all subexpressions.
-The extra argument is a tuple of the actul function to call on each subexpression and the extra argument.
-"
-  replaceable type Type_a subtypeof Any;
-  input DAE.Exp inExp;
-  input tuple<FuncExpType,Type_a> itpl;
-  output DAE.Exp e;
-  output Boolean cont;
-  output tuple<FuncExpType,Type_a> otpl;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-  input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
-  end FuncExpType;
-algorithm
-  // TODO: Implement flags to traverseExpBottomUp to handle special cases like WithoutRelations or without updating the expressions?
-  (e,cont,otpl) := match (inExp,itpl)
-    local
-      FuncExpType f;
-      Type_a ea1,ea2;
-    case (DAE.LUNARY(),_)
-      then (inExp,false,itpl);
-    case (DAE.LBINARY(),_)
-      then (inExp,false,itpl);
-    case (DAE.RELATION(),_)
-      then (inExp,false,itpl);
-    case (_,(f,ea1))
-      equation
-        (e,ea2) = f(inExp,ea1);
-        otpl = if referenceEq(ea1,ea2) then itpl else (f,ea2);
-      then (e,true,otpl);
-  end match;
-end traverseSubexpressionsWithoutRelations;
 
 protected function traverseExpMatrix
 "author: PA
