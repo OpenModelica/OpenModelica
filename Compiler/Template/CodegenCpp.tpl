@@ -40,7 +40,7 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
         let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", preVarsCount),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,mixedArrayVars,false), "", preVarsCount, false),'OMCpp<%fileNamePrefix%>PreVariables.h')
+        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,false), "", preVarsCount, false),'OMCpp<%fileNamePrefix%>PreVariables.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
         let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
@@ -6705,7 +6705,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end MemberVariable;
 
-template MemberVariablePreVariables(ModelInfo modelInfo, list<SimCodeVar.SimVar> mixedArrayVars, Boolean useFlatArrayNotation)
+template MemberVariablePreVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
@@ -6740,7 +6740,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     MemberVariableDefine("bool ",var, "boolVariables.AliasVars", useFlatArrayNotation)
    ;separator="\n"%>
    /*mixed array variables*/
-   <%mixedArrayVars |> arrVar =>
+   <%vars.mixedArrayVars |> arrVar =>
     MemberVariableDefine2(arrVar, "mixed", useFlatArrayNotation)
    ;separator="\n"%>
   >>

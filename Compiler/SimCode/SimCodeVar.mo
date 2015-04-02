@@ -68,6 +68,7 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> jacobianVars;
     list<SimVar> realOptimizeConstraintsVars;
     list<SimVar> realOptimizeFinalConstraintsVars;
+    list<SimVar> mixedArrayVars; //all arrays that contain state or state derivative variables, together with other variables
   end SIMVARS;
 end SimVars;
 

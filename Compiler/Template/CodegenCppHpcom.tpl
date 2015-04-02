@@ -1679,6 +1679,10 @@ template MemberVariablePreVariables(ModelInfo modelInfo, Option<MemoryMap> hpcOm
     <%vars.boolAliasVars |> var =>
       MemberVariableDefine("bool ",var, "boolVariables.AliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
       ;separator="\n"%>
+    /*mixed array variables*/
+    <%vars.mixedArrayVars |> arrVar =>
+      MemberVariableDefine2(arrVar, "mixed", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
+      ;separator="\n"%>
     >>
   end match
 end MemberVariablePreVariables;
