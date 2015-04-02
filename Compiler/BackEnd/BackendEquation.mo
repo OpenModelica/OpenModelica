@@ -280,7 +280,7 @@ algorithm
 end expressionVars;
 
 public function checkEquationsVarsExpTopDownTraverseHelper
-"This function traverses expssions to-down to collect all 
+"This function traverses expssions to-down to collect all
  variables that are involed into the expression."
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables, BinaryTreeInt.BinTree> itpl;
@@ -314,7 +314,7 @@ algorithm
     then (e, true, (vars, bt));
 
     // case for pre vars
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")), _) 
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
     then (inExp, false, inTuple);
 
     // add it

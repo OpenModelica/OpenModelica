@@ -2199,9 +2199,9 @@ algorithm
   indx_arr := arrayCreate(equationArraySizeDAE(iSyst), 0);
   funcs := getFunctions(shared);
   (_, m, _) := getIncidenceMatrix(iSyst, BackendDAE.SPARSE(), SOME(funcs));
-  
+
   indx_arr := markStateEquationsWork(indx_lst_e, {},  m, ass1, indx_arr);
-  
+
   indx_lst_e := Array.foldIndex(indx_arr, translateArrayList, {});
 
   el := BackendEquation.getEqns(indx_lst_e, ordererdEqs);

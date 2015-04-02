@@ -420,7 +420,7 @@ public function foldIndex<T, FoldT>
    input FoldT inFoldArg;
     output FoldT outFoldArg;
   end FoldFunc;
-protected 
+protected
   T e;
 algorithm
   for i in 1:arrayLength(inArray) loop
