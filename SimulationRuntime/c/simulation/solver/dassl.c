@@ -504,7 +504,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   double tout = 0;
   int i = 0;
   unsigned int ui = 0;
-  int retVal = 1;
+  int retVal = 0;
   int saveJumpState;
   threadData_t *threadData = data->threadData;
 
@@ -629,7 +629,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
       data->localData = localDataBackup;
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       TRACE_POP
-      return retVal;
+      break;
     }
     else if(dasslData->idid == 5)
     {
@@ -660,7 +660,6 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
 
   } while(dasslData->idid == 1 ||
           (dasslData->idid == -1 && solverInfo->currentTime <= data->simulationInfo.stopTime));
-  retVal = 0;
 
 #if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
