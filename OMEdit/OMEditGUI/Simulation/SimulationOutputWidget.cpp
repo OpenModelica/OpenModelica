@@ -316,9 +316,9 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
   QFileInfo fileInfo(fileName);
   if (file.exists()) {
     file.open(QIODevice::ReadOnly);
-    QPlainTextEdit *pPlainTextEdit = new QPlainTextEdit(QString(file.readAll()));
-    pPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
-    mpGeneratedFilesTabWidget->addTab(pPlainTextEdit, fileInfo.fileName());
+    TextEditor *pTextEditor = new TextEditor(mpMainWindow);
+    pTextEditor->setPlainText(QString(file.readAll()));
+    mpGeneratedFilesTabWidget->addTab(pTextEditor, fileInfo.fileName());
     file.close();
   }
 }

@@ -50,7 +50,8 @@ class TextEditor : public BaseEditor
 {
   Q_OBJECT
 public:
-  TextEditor(ModelWidget *pParent);
+  TextEditor(ModelWidget *pModelWidget);
+  TextEditor(MainWindow *pMainWindow);
 private slots:
   virtual void showContextMenu(QPoint point);
 public slots:

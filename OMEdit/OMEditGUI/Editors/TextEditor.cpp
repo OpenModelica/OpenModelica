@@ -37,10 +37,18 @@
 
 #include "TextEditor.h"
 
-TextEditor::TextEditor(ModelWidget *pParent)
-  : BaseEditor(pParent)
+TextEditor::TextEditor(ModelWidget *pModelWidget)
+  : BaseEditor(pModelWidget)
 {
+  //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
+  setFont(QFont(Helper::monospacedFontInfo.family()));
+}
 
+TextEditor::TextEditor(MainWindow *pMainWindow)
+  : BaseEditor(pMainWindow)
+{
+  //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
+  setFont(QFont(Helper::monospacedFontInfo.family()));
 }
 
 /*!
