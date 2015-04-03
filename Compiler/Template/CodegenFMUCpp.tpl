@@ -489,7 +489,7 @@ template accessVar(SimCode simCode, String direction, SimVar simVar, Integer off
 match simVar
   case SIMVAR(__) then
   let descName = System.stringReplace(crefStrNoUnderscore(name), "$", "_D_")
-  let description = if comment then '// <%descName%> "<%comment%>"' else '// <%descName%>'
+  let description = if comment then '/* <%descName%> "<%comment%>" */' else '/* <%descName%> */'
   let cppName = getCppName(simCode, simVar)
   let cppSign = getCppSign(simCode, simVar)
   if stringEq(direction, "get") then
@@ -534,7 +534,7 @@ template accessVecVar(String direction, SimVar simVar, Integer offset, String ve
 match simVar
   case SIMVAR(__) then
   let descName = System.stringReplace(crefStrNoUnderscore(name), "$", "_D_")
-  let description = if comment then '// <%descName%> "<%comment%>"' else '// <%descName%>'
+  let description = if comment then '/* <%descName%> "<%comment%>" */' else '/* <%descName%> */'
   if stringEq(crefStr(name), "$dummy") then
   <<>>
   else if stringEq(crefStr(name), "der($dummy)") then
