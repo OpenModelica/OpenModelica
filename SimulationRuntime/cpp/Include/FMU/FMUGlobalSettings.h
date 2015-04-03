@@ -34,9 +34,9 @@ public:
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "euler"; }
     virtual void setSelectedSolver(string) {}
-    virtual string    getSelectedLinSolver() { return "umfpack"; }
+    virtual string    getSelectedLinSolver() { return "kinsol"; }
     virtual void setSelectedLinSolver(string) {}
-    virtual string    getSelectedNonLinSolver() { return "umfpack"; }
+    virtual string    getSelectedNonLinSolver() { return "kinsol"; }
     virtual void setSelectedNonLinSolver(string) {}
     virtual void load(std::string xml_file) {};
     virtual void setResultsFileName(string) {}
