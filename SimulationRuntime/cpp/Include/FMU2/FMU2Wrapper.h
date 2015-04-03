@@ -87,7 +87,8 @@ class FMU2Wrapper
                                      fmi2Real startTime,
                                      fmi2Boolean stopTimeDefined,
                                      fmi2Real stopTime);
-  virtual fmi2Status initialize     ();
+  virtual fmi2Status enterInitializationMode();
+  virtual fmi2Status exitInitializationMode();
   virtual fmi2Status terminate      ();
   virtual fmi2Status reset          ();
 

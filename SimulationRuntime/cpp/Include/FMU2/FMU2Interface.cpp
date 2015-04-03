@@ -135,7 +135,7 @@ extern "C"
     FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
     LOG_CALL(w, "fmi2EnterInitializationMode");
     try {
-      return w->initialize();
+      return w->enterInitializationMode();
     }
     CATCH_EXCEPTION(w);
   }
@@ -144,7 +144,10 @@ extern "C"
   {
     FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
     LOG_CALL(w, "fmi2ExitInitializationMode");
-    return fmi2OK;
+    try {
+      return w->exitInitializationMode();
+    }
+    CATCH_EXCEPTION(w);
   }
 
   fmi2Status fmi2Terminate(fmi2Component c)

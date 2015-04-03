@@ -132,6 +132,40 @@ fmi2Status FMU2Wrapper::setupExperiment(fmi2Boolean toleranceDefined,
   return setTime(startTime);
 }
 
+fmi2Status FMU2Wrapper::enterInitializationMode()
+{
+  _model->setInitial(true);
+  _need_update = true;
+  return fmi2OK;
+}
+
+fmi2Status FMU2Wrapper::exitInitializationMode()
+{
+  if (_need_update)
+    updateModel();
+  _model->saveAll();
+  _model->setInitial(false);
+  return fmi2OK;
+}
+
+fmi2Status FMU2Wrapper::terminate()
+{
+  return fmi2OK;
+}
+
+fmi2Status FMU2Wrapper::reset()
+{
+  return fmi2OK;
+}
+
+void FMU2Wrapper::updateModel()
+{
+  if (_model->initial())
+    _model->initEquations(); // initial equations and calculated parameters
+  _model->evaluateAll();     // derivatives and algebraic variables
+  _need_update = false;
+}
+
 fmi2Status FMU2Wrapper::setTime(fmi2Real time)
 {
   _model->setTime(time);
@@ -154,19 +188,10 @@ fmi2Status FMU2Wrapper::getContinuousStates(fmi2Real states[], size_t nx)
 
 fmi2Status FMU2Wrapper::getDerivatives(fmi2Real derivatives[], size_t nx)
 {
-  updateModel();
+  if (_need_update)
+    updateModel();
   _model->getRHS(derivatives);
   return fmi2OK;
-}
-
-
-void FMU2Wrapper::updateModel()
-{
-  if (!_need_update)
-    return;
-
-  _model->evaluateAll(); // This will calculate the values for derivate variables, algebraic variables
-  _need_update = false;
 }
 
 fmi2Status FMU2Wrapper::completedIntegratorStep(fmi2Boolean noSetFMUStatePriorToCurrentPoint,
@@ -220,31 +245,10 @@ fmi2Status FMU2Wrapper::setString(const fmi2ValueReference vr[], size_t nvr,
   return fmi2OK;
 }
 
-fmi2Status FMU2Wrapper::initialize()
-{
-  _model->setInitial(true);
-  _model->initEquations(); // initialize dependent variables
-
-  bool restart = true;
-  int iter = 0;
-  while (restart && !(iter++ > 10)) {
-    _model->evaluateAll(IContinuous::ALL);
-    restart = _model->checkForDiscreteEvents();
-  }
-
-  _model->saveAll();
-   int dim = _model->getDimZeroFunc();
-   for (int i = 0; i < dim; i++)
-     _model->getCondition(i);
-
-  _model->setInitial(false);
-  _need_update = false;
-  return fmi2OK;
-}
-
 fmi2Status FMU2Wrapper::getEventIndicators(fmi2Real eventIndicators[], size_t ni)
 {
-  updateModel();
+  if (_need_update)
+    updateModel();
   bool conditions[NUMBER_OF_EVENT_INDICATORS];
   _model->getConditions(conditions);
   _model->getZeroFunc(eventIndicators);
@@ -257,7 +261,8 @@ fmi2Status FMU2Wrapper::getEventIndicators(fmi2Real eventIndicators[], size_t ni
 fmi2Status FMU2Wrapper::getReal(const fmi2ValueReference vr[], size_t nvr,
                                 fmi2Real value[])
 {
-  updateModel();
+  if (_need_update)
+    updateModel();
   _model->getReal(vr, nvr, value);
   return fmi2OK;
 }
@@ -265,7 +270,8 @@ fmi2Status FMU2Wrapper::getReal(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::getInteger(const fmi2ValueReference vr[], size_t nvr,
                                    fmi2Integer value[])
 {
-  updateModel();
+  if (_need_update)
+    updateModel();
   _model->getInteger(vr, nvr, value);
   return fmi2OK;
 }
@@ -273,7 +279,8 @@ fmi2Status FMU2Wrapper::getInteger(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::getBoolean(const fmi2ValueReference vr[], size_t nvr,
                                    fmi2Boolean value[])
 {
-  updateModel();
+  if (_need_update)
+    updateModel();
   _model->getBoolean(vr, nvr, value);
   return fmi2OK;
 }
@@ -287,7 +294,8 @@ fmi2Status FMU2Wrapper::getString(const fmi2ValueReference vr[], size_t nvr,
              nvr, _string_buffer.size());
     return fmi2Error;
   }
-  updateModel();
+  if (_need_update)
+    updateModel();
   _model->getString(vr, nvr, &_string_buffer[0]);
   for (size_t i = 0; i < nvr; i++)
     value[i] = _string_buffer[i].c_str(); // convert to fmi2String
@@ -297,7 +305,8 @@ fmi2Status FMU2Wrapper::getString(const fmi2ValueReference vr[], size_t nvr,
 
 fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
 {
-  updateModel();
+  if (_need_update)
+    updateModel();
   // Check if an Zero Crossings happend
   double f[NUMBER_OF_EVENT_INDICATORS];
   bool events[NUMBER_OF_EVENT_INDICATORS];
@@ -318,20 +327,8 @@ fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
 
 fmi2Status FMU2Wrapper::getNominalsOfContinuousStates(fmi2Real x_nominal[], size_t nx)
 {
-  updateModel();
   for (int i = 0; i < nx; i++)
     x_nominal[i] = 1.0;  // TODO
   return fmi2OK;
 }
 
-fmi2Status FMU2Wrapper::terminate()
-{
-  return fmi2OK;
-}
-
-fmi2Status FMU2Wrapper::reset()
-{
-  // Note: initialize() leeks memory and does not appear needed here
-  //_model->initialize();
-  return fmi2OK;
-}
