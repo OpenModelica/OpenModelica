@@ -162,7 +162,7 @@ fmi2Status FMU2Wrapper::getDerivatives(fmi2Real derivatives[], size_t nx)
 
 void FMU2Wrapper::updateModel()
 {
-  if(!_need_update)
+  if (!_need_update)
     return;
 
   _model->evaluateAll(); // This will calculate the values for derivate variables, algebraic variables
@@ -225,20 +225,17 @@ fmi2Status FMU2Wrapper::initialize()
   _model->setInitial(true);
   _model->initEquations(); // initialize dependent variables
 
-  bool restart=true;
-  int iter=0;
-  while(restart && !(iter++ > 10))
-  {
+  bool restart = true;
+  int iter = 0;
+  while (restart && !(iter++ > 10)) {
     _model->evaluateAll(IContinuous::ALL);
     restart = _model->checkForDiscreteEvents();
   }
 
   _model->saveAll();
    int dim = _model->getDimZeroFunc();
-   for(int i=0;i<dim;i++)
-   {
+   for (int i = 0; i < dim; i++)
      _model->getCondition(i);
-   }
 
   _model->setInitial(false);
   _need_update = false;
@@ -251,8 +248,8 @@ fmi2Status FMU2Wrapper::getEventIndicators(fmi2Real eventIndicators[], size_t ni
   bool conditions[NUMBER_OF_EVENT_INDICATORS];
   _model->getConditions(conditions);
   _model->getZeroFunc(eventIndicators);
-  for(int i = 0; i < ni; i++)
-    if(!conditions[i]) eventIndicators[i] = -eventIndicators[i];
+  for (int i = 0; i < ni; i++)
+    if (!conditions[i]) eventIndicators[i] = -eventIndicators[i];
   return fmi2OK;
 }
 
@@ -305,7 +302,7 @@ fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
   double f[NUMBER_OF_EVENT_INDICATORS];
   bool events[NUMBER_OF_EVENT_INDICATORS];
   _model->getZeroFunc(f);
-  for(int i=0; i<NUMBER_OF_EVENT_INDICATORS; i++)
+  for (int i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
     events[i] = f[i] >= 0;
   // Handle Zero Crossings if nessesary
   bool state_vars_reinitialized = _model->handleSystemEvents(events);
@@ -322,7 +319,7 @@ fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
 fmi2Status FMU2Wrapper::getNominalsOfContinuousStates(fmi2Real x_nominal[], size_t nx)
 {
   updateModel();
-  for(int i = 0; i < nx; ++i)
+  for (int i = 0; i < nx; i++)
     x_nominal[i] = 1.0;  // TODO
   return fmi2OK;
 }
