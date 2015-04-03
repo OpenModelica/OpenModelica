@@ -122,7 +122,6 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
   return ret;
 }
 
-/*  independent variables and re-initialization of caching */
 fmi2Status FMU2Wrapper::setupExperiment(fmi2Boolean toleranceDefined,
                                         fmi2Real tolerance,
                                         fmi2Real startTime,
@@ -142,7 +141,6 @@ fmi2Status FMU2Wrapper::setTime(fmi2Real time)
 
 fmi2Status FMU2Wrapper::setContinuousStates(const fmi2Real states[], size_t nx)
 {
-  // to set states do the folowing
   _model->setContinuousStates(states);
   _need_update = true;
   return fmi2OK;
@@ -164,7 +162,6 @@ fmi2Status FMU2Wrapper::getDerivatives(fmi2Real derivatives[], size_t nx)
 
 void FMU2Wrapper::updateModel()
 {
-  // only call update if, time, states or imputs changed
   if(!_need_update)
     return;
 
@@ -223,11 +220,10 @@ fmi2Status FMU2Wrapper::setString(const fmi2ValueReference vr[], size_t nvr,
   return fmi2OK;
 }
 
-/*  of the model equations */
 fmi2Status FMU2Wrapper::initialize()
 {
-  // TODO: here is some code duplication to SimulationRuntime/cpp/Core/Solver/Initailization.cpp
   _model->setInitial(true);
+  _model->initEquations(); // initialize dependent variables
 
   bool restart=true;
   int iter=0;
