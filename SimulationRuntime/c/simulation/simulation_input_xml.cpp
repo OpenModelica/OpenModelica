@@ -837,7 +837,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     infoStreamPrint(LOG_SOLVER, 0, "read override values: %s", overrideStr);
     /* fix overrideStr to contain | instead of , for splitting */
     parseVariableStr(overrideStr);
-    char *p = strtok(overrideStr, "|");
+    char *p = strtok(overrideStr, "!");
 
     while(p)
     {
@@ -866,7 +866,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
       infoStreamPrint(LOG_SOLVER, 0, "override %s = %s", key.c_str(), value.c_str());
 
       // move to next
-      p = strtok(NULL, "|");
+      p = strtok(NULL, "!");
     }
 
     free(overrideStr);

@@ -773,7 +773,7 @@ static void writeOutputVars(char* names, DATA* data)
   char *p = NULL;
   /* fix names to contain | instead of , for splitting */
   parseVariableStr(names);
-  p = strtok(names, "|");
+  p = strtok(names, "!");
 
   fprintf(stdout, "time=%.20g", data->localData[0]->timeValue);
 
@@ -838,7 +838,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA(data->simulationInfo.stringParameter[i]));
 
     /* move to next */
-    p = strtok(NULL, "|");
+    p = strtok(NULL, "!");
   }
   fprintf(stdout, "\n"); fflush(stdout);
 }

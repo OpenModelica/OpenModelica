@@ -1022,7 +1022,7 @@ void parseVariableStr(char* variableStr)
   {
     if (variableStr[i] == '[') { insideArray = 1; }
     if (variableStr[i] == ']') { insideArray = 0; }
-    if ((insideArray == 0) && (variableStr[i] == ',')) { variableStr[i] = '|'; }
+    if ((insideArray == 0) && (variableStr[i] == ',')) { variableStr[i] = '!'; }
   }
 }
 
