@@ -770,7 +770,10 @@ int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
 static void writeOutputVars(char* names, DATA* data)
 {
   int i = 0;
-  char *p = strtok(names, ",");
+  char *p = NULL;
+  /* fix names to contain | instead of , for splitting */
+  parseVariableStr(names);
+  p = strtok(names, "|");
 
   fprintf(stdout, "time=%.20g", data->localData[0]->timeValue);
 
@@ -835,7 +838,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA(data->simulationInfo.stringParameter[i]));
 
     /* move to next */
-    p = strtok(NULL, ",");
+    p = strtok(NULL, "|");
   }
   fprintf(stdout, "\n"); fflush(stdout);
 }

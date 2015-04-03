@@ -1014,4 +1014,16 @@ void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_wa
 void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_simulation;
 
+void parseVariableStr(char* variableStr)
+{
+  /* TODO! FIXME!: support also quoted identifiers containing comma: , */
+  unsigned int i = 0, insideArray = 0;
+  for (i = 0; i < strlen(variableStr); i++)
+  {
+    if (variableStr[i] == '[') { insideArray = 1; }
+    if (variableStr[i] == ']') { insideArray = 0; }
+    if ((insideArray == 0) && (variableStr[i] == ',')) { variableStr[i] = '|'; }
+  }
+}
+
 } // extern "C"
