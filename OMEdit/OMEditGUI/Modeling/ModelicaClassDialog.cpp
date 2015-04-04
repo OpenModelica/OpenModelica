@@ -776,11 +776,11 @@ void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
   \param nameStructure - qualified name of Modelica class
   \param pParent - pointer to MainWindow
   */
-CopyClassDialog::CopyClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow)
+DuplicateClassDialog::DuplicateClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint), mpLibraryTreeNode(pLibraryTreeNode), mpMainWindow(pMainWindow)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString(Helper::applicationName).append(" - Copy ").append(mpLibraryTreeNode->getNameStructure()));
+  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(Helper::duplicate).arg(mpLibraryTreeNode->getNameStructure()));
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
   mpPathLabel = new Label(Helper::path);
@@ -791,7 +791,7 @@ CopyClassDialog::CopyClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(copyClass()));
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(duplicateClass()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
@@ -811,25 +811,26 @@ CopyClassDialog::CopyClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *
   setLayout(pMainLayout);
 }
 
-void CopyClassDialog::browsePath()
+void DuplicateClassDialog::browsePath()
 {
   LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Path"), mpPathTextBox, mpMainWindow->getLibraryTreeWidget());
   pLibraryBrowseDialog->exec();
 }
 
-void CopyClassDialog::copyClass()
+/*!
+ * \brief DuplicateClassDialog::duplicateClass
+ * Duplicates the class.
+ */
+void DuplicateClassDialog::duplicateClass()
 {
-  if (mpNameTextBox->text().isEmpty())
-  {
+  if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("class"), Helper::ok);
     return;
   }
   /* if path class doesn't exist. */
-  if (!mpPathTextBox->text().isEmpty())
-  {
-    if (!mpMainWindow->getOMCProxy()->existClass(mpPathTextBox->text()))
-    {
+  if (!mpPathTextBox->text().isEmpty()) {
+    if (!mpMainWindow->getOMCProxy()->existClass(mpPathTextBox->text())) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpPathTextBox->text()), Helper::ok);
       return;
@@ -843,7 +844,7 @@ void CopyClassDialog::copyClass()
                           .arg((mpPathTextBox->text().isEmpty() ? "Top Level" : mpPathTextBox->text())), Helper::ok);
     return;
   }
-  // if everything is fine then copy the class.
+  // if everything is fine then duplicate the class.
   if (mpMainWindow->getOMCProxy()->copyClass(mpLibraryTreeNode->getNameStructure(), mpNameTextBox->text(), mpPathTextBox->text())) {
     LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
     LibraryTreeNode *pLibraryTreeNode;

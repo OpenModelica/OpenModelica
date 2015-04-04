@@ -186,6 +186,8 @@ QString Helper::loading;
 QString Helper::question;
 QString Helper::search;
 QString Helper::unloadClass;
+QString Helper::duplicate;
+QString Helper::duplicateTip;
 QString Helper::unloadClassTip;
 QString Helper::unloadXMLTip;
 QString Helper::refresh;
@@ -362,6 +364,8 @@ void Helper::initHelperVariables()
   Helper::loading = tr("Loading");
   Helper::question = tr("Question");
   Helper::search = tr("Search");
+  Helper::duplicate = tr("Duplicate");
+  Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::unloadXMLTip = tr("Unload the XML file");

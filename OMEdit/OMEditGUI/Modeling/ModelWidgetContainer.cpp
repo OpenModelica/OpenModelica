@@ -884,8 +884,8 @@ void GraphicsView::createActions()
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
   // Duplicate Action
-  mpDuplicateAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), tr("Duplicate"), this);
-  mpDuplicateAction->setStatusTip(tr("Duplicates the item"));
+  mpDuplicateAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
+  mpDuplicateAction->setStatusTip(Helper::duplicateTip);
   mpDuplicateAction->setShortcut(QKeySequence("Ctrl+d"));
   mpDuplicateAction->setDisabled(isSystemLibrary);
   // Rotate ClockWise Action

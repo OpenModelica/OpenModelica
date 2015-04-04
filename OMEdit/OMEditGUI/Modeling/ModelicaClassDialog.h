@@ -146,11 +146,11 @@ private slots:
 };
 
 class LibraryTreeNode;
-class CopyClassDialog : public QDialog
+class DuplicateClassDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CopyClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow);
+  DuplicateClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow);
 private:
   LibraryTreeNode *mpLibraryTreeNode;
   MainWindow *mpMainWindow;
@@ -164,7 +164,7 @@ private:
   QDialogButtonBox *mpButtonBox;
 public slots:
   void browsePath();
-  void copyClass();
+  void duplicateClass();
 };
 
 class RenameClassDialog : public QDialog

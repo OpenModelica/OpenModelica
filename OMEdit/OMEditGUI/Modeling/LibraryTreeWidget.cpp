@@ -549,9 +549,12 @@ void LibraryTreeWidget::createActions()
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(simulationSetup()));
   // copy action
-  mpCopyClassAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::copy, this);
-  mpCopyClassAction->setStatusTip(tr("Creates a copy of the class"));
-  connect(mpCopyClassAction, SIGNAL(triggered()), SLOT(copyClass()));
+  /* Ticket #3265
+   * Changed the name from Copy to Duplicate.
+   */
+  mpDuplicateClassAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
+  mpDuplicateClassAction->setStatusTip(Helper::duplicateTip);
+  connect(mpDuplicateClassAction, SIGNAL(triggered()), SLOT(duplicateClass()));
   // unload Action
   mpUnloadClassAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
@@ -1533,7 +1536,7 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
         /* If item is OpenModelica or part of it or is search tree item then don't show the unload for it. */
         if (!((StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()).compare("OpenModelica") == 0)  || isSearchedTree())) {
           menu.addSeparator();
-          menu.addAction(mpCopyClassAction);
+          menu.addAction(mpDuplicateClassAction);
           menu.addAction(mpUnloadClassAction);
           /* Only used for development testing. */
           /*menu.addAction(mpRefreshAction);*/
@@ -1652,14 +1655,19 @@ void LibraryTreeWidget::checkAllModels()
     mpMainWindow->checkAllModels(pLibraryTreeNode);
 }
 
-void LibraryTreeWidget::copyClass()
+/*!
+ * \brief LibraryTreeWidget::duplicateClass
+ * Opens the DuplicateClassDialog.
+ */
+void LibraryTreeWidget::duplicateClass()
 {
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
-  if (selectedItemsList.isEmpty())
+  if (selectedItemsList.isEmpty()) {
     return;
+  }
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode) {
-    CopyClassDialog *pCopyClassDialog = new CopyClassDialog(pLibraryTreeNode, mpMainWindow);
+    DuplicateClassDialog *pCopyClassDialog = new DuplicateClassDialog(pLibraryTreeNode, mpMainWindow);
     pCopyClassDialog->exec();
   }
 }

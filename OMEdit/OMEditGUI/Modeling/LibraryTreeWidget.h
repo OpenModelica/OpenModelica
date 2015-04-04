@@ -204,7 +204,7 @@ private:
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
   QAction *mpSimulationSetupAction;
-  QAction *mpCopyClassAction;
+  QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpUnloadTextFileAction;
   QAction *mpUnloadXMLFileAction;
@@ -235,7 +235,7 @@ public slots:
   void instantiateModel();
   void checkModel();
   void checkAllModels();
-  void copyClass();
+  void duplicateClass();
   void unloadClass();
   void unloadTextFile();
   void unloadXMLFile();

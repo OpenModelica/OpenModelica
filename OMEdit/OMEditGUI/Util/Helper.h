@@ -187,6 +187,8 @@ public:
   static QString loading;
   static QString question;
   static QString search;
+  static QString duplicate;
+  static QString duplicateTip;
   static QString unloadClass;
   static QString unloadClassTip;
   static QString unloadXMLTip;
