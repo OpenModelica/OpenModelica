@@ -193,7 +193,6 @@ private:
   QTimer *mpAutoSaveTimer;
   // File Menu
   QAction *mpNewModelicaClassAction;
-  QAction *mpNewTLMFileAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
@@ -284,7 +283,6 @@ private:
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void createNewModelicaClass();
-  void createNewTLMFile();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();

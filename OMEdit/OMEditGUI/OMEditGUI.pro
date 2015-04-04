@@ -72,7 +72,6 @@ SOURCES += main.cpp \
   Editors/TransformationsEditor.cpp \
   Editors/DebuggerSourceEditor.cpp \
   Editors/TextEditor.cpp \
-  Editors/TLMEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
@@ -129,7 +128,6 @@ HEADERS  += Util/backtrace.h \
   Editors/TransformationsEditor.h \
   Editors/DebuggerSourceEditor.h \
   Editors/TextEditor.h \
-  Editors/TLMEditor.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \

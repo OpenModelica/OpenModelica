@@ -286,8 +286,7 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
  */
 void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 {
-  const ModelicaTabSettings *pModelicaTabSettings;
-  pModelicaTabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
+  const ModelicaTabSettings modelicaTabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   // Indent or unindent the selected lines
@@ -305,13 +304,13 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
     } else {
       for (QTextBlock block = startBlock; block != endBlock; block = block.next()) {
         QString text = block.text();
-        int indentPosition = pModelicaTabSettings->lineIndentPosition(text);
+        int indentPosition = modelicaTabSettings.lineIndentPosition(text);
         if (!doIndent && !indentPosition) {
-          indentPosition = pModelicaTabSettings->firstNonSpace(text);
+          indentPosition = modelicaTabSettings.firstNonSpace(text);
         }
-        int targetColumn = pModelicaTabSettings->indentedColumn(pModelicaTabSettings->columnAt(text, indentPosition), doIndent);
+        int targetColumn = modelicaTabSettings.indentedColumn(modelicaTabSettings.columnAt(text, indentPosition), doIndent);
         cursor.setPosition(block.position() + indentPosition);
-        cursor.insertText(pModelicaTabSettings->indentationString(0, targetColumn));
+        cursor.insertText(modelicaTabSettings.indentationString(0, targetColumn));
         cursor.setPosition(block.position());
         cursor.setPosition(block.position() + indentPosition, QTextCursor::KeepAnchor);
         cursor.removeSelectedText();
@@ -324,13 +323,13 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
   QTextBlock block = cursor.block();
   QString text = block.text();
   int indentPosition = cursor.positionInBlock();
-  int spaces = pModelicaTabSettings->spacesLeftFromPosition(text, indentPosition);
-  int startColumn = pModelicaTabSettings->columnAt(text, indentPosition - spaces);
-  int targetColumn = pModelicaTabSettings->indentedColumn(pModelicaTabSettings->columnAt(text, indentPosition), doIndent);
+  int spaces = modelicaTabSettings.spacesLeftFromPosition(text, indentPosition);
+  int startColumn = modelicaTabSettings.columnAt(text, indentPosition - spaces);
+  int targetColumn = modelicaTabSettings.indentedColumn(modelicaTabSettings.columnAt(text, indentPosition), doIndent);
   cursor.setPosition(block.position() + indentPosition);
   cursor.setPosition(block.position() + indentPosition - spaces, QTextCursor::KeepAnchor);
   cursor.removeSelectedText();
-  cursor.insertText(pModelicaTabSettings->indentationString(startColumn, targetColumn));
+  cursor.insertText(modelicaTabSettings.indentationString(startColumn, targetColumn));
   cursor.endEditBlock();
   setTextCursor(cursor);
 }

@@ -53,7 +53,6 @@
 #include "Utilities.h"
 #include "ModelicaTextEditor.h"
 #include "TextEditor.h"
-#include "TLMEditor.h"
 
 class ModelWidget;
 class ComponentInfo;
@@ -284,8 +283,6 @@ class ModelWidgetContainer;
 class ModelicaTextEditor;
 class ModelicaTextHighlighter;
 class TextEditor;
-class TLMEditor;
-class TLMHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
@@ -297,7 +294,6 @@ public:
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
   BaseEditor* getEditor() {return mpEditor;}
-  TLMEditor* getTLMEditor() {return mpTLMEditor;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
@@ -332,8 +328,6 @@ private:
   GraphicsScene *mpIconGraphicsScene;
   BaseEditor *mpEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
-  TLMEditor *mpTLMEditor;
-  TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
 private slots:
   void showIconView(bool checked);

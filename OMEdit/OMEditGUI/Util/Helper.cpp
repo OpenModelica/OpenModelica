@@ -123,8 +123,6 @@ QString Helper::REAL = QString("Real");
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
-QString Helper::newTLMFile;
-QString Helper::createNewTLMFile;
 QString Helper::findClasses;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
@@ -301,8 +299,6 @@ void Helper::initHelperVariables()
   /* Global translated variables */
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
-  Helper::newTLMFile = tr("New TLM File");
-  Helper::createNewTLMFile = tr("Create New TLM File");
   Helper::findClasses = tr("Find Classes");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");

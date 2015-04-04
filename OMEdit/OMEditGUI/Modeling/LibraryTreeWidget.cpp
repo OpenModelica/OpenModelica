@@ -412,8 +412,6 @@ QIcon LibraryTreeNode::getModelicaNodeIcon()
 {
   if (mLibraryType == LibraryTreeNode::Text) {
     return QIcon(":/Resources/icons/txt.svg");
-  } else if (mLibraryType == LibraryTreeNode::TLM) {
-    return QIcon(":/Resources/icons/class-icon.svg");
   } else {
     switch (getRestriction()) {
       case StringHandler::Model:
@@ -563,10 +561,6 @@ void LibraryTreeWidget::createActions()
   mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadTextFileAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
-  // unload xml file Action
-  mpUnloadXMLFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
-  mpUnloadXMLFileAction->setStatusTip(Helper::unloadXMLTip);
-  connect(mpUnloadXMLFileAction, SIGNAL(triggered()), SLOT(unloadXMLFile()));
   // refresh Action
   mpRefreshAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::refresh, this);
   mpRefreshAction->setStatusTip(tr("Refresh the Modelica class"));
@@ -913,34 +907,6 @@ bool LibraryTreeWidget::unloadTextFile(LibraryTreeNode *pLibraryTreeNode, bool a
   return true;
 }
 
-bool LibraryTreeWidget::unloadXMLFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion)
-{
-  if (askQuestion)
-  {
-    QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeNode->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer)
-    {
-      case QMessageBox::Yes:
-        // Yes was clicked. Don't return.
-        break;
-      case QMessageBox::No:
-        // No was clicked. Return
-        return false;
-      default:
-        // should never be reached
-        return false;
-    }
-  }
-  unloadLibraryTreeNodeAndModelWidget(pLibraryTreeNode);
-  return true;
-}
-
 void LibraryTreeWidget::unloadClassHelper(LibraryTreeNode *pLibraryTreeNode)
 {
   for (int i = 0 ; i < pLibraryTreeNode->childCount(); i++)
@@ -975,8 +941,6 @@ bool LibraryTreeWidget::saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
   mpMainWindow->showProgressBar();
   if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
     result = saveModelicaLibraryTreeNode(pLibraryTreeNode);
-  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
-    result = saveXMLLibraryTreeNode(pLibraryTreeNode);
   } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
     result = saveTextLibraryTreeNode(pLibraryTreeNode);
   } else {
@@ -1170,45 +1134,6 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
     textStream.setCodec(Helper::utf8.toStdString().data());
     textStream.setGenerateByteOrderMark(false);
     textStream << pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
-    file.close();
-    /* mark the file as saved and update the labels. */
-    pLibraryTreeNode->setIsSaved(true);
-    pLibraryTreeNode->setFileName(fileName);
-    if (pLibraryTreeNode->getModelWidget())
-    {
-      pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
-      pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
-    }
-  } else {
-    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(tr("Unable to save the file. %1").arg(file.errorString())), Helper::ok);
-    return false;
-  }
-  return true;
-}
-
-bool LibraryTreeWidget::saveXMLLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
-{
-  QString fileName;
-  if (pLibraryTreeNode->getFileName().isEmpty())
-  {
-    QString name = pLibraryTreeNode->getName();
-    fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
-                                              Helper::xmlFileTypes, NULL, "xml", &name);
-    if (fileName.isEmpty())   // if user press ESC
-      return false;
-  }
-  else
-  {
-    fileName = pLibraryTreeNode->getFileName();
-  }
-
-  QFile file(fileName);
-  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    QTextStream textStream(&file);
-    textStream.setCodec(Helper::utf8.toStdString().data());
-    textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeNode->getModelWidget()->getTLMEditor()->getPlainTextEdit()->toPlainText();
     file.close();
     /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);
@@ -1548,9 +1473,6 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
       case LibraryTreeNode::Text:
         menu.addAction(mpUnloadTextFileAction);
         break;
-      case LibraryTreeNode::TLM:
-        menu.addAction(mpUnloadXMLFileAction);
-        break;
     }
     point.setY(point.y() + adjust);
     menu.exec(mapToGlobal(point));
@@ -1689,16 +1611,6 @@ void LibraryTreeWidget::unloadTextFile()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     unloadTextFile(pLibraryTreeNode);
-}
-
-void LibraryTreeWidget::unloadXMLFile()
-{
-  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
-  if (selectedItemsList.isEmpty())
-    return;
-  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
-  if (pLibraryTreeNode)
-    unloadXMLFile(pLibraryTreeNode);
 }
 
 void LibraryTreeWidget::refresh()

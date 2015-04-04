@@ -93,8 +93,7 @@ public:
   enum LibraryType {
     InvalidType, /* Used to catch errors */
     Modelica,   /* Used to represent Modelica models. */
-    Text,       /* Used to represent text based files. */
-    TLM         /* Used to represent XML files. */
+    Text       /* Used to represent text based files. */
   };
   enum SaveContentsType {
     SaveInOneFile,
@@ -181,7 +180,6 @@ public:
   void showProtectedClasses(bool enable);
   bool unloadClass(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
   bool unloadTextFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
-  bool unloadXMLFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
   void unloadClassHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
@@ -207,14 +205,12 @@ private:
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpUnloadTextFileAction;
-  QAction *mpUnloadXMLFileAction;
   QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   bool saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   bool saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
-  bool saveXMLLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibraryTreeNode);
   bool setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath);
@@ -238,7 +234,6 @@ public slots:
   void duplicateClass();
   void unloadClass();
   void unloadTextFile();
-  void unloadXMLFile();
   void refresh();
   void exportModelFMU();
   void exportModelXML();

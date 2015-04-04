@@ -1020,14 +1020,6 @@ void MainWindow::createNewModelicaClass()
   pModelicaClassDialog->exec();
 }
 
-void MainWindow::createNewTLMFile()
-{
-  LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode("TLM", false);
-  pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
-  mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-  mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode);
-}
-
 void MainWindow::openModelicaFile()
 {
   QStringList fileNames;
@@ -1871,11 +1863,6 @@ void MainWindow::createActions()
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
-  // create new TLM file action
-  mpNewTLMFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newTLMFile, this);
-  mpNewTLMFileAction->setStatusTip(Helper::createNewTLMFile);
-  //mpNewTLMFileAction->setShortcut(QKeySequence("Ctrl+x"));
-  connect(mpNewTLMFileAction, SIGNAL(triggered()), SLOT(createNewTLMFile()));
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -2189,7 +2176,6 @@ void MainWindow::createMenus()
   pFileMenu->setTitle(tr("&File"));
   // add actions to File menu
   pFileMenu->addAction(mpNewModelicaClassAction);
-  //pFileMenu->addAction(mpNewTLMFileAction);
   pFileMenu->addAction(mpOpenModelicaFileAction);
   pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   pFileMenu->addAction(mpLoadModelicaLibraryAction);

@@ -956,7 +956,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   // instantiate the model
   QPlainTextEdit *pPlainTextEdit = new QPlainTextEdit(informationText);
   if (modelicaTextHighlighter) {
-    ModelicaTextHighlighter *pModelicaHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextSettings(),
+    ModelicaTextHighlighter *pModelicaHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
                                                                                 pPlainTextEdit->document());
     Q_UNUSED(pModelicaHighlighter);
   }

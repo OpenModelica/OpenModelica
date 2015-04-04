@@ -2003,7 +2003,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     // modelica text editor
     mpEditor = new ModelicaTextEditor(this);
     MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(),
+    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
                                                             mpEditor->getPlainTextEdit()->document());
     mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
     connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
@@ -2032,29 +2032,6 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
     // set layout
     pMainLayout->addWidget(mpModelStatusBar);
-  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
-    // icon graphics framework
-    mpIconGraphicsScene = 0;
-    mpIconGraphicsView = 0;
-    // diagram graphics framework
-    mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
-    mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
-    mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
-    mpDiagramGraphicsView->hide();
-    // create an xml editor for TLM
-    mpEditor = new TLMEditor(this);
-    mpEditor->getPlainTextEdit()->setPlainText(text);
-    MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-    mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(), mpEditor->getPlainTextEdit()->document());
-    mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-    connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
-    mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
-    mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
-    mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
-    mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
-    // set layout
-    pMainLayout->addWidget(mpModelStatusBar);
-    pMainLayout->addWidget(mpDiagramGraphicsView, 1);
   }
   pMainLayout->addWidget(mpEditor, 1);
 }
@@ -2759,8 +2736,6 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   }
   if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Text) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
-  } else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM) {
-    pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   if (!checkPreferedView || pModelWidget->getLibraryTreeNode()->getLibraryType() != LibraryTreeNode::Modelica) {
     return;
@@ -3069,8 +3044,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       enabled = true;
     } else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Text) {
       enabled = true;
-    } else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM) {
-      enabled = true;
     } else {
       enabled = false;
     }
@@ -3092,8 +3065,6 @@ void ModelWidgetContainer::saveModelWidget()
   if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
     saveModelicaModelWidget(pModelWidget);
   } else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
-    saveTextModelWidget(pModelWidget);
-  } else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
     saveTextModelWidget(pModelWidget);
   }
 }

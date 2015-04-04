@@ -122,6 +122,135 @@ bool isComment(const QString &text,
 
 }
 
+/*!
+ * \class ModelicaTabSettings
+ * \brief Defines the tabs and indentation settings for the Modelica Text.
+ */
+ModelicaTabSettings::ModelicaTabSettings()
+  : mTabPolicy(SpacesOnlyTabPolicy), mTabSize(4), mIndentSize(2)
+{
+
+}
+
+/*!
+ * \brief ModelicaTabSettings::lineIndentPosition
+ * Returns the lines indent position.
+ * \param text
+ * \return
+ */
+int ModelicaTabSettings::lineIndentPosition(const QString &text) const
+{
+  int i = 0;
+  while (i < text.size()) {
+    if (!text.at(i).isSpace()) {
+      break;
+    }
+    ++i;
+  }
+  int column = columnAt(text, i);
+  return i - (column % mIndentSize);
+}
+
+/*!
+ * \brief ModelicaTabSettings::columnAt
+ * \param text
+ * \param position
+ * \return
+ */
+int ModelicaTabSettings::columnAt(const QString &text, int position) const
+{
+  int column = 0;
+  for (int i = 0; i < position; ++i) {
+    if (text.at(i) == QLatin1Char('\t')) {
+      column = column - (column % mTabSize) + mTabSize;
+    } else {
+      ++column;
+    }
+  }
+  return column;
+}
+
+/*!
+ * \brief ModelicaTabSettings::indentedColumn
+ * \param column
+ * \param doIndent
+ * \return
+ */
+int ModelicaTabSettings::indentedColumn(int column, bool doIndent) const
+{
+  int aligned = (column / mIndentSize) * mIndentSize;
+  if (doIndent) {
+    return aligned + mIndentSize;
+  }
+  if (aligned < column) {
+    return aligned;
+  }
+  return qMax(0, aligned - mIndentSize);
+}
+
+/*!
+ * \brief ModelicaTabSettings::indentationString
+ * \param startColumn
+ * \param targetColumn
+ * \param block
+ * \return
+ */
+QString ModelicaTabSettings::indentationString(int startColumn, int targetColumn) const
+{
+  targetColumn = qMax(startColumn, targetColumn);
+  if (mTabPolicy == SpacesOnlyTabPolicy) {
+    return QString(targetColumn - startColumn, QLatin1Char(' '));
+  }
+
+  QString s;
+  int alignedStart = startColumn - (startColumn % mTabSize) + mTabSize;
+  if (alignedStart > startColumn && alignedStart <= targetColumn) {
+    s += QLatin1Char('\t');
+    startColumn = alignedStart;
+  }
+  if (int columns = targetColumn - startColumn) {
+    int tabs = columns / mTabSize;
+    s += QString(tabs, QLatin1Char('\t'));
+    s += QString(columns - tabs * mTabSize, QLatin1Char(' '));
+  }
+  return s;
+}
+
+/*!
+ * \brief ModelicaTabSettings::firstNonSpace
+ * \param text
+ * \return
+ */
+int ModelicaTabSettings::firstNonSpace(const QString &text)
+{
+  int i = 0;
+  while (i < text.size()) {
+    if (!text.at(i).isSpace()) {
+      return i;
+    }
+    ++i;
+  }
+  return i;
+}
+
+/*!
+ * \brief ModelicaTabSettings::spacesLeftFromPosition
+ * \param text
+ * \param position
+ * \return
+ */
+int ModelicaTabSettings::spacesLeftFromPosition(const QString &text, int position)
+{
+  int i = position;
+  while (i > 0) {
+    if (!text.at(i-1).isSpace()) {
+      break;
+    }
+    --i;
+  }
+  return position - i;
+}
+
 //! @class ModelicaEditor
 //! @brief An editor for Modelica Text. Subclass QPlainTextEdit
 
@@ -227,8 +356,7 @@ bool ModelicaTextEditor::validateModelicaText()
 void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
 {
   ModelicaTextDocumentLayout *docLayout = qobject_cast<ModelicaTextDocumentLayout*>(doc->documentLayout());
-  if (!docLayout)
-  {
+  if (!docLayout) {
     QTextOption opt = doc->defaultTextOption();
     opt.setTextDirection(Qt::LeftToRight);
     opt.setFlags(opt.flags() | QTextOption::IncludeTrailingSpaces | QTextOption::AddSpaceForLineAndParagraphSeparators);
@@ -489,10 +617,10 @@ void ModelicaTextEditor::toggleCommentSelection()
 //! @brief A syntax highlighter for ModelicaEditor.
 
 //! Constructor
-ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent)
-  : QSyntaxHighlighter(pParent)
+ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextEditorPage *pModelicaTextEditorPage, QTextDocument *pTextDocument)
+  : QSyntaxHighlighter(pTextDocument)
 {
-  mpModelicaTextSettings = pSettings;
+  mpModelicaTextEditorPage = pModelicaTextEditorPage;
   initializeSettings();
 }
 
@@ -501,21 +629,21 @@ void ModelicaTextHighlighter::initializeSettings()
 {
   QTextDocument *pTextDocument = qobject_cast<QTextDocument*>(parent());
   QFont font;
-  font.setFamily(mpModelicaTextSettings->getFontFamily());
-  font.setPointSizeF(mpModelicaTextSettings->getFontSize());
+  font.setFamily(mpModelicaTextEditorPage->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(mpModelicaTextEditorPage->getFontSizeSpinBox()->value());
   pTextDocument->setDefaultFont(font);
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
-  mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
-  mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
-  mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
-  mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
-  mMultiLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
-  mFunctionFormat.setForeground(mpModelicaTextSettings->getFunctionRuleColor());
-  mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
+  mTextFormat.setForeground(mpModelicaTextEditorPage->getTextRuleColor());
+  mKeywordFormat.setForeground(mpModelicaTextEditorPage->getKeywordRuleColor());
+  mTypeFormat.setForeground(mpModelicaTextEditorPage->getTypeRuleColor());
+  mSingleLineCommentFormat.setForeground(mpModelicaTextEditorPage->getCommentRuleColor());
+  mMultiLineCommentFormat.setForeground(mpModelicaTextEditorPage->getCommentRuleColor());
+  mFunctionFormat.setForeground(mpModelicaTextEditorPage->getFunctionRuleColor());
+  mQuotationFormat.setForeground(QColor(mpModelicaTextEditorPage->getQuotesRuleColor()));
   // Priority: keyword > func() > ident > number. Yes, the order matters :)
-  mNumberFormat.setForeground(mpModelicaTextSettings->getNumberRuleColor());
+  mNumberFormat.setForeground(mpModelicaTextEditorPage->getNumberRuleColor());
   rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
   rule.mFormat = mNumberFormat;
   mHighlightingRules.append(rule);
@@ -676,11 +804,11 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
 {
   /* Only highlight the text if user has enabled the syntax highlighting */
-  if (!mpModelicaTextSettings->getOptionsDialog()->getModelicaTextEditorPage()->getSyntaxHighlightingCheckbox()->isChecked()) {
+  if (!mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
     return;
   }
   setCurrentBlockState(0);
-  setFormat(0, text.length(), mpModelicaTextSettings->getTextRuleColor());
+  setFormat(0, text.length(), mpModelicaTextEditorPage->getTextRuleColor());
   foreach (const HighlightingRule &rule, mHighlightingRules) {
     QRegExp expression(rule.mPattern);
     int index = expression.indexIn(text);

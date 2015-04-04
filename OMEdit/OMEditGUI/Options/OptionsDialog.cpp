@@ -52,8 +52,6 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpMainWindow = pMainWindow;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
-  mpModelicaTabSettings = new ModelicaTabSettings(this);
-  mpModelicaTextSettings = new ModelicaTextSettings(this);
   mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
@@ -77,9 +75,7 @@ void OptionsDialog::readSettings()
   mpSettings->sync();
   readGeneralSettings();
   readLibrariesSettings();
-  readModelicaTabSettings();
   readModelicaTextSettings();
-  mpModelicaTextEditorPage->initializeFields();
   emit modelicaTextSettingsChanged();
   readGraphicalViewsSettings();
   readSimulationSettings();
@@ -193,48 +189,56 @@ void OptionsDialog::readLibrariesSettings()
   mpSettings->endGroup();
 }
 
-/*!
- * \brief OptionsDialog::readModelicaTabSettings
- * Reads the Modelica text tab settings from omedit.ini
- */
-void OptionsDialog::readModelicaTabSettings()
-{
-  if (mpSettings->contains("ModelicaTabSettings/tabPolicy")) {
-    mpModelicaTabSettings->setTabPolicy(mpSettings->value("ModelicaTabSettings/tabPolicy").toInt());
-  }
-  if (mpSettings->contains("ModelicaTabSettings/tabSize")) {
-    mpModelicaTabSettings->setTabSize(mpSettings->value("ModelicaTabSettings/tabSize").toInt());
-  }
-  if (mpSettings->contains("ModelicaTabSettings/indentSize")) {
-    mpModelicaTabSettings->setIndentSize(mpSettings->value("ModelicaTabSettings/indentSize").toInt());
-  }
-}
-
 //! Reads the ModelicaText settings from omedit.ini
 void OptionsDialog::readModelicaTextSettings()
 {
-  if (mpSettings->contains("textEditor/enableSyntaxHighlighting"))
+  int currentIndex;
+  if (mpSettings->contains("textEditor/tabPolicy")) {
+    currentIndex = mpModelicaTextEditorPage->getTabPolicyComboBox()->findData(mpSettings->value("textEditor/tabPolicy").toInt());
+    mpModelicaTextEditorPage->getTabPolicyComboBox()->setCurrentIndex(currentIndex);
+  }
+  if (mpSettings->contains("textEditor/tabSize")) {
+    mpModelicaTextEditorPage->getTabSizeSpinBox()->setValue(mpSettings->value("textEditor/tabSize").toInt());
+  }
+  if (mpSettings->contains("textEditor/indentSize")) {
+    mpModelicaTextEditorPage->getIndentSpinBox()->setValue(mpSettings->value("textEditor/indentSize").toInt());
+  }
+  if (mpSettings->contains("textEditor/enableSyntaxHighlighting")) {
     mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("textEditor/enableSyntaxHighlighting").toBool());
-  if (mpSettings->contains("textEditor/enableLineWrapping"))
+  }
+  if (mpSettings->contains("textEditor/enableLineWrapping")) {
     mpModelicaTextEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("textEditor/enableLineWrapping").toBool());
-  if (mpSettings->contains("textEditor/fontFamily"))
-    mpModelicaTextSettings->setFontFamily(mpSettings->value("textEditor/fontFamily").toString());
-  if (mpSettings->contains("textEditor/fontSize"))
-    mpModelicaTextSettings->setFontSize(mpSettings->value("textEditor/fontSize").toDouble());
-  if (mpSettings->contains("textEditor/textRuleColor"))
-    mpModelicaTextSettings->setTextRuleColor(QColor(mpSettings->value("textEditor/textRuleColor").toUInt()));
-  if (mpSettings->contains("textEditor/keywordRuleColor"))
-    mpModelicaTextSettings->setKeywordRuleColor(QColor(mpSettings->value("textEditor/keywordRuleColor").toUInt()));
-  if (mpSettings->contains("textEditor/typeRuleColor"))
-    mpModelicaTextSettings->setTypeRuleColor(QColor(mpSettings->value("textEditor/typeRuleColor").toUInt()));
-  if (mpSettings->contains("textEditor/functionRuleColor"))
-    mpModelicaTextSettings->setFunctionRuleColor(QColor(mpSettings->value("textEditor/functionRuleColor").toUInt()));
-  if (mpSettings->contains("textEditor/quotesRuleColor"))
-    mpModelicaTextSettings->setQuotesRuleColor(QColor(mpSettings->value("textEditor/quotesRuleColor").toUInt()));
-  if (mpSettings->contains("textEditor/commentRuleColor"))
-    mpModelicaTextSettings->setCommentRuleColor(QColor(mpSettings->value("textEditor/commentRuleColor").toUInt()));
-  if (mpSettings->contains("textEditor/numberRuleColor"))
-    mpModelicaTextSettings->setNumberRuleColor(QColor(mpSettings->value("textEditor/numberRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("textEditor/fontFamily")) {
+    // select font family item
+    currentIndex = mpModelicaTextEditorPage->getFontFamilyComboBox()->findText(mpSettings->value("textEditor/fontFamily").toString(), Qt::MatchExactly);
+    mpModelicaTextEditorPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
+  }
+  if (mpSettings->contains("textEditor/fontSize")) {
+    // select font size item
+    mpModelicaTextEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("textEditor/fontSize").toDouble());
+  }
+  if (mpSettings->contains("textEditor/textRuleColor")) {
+    mpModelicaTextEditorPage->setTextRuleColor(QColor(mpSettings->value("textEditor/textRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("textEditor/keywordRuleColor")) {
+    mpModelicaTextEditorPage->setKeywordRuleColor(QColor(mpSettings->value("textEditor/keywordRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("textEditor/typeRuleColor")) {
+    mpModelicaTextEditorPage->setTypeRuleColor(QColor(mpSettings->value("textEditor/typeRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("textEditor/functionRuleColor")) {
+    mpModelicaTextEditorPage->setFunctionRuleColor(QColor(mpSettings->value("textEditor/functionRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("textEditor/quotesRuleColor")) {
+    mpModelicaTextEditorPage->setQuotesRuleColor(QColor(mpSettings->value("textEditor/quotesRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("textEditor/commentRuleColor")) {
+    mpModelicaTextEditorPage->setCommentRuleColor(QColor(mpSettings->value("textEditor/commentRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("textEditor/numberRuleColor")) {
+    mpModelicaTextEditorPage->setNumberRuleColor(QColor(mpSettings->value("textEditor/numberRuleColor").toUInt()));
+  }
 }
 
 //! Reads the GraphicsViews section settings from omedit.ini
@@ -594,31 +598,23 @@ void OptionsDialog::saveLibrariesSettings()
   mpSettings->endGroup();
 }
 
-/*!
- * \brief OptionsDialog::saveModelicaTabSettings
- * Saves the Modelica text tab settings to omedit.ini
- */
-void OptionsDialog::saveModelicaTabSettings()
-{
-  mpSettings->setValue("ModelicaTabSettings/tabPolicy", mpModelicaTabSettings->getTabPolicy());
-  mpSettings->setValue("ModelicaTabSettings/tabSize", mpModelicaTabSettings->getTabSize());
-  mpSettings->setValue("ModelicaTabSettings/indentSize", mpModelicaTabSettings->getIndentSize());
-}
-
 //! Saves the ModelicaText settings to omedit.ini
 void OptionsDialog::saveModelicaTextSettings()
 {
+  mpSettings->setValue("textEditor/tabPolicy", mpModelicaTextEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  mpSettings->setValue("textEditor/tabSize", mpModelicaTextEditorPage->getTabSizeSpinBox()->value());
+  mpSettings->setValue("textEditor/indentSize", mpModelicaTextEditorPage->getIndentSpinBox()->value());
   mpSettings->setValue("textEditor/enableSyntaxHighlighting", mpModelicaTextEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
   mpSettings->setValue("textEditor/enableLineWrapping", mpModelicaTextEditorPage->getLineWrappingCheckbox()->isChecked());
-  mpSettings->setValue("textEditor/fontFamily", mpModelicaTextSettings->getFontFamily());
-  mpSettings->setValue("textEditor/fontSize", mpModelicaTextSettings->getFontSize());
-  mpSettings->setValue("textEditor/textRuleColor", mpModelicaTextSettings->getTextRuleColor().rgba());
-  mpSettings->setValue("textEditor/keywordRuleColor", mpModelicaTextSettings->getKeywordRuleColor().rgba());
-  mpSettings->setValue("textEditor/typeRuleColor", mpModelicaTextSettings->getTypeRuleColor().rgba());
-  mpSettings->setValue("textEditor/functionRuleColor", mpModelicaTextSettings->getFunctionRuleColor().rgba());
-  mpSettings->setValue("textEditor/quotesRuleColor", mpModelicaTextSettings->getQuotesRuleColor().rgba());
-  mpSettings->setValue("textEditor/commentRuleColor", mpModelicaTextSettings->getCommentRuleColor().rgba());
-  mpSettings->setValue("textEditor/numberRuleColor", mpModelicaTextSettings->getNumberRuleColor().rgba());
+  mpSettings->setValue("textEditor/fontFamily", mpModelicaTextEditorPage->getFontFamilyComboBox()->currentFont().family());
+  mpSettings->setValue("textEditor/fontSize", mpModelicaTextEditorPage->getFontSizeSpinBox()->value());
+  mpSettings->setValue("textEditor/textRuleColor", mpModelicaTextEditorPage->getTextRuleColor().rgba());
+  mpSettings->setValue("textEditor/keywordRuleColor", mpModelicaTextEditorPage->getKeywordRuleColor().rgba());
+  mpSettings->setValue("textEditor/typeRuleColor", mpModelicaTextEditorPage->getTypeRuleColor().rgba());
+  mpSettings->setValue("textEditor/functionRuleColor", mpModelicaTextEditorPage->getFunctionRuleColor().rgba());
+  mpSettings->setValue("textEditor/quotesRuleColor", mpModelicaTextEditorPage->getQuotesRuleColor().rgba());
+  mpSettings->setValue("textEditor/commentRuleColor", mpModelicaTextEditorPage->getCommentRuleColor().rgba());
+  mpSettings->setValue("textEditor/numberRuleColor", mpModelicaTextEditorPage->getNumberRuleColor().rgba());
 }
 
 //! Saves the GraphicsViews section settings to omedit.ini
@@ -901,6 +897,15 @@ void OptionsDialog::show()
   setVisible(true);
 }
 
+ModelicaTabSettings OptionsDialog::getModelicaTabSettings()
+{
+  ModelicaTabSettings modelicaTabSettings;
+  modelicaTabSettings.setTabPolicy(mpModelicaTextEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  modelicaTabSettings.setTabSize(mpModelicaTextEditorPage->getTabSizeSpinBox()->value());
+  modelicaTabSettings.setIndentSize(mpModelicaTextEditorPage->getIndentSpinBox()->value());
+  return modelicaTabSettings;
+}
+
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
@@ -924,7 +929,6 @@ void OptionsDialog::saveSettings()
 {
   saveGeneralSettings();
   saveLibrariesSettings();
-  saveModelicaTabSettings();
   saveModelicaTextSettings();
   // emit the signal so that all syntax highlighters are updated
   emit modelicaTextSettingsChanged();
@@ -1703,324 +1707,6 @@ void AddUserLibraryDialog::addUserLibrary()
   accept();
 }
 
-/*!
- * \class ModelicaTabSettings
- * \brief Defines the tabs and indentation settings for the Modelica Text.
- */
-ModelicaTabSettings::ModelicaTabSettings(OptionsDialog *pOptionsDialog)
-  : QObject(pOptionsDialog), mTabPolicy(SpacesOnlyTabPolicy), mTabSize(4), mIndentSize(2)
-{
-
-}
-
-/*!
- * \brief ModelicaTabSettings::lineIndentPosition
- * Returns the lines indent position.
- * \param text
- * \return
- */
-int ModelicaTabSettings::lineIndentPosition(const QString &text) const
-{
-  int i = 0;
-  while (i < text.size()) {
-    if (!text.at(i).isSpace()) {
-      break;
-    }
-    ++i;
-  }
-  int column = columnAt(text, i);
-  return i - (column % mIndentSize);
-}
-
-/*!
- * \brief ModelicaTabSettings::columnAt
- * \param text
- * \param position
- * \return
- */
-int ModelicaTabSettings::columnAt(const QString &text, int position) const
-{
-  int column = 0;
-  for (int i = 0; i < position; ++i) {
-    if (text.at(i) == QLatin1Char('\t')) {
-      column = column - (column % mTabSize) + mTabSize;
-    } else {
-      ++column;
-    }
-  }
-  return column;
-}
-
-/*!
- * \brief ModelicaTabSettings::indentedColumn
- * \param column
- * \param doIndent
- * \return
- */
-int ModelicaTabSettings::indentedColumn(int column, bool doIndent) const
-{
-  int aligned = (column / mIndentSize) * mIndentSize;
-  if (doIndent) {
-    return aligned + mIndentSize;
-  }
-  if (aligned < column) {
-    return aligned;
-  }
-  return qMax(0, aligned - mIndentSize);
-}
-
-/*!
- * \brief ModelicaTabSettings::indentationString
- * \param startColumn
- * \param targetColumn
- * \param block
- * \return
- */
-QString ModelicaTabSettings::indentationString(int startColumn, int targetColumn) const
-{
-  targetColumn = qMax(startColumn, targetColumn);
-  if (mTabPolicy == SpacesOnlyTabPolicy) {
-    return QString(targetColumn - startColumn, QLatin1Char(' '));
-  }
-
-  QString s;
-  int alignedStart = startColumn - (startColumn % mTabSize) + mTabSize;
-  if (alignedStart > startColumn && alignedStart <= targetColumn) {
-    s += QLatin1Char('\t');
-    startColumn = alignedStart;
-  }
-  if (int columns = targetColumn - startColumn) {
-    int tabs = columns / mTabSize;
-    s += QString(tabs, QLatin1Char('\t'));
-    s += QString(columns - tabs * mTabSize, QLatin1Char(' '));
-  }
-  return s;
-}
-
-/*!
- * \brief ModelicaTabSettings::firstNonSpace
- * \param text
- * \return
- */
-int ModelicaTabSettings::firstNonSpace(const QString &text)
-{
-  int i = 0;
-  while (i < text.size()) {
-    if (!text.at(i).isSpace()) {
-      return i;
-    }
-    ++i;
-  }
-  return i;
-}
-
-/*!
- * \brief ModelicaTabSettings::spacesLeftFromPosition
- * \param text
- * \param position
- * \return
- */
-int ModelicaTabSettings::spacesLeftFromPosition(const QString &text, int position)
-{
-  int i = position;
-  while (i > 0) {
-    if (!text.at(i-1).isSpace()) {
-      break;
-    }
-    --i;
-  }
-  return position - i;
-}
-
-//! @class ModelicaTextSettings
-//! @brief Defines the settings like font, style, keywords colors etc. for the Modelica Text.
-
-//! Constructor
-ModelicaTextSettings::ModelicaTextSettings(OptionsDialog *pOptionsDialog)
-  : QObject(pOptionsDialog), mpOptionsDialog(pOptionsDialog)
-{
-  // set default values, will be handy if we are unable to create the xml file
-  setFontFamily(Helper::monospacedFontInfo.family());
-  setFontSize(Helper::monospacedFontInfo.pointSizeF());
-  setTextRuleColor(QColor(0, 0, 0));                // black
-  setKeywordRuleColor(QColor(139, 0, 0));           // dark red
-  setTypeRuleColor(QColor(255, 10, 10));            // red
-  setFunctionRuleColor(QColor(0, 0, 255));          // blue
-  setQuotesRuleColor(QColor(0, 139, 0));            // dark green
-  setCommentRuleColor(QColor(0, 150, 0));           // dark green
-  setNumberRuleColor(QColor(139, 0, 139));          // purple
-  setTLMTagRuleColor(QColor(0, 0, 255));            // blue
-  setTLMElementRuleColor(QColor(0, 0, 255));        // blue
-  setTLMQuotesRuleColor(QColor(139, 0, 0));         // dark red
-}
-
-//! Sets the font for the Modelica Text.
-//! @param fontFamily is the font to set.
-void ModelicaTextSettings::setFontFamily(QString fontFamily)
-{
-  mFontFamily = fontFamily;
-}
-
-//! Returns the Modelica Text font.
-//! @return mFontFamily the font family.
-QString ModelicaTextSettings::getFontFamily()
-{
-  return mFontFamily;
-}
-
-//! Sets the font size for the Modelica Text.
-//! @param fontSize is the font size to set.
-void ModelicaTextSettings::setFontSize(double fontSize)
-{
-  mFontSize = fontSize;
-}
-
-//! Returns the Modelica Text font size.
-//! @return mFontSize the font size.
-double ModelicaTextSettings::getFontSize()
-{
-  return mFontSize;
-}
-
-//! Sets the color for the Modelica Text.
-//! @param color is the color to set.
-void ModelicaTextSettings::setTextRuleColor(QColor color)
-{
-  mTextRuleColor = color;
-}
-
-//! Returns the Modelica Text color.
-//! @return mTextRuleColor the color.
-QColor ModelicaTextSettings::getTextRuleColor()
-{
-  return mTextRuleColor;
-}
-
-//! Sets the color for the Modelica Text numbers.
-//! @param color is the color to set.
-void ModelicaTextSettings::setNumberRuleColor(QColor color)
-{
-  mNumberRuleColor = color;
-}
-
-//! Returns the Modelica Text numbers color.
-//! @return mNumberRuleColor the color.
-QColor ModelicaTextSettings::getNumberRuleColor()
-{
-  return mNumberRuleColor;
-}
-
-//! Sets the color for the Modelica Text keywords.
-//! @param color is the color to set.
-void ModelicaTextSettings::setKeywordRuleColor(QColor color)
-{
-  mKeyWordRuleColor = color;
-}
-
-//! Returns the Modelica Text keyword color.
-//! @return mKeyWordRuleColor the color.
-QColor ModelicaTextSettings::getKeywordRuleColor()
-{
-  return mKeyWordRuleColor;
-}
-
-//! Sets the color for the Modelica Text types.
-//! @param color is the color to set.
-void ModelicaTextSettings::setTypeRuleColor(QColor color)
-{
-  mTypeRuleColor = color;
-}
-
-//! Returns the Modelica Text types color.
-//! @return mTypeRuleColor the color.
-QColor ModelicaTextSettings::getTypeRuleColor()
-{
-  return mTypeRuleColor;
-}
-
-//! Sets the color for the Modelica Text functions.
-//! @param color is the color to set.
-void ModelicaTextSettings::setFunctionRuleColor(QColor color)
-{
-  mFunctionRuleColor = color;
-}
-
-//! Returns the Modelica Text functions color.
-//! @return mFunctionRuleColor the color.
-QColor ModelicaTextSettings::getFunctionRuleColor()
-{
-  return mFunctionRuleColor;
-}
-
-//! Sets the color for the Modelica Text quotes.
-//! @param color is the color to set.
-void ModelicaTextSettings::setQuotesRuleColor(QColor color)
-{
-  mQuotesRuleColor = color;
-}
-
-//! Returns the Modelica Text quotes color.
-//! @return mQuotesRuleColor the color.
-QColor ModelicaTextSettings::getQuotesRuleColor()
-{
-  return mQuotesRuleColor;
-}
-
-//! Sets the color for the Modelica Text comments.
-//! @param color is the color to set.
-void ModelicaTextSettings::setCommentRuleColor(QColor color)
-{
-  mCommentRuleColor = color;
-}
-
-//! Returns the Modelica Text comments color.
-//! @return mCommentRuleColor the color.
-QColor ModelicaTextSettings::getCommentRuleColor()
-{
-  return mCommentRuleColor;
-}
-
-//! Sets the color for the TLM Tag.
-//! @param color is the color to set.
-void ModelicaTextSettings::setTLMTagRuleColor(QColor color)
-{
-  mTLMTagRuleColor = color;
-}
-
-//! Returns the TLM Tag color.
-//! @return mTLMTagRuleColor the color.
-QColor ModelicaTextSettings::getTLMTagRuleColor()
-{
-  return mTLMTagRuleColor;
-}
-
-//! Sets the color for the TLM Element.
-//! @param color is the color to set.
-void ModelicaTextSettings::setTLMElementRuleColor(QColor color)
-{
-  mTLMElementRuleColor = color;
-}
-
-//! Returns the TLM  Element color.
-//! @return mTLMElementRuleColor the color.
-QColor ModelicaTextSettings::getTLMElementRuleColor()
-{
-  return mTLMElementRuleColor;
-}
-
-//! Sets the color for the TLM Quotes.
-//! @param color is the color to set.
-void ModelicaTextSettings::setTLMQuotesRuleColor(QColor color)
-{
-  mTLMQuotesRuleColor = color;
-}
-
-//! Returns the TLM  Quotes color.
-//! @return mTLMQuotesRuleColor the color.
-QColor ModelicaTextSettings::getTLMQuotesRuleColor()
-{
-  return mTLMQuotesRuleColor;
-}
 //! @class ModelicaTextEditorPage
 //! @brief Creates an interface for Modelica Text settings.
 
@@ -2037,19 +1723,16 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   mpTabPolicyComboBox = new QComboBox;
   mpTabPolicyComboBox->addItem(tr("Spaces Only"), 0);
   mpTabPolicyComboBox->addItem(tr("Tabs Only"), 1);
-  connect(mpTabPolicyComboBox, SIGNAL(currentIndexChanged(int)), SLOT(tabPolicyChanged(int)));
   // tab size
   mpTabSizeLabel = new Label(tr("Tab Size:"));
   mpTabSizeSpinBox = new QSpinBox;
   mpTabSizeSpinBox->setRange(1, 20);
   mpTabSizeSpinBox->setValue(4);
-  connect(mpTabSizeSpinBox, SIGNAL(valueChanged(int)), SLOT(tabSizeChanged(int)));
   // indent size
   mpIndentSizeLabel = new Label(tr("Indent Size:"));
   mpIndentSpinBox = new QSpinBox;
   mpIndentSpinBox->setRange(1, 20);
   mpIndentSpinBox->setValue(2);
-  connect(mpIndentSpinBox, SIGNAL(valueChanged(int)), SLOT(indentSizeChanged(int)));
   // set tabs & indentation groupbox layout
   QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
@@ -2067,6 +1750,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   // line wrap checkbox
   mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
   mpLineWrappingCheckbox->setChecked(true);
+  connect(mpLineWrappingCheckbox, SIGNAL(toggled(bool)), this, SLOT(setLineWrapping()));
   // set Syntax Highlight & Text Wrapping groupbox layout
   QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
   pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
@@ -2078,16 +1762,16 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
   int currentIndex;
-  currentIndex = mpFontFamilyComboBox->findText(mpOptionsDialog->getModelicaTextSettings()->getFontFamily(), Qt::MatchExactly);
+  currentIndex = mpFontFamilyComboBox->findText(Helper::monospacedFontInfo.family(), Qt::MatchExactly);
   mpFontFamilyComboBox->setCurrentIndex(currentIndex);
-  connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontFamilyChanged(QFont)));
+  connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SIGNAL(updatePreview()));
   // font size combobox
   mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
-  mpFontSizeSpinBox->setValue(mpOptionsDialog->getModelicaTextSettings()->getFontSize());
+  mpFontSizeSpinBox->setValue(Helper::monospacedFontInfo.pointSizeF());
   mpFontSizeSpinBox->setSingleStep(1);
-  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(double)), SLOT(fontSizeChanged(double)));
+  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(double)), SIGNAL(updatePreview()));
   // Item color label and pick color button
   mpItemColorLabel = new Label(tr("Item Color:"));
   mpItemColorPickButton = new QPushButton(Helper::pickColor);
@@ -2106,12 +1790,21 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
   mpPreviewLabel = new Label(tr("Preview:"));
   mpPreviewPlainTextBox = new QPlainTextEdit;
   mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
-  mpPreviewPlainTextBox->setPlainText(getPreviewText());
+  QString previewText;
+  previewText.append("class HelloWorld /* block\n"
+                     "comment */\n"
+                     "\tReal x(start = 1); // Line comment\n"
+                     "\tparameter Real a = 1.573;\n"
+                     "\tString str = \"a\\\"bc\n"
+                     "123\";\n"
+                     "equation\n"
+                     "\tder(x) = - a * x;\n"
+                     "end HelloWorld;\n");
+  mpPreviewPlainTextBox->setPlainText(previewText);
   // highlight preview textbox
-  mpModelicaTextHighlighter = new ModelicaTextHighlighter(mpOptionsDialog->getModelicaTextSettings(), mpPreviewPlainTextBox->document());
-  connect(this, SIGNAL(updatePreview()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), mpModelicaTextHighlighter, SLOT(settingsChanged()));
-  connect(mpLineWrappingCheckbox, SIGNAL(toggled(bool)), this, SLOT(setLineWrapping()));
+  ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextBox->document());
+  connect(this, SIGNAL(updatePreview()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
   // set fonts & colors groupbox layout
   QGridLayout *pFontsColorsGroupBoxLayout = new QGridLayout;
   pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
@@ -2138,228 +1831,111 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
 void ModelicaTextEditorPage::addListItems()
 {
   // don't change the Data of items as it is being used in ModelicaTextEditorPage::pickColor slot to identify the items
+  // text
   mpTextItem = new QListWidgetItem(mpItemsList);
   mpTextItem->setText("Text");
   mpTextItem->setData(Qt::UserRole, "Text");
-  mpTextItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTextRuleColor());
-
+  setTextRuleColor(QColor(0, 0, 0)); // black
+  // number
   mpNumberItem = new QListWidgetItem(mpItemsList);
   mpNumberItem->setText("Number");
   mpNumberItem->setData(Qt::UserRole, "Number");
-  mpNumberItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getNumberRuleColor());
-
+  setNumberRuleColor(QColor(139, 0, 139)); // purple
+  // keyword
   mpKeywordItem = new QListWidgetItem(mpItemsList);
   mpKeywordItem->setText("Keyword");
   mpKeywordItem->setData(Qt::UserRole, "Keyword");
-  mpKeywordItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getKeywordRuleColor());
-
+  setKeywordRuleColor(QColor(139, 0, 0)); // dark red
+  // type
   mpTypeItem = new QListWidgetItem(mpItemsList);
   mpTypeItem->setText("Type");
   mpTypeItem->setData(Qt::UserRole, "Type");
-  mpTypeItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTypeRuleColor());
-
+  setTypeRuleColor(QColor(255, 10, 10)); // red
+  // function
   mpFunctionItem = new QListWidgetItem(mpItemsList);
   mpFunctionItem->setText("Function");
   mpFunctionItem->setData(Qt::UserRole, "Function");
-  mpFunctionItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getFunctionRuleColor());
-
+  setFunctionRuleColor(QColor(0, 0, 255)); // blue
+  // Quotes
   mpQuotesItem = new QListWidgetItem(mpItemsList);
   mpQuotesItem->setText("Quotes");
   mpQuotesItem->setData(Qt::UserRole, "Quotes");
-  mpQuotesItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getQuotesRuleColor());
-
+  setQuotesRuleColor(QColor(0, 139, 0)); // dark green
+  // comment
   mpCommentItem = new QListWidgetItem(mpItemsList);
   mpCommentItem->setText("Comment");
   mpCommentItem->setData(Qt::UserRole, "Comment");
-  mpCommentItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getCommentRuleColor());
-
-  mpTLMTagItem = new QListWidgetItem(mpItemsList);
-  mpTLMTagItem->setText("TLM Tag");
-  mpTLMTagItem->setData(Qt::UserRole, "TLM Tag");
-  mpTLMTagItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTLMTagRuleColor());
-
-  mpTLMElementItem = new QListWidgetItem(mpItemsList);
-  mpTLMElementItem->setText("TLM Element");
-  mpTLMElementItem->setData(Qt::UserRole, "TLM Element");
-  mpTLMElementItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTLMElementRuleColor());
-
-  mpTLMQuotesItem = new QListWidgetItem(mpItemsList);
-  mpTLMQuotesItem->setText("TLM Quotes");
-  mpTLMQuotesItem->setData(Qt::UserRole, "TLM Quotes");
-  mpTLMQuotesItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTLMQuotesRuleColor());
-}
-
-//! Returns the preview text.
-QString ModelicaTextEditorPage::getPreviewText()
-{
-  QString previewText;
-  previewText.append("class HelloWorld /* block\n"
-                     "comment */\n"
-                     "\tReal x(start = 1); // Line comment\n"
-                     "\tparameter Real a = 1.573;\n"
-                     "\tString str = \"a\\\"bc\n"
-                     "123\";\n"
-                     "equation\n"
-                     "\tder(x) = - a * x;\n"
-                     "end HelloWorld;\n");
-
-  return previewText;
-}
-
-//! Initialize all fields with default values.
-void ModelicaTextEditorPage::initializeFields()
-{
-  int currentIndex;
-  // tab policy
-  currentIndex = mpTabPolicyComboBox->findData(mpOptionsDialog->getModelicaTabSettings()->getTabPolicy());
-  mpTabPolicyComboBox->setCurrentIndex(currentIndex);
-  // tab size
-  mpTabSizeSpinBox->setValue(mpOptionsDialog->getModelicaTabSettings()->getTabSize());
-  // indent size
-  mpIndentSpinBox->setValue(mpOptionsDialog->getModelicaTabSettings()->getIndentSize());
-  // select font family item
-  currentIndex = mpFontFamilyComboBox->findText(mpOptionsDialog->getModelicaTextSettings()->getFontFamily(), Qt::MatchExactly);
-  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
-  // select font size item
-  mpFontSizeSpinBox->setValue(mpOptionsDialog->getModelicaTextSettings()->getFontSize());
-  // make first item in the list selected
-  mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
-  // refresh the preview textbox
-  mpPreviewPlainTextBox->setPlainText(getPreviewText());
-  // update list items
-  mpTextItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTextRuleColor());
-  mpNumberItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getNumberRuleColor());
-  mpKeywordItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getKeywordRuleColor());
-  mpTypeItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getTypeRuleColor());
-  mpFunctionItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getFunctionRuleColor());
-  mpQuotesItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getQuotesRuleColor());
-  mpCommentItem->setForeground(mpOptionsDialog->getModelicaTextSettings()->getCommentRuleColor());
-}
-
-QCheckBox* ModelicaTextEditorPage::getSyntaxHighlightingCheckbox()
-{
-  return mpSyntaxHighlightingCheckbox;
-}
-
-QCheckBox* ModelicaTextEditorPage::getLineWrappingCheckbox()
-{
-  return mpLineWrappingCheckbox;
+  setCommentRuleColor(QColor(0, 150, 0)); // dark green
 }
 
 /*!
- * \brief ModelicaTextEditorPage::tabPolicyChanged
- * Slot activated when mpTabPolicyLabel currentIndexChanged SIGNAL is raised.
- * \param index
+ * \brief ModelicaTextEditorPage::setTextRuleColor
+ * \param color
  */
-void ModelicaTextEditorPage::tabPolicyChanged(int index)
+void ModelicaTextEditorPage::setTextRuleColor(QColor color)
 {
-  mpOptionsDialog->getModelicaTabSettings()->setTabPolicy(mpTabPolicyComboBox->itemData(index).toInt());
+  mTextColor = color;
+  mpTextItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::tabSizeChanged
- * Slot activated when mpTabSizeSpinBox valueChanged SIGNAL is raised.
- * \param value
+ * \brief ModelicaTextEditorPage::setNumberRuleColor
+ * \param color
  */
-void ModelicaTextEditorPage::tabSizeChanged(int value)
+void ModelicaTextEditorPage::setNumberRuleColor(QColor color)
 {
-  mpOptionsDialog->getModelicaTabSettings()->setTabSize(value);
+  mNumberColor = color;
+  mpNumberItem->setForeground(color);
 }
 
 /*!
- * \brief ModelicaTextEditorPage::indentSizeChanged
- * Slot activated when mpIndentSpinBox valueChanged SIGNAL is raised.
- * \param value
+ * \brief ModelicaTextEditorPage::setKeywordRuleColor
+ * \param color
  */
-void ModelicaTextEditorPage::indentSizeChanged(int value)
+void ModelicaTextEditorPage::setKeywordRuleColor(QColor color)
 {
-  mpOptionsDialog->getModelicaTabSettings()->setIndentSize(value);
+  mKeywordColor = color;
+  mpKeywordItem->setForeground(color);
 }
 
-//! Changes the font family when mpFontFamilyComboBox currentFontChanged signal is raised.
-void ModelicaTextEditorPage::fontFamilyChanged(QFont font)
+/*!
+ * \brief ModelicaTextEditorPage::setTypeRuleColor
+ * \param color
+ */
+void ModelicaTextEditorPage::setTypeRuleColor(QColor color)
 {
-  mpOptionsDialog->getModelicaTextSettings()->setFontFamily(font.family());
-  emit updatePreview();
+  mTypeColor = color;
+  mpTypeItem->setForeground(color);
 }
 
-//! Changes the font size when mpFontSizeComboBox currentIndexChanged signal is raised.
-void ModelicaTextEditorPage::fontSizeChanged(double newValue)
+/*!
+ * \brief ModelicaTextEditorPage::setFunctionRuleColor
+ * \param color
+ */
+void ModelicaTextEditorPage::setFunctionRuleColor(QColor color)
 {
-  mpOptionsDialog->getModelicaTextSettings()->setFontSize(newValue);
-  emit updatePreview();
+  mFunctionColor = color;
+  mpFunctionItem->setForeground(color);
 }
 
-//! Picks a color for one of the Modelica Text Settings rules.
-//! This method is called when mpColorPickButton clicked signal raised.
-void ModelicaTextEditorPage::pickColor()
+/*!
+ * \brief ModelicaTextEditorPage::setQuotesRuleColor
+ * \param color
+ */
+void ModelicaTextEditorPage::setQuotesRuleColor(QColor color)
 {
-  QListWidgetItem *item = mpItemsList->currentItem();
-  QColor initialColor;
-  // get the color of the item
-  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0)
-  {
-    initialColor = mpOptionsDialog->getModelicaTextSettings()->getTextRuleColor();
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("number") == 0)
-  {
-    initialColor = mpOptionsDialog->getModelicaTextSettings()->getNumberRuleColor();
-  }
-  else if (item->data(Qt::UserRole).toString().toLower().compare("keyword") == 0)
-  {
-    initialColor = mpOptionsDialog->getModelicaTextSettings()->getKeywordRuleColor();
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("type") == 0)
-  {
-    initialColor = mpOptionsDialog->getModelicaTextSettings()->getTypeRuleColor();
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("function") == 0)
-  {
-    initialColor = mpOptionsDialog->getModelicaTextSettings()->getFunctionRuleColor();
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0)
-  {
-    initialColor = mpOptionsDialog->getModelicaTextSettings()->getQuotesRuleColor();
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0)
-  {
-    initialColor = mpOptionsDialog->getModelicaTextSettings()->getCommentRuleColor();
-  }
-  QColor color = QColorDialog::getColor(initialColor);
-  if (!color.isValid())
-    return;
-  // set the color of the item
-  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0)
-  {
-    mpOptionsDialog->getModelicaTextSettings()->setTextRuleColor(color);
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("number") == 0)
-  {
-    mpOptionsDialog->getModelicaTextSettings()->setNumberRuleColor(color);
-  }
-  else if (item->data(Qt::UserRole).toString().toLower().compare("keyword") == 0)
-  {
-    mpOptionsDialog->getModelicaTextSettings()->setKeywordRuleColor(color);
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("type") == 0)
-  {
-    mpOptionsDialog->getModelicaTextSettings()->setTypeRuleColor(color);
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("function") == 0)
-  {
-    mpOptionsDialog->getModelicaTextSettings()->setFunctionRuleColor(color);
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0)
-  {
-    mpOptionsDialog->getModelicaTextSettings()->setQuotesRuleColor(color);
-  }
-  else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0)
-  {
-    mpOptionsDialog->getModelicaTextSettings()->setCommentRuleColor(color);
-  }
-  // change the color of item
-  item->setForeground(color);
-  emit updatePreview();
+  mQuotesColor = color;
+  mpQuotesItem->setForeground(color);
+}
+
+/*!
+ * \brief ModelicaTextEditorPage::setCommentRuleColor
+ * \param color
+ */
+void ModelicaTextEditorPage::setCommentRuleColor(QColor color)
+{
+  mCommentColor = color;
+  mpCommentItem->setForeground(color);
 }
 
 /*!
@@ -2374,6 +1950,54 @@ void ModelicaTextEditorPage::setLineWrapping()
   } else {
     mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::NoWrap);
   }
+}
+
+/*!
+ * \brief ModelicaTextEditorPage::pickColor
+ * Picks a color for one of the Modelica Text Settings rules.
+ * This method is called when mpColorPickButton clicked SIGNAL raised.
+ */
+void ModelicaTextEditorPage::pickColor()
+{
+  QListWidgetItem *item = mpItemsList->currentItem();
+  QColor initialColor;
+  // get the color of the item
+  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
+    initialColor = mTextColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("number") == 0) {
+    initialColor = mNumberColor;
+  } else if (item->data(Qt::UserRole).toString().toLower().compare("keyword") == 0) {
+    initialColor = mKeywordColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("type") == 0) {
+    initialColor = mTypeColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("function") == 0) {
+    initialColor = mFunctionColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
+    initialColor = mQuotesColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
+    initialColor = mCommentColor;
+  }
+  QColor color = QColorDialog::getColor(initialColor);
+  if (!color.isValid()) {
+    return;
+  }
+  // set the color of the item
+  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
+    setTextRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("number") == 0) {
+    setNumberRuleColor(color);
+  } else if (item->data(Qt::UserRole).toString().toLower().compare("keyword") == 0) {
+    setKeywordRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("type") == 0) {
+    setTypeRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("function") == 0) {
+    setFunctionRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
+    setQuotesRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
+    setCommentRuleColor(color);
+  }
+  emit updatePreview();
 }
 
 GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)

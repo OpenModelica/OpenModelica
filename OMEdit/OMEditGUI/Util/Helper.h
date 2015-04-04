@@ -125,8 +125,6 @@ public:
   /* Global translated variables */
   static QString newModelicaClass;
   static QString createNewModelicaClass;
-  static QString newTLMFile;
-  static QString createNewTLMFile;
   static QString findClasses;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;

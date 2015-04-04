@@ -47,8 +47,6 @@ class MainWindow;
 class GeneralSettingsPage;
 class LibrariesPage;
 class ModelicaTextHighlighter;
-class ModelicaTabSettings;
-class ModelicaTextSettings;
 class ModelicaTextEditorPage;
 class GraphicalViewsPage;
 class SimulationPage;
@@ -60,6 +58,7 @@ class CurveStylePage;
 class FigaroPage;
 class DebuggerPage;
 class FMIPage;
+class ModelicaTabSettings;
 
 class OptionsDialog : public QDialog
 {
@@ -69,7 +68,6 @@ public:
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();
-  void readModelicaTabSettings();
   void readModelicaTextSettings();
   void readGraphicalViewsSettings();
   void readSimulationSettings();
@@ -83,7 +81,6 @@ public:
   void readFMISettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
-  void saveModelicaTabSettings();
   void saveModelicaTextSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
@@ -100,8 +97,6 @@ public:
   void createPages();
   MainWindow* getMainWindow() {return mpMainWindow;}
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
-  ModelicaTabSettings* getModelicaTabSettings() {return mpModelicaTabSettings;}
-  ModelicaTextSettings* getModelicaTextSettings() {return mpModelicaTextSettings;}
   ModelicaTextEditorPage* getModelicaTextEditorPage() {return mpModelicaTextEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
   SimulationPage* getSimulationPage() {return mpSimulationPage;}
@@ -115,6 +110,7 @@ public:
   FMIPage* getFMIPage() {return mpFMIPage;}
   void saveDialogGeometry();
   void show();
+  ModelicaTabSettings getModelicaTabSettings();
 signals:
   void modelicaTextSettingsChanged();
   void updateLineWrapping();
@@ -126,8 +122,6 @@ private:
   MainWindow *mpMainWindow;
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
-  ModelicaTabSettings *mpModelicaTabSettings;
-  ModelicaTextSettings *mpModelicaTextSettings;
   ModelicaTextEditorPage *mpModelicaTextEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
@@ -288,91 +282,33 @@ private slots:
   void addUserLibrary();
 };
 
-class ModelicaTabSettings : public QObject
-{
-  Q_OBJECT
-public:
-  enum TabPolicy {
-    SpacesOnlyTabPolicy = 0,
-    TabsOnlyTabPolicy = 1
-  };
-  ModelicaTabSettings(OptionsDialog *pOptionsDialog);
-  void setTabPolicy(int tabPolicy) {mTabPolicy = (TabPolicy)tabPolicy;}
-  TabPolicy getTabPolicy() {return mTabPolicy;}
-  void setTabSize(int tabSize) {mTabSize = tabSize;}
-  int getTabSize() {return mTabSize;}
-  void setIndentSize(int indentSize) {mIndentSize = indentSize;}
-  int getIndentSize() {return mIndentSize;}
-
-  int lineIndentPosition(const QString &text) const;
-  int columnAt(const QString &text, int position) const;
-  int indentedColumn(int column, bool doIndent = true) const;
-  QString indentationString(int startColumn, int targetColumn) const;
-
-  static int firstNonSpace(const QString &text);
-  static int spacesLeftFromPosition(const QString &text, int position);
-private:
-  TabPolicy mTabPolicy;
-  int mTabSize;
-  int mIndentSize;
-};
-
-class ModelicaTextSettings : public QObject
-{
-  Q_OBJECT
-public:
-  ModelicaTextSettings(OptionsDialog *pOptionsDialog);
-  OptionsDialog *getOptionsDialog() {return mpOptionsDialog;}
-  void setFontFamily(QString fontFamily);
-  QString getFontFamily();
-  void setFontSize(double fontSize);
-  double getFontSize();
-  void setTextRuleColor(QColor color);
-  QColor getTextRuleColor();
-  void setNumberRuleColor(QColor color);
-  QColor getNumberRuleColor();
-  void setKeywordRuleColor(QColor color);
-  QColor getKeywordRuleColor();
-  void setTypeRuleColor(QColor color);
-  QColor getTypeRuleColor();
-  void setFunctionRuleColor(QColor color);
-  QColor getFunctionRuleColor();
-  void setQuotesRuleColor(QColor color);
-  QColor getQuotesRuleColor();
-  void setCommentRuleColor(QColor color);
-  QColor getCommentRuleColor();
-  void setTLMTagRuleColor(QColor color);
-  QColor getTLMTagRuleColor();
-  void setTLMElementRuleColor(QColor color);
-  QColor getTLMElementRuleColor();
-  void setTLMQuotesRuleColor(QColor color);
-  QColor getTLMQuotesRuleColor();
-private:
-  OptionsDialog *mpOptionsDialog;
-  QString mFontFamily;
-  double mFontSize;
-  QColor mTextRuleColor;
-  QColor mNumberRuleColor;
-  QColor mKeyWordRuleColor;
-  QColor mTypeRuleColor;
-  QColor mFunctionRuleColor;
-  QColor mQuotesRuleColor;
-  QColor mCommentRuleColor;
-  QColor mTLMTagRuleColor;
-  QColor mTLMElementRuleColor;
-  QColor mTLMQuotesRuleColor;
-};
-
 class ModelicaTextEditorPage : public QWidget
 {
   Q_OBJECT
 public:
   ModelicaTextEditorPage(OptionsDialog *pOptionsDialog);
+  QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
+  QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
+  QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
+  QCheckBox* getSyntaxHighlightingCheckbox() {return mpSyntaxHighlightingCheckbox;}
+  QCheckBox* getLineWrappingCheckbox() {return mpLineWrappingCheckbox;}
+  QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
+  DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void addListItems();
-  QString getPreviewText();
-  void initializeFields();
-  QCheckBox* getSyntaxHighlightingCheckbox();
-  QCheckBox* getLineWrappingCheckbox();
+  void setTextRuleColor(QColor color);
+  QColor getTextRuleColor() {return mTextColor;}
+  void setNumberRuleColor(QColor color);
+  QColor getNumberRuleColor() {return mNumberColor;}
+  void setKeywordRuleColor(QColor color);
+  QColor getKeywordRuleColor() {return mKeywordColor;}
+  void setTypeRuleColor(QColor color);
+  QColor getTypeRuleColor() {return mTypeColor;}
+  void setFunctionRuleColor(QColor color);
+  QColor getFunctionRuleColor() {return mFunctionColor;}
+  void setQuotesRuleColor(QColor color);
+  QColor getQuotesRuleColor() {return mQuotesColor;}
+  void setCommentRuleColor(QColor color);
+  QColor getCommentRuleColor() {return mCommentColor;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpTabsAndIndentation;
@@ -396,27 +332,25 @@ private:
   QPushButton *mpItemColorPickButton;
   Label *mpPreviewLabel;
   QPlainTextEdit *mpPreviewPlainTextBox;
-  ModelicaTextHighlighter *mpModelicaTextHighlighter;
+  QColor mTextColor;
   QListWidgetItem *mpTextItem;
+  QColor mNumberColor;
   QListWidgetItem *mpNumberItem;
+  QColor mKeywordColor;
   QListWidgetItem *mpKeywordItem;
+  QColor mTypeColor;
   QListWidgetItem *mpTypeItem;
+  QColor mFunctionColor;
   QListWidgetItem *mpFunctionItem;
+  QColor mQuotesColor;
   QListWidgetItem *mpQuotesItem;
+  QColor mCommentColor;
   QListWidgetItem *mpCommentItem;
-  QListWidgetItem *mpTLMTagItem;
-  QListWidgetItem *mpTLMElementItem;
-  QListWidgetItem *mpTLMQuotesItem;
 signals:
   void updatePreview();
 public slots:
-  void tabPolicyChanged(int index);
-  void tabSizeChanged(int value);
-  void indentSizeChanged(int value);
-  void fontFamilyChanged(QFont font);
-  void fontSizeChanged(double newValue);
-  void pickColor();
   void setLineWrapping();
+  void pickColor();
 };
 
 class GraphicalViewsPage : public QWidget
