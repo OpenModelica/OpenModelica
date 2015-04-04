@@ -851,7 +851,7 @@ void DuplicateClassDialog::duplicateClass()
     QString className = mpNameTextBox->text().trimmed();
     pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(className, mpPathTextBox->text().trimmed(), false);
     pLibraryTreeNode->setSaveContentsType(mpLibraryTreeNode->getSaveContentsType());
-    pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+    pLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
   }
   accept();
 }

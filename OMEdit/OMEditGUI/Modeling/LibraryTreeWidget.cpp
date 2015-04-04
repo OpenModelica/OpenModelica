@@ -628,14 +628,15 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
 void LibraryTreeWidget::createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode)
 {
   QStringList libs = mpMainWindow->getOMCProxy()->getClassNames(pLibraryTreeNode->getNameStructure(), true);
-  if (!libs.isEmpty())
+  if (!libs.isEmpty()) {
     libs.removeFirst();
+  }
   QList<LibraryTreeNode*> nodes;
-  foreach (QString lib, libs)
-  {
+  foreach (QString lib, libs) {
     /* $Code is a special OpenModelica keyword. No API command will work if we use it. */
-    if (lib.contains("$Code"))
+    if (lib.contains("$Code")) {
       continue;
+    }
     QString name = StringHandler::getLastWordAfterDot(lib);
     QString parentName = StringHandler::removeLastWordAfterDot(lib);
     OMCInterface::getClassInformation_res classInformation = mpMainWindow->getOMCProxy()->getClassInformation(lib);
@@ -661,8 +662,7 @@ void LibraryTreeWidget::expandLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
   int progressValue = 0;
   mpMainWindow->getProgressBar()->setRange(0, pLibraryTreeNode->childCount());
   mpMainWindow->showProgressBar();
-  for (int i = 0 ; i < pLibraryTreeNode->childCount() ; i++)
-  {
+  for (int i = 0 ; i < pLibraryTreeNode->childCount() ; i++) {
     loadLibraryTreeNode(pLibraryTreeNode, dynamic_cast<LibraryTreeNode*>(pLibraryTreeNode->child(i)));
     mpMainWindow->getProgressBar()->setValue(++progressValue);
   }
@@ -1490,8 +1490,7 @@ void LibraryTreeWidget::expandLibraryTreeNode(QTreeWidgetItem *item)
   blockSignals(true);
   collapseItem(item);
   blockSignals(false);
-  if (!isLibraryTreeNodeExpanded(item))
-  {
+  if (!isLibraryTreeNodeExpanded(item)) {
     LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(item);
     addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
     QApplication::setOverrideCursor(Qt::WaitCursor);
