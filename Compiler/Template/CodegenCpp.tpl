@@ -119,6 +119,8 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
     virtual bool initial();
     virtual void setInitial(bool);
     virtual void initialize();
+    virtual void initializeFreeVariables();
+    virtual void initializeBoundVariables();
     virtual void initEquations();
 
   private:
@@ -5074,6 +5076,13 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
+      initializeFreeVariables();
+      initializeBoundVariables();
+      saveAll();
+   }
+
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
+   {
       _discrete_events = _event_handling->initialize(this);
       //create and initialize Algloopsolvers
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -5102,20 +5111,23 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       initializeDerVars();
        /*external vars decls*/
       initializeExternalVar();
-      <%initFunctions%>
-
-
-
 
       //init event handling
       <%initEventHandling%>
       //init alg loop vars
       <%initAlgloopvars%>
 
-    #if defined(__TRICORE__) || defined(__vxworks)
-    //init inputs
-    stepStarted(0.0);
-    #endif
+   #if defined(__TRICORE__) || defined(__vxworks)
+      //init inputs
+      stepStarted(0.0);
+   #endif
+   }
+
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoundVariables()
+   {
+      //bound start values
+      <%initFunctions%>
+
       //init equations
       initEquations();
 
@@ -5128,11 +5140,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       }
 
       //initialAnalyticJacobian();
-      saveAll();
 
       <%functionInitDelay(delayedExps,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-
-    }
+   }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations()
    {

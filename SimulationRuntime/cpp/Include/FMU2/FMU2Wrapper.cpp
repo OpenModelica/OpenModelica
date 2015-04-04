@@ -77,7 +77,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
     (new MODEL_CLASS(&_global_settings, solver_factory,
                      boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
-  _model->initialize(); // set default start values
+  _model->initializeFreeVariables();
   _string_buffer.resize(_model->getDimString());
 }
 
@@ -161,7 +161,7 @@ fmi2Status FMU2Wrapper::reset()
 void FMU2Wrapper::updateModel()
 {
   if (_model->initial())
-    _model->initEquations(); // initial equations and calculated parameters
+    _model->initializeBoundVariables();
   _model->evaluateAll();     // derivatives and algebraic variables
   _need_update = false;
 }
@@ -199,7 +199,7 @@ fmi2Status FMU2Wrapper::completedIntegratorStep(fmi2Boolean noSetFMUStatePriorTo
                                                 fmi2Boolean *terminateSimulation)
 {
   _model->saveAll();
-  *enterEventMode = false;
+  *enterEventMode = fmi2False;
   *terminateSimulation = fmi2False;
   return fmi2OK;
 }

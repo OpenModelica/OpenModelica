@@ -22,7 +22,6 @@ FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
   _model = boost::shared_ptr<MODEL_CLASS>
       (new MODEL_CLASS(&_global_settings, solver_factory, boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
-  _model->initialize(); // set default start values
   _tmp_real_buffer.resize(_model->getDimReal());
   _tmp_int_buffer.resize(_model->getDimInteger());
   _tmp_bool_buffer.resize(_model->getDimBoolean());
@@ -129,8 +128,9 @@ fmiStatus FMUWrapper::setString(const fmiValueReference vr[], size_t nvr,
 /*  of the model equations */
 fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo)
 {
+  // TODO: here is some code duplication to SimulationRuntime/cpp/Core/Solver/Initailization.cpp 
+  _model->initialize(); 
   _model->setInitial(true);
-  _model->initEquations(); // initialize dependent variables
 
   bool restart=true;
   int iter=0;
