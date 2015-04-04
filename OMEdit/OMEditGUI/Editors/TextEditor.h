@@ -39,9 +39,6 @@
 #define TEXTEDITOR_H
 
 #include "MainWindow.h"
-#include "Helper.h"
-#include "Utilities.h"
-#include "BaseEditor.h"
 
 class MainWindow;
 class ModelWidget;

@@ -37,6 +37,7 @@
 
 #include "SimulationOutputWidget.h"
 #include "VariablesWidget.h"
+#include "CEditor.h"
 
 /*!
   \class SimulationOutputTree
@@ -316,9 +317,16 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
   QFileInfo fileInfo(fileName);
   if (file.exists()) {
     file.open(QIODevice::ReadOnly);
-    TextEditor *pTextEditor = new TextEditor(mpMainWindow);
-    pTextEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
-    mpGeneratedFilesTabWidget->addTab(pTextEditor, fileInfo.fileName());
+    BaseEditor *pEditor;
+    if (StringHandler::isCFile(fileInfo.suffix())) {
+      pEditor = new CEditor(mpMainWindow);
+      CHighlighter *pCHighlighter = new CHighlighter(pEditor->getPlainTextEdit()->document());
+      Q_UNUSED(pCHighlighter);
+    } else {
+      pEditor = new TextEditor(mpMainWindow);
+    }
+    pEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
+    mpGeneratedFilesTabWidget->addTab(pEditor, fileInfo.fileName());
     file.close();
   }
 }

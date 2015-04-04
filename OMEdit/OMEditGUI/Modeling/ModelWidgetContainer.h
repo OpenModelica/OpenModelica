@@ -50,7 +50,7 @@
 #include "Component.h"
 #include "StringHandler.h"
 #include "Helper.h"
-#include "Utilities.h"
+#include "BaseEditor.h"
 #include "ModelicaTextEditor.h"
 #include "TextEditor.h"
 
