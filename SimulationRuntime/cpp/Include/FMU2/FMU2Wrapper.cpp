@@ -76,8 +76,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _model = boost::shared_ptr<MODEL_CLASS>
     (new MODEL_CLASS(&_global_settings, solver_factory,
                      boost::shared_ptr<ISimData>(new SimData())));
-  _model->setInitial(true);
-  _model->initializeFreeVariables();
+  _model->initialize();
   _string_buffer.resize(_model->getDimString());
 }
 
@@ -155,6 +154,7 @@ fmi2Status FMU2Wrapper::terminate()
 
 fmi2Status FMU2Wrapper::reset()
 {
+  _model->initialize();
   return fmi2OK;
 }
 

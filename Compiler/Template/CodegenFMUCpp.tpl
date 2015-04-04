@@ -179,6 +179,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
         boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
         boost::shared_ptr<ISimData> simData);
 
+    // initialization
+    virtual void initialize();
+
     // getters for given value references
     virtual void getReal(const unsigned int vr[], int nvr, double value[]);
     virtual void getInteger(const unsigned int vr[], int nvr, int value[]);
@@ -239,6 +242,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     PreVariables(<%getPreVarsCount(simCode)%>),
     <%modelIdentifier%>(globalSettings, nonLinSolverFactory, simData),
     <%modelIdentifier%>Extension(globalSettings, nonLinSolverFactory, simData) {
+  }
+
+  // initialization
+  void <%modelIdentifier%>FMU::initialize() {
+    <%modelIdentifier%>WriteOutput::initialize();
+    <%modelIdentifier%>Initialize::initializeFreeVariables();
+    <%modelIdentifier%>Jacobian::initialize();
+    <%modelIdentifier%>Jacobian::initializeColoredJacobianA();
   }
 
   // getters
