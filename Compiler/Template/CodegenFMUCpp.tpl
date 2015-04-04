@@ -64,6 +64,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
   let cpp = CodegenCpp.translateModel(simCode)
+  let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs, extraFuncsDecl, "", guid, FMUVersion, FMUType), 'modelDescription.xml')
@@ -72,6 +73,30 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
  ""
    // Return empty result since result written to files directly
 end translateModel;
+
+template fmuWriteOutputHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+ "Overrides code for writing simulation file. FMU does not write an output file"
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+  <<
+  #pragma once
+  #include <Core/Modelica.h>
+
+  // Dummy code for FMU that writes no output file
+  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput {
+   public:
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory, boost::shared_ptr<ISimData> simData) {}
+    virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput() {}
+
+    virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT) {}
+    virtual IHistory* getHistory() {}
+
+   protected:
+    void initialize() {}
+  };
+  >>
+end fmuWriteOutputHeaderFile;
 
 template fmuModelDescriptionFileCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,String guid, String FMUVersion, String FMUType)
  "Generates code for ModelDescription file for FMU target."
@@ -704,15 +729,16 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   CALCHELPERMAINFILE2=OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp
   CALCHELPERMAINFILE3=OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp
-  CALCHELPERMAINFILE4=OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp
+  #skip CALCHELPERMAINFILE4 with WriteOutput
   CALCHELPERMAINFILE5=OMCpp<%fileNamePrefix%>CalcHelperMain5.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
   OMCPP_LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory -lOMCppMath_static
   OMCPP_SOLVER_LIBS= -Wl,-rpath,$(OMHOME)/lib/omc/cpp
+  BOOST_LIBRARIES = -lboost_system -lboost_filesystem -lboost_program_options
   LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
 
-  CPPFILES=OMCpp<%fileNamePrefix%>.cpp OMCpp<%fileNamePrefix%>FMU.cpp $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE4) $(CALCHELPERMAINFILE5) $(ALGLOOPSMAINFILE)
+  CPPFILES=OMCpp<%fileNamePrefix%>.cpp OMCpp<%fileNamePrefix%>FMU.cpp $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE5) $(ALGLOOPSMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
 
   .PHONY: <%modelName%>.fmu $(CPPFILES) clean
