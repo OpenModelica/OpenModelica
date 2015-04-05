@@ -169,7 +169,19 @@ if test ! "$DARWIN" = "1"; then
 
 if test "`getconf LONG_BIT`" = "64"; then
 
-AC_MSG_CHECKING([x86_64 CFLAGS])
+AC_MSG_CHECKING([getconf LONG_BIT = 64 CFLAGS])
+
+if echo $CFLAGS | grep -q -- -fPIC; then
+  AC_MSG_RESULT([already got -fPIC])
+else
+  CFLAGS_BEFORE="$CFLAGS"
+  CFLAGS="$CFLAGS -fPIC -Werror"
+  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"], [AC_MSG_RESULT([does not need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
+fi
+
+else
+
+AC_MSG_CHECKING([getconf LONG_BIT != 64 CFLAGS])
 
 if echo $CFLAGS | grep -q -- -fPIC; then
   AC_MSG_RESULT([already got -fPIC])
