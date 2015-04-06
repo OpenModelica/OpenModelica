@@ -4883,7 +4883,7 @@ match var
 case var as VARIABLE(__) then
   match value
   case SOME(CREF(componentRef = cr)) then
-    '<%contextCref(cr,contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> =  <%outStruct%>.targTest9<%i%><%\n%>'
+    if outStruct then '<%contextCref(cr,contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> =  <%outStruct%>.targTest9<%i%><%\n%>' else '<%\n%>'
   case SOME(arr as ARRAY(__)) then
     let arrayExp = '<%daeExp(arr, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
     <<
@@ -14397,9 +14397,12 @@ template algStmtAssignArr(DAE.Statement stmt, Context context,
 ::=
 match stmt
 case STMT_ASSIGN_ARR(exp=RANGE(__), lhs=CREF(componentRef=cr), type_=t) then
+  let &preExp = buffer "" /*BUFD*/
+  let expPart = daeExpRange(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let cref = contextArrayCref(cr, context)
   <<
-  STMT_ASSIGN_ARR  RANGE
-  fillArrayFromRange(t,exp,cr,context,&varDecls)
+  <%preExp%>
+  <%cref%>.assign(<%expPart%>);
   >>
 case STMT_ASSIGN_ARR(exp=e as CALL(__), lhs=CREF(componentRef=cr), type_=t) then
   let &preExp = buffer "" /*BUFD*/
