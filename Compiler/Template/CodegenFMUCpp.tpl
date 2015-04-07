@@ -115,9 +115,9 @@ end fmuModelDescriptionFileCpp;
 template fmiModelDescriptionCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
-//  <%UnitDefinitions(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
-//  <%TypeDefinitions(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
-//  <%VendorAnnotations(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+//  <%UnitDefinitions(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
+//  <%TypeDefinitions(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
+//  <%VendorAnnotations(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
 match simCode
 case SIMCODE(__) then
   <<
