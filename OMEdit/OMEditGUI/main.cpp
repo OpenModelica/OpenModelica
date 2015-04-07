@@ -194,7 +194,6 @@ void printOMEditUsage()
 {
   printf("Usage: OMEdit [--OMCLogger=true|false] [files]\n");
   printf("    --OMCLogger=[true|false]    Allows sending OMC commands from OMCLogger. Default is false.\n");
-  printf("    --debug=[true|false]        Prints the debug information related to the GUI. Default is false.\n");
   printf("    files                       List of Modelica files(*.mo) to open.\n");
 }
 
@@ -289,37 +288,22 @@ int main(int argc, char *argv[])
   }
   // if user has requested to open the file by passing it in argument then,
   bool OMCLogger = false;
-  if (a.arguments().size() > 1)
-  {
-    for (int i = 1; i < a.arguments().size(); i++)
-    {
-      if (strncmp(a.arguments().at(i).toStdString().c_str(), "--OMCLogger=",12) == 0)
-      {
+  if (a.arguments().size() > 1) {
+    for (int i = 1; i < a.arguments().size(); i++) {
+      if (strncmp(a.arguments().at(i).toStdString().c_str(), "--OMCLogger=",12) == 0) {
         QString omcLoggerArg = a.arguments().at(i);
         omcLoggerArg.remove("--OMCLogger=");
-        if (0 == strcmp("true", omcLoggerArg.toStdString().c_str()))
+        if (0 == strcmp("true", omcLoggerArg.toStdString().c_str())) {
           OMCLogger = true;
-        else
+        } else {
           OMCLogger = false;
-      }
-      else if (strncmp(a.arguments().at(i).toStdString().c_str(), "--debug=",8) == 0)
-      {
-        QString debugArg = a.arguments().at(i);
-        debugArg.remove("--debug=");
-        if (0 == strcmp("true", debugArg.toStdString().c_str()))
-          mainwindow.setDebugApplication(true);
-        else
-          mainwindow.setDebugApplication(false);
-      }
-      else
-      {
+        }
+      } else {
         fileName = a.arguments().at(i);
-        if (!fileName.isEmpty())
-        {
+        if (!fileName.isEmpty()) {
           // if path is relative make it absolute
           QFileInfo file (fileName);
-          if (file.isRelative())
-          {
+          if (file.isRelative()) {
             fileName.prepend(QString(QDir::currentPath()).append("/"));
           }
           fileName = fileName.replace("\\", "/");
@@ -336,12 +320,10 @@ int main(int argc, char *argv[])
   splashScreen.finish(&mainwindow);
   /* Show release information notification */
   bool releaseInformation = true;
-  if (pSettings->contains("notifications/releaseInformation"))
-  {
+  if (pSettings->contains("notifications/releaseInformation")) {
     releaseInformation = pSettings->value("notifications/releaseInformation").toBool();
   }
-  if (releaseInformation)
-  {
+  if (releaseInformation) {
     NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReleaseInformation,
                                                                         NotificationsDialog::InformationIcon, &mainwindow);
     pNotificationsDialog->getNotificationCheckBox()->setHidden(true);

@@ -54,6 +54,43 @@ MainWindow* MdiArea::getMainWindow()
   return mpMainWindow;
 }
 
+/*!
+ * \class FileDataNotifier
+ * \brief Looks for new data on file. When data is availabe emits bytesAvailable SIGNAL.
+ * \brief FileDataNotifier::FileDataNotifier
+ * \param fileName
+ */
+FileDataNotifier::FileDataNotifier(const QString fileName)
+{
+  mFile.setFileName(fileName);
+  mStop = false;
+  mBytesAvailable = 0;
+}
+
+/*!
+ * \brief FileDataNotifier::run
+ * Reimplentation of QThread::run().
+ * Looks for when is new data available for reading on file.
+ * Emits the bytesAvailable SIGNAL.
+ */
+void FileDataNotifier::run()
+{
+  if (mFile.open(QIODevice::ReadOnly)) {
+    while(!mStop) {
+      // if file doesn't exist then break.
+      if (!mFile.exists()) {
+        break;
+      }
+      // if file has bytes available to read.
+      if (mFile.bytesAvailable() > mBytesAvailable) {
+        mBytesAvailable = mFile.bytesAvailable();
+        emit bytesAvailable(mFile.bytesAvailable());
+      }
+      Sleep::sleep(1);
+    }
+  }
+}
+
 Label::Label(QWidget *parent, Qt::WindowFlags flags)
   : QLabel(parent, flags), mElideMode(Qt::ElideNone), mText("")
 {

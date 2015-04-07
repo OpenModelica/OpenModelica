@@ -44,7 +44,7 @@
 #include "SimulationOutputWidget.h"
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
-  : QMainWindow(parent), mExitApplicationStatus(false), mDebugApplication(false)
+  : QMainWindow(parent), mExitApplicationStatus(false)
 {
   // This is a very convoluted way of asking for the default system font in Qt
   QFont systmFont("Monospace");
@@ -76,10 +76,9 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   }
   pSplashScreen->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
   mpOptionsDialog = new OptionsDialog(this);
+  pSplashScreen->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // Create an object of MessagesWidget.
   mpMessagesWidget = new MessagesWidget(this);
-  //Set the name and size of the main window
-  pSplashScreen->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // Create MessagesDockWidget dock
   mpMessagesDockWidget = new QDockWidget(tr("Messages Browser"), this);
   mpMessagesDockWidget->setObjectName("Messages");
@@ -88,6 +87,21 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
   connect(mpMessagesWidget, SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
+  // Reopen the standard output stream.
+  QString outputFileName = mpOMCProxy->changeDirectory()+ "/OMEditOutput.txt";
+  freopen(outputFileName.toStdString().c_str(), "w", stdout);
+  setbuf(stdout, NULL); // used non-buffered stdout
+  mpOutputFileDataNotifier = 0;
+  mOutputFile.setFileName(outputFileName);
+  if (mOutputFile.open(QIODevice::ReadOnly)) {
+    mpOutputFileDataNotifier = new FileDataNotifier(outputFileName);
+    connect(mpOutputFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readOutputFile(qint64)));
+    mpOutputFileDataNotifier->start();
+  } else {
+    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(outputFileName), Helper::scriptingKind,
+                                                Helper::errorLevel));
+
+  }
   // Create an object of SearchClassWidget
   mpSearchClassWidget = new SearchClassWidget(this);
   // Create LibraryTreeWidget dock
@@ -268,16 +282,6 @@ void MainWindow::setExitApplicationStatus(bool status)
 bool MainWindow::getExitApplicationStatus()
 {
   return mExitApplicationStatus;
-}
-
-void MainWindow::setDebugApplication(bool debug)
-{
-  mDebugApplication = debug;
-}
-
-bool MainWindow::getDebugApplication()
-{
-  return mDebugApplication;
 }
 
 OptionsDialog* MainWindow::getOptionsDialog()
@@ -580,6 +584,12 @@ int MainWindow::askForExit()
 void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
+  if (mpOutputFileDataNotifier) {
+    mpOutputFileDataNotifier->stop();
+    mpOutputFileDataNotifier->exit();
+    mpOutputFileDataNotifier->wait();
+    delete mpOutputFileDataNotifier;
+  }
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
   delete mpDebuggerMainWindow;
@@ -1116,6 +1126,17 @@ void MainWindow::loadSystemLibrary()
       hideProgressBar();
     }
   }
+}
+
+/*!
+ * \brief MainWindow::readOutputFile
+ * Reads the available data from file and adds it to MessagesWidget.
+ * \param bytes
+ */
+void MainWindow::readOutputFile(qint64 bytes)
+{
+  QString data = mOutputFile.read(bytes);
+  mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
 void MainWindow::focusSearchClassWidget(bool visible)

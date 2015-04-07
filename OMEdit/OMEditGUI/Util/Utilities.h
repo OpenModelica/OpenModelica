@@ -38,6 +38,7 @@
 
 #include <QMdiArea>
 #include <QThread>
+#include <QFile>
 #include <QLabel>
 #include <QDoubleSpinBox>
 #include <QCheckBox>
@@ -67,6 +68,22 @@ public:
   static void sleep(unsigned long secs) {QThread::sleep(secs);}
 protected:
   void run() {}
+};
+
+class FileDataNotifier : public QThread
+{
+  Q_OBJECT
+public:
+  FileDataNotifier(const QString fileName);
+  void stop() {mStop = true;}
+private:
+  QFile mFile;
+  bool mStop;
+  qint64 mBytesAvailable;
+protected:
+  void run();
+signals:
+  void bytesAvailable(qint64 bytes);
 };
 
 /*!

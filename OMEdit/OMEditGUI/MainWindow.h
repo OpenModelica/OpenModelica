@@ -87,8 +87,6 @@ public:
   OMCProxy* getOMCProxy();
   void setExitApplicationStatus(bool status);
   bool getExitApplicationStatus();
-  void setDebugApplication(bool debug);
-  bool getDebugApplication();
   OptionsDialog* getOptionsDialog();
   MessagesWidget* getMessagesWidget();
   LibraryTreeWidget* getLibraryTreeWidget();
@@ -163,10 +161,11 @@ public:
 private:
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
-  bool mDebugApplication;
   OptionsDialog *mpOptionsDialog;
   MessagesWidget *mpMessagesWidget;
   QDockWidget *mpMessagesDockWidget;
+  QFile mOutputFile;
+  FileDataNotifier *mpOutputFileDataNotifier;
   SearchClassWidget *mpSearchClassWidget;
   QDockWidget *mpSearchClassDockWidget;
   LibraryTreeWidget *mpLibraryTreeWidget;
@@ -289,6 +288,7 @@ public slots:
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void loadSystemLibrary();
+  void readOutputFile(qint64 bytes);
   void focusSearchClassWidget(bool visible);
   void openRecentFile();
   void clearRecentFilesList();
