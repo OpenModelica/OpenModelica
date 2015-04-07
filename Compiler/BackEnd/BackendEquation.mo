@@ -2305,7 +2305,7 @@ public function makeTmpEqnForExp
   input BackendDAE.Variables ivars;
   input BackendDAE.Shared ishared;
 
-  output DAE.Exp oExp = iExp;
+  output DAE.Exp oExp;
   output BackendDAE.EquationArray oeqns = ieqns;
   output BackendDAE.Variables ovars = ivars;
   output BackendDAE.Shared oshared = ishared;
@@ -2321,12 +2321,14 @@ protected
   Boolean b;
 
 algorithm
-  if not (Expression.isCref(iExp) or Expression.isConst(iExp)) then
+  
+  (y, _) := ExpressionSimplify.simplify(iExp);
+  b := Expression.isCref(y) or Expression.isConst(y);
+  if not b then
 
     cr  := ComponentReference.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
     tmpvar := BackendVariable.makeVar(cr);
     x := Expression.crefExp(cr);
-    (y, _) := ExpressionSimplify.simplify(iExp);
     oExp := x;
 
     eqn := BackendDAE.EQUATION(x, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
@@ -2339,7 +2341,7 @@ algorithm
         case({cr1}) then ComponentReference.crefEqualNoStringCompare(cr,cr1);
         else false;
         end match;
-
+ 
     if b then
       tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
       tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.CONST());
@@ -2348,6 +2350,8 @@ algorithm
       oeqns := BackendEquation.addEquation(eqn, oeqns);
       ovars := BackendVariable.addVar(tmpvar, ovars);
     end if;
+  else
+   oExp := y;
   end if;
 
 end makeTmpEqnForExp;

@@ -3029,6 +3029,14 @@ algorithm
   res := Expression.makePureBuiltinCall("noEvent", {e1}, DAE.T_BOOL_DEFAULT);
 end makeNoEvent;
 
+public function makeAbs ""
+input DAE.Exp e1;
+output DAE.Exp res;
+algorithm
+  res := Expression.makePureBuiltinCall("abs", {e1}, DAE.T_REAL_DEFAULT);
+end makeAbs;
+
+
 public function makeNestedIf "creates a nested if expression given a list of conditions and
 guared expressions and a default value (the else branch)"
   input list<DAE.Exp> inConds "conditions";

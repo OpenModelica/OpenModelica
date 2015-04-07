@@ -2247,6 +2247,8 @@ protected
   array<DAE.Exp> A = arrayCreate(n*n,DAE.RCONST(0.0));
   array<DAE.Exp> ax = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> solvedX = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> scaleA = arrayCreate(n,DAE.RCONST(0.0));
+
   DAE.Exp a, x, eqn_exp, eqn_scalar;
   Integer m, ii, jj, mm;
   list<DAE.Exp> x_lst = List.map(cr_x, Expression.crefExp);
@@ -2267,6 +2269,26 @@ algorithm
     m := ii + (jj-1)*n;
     (a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$A$" + intString(m), offset, oeqns, ovars, oshared);
     arrayUpdate(A,m,a);
+  end for;
+
+  // calc scale A
+  for i in 1:n loop
+    m := (i-1)*n;
+    a :=  Expression.makeSum1(list(Expression.makeAbs(arrayGet(A, m+j)) for j in 1:n));
+    arrayUpdate(scaleA,i,a);
+  end for;
+
+  // update A scaling
+  for i in 1:n loop
+    m := (i-1)*n;
+    for j in 1:n loop
+      a := arrayGet(A,j+m);
+      if not Expression.isZero(a) then
+        a := Expression.expDiv(a, arrayGet(scaleA,j));
+        (a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$sA$" + intString(i + (j-1)*n), offset, oeqns, ovars, oshared);
+        arrayUpdate(A, j+m, a);
+      end if;
+    end for;
   end for;
 
   // b
@@ -2293,6 +2315,19 @@ algorithm
 
   // A*x = b -> R*x = Q'b
   (R, Qb, oeqns, ovars, oshared) := qrDecomposition(A, n, b, oeqns, ovars, offset, oshared);
+
+  // update R scaling
+  for i in 1:n loop
+    m := (i-1)*n;
+    for j in 1:n loop
+      a := arrayGet(R,j+m);
+      if not Expression.isZero(a) then
+        a := Expression.expMul(a, arrayGet(scaleA,j));
+        //(a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$sR$" + intString(i + (j-1)*n), offset, oeqns, ovars, oshared);
+        arrayUpdate(R, j+m, a);
+      end if;
+    end for;
+  end for;
 
   // R*x = Q'*b
   for i in n:-1:1 loop
