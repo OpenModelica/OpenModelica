@@ -41,7 +41,7 @@
 #define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error_time(threadData, b, c, time, __FILE__, __LINE__,data->simulationInfo.noThrowDivZero?1:0)))
 #endif
 
-#define DIVISION_SIM(a,b,msg,equation) (((b) != 0) ? ((a) / (b)) : ((a) / division_error_equation_time(threadData, a, b, msg, equation, time, data->simulationInfo.noThrowDivZero?1:0)))
+#define DIVISION_SIM(a,b,msg,equation) (initial() && (a) == 0 && (b) == 0 ? 0 : ((b) != 0) ? ((a) / (b)) : ((a) / division_error_equation_time(threadData, a, b, msg, equation, time, data->simulationInfo.noThrowDivZero?1:0)))
 
 #define DIVISIONNOTIME(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(threadData, b, c, __FILE__, __LINE__)))
 
