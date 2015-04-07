@@ -4,21 +4,21 @@
 
 RTEuler::RTEuler(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings)
-    , _eulerSettings		(dynamic_cast<ISolverSettings*>(_settings))
-    , _z					(NULL)		
-    , _dimSys				(0)
-    , _f					(NULL)
+    , _eulerSettings    (dynamic_cast<ISolverSettings*>(_settings))
+    , _z          (NULL)
+    , _dimSys        (0)
+    , _f          (NULL)
 {
 }
 
 RTEuler::~RTEuler()
-{	
+{
     if(_z)
         delete [] _z;
     if(_f)
         delete [] _f;
     if(_zInit)
-    	delete [] _zInit;      
+      delete [] _zInit;
 }
 
 
@@ -34,7 +34,7 @@ void RTEuler::initialize()
     SolverDefaultImplementation::initialize();
 
     // Dimension of the system (number of variables)
-    _dimSys	= _continuous_system->getDimContinuousStates();
+    _dimSys  = _continuous_system->getDimContinuousStates();
 
     // Check system dimension
     if(_dimSys <= 0 || !(_properties->isODE()))
@@ -43,38 +43,38 @@ void RTEuler::initialize()
     }
     else
     {
-		       
-        // Allocate state vectors, stages and temporary arrays
-        if(_z)				delete [] _z;
-        if(_f)				delete [] _f;
-      
-       
 
-        _z				= new double[_dimSys];
-        _f   			= new double[_dimSys];
-        _zInit   		= new double[_dimSys];
-        
-        
-        
-        
-        
-        
-        
+        // Allocate state vectors, stages and temporary arrays
+        if(_z)        delete [] _z;
+        if(_f)        delete [] _f;
+
+
+
+        _z        = new double[_dimSys];
+        _f         = new double[_dimSys];
+        _zInit       = new double[_dimSys];
+
+
+
+
+
+
+
         memset(_z,0,_dimSys*sizeof(double));     //hier!!!
         memset(_zInit,0,_dimSys*sizeof(double));
-        
+
         memset(_f,0,_dimSys*sizeof(double));
 
-        
-        
+
+
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         _continuous_system->getContinuousStates(_zInit);
 
         // Ensures that solver is started with right sign of zero function
         _zeroStatus = UNCHANGED_SIGN;
-                
+
         memcpy(_z,_zInit,_dimSys*sizeof(double));
-        
+
         IGlobalSettings* globalsettings = _eulerSettings->getGlobalSettings();
         _h = globalsettings->gethOutput();
     }
@@ -93,7 +93,7 @@ void RTEuler::setEndTime(const double& t)
 };
 
 /// Set the initial step size (needed for reinitialization after external zero search)
-void RTEuler::setInitStepSize(const double& h)	
+void RTEuler::setInitStepSize(const double& h)
 {
     SolverDefaultImplementation::setInitStepSize(h);
 };
@@ -113,13 +113,13 @@ bool RTEuler::stateSelection()
 void RTEuler::solve(const SOLVERCALL command)
 {
 
-	_continuous_system->stepStarted(_tCurrent);
-	_continuous_system->getContinuousStates(_z);
-	doRK1();
+  _continuous_system->stepStarted(_tCurrent);
+  _continuous_system->getContinuousStates(_z);
+  doRK1();
     //_totStps++;
     //_accStps++;
     //_tCurrent += _h; //time not required
-    
+
    _continuous_system->setContinuousStates(_z);
    _continuous_system->evaluateAll();
    _continuous_system->stepCompleted(_tCurrent);
@@ -140,7 +140,7 @@ void RTEuler::writeSimulationInfo()
 }
 
 const int RTEuler::reportErrorMessage(ostream& messageStream)
-{    
+{
     return 1;
 }
 
@@ -149,10 +149,10 @@ const int RTEuler::reportErrorMessage(ostream& messageStream)
 void RTEuler::doRK1()
 {
 
-	calcFunction(_tCurrent, _z, _f);
+  calcFunction(_tCurrent, _z, _f);
 
-	for(int i = 0; i < _dimSys; ++i) 
-		_z[i] += _h * _f[i];
+  for(int i = 0; i < _dimSys; ++i)
+    _z[i] += _h * _f[i];
 }
 
 void RTEuler::setTimeOut(unsigned int time_out)

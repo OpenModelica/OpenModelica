@@ -2321,7 +2321,7 @@ protected
   Boolean b;
 
 algorithm
-  
+
   (y, _) := ExpressionSimplify.simplify(iExp);
   b := Expression.isCref(y) or Expression.isConst(y);
   if not b then
@@ -2341,7 +2341,7 @@ algorithm
         case({cr1}) then ComponentReference.crefEqualNoStringCompare(cr,cr1);
         else false;
         end match;
- 
+
     if b then
       tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
       tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.CONST());

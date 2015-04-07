@@ -8,16 +8,16 @@ class IEulerSettings;
 /*****************************************************************************/
 /**
 
-Euler method for the solution of a non-stiff initial value problem of a system 
-of ordinary differantial equations of the form 
+Euler method for the solution of a non-stiff initial value problem of a system
+of ordinary differantial equations of the form
 
-z' = f(t,z). 
+z' = f(t,z).
 
 Dense output may be used. Zero crossing are detected by bisection or linear
 interpolation.
 
 \date     01.09.2008
-\author   
+\author
 
 
 */
@@ -27,7 +27,7 @@ Copyright (c) 2008, OSMC
 class  RTEuler : public ISolver, public SolverDefaultImplementation
 {
 public:
-	 RTEuler(IMixedSystem* system, ISolverSettings* settings);
+   RTEuler(IMixedSystem* system, ISolverSettings* settings);
      virtual ~RTEuler();
 
     /// Set start time for numerical solution
@@ -64,23 +64,23 @@ private:
     void calcFunction(const double& t, const double* z, double* zDot);
 
     void doRK1();
-     
+
     // Member variables
     //---------------------------------------------------------------
     ISolverSettings
-        *_eulerSettings;							///< Settings for the solver
+        *_eulerSettings;              ///< Settings for the solver
 
     long int
-        _dimSys;									///< Temp 			- (total) Dimension of systems (=number of ODE)
+        _dimSys;                  ///< Temp       - (total) Dimension of systems (=number of ODE)
 
-  
+
     double _tHelp;
     double
-        *_z,										///< Temp			- State vector   
-        *_zInit,          							///< Temp           - Initial state vector
-        *_f;										///< Temp			- function evaluation									///< Temp			- yhelp and fhelp only provided in order to avoid multiple generation of save
-	
-    ISystemProperties* _properties; 
+        *_z,                    ///< Temp      - State vector
+        *_zInit,                        ///< Temp           - Initial state vector
+        *_f;                    ///< Temp      - function evaluation                  ///< Temp      - yhelp and fhelp only provided in order to avoid multiple generation of save
+
+    ISystemProperties* _properties;
     IContinuous* _continuous_system;
     IEvent* _event_system;
     IMixedSystem* _mixed_system;

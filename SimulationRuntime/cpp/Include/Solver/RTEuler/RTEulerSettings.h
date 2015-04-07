@@ -9,7 +9,7 @@
 Encapsulation of settings for euler solver
 
 \date     October, 1st, 2008
-\author 
+\author
 
 
 */
@@ -21,9 +21,9 @@ class RTEulerSettings : public SolverSettings
 
 public:
     RTEulerSettings(IGlobalSettings* globalSettings);
- 
+
      virtual void load(std::string xml_file);
 private:
-    
-   
+
+
 };

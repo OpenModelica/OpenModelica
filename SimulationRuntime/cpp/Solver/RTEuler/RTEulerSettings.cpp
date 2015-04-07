@@ -3,7 +3,7 @@
 #include <Solver/RTEuler/RTEulerSettings.h>
 
 RTEulerSettings::RTEulerSettings(IGlobalSettings* globalSettings)
-: SolverSettings		(globalSettings)
+: SolverSettings    (globalSettings)
 {
 }
 
@@ -19,5 +19,5 @@ void RTEulerSettings::load(std::string xml_file)
  /* std::fstream ofs;
     ofs.open("C:\\Temp\\EulerSettings.xml", ios::out);
     boost::archive::xml_oarchive xml(ofs);
-    xml << boost::serialization::make_nvp("EulerSettings", *this); 
+    xml << boost::serialization::make_nvp("EulerSettings", *this);
     ofs.close();*/
