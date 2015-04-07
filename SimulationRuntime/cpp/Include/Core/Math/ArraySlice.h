@@ -204,12 +204,12 @@ class ArraySlice : public BaseArray<T> {
     return ndims;
   }
 
-  virtual void setDims(std::vector<size_t> v) {
+  virtual void setDims(const std::vector<size_t> &v) {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                   "Can't set dims of ArraySlice");
   }
 
-  virtual void resize(std::vector<size_t> dims) {
+  virtual void resize(const std::vector<size_t> &dims) {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                   "Can't resize ArraySlice");
   }

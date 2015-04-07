@@ -10,7 +10,7 @@ template<class T>class BaseArray
 public:
   BaseArray(bool is_static)
   :_static(is_static)
-  {};
+  {}
 
   //interface methods for all arrays
 
@@ -22,8 +22,8 @@ public:
   virtual const T* getData() const = 0;
   virtual unsigned int getNumElems() const = 0;
   virtual unsigned int getNumDims() const = 0;
-  virtual void setDims(std::vector<size_t> v) = 0;
-  virtual void resize(std::vector<size_t> dims) = 0;
+  virtual void setDims(const std::vector<size_t>& v) = 0;
+  virtual void resize(const std::vector<size_t>& dims) = 0;
   virtual const char** getCStrData()
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array getCStrData call");
@@ -142,7 +142,7 @@ public:
   return *this;
  }
 
- virtual void resize(std::vector<size_t> dims)
+ virtual void resize(const std::vector<size_t>& dims)
  {
      if (dims != getDims())
          std::runtime_error("Cannot resize static array!");
@@ -212,7 +212,7 @@ public:
      return 1;
   }
 
-  virtual void setDims(std::vector<size_t> v) {  }
+  virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t size1)  { }
 
   typedef typename boost::array<T,size>::const_iterator                              const_iterator;
@@ -279,7 +279,7 @@ public:
   //  _array_data = otherArray._array_data;
   //}
 
- virtual void resize(std::vector<size_t> dims)
+ virtual void resize(const std::vector<size_t>& dims)
  {
      if (dims != getDims())
          std::runtime_error("Cannot resize static array!");
@@ -405,7 +405,7 @@ public:
      return 1;
   }
 
-  virtual void setDims(std::vector<size_t> v) {  }
+  virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t size1)  { }
 
   typedef typename boost::array<string,size>::const_iterator                              const_iterator;
@@ -484,7 +484,7 @@ public:
 
   }
 
-  virtual void resize(std::vector<size_t> dims)
+  virtual void resize(const std::vector<size_t>& dims)
   {
       if (dims != getDims())
           std::runtime_error("Cannot resize static array!");
@@ -562,7 +562,7 @@ public:
      return _array_data.data();
   }
 
-  virtual void setDims(std::vector<size_t> v) {  }
+  virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
   //boost::array< boost::array<T, size2>, size1> _array_data;
@@ -661,7 +661,7 @@ public:
      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"append not supported for 2-dim string array");
   }
 
-  virtual void resize(std::vector<size_t> dims)
+  virtual void resize(const std::vector<size_t>& dims)
   {
       if (dims != getDims())
           std::runtime_error("Cannot resize static array!");
@@ -748,7 +748,7 @@ public:
     return _c_array_data.c_array();
   }
 
-  virtual void setDims(std::vector<size_t> v) {  }
+  virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
   //boost::array< boost::array<T, size2>, size1> _array_data;
@@ -817,7 +817,7 @@ public:
      memcpy( _array_data.begin(), data, size1*size2*size3 * sizeof( T ) );
   }
 
-  virtual void resize(std::vector<size_t> dims)
+  virtual void resize(const std::vector<size_t>& dims)
   {
       if (dims != getDims())
           std::runtime_error("Cannot resize static array!");
@@ -864,7 +864,7 @@ public:
      return 3;
   }
 
-  virtual void setDims(std::vector<size_t> v) { }
+  virtual void setDims(const std::vector<size_t>& v) { }
   void setDims(size_t i,size_t j,size_t k)  { }
    /*
   access to data
@@ -990,7 +990,7 @@ public:
   {
     return size1 + size2 + size3 + size4;
   }
-  virtual void setDims(std::vector<size_t> v)
+  virtual void setDims(const std::vector<size_t>& v)
   {
 
   }
@@ -1115,7 +1115,7 @@ public:
   {
     return size1 + size2 + size3 + size4 + size5;
   }
-  virtual void setDims(std::vector<size_t> v)
+  virtual void setDims(const std::vector<size_t>& v)
   {
 
   }
@@ -1188,7 +1188,7 @@ public:
   }
   */
 
-  virtual void resize(std::vector<size_t> dims)
+  virtual void resize(const std::vector<size_t>& dims)
   {
       if (dims != getDims())
       {
@@ -1253,7 +1253,7 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<size_t> v)
+  virtual void setDims(const std::vector<size_t>& v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
@@ -1335,7 +1335,7 @@ public:
   }
   ~DynArrayDim2(){}
 
-  virtual void resize(std::vector<size_t> dims)
+  virtual void resize(const std::vector<size_t>& dims)
   {
       if (dims != getDims())
       {
@@ -1403,7 +1403,7 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<size_t> v)
+  virtual void setDims(const std::vector<size_t>& v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
@@ -1488,7 +1488,7 @@ public:
   }
   */
 
-  virtual void resize(std::vector<size_t> dims)
+  virtual void resize(const std::vector<size_t>& dims)
   {
       if (dims != getDims())
       {
@@ -1532,7 +1532,7 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<size_t> v)
+  virtual void setDims(const std::vector<size_t>& v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
@@ -1652,7 +1652,7 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<size_t> v)
+  virtual void setDims(const std::vector<size_t>& v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
@@ -1758,7 +1758,7 @@ public:
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(std::vector<size_t> v)
+  virtual void setDims(const std::vector<size_t>& v)
   {
     _multi_array.resize(v);
     _multi_array.reindex(1);
