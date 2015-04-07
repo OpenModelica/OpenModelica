@@ -57,6 +57,7 @@ using namespace std;
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string.hpp>
 #if defined (__vxworks) || defined (__TRICORE__)
 #else
 #include "Utils/extension/shared_library.hpp"
@@ -142,6 +143,7 @@ namespace uBlas = boost::numeric::ublas;
 using namespace boost::assign;
 using namespace boost::numeric;
 using boost::multi_array;
+using namespace boost::algorithm;
 using boost::const_multi_array_ref;
 using boost::multi_array_ref;
 using boost::unordered_map;
