@@ -195,6 +195,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/SimulationSettings/ISimControllerSettings.h>
 #include <Core/Math/Functions.h>
 #include <Core/Math/ArrayOperations.h>
+#include <Core/Math/ArraySlice.h>
 #include <Core/Math/Utility.h>
 #include <Core/Math/SparseMatrix.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>

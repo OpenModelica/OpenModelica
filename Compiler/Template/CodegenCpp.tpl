@@ -12067,6 +12067,31 @@ template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &p
     var
 end daeExpCrefRhsArrayBox2;
 
+
+template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
+  Text &preExp, Text &varDecls, SimCode simCode, 
+  Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, 
+  Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates index spec of an array as temporary vector<Slice>."
+::=
+  let tmp_slice = tempDecl("vector<Slice>", &varDecls /*BUFD*/)
+  let &preExp += '<%tmp_slice%>.clear();<%\n%>'
+  let idx_str = (subs |> sub hasindex i1 =>
+    match sub
+      case INDEX(__) then
+        let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        let &preExp += '<%tmp_slice%>.push_back(Slice(<%expPart%>));<%\n%>'
+        ''
+      case WHOLEDIM(__) then
+        let &preExp += '<%tmp_slice%>.push_back(Slice());<%\n%>'
+        ''
+      case SLICE(__) then
+        error(sourceInfo(), "Unknown slice expression " + printExpStr(exp))
+    ;separator="\n ")
+  <<<%tmp_slice%>>>
+end daeExpCrefIndexSpec;
+
+
 template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
   match cr
   case CREF_IDENT(ident = "xloc") then '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
@@ -14419,9 +14444,10 @@ case STMT_ASSIGN_ARR(exp=e as CALL(__), lhs=CREF(componentRef=cr), type_=t) then
      <%preExp%>
      <%cref%>.assign(<%expPart%>);
     >>
-case STMT_ASSIGN_ARR(exp=e, lhs=CREF(componentRef=cr), type_=t) then
+case STMT_ASSIGN_ARR(exp=e, lhs=lhsexp as CREF(componentRef=cr), type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let dest = algStmtAssignArrCref(lhsexp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     /*previous multi_array
     <<
     <%preExp%>
@@ -14429,10 +14455,27 @@ case STMT_ASSIGN_ARR(exp=e, lhs=CREF(componentRef=cr), type_=t) then
     >>
   */
   <<
-     <%preExp%>
-     <%contextArrayCref(cr, context)%>.assign(<%expPart%>);
-    >>
+  <%preExp%>
+  <%dest%>.assign(<%expPart%>);
+  >>
 end algStmtAssignArr;
+
+
+template algStmtAssignArrCref(DAE.Exp exp, Context context, 
+  Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, SimCode simCode,
+  Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
+  Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates a component reference to an array or a slice of it."
+::=
+match exp
+  case CREF(componentRef=cr, ty = T_ARRAY(ty=basety, dims=dims)) then
+    let typeStr = expTypeArray(ty)
+    let slice = if crefSubs(cr) then daeExpCrefIndexSpec(crefSubs(cr), context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    if slice then
+      'ArraySlice<<%typeStr%>>(<%contextArrayCref(cr, context)%>, <%slice%>)'
+    else
+      '<%contextArrayCref(cr, context)%>'
+end algStmtAssignArrCref;
 
 
 template indexSpecFromCref(ComponentRef cr, Context context, Text &preExp /*BUFP*/,
