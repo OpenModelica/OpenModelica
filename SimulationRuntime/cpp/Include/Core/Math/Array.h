@@ -14,14 +14,14 @@ public:
 
   //interface methods for all arrays
 
-  virtual T& operator()(vector<size_t> idx) = 0;
+  virtual T& operator()(const vector<size_t>& idx) = 0;
   virtual void assign(const T* data) = 0;
   virtual void assign(const BaseArray<T>& otherArray) = 0;
   virtual std::vector<size_t> getDims() const = 0;
   virtual T* getData() = 0;
   virtual const T* getData() const = 0;
-  virtual unsigned int getNumElems() = 0;
-  virtual unsigned int getNumDims() = 0;
+  virtual unsigned int getNumElems() const = 0;
+  virtual unsigned int getNumDims() const = 0;
   virtual void setDims(std::vector<size_t> v) = 0;
   virtual void resize(std::vector<size_t> dims) = 0;
   virtual const char** getCStrData()
@@ -167,7 +167,7 @@ public:
       _array_data[i-1] = otherArray(i);
     }*/
   }
-  virtual T& operator()(vector<size_t> idx)
+  virtual T& operator()(const vector<size_t>& idx)
   {
      return _array_data[idx[0]-1];
   };
@@ -203,11 +203,11 @@ public:
   {
      return _array_data.data();
   }
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return size;
   }
-  virtual unsigned int getNumDims()
+  virtual unsigned int getNumDims() const
   {
      return 1;
   }
@@ -355,7 +355,7 @@ public:
     }
 
   }
-  virtual string& operator()(vector<size_t> idx)
+  virtual string& operator()(const vector<size_t>& idx)
   {
      return _array_data[idx[0]-1];
   };
@@ -396,11 +396,11 @@ public:
   }
 
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return size;
   }
-  virtual unsigned int getNumDims()
+  virtual unsigned int getNumDims() const
   {
      return 1;
   }
@@ -509,7 +509,7 @@ public:
 
 
   }
-  virtual T& operator()(vector<size_t> idx)
+  virtual T& operator()(const vector<size_t>& idx)
   {
      return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
   };
@@ -538,12 +538,12 @@ public:
     return v;
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return size1 * size2;
   }
 
-    virtual unsigned int getNumDims()
+    virtual unsigned int getNumDims() const
   {
      return 2;
   }
@@ -695,7 +695,7 @@ public:
              }
         }
   }
-  virtual string& operator()(vector<size_t> idx)
+  virtual string& operator()(const vector<size_t>& idx)
   {
      return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
   };
@@ -718,12 +718,12 @@ public:
     return v;
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return size1 * size2;
   }
 
-    virtual unsigned int getNumDims()
+    virtual unsigned int getNumDims() const
   {
      return 2;
   }
@@ -839,7 +839,7 @@ public:
   }
   return *this;
  }
-  virtual T& operator()(vector<size_t> idx)
+  virtual T& operator()(const vector<size_t>& idx)
   {
     //row-major order
    return _array_data[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))];
@@ -854,12 +854,12 @@ public:
     //return _array_data[(k - 1)*size2*size1 +   (j - 1)*size1 + (i - 1)];
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return size1 * size2 * size3;
   }
 
-   virtual unsigned int getNumDims()
+   virtual unsigned int getNumDims() const
   {
      return 3;
   }
@@ -986,7 +986,7 @@ public:
     return _array_data[i - 1][j - 1][k - 1][l - 1];
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return size1 + size2 + size3 + size4;
   }
@@ -1111,7 +1111,7 @@ public:
   {
     return _array_data[i - 1][j - 1][k - 1][l - 1][m - 1];
   }
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return size1 + size2 + size3 + size4 + size5;
   }
@@ -1219,7 +1219,7 @@ public:
   }
 
 
-  virtual T& operator()(vector<size_t> idx)
+  virtual T& operator()(const vector<size_t>& idx)
   {
      return _multi_array[idx[0]];
   };
@@ -1280,11 +1280,11 @@ public:
   {
      return _multi_array.data();
   }
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return _multi_array.num_elements();
   }
- virtual unsigned int getNumDims()
+ virtual unsigned int getNumDims() const
   {
      return 1;
   }
@@ -1385,7 +1385,7 @@ public:
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
   }
- virtual T& operator()(vector<size_t> idx)
+ virtual T& operator()(const vector<size_t>& idx)
   {
      return _multi_array[idx[0]][idx[1]];
   };
@@ -1417,11 +1417,11 @@ public:
     return ex;
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return _multi_array.num_elements();
   }
-   virtual unsigned int getNumDims()
+   virtual unsigned int getNumDims() const
   {
      return 2;
   }
@@ -1545,7 +1545,7 @@ public:
     ex.assign( shape, shape + 3 );
     return ex;
   }
-  virtual T& operator()(vector<size_t> idx)
+  virtual T& operator()(const vector<size_t>& idx)
   {
      return _multi_array[idx[0]][idx[1]][idx[2]];
   };
@@ -1554,11 +1554,11 @@ public:
     return _multi_array[i][j][k];
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return _multi_array.num_elements();
   }
-   virtual unsigned int getNumDims()
+   virtual unsigned int getNumDims() const
   {
      return 3;
   }
@@ -1672,7 +1672,7 @@ public:
     return _multi_array[i][j][k][l];
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return _multi_array.num_elements();
   }
@@ -1778,7 +1778,7 @@ public:
     return _multi_array[i][j][k][l][m];
   }
 
-  virtual unsigned int getNumElems()
+  virtual unsigned int getNumElems() const
   {
     return _multi_array.num_elements();
   }

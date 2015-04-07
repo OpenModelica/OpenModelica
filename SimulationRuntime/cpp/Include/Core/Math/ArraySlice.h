@@ -72,7 +72,7 @@ class Slice {
     nindices = 0;
   }
 
-  Slice(BaseArray<int> &ivec) {
+  Slice(const BaseArray<int> &ivec) {
     start = 0;
     step = 0;
     stop = 0;
@@ -125,7 +125,7 @@ class ArraySlice : public BaseArray<T> {
     }
   }
 
-  virtual T& operator()(vector<size_t> idx) {
+  virtual T& operator()(const vector<size_t> &idx) {
     vector<size_t>::const_iterator it = idx.begin();
     vector< vector<size_t> >::const_iterator dit;
     size_t i, dim;
@@ -187,7 +187,7 @@ class ArraySlice : public BaseArray<T> {
                                   "Can't get const data pointer of ArraySlice");
   }
 
-  virtual unsigned int getNumElems() {
+  virtual unsigned int getNumElems() const {
     unsigned int nelems = 1;
     size_t dim;
     vector< vector<size_t> >::const_iterator dit;
@@ -196,7 +196,7 @@ class ArraySlice : public BaseArray<T> {
     return nelems;
   }
 
-  virtual unsigned int getNumDims() {
+  virtual unsigned int getNumDims() const {
     int ndims = 0;
     vector< vector<size_t> >::const_iterator dit;
     for (dit = _idxs.begin(); dit != _idxs.end(); dit++)
