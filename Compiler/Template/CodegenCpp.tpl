@@ -4541,7 +4541,7 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
     let typeStr = expTypeShort(type_)
     let name = if outputIndex then 'out.targTest4<%outputIndex%>' else contextCref2(c,contextFunction)
     let dim = daeExp(exp, contextFunction, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '<%name%>.getDims()[<%dim%> - 1]'
+    '<%name%>.getDim(<%dim%>)'
 
 end extArg;
 
@@ -10460,7 +10460,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let &rangeExpPre += '<%loopVar%> = <%rangeExp%>/*testloopvar2*/;<%\n%>'
     let &rangeExpPre += if firstIndex then '<%firstIndex%> = 1;<%\n%>'
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) else "1")
-    let empty = '0 == (<%loopVar%>.getDims()[1])'
+    let empty = '0 == (<%loopVar%>.getDim(2))'
     let iteratorName = contextIteratorName(iter.id, context)
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
     let guardExp =
@@ -10478,7 +10478,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         else
           '<%loopVar%>( <%firstIndex%>++)'
       <<
-      while(<%firstIndex%> <=  <%loopVar%>.getDims()[0]) {
+      while(<%firstIndex%> <=  <%loopVar%>.getDim(1)) {
         <%iteratorName%> = <%addr%>;
         <%guardExp%>
       }
@@ -10490,7 +10490,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let loopVar = '<%iter.id%>_loopVar'
          let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = max(<%length%>,(<%loopVar%>.getDims()[0]));<%\n%>'
+         let &rangeExpPre += '<%length%> = max(<%length%>,(<%loopVar%>.getDim(1)));<%\n%>'
          "")
       <<
        <%arrIndex%> = 1;
@@ -10571,7 +10571,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp, Text &varDecls, SimC
     let typeStr = '<%expTypeArray(exp.ty)%>'
   //previous multiarray let &preExp += '<%resVar%> = <%expPart%>.shape()[<%dimPart%>-1];<%\n%>'
     //previous multiarray
-  let &preExp += '<%resVar%> = <%expPart%>.getDims()[<%dimPart%>-1];<%\n%>'
+  let &preExp += '<%resVar%> = <%expPart%>.getDim(<%dimPart%>);<%\n%>'
     resVar
   else "size(X) not implemented"
 end daeExpSize;
@@ -12003,7 +12003,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context, Text &pre
         let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         let &preExp +=  '<%tmp_idx%>.assign(<%expPart%>.getData(),<%expPart%>.getData()+<%expPart%>.getNumElems());<%\n%>
-                         <%tmp_shape%>.push_back(<%expPart%>.getDims()[0]);<%\n%>
+                         <%tmp_shape%>.push_back(<%expPart%>.getDim(1));<%\n%>
                          <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
        ''
     ;separator="\n ")

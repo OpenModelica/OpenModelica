@@ -177,6 +177,28 @@ class ArraySlice : public BaseArray<T> {
     return dims;
   }
 
+  virtual size_t getDim(size_t reducedDim) const {
+    size_t dim, rdim = 1;
+    vector< vector<size_t> >::const_iterator dit;
+    for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
+      switch (dit->size()) {
+      case 0:
+        // all indices
+        if (reducedDim == rdim++)
+          return _baseArray.getDim(dim);
+        break;
+      case 1:
+        // reduction
+        break;
+      default:
+        // regular index mapping
+        if (reducedDim == rdim++)
+          return dit->size();
+      }
+    }
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDim out of range");
+  }
+
   virtual T* getData() {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                   "Can't get data pointer of ArraySlice");

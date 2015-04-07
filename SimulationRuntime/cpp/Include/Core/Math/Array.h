@@ -18,6 +18,7 @@ public:
   virtual void assign(const T* data) = 0;
   virtual void assign(const BaseArray<T>& otherArray) = 0;
   virtual std::vector<size_t> getDims() const = 0;
+  virtual size_t getDim(size_t dim) const = 0; // { getDims()[dim - 1]; }
   virtual T* getData() = 0;
   virtual const T* getData() const = 0;
   virtual unsigned int getNumElems() const = 0;
@@ -188,6 +189,11 @@ public:
     std::vector<size_t> v;
     v.push_back(size);
     return v;
+  }
+
+  virtual size_t getDim(size_t dim) const
+  {
+    return size;
   }
  /*
   access to data
@@ -376,6 +382,12 @@ public:
     v.push_back(size);
     return v;
   }
+
+  virtual size_t getDim(size_t dim) const
+  {
+    return size;
+  }
+
  /*
   access to data
   */
@@ -536,6 +548,18 @@ public:
     v.push_back(size1);
     v.push_back(size2);
     return v;
+  }
+
+  virtual size_t getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return size1;
+    case 2:
+      return size2;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
   }
 
   virtual unsigned int getNumElems() const
@@ -718,6 +742,18 @@ public:
     return v;
   }
 
+  virtual size_t getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return size1;
+    case 2:
+      return size2;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
+  }
+
   virtual unsigned int getNumElems() const
   {
     return size1 * size2;
@@ -831,6 +867,21 @@ public:
     v.push_back(size3);
     return v;
   }
+
+  virtual size_t getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return size1;
+    case 2:
+      return size2;
+    case 3:
+      return size3;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
+  }
+
  StatArrayDim3<T,size1,size2,size3>& operator=(const StatArrayDim3<T,size1,size2,size3>& rhs)
  {
   if (this != &rhs)
@@ -1148,7 +1199,7 @@ public:
   :BaseArray<T>(false)
   {
     //assign(dynarray);
-    setDims(dynarray.getDims()[0]);
+    setDims(dynarray.getDim(1));
     _multi_array.reindex(1);
     _multi_array=dynarray._multi_array;
   }
@@ -1266,6 +1317,11 @@ public:
     ex.assign( shape, shape + 1 );
     return ex;
   }
+
+  virtual size_t getDim(size_t dim) const
+  {
+    return _multi_array.shape()[dim - 1];
+  }
   /*
   access to data (read-only)
   */
@@ -1307,7 +1363,7 @@ public:
   :BaseArray<T>(false)
   {
     //assign(dynarray);
-    setDims(dynarray.getDims()[0],dynarray.getDims()[1]);
+    setDims(dynarray.getDim(1), dynarray.getDim(2));
     _multi_array.reindex(1);
     _multi_array=dynarray._multi_array;
   }
@@ -1415,6 +1471,11 @@ public:
     std::vector<size_t> ex;
     ex.assign( shape, shape + 2 );
     return ex;
+  }
+
+  virtual size_t getDim(size_t dim) const
+  {
+    return _multi_array.shape()[dim - 1];
   }
 
   virtual unsigned int getNumElems() const
@@ -1545,6 +1606,12 @@ public:
     ex.assign( shape, shape + 3 );
     return ex;
   }
+
+  virtual size_t getDim(size_t dim) const
+  {
+    return _multi_array.shape()[dim - 1];
+  }
+
   virtual T& operator()(const vector<size_t>& idx)
   {
      return _multi_array[idx[0]][idx[1]][idx[2]];
@@ -1666,6 +1733,10 @@ public:
     return ex;
   }
 
+  virtual size_t getDim(size_t dim) const
+  {
+    return _multi_array.shape()[dim - 1];
+  }
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l)
   {
@@ -1772,6 +1843,10 @@ public:
     return ex;
   }
 
+  virtual size_t getDim(size_t dim) const
+  {
+    return _multi_array.shape()[dim - 1];
+  }
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l, unsigned int m)
   {
