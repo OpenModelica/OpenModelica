@@ -223,15 +223,15 @@ algorithm
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);
 
-      //taskGraphDAE = arrayCopy(taskGraph);
-      //taskGraphDataDAE = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
-      //(taskGraphDAE,taskGraphDataDAE) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDAE,taskGraphDataDAE);
+      taskGraphDAE = arrayCopy(taskGraph);
+      taskGraphDataDAE = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
+      (taskGraphDAE,taskGraphDataDAE) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDAE,taskGraphDataDAE);
 
-      //fileName = ("taskGraph"+filenamePrefix+"DAE.graphml");
-      //daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
-      //daeSccMapping = arrayAppend(sccSimEqMapping,daeSccMapping);
-      //schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
-      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
+      fileName = ("taskGraph"+filenamePrefix+"DAE.graphml");
+      daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
+      daeSccMapping = arrayAppend(sccSimEqMapping,daeSccMapping);
+      schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       SimCodeUtil.execStat("hpcom create DAE TaskGraph");
 
       //print("DAE\n");

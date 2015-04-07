@@ -5788,7 +5788,7 @@ algorithm
       crefsLst = List.map(eqLst,BackendEquation.equationCrefs);
       //print("crefs \n");List.map_0(crefsLst,ComponentReference.printComponentRefList);
       nodeVarLst = List.map2(crefsLst,getNodeForCrefLst,dae,varCompMap);
-      //print("nodes: "+stringDelimitList(List.map(nodeLst,intLstString)," | ")+"\n");
+      //print("nodeVarLst"+stringDelimitList(List.map(nodeVarLst,printNodeVars),"\n")+"\n");
 
       TASKGRAPHMETA(inComps=inComps1, varCompMapping=varCompMapping1, eqCompMapping=eqCompMapping1, compParamMapping=compParamMapping1, compNames=compNames1, compDescs=compDescs1, exeCosts=exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1, compInformations=compInformations1) = graphDataIn;
       graph = arrayAppend(graphIn,arrayCreate(numNewComps,{}));
@@ -5814,6 +5814,20 @@ algorithm
   else (graphIn,graphDataIn);
   end matchcontinue;
 end appendRemovedEquations;
+
+protected function printNodeVars
+  input list<tuple<Integer,Integer>> nodes;
+  output String s;
+algorithm
+  s := ":" + stringDelimitList(List.map(nodes,printNodeVars1)," | ");
+end printNodeVars;
+
+protected function printNodeVars1
+  input tuple<Integer,Integer> node;
+  output String s;
+algorithm
+  s := "("+intString(Util.tuple21(node))+","+intString(Util.tuple22(node))+")";
+end printNodeVars1;
 
 protected function setCommCostsToParent"sets/updated the communication costs for the list of parents to the child node.
 author:Waurich TUD 2014-07"
@@ -5890,21 +5904,21 @@ protected
   list<tuple<Integer,Integer>> tmpNodeVarLst;
 algorithm
   tmpNodeVarLst := List.map2(iCrefs,getNodeForCref,iDae,iVarCompMap);
-  oNodeVarLst := List.filter1OnTrue(tmpNodeVarLst,tupleList21Equal,-1);
+  oNodeVarLst := List.filterOnTrue(tmpNodeVarLst,nodeIsDependent);
+  //print("tmpNodeVarLst1 "+printNodeVars(tmpNodeVarLst)+"\n");
 end getNodeForCrefLst;
 
-protected function tupleList21Equal
-  "Checks if the first tuple argument is equal to the iCompValue.
-   author: marcusw"
-  input tuple<Integer,Integer> iTuple;
-  input Integer iCompValue;
-  output Boolean oEqual;
+protected function nodeIsDependent
+  "if this node has no parent, it is independent
+   author: waurich"
+  input tuple<Integer,Integer> node;
+  output Boolean dep;
 protected
   Integer tpl1;
 algorithm
-  (tpl1,_) := iTuple;
-  oEqual := intEq(tpl1,iCompValue);
-end tupleList21Equal;
+  (tpl1,_) := node;
+  dep := intNe(tpl1,-1);
+end nodeIsDependent;
 
 protected function getNodeForCref "get the node- and var-idx for the given cref
 author:Waurich TUD 2014-07"
@@ -5918,7 +5932,9 @@ protected
 algorithm
   BackendDAE.DAE(eqs=eqSystems) := iDae;
   (eqSysIdx,varIdx,_) := getNodeForCref1(eqSystems,iCref,1);
+  //print("got var "+intString(varIdx)+" in eqSys "+intString(eqSysIdx)+"\n");
   nodeIdx := getNodeForVarIdx(varIdx,eqSysIdx,iVarCompMapping,varIdx);
+  //print("got nodeIdx "+intString(nodeIdx)+"\n");
   oNodeVarIdx := (nodeIdx,varIdx);
 end getNodeForCref;
 
@@ -5938,13 +5954,20 @@ algorithm
       BackendDAE.EqSystems eqSys;
       BackendDAE.EqSystems rest;
       BackendDAE.Variables vars;
+      list<BackendDAE.Var> varLst;
    case(BackendDAE.EQSYSTEM(orderedVars = vars)::_,_,_)
       equation
-        (_,lst) = BackendVariable.getVar(cref,vars);
+        //print("check cref: "+ComponentReference.printComponentRefStr(cref)+"\n");
+        (varLst,lst) = BackendVariable.getVar(cref,vars);
         if intNe(listLength(lst),1) then
           print("Check if there is a assert or something that is dependent of arrayEquations");
         end if;
-      then (eqSysIdxIn,List.first(lst),true);
+        if BackendVariable.isStateVar(List.first(varLst)) then // if its dependent on a state --> no edge in the task graph
+          (esIdx,vIdx,b) = (-1,-1,false);
+        else 
+          (esIdx,vIdx,b) = (eqSysIdxIn,List.first(lst),true);
+        end if;
+      then (esIdx,vIdx,b);
     case(BackendDAE.EQSYSTEM()::rest,_,_)
       equation
         (esIdx,vIdx,b) = getNodeForCref1(rest,cref,eqSysIdxIn+1);
