@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(__vxworks)
+#if defined(__vxworks) || defined(__TRICORE__)
 
 #define BOOST_EXTENSION_SOLVER_DECL
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL
@@ -21,6 +21,3 @@
 #else
     error "operating system not supported"
 #endif
-
-
-

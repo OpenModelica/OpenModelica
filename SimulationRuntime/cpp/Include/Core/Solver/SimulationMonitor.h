@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(__vxworks)
+#if defined(__vxworks) || defined (__TRICORE__)
 #define BOOST_EXTENSION_MONITOR_DECL
 #endif
 
