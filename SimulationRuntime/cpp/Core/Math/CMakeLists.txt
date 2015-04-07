@@ -20,11 +20,12 @@ ELSE(RUNTIME_STATIC_LINKING)
 ENDIF(RUNTIME_STATIC_LINKING)
 
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Math/Functions.h
-          ${CMAKE_SOURCE_DIR}/Include/Core/Math/ArrayOperations.h
-          ${CMAKE_SOURCE_DIR}/Include/Core/Math/Utility.h
-          ${CMAKE_SOURCE_DIR}/Include/Core/Math/Constants.h
+	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/ArrayOperations.h
+	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/Utility.h
+	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/Constants.h
 	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/SparseMatrix.h
 	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/ILapack.h
-          ${CMAKE_SOURCE_DIR}/Include/Core/Math/OMAPI.h
-		   ${CMAKE_SOURCE_DIR}/Include/Core/Math/Array.h
-         DESTINATION include/omc/cpp/Core/Math)
+	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/OMAPI.h
+	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/Array.h
+	  ${CMAKE_SOURCE_DIR}/Include/Core/Math/ArraySlice.h
+	 DESTINATION include/omc/cpp/Core/Math)
