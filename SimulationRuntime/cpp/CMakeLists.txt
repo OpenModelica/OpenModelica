@@ -61,6 +61,7 @@ SET(IDAName ${LIBPREFIX}IDA)
 SET(PeerName ${LIBPREFIX}Peer)
 SET(RTRKName ${LIBPREFIX}RTRK)
 SET(EulerName ${LIBPREFIX}Euler)
+SET(RTEulerName ${LIBPREFIX}RTEuler)
 SET(IdaName ${LIBPREFIX}Ida)
 SET(IdasName ${LIBPREFIX}Idas)
 SET(KinsolName ${LIBPREFIX}Kinsol)
@@ -398,6 +399,7 @@ add_subdirectory (Core/SimController)
 
 #add  Euler solver project
 add_subdirectory (Solver/Euler)
+add_subdirectory (Solver/RTEuler)
 add_subdirectory (Solver/Newton)
 add_subdirectory (Solver/Hybrj)
 add_subdirectory (Solver/UmfPack)
@@ -454,6 +456,9 @@ GET_FILENAME_COMPONENT(libUmfPackName ${libUmfPack} NAME)
 GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
 
+GET_TARGET_PROPERTY(libRTEuler ${RTEulerName} LOCATION)
+GET_FILENAME_COMPONENT(libRTEulerName ${libRTEuler} NAME)
+
 GET_TARGET_PROPERTY(libHybrj ${HybrjName} LOCATION)
 GET_FILENAME_COMPONENT(libHybrjName ${libHybrj} NAME)
 
@@ -486,6 +491,7 @@ GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} LOCATION)
 GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
 
 set (EULER_LIB ${libEulerName})
+set (RTEULER_LIB ${libRTEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
 set (NEWTON_LIB ${libNewtonName})
