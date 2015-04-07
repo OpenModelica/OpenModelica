@@ -492,6 +492,89 @@ algorithm
   (_, (_,cr_lst)) := traverseExpsOfEquation(e, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, cr_lst));
 end traversingEquationCrefFinder;
 
+
+public function equationUnknownCrefsNotConst "author: Frenkel TUD 2012-05
+  From the equation and a variable array return all
+  variables in the equation an not in the variable array or not const"
+  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inKnVars;
+  output list<DAE.ComponentRef> cr_lst;
+protected
+  HashTable.HashTable ht;
+algorithm
+  ht := HashTable.emptyHashTable();
+  (_, (_, (_, _, ht))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (checkEquationsUnknownCrefsExpNotConst, (inVars, inKnVars, ht)));
+  cr_lst := BaseHashTable.hashTableKeyList(ht);
+end equationUnknownCrefsNotConst;
+
+protected function checkEquationsUnknownCrefsExpNotConst
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables, HashTable.HashTable> inTuple;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables, HashTable.HashTable> outTuple;
+algorithm
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
+    local
+      DAE.Exp e, e1;
+      BackendDAE.Variables vars, knvars;
+      HashTable.HashTable ht;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> expl;
+      list<DAE.Var> varLst;
+      list<BackendDAE.Var> var_lst;
+
+    // special case for records
+    case (e as DAE.CREF(componentRef = cr, ty= DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(_))), _)
+      equation
+        expl = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
+        (_, outTuple) = Expression.traverseExpList(expl, checkEquationsUnknownCrefsExp, inTuple);
+      then (e, outTuple);
+
+    // special case for arrays
+    case (e as DAE.CREF(ty = DAE.T_ARRAY()), _)
+      equation
+        (e1, true) = Expression.extendArrExp(e, false);
+        (_, outTuple) = Expression.traverseExpBottomUp(e1, checkEquationsUnknownCrefsExp, inTuple);
+      then (e, outTuple);
+
+    // case for function pointers
+    case (DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()), _)
+      then (inExp, inTuple);
+
+    // already there
+    case (DAE.CREF(componentRef = cr), (_, _, ht))
+      equation
+        _ = BaseHashTable.get(cr, ht);
+      then (inExp, inTuple);
+
+    // known
+    case (DAE.CREF(componentRef = cr), (vars, _, _))
+      algorithm
+       (var_lst, _) := BackendVariable.getVar(cr, vars);
+       for var in var_lst loop
+         true := BackendVariable.isVarConst(var) or  BackendVariable.isParam(var);
+       end for;
+      then (inExp, inTuple);
+
+    case (DAE.CREF(componentRef = cr), (_, knvars, _))
+      algorithm
+        (var_lst, _) := BackendVariable.getVar(cr, knvars);
+        for var in var_lst loop
+           false := BackendVariable.isInput(var);
+        end for;
+      then (inExp, inTuple);
+
+    // add it
+    case (DAE.CREF(componentRef = cr), (vars, knvars, ht))
+      equation
+        ht = BaseHashTable.add((cr, 0), ht);
+      then (inExp, (vars, knvars, ht));
+
+    else (inExp,inTuple);
+  end matchcontinue;
+end checkEquationsUnknownCrefsExpNotConst;
+
 public function equationUnknownCrefs "author: Frenkel TUD 2012-05
   From the equation and a variable array return all
   variables in the equation an not in the variable array."
@@ -2220,27 +2303,51 @@ public function makeTmpEqnForExp
   input Integer offset;
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
-  output DAE.Exp oExp;
-  output BackendDAE.EquationArray oeqns;
-  output BackendDAE.Variables ovars;
+  input BackendDAE.Shared ishared;
+
+  output DAE.Exp oExp = iExp;
+  output BackendDAE.EquationArray oeqns = ieqns;
+  output BackendDAE.Variables ovars = ivars;
+  output BackendDAE.Shared oshared = ishared;
+
 protected
   DAE.ComponentRef cr;
   BackendDAE.Var tmpvar;
-  String name_ = "$TMP$" + intString(offset) + "$" + name;
+  String name_ = "OMC__HELPER__VAR" + intString(offset) + "$" + name;
   DAE.Exp x, y;
+  BackendDAE.Equation eqn;
+  list<DAE.ComponentRef> cr_lst;
+  BackendDAE.Variables knowVars = BackendVariable.daeKnVars(oshared);
+  Boolean b;
+
 algorithm
   if not (Expression.isCref(iExp) or Expression.isConst(iExp)) then
+
     cr  := ComponentReference.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
     tmpvar := BackendVariable.makeVar(cr);
-    ovars := BackendVariable.addVar(tmpvar, ivars);
     x := Expression.crefExp(cr);
     (y, _) := ExpressionSimplify.simplify(iExp);
-    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(x, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), ieqns);
     oExp := x;
-  else
-    oExp := iExp;
-    oeqns := ieqns;
-    ovars := ivars;
+
+    eqn := BackendDAE.EQUATION(x, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    //BackendDump.printEquation(eqn);
+    cr_lst := equationUnknownCrefsNotConst({eqn}, ivars, knowVars);
+
+    b := match(cr_lst)
+        local DAE.ComponentRef cr1;
+        case({}) then true;
+        case({cr1}) then ComponentReference.crefEqualNoStringCompare(cr,cr1);
+        else false;
+        end match;
+ 
+    if b then
+      tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
+      tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.CONST());
+      oshared := BackendVariable.addKnVarDAE(tmpvar, oshared);
+    else
+      oeqns := BackendEquation.addEquation(eqn, oeqns);
+      ovars := BackendVariable.addVar(tmpvar, ovars);
+    end if;
   end if;
 
 end makeTmpEqnForExp;
@@ -2255,13 +2362,15 @@ public function normalizationVec
   input Integer offset;
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
+  input BackendDAE.Shared ishared;
   output array<DAE.Exp> nvec;
   output BackendDAE.EquationArray oeqns;
   output BackendDAE.Variables ovars;
+  output BackendDAE.Shared oshared;
 protected
   DAE.Exp len = Expression.lenVec(vec);
 algorithm
-  (len,oeqns,ovars) := makeTmpEqnForExp(len, name, offset, ieqns, ivars);
+  (len,oeqns,ovars,oshared) := makeTmpEqnForExp(len, name, offset, ieqns, ivars,ishared);
   if Expression.isZero(len) then
     fail();
   end if;

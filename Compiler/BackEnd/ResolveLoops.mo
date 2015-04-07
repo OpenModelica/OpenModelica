@@ -2216,7 +2216,7 @@ algorithm
         beqs = listReverse(beqs);
         n = listLength(beqs);
         names = List.map(var_lst,BackendVariable.varCref);
-        (eqns,vars, n) = solveLinearSystem4(beqs, jac, names, var_lst, n, eqns, vars, offset);
+        (eqns,vars, n, shared) = solveLinearSystem4(beqs, jac, names, var_lst, n, eqns, vars, offset, shared);
         //eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns);
       then
         (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),matching,stateSets,partitionKind),shared,n);
@@ -2235,16 +2235,19 @@ protected function solveLinearSystem4
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
   input Integer offset;
+  input BackendDAE.Shared ishared;
   output BackendDAE.EquationArray oeqns = ieqns;
   output BackendDAE.Variables ovars = ivars;
   output Integer offset_ = offset + 1;
+  output BackendDAE.Shared oshared = ishared;
 protected
   array<DAE.Exp> R;
   array<DAE.Exp> Qb = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> b = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> A = arrayCreate(n*n,DAE.RCONST(0.0));
   array<DAE.Exp> ax = arrayCreate(n,DAE.RCONST(0.0));
-  DAE.Exp a, x;
+  array<DAE.Exp> solvedX = arrayCreate(n,DAE.RCONST(0.0));
+  DAE.Exp a, x, eqn_exp, eqn_scalar;
   Integer m, ii, jj, mm;
   list<DAE.Exp> x_lst = List.map(cr_x, Expression.crefExp);
   DAE.ComponentRef cr;
@@ -2262,14 +2265,14 @@ algorithm
   for i in 1:mm loop
     (jj,ii,BackendDAE.RESIDUAL_EQUATION(exp = a)) :: jac_ := jac_; // jac(1) = a11, jac(2)=a12,.., jac(n+1) = an1
     m := ii + (jj-1)*n;
-    (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$A$" + intString(m), offset, oeqns, ovars);
+    (a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$A$" + intString(m), offset, oeqns, ovars, oshared);
     arrayUpdate(A,m,a);
   end for;
 
   // b
   m := 1;
   for b_ in b_lst loop
-     (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(b_, "QR$b$" + intString(m), offset, oeqns, ovars);
+     (a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(b_, "QR$b$" + intString(m), offset, oeqns, ovars, oshared);
      arrayUpdate(b, m, a);
      m := m + 1;
   end for;
@@ -2289,10 +2292,10 @@ algorithm
   //qrDecomposition3(ax, n, false, "x");
 
   // A*x = b -> R*x = Q'b
-  (R, Qb, oeqns, ovars) := qrDecomposition(A, n, b, oeqns, ovars, offset);
+  (R, Qb, oeqns, ovars, oshared) := qrDecomposition(A, n, b, oeqns, ovars, offset, oshared);
 
   // R*x = Q'*b
-  for i in 1:n loop
+  for i in n:-1:1 loop
     m := (i-1)*n;
     a := Expression.makeSum1(list(Expression.expMul(arrayGet(R, m + j), arrayGet(ax, j)) for j in i:n));
     eqn := BackendDAE.EQUATION(a, arrayGet(Qb,i), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
@@ -2311,11 +2314,13 @@ protected function qrDecomposition
   input array<DAE.Exp> ib;
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
+  input Integer offset;
+  input BackendDAE.Shared ishared;
   output array<DAE.Exp> R = arrayCreate(n*n,DAE.RCONST(0.0));
   output array<DAE.Exp> b = arrayCreate(n,DAE.RCONST(0.0));
   output BackendDAE.EquationArray oeqns = ieqns;
   output BackendDAE.Variables ovars = ivars;
-  input Integer offset;
+  output BackendDAE.Shared oshared;
 protected
   array<DAE.Exp> Q = arrayCreate(n*n,DAE.RCONST(0.0));
   array<DAE.Exp> v = arrayCreate(n,DAE.RCONST(0.0));
@@ -2334,11 +2339,11 @@ protected
 algorithm
 //Gram–Schmidt process
   v := qrDecomposition1(A,n,kk);
-  (u, oeqns, ovars) := BackendEquation.normalizationVec(v,"QR$NOM$" + intString(kk), offset, oeqns, ovars);
+  (u, oeqns, ovars, oshared) := BackendEquation.normalizationVec(v,"QR$NOM$" + intString(kk), offset, oeqns, ovars, ishared);
 
   for j in 1:n loop
     (a,_) := ExpressionSimplify.simplify(arrayGet(u,j));
-    (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$Q$" + intString(kk + (j-1)*n), offset, oeqns, ovars);
+    (a, oeqns, ovars,oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$Q$" + intString(kk + (j-1)*n), offset, oeqns, ovars,oshared);
     arrayUpdate(Q, kk + (j-1)*n, a);
   end for;
 
@@ -2346,15 +2351,15 @@ algorithm
     v := qrDecomposition1(A,n,k+1);
     for j in 1:k loop
       u := qrDecomposition1(Q,n,j);
-      (v, oeqns, ovars) := gramSchmidtProcessHelper(v,u,"QR$W$" + intString(kk) + "$" + intString(kk), offset, oeqns, ovars);
+      (v, oeqns, ovars,oshared) := gramSchmidtProcessHelper(v,u,"QR$W$" + intString(kk) + "$" + intString(kk), offset, oeqns, ovars,oshared);
       kk := kk +1;
     end for;
-    (u, oeqns, ovars) := BackendEquation.normalizationVec(v,"QR$NOM$" + intString(k+1), offset, oeqns, ovars);
+    (u, oeqns, ovars, oshared) := BackendEquation.normalizationVec(v,"QR$NOM$" + intString(k+1), offset, oeqns, ovars, oshared);
     //qrDecomposition3(u, n, false, "u");
     for j in 1:n loop
       nn := k+1 + (j-1)*n;
       (a,_) := ExpressionSimplify.simplify(arrayGet(u,j));
-      (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$Q$" + intString(nn), offset, oeqns, ovars);
+      (a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$Q$" + intString(nn), offset, oeqns, ovars, oshared);
       arrayUpdate(Q, nn, a);
     end for;
 
@@ -2370,7 +2375,7 @@ algorithm
     for j in i:n loop
       y := qrDecomposition1(A,n,j);
       a := Expression.makeScalarProduct(x,y);
-      (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$R$" + intString(m + j), offset, oeqns, ovars);
+      (a, oeqns, ovars,oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$R$" + intString(m + j), offset, oeqns, ovars,oshared);
       arrayUpdate(R, m+j, a);
     end for;
   end for;
@@ -2382,7 +2387,7 @@ algorithm
      x := qrDecomposition1(Q,n,i);
      //qrDecomposition3(x, n, false, "x" + intString(i));
      a := Expression.makeScalarProduct(x,ib);
-     (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$Qb$" + intString(i), offset, oeqns, ovars);
+     (a, oeqns, ovars,oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$Qb$" + intString(i), offset, oeqns, ovars, oshared);
      arrayUpdate(b, i, a);
   end for;
   //qrDecomposition3(b, n, false, "Qb");
@@ -2446,18 +2451,20 @@ protected function gramSchmidtProcessHelper
   input Integer offset;
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
+  input BackendDAE.Shared ishared;
   output array<DAE.Exp> v;
   output BackendDAE.EquationArray oeqns;
   output BackendDAE.Variables ovars;
+  output BackendDAE.Shared oshared;
 protected
   DAE.Exp h = Expression.makeScalarProduct(w,u);
   Integer n = arrayLength(w);
 algorithm
-  (h,oeqns,ovars) := BackendEquation.makeTmpEqnForExp(h, name + "_h", offset, ieqns, ivars);
+  (h,oeqns,ovars,oshared) := BackendEquation.makeTmpEqnForExp(h, name + "_h", offset, ieqns, ivars, ishared);
   v := Array.map1(u, Expression.expMul, h);
   v := Expression.subVec(w,v);
   for i in 1:n loop
-     (h,oeqns,ovars) := BackendEquation.makeTmpEqnForExp(arrayGet(v,i), name + "_" + intString(i), offset, oeqns, ovars);
+     (h,oeqns,ovars,oshared) := BackendEquation.makeTmpEqnForExp(arrayGet(v,i), name + "_" + intString(i), offset, oeqns, ovars, oshared);
      arrayUpdate(v,i,h);
   end for;
 
