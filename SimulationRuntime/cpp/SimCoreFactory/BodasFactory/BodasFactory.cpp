@@ -44,7 +44,7 @@ boost::shared_ptr<IMixedSystem> BodasFactory::LoadSystem(IGlobalSettings* global
 boost::shared_ptr<ISimData> BodasFactory::LoadSimData()
 {
     ISimData* simData = createSimData();
-    return boost::shared_ptr<ISimData>(simData);   
+    return boost::shared_ptr<ISimData>(simData);
 }
 
 boost::shared_ptr<ISolver> BodasFactory::LoadSolver(IMixedSystem* system, string solver_name, boost::shared_ptr<ISolverSettings> solver_settings)
@@ -69,7 +69,7 @@ boost::shared_ptr<ISolverSettings> BodasFactory::LoadSolverSettings(string solve
     }
     else
     {
-    
+
     }
     return boost::shared_ptr<ISolverSettings>(solver_settings);
 }

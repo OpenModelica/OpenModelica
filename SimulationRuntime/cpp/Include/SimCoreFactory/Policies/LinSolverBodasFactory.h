@@ -5,7 +5,7 @@
  Policy class to create lin solver object
  */
 template<class CreationPolicy>
-struct LinSolverBodasFactory : public ObjectFactory<CreationPolicy> 
+struct LinSolverBodasFactory : public ObjectFactory<CreationPolicy>
 {
 public:
   LinSolverBodasFactory(PATH library_path, PATH modelicasystem_path, PATH config_path)
@@ -13,7 +13,7 @@ public:
       , _last_selected_solver("empty")
   {
   }
-  
+
   virtual ~LinSolverBodasFactory()
   {
   }
@@ -29,7 +29,7 @@ public:
     boost::shared_ptr<IAlgLoopSolver> solver;
     return solver;
   }
-   
+
 protected:
   string _last_selected_solver;
 };

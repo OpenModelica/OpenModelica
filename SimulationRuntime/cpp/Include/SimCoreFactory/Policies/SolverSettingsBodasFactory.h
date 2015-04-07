@@ -2,7 +2,7 @@
 /*
 Policy class to create solver settings object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct SolverSettingsBodasFactory : public ObjectFactory<CreationPolicy>
 {
 public:

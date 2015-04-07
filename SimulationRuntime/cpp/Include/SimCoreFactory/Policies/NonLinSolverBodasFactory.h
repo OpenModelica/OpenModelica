@@ -3,7 +3,7 @@
 /*
 Policy class to create nonlin solver object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct NonLinSolverBodasFactory : public  ObjectFactory<CreationPolicy>
 {
 public:
@@ -55,6 +55,6 @@ public:
     else
       throw std::invalid_argument("Selected nonlinear solver is not available");
   }
-  
+
   string _last_selected_solver;
 };
