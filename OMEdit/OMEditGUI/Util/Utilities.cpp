@@ -68,6 +68,18 @@ FileDataNotifier::FileDataNotifier(const QString fileName)
 }
 
 /*!
+ * \brief FileDataNotifier::exit
+ * Reimplementation of QThread::exit()
+ * Sets mStop to true.
+ * \param retcode
+ */
+void FileDataNotifier::exit(int retcode)
+{
+  mStop = true;
+  QThread::exit(retcode);
+}
+
+/*!
  * \brief FileDataNotifier::run
  * Reimplentation of QThread::run().
  * Looks for when is new data available for reading on file.
@@ -89,6 +101,18 @@ void FileDataNotifier::run()
       Sleep::sleep(1);
     }
   }
+}
+
+/*!
+ * \brief FileDataNotifier::start
+ * Reimplementation of QThread::start()
+ * Sets mStop to false.
+ * \param priority
+ */
+void FileDataNotifier::start(Priority priority)
+{
+  mStop = false;
+  QThread::start(priority);
 }
 
 Label::Label(QWidget *parent, Qt::WindowFlags flags)

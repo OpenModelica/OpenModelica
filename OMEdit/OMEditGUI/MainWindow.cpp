@@ -88,7 +88,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpMessagesDockWidget->hide();
   connect(mpMessagesWidget, SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
   // Reopen the standard output stream.
-  QString outputFileName = mpOMCProxy->changeDirectory()+ "/OMEditOutput.txt";
+  QString outputFileName = mpOMCProxy->changeDirectory()+ "/omeditoutput.txt";
   freopen(outputFileName.toStdString().c_str(), "w", stdout);
   setbuf(stdout, NULL); // used non-buffered stdout
   mpOutputFileDataNotifier = 0;
@@ -585,7 +585,6 @@ void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
   if (mpOutputFileDataNotifier) {
-    mpOutputFileDataNotifier->stop();
     mpOutputFileDataNotifier->exit();
     mpOutputFileDataNotifier->wait();
     delete mpOutputFileDataNotifier;
