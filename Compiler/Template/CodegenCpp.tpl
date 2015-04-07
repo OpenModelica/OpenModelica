@@ -12086,7 +12086,9 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
         let &preExp += '<%tmp_slice%>.push_back(Slice());<%\n%>'
         ''
       case SLICE(__) then
-        error(sourceInfo(), "Unknown slice expression " + printExpStr(exp))
+        let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        let &preExp += '<%tmp_slice%>.push_back(Slice(<%expPart%>));<%\n%>'
+        ''
     ;separator="\n ")
   <<<%tmp_slice%>>>
 end daeExpCrefIndexSpec;

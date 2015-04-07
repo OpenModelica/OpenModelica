@@ -40,43 +40,55 @@ class Slice {
  public:
   // all indices
   Slice() {
-    this->start = 1;
-    this->step = 1;
-    this->stop = 0;
+    start = 1;
+    step = 1;
+    stop = 0;
+    indices = NULL;
+    nindices = 0;
   }
 
   // one index
   Slice(int index) {
-    this->start = index;
-    this->step = 1;
-    this->stop = index;
+    start = index;
+    step = 1;
+    stop = index;
+    indices = NULL;
+    nindices = 0;
   }
 
   Slice(int start, int stop) {
     this->start = start;
-    this->step = 1;
+    step = 1;
     this->stop = stop;
+    indices = NULL;
+    nindices = 0;
   }
 
   Slice(int start, int step, int stop) {
     this->start = start;
     this->step = step;
     this->stop = stop;
+    indices = NULL;
+    nindices = 0;
   }
 
-  Slice(vector<int> &ivec) {
+  Slice(BaseArray<int> &ivec) {
     start = 0;
     step = 0;
     stop = 0;
-    vector<int>::const_iterator it;
-    for (it = ivec.begin(); it != ivec.end(); it++)
-      indices.push_back(*it);
+    if (ivec.getNumDims() != 1)
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                    "Slice requires an index vector");
+    // make shallow copy as ivec should live long enough in a Modelica model
+    indices = ivec.getData();
+    nindices = ivec.getNumElems();
   }
 
   size_t start;
   size_t step;
   size_t stop;
-  vector<size_t> indices;
+  const int *indices;
+  int nindices;
 };
 
 // Multi-dimensional array slice holding a reference to a BaseArray.
@@ -98,7 +110,7 @@ class ArraySlice : public BaseArray<T> {
     size_t dim;
     for (dim = 1, sit = slice.begin(); sit != slice.end(); dim++, sit++) {
       if (sit->step == 0)
-        _idxs[dim - 1] = sit->indices;
+        _idxs[dim - 1].assign(sit->indices, sit->indices + sit->nindices);
       else {
         size_t maxIndex = baseArray.getDims()[dim - 1];
         size_t start = sit->start > 0? sit->start: maxIndex;
