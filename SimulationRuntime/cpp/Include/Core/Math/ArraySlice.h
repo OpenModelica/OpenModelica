@@ -92,7 +92,7 @@ class ArraySlice : public BaseArray<T> {
     if (baseArray.getNumDims() != slice.size())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Wrong dimensions for ArraySlice");
-    // create an explicit index set per dimension, 
+    // create an explicit index set per dimension,
     // except for all indices that are indicated with an empty index set
     vector<Slice>::const_iterator sit;
     size_t dim;

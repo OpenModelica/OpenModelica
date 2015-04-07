@@ -12069,8 +12069,8 @@ end daeExpCrefRhsArrayBox2;
 
 
 template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
-  Text &preExp, Text &varDecls, SimCode simCode, 
-  Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, 
+  Text &preExp, Text &varDecls, SimCode simCode,
+  Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
   Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates index spec of an array as temporary vector<Slice>."
 ::=
@@ -14461,7 +14461,7 @@ case STMT_ASSIGN_ARR(exp=e, lhs=lhsexp as CREF(componentRef=cr), type_=t) then
 end algStmtAssignArr;
 
 
-template algStmtAssignArrCref(DAE.Exp exp, Context context, 
+template algStmtAssignArrCref(DAE.Exp exp, Context context,
   Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, SimCode simCode,
   Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
   Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
