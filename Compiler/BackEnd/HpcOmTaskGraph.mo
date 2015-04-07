@@ -5964,7 +5964,7 @@ algorithm
         end if;
         if BackendVariable.isStateVar(List.first(varLst)) then // if its dependent on a state --> no edge in the task graph
           (esIdx,vIdx,b) = (-1,-1,false);
-        else 
+        else
           (esIdx,vIdx,b) = (eqSysIdxIn,List.first(lst),true);
         end if;
       then (esIdx,vIdx,b);
