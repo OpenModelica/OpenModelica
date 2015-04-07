@@ -158,7 +158,6 @@ private:
   int calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthcol, double* y, N_Vector fy, DlsMat Jac);
   void initializeColoredJac();
 
-  void setcycletime(double cycletime);
 
 
   ISolverSettings

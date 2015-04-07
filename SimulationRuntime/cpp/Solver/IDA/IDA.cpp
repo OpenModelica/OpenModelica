@@ -969,6 +969,3 @@ int Ida::check_flag(void *flagvalue, const char *funcname, int opt)
 
   return (0);
 }
-
-void Ida::setcycletime(double cycletime){}
-

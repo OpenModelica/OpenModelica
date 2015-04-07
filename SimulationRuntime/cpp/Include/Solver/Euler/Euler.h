@@ -55,7 +55,6 @@ public:
     /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
     virtual int reportErrorMessage(ostream& messageStream);
     virtual bool stateSelection();
-  virtual void setcycletime(double cycletime);
 private:
     /// (Explizites) Euler-Verfahren 1. Ordnung
     /*

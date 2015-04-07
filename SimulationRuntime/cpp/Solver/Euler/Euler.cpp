@@ -1315,5 +1315,3 @@ void Euler::calcJac(double* yHelp, double* _fHelp, const double* _f, double* jac
         }
     }
 }
-
-  void Euler::setcycletime(double cycletime){}
