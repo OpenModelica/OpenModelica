@@ -2060,9 +2060,8 @@ bool OMCProxy::translateModelFMU(QString className, double version, QString file
     QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), "me", fileNamePrefix);
     if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
       result = true;
-    } else {
-      printMessagesStringInternal();
     }
+    printMessagesStringInternal();
   } catch(std::exception &exception) {
     showException(exception);
     printMessagesStringInternal();
