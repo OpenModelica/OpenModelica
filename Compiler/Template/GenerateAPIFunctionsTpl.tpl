@@ -148,6 +148,7 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
   signals:
     void logCommand(QString command, QTime *commandTime);
     void logResponse(QString response, QTime *responseTime);
+    void throwException(QString exception);
   };
   >>
 end getQtInterfaceHeaders;
@@ -379,18 +380,22 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   {
     <%varDecl%>
 
-    MMC_TRY_TOP_INTERNAL()
+    try {
+      MMC_TRY_TOP_INTERNAL()
+    
+      QTime commandTime;
+      commandTime.start();
+      emit logCommand("<%replaceDotAndUnderscore(name)%>("+<%if intGt(listLength(args), 0) then commandArgs else 'QString("")'%>+")", &commandTime);
+      st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
+      <%postCall%>
+      QString responseLog;
+      <%responseLog%>
+      emit logResponse(responseLog, &commandTime);
 
-    QTime commandTime;
-    commandTime.start();
-    emit logCommand("<%replaceDotAndUnderscore(name)%>("+<%if intGt(listLength(args), 0) then commandArgs else 'QString("")'%>+")", &commandTime);
-    st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
-    <%postCall%>
-    QString responseLog;
-    <%responseLog%>
-    emit logResponse(responseLog, &commandTime);
-
-    MMC_CATCH_TOP(throw std::runtime_error("<%replaceDotAndUnderscore(name)%> failed");)
+      MMC_CATCH_TOP()
+    } catch(std::exception &exception) {
+      emit throwException(QString("<%replaceDotAndUnderscore(name)%> failed. %1").arg(exception.what()));
+    }
 
     <%if outArgs then "return result;"%>
   }
