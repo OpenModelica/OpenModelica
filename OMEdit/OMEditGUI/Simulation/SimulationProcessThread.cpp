@@ -113,7 +113,10 @@ void SimulationProcessThread::runSimulationExecutable()
   // run the simulation executable to create the result file
 #ifdef WIN32
   fileName = fileName.append(".exe");
-  mpSimulationProcess->setProcessEnvironment(StringHandler::simulationProcessEnvironment());
+  QFileInfo fileInfo(simulationOptions.getFileName());
+  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
+  processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
+  mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #endif
   mpSimulationProcess->start(fileName, args);
   emit sendSimulationOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);

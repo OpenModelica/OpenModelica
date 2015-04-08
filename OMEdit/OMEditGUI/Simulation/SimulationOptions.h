@@ -104,7 +104,8 @@ public:
     setAdditionalSimulationFlags("");
     setIsValid(false);
     setReSimulate(false);
-    mWorkingDirectory = "";
+    setWorkingDirectory("");
+    setFileName("");
   }
 
   void setClassName(QString className) {mClassName = className;}
@@ -230,6 +231,8 @@ public:
   bool isReSimulate() {return mReSimulate;}
   void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
   QString getWorkingDirectory() const {return mWorkingDirectory;}
+  void setFileName(QString fileName) {mFileName = fileName;}
+  QString getFileName() const {return mFileName;}
 private:
   QString mClassName;
   QString mStartTime;
@@ -292,6 +295,7 @@ private:
   bool mValid;
   bool mReSimulate;
   QString mWorkingDirectory;
+  QString mFileName;
 };
 
 #endif // SIMULATIONOPTIONS_H
