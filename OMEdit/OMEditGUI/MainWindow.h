@@ -166,6 +166,8 @@ private:
   QDockWidget *mpMessagesDockWidget;
   QFile mOutputFile;
   FileDataNotifier *mpOutputFileDataNotifier;
+  QFile mErrorFile;
+  FileDataNotifier *mpErrorFileDataNotifier;
   SearchClassWidget *mpSearchClassWidget;
   QDockWidget *mpSearchClassDockWidget;
   LibraryTreeWidget *mpLibraryTreeWidget;
@@ -289,6 +291,7 @@ public slots:
   void showOpenTransformationFileDialog();
   void loadSystemLibrary();
   void readOutputFile(qint64 bytes);
+  void readErrorFile(qint64 bytes);
   void focusSearchClassWidget(bool visible);
   void openRecentFile();
   void clearRecentFilesList();

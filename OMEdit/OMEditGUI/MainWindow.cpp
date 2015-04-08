@@ -102,6 +102,21 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
                                                 Helper::errorLevel));
 
   }
+  // Reopen the standard error stream.
+  QString errorFileName = mpOMCProxy->changeDirectory()+ "/omediterror.txt";
+  freopen(errorFileName.toStdString().c_str(), "w", stderr);
+  setbuf(stderr, NULL); // used non-buffered stderr
+  mpErrorFileDataNotifier = 0;
+  mErrorFile.setFileName(errorFileName);
+  if (mErrorFile.open(QIODevice::ReadOnly)) {
+    mpErrorFileDataNotifier = new FileDataNotifier(errorFileName);
+    connect(mpErrorFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readErrorFile(qint64)));
+    mpErrorFileDataNotifier->start();
+  } else {
+    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(errorFileName), Helper::scriptingKind,
+                                                Helper::errorLevel));
+
+  }
   // Create an object of SearchClassWidget
   mpSearchClassWidget = new SearchClassWidget(this);
   // Create LibraryTreeWidget dock
@@ -581,13 +596,26 @@ int MainWindow::askForExit()
   return true;
 }
 
+/*!
+ * \brief MainWindow::beforeClosingMainWindow
+ * Called before closing the MainWindow
+ * Deletes the object.
+ * Saves the window state and geometry in the settings file.
+ */
 void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
   if (mpOutputFileDataNotifier) {
+    mOutputFile.close();
     mpOutputFileDataNotifier->exit();
     mpOutputFileDataNotifier->wait();
     delete mpOutputFileDataNotifier;
+  }
+  if (mpErrorFileDataNotifier) {
+    mErrorFile.close();
+    mpErrorFileDataNotifier->exit();
+    mpErrorFileDataNotifier->wait();
+    delete mpErrorFileDataNotifier;
   }
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
@@ -596,13 +624,11 @@ void MainWindow::beforeClosingMainWindow()
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
-  if (mTransformationsWidgetHash.size() > 0)
-  {
+  if (mTransformationsWidgetHash.size() > 0) {
     transformationsWidgets.toBack();
     transformationsWidgets.previous();
     TransformationsWidget *pTransformationsWidget = transformationsWidgets.value();
-    if (pTransformationsWidget)
-    {
+    if (pTransformationsWidget) {
       pSettings->beginGroup("transformationalDebugger");
       pSettings->setValue("geometry", pTransformationsWidget->saveGeometry());
       pSettings->setValue("variablesNestedHorizontalSplitter", pTransformationsWidget->getVariablesNestedHorizontalSplitter()->saveState());
@@ -618,8 +644,7 @@ void MainWindow::beforeClosingMainWindow()
   }
   /* delete the TransformationsWidgets */
   transformationsWidgets.toFront();
-  while (transformationsWidgets.hasNext())
-  {
+  while (transformationsWidgets.hasNext()) {
     transformationsWidgets.next();
     TransformationsWidget *pTransformationsWidget = transformationsWidgets.value();
     delete pTransformationsWidget;
@@ -1129,12 +1154,23 @@ void MainWindow::loadSystemLibrary()
 
 /*!
  * \brief MainWindow::readOutputFile
- * Reads the available data from file and adds it to MessagesWidget.
+ * Reads the available output data from file and adds it to MessagesWidget.
  * \param bytes
  */
 void MainWindow::readOutputFile(qint64 bytes)
 {
   QString data = mOutputFile.read(bytes);
+  mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+}
+
+/*!
+ * \brief MainWindow::readErrorFile
+ * Reads the available error data from file and adds it to MessagesWidget.
+ * \param bytes
+ */
+void MainWindow::readErrorFile(qint64 bytes)
+{
+  QString data = mErrorFile.read(bytes);
   mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
