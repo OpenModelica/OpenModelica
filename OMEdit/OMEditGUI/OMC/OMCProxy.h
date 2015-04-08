@@ -95,7 +95,6 @@ public:
   QString getResult();
   void exitApplication();
   void removeObjectRefFile();
-  void showException(std::exception &exception);
   QString getErrorString(bool warningsAsErrors = false);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
@@ -215,6 +214,7 @@ signals:
 public slots:
   void logCommand(QString command, QTime *commandTime);
   void logResponse(QString response, QTime *responseTime);
+  void showException(QString exception);
   void openOMCLoggerWidget();
   void sendCustomExpression();
 };
