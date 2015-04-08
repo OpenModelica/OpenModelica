@@ -14348,7 +14348,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
   <<
   <%preExp%>
     <%type%> <%iterName%>;
-   BOOST_FOREACH( short <%iterName%>,  <%evar%> ){
+    BOOST_FOREACH(<%iterName%>, <%evar%>) {
       <%body%>
     }
   >>

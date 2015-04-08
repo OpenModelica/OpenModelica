@@ -1341,12 +1341,26 @@ public:
   {
     return _multi_array.num_elements();
   }
- virtual size_t getNumDims() const
+  virtual size_t getNumDims() const
   {
      return 1;
   }
-  private:
-    boost::multi_array<T, 1> _multi_array;
+
+  typedef typename boost::multi_array<T, 1>::const_iterator const_iterator;
+  typedef typename boost::multi_array<T, 1>::iterator iterator;
+
+  iterator begin()
+  {
+    return _multi_array.begin();
+  }
+
+  iterator end()
+  {
+    return _multi_array.end();
+  }
+
+ private:
+  boost::multi_array<T, 1> _multi_array;
 };
 
 
