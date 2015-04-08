@@ -1810,6 +1810,7 @@ bool OMCProxy::translateModel(QString className, QString simualtionParameters)
   sendCommand("translateModel(" + className + "," + simualtionParameters + ")");
   bool res = StringHandler::unparseBool(getResult());
   printMessagesStringInternal();
+  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
   return res;
 }
 
@@ -1853,6 +1854,7 @@ QString OMCProxy::checkModel(QString className)
   sendCommand("checkModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
+  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -1879,6 +1881,7 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
   sendCommand("checkAllModelsRecursive(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
+  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -1892,6 +1895,7 @@ QString OMCProxy::instantiateModel(QString className)
   sendCommand("instantiateModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
+  mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
   return result;
 }
 
@@ -1930,6 +1934,7 @@ bool OMCProxy::translateModelFMU(QString className, double version, QString file
   QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), "me", fileNamePrefix);
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     result = true;
+    mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
   }
   printMessagesStringInternal();
   return result;
@@ -1942,14 +1947,14 @@ bool OMCProxy::translateModelFMU(QString className, double version, QString file
   */
 bool OMCProxy::translateModelXML(QString className)
 {
+  bool result = false;
   sendCommand("translateModelXML(" + className + ")");
-  if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to XML") == 0)
-    return true;
-  else
-  {
-    printMessagesStringInternal();
-    return false;
+  if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to XML") == 0) {
+    result = true;
+    mpMainWindow->getLibraryTreeWidget()->loadDependentLibraries(getClassNames());
   }
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!
