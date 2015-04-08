@@ -209,8 +209,8 @@ class ArraySlice : public BaseArray<T> {
                                   "Can't get const data pointer of ArraySlice");
   }
 
-  virtual unsigned int getNumElems() const {
-    unsigned int nelems = 1;
+  virtual size_t getNumElems() const {
+    size_t nelems = 1;
     size_t dim;
     vector< vector<size_t> >::const_iterator dit;
     for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++)
@@ -218,7 +218,7 @@ class ArraySlice : public BaseArray<T> {
     return nelems;
   }
 
-  virtual unsigned int getNumDims() const {
+  virtual size_t getNumDims() const {
     int ndims = 0;
     vector< vector<size_t> >::const_iterator dit;
     for (dit = _idxs.begin(); dit != _idxs.end(); dit++)
