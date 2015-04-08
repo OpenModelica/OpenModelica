@@ -11964,21 +11964,27 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp, Text &varDecls, 
     else
       // The array subscript denotes a slice
       let arrName = contextArrayCref(cr, context)
-      let arrName = contextArrayCref(cr, context)
-      let arrayType = expTypeFlag(ty, 6)
+      let typeStr = expTypeArray(ty)
+      let slice = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp,
+        &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
+        stateDerVectorName, useFlatArrayNotation)
+      let &preExp += 'ArraySlice<<%typeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
+      '<%slice%>_as'
+      // old code making a copy of the slice using create_array_from_shape
+      //let arrayType = expTypeFlag(ty, 6)
       /* let dimstr = listLength(crefSubs(cr))
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
           daeExp(exp, context, &preExp , &varDecls ,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         ;separator="][")*/
-      let tmp = tempDecl(arrayType, &varDecls /*BUFD*/)
-      let spec1 = daeExpCrefRhsIndexSpec(crefSubs(cr), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      let &preExp += 'create_array_from_shape(<%spec1%>,<%arrName%>,<%tmp%>);<%\n%>'
-      tmp
+      //let tmp = tempDecl(arrayType, &varDecls /*BUFD*/)
+      //let spec1 = daeExpCrefRhsIndexSpec(crefSubs(cr), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      //let &preExp += 'create_array_from_shape(<%spec1%>,<%arrName%>,<%tmp%>);<%\n%>'
+      //tmp
 end daeExpCrefRhs2;
 
 template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
                                 Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Helper to daeExpCrefRhs."
+ "Helper to daeExpCrefRhs. Bogus and not used (#3263)."
 ::=
 
   let nridx_str = listLength(subs)
@@ -14482,7 +14488,7 @@ end algStmtAssignArrCref;
 
 template indexSpecFromCref(ComponentRef cr, Context context, Text &preExp /*BUFP*/,
                   Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Helper to algStmtAssignArr.
+ "Helper to algStmtAssignArr. Not used.
   Currently works only for CREF_IDENT." ::=
 match cr
 case CREF_IDENT(subscriptLst=subs as (_ :: _)) then
