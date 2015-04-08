@@ -39,7 +39,7 @@ public:
      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
-  virtual T& operator()(const unsigned int  i, const unsigned int j)
+  virtual T& operator()(unsigned int  i, unsigned int j)
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
@@ -437,7 +437,8 @@ public:
 };
 
 
-template<typename T ,std::size_t size1,std::size_t size2,bool fotran = false>class StatArrayDim2 : public BaseArray<T>
+template<typename T, std::size_t size1, std::size_t size2, bool fortran = false>
+class StatArrayDim2 : public BaseArray<T>
 {
 
 public:
@@ -526,19 +527,19 @@ public:
      return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
   };
 
-  inline virtual T& operator()(const unsigned int i, const unsigned  int j)
+  inline virtual T& operator()(unsigned int i, unsigned int j)
   {
-    if(fotran)
-       return _array_data[size1*(j - 1) + i - 1]; //column wise order
-     else
-       return _array_data[size2*(i - 1) + j - 1]; //row wise order
-  }
-  inline virtual const T& operator()(const unsigned int i, const unsigned  int j) const
-  {
-    if(fotran)
-     return _array_data[size1*(j - 1) + i - 1];//column wise order
+    if (fortran)
+      return _array_data[size1*(j - 1) + i - 1]; //column wise order
     else
-     return _array_data[size2*(i - 1) + j - 1];//row wise order
+      return _array_data[size2*(i - 1) + j - 1]; //row wise order
+  }
+  inline virtual const T& operator()(unsigned int i, unsigned int j) const
+  {
+    if (fortran)
+      return _array_data[size1*(j - 1) + i - 1]; //column wise order
+    else
+      return _array_data[size2*(i - 1) + j - 1]; //row wise order
   }
 
 
@@ -724,11 +725,11 @@ public:
      return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
   };
 
-  inline virtual string& operator()(const unsigned int i, const unsigned  int j)
+  inline virtual string& operator()(unsigned int i, unsigned int j)
   {
       return _array_data[size2*(i - 1) + j - 1]; //row wise order
   }
-  inline virtual const string& operator()(const unsigned int i, const unsigned  int j) const
+  inline virtual const string& operator()(unsigned int i, unsigned int j) const
   {
        return _array_data[size2*(i - 1) + j - 1];//row wise order
   }
@@ -1445,7 +1446,7 @@ public:
   {
      return _multi_array[idx[0]][idx[1]];
   };
-  inline virtual T& operator()(const unsigned  int i, const unsigned  int j)
+  inline virtual T& operator()(unsigned int i, unsigned int j)
   {
     return _multi_array[i][j];
   }
