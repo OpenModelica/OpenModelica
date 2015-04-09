@@ -711,7 +711,8 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("HKExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
-    ("PRExt", Util.gettext("Matching algorithm using push relabel mechanism external c implementation."))})),
+    ("PRExt", Util.gettext("Matching algorithm using push relabel mechanism external c implementation.")),
+    ("BB", Util.gettext("BBs try."))})),
     Util.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
 
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",

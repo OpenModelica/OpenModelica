@@ -61,6 +61,181 @@ protected import Util;
 protected import System;
 
 /*************************************/
+/*   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB */
+/*************************************/
+public function RegularMatching
+  input BackendDAE.IncidenceMatrix m;
+  input Integer nVars;
+  input Integer nEqns;
+  output array<Integer> assign_v_e;
+  output array<Integer> assign_e_v;
+protected
+  Integer i, j;
+  Boolean success = true;
+  array<Boolean> eMark,vMark;
+algorithm
+  assign_e_v := arrayCreate(nEqns,-1);
+  assign_v_e := arrayCreate(nVars,-1);
+  vMark := arrayCreate(nVars,false);
+  eMark := arrayCreate(nEqns,false);
+
+  i := 1;
+  while i<=nEqns and success loop
+    j := assign_e_v[i];
+    if ((j>0) and assign_v_e[j] == i) then
+      success :=true;
+    else
+      Array.setRange(1,nVars,vMark,false);
+      Array.setRange(1,nEqns,eMark,false);
+      (success, _) := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v, {});
+    end if;
+    i := i+1;
+  end while;
+  if not success then
+    print("\nSingular System!!!\n");
+    fail();
+  end if;
+end RegularMatching;
+
+public function BBMatching
+  input BackendDAE.EqSystem inSys;
+  input BackendDAE.Shared inShared;
+  input Boolean clearMatching;
+  input BackendDAE.MatchingOptions inMatchingOptions;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  output BackendDAE.EqSystem outSys=inSys;
+  output BackendDAE.Shared outShared=inShared;
+  output BackendDAE.StructurallySingularSystemHandlerArg outArg=inArg;
+protected
+  Integer i;
+  Boolean success = true;
+  BackendDAE.IncidenceMatrix m;
+  Integer nVars,nEqns,j;
+  array<Integer> assign_v_e, assign_e_v;
+  array<Boolean> eMark,vMark;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Variables vars;
+  list<Integer> mEqns;
+algorithm
+  //BackendDAE.EQSYSTEM(m=SOME(m),matching=BackendDAE.MATCHING(ass1=assign_v_e,ass2=assign_e_v)) := outSys;
+  BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
+  nEqns := BackendDAEUtil.systemSize(outSys);
+  nVars := BackendVariable.daenumVariables(outSys);
+  // Be carefull, since matching may have been generated with not distinguishing between 
+  // state and their derivative, which leads to wrong traversing of bibartite graph!!!! 
+  //(assign_v_e,assign_e_v) := getAssignment(clearMatching,nVars,nEqns,inSys);
+  //if clearMatching then
+  assign_e_v := arrayCreate(nEqns,-1);
+  assign_v_e := arrayCreate(nVars,-1);
+  //BBCheapMatching(nEqns, m, assign_v_e, assign_e_v);
+  //end if;
+  vMark := arrayCreate(nVars,false);
+  eMark := arrayCreate(nEqns,false);
+  i := 1;
+  while i<=nEqns and success loop
+    j := assign_e_v[i];
+    if ((j>0) and assign_v_e[j] == i) then
+      success :=true;
+    else
+      Array.setRange(1,nVars,vMark,false);
+      Array.setRange(1,nEqns,eMark,false);
+      (success, mEqns) := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v, {});
+      if not success then
+        (_,i,outSys,outShared,assign_v_e,assign_e_v,outArg) := sssHandler({mEqns},i,outSys,outShared,assign_v_e,assign_e_v,outArg);
+        BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
+        //nEqns := BackendDAEUtil.systemSize(outSys);
+        //nVars := BackendVariable.daenumVariables(outSys);
+        //assign_v_e := assignmentsArrayExpand(assign_v_e, nVars,arrayLength(assign_v_e),-1);
+        //assign_e_v := assignmentsArrayExpand(assign_e_v, nEqns,arrayLength(assign_e_v),-1);
+        //vMark := assignmentsArrayBooleanExpand(vMark, nVars,arrayLength(vMark),false);
+        //eMark := assignmentsArrayBooleanExpand(eMark, nEqns,arrayLength(eMark),false);
+        success := true;
+        i := i-1;
+      end if;
+    end if;
+    i := i+1;
+  end while;
+  if success then
+    outSys := BackendDAEUtil.setEqSystemMatching(outSys,BackendDAE.MATCHING(assign_v_e,assign_e_v,{}));
+  else
+    print("\nSingular System!!!\n");
+  end if;
+end BBMatching;
+
+protected function BBPathFound
+  input Integer i;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Boolean> eMark;
+  input array<Boolean> vMark;
+  input array<Integer> assign_v_e;
+  input array<Integer> assign_e_v;
+  input list<Integer> inMEqns;
+  output Boolean success = false;
+  output list<Integer> outMEqns=inMEqns;
+protected
+  Integer j;
+  list<Integer> vars;
+algorithm
+  if not eMark[i] then
+    outMEqns := i::outMEqns;
+    arrayUpdate(eMark,i,true);
+  end if;
+  vars := m[i];
+  while not success and (listLength(vars) > 0) loop
+    j::vars := vars;
+    // negative entries in adjacence matrix belong to states!!!    
+    if (j>0 and assign_v_e[j] <= 0) then
+      success := true;
+      arrayUpdate(assign_v_e,j,i);
+      arrayUpdate(assign_e_v,i,j);
+    end if;
+  end while;
+  vars := m[i];
+  while not success and (listLength(vars) > 0) loop
+    j::vars := vars;
+    // negative entries in adjacence matrix belong to states!!!    
+    if (j>0 and not vMark[j]) then
+      arrayUpdate(vMark,j,true);
+      (success, outMEqns) := BBPathFound(assign_v_e[j], m, eMark, vMark, assign_v_e, assign_e_v, outMEqns);
+      if success then
+        arrayUpdate(assign_v_e,j,i);
+        arrayUpdate(assign_e_v,i,j);
+      end if;
+    end if;
+  end while;
+end BBPathFound;
+
+protected function BBCheapMatching
+  input Integer nEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Integer> assign_v_e;
+  input array<Integer> assign_e_v;
+protected
+  Integer i,j;
+  Boolean success=false;
+  list<Integer> vars;
+algorithm
+  for i in 1:nEqns loop
+    vars := m[i];
+    while not success and (listLength(vars) > 0) loop
+      j::vars := vars;
+      // negative entries in adjacence matrix belong to states!!!    
+      if (j>0 and assign_v_e[j] <= 0) then
+        success := true;
+        arrayUpdate(assign_v_e,j,i);
+        arrayUpdate(assign_e_v,i,j);
+      end if;
+    end while;
+  end for;
+end BBCheapMatching;
+
+/*************************************/
+/*   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB */
+/*************************************/
+
+
+/*************************************/
 /*   Matching Algorithms */
 /*************************************/
 
@@ -5817,6 +5992,34 @@ algorithm
         fail();
   end matchcontinue;
 end assignmentsArrayExpand;
+
+protected function assignmentsArrayBooleanExpand
+"function helper for assignmentsArrayExpand
+ author: Frenkel TUD 2012-04"
+ input array<Boolean> ass;
+ input Integer needed;
+ input Integer memsize;
+ input Boolean default;
+ output array<Boolean> outAss;
+algorithm
+  outAss := matchcontinue(ass,needed,memsize,default)
+    case (_,_,_,_)
+      equation
+        true = intGt(memsize,needed);
+      then
+        ass;
+    case (_,_,_,_)
+      equation
+        false = intGt(memsize,needed);
+      then
+        Array.expand(needed-memsize, ass, default);
+    else
+      equation
+        Error.addInternalError("function assignmentsArrayExpand failed", sourceInfo());
+      then
+        fail();
+  end matchcontinue;
+end assignmentsArrayBooleanExpand;
 
 protected function checkAssignment
 "author: Frenkel TUD 2012-06

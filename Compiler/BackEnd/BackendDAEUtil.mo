@@ -7578,7 +7578,8 @@ algorithm
                            (Matching.HKExternal,"HKExt"),
                            (Matching.HKDWExternal,"HKDWExt"),
                            (Matching.ABMPExternal,"ABMPExt"),
-                           (Matching.PR_FIFO_FAIRExternal,"PRExt")};
+                           (Matching.PR_FIFO_FAIRExternal,"PRExt"),
+                           (Matching.BBMatching,"BB")};
  strMatchingAlgorithm := getMatchingAlgorithmString();
  strMatchingAlgorithm := Util.getOptionOrDefault(ostrMatchingAlgorithm,strMatchingAlgorithm);
  matchingAlgorithm := selectMatchingAlgorithm(strMatchingAlgorithm,allMatchingAlgorithms);
