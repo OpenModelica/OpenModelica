@@ -5,8 +5,10 @@ extern "C" ISimController* createSimController(PATH library_path, PATH modelicas
 extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings, PATH library_path, PATH modelicasystem_path);
 extern "C" ISettingsFactory* createSettingsFactory(PATH library_path, PATH modelicasystem_path);
 extern "C" ISimData* createSimData();
+extern "C" ISolver* createRTRK(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolverSettings* createRTEulerSettings(IGlobalSettings* globalSettings);
 extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* settings);
+extern "C" ISolverSettings* createRTRKSettings(IGlobalSettings* globalSettings);
 extern "C" INonLinSolverSettings* createKinsolSettings();
 extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algloop, INonLinSolverSettings* solver_settings);
 extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simdata);
@@ -49,28 +51,37 @@ boost::shared_ptr<ISimData> BodasFactory::LoadSimData()
 
 boost::shared_ptr<ISolver> BodasFactory::LoadSolver(IMixedSystem* system, string solver_name, boost::shared_ptr<ISolverSettings> solver_settings)
 {
-    ISolver* solver;
-    if (solver_name.compare("createRTEuler") == 0)
-    {
-        solver = createRTEuler(system, solver_settings.get());
-    }
-    else
-    {
-    }
-    return boost::shared_ptr<ISolver>(solver);
+	ISolver* solver;
+	if (solver_name.compare("createRTEuler") == 0)
+	{
+		solver = createRTEuler(system, solver_settings.get());
+	}
+	else if (solver_name.compare("createRTRK") == 0)
+	{
+		solver = createRTRK(system, solver_settings.get());
+	}
+	else
+	{
+	}
+    
+	return boost::shared_ptr<ISolver>(solver);
 }
 
 boost::shared_ptr<ISolverSettings> BodasFactory::LoadSolverSettings(string solver_name, boost::shared_ptr<IGlobalSettings> global_settings)
 {
-    ISolverSettings* solver_settings;
-    if (solver_name.compare("createRTEulerSettings") == 0)
-    {
-        solver_settings = createRTEulerSettings(global_settings.get());
-    }
-    else
-    {
-
-    }
+	ISolverSettings* solver_settings;
+	if (solver_name.compare("createRTEulerSettings") == 0)
+	{
+		solver_settings = createRTEulerSettings(global_settings.get());
+	}
+	else if (solver_name.compare("createRTRKSettings") == 0)
+	{
+		solver_settings = createRTRKSettings(global_settings.get());
+	}
+	else
+	{
+		
+	}
     return boost::shared_ptr<ISolverSettings>(solver_settings);
 }
 
