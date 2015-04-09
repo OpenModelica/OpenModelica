@@ -44,10 +44,11 @@ using namespace OMPlot;
 PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
   : MdiArea(pParent)
 {
-  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPlottingViewMode().compare(Helper::subWindow) == 0)
+  if (mpMainWindow->getOptionsDialog()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
-  else
+  } else {
     setViewMode(QMdiArea::TabbedView);
+  }
   // dont show this widget at startup
   setVisible(false);
 }
@@ -104,6 +105,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setWindowTitle(getUniqueName("Plot : "));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
+    pPlotWindow->setAutoScale(mpMainWindow->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plot-window.svg"));
@@ -130,6 +132,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setWindowTitle(getUniqueName("Parametric Plot : "));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
+    pPlotWindow->setAutoScale(mpMainWindow->getOptionsDialog()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
@@ -173,8 +176,10 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
       {
         pPlotWindow->getPlot()->removeCurve(pPlotCurve);
         pPlotCurve->detach();
-        pPlotWindow->fitInView();
-        pPlotWindow->getPlot()->updateGeometry();
+        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+          pPlotWindow->fitInView();
+          pPlotWindow->getPlot()->updateGeometry();
+        }
       }
     }
   }

@@ -303,8 +303,8 @@ bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value
   {
     if (!signalsBlocked())
     {
-      CurveStylePage *pCurveStylePage = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getOptionsDialog()->getCurveStylePage();
-      emit itemChecked(index, pCurveStylePage->getCurveThickness(), pCurveStylePage->getCurvePattern());
+      PlottingPage *pPlottingPage = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getOptionsDialog()->getPlottingPage();
+      emit itemChecked(index, pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern());
     }
   }
   emit dataChanged(index, index);
@@ -869,8 +869,10 @@ void VariablesWidget::variablesUpdated()
         }
       }
     }
-    pPlotWindow->fitInView();
-    pPlotWindow->getPlot()->updateLayout();
+    if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+      pPlotWindow->fitInView();
+      pPlotWindow->getPlot()->updateLayout();
+    }
   }
   updateVariablesTreeHelper(mpMainWindow->getPlotWindowContainer()->currentSubWindow());
 }
@@ -1077,9 +1079,11 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setVariablesList(QStringList(pVariablesTreeItem->getPlotVariable()));
         pPlotWindow->setUnit(pVariablesTreeItem->getUnit());
         pPlotWindow->plot(pPlotCurve);
-        pPlotWindow->fitInView();
-        pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-        pPlotWindow->getPlot()->updateLayout();
+        if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+          pPlotWindow->fitInView();
+          pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+          pPlotWindow->getPlot()->updateLayout();
+        }
       }
       // if user unchecks the variable then remove it from the plot
       else if (!pVariablesTreeItem->isChecked())
@@ -1091,9 +1095,11 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
             pPlotCurve->detach();
-            pPlotWindow->fitInView();
-            pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-            pPlotWindow->getPlot()->updateLayout();
+            if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+              pPlotWindow->fitInView();
+              pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+              pPlotWindow->getPlot()->updateLayout();
+            }
           }
         }
       }
@@ -1151,9 +1157,11 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               else
                 pPlotWindow->setYLabel(yVariable + " [" + yUnit + "]");
             }
-            pPlotWindow->fitInView();
-            pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-            pPlotWindow->getPlot()->updateLayout();
+            if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+              pPlotWindow->fitInView();
+              pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+              pPlotWindow->getPlot()->updateLayout();
+            }
           }
           else
           {
@@ -1200,9 +1208,11 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
                   mpVariablesTreeModel->blockSignals(state);
                   pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                   pPlotCurve->detach();
-                  pPlotWindow->fitInView();
-                  pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-                  pPlotWindow->getPlot()->updateLayout();
+                  if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+                    pPlotWindow->fitInView();
+                    pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+                    pPlotWindow->getPlot()->updateLayout();
+                  }
                 }
               }
               mPlotParametricVariables.removeOne(list);

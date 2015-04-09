@@ -59,7 +59,7 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpNotificationsPage = new NotificationsPage(this);
   mpLineStylePage = new LineStylePage(this);
   mpFillStylePage = new FillStylePage(this);
-  mpCurveStylePage = new CurveStylePage(this);
+  mpPlottingPage = new PlottingPage(this);
   mpFigaroPage = new FigaroPage(this);
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
@@ -83,7 +83,7 @@ void OptionsDialog::readSettings()
   readNotificationsSettings();
   readLineStyleSettings();
   readFillStyleSettings();
-  readCurveStyleSettings();
+  readPlottingSettings();
   readFigaroSettings();
   readDebuggerSettings();
   readFMISettings();
@@ -93,8 +93,7 @@ void OptionsDialog::readSettings()
 void OptionsDialog::readGeneralSettings()
 {
   // read the language option
-  if (mpSettings->contains("language"))
-  {
+  if (mpSettings->contains("language")) {
     /* Handle locale stored both as variant and as QString */
     QLocale locale = QLocale(mpSettings->value("language").toString());
     int currentIndex = mpGeneralSettingsPage->getLanguageComboBox()->findData(locale.name() == "C" ? mpSettings->value("language") : QVariant(locale), Qt::UserRole, Qt::MatchExactly);
@@ -103,46 +102,54 @@ void OptionsDialog::readGeneralSettings()
     }
   }
   // read the working directory
-  if (mpSettings->contains("workingDirectory"))
+  if (mpSettings->contains("workingDirectory")) {
     mpMainWindow->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
+  }
   mpGeneralSettingsPage->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
   // read toolbar icon size
   if (mpSettings->contains("toolbarIconSize")) {
     mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->setValue(mpSettings->value("toolbarIconSize").toInt());
   }
   // read the user customizations
-  if (mpSettings->contains("userCustomizations"))
+  if (mpSettings->contains("userCustomizations")) {
     mpGeneralSettingsPage->setPreserveUserCustomizations(mpSettings->value("userCustomizations").toBool());
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
   }
   // read show protected classes
-  if (mpSettings->contains("showProtectedClasses"))
+  if (mpSettings->contains("showProtectedClasses")) {
     mpGeneralSettingsPage->setShowProtectedClasses(mpSettings->value("showProtectedClasses").toBool());
+  }
   // read the modeling view mode
-  if (mpSettings->contains("modeling/viewmode"))
+  if (mpSettings->contains("modeling/viewmode")) {
     mpGeneralSettingsPage->setModelingViewMode(mpSettings->value("modeling/viewmode").toString());
-  // read the plotting view mode
-  if (mpSettings->contains("plotting/viewmode"))
-    mpGeneralSettingsPage->setPlottingViewMode(mpSettings->value("plotting/viewmode").toString());
+  }
   // read the default view
-  if (mpSettings->contains("defaultView"))
+  if (mpSettings->contains("defaultView")) {
     mpGeneralSettingsPage->setDefaultView(mpSettings->value("defaultView").toString());
+  }
   // read auto save
-  if (mpSettings->contains("autoSave/enable"))
+  if (mpSettings->contains("autoSave/enable")) {
     mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mpSettings->value("autoSave/enable").toBool());
-  if (mpSettings->contains("autoSave/interval"))
+  }
+  if (mpSettings->contains("autoSave/interval")) {
     mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->setValue(mpSettings->value("autoSave/interval").toInt());
-  if (mpSettings->contains("autoSave/enableSingleClasses"))
+  }
+  if (mpSettings->contains("autoSave/enableSingleClasses")) {
     mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->setChecked(mpSettings->value("autoSave/enableSingleClasses").toBool());
-  if (mpSettings->contains("autoSave/enableOneFilePackages"))
+  }
+  if (mpSettings->contains("autoSave/enableOneFilePackages")) {
     mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->setChecked(mpSettings->value("autoSave/enableOneFilePackages").toBool());
+  }
   // read welcome page
-  if (mpSettings->contains("welcomePage/view"))
+  if (mpSettings->contains("welcomePage/view")) {
     mpGeneralSettingsPage->setWelcomePageView(mpSettings->value("welcomePage/view").toInt());
-  if (mpSettings->contains("welcomePage/showLatestNews"))
+  }
+  if (mpSettings->contains("welcomePage/showLatestNews")) {
     mpGeneralSettingsPage->getShowLatestNewsCheckBox()->setChecked(mpSettings->value("welcomePage/showLatestNews").toBool());
+  }
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -417,13 +424,23 @@ void OptionsDialog::readFillStyleSettings()
     mpFillStylePage->setFillPattern(mpSettings->value("fillstyle/pattern").toString());
 }
 
-//! Reads the CurveStyle section settings from omedit.ini
-void OptionsDialog::readCurveStyleSettings()
+//! Reads the Plotting section settings from omedit.ini
+void OptionsDialog::readPlottingSettings()
 {
-  if (mpSettings->contains("curvestyle/pattern"))
-    mpCurveStylePage->setCurvePattern(mpSettings->value("curvestyle/pattern").toInt());
-  if (mpSettings->contains("curvestyle/thickness"))
-    mpCurveStylePage->setCurveThickness(mpSettings->value("curvestyle/thickness").toFloat());
+  // read the auto scale
+  if (mpSettings->contains("plotting/autoScale")) {
+    mpPlottingPage->getAutoScaleCheckBox()->setChecked(mpSettings->value("plotting/autoScale").toBool());
+  }
+  // read the plotting view mode
+  if (mpSettings->contains("plotting/viewmode")) {
+    mpPlottingPage->setPlottingViewMode(mpSettings->value("plotting/viewmode").toString());
+  }
+  if (mpSettings->contains("curvestyle/pattern")) {
+    mpPlottingPage->setCurvePattern(mpSettings->value("curvestyle/pattern").toInt());
+  }
+  if (mpSettings->contains("curvestyle/thickness")) {
+    mpPlottingPage->setCurveThickness(mpSettings->value("curvestyle/thickness").toFloat());
+  }
 }
 
 //! Reads the Fiagro section settings from omedit.ini
@@ -522,18 +539,6 @@ void OptionsDialog::saveGeneralSettings()
     }
   } else {
     mpMainWindow->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
-  }
-  // save plotting view mode
-  mpSettings->setValue("plotting/viewmode", mpGeneralSettingsPage->getPlottingViewMode());
-  if (mpGeneralSettingsPage->getPlottingViewMode().compare(Helper::subWindow) == 0) {
-    mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
-    OMPlot::PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
-    if (pPlotWindow) {
-      pPlotWindow->show();
-      pPlotWindow->setWindowState(Qt::WindowMaximized);
-    }
-  } else {
-    mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
   }
   // save default view
   mpSettings->setValue("defaultView", mpGeneralSettingsPage->getDefaultView());
@@ -703,11 +708,25 @@ void OptionsDialog::saveFillStyleSettings()
   mpSettings->setValue("fillstyle/pattern", mpFillStylePage->getFillPattern());
 }
 
-//! Saves the CurveStyle section settings to omedit.ini
-void OptionsDialog::saveCurveStyleSettings()
+//! Saves the Plotting section settings to omedit.ini
+void OptionsDialog::savePlottingSettings()
 {
-  mpSettings->setValue("curvestyle/pattern", mpCurveStylePage->getCurvePattern());
-  mpSettings->setValue("curvestyle/thickness", mpCurveStylePage->getCurveThickness());
+  // save the auto scale
+  mpSettings->setValue("plotting/autoScale", mpPlottingPage->getAutoScaleCheckBox()->isChecked());
+  // save plotting view mode
+  mpSettings->setValue("plotting/viewmode", mpPlottingPage->getPlottingViewMode());
+  if (mpPlottingPage->getPlottingViewMode().compare(Helper::subWindow) == 0) {
+    mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
+    OMPlot::PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
+    if (pPlotWindow) {
+      pPlotWindow->show();
+      pPlotWindow->setWindowState(Qt::WindowMaximized);
+    }
+  } else {
+    mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
+  }
+  mpSettings->setValue("curvestyle/pattern", mpPlottingPage->getCurvePattern());
+  mpSettings->setValue("curvestyle/thickness", mpPlottingPage->getCurveThickness());
 }
 
 //! Saves the Figaro section settings to omedit.ini
@@ -836,10 +855,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pFillStyleItem = new QListWidgetItem(mpOptionsList);
   pFillStyleItem->setIcon(QIcon(":/Resources/icons/fillstyle.svg"));
   pFillStyleItem->setText(Helper::fillStyle);
-  // Curve Style Item
-  QListWidgetItem *pCurveStyleItem = new QListWidgetItem(mpOptionsList);
-  pCurveStyleItem->setIcon(QIcon(":/Resources/icons/omplot.png"));
-  pCurveStyleItem->setText(Helper::curveStyle);
+  // Plotting Item
+  QListWidgetItem *pPlottingItem = new QListWidgetItem(mpOptionsList);
+  pPlottingItem->setIcon(QIcon(":/Resources/icons/omplot.png"));
+  pPlottingItem->setText(tr("Plotting"));
   // Figaro Item
   QListWidgetItem *pFigaroItem = new QListWidgetItem(mpOptionsList);
   pFigaroItem->setIcon(QIcon(":/Resources/icons/console.svg"));
@@ -868,7 +887,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpNotificationsPage);
   mpPagesWidget->addWidget(mpLineStylePage);
   mpPagesWidget->addWidget(mpFillStylePage);
-  mpPagesWidget->addWidget(mpCurveStylePage);
+  mpPagesWidget->addWidget(mpPlottingPage);
   mpPagesWidget->addWidget(mpFigaroPage);
   mpPagesWidget->addWidget(mpDebuggerPage);
   mpPagesWidget->addWidget(mpFMIPage);
@@ -940,7 +959,7 @@ void OptionsDialog::saveSettings()
   saveNotificationsSettings();
   saveLineStyleSettings();
   saveFillStyleSettings();
-  saveCurveStyleSettings();
+  savePlottingSettings();
   saveFigaroSettings();
   saveDebuggerSettings();
   saveFMISettings();
@@ -1040,23 +1059,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   modelingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   modelingViewModeLayout->addLayout(pModelingRadioButtonsLayout, 0, 0);
   mpModelingViewModeGroupBox->setLayout(modelingViewModeLayout);
-  // Plotting View Mode
-  mpPlottingViewModeGroupBox = new QGroupBox(tr("Plotting View Mode"));
-  mpPlottingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
-  mpPlottingTabbedViewRadioButton->setChecked(true);
-  mpPlottingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
-  QButtonGroup *pPlottingViewModeButtonGroup = new QButtonGroup;
-  pPlottingViewModeButtonGroup->addButton(mpPlottingTabbedViewRadioButton);
-  pPlottingViewModeButtonGroup->addButton(mpPlottingSubWindowViewRadioButton);
-  // plotting view radio buttons layout
-  QHBoxLayout *pPlottingRadioButtonsLayout = new QHBoxLayout;
-  pPlottingRadioButtonsLayout->addWidget(mpPlottingTabbedViewRadioButton);
-  pPlottingRadioButtonsLayout->addWidget(mpPlottingSubWindowViewRadioButton);
-  // set the layout of plotting view mode group
-  QGridLayout *pPlottingViewModeLayout = new QGridLayout;
-  pPlottingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pPlottingViewModeLayout->addLayout(pPlottingRadioButtonsLayout, 0, 0);
-  mpPlottingViewModeGroupBox->setLayout(pPlottingViewModeLayout);
   // Default View
   mpDefaultViewGroupBox = new QGroupBox(tr("Default View"));
   mpDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
@@ -1136,7 +1138,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpGeneralSettingsGroupBox);
   pMainLayout->addWidget(mpLibrariesBrowserGroupBox);
   pMainLayout->addWidget(mpModelingViewModeGroupBox);
-  pMainLayout->addWidget(mpPlottingViewModeGroupBox);
   pMainLayout->addWidget(mpDefaultViewGroupBox);
   pMainLayout->addWidget(mpEnableAutoSaveGroupBox);
   pMainLayout->addWidget(mpWelcomePageGroupBox);
@@ -1195,22 +1196,6 @@ void GeneralSettingsPage::setModelingViewMode(QString value)
 QString GeneralSettingsPage::getModelingViewMode()
 {
   if (mpModelingSubWindowViewRadioButton->isChecked())
-    return Helper::subWindow;
-  else
-    return Helper::tabbed;
-}
-
-void GeneralSettingsPage::setPlottingViewMode(QString value)
-{
-  if (value.compare(Helper::subWindow) == 0)
-    mpPlottingSubWindowViewRadioButton->setChecked(true);
-  else
-    mpPlottingTabbedViewRadioButton->setChecked(true);
-}
-
-QString GeneralSettingsPage::getPlottingViewMode()
-{
-  if (mpPlottingSubWindowViewRadioButton->isChecked())
     return Helper::subWindow;
   else
     return Helper::tabbed;
@@ -2920,15 +2905,41 @@ void FillStylePage::fillPickColor()
   setFillPickColorButtonIcon();
 }
 
-//! @class CurveStylePage
+//! @class PlottingPage
 //! @brief Creates an interface for curve style settings.
 
 //! Constructor
 //! @param pOptionsDialog is the pointer to OptionsDialog
-CurveStylePage::CurveStylePage(OptionsDialog *pOptionsDialog)
+PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
+  // general groupbox
+  mpGeneralGroupBox = new QGroupBox(Helper::general);
+  // auto scale
+  mpAutoScaleCheckBox = new QCheckBox(tr("Auto Scale"));
+  mpAutoScaleCheckBox->setToolTip(tr("Auto scale the plot to fit in view when variable is plotted."));
+  // set general groupbox layout
+  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
+  pGeneralGroupBoxLayout->addWidget(mpAutoScaleCheckBox, 0, 0);
+  mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
+  // Plotting View Mode
+  mpPlottingViewModeGroupBox = new QGroupBox(tr("Plotting View Mode"));
+  mpPlottingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
+  mpPlottingTabbedViewRadioButton->setChecked(true);
+  mpPlottingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
+  QButtonGroup *pPlottingViewModeButtonGroup = new QButtonGroup;
+  pPlottingViewModeButtonGroup->addButton(mpPlottingTabbedViewRadioButton);
+  pPlottingViewModeButtonGroup->addButton(mpPlottingSubWindowViewRadioButton);
+  // plotting view radio buttons layout
+  QHBoxLayout *pPlottingRadioButtonsLayout = new QHBoxLayout;
+  pPlottingRadioButtonsLayout->addWidget(mpPlottingTabbedViewRadioButton);
+  pPlottingRadioButtonsLayout->addWidget(mpPlottingSubWindowViewRadioButton);
+  // set the layout of plotting view mode group
+  QGridLayout *pPlottingViewModeLayout = new QGridLayout;
+  pPlottingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pPlottingViewModeLayout->addLayout(pPlottingRadioButtonsLayout, 0, 0);
+  mpPlottingViewModeGroupBox->setLayout(pPlottingViewModeLayout);
   mpCurveStyleGroupBox = new QGroupBox(Helper::curveStyle);
   // Curve Pattern
   mpCurvePatternLabel = new Label(Helper::pattern);
@@ -2958,27 +2969,57 @@ CurveStylePage::CurveStylePage(OptionsDialog *pOptionsDialog)
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpGeneralGroupBox);
+  pMainLayout->addWidget(mpPlottingViewModeGroupBox);
   pMainLayout->addWidget(mpCurveStyleGroupBox);
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief PlottingPage::setPlottingViewMode
+ * Sets the plotting view mode.
+ * \param value
+ */
+void PlottingPage::setPlottingViewMode(QString value)
+{
+  if (value.compare(Helper::subWindow) == 0) {
+    mpPlottingSubWindowViewRadioButton->setChecked(true);
+  } else {
+    mpPlottingTabbedViewRadioButton->setChecked(true);
+  }
+}
+
+/*!
+ * \brief PlottingPage::getPlottingViewMode
+ * Gets the plotting view mode.
+ * \return
+ */
+QString PlottingPage::getPlottingViewMode()
+{
+  if (mpPlottingSubWindowViewRadioButton->isChecked()) {
+    return Helper::subWindow;
+  } else {
+    return Helper::tabbed;
+  }
+}
+
 //! Sets the pen pattern
 //! @param pattern to set.
-void CurveStylePage::setCurvePattern(int pattern)
+void PlottingPage::setCurvePattern(int pattern)
 {
   int index = mpCurvePatternComboBox->findData(pattern);
   if (index != -1)
     mpCurvePatternComboBox->setCurrentIndex(index);
 }
 
-int CurveStylePage::getCurvePattern()
+int PlottingPage::getCurvePattern()
 {
   return mpCurvePatternComboBox->itemData(mpCurvePatternComboBox->currentIndex()).toInt();
 }
 
 //! Sets the pen thickness
 //! @param thickness to set.
-void CurveStylePage::setCurveThickness(qreal thickness)
+void PlottingPage::setCurveThickness(qreal thickness)
 {
   if (thickness <= 0)
     thickness = 1.0;
@@ -2986,7 +3027,7 @@ void CurveStylePage::setCurveThickness(qreal thickness)
 }
 
 //! Returns the pen thickness
-qreal CurveStylePage::getCurveThickness()
+qreal PlottingPage::getCurveThickness()
 {
   return mpCurveThicknessSpinBox->value();
 }

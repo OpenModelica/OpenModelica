@@ -54,7 +54,7 @@ class MessagesPage;
 class NotificationsPage;
 class LineStylePage;
 class FillStylePage;
-class CurveStylePage;
+class PlottingPage;
 class FigaroPage;
 class DebuggerPage;
 class FMIPage;
@@ -75,7 +75,7 @@ public:
   void readNotificationsSettings();
   void readLineStyleSettings();
   void readFillStyleSettings();
-  void readCurveStyleSettings();
+  void readPlottingSettings();
   void readFigaroSettings();
   void readDebuggerSettings();
   void readFMISettings();
@@ -88,7 +88,7 @@ public:
   void saveNotificationsSettings();
   void saveLineStyleSettings();
   void saveFillStyleSettings();
-  void saveCurveStyleSettings();
+  void savePlottingSettings();
   void saveFigaroSettings();
   void saveDebuggerSettings();
   void saveFMISettings();
@@ -104,7 +104,7 @@ public:
   NotificationsPage* getNotificationsPage() {return mpNotificationsPage;}
   LineStylePage* getLineStylePage() {return mpLineStylePage;}
   FillStylePage* getFillStylePage() {return mpFillStylePage;}
-  CurveStylePage* getCurveStylePage() {return mpCurveStylePage;}
+  PlottingPage* getPlottingPage() {return mpPlottingPage;}
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
@@ -129,7 +129,7 @@ private:
   NotificationsPage *mpNotificationsPage;
   LineStylePage *mpLineStylePage;
   FillStylePage *mpFillStylePage;
-  CurveStylePage *mpCurveStylePage;
+  PlottingPage *mpPlottingPage;
   FigaroPage *mpFigaroPage;
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
@@ -158,8 +158,6 @@ public:
   bool getShowProtectedClasses();
   void setModelingViewMode(QString value);
   QString getModelingViewMode();
-  void setPlottingViewMode(QString value);
-  QString getPlottingViewMode();
   void setDefaultView(QString value);
   QString getDefaultView();
   QGroupBox* getEnableAutoSaveGroupBox();
@@ -187,9 +185,6 @@ private:
   QGroupBox *mpModelingViewModeGroupBox;
   QRadioButton *mpModelingTabbedViewRadioButton;
   QRadioButton *mpModelingSubWindowViewRadioButton;
-  QGroupBox *mpPlottingViewModeGroupBox;
-  QRadioButton *mpPlottingTabbedViewRadioButton;
-  QRadioButton *mpPlottingSubWindowViewRadioButton;
   QGroupBox *mpDefaultViewGroupBox;
   QRadioButton *mpIconViewRadioButton;
   QRadioButton *mpDiagramViewRadioButton;
@@ -587,17 +582,25 @@ public slots:
   void fillPickColor();
 };
 
-class CurveStylePage : public QWidget
+class PlottingPage : public QWidget
 {
   Q_OBJECT
 public:
-  CurveStylePage(OptionsDialog *pOptionsDialog);
+  PlottingPage(OptionsDialog *pOptionsDialog);
+  void setPlottingViewMode(QString value);
+  QString getPlottingViewMode();
+  QCheckBox* getAutoScaleCheckBox() {return mpAutoScaleCheckBox;}
   void setCurvePattern(int pattern);
   int getCurvePattern();
   void setCurveThickness(qreal thickness);
   qreal getCurveThickness();
 private:
   OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpGeneralGroupBox;
+  QCheckBox *mpAutoScaleCheckBox;
+  QGroupBox *mpPlottingViewModeGroupBox;
+  QRadioButton *mpPlottingTabbedViewRadioButton;
+  QRadioButton *mpPlottingSubWindowViewRadioButton;
   QGroupBox *mpCurveStyleGroupBox;
   Label *mpCurvePatternLabel;
   QComboBox *mpCurvePatternComboBox;
