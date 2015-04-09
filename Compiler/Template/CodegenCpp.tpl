@@ -507,13 +507,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include <Core/ModelicaDefine.h>
   #include "OMCpp<%fileNamePrefix%>Extension.h" */
 
-  #if defined(__TRICORE__)  || defined(__vxworks)
+  #if defined(__TRICORE__) || defined(__vxworks)
 
-  extern "C" IMixedSystem* create<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor, boost::shared_ptr<ISimData> sim_data)
-  {
-     return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, nonlinsolverfactor, sim_data);
-  }
-  #elif  defined (RUNTIME_STATIC_LINKING)
+    extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData)
+    {
+      return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData);
+    }  
+  
+  #elif defined (RUNTIME_STATIC_LINKING)
+  
     #include <Core/DataExchange/SimData.h>
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
     #include "OMCpp<%dotPath(modelInfo.name)%>Extension.h"
@@ -528,15 +530,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       boost::shared_ptr<IMixedSystem> sp( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData) );
       return sp;
     }
+
   #else
 
-  using boost::extensions::factory;
-   BOOST_EXTENSION_TYPE_MAP_FUNCTION
-   {
-    types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
-    ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
-
-   }
+    using boost::extensions::factory;
+    BOOST_EXTENSION_TYPE_MAP_FUNCTION
+    {
+      types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
+      ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
+    }
 
   #endif
   >>
