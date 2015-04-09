@@ -3334,6 +3334,8 @@ match simCode
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
 
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
+        //initialize Algloop variables with NULL
+        initializeAlgloopSolverVariables();
         >>
 
 end generateSimulationCppConstructorContent;
@@ -5088,11 +5090,10 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()
    {
       _discrete_events = _event_handling->initialize(this);
+
       //create and initialize Algloopsolvers
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
-      //initialize Algloop variables
-      initializeAlgloopSolverVariables();
       //init alg loop vars
       <%initAlgloopvars%>
    }
