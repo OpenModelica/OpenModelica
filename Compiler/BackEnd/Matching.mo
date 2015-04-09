@@ -122,8 +122,8 @@ algorithm
   BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
   nEqns := BackendDAEUtil.systemSize(outSys);
   nVars := BackendVariable.daenumVariables(outSys);
-  // Be carefull, since matching may have been generated with not distinguishing between 
-  // state and their derivative, which leads to wrong traversing of bibartite graph!!!! 
+  // Be carefull, since matching may have been generated with not distinguishing between
+  // state and their derivative, which leads to wrong traversing of bibartite graph!!!!
   //(assign_v_e,assign_e_v) := getAssignment(clearMatching,nVars,nEqns,inSys);
   //if clearMatching then
   assign_e_v := arrayCreate(nEqns,-1);
@@ -184,7 +184,7 @@ algorithm
   vars := m[i];
   while not success and (listLength(vars) > 0) loop
     j::vars := vars;
-    // negative entries in adjacence matrix belong to states!!!    
+    // negative entries in adjacence matrix belong to states!!!
     if (j>0 and assign_v_e[j] <= 0) then
       success := true;
       arrayUpdate(assign_v_e,j,i);
@@ -194,7 +194,7 @@ algorithm
   vars := m[i];
   while not success and (listLength(vars) > 0) loop
     j::vars := vars;
-    // negative entries in adjacence matrix belong to states!!!    
+    // negative entries in adjacence matrix belong to states!!!
     if (j>0 and not vMark[j]) then
       arrayUpdate(vMark,j,true);
       (success, outMEqns) := BBPathFound(assign_v_e[j], m, eMark, vMark, assign_v_e, assign_e_v, outMEqns);
@@ -220,7 +220,7 @@ algorithm
     vars := m[i];
     while not success and (listLength(vars) > 0) loop
       j::vars := vars;
-      // negative entries in adjacence matrix belong to states!!!    
+      // negative entries in adjacence matrix belong to states!!!
       if (j>0 and assign_v_e[j] <= 0) then
         success := true;
         arrayUpdate(assign_v_e,j,i);

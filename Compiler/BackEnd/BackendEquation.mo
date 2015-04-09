@@ -2255,12 +2255,12 @@ algorithm
 
     (inputsKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isInput);
 
-    b := List.isEmpty(eqnVars) and List.isEmpty(inputsKnVars) and not Expression.expHasCref(y,cr_time); 
+    b := List.isEmpty(eqnVars) and List.isEmpty(inputsKnVars) and not Expression.expHasCref(y,cr_time);
 
     if b then
       tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
       (paramKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isParam);
-      if List.isEmpty(paramKnVars) then 
+      if List.isEmpty(paramKnVars) then
         tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.CONST());
       else
         tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.PARAM());
