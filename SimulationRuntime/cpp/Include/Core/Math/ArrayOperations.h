@@ -43,20 +43,17 @@ sp (shape,indices) of source array
 template < typename T >
 void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 
-
-
 template < typename T >
 void promote_array(unsigned int n,BaseArray<T>& s,BaseArray<T>& d);
-
-
 
 template < typename T>
 void multiply_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputArray  );
 
+template <typename T>
+void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray);
 
 template < typename T>
 void divide_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputArray  );
-
 
 template < typename T >
 void fill_array( BaseArray<T> & inputArray , T b);

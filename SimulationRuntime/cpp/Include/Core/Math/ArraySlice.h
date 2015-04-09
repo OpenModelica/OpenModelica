@@ -251,7 +251,11 @@ class ArraySlice: public BaseArray<T> {
     accessElement(1, i);
   }
 
-  virtual T& operator()(size_t  i, size_t j) {
+  virtual T& operator()(size_t i, size_t j) {
+    accessElement(2, i, j);
+  }
+
+  virtual const T& operator()(size_t i, size_t j) const {
     accessElement(2, i, j);
   }
 

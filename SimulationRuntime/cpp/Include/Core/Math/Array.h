@@ -39,7 +39,12 @@ public:
      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
-  virtual T& operator()(size_t  i, size_t j)
+  virtual T& operator()(size_t i, size_t j)
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+  };
+
+  virtual const T& operator()(size_t i, size_t j) const
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
@@ -1461,6 +1466,10 @@ public:
      return _multi_array[idx[0]][idx[1]];
   };
   inline virtual T& operator()(size_t i, size_t j)
+  {
+    return _multi_array[i][j];
+  }
+  inline virtual const T& operator()(size_t i, size_t j) const
   {
     return _multi_array[i][j];
   }

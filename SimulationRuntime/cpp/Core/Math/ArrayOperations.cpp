@@ -184,6 +184,53 @@ void multiply_array(BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputAr
   std::transform (data, data + nelems, aim, std::bind2nd( std::multiplies< T >(), b ));
 };
 
+template <typename T>
+void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray)
+{
+  size_t leftNumDims = leftArray.getNumDims();
+  size_t rightNumDims = rightArray.getNumDims();
+  size_t matchDim = rightArray.getDim(1);
+  if (leftArray.getDim(leftNumDims) != matchDim)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Wrong sizes in multiply_array");
+  if (matchDim == 0) {
+    fill_array(resultArray, T()); // zero
+  }
+  else if (leftNumDims == 1 && rightNumDims == 2) {
+    size_t rightDim = rightArray.getDim(2);
+    for (size_t j = 1; j <= rightDim; j++) {
+      T val = leftArray(1) * rightArray(1, j);
+      for (size_t k = 2; k <= matchDim; k++)
+        val += leftArray(k) * rightArray(k, j);
+      resultArray(j) = val;
+    }
+  }
+  else if (leftNumDims == 2 && rightNumDims == 1) {
+    size_t leftDim = leftArray.getDim(1);
+    for (size_t i = 1; i <= leftDim; i++) {
+      T val = leftArray(i, 1) * rightArray(1);
+      for (size_t k = 2; k <= matchDim; k++)
+        val += leftArray(i, k) * rightArray(k);
+      resultArray(i) = val;
+    }
+  }
+  else if (leftNumDims == 2 && rightNumDims == 2) {
+    size_t leftDim = leftArray.getDim(1);
+    size_t rightDim = rightArray.getDim(2);
+    for (size_t i = 1; i <= leftDim; i++) {
+      for (size_t j = 1; j <= rightDim; j++) {
+        T val = leftArray(i, 1) * rightArray(1, j);
+        for (size_t k = 2; k <= matchDim; k++)
+          val += leftArray(i, k) * rightArray(k, j);
+        resultArray(i, j) = val;
+      }
+    }
+  }
+  else
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Unsupported dimensions in multiply_array");
+}
+
 template < typename T>
 void divide_array(BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray)
 {
@@ -344,6 +391,10 @@ template void BOOST_EXTENSION_EXPORT_DECL create_array_from_shape(const spec_typ
 template void BOOST_EXTENSION_EXPORT_DECL multiply_array(BaseArray<double>& inputArray, const double &b, BaseArray<double> & outputArray);
 template void BOOST_EXTENSION_EXPORT_DECL multiply_array(BaseArray<int>& inputArray, const int &b, BaseArray<int> & outputArray);
 template void BOOST_EXTENSION_EXPORT_DECL multiply_array(BaseArray<bool>& inputArray, const bool &b, BaseArray<bool> & outputArray);
+
+template void BOOST_EXTENSION_EXPORT_DECL multiply_array(const BaseArray<double> &leftArray, const BaseArray<double> &rightArray, BaseArray<double> &resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL multiply_array(const BaseArray<int> &leftArray, const BaseArray<int> &rightArray, BaseArray<int> &resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL multiply_array(const BaseArray<bool> &leftArray, const BaseArray<bool> &rightArray, BaseArray<bool> &resultArray);
 
 template void BOOST_EXTENSION_EXPORT_DECL divide_array(BaseArray<double>& inputArray, const double &b, BaseArray<double>& outputArray);
 template void BOOST_EXTENSION_EXPORT_DECL divide_array(BaseArray<int>& inputArray, const int &b, BaseArray<int>& outputArray);
