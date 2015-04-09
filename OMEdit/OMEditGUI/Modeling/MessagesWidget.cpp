@@ -184,44 +184,45 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
       break;
   }
   QString linkFormat = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>");
-  QString message;
+  QString errorMessage;
+  QString message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
   if (messageItem.getFileName().isEmpty()) { // if custom error message
-    message = messageItem.getMessage();
+    errorMessage = message;
   } else if (mpMainWindow->getOMCProxy()->existClass(messageItem.getFileName())) {
     // If the class is only loaded in AST via loadString then create link for the error message.
-    message = linkFormat.arg(messageItem.getFileName())
+    errorMessage = linkFormat.arg(messageItem.getFileName())
         .arg(messageItem.getLocation())
         .arg(messageItem.getFileName())
         .arg(messageItem.getLineStart())
-        .arg(messageItem.getMessage());
+        .arg(message);
   } else {
     // Find the class name using the file name and line number.
     LibraryTreeNode *pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNodeFromFile(messageItem.getFileName(),
                                                                                                          messageItem.getLineStart().toInt());
     if (pLibraryTreeNode) {
-      message = linkFormat.arg(pLibraryTreeNode->getNameStructure())
+      errorMessage = linkFormat.arg(pLibraryTreeNode->getNameStructure())
           .arg(messageItem.getLocation())
           .arg(pLibraryTreeNode->getNameStructure())
           .arg(messageItem.getLineStart())
-          .arg(messageItem.getMessage());
+          .arg(message);
     } else {
       // otherwise display filename to user where error occurred.
-      message = QString("[%1: %2]: %3")
+      errorMessage = QString("[%1: %2]: %3")
           .arg(messageItem.getFileName())
           .arg(messageItem.getLocation())
-          .arg(messageItem.getMessage());
+          .arg(message);
     }
   }
   QString errorString = QString("<div class=\"%1\">"
-                                "<b>[%2] %3 %4 %5</b><br />"
+                                "<b>[%2] %3 %4 %5</b><br>"
                                 "%6"
-                                "</div><br />")
+                                "</div><br>")
       .arg(messageCSSClass)
       .arg(QString::number(mMessageNumber))
       .arg(QTime::currentTime().toString())
       .arg(StringHandler::getErrorKindString(messageItem.getErrorKind()))
       .arg(StringHandler::getErrorTypeDisplayString(messageItem.getErrorType()))
-      .arg(message);
+      .arg(errorMessage);
   mpMessagesTextBrowser->insertHtml(errorString);
   mMessageNumber++;
   // move the cursor down after adding message.
