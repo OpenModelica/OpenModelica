@@ -115,10 +115,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setFixedAttr(oattr, SOME(DAE.BCONST(inBoolean)));
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
 end setVarFixed;
 
 public function varFixed "author: PA
@@ -168,10 +168,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStartAttr(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io, false);
 end setVarStartValue;
 
 public function setVarStartValueOption "author: Frenkel TUD
@@ -196,10 +196,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStartAttrOption(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
 end setVarStartValueOption;
 
 public function setVarStartOrigin "author: Frenkel TUD
@@ -224,10 +224,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStartOrigin(oattr, startOrigin);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
 end setVarStartOrigin;
 
 public function setVarAttributes "sets the variable attributes of a variable.
@@ -250,8 +250,8 @@ protected
     DAE.ConnectorType ct;
     DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,ts,s,ct,io) := v;
-  outV := BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,ts,s,ct,io);
+  BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,ts,s,ct,io, _) := v;
+  outV := BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,ts,s,ct,io, false);
 end setVarAttributes;
 
 public function varStartValue "author: PA
@@ -485,10 +485,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStateSelect(oattr, stateSelect);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
 end setVarStateSelect;
 
 public function varStateDerivative "author: Frenkel TUD 2013-01
@@ -545,7 +545,7 @@ algorithm
               comment=s,
               connectorType=ct,
               innerOuter=io) := inVar;
-  outVar := BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,ts,s,ct,io);
+  outVar := BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,ts,s,ct,io, false);
 end setStateDerivative;
 
 public function getVariableAttributefromType
@@ -590,10 +590,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setFinalAttr(oattr, finalPrefix);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
 end setVarFinal;
 
 public function setVarMinMax "author: Frenkel TUD
@@ -620,10 +620,10 @@ protected
   DAE.VarInnerOuter io;
 algorithm
   if isSome(inMin) or isSome(inMax) then
-    BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io) := inVar;
+    BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
     oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
     oattr := DAEUtil.setMinMax(oattr, inMin, inMax);
-    outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io);
+    outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
   else
     outVar := inVar;
   end if;
@@ -651,10 +651,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setUnitAttr(oattr, inUnit);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
 end setUnit;
 
 public function varNominalValue "author: Frenkel TUD"
@@ -686,10 +686,10 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, _) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setNominalAttr(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, false);
 end setVarNominalValue;
 
 public function varType "author: PA
@@ -1670,7 +1670,7 @@ algorithm
   outVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                           DAE.emptyElementSource,
                           NONE(),
-                          NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+                          NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end createAliasDerVar;
 
 public function createDummyVar
@@ -1682,7 +1682,7 @@ algorithm
   outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1,NONE()),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-                            NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER());
+                            NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
 end createDummyVar;
 
 public function createCSEVar "Creates a cse variable with the name of inCref.
@@ -1702,12 +1702,12 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path), source=typeLst) = inType;
       source = DAE.SOURCE(Absyn.dummyInfo, {}, NONE(), {}, path::typeLst, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
     then outVar;
 
     case (_) equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
     then outVar;
   end match;
 end createCSEVar;
@@ -1745,7 +1745,7 @@ algorithm
                  comment = comment,
                  connectorType = ct,
                  innerOuter = io) := inVar;
-  outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct, io);
+  outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct, io, false);
 end copyVarNewName;
 
 public function setVarKindForVar"updates the varkind for an indexed var inside the variable-array.
@@ -1805,7 +1805,7 @@ algorithm
                  comment = comment,
                  connectorType = ct,
                  innerOuter = io) := inVar;
-  outVar := BackendDAE.VAR(cr, inVarKind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct, io);
+  outVar := BackendDAE.VAR(cr, inVarKind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct, io, false);
   // referenceUpdate(inVar, 2, new_kind);
 end setVarKind;
 
@@ -1842,7 +1842,7 @@ algorithm
                  comment = comment,
                  connectorType = ct,
                  innerOuter = io) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, ts, comment, ct, io);
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, ts, comment, ct, io, false);
 end setBindExp;
 
 public function setBindValue "author: lochel"
@@ -1877,7 +1877,7 @@ algorithm
                  comment = comment,
                  connectorType = ct,
                  innerOuter = io) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, ts, comment, ct, io);
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, ts, comment, ct, io, false);
 end setBindValue;
 
 public function setVarDirectionTpl
@@ -1927,7 +1927,7 @@ algorithm
               connectorType = ct,
               innerOuter = io),_)
     equation
-      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,ts,comment,ct,io); // referenceUpdate(inVar, 3, varDirection);
+      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,ts,comment,ct,io,false); // referenceUpdate(inVar, 3, varDirection);
     then
       oVar;
   end match;
@@ -2856,7 +2856,7 @@ end existsVar;
 
 public function makeVar
  input DAE.ComponentRef cr;
- output BackendDAE.Var v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+ output BackendDAE.Var v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(),false);
 end makeVar;
 
 public function addVarDAE
@@ -3801,7 +3801,7 @@ algorithm
       equation
         ops = listReverse(iops);
         source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
-      then BackendDAE.VAR(a,b,c,p,d,e,f,g,source,oattr,ts,s,ct,io);
+      then BackendDAE.VAR(a,b,c,p,d,e,f,g,source,oattr,ts,s,ct,io,false);
   end match;
 end mergeVariableOperations;
 
@@ -4414,7 +4414,7 @@ algorithm
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, ts, comment, ct, io);
+        BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, ts, comment, ct, io,false);
 
     case (backendVar)
     then

@@ -2243,8 +2243,8 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,io) := inVar;
-  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,io);
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,io,_) := inVar;
+  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,io,false);
 end setVarCref;
 
 public function setVarBindingOpt "author: PA
@@ -2268,8 +2268,8 @@ protected
   DAE.ConnectorType ct;
   DAE.VarInnerOuter innerOuter;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,innerOuter) := inVar;
-  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,ts,cmt,ct,innerOuter);
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,innerOuter,_) := inVar;
+  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,ts,cmt,ct,innerOuter,false);
 end setVarBindingOpt;
 
 public function moveVariables "

@@ -389,8 +389,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_INTEGER_DEFAULT,NONE(),NONE(),{},
-                     DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),  DAE.NOT_INNER_OUTER());
+  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -907,7 +906,7 @@ algorithm
         true = Expression.isConst(e);
         (_, v, _) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
       then
-        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, ts, c, ct, io);
+        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, ts, c, ct, io, false);
     else inVar;
   end matchcontinue;
 end calculateValue;
@@ -6059,6 +6058,7 @@ algorithm
       list<BackendDAE.WhenClause> whenClauseLst;
       Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
+  
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))),_,_)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
@@ -6068,11 +6068,10 @@ algorithm
         (_,ext_arg_6) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,func,ext_arg_5);
       then
         ext_arg_6;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExps failed"});
-      then
-        fail();
+        
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExps failed"});
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExps;
 
@@ -6501,15 +6500,14 @@ protected function traverseBackendDAEExpsVarWithUpdate "author: Frenkel TUD
     output Type_a outA;
   end FuncExpType;
 algorithm
-  (ovar,outTypeA) :=
-  matchcontinue (inVar,func,inTypeA)
+  (ovar, outTypeA) := matchcontinue(inVar)
     local
       DAE.Exp e1;
       DAE.ComponentRef cref;
       list<DAE.Dimension> instdims;
       Option<DAE.VariableAttributes> attr;
-    Option<BackendDAE.TearingSelect> ts;
-      Type_a ext_arg_1,ext_arg_2;
+      Option<BackendDAE.TearingSelect> ts;
+      Type_a ext_arg_1, ext_arg_2;
       VarKind varKind;
       DAE.VarDirection varDirection;
       DAE.VarParallelism varParallelism;
@@ -6519,28 +6517,24 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.VarInnerOuter io;
+      Boolean unreplaceable;
 
-    case (NONE(),_,_) then (NONE(),inTypeA);
+    case NONE()
+    then (NONE(), inTypeA);
 
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct,io)),_,_)
-      equation
-        (e1,ext_arg_1) = func(e1,inTypeA);
-        (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_1);
-      then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct,io)),ext_arg_2);
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)) equation
+      (e1, ext_arg_1) = func(e1, inTypeA);
+      (attr, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, ext_arg_1);
+    then (SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)), ext_arg_2);
 
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct,io)),_,_)
-      equation
-        (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,inTypeA);
-      then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct,io)),ext_arg_2);
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)) equation
+      (attr, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, inTypeA);
+    then (SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), bindValue, instdims, source, attr, ts, comment, ct, io, unreplaceable)), ext_arg_2);
 
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendDAE.traverseBackendDAEExpsVar failed\n");
-      then
-        fail();
+    else equation
+      true = Flags.isSet(Flags.FAILTRACE);
+      Debug.trace("- BackendDAE.traverseBackendDAEExpsVar failed\n");
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExpsVarWithUpdate;
 

@@ -492,9 +492,8 @@ protected function inlineVar
   output BackendDAE.Var outVar;
   output Boolean inlined;
 algorithm
-  (outVar,inlined) := match(inVar,inElementList)
+  (outVar, inlined) := match(inVar)
     local
-      Inline.Functiontuple fns;
       DAE.ComponentRef varName;
       BackendDAE.VarKind varKind;
       DAE.VarDirection varDirection;
@@ -503,21 +502,21 @@ algorithm
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Option<DAE.VariableAttributes> values,values1;
-    Option<BackendDAE.TearingSelect> ts;
+      Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
-      BackendDAE.Var var;
       DAE.ElementSource source;
       Option<DAE.Exp> bind;
       Boolean b1,b2;
       DAE.VarInnerOuter io;
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,ts,comment,ct,io),fns)
-      equation
-        (bind,source,b1) = Inline.inlineExpOpt(bind,fns,source);
-        (values1,source,b2) = Inline.inlineStartAttribute(values,source,fns);
-      then
-        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,ts,comment,ct,io),b1 or b2);
-    case(var,_) then (var,false);
+      Boolean unreplaceable;
+      
+    case BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,ts,comment,ct,io,unreplaceable) equation
+      (bind,source,b1) = Inline.inlineExpOpt(bind,inElementList,source);
+      (values1,source,b2) = Inline.inlineStartAttribute(values,source,inElementList);
+    then (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,ts,comment,ct,io,unreplaceable), b1 or b2);
+    
+    else (inVar, false);
   end match;
 end inlineVar;
 

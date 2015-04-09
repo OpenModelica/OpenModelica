@@ -190,7 +190,7 @@ public
 uniontype Var "variables"
   record VAR
     .DAE.ComponentRef varName "variable name";
-    VarKind varKind "Kind of variable";
+    VarKind varKind "kind of variable";
     .DAE.VarDirection varDirection "input, output or bidirectional";
     .DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
     Type varType "built-in type or enumeration";
@@ -202,7 +202,8 @@ uniontype Var "variables"
     Option<TearingSelect> tearingSelectOption "value for TearingSelect";
     Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
-    .DAE.VarInnerOuter innerOuter "inner, outer,  inner outer or unspecified";
+    .DAE.VarInnerOuter innerOuter "inner, outer, inner outer or unspecified";
+    Boolean unreplaceable "indicates if it is allowed to replace this variable";
   end VAR;
 end Var;
 

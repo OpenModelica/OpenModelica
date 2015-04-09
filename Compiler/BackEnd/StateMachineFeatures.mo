@@ -1431,7 +1431,7 @@ Create a BackendDAE.Var with some defaults"
   output BackendDAE.Var var;
 algorithm
   var := BackendDAE.VAR(cref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), varType, NONE(), NONE(), {},
-    DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+    DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(),false);
 end createVarWithDefaults;
 
 public function emptySMS "
