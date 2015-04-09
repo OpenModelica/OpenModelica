@@ -12534,20 +12534,21 @@ algorithm
       list<Absyn.ComponentItem> items;
       list<Absyn.Element> rest;
       FCore.Graph env;
+      Option<Absyn.ConstrainClass> cc;
 
     case ({},_,_,_,_) then {};
 
-    case ((Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items)) :: rest),env,_,_,_)
+    case ((Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc) :: rest),env,_,_,_)
       equation
-        res1 = getComponentitemsAnnotationsFromItems(items, env, inClass,inFullProgram,inModelPath);
-        res2 = getComponentitemsAnnotations(rest, env, inClass,inFullProgram,inModelPath);
+        res1 = getComponentitemsAnnotationsFromItems(items, getAnnotationsFromConstraintClass(cc), env, inClass, inFullProgram, inModelPath);
+        res2 = getComponentitemsAnnotations(rest, env, inClass, inFullProgram, inModelPath);
         res = listAppend(res1, res2);
       then
         res;
 
-    case ((Absyn.ELEMENT(specification = Absyn.COMPONENTS()) :: rest),env,_,_,_)
+    case ((Absyn.ELEMENT(specification = Absyn.COMPONENTS(), constrainClass = cc) :: rest),env,_,_,_)
       equation
-        res2 = getComponentitemsAnnotations(rest, env,inClass,inFullProgram,inModelPath);
+        res2 = getComponentitemsAnnotations(rest, env, inClass, inFullProgram, inModelPath);
         res = "{}"::res2;
       then
         res;
@@ -12559,6 +12560,18 @@ algorithm
         res;
   end matchcontinue;
 end getComponentitemsAnnotations;
+
+protected function getAnnotationsFromConstraintClass
+  input Option<Absyn.ConstrainClass> inCC;
+  output list<Absyn.ElementArg> outElArgLst;
+algorithm
+  outElArgLst := match(inCC)
+    local list<Absyn.ElementArg> elementArgs;
+    case SOME(Absyn.CONSTRAINCLASS(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs))))))
+      then elementArgs;
+    else {};
+  end match;
+end getAnnotationsFromConstraintClass;
 
 protected function getComponentitemsAnnotationsElArgs
 "Helper function to getComponentitemsAnnotationsFromItems."
@@ -12663,13 +12676,14 @@ end getComponentitemsAnnotationsElArgs;
 protected function getComponentitemsAnnotationsFromItems
 "Helper function to getComponentitemsAnnotations."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
+  input list<Absyn.ElementArg> ccAnnotations;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
   output list<String> outStringLst;
 algorithm
-  outStringLst := match (inAbsynComponentItemLst,inEnv,inClass,inFullProgram,inModelPath)
+  outStringLst := match (inAbsynComponentItemLst,ccAnnotations,inEnv,inClass,inFullProgram,inModelPath)
     local
       FCore.Graph env;
       String gexpstr,gexpstr_1;
@@ -12678,36 +12692,49 @@ algorithm
       list<Absyn.ComponentItem> rest;
 
     // handle empty
-    case ({},_,_,_,_) then {};
+    case ({},_,_,_,_,_) then {};
 
     case ((Absyn.COMPONENTITEM(comment = SOME(
       Absyn.COMMENT(
             SOME(Absyn.ANNOTATION(annotations)),
-            _))) :: rest),env,_,_,_)
+            _))) :: rest),_,env,_,_,_)
       equation
+        annotations = listAppend(annotations, ccAnnotations);
         res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
         gexpstr = stringDelimitList(res, ", ");
-
         gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
-        res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
+        res = getComponentitemsAnnotationsFromItems(rest, ccAnnotations, env, inClass,inFullProgram,inModelPath);
       then
         (gexpstr_1 :: res);
 
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(_,_))) :: rest),env,_,_,_)
+    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(_,_))) :: rest),_,env,_,_,_)
       equation
-        res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
+        annotations = ccAnnotations;
+        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
+        gexpstr = stringDelimitList(res, ", ");
+        gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
+        res = getComponentitemsAnnotationsFromItems(rest, ccAnnotations, env, inClass,inFullProgram,inModelPath);
       then
-        ("{}" :: res);
+        (gexpstr_1 :: res);
 
-    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),env, _,_,_)
+    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),_,env, _,_,_)
       equation
-        res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
+        annotations = ccAnnotations;
+        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
+        gexpstr = stringDelimitList(res, ", ");
+        gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
+        res = getComponentitemsAnnotationsFromItems(rest, ccAnnotations, env, inClass,inFullProgram,inModelPath);
       then
-        ("{}" :: res);
+        (gexpstr_1 :: res);
 
-    case ({Absyn.COMPONENTITEM(comment = NONE())},_,_,_,_)
+    case ({Absyn.COMPONENTITEM(comment = NONE())},_,env,_,_,_)
+      equation
+        annotations = ccAnnotations;
+        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
+        gexpstr = stringDelimitList(res, ", ");
+        gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
       then
-        {"{}"};
+        {gexpstr_1};
 
   end match;
 end getComponentitemsAnnotationsFromItems;
