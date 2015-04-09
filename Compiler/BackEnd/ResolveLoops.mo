@@ -2246,10 +2246,10 @@ protected
   array<DAE.Exp> b = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> A = arrayCreate(n*n,DAE.RCONST(0.0));
   array<DAE.Exp> ax = arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> solvedX = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> scaled_x = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> scaleA = arrayCreate(n,DAE.RCONST(0.0));
 
-  DAE.Exp a, x, eqn_exp, eqn_scalar;
+  DAE.Exp a, x;
   Integer m, ii, jj, mm;
   list<DAE.Exp> x_lst = List.map(cr_x, Expression.crefExp);
   DAE.ComponentRef cr;
@@ -2311,30 +2311,26 @@ algorithm
     end if;
     m := m + 1;
   end for;
+
+  //rescale x
+  // scale_x = x/factor
+  for i in 1:n loop
+    a := Expression.expMul(arrayGet(ax,i), arrayGet(scaleA,i));
+    (a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$sx$" + intString(i), offset, oeqns, ovars, oshared);
+    arrayUpdate(scaled_x,i,a);
+  end for;
+
   //qrDecomposition3(ax, n, false, "x");
 
   // A*x = b -> R*x = Q'b
   (R, Qb, oeqns, ovars, oshared) := qrDecomposition(A, n, b, oeqns, ovars, offset, oshared);
 
-  // update R scaling
-  for i in 1:n loop
-    m := (i-1)*n;
-    for j in 1:n loop
-      a := arrayGet(R,j+m);
-      if not Expression.isZero(a) then
-        a := Expression.expMul(a, arrayGet(scaleA,j));
-        //(a, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(a, "QR$sR$" + intString(i + (j-1)*n), offset, oeqns, ovars, oshared);
-        arrayUpdate(R, j+m, a);
-      end if;
-    end for;
-  end for;
-
-  // R*x = Q'*b
+  // R*x = Q'*b where x is scaled
   for i in n:-1:1 loop
     m := (i-1)*n;
-    a := Expression.makeSum1(list(Expression.expMul(arrayGet(R, m + j), arrayGet(ax, j)) for j in i:n));
+    a := Expression.makeSum1(list(Expression.expMul(arrayGet(R, m + j), arrayGet(scaled_x, j)) for j in i:n));
     eqn := BackendDAE.EQUATION(a, arrayGet(Qb,i), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    eqn := BackendEquation.solveEquation(eqn, arrayGet(ax,i), NONE());
+    eqn := BackendEquation.solveEquation(eqn, arrayGet(scaled_x,i), NONE());
     oeqns := BackendEquation.addEquation(eqn, oeqns);
   end for;
 
