@@ -2511,8 +2511,9 @@ function plot "Launches a plot window using OMPlot."
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
+  input Boolean autoScale = true "Use auto scale while plotting.";
   output Boolean success "Returns true on success";
-  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
+  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<footer>\",\"<autoScale>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
 <p>Launches a plot window using OMPlot. Returns true on success.</p>
@@ -2548,8 +2549,9 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
+  input Boolean autoScale = true "Use auto scale while plotting.";
   output Boolean success "Returns true on success";
-  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
+  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<footer>\",\"<autoScale>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text");
 end plotAll;
@@ -2592,8 +2594,9 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
+  input Boolean autoScale = true "Use auto scale while plotting.";
   output Boolean success "Returns true on success";
-  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
+  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<footer>\",\"<autoScale>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text");
 end plotParametric;
