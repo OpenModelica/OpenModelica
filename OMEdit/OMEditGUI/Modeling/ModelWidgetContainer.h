@@ -280,9 +280,7 @@ private slots:
 
 class LibraryTreeNode;
 class ModelWidgetContainer;
-class ModelicaTextEditor;
 class ModelicaTextHighlighter;
-class TextEditor;
 class Label;
 class ModelWidget : public QWidget
 {
