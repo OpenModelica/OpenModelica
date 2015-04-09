@@ -6058,7 +6058,8 @@ algorithm
       list<BackendDAE.WhenClause> whenClauseLst;
       Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
-  
+      String name;
+
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))),_,_)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
@@ -6068,9 +6069,10 @@ algorithm
         (_,ext_arg_6) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,func,ext_arg_5);
       then
         ext_arg_6;
-        
+
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExps failed"});
+      (_, _, name) = System.dladdr(func);
+      Error.addInternalError("traverseBackendDAEExps failed for " + name, sourceInfo());
     then fail();
   end matchcontinue;
 end traverseBackendDAEExps;
@@ -6234,6 +6236,8 @@ algorithm
       Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
       list<BackendDAE.WhenClause> wc;
+      String name;
+
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),_,_)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystemWithUpdate,func,inTypeA);
@@ -6243,11 +6247,11 @@ algorithm
         (_,ext_arg_6) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(wc,func,ext_arg_5);
       then
         ext_arg_6;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate failed"});
-      then
-        fail();
+
+    else equation
+      (_, _, name) = System.dladdr(func);
+      Error.addInternalError("traverseBackendDAEExpsNoCopyWithUpdate failed for " + name, sourceInfo());
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExpsNoCopyWithUpdate;
 
@@ -6316,17 +6320,18 @@ algorithm
     local
       array<Option<Var>> varOptArr;
       Type_a ext_arg_1;
+      String name;
     case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
       equation
         ext_arg_1 = traverseArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,inTypeA);
       then
         ext_arg_1;
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendDAE.traverseBackendDAEExpsVars failed\n");
-      then
-        fail();
+
+    else equation
+      true = Flags.isSet(Flags.FAILTRACE);
+      (_, _, name) = System.dladdr(func);
+      Debug.trace("- BackendDAE.traverseBackendDAEExpsVars failed for " + name + "\n");
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExpsVars;
 
@@ -6348,16 +6353,17 @@ algorithm
     local
       array<Option<Var>> varOptArr;
       Type_a ext_arg_1;
+      String name;
     case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
       equation
         (_,ext_arg_1) = traverseArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEExpsVarWithUpdate,inTypeA);
       then
         ext_arg_1;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate failed"});
-      then
-        fail();
+
+    else equation
+      (_, _, name) = System.dladdr(func);
+      Error.addInternalError("traverseBackendDAEExpsVarsWithUpdate failed for " + name, sourceInfo());
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExpsVarsWithUpdate;
 
@@ -6518,6 +6524,7 @@ algorithm
       DAE.ConnectorType ct;
       DAE.VarInnerOuter io;
       Boolean unreplaceable;
+      String name;
 
     case NONE()
     then (NONE(), inTypeA);
@@ -6533,7 +6540,8 @@ algorithm
 
     else equation
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.trace("- BackendDAE.traverseBackendDAEExpsVar failed\n");
+      (_, _, name) = System.dladdr(func);
+      Debug.trace("- BackendDAE.traverseBackendDAEExpsVar failed for " + name + "\n");
     then fail();
   end matchcontinue;
 end traverseBackendDAEExpsVarWithUpdate;
@@ -6607,7 +6615,6 @@ algorithm
      (f,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
      (eqbound,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
     then (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,i,f,eqbound,p,fin,startOrigin)),outExtraArg);
-
  end match;
 end traverseBackendDAEVarAttr;
 
@@ -6662,14 +6669,16 @@ algorithm
   matchcontinue (inEquationArray,func,inTypeA)
     local
       array<Option<BackendDAE.Equation>> equOptArr;
+      String name;
+
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
       then traverseArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,inTypeA);
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendDAE.traverseBackendDAEExpsEqns failed\n");
-      then
-        fail();
+
+    else equation
+      true = Flags.isSet(Flags.FAILTRACE);
+      (_, _, name) = System.dladdr(func);
+      Debug.trace("- BackendDAE.traverseBackendDAEExpsEqns failed for " + name + "\n");
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExpsEqns;
 
@@ -6692,14 +6701,16 @@ algorithm
   matchcontinue (inEquationArray,func,inTypeA)
     local
       array<Option<BackendDAE.Equation>> equOptArr;
+      String name;
+
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-      then traverseArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,inTypeA);
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendDAE.traverseBackendDAEExpsEqnsWithStop failed\n");
-      then
-        fail();
+    then traverseArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,inTypeA);
+
+    else equation
+      true = Flags.isSet(Flags.FAILTRACE);
+      (_, _, name) = System.dladdr(func);
+      Debug.trace("- BackendDAE.traverseBackendDAEExpsEqnsWithStop failed for " + name + "\n");
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExpsEqnsWithStop;
 
@@ -6723,15 +6734,16 @@ algorithm
   matchcontinue (inEquationArray,func,inTypeA)
     local
       array<Option<BackendDAE.Equation>> equOptArr;
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-      equation
-        (_,outTypeA) = traverseArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,inTypeA);
-      then outTypeA;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate failed"});
-      then
-        fail();
+      String name;
+
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_) equation
+      (_,outTypeA) = traverseArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,inTypeA);
+    then outTypeA;
+
+    else equation
+      (_, _, name) = System.dladdr(func);
+      Error.addInternalError("traverseBackendDAEExpsEqnsWithUpdate failed for " + name, sourceInfo());
+    then fail();
   end matchcontinue;
 end traverseBackendDAEExpsEqnsWithUpdate;
 
