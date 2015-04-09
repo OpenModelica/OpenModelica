@@ -110,9 +110,16 @@ void PlotWindow::initializePlot(QStringList arguments)
   setCurveStyle(QString(arguments[14]).toInt());
   setLegendPosition(QString(arguments[15]));
   setFooter(QString(arguments[16]));
+  if (QString(arguments[17]) == "true") {
+    setAutoScale(true);
+  } else if (QString(arguments[17]) == "false") {
+    setAutoScale(false);
+  } else {
+    throw PlotException("Invalid input" + arguments[17]);
+  }
   /* read variables */
   QStringList variablesToRead;
-  for(int i = 17; i < arguments.length(); i++)
+  for(int i = 18; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);
@@ -175,6 +182,13 @@ void PlotWindow::setupToolbar()
   mpPanButton->setCheckable(true);
   connect(mpPanButton, SIGNAL(toggled(bool)), SLOT(enablePanMode(bool)));
   toolBar->addWidget(mpPanButton);
+  toolBar->addSeparator();
+  // Auto scale
+  mpAutoScaleButton = new QToolButton(toolBar);
+  mpAutoScaleButton->setText(tr("Auto Scale"));
+  mpAutoScaleButton->setCheckable(true);
+  connect(mpAutoScaleButton, SIGNAL(toggled(bool)), SLOT(setAutoScale(bool)));
+  toolBar->addWidget(mpAutoScaleButton);
   toolBar->addSeparator();
   //Fit in View
   QToolButton *fitInViewButton = new QToolButton(toolBar);
@@ -1044,6 +1058,13 @@ void PlotWindow::setLogY(bool on)
   mpLogYCheckBox->setChecked(on);
   mpLogYCheckBox->blockSignals(false);
   mpPlot->replot();
+}
+
+void PlotWindow::setAutoScale(bool on)
+{
+  bool state = mpAutoScaleButton->blockSignals(true);
+  mpAutoScaleButton->setChecked(on);
+  mpAutoScaleButton->blockSignals(state);
 }
 
 void PlotWindow::showSetupDialog()

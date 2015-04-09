@@ -63,6 +63,7 @@ private:
   QToolButton *mpNoGridButton;
   QToolButton *mpZoomButton;
   QToolButton *mpPanButton;
+  QToolButton *mpAutoScaleButton;
   QToolButton *mpSetupButton;
   QTextStream *mpTextStream;
   QFile mFile;
@@ -94,6 +95,7 @@ public:
   QString getGrid();
   QCheckBox* getLogXCheckBox();
   QCheckBox* getLogYCheckBox();
+  QToolButton* getAutoScaleButton() {return mpAutoScaleButton;}
   void setXLabel(QString label);
   void setYLabel(QString label);
   void setUnit(QString unit) {mUnit = unit;}
@@ -130,6 +132,7 @@ public slots:
   void fitInView();
   void setLogX(bool on);
   void setLogY(bool on);
+  void setAutoScale(bool on);
   void showSetupDialog();
   void showSetupDialog(QString variable);
 };

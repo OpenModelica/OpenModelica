@@ -64,6 +64,7 @@ void printUsage()
     printf("    --curve-style=STYLE        Sets the STYLE of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7\n");
     printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
     printf("    --footer=FOOTER            Sets the FOOTER of the plot window\n");
+    printf("    --auto-scale=[true|false]  Use auto scale while plotting.\n");
 }
 
 int main(int argc, char *argv[])
@@ -86,6 +87,7 @@ int main(int argc, char *argv[])
     int curveStyle = 1;
     QString legendPosition = "top";
     QString footer("");
+    bool autoScale = true;
     QStringList vars;
     QString filename;
     for(int i = 1; i < argc; i++)
@@ -139,6 +141,8 @@ int main(int argc, char *argv[])
           legendPosition = argv[i]+18;
         } else if (strncmp(argv[i], "--footer=", 9) == 0) {
           footer = argv[i]+9;
+        } else if (strncmp(argv[i], "--auto-scale=",13) == 0) {
+          CONSUME_BOOL_ARG(i,13,autoScale);
         } else if (strncmp(argv[i], "--", 2) == 0) {
           fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
           return 1;
@@ -169,6 +173,7 @@ int main(int argc, char *argv[])
     arguments.append(QString::number(curveStyle));
     arguments.append(legendPosition);
     arguments.append(footer);
+    arguments.append(autoScale ? "true" : "false");
     arguments.append(vars);
     // create the plot application object that is used to check that only one instance of application is running
     PlotApplication app(argc, argv, "OMPlot");
