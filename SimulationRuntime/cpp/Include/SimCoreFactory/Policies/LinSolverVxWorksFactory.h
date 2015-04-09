@@ -3,7 +3,7 @@
 /*
 Policy class to create nonlin solver object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct LinSolverVxWorksFactory : public  ObjectFactory<CreationPolicy>
 {
 

@@ -56,72 +56,72 @@ boost::shared_ptr<ISimData> VxWorksFactory::LoadSimData()
 
 boost::shared_ptr<ISolver> VxWorksFactory::LoadSolver(IMixedSystem* system, string solver_name,boost::shared_ptr<ISolverSettings>  solver_settings)
 {
-	ISolver* solver;
-	if (solver_name.compare("createRTEuler") == 0)
-	{
-		solver = createRTEuler(system, solver_settings.get());
-	}
-	else if (solver_name.compare("createRTRK") == 0)
-	{
-		solver = createRTRK(system, solver_settings.get());
-	}
-	else
-	{
-	}
-    
-	return boost::shared_ptr<ISolver>(solver);
+  ISolver* solver;
+  if (solver_name.compare("createRTEuler") == 0)
+  {
+    solver = createRTEuler(system, solver_settings.get());
+  }
+  else if (solver_name.compare("createRTRK") == 0)
+  {
+    solver = createRTRK(system, solver_settings.get());
+  }
+  else
+  {
+  }
+
+  return boost::shared_ptr<ISolver>(solver);
 }
 
 boost::shared_ptr<ISolverSettings> VxWorksFactory::LoadSolverSettings(string solver_name,boost::shared_ptr<IGlobalSettings> global_settings)
 {
-	ISolverSettings* solver_settings;
-	if (solver_name.compare("createRTEulerSettings") == 0)
-	{
-		solver_settings = createRTEulerSettings(global_settings.get());
-	}
-	else if (solver_name.compare("createRTRKSettings") == 0)
-	{
-		solver_settings = createRTRKSettings(global_settings.get());
-	}
-	else
-	{
-		
-	}
+  ISolverSettings* solver_settings;
+  if (solver_name.compare("createRTEulerSettings") == 0)
+  {
+    solver_settings = createRTEulerSettings(global_settings.get());
+  }
+  else if (solver_name.compare("createRTRKSettings") == 0)
+  {
+    solver_settings = createRTRKSettings(global_settings.get());
+  }
+  else
+  {
+
+  }
     return boost::shared_ptr<ISolverSettings>(solver_settings);
 }
 
 boost::shared_ptr<IAlgLoopSolver> VxWorksFactory::LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings)
 {
-	IAlgLoopSolver* algloopsolver;
-	if (solver_name.compare("createNewton") == 0)
-	{
-		//algloopsolver = createNewton(algLoop, solver_settings.get());
-	}
-	else if (solver_name.compare("createKinsol") == 0)
-	{
-		algloopsolver = createKinsol(algLoop, solver_settings.get());
-	}
-	else
-	{
-	}
-    
-	return boost::shared_ptr<IAlgLoopSolver>(algloopsolver);
+  IAlgLoopSolver* algloopsolver;
+  if (solver_name.compare("createNewton") == 0)
+  {
+    //algloopsolver = createNewton(algLoop, solver_settings.get());
+  }
+  else if (solver_name.compare("createKinsol") == 0)
+  {
+    algloopsolver = createKinsol(algLoop, solver_settings.get());
+  }
+  else
+  {
+  }
+
+  return boost::shared_ptr<IAlgLoopSolver>(algloopsolver);
 }
 
 boost::shared_ptr<INonLinSolverSettings> VxWorksFactory::LoadAlgLoopSolverSettings(string solver_name)
 {
-	INonLinSolverSettings* solver_settings;
-	if (solver_name.compare("createNewtonSettings") == 0)
-	{
-		//solver_settings = createNewtonSettings();
-	}
-	else if (solver_name.compare("createKinsolSettings") == 0)
-	{
-		solver_settings = createKinsolSettings();
-	}
-	else
-	{
-		
-	}
+  INonLinSolverSettings* solver_settings;
+  if (solver_name.compare("createNewtonSettings") == 0)
+  {
+    //solver_settings = createNewtonSettings();
+  }
+  else if (solver_name.compare("createKinsolSettings") == 0)
+  {
+    solver_settings = createKinsolSettings();
+  }
+  else
+  {
+
+  }
     return boost::shared_ptr<INonLinSolverSettings>(solver_settings);
 }

@@ -10,7 +10,7 @@ public:
     SystemVxWorksFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
         :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
-        _use_modelica_compiler = false;      
+        _use_modelica_compiler = false;
     }
 
     ~SystemVxWorksFactory()
@@ -31,11 +31,11 @@ public:
       return simData;
 
     }
-    
+
     boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData)
     {
         boost::shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings,algloopsolverfactory, simData);
-         
+
         return system;
     }
 

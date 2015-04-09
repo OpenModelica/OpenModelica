@@ -513,10 +513,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData)
     {
       return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData);
-    }  
-  
+    }
+
   #elif defined (RUNTIME_STATIC_LINKING)
-  
+
     #include <Core/DataExchange/SimData.h>
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
     #include "OMCpp<%dotPath(modelInfo.name)%>Extension.h"

@@ -3,7 +3,7 @@
 /*
 Policy class to create solver object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct SolverVxWorksFactory : public  ObjectFactory<CreationPolicy>
 {
 

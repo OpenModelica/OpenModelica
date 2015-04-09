@@ -2,7 +2,7 @@
 /*
 Policy class to create solver settings object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct SolverSettingsVxWorksFactory : public  ObjectFactory<CreationPolicy>
 {
 
@@ -11,14 +11,14 @@ public:
         :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
     }
-    
+
     void loadGlobalSettings( boost::shared_ptr<IGlobalSettings> global_settings)
     {
-               
+
     }
     ~SolverSettingsVxWorksFactory()
     {
-    }    
+    }
     boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
     {
 
@@ -27,14 +27,14 @@ public:
         {
             solver_settings_key.assign("createEulerSettings");
         }
-	    else if(solvername.compare("RTEuler")==0)
+      else if(solvername.compare("RTEuler")==0)
         {
             solver_settings_key.assign("createRTEulerSettings");
-        }	
+        }
         else if(solvername.compare("RTRK")==0)
         {
             solver_settings_key.assign("createRTRKSettings");
-        }	
+        }  
         else if(solvername.compare("Idas")==0)
         {
             solver_settings_key.assign("extension_export_idas");
