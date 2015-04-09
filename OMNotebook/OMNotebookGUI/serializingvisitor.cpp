@@ -275,6 +275,7 @@ namespace IAEX
       omcPlotElement.setAttribute(XML_GRAPHCELL_CURVE_STYLE, node->mpPlotWindow->getCurveStyle());
       omcPlotElement.setAttribute(XML_GRAPHCELL_LEGENDPOSITION, node->mpPlotWindow->getLegendPosition());
       omcPlotElement.setAttribute(XML_GRAPHCELL_FOOTER, node->mpPlotWindow->getFooter());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_AUTOSCALE, node->mpPlotWindow->getAutoScaleButton()->isChecked() ? "true" : "false");
 
       foreach (PlotCurve *pPlotCurve, node->mpPlotWindow->getPlot()->getPlotCurvesList())
       {

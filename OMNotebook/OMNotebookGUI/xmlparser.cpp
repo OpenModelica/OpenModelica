@@ -609,6 +609,7 @@ namespace IAEX
           gCell->mpPlotWindow->setCurveStyle(e.attribute(XML_GRAPHCELL_CURVE_STYLE).toDouble());
           gCell->mpPlotWindow->setLegendPosition(e.attribute(XML_GRAPHCELL_LEGENDPOSITION));
           gCell->mpPlotWindow->setFooter(e.attribute(XML_GRAPHCELL_FOOTER));
+          gCell->mpPlotWindow->setAutoScale((e.attribute(XML_GRAPHCELL_AUTOSCALE) == XML_TRUE) ? true : false);
           // read curves
           for (QDomNode n = e.firstChild(); !n.isNull(); n = n.nextSibling())
           {
