@@ -154,7 +154,7 @@ fmi2Status FMU2Wrapper::terminate()
 
 fmi2Status FMU2Wrapper::reset()
 {
-  _model->initialize();
+  _model->initializeFreeVariables();
   return fmi2OK;
 }
 

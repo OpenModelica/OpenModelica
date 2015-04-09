@@ -119,6 +119,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
     virtual bool initial();
     virtual void setInitial(bool);
     virtual void initialize();
+    virtual void initializeMemory();
     virtual void initializeFreeVariables();
     virtual void initializeBoundVariables();
     virtual void initEquations();
@@ -5078,12 +5079,13 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
+      initializeMemory();
       initializeFreeVariables();
       initializeBoundVariables();
       saveAll();
    }
 
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()
    {
       _discrete_events = _event_handling->initialize(this);
       //create and initialize Algloopsolvers
@@ -5091,10 +5093,13 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
       //initialize Algloop variables
       initializeAlgloopSolverVariables();
+      //init alg loop vars
+      <%initAlgloopvars%>
+   }
 
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
+   {
       _simTime = 0.0;
-      /*variable decls*/
-      <%varDecls%>
 
       /*initialize parameter*/
       initializeParameterVars();
@@ -5114,11 +5119,6 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
        /*external vars decls*/
       initializeExternalVar();
 
-      //init event handling
-      <%initEventHandling%>
-      //init alg loop vars
-      <%initAlgloopvars%>
-
    #if defined(__TRICORE__) || defined(__vxworks)
       //init inputs
       stepStarted(0.0);
@@ -5127,8 +5127,14 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoundVariables()
    {
+      //variable decls
+      <%varDecls%>
+
       //bound start values
       <%initFunctions%>
+
+      //init event handling
+      <%initEventHandling%>
 
       //init equations
       initEquations();

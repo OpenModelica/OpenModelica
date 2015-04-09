@@ -247,6 +247,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   // initialization
   void <%modelIdentifier%>FMU::initialize() {
     <%modelIdentifier%>WriteOutput::initialize();
+    <%modelIdentifier%>Initialize::initializeMemory();
     <%modelIdentifier%>Initialize::initializeFreeVariables();
     <%modelIdentifier%>Jacobian::initialize();
     <%modelIdentifier%>Jacobian::initializeColoredJacobianA();
