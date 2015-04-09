@@ -11,7 +11,7 @@ public:
         , _last_selected_solver("empty")
     {
     }
-    
+
     ~LinSolverVxWorksFactory()
     {
     }

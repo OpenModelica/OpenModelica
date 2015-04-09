@@ -18,7 +18,7 @@ public:
     boost::shared_ptr<ISolverSettings> LoadSolverSettings(string solver_name, boost::shared_ptr<IGlobalSettings>);
     boost::shared_ptr<IAlgLoopSolver> LoadAlgLoopSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings);
     boost::shared_ptr<INonLinSolverSettings> LoadAlgLoopSolverSettings(string solver_name);
-    
+
 private:
     string _library_path;
     string _modelicasystem_path;
