@@ -44,8 +44,7 @@ class Slice {
     start = 1;
     step = 1;
     stop = 0;
-    indices = NULL;
-    nindices = 0;
+    iset = NULL;
   }
 
   // one index
@@ -53,43 +52,38 @@ class Slice {
     start = index;
     step = 1;
     stop = index;
-    indices = NULL;
-    nindices = 0;
+    iset = NULL;
   }
 
   Slice(int start, int stop) {
     this->start = start;
     step = 1;
     this->stop = stop;
-    indices = NULL;
-    nindices = 0;
+    iset = NULL;
   }
 
   Slice(int start, int step, int stop) {
     this->start = start;
     this->step = step;
     this->stop = stop;
-    indices = NULL;
-    nindices = 0;
+    iset = NULL;
   }
 
-  Slice(const BaseArray<int> &ivec) {
+  Slice(const BaseArray<int> &indices) {
     start = 0;
     step = 0;
     stop = 0;
-    if (ivec.getNumDims() != 1)
+    if (indices.getNumDims() != 1)
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Slice requires an index vector");
-    // make shallow copy as ivec should live long enough in a Modelica model
-    indices = ivec.getData();
-    nindices = ivec.getNumElems();
+    // store pointer as indices should live long enough in a Modelica model
+    iset = &indices;
   }
 
   size_t start;
   size_t step;
   size_t stop;
-  const int *indices;
-  int nindices;
+  const BaseArray<int> *iset;
 };
 
 // Multi-dimensional array slice holding a reference to a BaseArray.
@@ -99,6 +93,7 @@ class ArraySlice: public BaseArray<T> {
   ArraySlice(BaseArray<T> &baseArray, const vector<Slice> &slice)
     : BaseArray<T>(baseArray.isStatic())
     , _baseArray(baseArray)
+    , _isets(slice.size())
     , _idxs(slice.size())
     , _baseIdx(slice.size()) {
 
@@ -114,8 +109,9 @@ class ArraySlice: public BaseArray<T> {
     vector< vector<size_t> >::iterator dit = _idxs.begin();
     for (dim = 1, sit = slice.begin(); sit != slice.end(); dim++, sit++) {
       if (sit->step == 0)
-        dit->assign(sit->indices, sit->indices + sit->nindices);
+        _isets[dim - 1] = sit->iset;
       else {
+        _isets[dim - 1] = NULL;
         size_t maxIndex = baseArray.getDim(dim);
         size_t start = sit->start > 0? sit->start: maxIndex;
         size_t stop = sit->stop > 0? sit->stop: maxIndex;
@@ -137,10 +133,13 @@ class ArraySlice: public BaseArray<T> {
 
   virtual T& operator()(const vector<size_t> &idx) {
     vector<size_t>::const_iterator it = idx.begin();
-    size_t dim;
+    size_t dim, size;
+    const BaseArray<int> *iset;
     vector< vector<size_t> >::const_iterator dit;
     for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      switch (dit->size()) {
+      iset = _isets[dim - 1];
+      size = iset? iset->getNumElems(): dit->size();
+      switch (size) {
       case 0:
         // all indices
         _baseIdx[dim - 1] = *it++;
@@ -150,7 +149,7 @@ class ArraySlice: public BaseArray<T> {
         break;
       default:
         // regular index mapping
-        _baseIdx[dim - 1] = (*dit)[*it++ - 1];
+        _baseIdx[dim - 1] = iset? (*iset)(*it++): (*dit)[*it++ - 1];
       }
     }
     return _baseArray(_baseIdx);
@@ -166,10 +165,13 @@ class ArraySlice: public BaseArray<T> {
 
   virtual std::vector<size_t> getDims() const {
     vector<size_t> dims;
-    size_t dim;
+    size_t dim, size;
+    const BaseArray<int> *iset;
     vector< vector<size_t> >::const_iterator dit;
     for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      switch (dit->size()) {
+      iset = _isets[dim - 1];
+      size = iset? iset->getNumElems(): dit->size();
+      switch (size) {
       case 0:
         // all indices
         dims.push_back(_baseArray.getDim(dim));
@@ -179,17 +181,20 @@ class ArraySlice: public BaseArray<T> {
         break;
       default:
         // regular index mapping
-        dims.push_back(dit->size());
+        dims.push_back(size);
       }
     }
     return dims;
   }
 
   virtual size_t getDim(size_t reducedDim) const {
-    size_t dim, rdim = 1;
+    size_t dim, size, rdim = 1;
+    const BaseArray<int> *iset;
     vector< vector<size_t> >::const_iterator dit;
     for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      switch (dit->size()) {
+      iset = _isets[dim - 1];
+      size = iset? iset->getNumElems(): dit->size();
+      switch (size) {
       case 0:
         // all indices
         if (reducedDim == rdim++)
@@ -201,7 +206,7 @@ class ArraySlice: public BaseArray<T> {
       default:
         // regular index mapping
         if (reducedDim == rdim++)
-          return dit->size();
+          return size;
       }
     }
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDim out of range");
@@ -264,7 +269,8 @@ class ArraySlice: public BaseArray<T> {
 
  protected:
   BaseArray<T> &_baseArray;        // underlying array
-  vector< vector<size_t> > _idxs;  // index sets per dimension
+  vector<const BaseArray<int>*> _isets; // given index sets per dimension
+  vector< vector<size_t> > _idxs;  // created index sets per dimension
   size_t _ndims;                   // number of reduced dimensions
   size_t _nelems;                  // number of elements
   mutable vector<size_t> _baseIdx; // idx into underlying array
@@ -273,11 +279,15 @@ class ArraySlice: public BaseArray<T> {
   // recursive method for muli-dimensional assignment of raw data
   size_t setDataDim(size_t dim, const T* data) {
     size_t processed = 0;
-    size_t size = _idxs[dim - 1].size();
+    const BaseArray<int> *iset = _isets[dim - 1];
+    size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
     if (size == 0)
       size = _baseArray.getDim(dim);
     for (size_t i = 1; i <= size; i++) {
-      _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
+      if (iset)
+        _baseIdx[dim - 1] = iset->getNumElems() > 0? (*iset)(i): i;
+      else
+        _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
       if (dim < _idxs.size())
         processed += setDataDim(dim + 1, data + processed);
       else
@@ -289,11 +299,15 @@ class ArraySlice: public BaseArray<T> {
   // recursive method for reading raw data
   size_t getDataDim(size_t dim, T* data) const {
     size_t processed = 0;
-    size_t size = _idxs[dim - 1].size();
+    const BaseArray<int> *iset = _isets[dim - 1];
+    size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
     if (size == 0)
       size = _baseArray.getDim(dim);
     for (size_t i = 1; i <= size; i++) {
-      _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
+      if (iset)
+        _baseIdx[dim - 1] = iset->getNumElems() > 0? (*iset)(i): i;
+      else
+        _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
       if (dim < _idxs.size())
         processed += getDataDim(dim + 1, data + processed);
       else
@@ -306,22 +320,27 @@ class ArraySlice: public BaseArray<T> {
     if (ndims != _ndims)
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Wrong dimensions accessing ArraySlice");
-    size_t dim;
+    size_t dim, size, i;
+    const BaseArray<int> *iset;
     va_list args;
     va_start(args, ndims);
     vector< vector<size_t> >::const_iterator dit;
     for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      switch (dit->size()) {
+      iset = _isets[dim - 1];
+      size = iset? iset->getNumElems(): dit->size();
+      switch (size) {
       case 0:
         // all indices
-        _baseIdx[dim - 1] = va_arg(args, size_t);
+        i = va_arg(args, size_t);
+        _baseIdx[dim - 1] = i;
         break;
       case 1:
         // reduction
         break;
       default:
         // regular index mapping
-        _baseIdx[dim - 1] = (*dit)[va_arg(args, size_t) - 1];
+        i = va_arg(args, size_t);
+        _baseIdx[dim - 1] = iset? (*iset)(i): (*dit)[i - 1];
       }
     }
     va_end(args);
