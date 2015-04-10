@@ -75,7 +75,8 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
                                             PATH(""), PATH("")));
   _model = boost::shared_ptr<MODEL_CLASS>
     (new MODEL_CLASS(&_global_settings, solver_factory,
-                     boost::shared_ptr<ISimData>(new SimData())));
+                     boost::shared_ptr<ISimData>(new SimData()),
+                     boost::shared_ptr<ISimVars>(MODEL_CLASS::createSimVars())));
   _model->initialize();
   _string_buffer.resize(_model->getDimString());
 }

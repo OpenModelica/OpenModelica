@@ -86,7 +86,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   // Dummy code for FMU that writes no output file
   class <%lastIdentOfPath(modelInfo.name)%>WriteOutput {
    public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory, boost::shared_ptr<ISimData> simData) {}
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory, boost::shared_ptr<ISimData> simData, boost::shared_ptr<ISimVars> simVars) {}
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput() {}
 
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT) {}
@@ -174,10 +174,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   class <%modelIdentifier%>FMU: public <%modelIdentifier%>Extension {
    public:
+    // create simulation variables
+    static ISimVars *createSimVars();
+
     // constructor
     <%modelIdentifier%>FMU(IGlobalSettings* globalSettings,
         boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
-        boost::shared_ptr<ISimData> simData);
+        boost::shared_ptr<ISimData> simData,
+        boost::shared_ptr<ISimVars> simVars);
 
     // initialization
     virtual void initialize();
@@ -235,13 +239,21 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   else
     '#include "FMU/FMULibInterface.cpp"'%>
 
+  // create simulation variables
+  #include <System/FactoryExport.h>
+  #include <System/SimVars.h>
+
+  ISimVars *<%modelIdentifier%>FMU::createSimVars() {
+    return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%getPreVarsCount(simCode)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
+  }
+
   // constructor
   <%modelIdentifier%>FMU::<%modelIdentifier%>FMU(IGlobalSettings* globalSettings,
       boost::shared_ptr<IAlgLoopSolverFactory> nonLinSolverFactory,
-      boost::shared_ptr<ISimData> simData):
-    PreVariables(<%getPreVarsCount(simCode)%>),
-    <%modelIdentifier%>(globalSettings, nonLinSolverFactory, simData),
-    <%modelIdentifier%>Extension(globalSettings, nonLinSolverFactory, simData) {
+      boost::shared_ptr<ISimData> simData,
+      boost::shared_ptr<ISimVars> simVars):
+    <%modelIdentifier%>(globalSettings, nonLinSolverFactory, simData, simVars),
+    <%modelIdentifier%>Extension(globalSettings, nonLinSolverFactory, simData, simVars) {
   }
 
   // initialization

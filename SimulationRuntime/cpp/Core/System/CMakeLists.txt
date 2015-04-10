@@ -45,6 +45,8 @@ install (FILES
         ${CMAKE_SOURCE_DIR}/Include/Core/System/PreVariables.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/DiscreteEvents.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ContinuousEvents.h
+        ${CMAKE_SOURCE_DIR}/Include/Core/System/SimVars.h
+        ${CMAKE_SOURCE_DIR}/Core/System/FactoryExport.h
 	DESTINATION include/omc/cpp/Core/System)
 install (FILES
 	${CMAKE_SOURCE_DIR}/Include/Core/System/IAlgLoop.h
