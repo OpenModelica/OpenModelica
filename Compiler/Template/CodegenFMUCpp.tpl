@@ -746,9 +746,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
   OMCPP_LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory -lOMCppMath_static
-  OMCPP_SOLVER_LIBS= -Wl,-rpath,$(OMHOME)/lib/omc/cpp
+  OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/omc/cpp"
+  MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables
   BOOST_LIBRARIES = -lboost_system -lboost_filesystem -lboost_program_options
-  LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+  LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
 
   CPPFILES=OMCpp<%fileNamePrefix%>.cpp OMCpp<%fileNamePrefix%>FMU.cpp $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE5) $(ALGLOOPSMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
@@ -756,7 +757,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   .PHONY: <%modelName%>.fmu $(CPPFILES) clean
 
   <%modelName%>.fmu: $(OFILES)
-  <%\t%>$(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(CFLAGS) $(LDFLAGS) $(LIBS)
+  <%\t%>$(CXX) -shared -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(LDFLAGS) $(LIBS)
   <%\t%>rm -rf binaries
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) "binaries/$(PLATFORM)/"

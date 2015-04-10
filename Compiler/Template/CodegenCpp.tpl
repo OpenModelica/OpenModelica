@@ -2815,9 +2815,11 @@ case "gcc" then
             CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
             CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp/Core" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
             CFLAGS_STATIC=$(CFLAGS) <%staticIncludes%>
+
+            MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables
             LDSYSTEMFLAGS=-L"$(OMHOME)/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
             LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS)
-            LDMAINFLAGS=-L"$(OMHOME)/lib/omc/cpp" -L"$(OMHOME)/bin" -lOMCppOMCFactory -lOMCppModelicaUtilities -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%>
+            LDMAINFLAGS=-L"$(OMHOME)/lib/omc/cpp" -L"$(OMHOME)/bin" -lOMCppOMCFactory -lOMCppModelicaUtilities $(MODELICA_EXTERNAL_LIBS) -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%>
             LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS)
             CPPFLAGS = $(CFLAGS) <%extraCppFlags%>
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
@@ -2844,7 +2846,7 @@ case "gcc" then
             <%\t%>$(eval LDSYTEMFLAGS=$(LDSYSTEMFLAGS_STATIC))
             <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(OFILES) $(MAINFILE) $(LDMAINFLAGS)
             else
-            <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYSTEMFLAGS)
+            <%\t%>$(CXX) -shared -o $(SYSTEMOBJ) $(OFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYSTEMFLAGS)
             <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
             endif
 
