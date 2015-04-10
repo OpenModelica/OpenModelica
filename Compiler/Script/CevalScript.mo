@@ -2039,6 +2039,12 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
+    case (cache,_,"deleteFile",{Values.STRING(str)},st,_)
+      equation
+        b = if System.removeFile(str) == 0 then true else false;
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,_,"compareFiles",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         b = System.fileContentsEqual(str1,str2);
