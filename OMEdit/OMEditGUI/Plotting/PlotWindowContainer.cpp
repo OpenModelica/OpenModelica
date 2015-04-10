@@ -153,15 +153,13 @@ void PlotWindowContainer::clearPlotWindow()
     return;
   }
   int i = 0;
-  while(i != pPlotWindow->getPlot()->getPlotCurvesList().size())
-  {
+  while(i != pPlotWindow->getPlot()->getPlotCurvesList().size()) {
     PlotCurve *pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList()[i];
     pPlotWindow->getPlot()->removeCurve(pPlotCurve);
     pPlotCurve->detach();
-    pPlotWindow->fitInView();
-    pPlotWindow->getPlot()->updateGeometry();
     i = 0;   //Restart iteration
   }
+  pPlotWindow->fitInView();
   mpMainWindow->getVariablesWidget()->updateVariablesTreeHelper(subWindowList(QMdiArea::ActivationHistoryOrder).last());
 }
 
@@ -178,7 +176,8 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
         pPlotCurve->detach();
         if (pPlotWindow->getAutoScaleButton()->isChecked()) {
           pPlotWindow->fitInView();
-          pPlotWindow->getPlot()->updateGeometry();
+        } else {
+          pPlotWindow->getPlot()->replot();
         }
       }
     }
