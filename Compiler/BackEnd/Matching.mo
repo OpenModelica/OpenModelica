@@ -75,29 +75,11 @@ public function PerfectMatching "
   output array<Integer> assign_v_e;
   output array<Integer> assign_e_v;
 protected
-  Integer i, j;
-  Boolean success=true;
-  array<Boolean> eMark, vMark;
+  Boolean perfectMatching;
 algorithm
-  assign_e_v := arrayCreate(nEqns, -1);
-  assign_v_e := arrayCreate(nVars, -1);
-  vMark := arrayCreate(nVars, false);
-  eMark := arrayCreate(nEqns, false);
+  (assign_v_e, assign_e_v, perfectMatching) := RegularMatching(m, nVars, nEqns);
 
-  i := 1;
-  while i<=nEqns and success loop
-    j := assign_e_v[i];
-    if (j>0 and assign_v_e[j] == i) then
-      success :=true;
-    else
-      Array.setRange(1, nVars, vMark, false);
-      Array.setRange(1, nEqns, eMark, false);
-      (success, _) := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v, {});
-    end if;
-    i := i+1;
-  end while;
-
-  if not success then
+  if not perfectMatching then
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.traceln("- Matching.PerfectMatching failed: Singular System!");
     end if;
