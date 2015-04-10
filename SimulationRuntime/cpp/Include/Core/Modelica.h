@@ -192,6 +192,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/Solver/ISolver.h>
 #include <Core/Solver/IAlgLoopSolver.h>
 #include <Core/System/IAlgLoopSolverFactory.h>
+#include <Core/System/ISimVars.h>
 #include <Core/System/PreVariables.h>
 #include <Core/SimController/ISimData.h>
 #include <Core/SimulationSettings/ISimControllerSettings.h>

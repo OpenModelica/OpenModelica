@@ -20,7 +20,7 @@ public:
   EventHandling();
   virtual ~EventHandling(void);
   //Inits the event variables
-   boost::shared_ptr<DiscreteEvents> initialize(IEvent* system);
+   boost::shared_ptr<DiscreteEvents> initialize(IEvent* system,boost::shared_ptr<ISimVars> sim_vars);
 
 
   //saves a variable in _pre_vars vector

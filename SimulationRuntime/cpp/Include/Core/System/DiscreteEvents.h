@@ -8,7 +8,7 @@ class BOOST_EXTENSION_EVENTHANDLING_DECL DiscreteEvents
 #endif
 {
 public:
-  DiscreteEvents(PreVariables* preVars);
+  DiscreteEvents(boost::shared_ptr<ISimVars> sim_vars);
   virtual ~DiscreteEvents( );
   //Inits the event variables
   void initialize();
@@ -41,5 +41,5 @@ public:
   getCondition_type getCondition;
 
 private:
-   PreVariables* _preVars;
+   boost::shared_ptr<ISimVars> _sim_vars;
 };

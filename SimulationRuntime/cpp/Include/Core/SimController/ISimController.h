@@ -49,6 +49,17 @@ public:
   virtual boost::weak_ptr<IMixedSystem> LoadModelicaSystem(PATH modelica_path,string modelKey) = 0;
   virtual boost::weak_ptr<ISimData> LoadSimData(string modelKey) = 0;
   /*
+  Creates  SimVars object, stores all model variable in continuous block of memory
+     @modelKey  model name
+     @dim_real  number of all real variables (real algebraic vars,discrete algebraic vars, state vars, der state vars)
+     @dim_int   number of all integer variables integer algebraic vars
+     @dim_bool  number of all bool variables (boolean algebraic vars)
+     @dim_pre_vars number of all pre variables (real algebraic vars,discrete algebraic vars, boolean algebraic vars, integer algebraic vars, state vars, der state vars)
+     @dim_z number of all state variables
+     @z_i start index of state vector in real_vars list
+     */
+  virtual boost::weak_ptr<ISimVars> LoadSimVars(string modelKey,size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i) = 0;
+  /*
   Starts the simulation
   modelKey: Modelica model name
   modelica_path: path to Modelica system dll
@@ -57,6 +68,7 @@ public:
 
   virtual void StartVxWorks(SimSettings simsettings,string modelKey) = 0;
   virtual boost::weak_ptr<ISimData> getSimData(string modelname) = 0;
+  virtual boost::weak_ptr<ISimVars> getSimVars(string modelname) = 0;
   virtual boost::weak_ptr<IMixedSystem> getSystem(string modelname) = 0;
   virtual void calcOneStep() = 0;
 

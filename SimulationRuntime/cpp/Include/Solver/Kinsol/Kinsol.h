@@ -14,7 +14,7 @@
 #include <kinsol/kinsol_sptfqmr.h>
 #include <boost/math/special_functions/fpclassify.hpp>
 //#include<kinsol_lapack.h>
-
+ int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 class Kinsol : public IAlgLoopSolver
 {
 public:
@@ -30,7 +30,7 @@ public:
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus();
   virtual void stepCompleted(double time);
-
+  int kin_f(N_Vector y, N_Vector fval, void *user_data);
 private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
@@ -38,7 +38,7 @@ private:
   void calcJacobian(double* f, double* y);
 
   int check_flag(void *flagvalue, char *funcname, int opt);
-  static int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
+  
   void solveNLS();
   bool isfinite(double* u, int dim);
   void check4EventRetry(double* y);

@@ -483,6 +483,21 @@ algorithm
   str := stringDelimitList(lst1, delim);
 end stringDelimitListNonEmptyElts;
 
+public  function sumStringDelimit2Int
+" splits the input string at the delimiter string in list of strings and converts to integer list which is then summarized
+  "
+    input String inString;
+    input String delim;
+    output Integer i;
+protected
+  list<String> lst;
+ list<Integer> lst2;    
+   algorithm
+       lst:=stringSplitAtChar(inString,delim);
+       lst2:=List.map(lst, stringInt);
+       i:=List.fold(lst2,intAdd,0);
+end sumStringDelimit2Int;
+
 public function stringReplaceChar "Takes a string and two chars and replaces the first char with the second char:
   Example: string_replace_char(\"hej.b.c\",\".\",\"_\") => \"hej_b_c\"
   2007-11-26 BZ: Now it is possible to replace chars with emptychar, and

@@ -46,13 +46,13 @@ private:
 };
 
 #ifdef RUNTIME_STATIC_LINKING
-class SystemDefaultImplementation: public virtual PreVariables
+class SystemDefaultImplementation
 #else
-class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation: public virtual PreVariables
+class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 #endif
 {
 public:
-  SystemDefaultImplementation(IGlobalSettings* globalSettings);
+  SystemDefaultImplementation(IGlobalSettings* globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
   virtual ~SystemDefaultImplementation();
 
   /// Provide number (dimension) of boolean variables
@@ -169,13 +169,17 @@ protected:
     InitVars<int> _int_start_values;
     InitVars<bool> _bool_start_values;
     InitVars<string> _string_start_values;
-
+   double
+        *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
+        *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
 
     typedef boost::circular_buffer<double> buffer_type;
     map<unsigned int, buffer_type> _delay_buffer;
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
+    boost::shared_ptr<ISimData> _sim_data;
+    boost::shared_ptr<ISimVars> _sim_vars;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
 };
 

@@ -9,6 +9,14 @@ extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, lo
   #include <include/kinsol/kinsol.h>
 #endif
 
+
+int kin_fCallback(N_Vector y,N_Vector fval, void *user_data)
+{
+    Kinsol* myKinsol =  (Kinsol*)(user_data);
+    return  myKinsol->kin_f(y,fval,user_data);
+}
+
+
 Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
     : _algLoop            (algLoop)
     , _kinsolSettings     ((INonLinSolverSettings*)settings)
@@ -340,7 +348,7 @@ void Kinsol::calcFunction(const double *y, double *residual)
      }
 }
 
-int Kinsol::kin_fCallback(N_Vector y,N_Vector fval, void *user_data)
+int Kinsol::kin_f(N_Vector y,N_Vector fval, void *user_data)
 {
     ((Kinsol*) user_data)->calcFunction(NV_DATA_S(y),NV_DATA_S(fval));
 

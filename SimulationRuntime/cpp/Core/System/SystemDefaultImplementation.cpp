@@ -2,7 +2,6 @@
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include "FactoryExport.h"
 #include <Core/System/EventHandling.h>
-#include <Core/System/PreVariables.h>
 #include <Core/System/SystemDefaultImplementation.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 
@@ -25,10 +24,12 @@ bool greaterTime( pair<unsigned int,double> t1, double t2)
   return t1.second > t2;
 }
 
-SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings)
+SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
   : _simTime        (0.0)
-  /*, __z          (NULL)
-  , __zDot        (NULL)*/
+  ,_sim_data(sim_data)
+  , _sim_vars(sim_vars)
+  , __z          (sim_vars->getStateVector())
+  , __zDot        (sim_vars->getDerStateVector())
   , _conditions      (NULL)
   , _time_conditions    (NULL)
   , _dimContinuousStates  (0)
@@ -67,8 +68,11 @@ std::runtime_error("No such start value");
 */
 SystemDefaultImplementation::~SystemDefaultImplementation()
 {
+  /*
+  changed: is handled in SimVars class
   if(__z) delete [] __z;
   if(__zDot) delete [] __zDot;
+  */
   if(_conditions) delete [] _conditions ;
   if(_time_conditions) delete [] _time_conditions ;
   if(_time_event_counter) delete [] _time_event_counter;
@@ -120,6 +124,9 @@ int SystemDefaultImplementation::getDimRHS() const
 void SystemDefaultImplementation::initialize()
 {
   _callType = IContinuous::CONTINUOUS;
+  
+  /*
+  changed: is handled in SimVars class
   if((_dimContinuousStates) > 0)
   {
     // Initialize "extended state vector"
@@ -132,6 +139,7 @@ void SystemDefaultImplementation::initialize()
     memset(__z,0,(_dimContinuousStates)*sizeof(double));
     memset(__zDot,0,(_dimContinuousStates)*sizeof(double));
   }
+  */
   if(_dimZeroFunc > 0)
   {
     if(_conditions) delete [] _conditions ;

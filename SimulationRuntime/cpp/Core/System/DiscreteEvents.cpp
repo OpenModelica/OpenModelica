@@ -5,8 +5,8 @@
 #include <Core/Math/Functions.h>
 
 
-DiscreteEvents::DiscreteEvents(PreVariables* preVars)
-: _preVars(preVars)
+DiscreteEvents::DiscreteEvents(boost::shared_ptr<ISimVars> sim_vars)
+: _sim_vars(sim_vars)
 {
 }
 
@@ -22,7 +22,7 @@ Inits the event variables
 void DiscreteEvents::initialize()
 {
 
-  _preVars->initPreVariables();
+  _sim_vars->initPreVariables();
   //_preVars->_pre_vars.resize((boost::extents[_preVars->_pre_real_vars_idx.size()+_preVars->_pre_int_vars_idx.size()+_preVars->_pre_bool_vars_idx.size()]));
 }
 
@@ -39,8 +39,7 @@ Saves a variable in _preVars->_pre_vars vector
 
 void DiscreteEvents::save(double& var)
 {
-  unsigned int i = _preVars->_pre_real_vars_idx[&var];
-  _preVars->_pre_vars[i]=var;
+  _sim_vars->setPreVar(var);
 }
 
 /**
@@ -49,8 +48,7 @@ Saves a variable in _preVars->_pre_vars vector
 
 void DiscreteEvents::save(int& var)
 {
-  unsigned int i = _preVars->_pre_int_vars_idx[&var];
-  _preVars->_pre_vars[i]=var;
+  _sim_vars->setPreVar(var);
 }
 
 /**
@@ -59,8 +57,7 @@ Saves a variable in _preVars->_pre_vars vector
 
 void DiscreteEvents::save(bool& var)
 {
-  unsigned int i = _preVars->_pre_bool_vars_idx[&var];
-  _preVars->_pre_vars[i]=var;
+  _sim_vars->setPreVar(var);
 }
 
 /**
@@ -68,8 +65,8 @@ Implementation of the Modelica pre  operator
 */
 double DiscreteEvents::pre(double& var)
 {
-  unsigned int i = _preVars->_pre_real_vars_idx[&var];
-  return _preVars->_pre_vars[i];
+  double& pre_var = _sim_vars->getPreVar(var);
+  return pre_var;
 
 }
 
@@ -78,8 +75,8 @@ Implementation of the Modelica pre  operator
 */
 double DiscreteEvents::pre(int& var)
 {
-  unsigned int i = _preVars->_pre_int_vars_idx[&var];
-  return _preVars->_pre_vars[i];
+  double& pre_var = _sim_vars->getPreVar(var);
+  return pre_var;
 
 }
 
@@ -88,8 +85,8 @@ Implementation of the Modelica pre  operator
 */
 double DiscreteEvents::pre(bool& var)
 {
-  unsigned int i = _preVars->_pre_bool_vars_idx[&var];
-  return _preVars->_pre_vars[i];
+  double& pre_var = _sim_vars->getPreVar(var);
+  return pre_var;
 
 }
 /**
@@ -149,21 +146,21 @@ bool DiscreteEvents::change(bool& var)
 
 bool DiscreteEvents::changeDiscreteVar(double& var)
 {
-  unsigned int i = _preVars->_pre_real_vars_idx[&var];
-  return var != _preVars->_pre_vars[i];
+   double& pre_var = _sim_vars->getPreVar(var);
+   return var != pre_var;
 
 }
 bool DiscreteEvents::changeDiscreteVar(int& var)
 {
-  unsigned int i = _preVars->_pre_int_vars_idx[&var];
-  return var != _preVars->_pre_vars[i];
+  double& pre_var = _sim_vars->getPreVar(var);
+  return var != pre_var;
 
 }
 
 bool DiscreteEvents::changeDiscreteVar(bool& var)
 {
-  unsigned int i = _preVars->_pre_bool_vars_idx[&var];
-  return var != _preVars->_pre_vars[i];
+  double& pre_var = _sim_vars->getPreVar(var);
+  return var != pre_var;
 
 }
 

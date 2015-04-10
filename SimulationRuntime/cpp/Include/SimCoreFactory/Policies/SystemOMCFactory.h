@@ -58,7 +58,22 @@ public:
     return simData;
 
   }
-  boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData)
+  
+  boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
+  {
+    std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t > >::iterator simvars_iter;
+    std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t > >& simvars_factory(_system_type_map->get());
+    simvars_iter = simvars_factory.find("SimVars");
+    if (simvars_iter == simvars_factory.end())
+    {
+      throw ModelicaSimulationError(MODEL_FACTORY,"No simvars found");
+    }
+    boost::shared_ptr<ISimVars> simVars(simvars_iter->second.create(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i));
+    return simVars;
+
+  }
+  
+  boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)
   {
     PATH modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;
     PATH modelica_name(modelLib);
@@ -71,19 +86,19 @@ public:
       throw ModelicaSimulationError(MODEL_FACTORY,tmp.str());
     }
 
-    std::map<std::string, factory<IMixedSystem, IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData> > >::iterator system_iter;
-    std::map<std::string, factory<IMixedSystem, IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData> > >& factories(_system_type_map->get());
+    std::map<std::string, factory<IMixedSystem, IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>, boost::shared_ptr<ISimVars> > >::iterator system_iter;
+    std::map<std::string, factory<IMixedSystem, IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>, boost::shared_ptr<ISimVars> > >& factories(_system_type_map->get());
     system_iter = factories.find(modelKey);
     if (system_iter == factories.end())
     {
       throw ModelicaSimulationError(MODEL_FACTORY,"No system found");
     }
 
-    boost::shared_ptr<IMixedSystem> system(system_iter->second.create(globalSettings,algloopsolverfactory,simData));
+    boost::shared_ptr<IMixedSystem> system(system_iter->second.create(globalSettings,algloopsolverfactory,simData,simVars));
     return system;
   }
 
-   boost::shared_ptr<IMixedSystem>  createModelicaSystem(PATH modelica_path, string modelKey, IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData)
+   boost::shared_ptr<IMixedSystem>  createModelicaSystem(PATH modelica_path, string modelKey, IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)
   {
     throw ModelicaSimulationError(MODEL_FACTORY,"Modelica is not supported");
   }

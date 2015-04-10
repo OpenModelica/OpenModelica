@@ -2597,6 +2597,12 @@ package Util
     input list<Integer> lst;
     output Integer i;
   end intProduct;
+  
+   function sumStringDelimit2Int
+    input String lst;
+    input String delim;
+    output Integer i;
+  end sumStringDelimit2Int;
 
   function testsuiteFriendly
     input String in;

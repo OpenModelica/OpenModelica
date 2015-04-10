@@ -23,14 +23,10 @@ EventHandling::~EventHandling(void)
 /**
 Inits the event variables
 */
-boost::shared_ptr<DiscreteEvents> EventHandling::initialize(IEvent* event_system)
+boost::shared_ptr<DiscreteEvents> EventHandling::initialize(IEvent* event_system,boost::shared_ptr<ISimVars> sim_vars)
 {
-  //initialize prevars
-  //event_system->initPreVariables(preVars->_pre_real_vars_idx,preVars->_pre_int_vars_idx,preVars->_pre_bool_vars_idx);
-  //preVars->_pre_vars.resize((boost::extents[preVars->_pre_real_vars_idx.size()+preVars->_pre_int_vars_idx.size()+preVars->_pre_bool_vars_idx.size()]));
-  //initialize discrete event handling
-  PreVariables* preVars = dynamic_cast<PreVariables*>(event_system);
-  boost::shared_ptr<DiscreteEvents> discreteEvents = boost::shared_ptr<DiscreteEvents>(new DiscreteEvents(preVars));
+  
+  boost::shared_ptr<DiscreteEvents> discreteEvents = boost::shared_ptr<DiscreteEvents>(new DiscreteEvents(sim_vars));
   discreteEvents->initialize();
   //initialize continuous event handling
   _continuousEvents->initialize(event_system);

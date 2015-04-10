@@ -49,9 +49,7 @@ template translateModel(SimCode simCode)
       let() = textFile(simulationExtensionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Extension.h')
       let() = textFile(simulationExtensionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", preVarsCount), 'OMCpp<%fileNamePrefix%>Extension.cpp')
       let() = textFile(simulationWriteOutputHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>WriteOutput.h')
-      let() = textFile(simulationPreVarsHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo, hpcOmMemory, stringBool(useMemoryOptimization), false), generateAdditionalPublicMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, ""), preVarsCount, false), 'OMCpp<%fileNamePrefix%>PreVariables.h')
       let() = textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-      let() = textFile(simulationPreVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>PreVariables.cpp')
       let() = textFile(simulationWriteOutputAlgVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
       let() = textFile(simulationWriteOutputParameterCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
       let() = textFile(simulationWriteOutputAliasVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
@@ -407,7 +405,6 @@ template simulationCppFile(SimCode simCode, Context context, Text& extraFuncs, T
       <<
       #include <Core/Modelica.h>
       #include <Core/ModelicaDefine.h>
-      #include "OMCpp<%fileNamePrefix%>PreVariables.h"
       #include "OMCpp<%fileNamePrefix%>.h"
       #include "OMCpp<%fileNamePrefix%>Functions.h"
       #include <Core/System/EventHandling.h>
@@ -419,7 +416,6 @@ template simulationCppFile(SimCode simCode, Context context, Text& extraFuncs, T
       /* Constructor */
       <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
         : SystemDefaultImplementation(globalSettings)
-        , <%className%>PreVariables()
         , _algLoopSolverFactory(nonlinsolverfactory)
         , _sim_data(sim_data)
         <%hpcomMemberVariableDefinition%>

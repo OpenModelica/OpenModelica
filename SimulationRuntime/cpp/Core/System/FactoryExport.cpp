@@ -27,9 +27,10 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::exten
 
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
+#include "FactoryExport.h"
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/System/AlgLoopSolverFactory.h>
-
+#include <Core/System/SimVars.h>
 /*OMC factory*/
 using boost::extensions::factory;
 
@@ -37,6 +38,8 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 
   types.get<std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings*,PATH,PATH> > >()
     ["AlgLoopSolverFactory"].set<AlgLoopSolverFactory>();
+  types.get<std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t> > >()
+    ["SimVars"].set<SimVars>();
 }
 
 #else
