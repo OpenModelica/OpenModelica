@@ -38,7 +38,7 @@ private:
   void calcJacobian(double* f, double* y);
 
   int check_flag(void *flagvalue, char *funcname, int opt);
-  
+
   void solveNLS();
   bool isfinite(double* u, int dim);
   void check4EventRetry(double* y);

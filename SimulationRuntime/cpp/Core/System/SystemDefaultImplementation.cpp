@@ -124,7 +124,7 @@ int SystemDefaultImplementation::getDimRHS() const
 void SystemDefaultImplementation::initialize()
 {
   _callType = IContinuous::CONTINUOUS;
-  
+
   /*
   changed: is handled in SimVars class
   if((_dimContinuousStates) > 0)

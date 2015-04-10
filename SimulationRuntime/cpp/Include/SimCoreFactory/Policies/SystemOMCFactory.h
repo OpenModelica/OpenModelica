@@ -58,7 +58,7 @@ public:
     return simData;
 
   }
-  
+
   boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
   {
     std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t > >::iterator simvars_iter;
@@ -72,7 +72,7 @@ public:
     return simVars;
 
   }
-  
+
   boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)
   {
     PATH modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;

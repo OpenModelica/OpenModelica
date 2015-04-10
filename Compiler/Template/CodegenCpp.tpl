@@ -1931,8 +1931,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   int main(int argc, const char* argv[])
   #endif
   {
-      
-     
+
+
       std::map<std::string, std::string> opts;
       std::map<std::string, std::string>::const_iterator it;
       opts["-s"] = "<%start%>";
@@ -1983,7 +1983,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
           optv.push_back(it->first.c_str());
           optv.push_back(it->second.c_str());
       }
-      
+
       <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
@@ -3113,7 +3113,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     #include <DataExchange/SimDouble.h>
     #endif
 
-    
+
     /* Constructor */
     <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
         : SystemDefaultImplementation(globalSettings,sim_data,sim_vars)
@@ -5018,7 +5018,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    {
 
 
-    
+
       initializeMemory();
 
       initializeFreeVariables();
@@ -6032,7 +6032,7 @@ match modelInfo
     void getBoolean_<%idx%>(bool* z);
     >>
     ;separator="\n")
-  */  
+  */
   let getstringvars = (List.partition(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars), 100) |> ls hasindex idx =>
     <<
     void getString_<%idx%>(string* z);
@@ -6104,7 +6104,7 @@ match modelInfo
       boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
       <%algloopsolver%>
       <%jacalgloopsolver%>
-     
+
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
       #ifdef MEASURETIME_PROFILEBLOCKS
@@ -6702,7 +6702,7 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.intAlgVars |> var =>
     MemberVariableDefine(var, "intVariables.algebraics", useFlatArrayNotation)
   ;separator="\n"%>
- 
+
    /*mixed array variables*/
    <%vars.mixedArrayVars |> arrVar =>
     MemberVariableDefine2(arrVar, "mixed", useFlatArrayNotation)
@@ -6727,17 +6727,17 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   /*discrete algvars*/
   <%vars.discreteAlgVars |> var hasindex idx =>
     MemberVariableInitialize2(var,  useFlatArrayNotation,"Real",real_var_init_buffer)
-    
+
   ;separator="\n"%>
    /*int algvars*/
    <%vars.intAlgVars |> var hasindex idx =>
     MemberVariableInitialize2(var,  useFlatArrayNotation,"Int",int_var_init_buffer)
-    
+
   ;separator="\n"%>
     /*bool algvars*/
    <%vars.boolAlgVars |> var hasindex idx =>
     MemberVariableInitialize2(var,  useFlatArrayNotation,"Bool",bool_var_init_buffer)
-    
+
   ;separator="\n"%>
   >>
 end MemberVariableInitialize;
@@ -6772,12 +6772,12 @@ match simVar
           var_init
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
-     
+
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims
-        case "0" then  
+        case "0" then
         let index = sumStringDelimit2Int(indices,",")
         let var_init =',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
         let &indices += ',1'
@@ -7012,7 +7012,7 @@ match simVar
       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      let &dims = buffer "" 
+      let &dims = buffer ""
       let arrayName = arraycref2(name,dims)
       let arraysize = arrayextentDims(name,v.numArrayElement)
       let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
@@ -7029,7 +7029,7 @@ match simVar
           >>
     case SIMVAR(numArrayElement=_::_) then
       let test = numArrayElement |> index =>  '<%index%>'; separator=","
-      let& dims = buffer "" 
+      let& dims = buffer ""
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims
@@ -7087,7 +7087,7 @@ match simVar
         case "2" then
         <<
           StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>,false,true> <%arrayName%>;
-        >>        
+        >>
         else
         <<
          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>,true> <%arrayName%>;
@@ -14673,27 +14673,27 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       let getboolvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), 0, simCode , &extraFuncs , &extraFuncsDecl, &boolFuncCalls, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
 
       let getstringvariable = getVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars), 0, simCode ,&extraFuncs, &extraFuncsDecl, &stringFuncCalls, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
-      */ 
+      */
       let &varDeclsInt = buffer ""
       /* changed: handled in SimVars class
       let setIntVariables = (listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
            var hasindex i0 fromindex 0 =>
            setVariablesDefault(var, i0, 0,simCode,varDeclsInt, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
            ;separator="\n")
-      let &varDeclsBool = buffer "" 
+      let &varDeclsBool = buffer ""
       let setBoolVariables =     (listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
            var hasindex i0 fromindex 0 =>
            setVariablesDefault(var, i0,0,simCode,varDeclsBool, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
            ;separator="\n")
         */
-         let &varDeclsString = buffer "" 
+         let &varDeclsString = buffer ""
         let setStringVariables =  (listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars) |>
            var hasindex i0 fromindex 0 =>
            setVariablesDefault(var, i0, 0,simCode,varDeclsString, extraFuncs,extraFuncsDecl,extraFuncsNamespace,context, stateDerVectorName,useFlatArrayNotation)
            ;separator="\n")
 
       <<
-      
+
 
       void <%lastIdentOfPath(name)%>::getReal(double* z)
       {
@@ -14701,14 +14701,14 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
         memcpy(z,real_vars,<%numRealvars(modelInfo)%>);
       }
 
-      
+
 
       void <%lastIdentOfPath(name)%>::setReal(const double* z)
       {
          _sim_vars->setRealVarsVector(z);
       }
 
-      
+
 
       void <%lastIdentOfPath(name)%>::getInteger(int* z)
       {
@@ -14716,7 +14716,7 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
         memcpy(z,int_vars,<%numIntvars(modelInfo)%>);
       }
 
-     
+
 
       void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
       {
@@ -14724,7 +14724,7 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
         memcpy(z,bool_vars,<%numBoolvars(modelInfo)%>);
       }
 
-     
+
 
       void <%lastIdentOfPath(name)%>::getString(string* z)
       {

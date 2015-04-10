@@ -11,10 +11,10 @@ Operator class to assign simvar memory to a reference array
 template<class T>
 struct AssignArrayVar
 {
-	T* operator()(T& val)
-	{
-		return &val;
-	}
+  T* operator()(T& val)
+  {
+    return &val;
+  }
 };
 
 
@@ -143,8 +143,8 @@ public:
      const T* data_otherarray = otherarray.getData();
      memcpy( _array_data.begin(), data_otherarray, size * sizeof( T ) );
   }
-  
-  
+
+
   /*
   Constuctor for one dimensional array
   empty array
@@ -234,7 +234,7 @@ public:
     const T* data_otherarray = otherArray.getData();
 
      memcpy( _array_data.begin(), data_otherarray, size * sizeof( T ) );
-    
+
   }
 
    /*
@@ -251,13 +251,13 @@ public:
 
  /*
    Index operator to access array element
-  \@index  index 
+  \@index  index
   */
   inline virtual T& operator()(size_t index)
   {
     if(isRef)
     {
-	  T& var( *(_ref_array_data[index - 1]));
+    T& var( *(_ref_array_data[index - 1]));
       return var;
     }
     else
@@ -266,7 +266,7 @@ public:
 
   /*
    Index operator to read array element
-  \@index  index 
+  \@index  index
   */
   inline virtual const T& operator()(unsigned int index) const
   {
@@ -309,7 +309,7 @@ public:
      return _array_data.data();
   }
 
-  
+
   /*
   Returns number of elements
   */
@@ -344,7 +344,7 @@ public:
 
   private:
     /*
-    Checks if array is a reference array and throws exception 
+    Checks if array is a reference array and throws exception
     some array array operations are not possible for reference arrays
     */
     void checkArray(string error_msg) const
@@ -405,7 +405,7 @@ public:
 
   ~StatArrayDim1() {}
 
-  
+
 
  virtual void resize(const std::vector<size_t>& dims)
  {
@@ -529,7 +529,7 @@ public:
   {
     return _c_array_data.c_array();
   }
-  
+
 
   virtual size_t getNumElems() const
   {
@@ -573,8 +573,8 @@ class StatArrayDim2 : public BaseArray<T>
 {
 
 public:
-  
-  
+
+
   /*
   Constuctor for two dimensional array
   if reference array it uses data from simvars memory
@@ -637,7 +637,7 @@ public:
   if (this != &rhs)
   {
         try
-        { 
+        {
             StatArrayDim2<T,size1,size2,fortran,isRef>& a = dynamic_cast<StatArrayDim2<T,size1,size2,fortran,isRef>& >(rhs);
             _array_data = a._array_data;
         }
@@ -645,7 +645,7 @@ public:
         {
          throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
         }
-      
+
   }
   return *this;
  }
@@ -681,7 +681,7 @@ public:
   */
   virtual void assign(const BaseArray<T>& otherArray)
   {
-    
+
     checkArray("assign data to reference array is not supported");
     std::vector<size_t> v;
     v = otherArray.getDims();
@@ -692,7 +692,7 @@ public:
   }
  /*
   Assigns array data to array
-  \@data array data 
+  \@data array data
   */
   virtual void assign(const T* data)
   {
@@ -723,23 +723,23 @@ public:
 
      if(fortran)
     {
-       if(isRef)      
+       if(isRef)
          return *(_ref_array_data[size1*(j - 1) + i - 1]); //column wise order
        else
          return _array_data[size1*(j - 1) + i - 1]; //column wise order
     }
      else
      {
-       if(isRef) 
+       if(isRef)
         return *(_ref_array_data[size2*(i - 1) + j - 1]); //row wise order
-       else 
+       else
         return _array_data[size2*(i - 1) + j - 1]; //row wise order
      }
   }
 
   /*
    Index operator to read array element
-  \@index  index 
+  \@index  index
   */
   inline virtual const T& operator()(size_t i, size_t j) const
   {
@@ -802,12 +802,12 @@ public:
      checkArray("access data for reference array is not supported");
      return _array_data.data();
   }
- 
+
   virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
    /*
-    Checks if array is a reference array and throws exception 
+    Checks if array is a reference array and throws exception
     some array array operations are not possible for reference arrays
     */
     void checkArray(string error_msg) const
@@ -817,7 +817,7 @@ private:
           throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,error_msg);
       }
     }
-    
+
     //static array data
     boost::array<T, size2 * size1> _array_data;
     //reference array data, only used if isRef = true
@@ -834,7 +834,7 @@ class StatArrayDim2<string,size1,size2> : public BaseArray<string>
 {
 
 public:
-  StatArrayDim2(const string data[]) 
+  StatArrayDim2(const string data[])
   :BaseArray<string>(true)
   {
 
@@ -1013,11 +1013,11 @@ public:
 
     return _c_array_data.c_array();
   }
- 
+
   virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
-  
+
   boost::array<string, size2 * size1> _array_data;
   boost::array<const char*,size2 * size1> _c_array_data;
 
@@ -1042,9 +1042,9 @@ Three dimensional static array, implements BaseArray interface methods
 */
 template<typename T ,std::size_t size1, std::size_t size2, std::size_t size3,bool isRef = false> class StatArrayDim3 : public BaseArray<T>
 {
-  
+
 public:
-  
+
   /*
   Constuctor for one dimensional array
   if reference array it uses data from simvars memory
@@ -1093,7 +1093,7 @@ public:
   }
   /*
   Assigns array data to array
-  \@data array data 
+  \@data array data
   */
   virtual void assign(const T* data)
   {
@@ -1111,7 +1111,7 @@ public:
         const T* data = rhs.getData();
         memcpy( _array_data.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
   }
-  
+
  /*
   Resize array method
   \@dims vector with new dimension sizes
@@ -1173,7 +1173,7 @@ public:
     //row-major order
    if(isRef)
       return *(_ref_array_data[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))]);
-   else      
+   else
       return _array_data[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))];
      //column-major order
     //return _array_data[(idx[2] - 1)*size2*size1 +   (idx[1] - 1)*size1 + (idx[0] - 1)];
@@ -1181,7 +1181,7 @@ public:
 
  /*
    Index operator to access array element
-  \@i  index 1 
+  \@i  index 1
   \@j  index 2
   \@k  index 3
   */
@@ -1229,10 +1229,10 @@ public:
      checkArray("access data for reference array is not supported");
      return _array_data.data();
   }
- 
+
 private:
     /*
-    Checks if array is a reference array and throws exception 
+    Checks if array is a reference array and throws exception
     some array array operations are not possible for reference arrays
     */
     void checkArray(string error_msg) const
@@ -1810,7 +1810,7 @@ public:
   {
      return _multi_array.data();
   }
-  
+
 private:
   boost::multi_array<T, 2> _multi_array;
 };
@@ -1954,7 +1954,7 @@ public:
   {
      return _multi_array.data();
   }
-  
+
 private:
   boost::multi_array<T, 3> _multi_array;
 };

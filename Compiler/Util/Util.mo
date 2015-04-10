@@ -491,7 +491,7 @@ public  function sumStringDelimit2Int
     output Integer i;
 protected
   list<String> lst;
- list<Integer> lst2;    
+ list<Integer> lst2;
    algorithm
        lst:=stringSplitAtChar(inString,delim);
        lst2:=List.map(lst, stringInt);

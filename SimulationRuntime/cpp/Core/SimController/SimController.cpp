@@ -17,7 +17,7 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path)
 
 SimController::~SimController()
 {
-  
+
  // _systems.clear();
  // _sim_vars.clear();
 
@@ -58,7 +58,7 @@ boost::weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string m
       }
     //destroy system
     _systems.erase(iter);
-    
+
   }
    boost::shared_ptr<ISimData> simData = getSimData(modelKey).lock();
     boost::shared_ptr<ISimVars> simVars = getSimVars(modelKey).lock();
@@ -84,7 +84,7 @@ boost::weak_ptr<IMixedSystem> SimController::LoadModelicaSystem(PATH modelica_pa
       }
        //destroy system
       _systems.erase(iter);
-     
+
     }
     boost::shared_ptr<ISimData> simData = getSimData(modelKey).lock();
      boost::shared_ptr<ISimVars> simVars = getSimVars(modelKey).lock();

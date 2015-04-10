@@ -25,7 +25,7 @@ Inits the event variables
 */
 boost::shared_ptr<DiscreteEvents> EventHandling::initialize(IEvent* event_system,boost::shared_ptr<ISimVars> sim_vars)
 {
-  
+
   boost::shared_ptr<DiscreteEvents> discreteEvents = boost::shared_ptr<DiscreteEvents>(new DiscreteEvents(sim_vars));
   discreteEvents->initialize();
   //initialize continuous event handling
