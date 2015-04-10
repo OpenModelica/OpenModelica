@@ -10362,8 +10362,8 @@ template daeExpRange(Exp exp, Context context, Text &preExp, Text &varDecls, Sim
   */
   let &preExp += 'int <%tmp%>_num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
     <%tmp%>.setDims(<%tmp%>_num_elems)/*setDims 2*/;
-     for(int i= 1;i<=<%tmp%>_num_elems;i++)
-        <%tmp%>(i) =<%start_exp%>+(i-1)*<%step_exp%>;
+    for (int <%tmp%>_i = 1; <%tmp%>_i <= <%tmp%>_num_elems; <%tmp%>_i++)
+      <%tmp%>(<%tmp%>_i) = <%start_exp%>+(<%tmp%>_i-1)*<%step_exp%>;
     '
     '<%tmp%>'
 end daeExpRange;
