@@ -193,14 +193,11 @@ void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArra
   if (leftArray.getDim(leftNumDims) != matchDim)
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                   "Wrong sizes in multiply_array");
-  if (matchDim == 0) {
-    fill_array(resultArray, T()); // zero
-  }
-  else if (leftNumDims == 1 && rightNumDims == 2) {
+  if (leftNumDims == 1 && rightNumDims == 2) {
     size_t rightDim = rightArray.getDim(2);
     for (size_t j = 1; j <= rightDim; j++) {
-      T val = leftArray(1) * rightArray(1, j);
-      for (size_t k = 2; k <= matchDim; k++)
+      T val = T();
+      for (size_t k = 1; k <= matchDim; k++)
         val += leftArray(k) * rightArray(k, j);
       resultArray(j) = val;
     }
@@ -208,8 +205,8 @@ void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArra
   else if (leftNumDims == 2 && rightNumDims == 1) {
     size_t leftDim = leftArray.getDim(1);
     for (size_t i = 1; i <= leftDim; i++) {
-      T val = leftArray(i, 1) * rightArray(1);
-      for (size_t k = 2; k <= matchDim; k++)
+      T val = T();
+      for (size_t k = 1; k <= matchDim; k++)
         val += leftArray(i, k) * rightArray(k);
       resultArray(i) = val;
     }
@@ -219,8 +216,8 @@ void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArra
     size_t rightDim = rightArray.getDim(2);
     for (size_t i = 1; i <= leftDim; i++) {
       for (size_t j = 1; j <= rightDim; j++) {
-        T val = leftArray(i, 1) * rightArray(1, j);
-        for (size_t k = 2; k <= matchDim; k++)
+        T val = T();
+        for (size_t k = 1; k <= matchDim; k++)
           val += leftArray(i, k) * rightArray(k, j);
         resultArray(i, j) = val;
       }
