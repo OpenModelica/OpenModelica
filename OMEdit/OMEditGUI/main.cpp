@@ -318,16 +318,5 @@ int main(int argc, char *argv[])
   mainwindow.show();
   // hide the splash screen
   splashScreen.finish(&mainwindow);
-  /* Show release information notification */
-  bool releaseInformation = true;
-  if (pSettings->contains("notifications/releaseInformation")) {
-    releaseInformation = pSettings->value("notifications/releaseInformation").toBool();
-  }
-  if (releaseInformation) {
-    NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReleaseInformation,
-                                                                        NotificationsDialog::InformationIcon, &mainwindow);
-    pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
-    pNotificationsDialog->exec();
-  }
   return a.exec();
 }

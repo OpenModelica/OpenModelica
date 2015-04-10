@@ -50,8 +50,7 @@ public:
     ItemDroppedOnItself,
     ReplaceableIfPartial,
     InnerModelNameChanged,
-    SaveModelForBitmapInsertion,
-    ReleaseInformation
+    SaveModelForBitmapInsertion
   };
   enum NotificationIcon {NoIcon, QuestionIcon, InformationIcon, WarningIcon, CriticalIcon};
   NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, MainWindow *pMainWindow);
@@ -74,7 +73,6 @@ private:
   void saveReplaceableIfPartialNotificationSettings();
   void saveInnerModelNameChangedNotificationSettings();
   void saveModelForBitmapInsertionNotificationSettings();
-  void saveReleaseInformationNotificationSettings();
 private slots:
   void saveNotification();
 };

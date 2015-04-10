@@ -147,7 +147,6 @@ QString NotificationsDialog::getNotificationTitleString()
     case NotificationsDialog::ReplaceableIfPartial:
     case NotificationsDialog::InnerModelNameChanged:
     case NotificationsDialog::SaveModelForBitmapInsertion:
-    case NotificationsDialog::ReleaseInformation:
       return Helper::information;
     default:
       // should never be reached
@@ -173,11 +172,6 @@ QString NotificationsDialog::getNotificationLabelString()
       return "this string needs argument and will be set via NotificationsDialog::setNotificationLabelString(QString label)";
     case NotificationsDialog::SaveModelForBitmapInsertion:
       return tr("You must save the class before referencing a bitmap from local directory.");
-    case NotificationsDialog::ReleaseInformation:
-      return tr("Welcome to new enhanced OMEdit - OpenModelica Connection Editor.\n"
-                "This version includes a lot of improvements and bug fixes. Check release notes for more details.<br /><br />"
-                "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.<br />"
-                "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
@@ -208,7 +202,6 @@ QString NotificationsDialog::getNotificationCheckBoxString()
     case NotificationsDialog::InnerModelNameChanged:
     case NotificationsDialog::SaveModelForBitmapInsertion:
       return Helper::dontShowThisMessageAgain;
-    case NotificationsDialog::ReleaseInformation:
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationCheckBoxString()";
@@ -269,25 +262,13 @@ void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 }
 
 /*!
-  Saves the notifications/releaseInformation key settings to omedit.ini file.
-  */
-void NotificationsDialog::saveReleaseInformationNotificationSettings()
-{
-  QSettings *pSettings = OpenModelica::getApplicationSettings();
-  pSettings->clear();
-  pSettings->setValue("notifications/releaseInformation", false);
-}
-
-/*!
   Slot activated when mpOkButton clicked signal is raised.\n
   Checks the notification type and calls the appropriate method.
   */
 void NotificationsDialog::saveNotification()
 {
-  if (mpNotificationCheckBox->isChecked())
-  {
-    switch (mNotificationType)
-    {
+  if (mpNotificationCheckBox->isChecked()) {
+    switch (mNotificationType) {
       case NotificationsDialog::QuitApplication:
         saveQuitNotificationSettings();
         break;
@@ -302,21 +283,6 @@ void NotificationsDialog::saveNotification()
         break;
       case NotificationsDialog::SaveModelForBitmapInsertion:
         saveModelForBitmapInsertionNotificationSettings();
-        break;
-      case NotificationsDialog::ReleaseInformation:
-        saveReleaseInformationNotificationSettings();
-        break;
-      default:
-        // should never be reached
-        break;
-    }
-  }
-  else
-  {
-    switch (mNotificationType)
-    {
-      case NotificationsDialog::ReleaseInformation:
-        saveReleaseInformationNotificationSettings();
         break;
       default:
         // should never be reached
