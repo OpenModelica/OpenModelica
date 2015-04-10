@@ -1016,6 +1016,7 @@ void PlotWindow::fitInView()
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpPlot->replot();
+  mpPlot->getPlotZoomer()->setZoomBase(false);
 }
 
 void PlotWindow::setLogX(bool on)
