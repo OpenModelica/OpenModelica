@@ -351,6 +351,12 @@ void BaseEditor::PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
  */
 void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 {
+  if (pEvent->key() == Qt::Key_Escape) {
+    if (mpBaseEditor->getFindReplaceWidget()->isVisible()) {
+      mpBaseEditor->getFindReplaceWidget()->close();
+    }
+    return;
+  }
   if (pEvent->key() == Qt::Key_Tab || pEvent->key() == Qt::Key_Backtab) {
     // tab or backtab is pressed.
     indentOrUnindent(pEvent->key() == Qt::Key_Tab);
@@ -747,6 +753,18 @@ void FindReplaceWidget::findNext()
 }
 
 /*!
+ * \brief FindReplaceWidget::close
+ * Reimplementation of QWidget::close(). Sets the focus on BaseEditor::PlainTextEdit
+ * \return
+ */
+bool FindReplaceWidget::close()
+{
+  bool closed = QWidget::close();
+  mpBaseEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+  return closed;
+}
+
+/*!
   Replaces the found occurrences and goes to the next occurrence
   */
 void FindReplaceWidget::replace()
@@ -793,6 +811,15 @@ void FindReplaceWidget::replaceAll()
     i++;
   }
   mpBaseEditor->getPlainTextEdit()->textCursor().endEditBlock();
+}
+
+void FindReplaceWidget::keyPressEvent(QKeyEvent *pEvent)
+{
+  if (pEvent->key() == Qt::Key_Escape) {
+    mpBaseEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+    return;
+  }
+  QWidget::keyPressEvent(pEvent);
 }
 
 /*!

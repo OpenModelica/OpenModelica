@@ -79,6 +79,7 @@ public:
   ModelWidget *getModelWidget() {return mpModelWidget;}
   MainWindow* getMainWindow() {return mpMainWindow;}
   PlainTextEdit *getPlainTextEdit() {return mpPlainTextEdit;}
+  FindReplaceWidget* getFindReplaceWidget() {return mpFindReplaceWidget;}
   bool canHaveBreakpoints() {return mCanHaveBreakpoints;}
   void setCanHaveBreakpoints(bool canHaveBreakpoints);
   QAction *getToggleBreakpointAction() {return mpToggleBreakpointAction;}
@@ -175,8 +176,11 @@ private:
 public slots:
   void findPrevious();
   void findNext();
+  bool close();
   void replace();
   void replaceAll();
+protected:
+  virtual void keyPressEvent(QKeyEvent *pEvent);
 protected slots:
   void validateRegularExpression(const QString &text);
   void regularExpressionSelected(bool selected);
