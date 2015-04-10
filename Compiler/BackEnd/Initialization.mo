@@ -802,11 +802,8 @@ algorithm
     // BackendDump.dumpIncidenceMatrix(mT);
 
     // match the system
-    ass1 := arrayCreate(nParam, -1);
-    ass2 := arrayCreate(nParam, -1);
-    Matching.matchingExternalsetIncidenceMatrix(nParam, nParam, m);
-    BackendDAEEXT.matching(nParam, nParam, 5, 0, 0.0, 1);
-    BackendDAEEXT.getAssignment(ass2, ass1);
+    // ass1 and ass2 should be {1, 2, ..., nParam}
+    (ass1, ass2) := Matching.PerfectMatching(m, nParam, nParam);
     // BackendDump.dumpMatchingVars(ass1);
     // BackendDump.dumpMatchingEqns(ass2);
 
@@ -1303,7 +1300,7 @@ protected function fixInitialSystem "author: lochel
   output list<BackendDAE.Equation> outRemovedEqns;
 protected
   Integer nVars, nEqns, nInitEqs, nAddEqs, nAddVars;
-  list<Integer> stateIndices, range, unassigned, initEqsIndices, redundantEqns;
+  list<Integer> stateIndices, range, initEqsIndices, redundantEqns;
   list<BackendDAE.Var> initVarList;
   array<Integer> vec1, vec2;
   BackendDAE.IncidenceMatrix m "incidence matrix of modified system";
@@ -1312,6 +1309,7 @@ protected
   DAE.FunctionTree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
   array<Integer> mapIncRowEqn;
+  Boolean perfectMatching;
 algorithm
   // nVars = nEqns
   nVars := BackendVariable.varsSize(inVars);
@@ -1351,16 +1349,17 @@ algorithm
   Matching.matchingExternalsetIncidenceMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
   BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
   BackendDAEEXT.getAssignment(vec2, vec1);
-//BackendDump.dumpMatchingVars(vec1);
-//BackendDump.dumpMatchingEqns(vec2);
+  perfectMatching := 0 == listLength(Matching.getUnassigned(nVars+nAddVars, vec1, {}));
+  // (vec1, vec2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
+  // BackendDump.dumpMatchingVars(vec1);
+  // BackendDump.dumpMatchingEqns(vec2);
 
   // check whether or not a complete matching was found
-  unassigned := Matching.getUnassigned(nVars+nAddVars, vec1, {});
-  if 0 < listLength(unassigned) then
+  if not perfectMatching then
     Error.addCompilerNotification("The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
     //BackendDump.dumpEqSystem(syst, "The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
   end if;
-  0 := listLength(unassigned); // if this fails, the system is singular (mixed-determined)
+  true := perfectMatching; // if this fails, the system is singular (mixed-determined)
 
   // map to equations
   range := if nAddVars > 0 then List.intRange2(nVars+1, nVars+nAddVars) else {};

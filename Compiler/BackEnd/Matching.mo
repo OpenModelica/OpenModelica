@@ -60,10 +60,15 @@ protected import List;
 protected import Util;
 protected import System;
 
-/*************************************/
-/*   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB */
-/*************************************/
-public function RegularMatching
+// =============================================================================
+// just a matching algorithm
+// - PerfectMatching
+// - RegularMatching
+//
+// =============================================================================
+
+public function PerfectMatching "
+  This function fails if there is no perfect matching for the given system."
   input BackendDAE.IncidenceMatrix m;
   input Integer nVars;
   input Integer nEqns;
@@ -71,30 +76,65 @@ public function RegularMatching
   output array<Integer> assign_e_v;
 protected
   Integer i, j;
-  Boolean success = true;
-  array<Boolean> eMark,vMark;
+  Boolean success=true;
+  array<Boolean> eMark, vMark;
 algorithm
-  assign_e_v := arrayCreate(nEqns,-1);
-  assign_v_e := arrayCreate(nVars,-1);
-  vMark := arrayCreate(nVars,false);
-  eMark := arrayCreate(nEqns,false);
+  assign_e_v := arrayCreate(nEqns, -1);
+  assign_v_e := arrayCreate(nVars, -1);
+  vMark := arrayCreate(nVars, false);
+  eMark := arrayCreate(nEqns, false);
 
   i := 1;
   while i<=nEqns and success loop
     j := assign_e_v[i];
-    if ((j>0) and assign_v_e[j] == i) then
+    if (j>0 and assign_v_e[j] == i) then
       success :=true;
     else
-      Array.setRange(1,nVars,vMark,false);
-      Array.setRange(1,nEqns,eMark,false);
+      Array.setRange(1, nVars, vMark, false);
+      Array.setRange(1, nEqns, eMark, false);
       (success, _) := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v, {});
     end if;
     i := i+1;
   end while;
+
   if not success then
-    print("\nSingular System!!!\n");
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.traceln("- Matching.PerfectMatching failed: Singular System!");
+    end if;
+    // Error.addCompilerWarning("Singular System!");
     fail();
   end if;
+end PerfectMatching;
+
+public function RegularMatching "
+  This function returns at least a partial matching for singular systems."
+  input BackendDAE.IncidenceMatrix m;
+  input Integer nVars;
+  input Integer nEqns;
+  output array<Integer> assign_v_e;
+  output array<Integer> assign_e_v;
+  output Boolean outPerfectMatching=true;
+protected
+  Integer i, j;
+  array<Boolean> eMark, vMark;
+algorithm
+  assign_e_v := arrayCreate(nEqns, -1);
+  assign_v_e := arrayCreate(nVars, -1);
+  vMark := arrayCreate(nVars, false);
+  eMark := arrayCreate(nEqns, false);
+
+  i := 1;
+  while i<=nEqns and outPerfectMatching loop
+    j := assign_e_v[i];
+    if (j>0 and assign_v_e[j] == i) then
+      outPerfectMatching :=true;
+    else
+      Array.setRange(1, nVars, vMark, false);
+      Array.setRange(1, nEqns, eMark, false);
+      (outPerfectMatching, _) := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v, {});
+    end if;
+    i := i+1;
+  end while;
 end RegularMatching;
 
 public function BBMatching
@@ -230,14 +270,11 @@ algorithm
   end for;
 end BBCheapMatching;
 
-/*************************************/
-/*   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB */
-/*************************************/
 
-
-/*************************************/
-/*   Matching Algorithms */
-/*************************************/
+// =============================================================================
+// Matching Algorithms
+//
+// =============================================================================
 
 public function DFSLH
 "deapth first search with look ahead feature. basically the same like MC21A."
@@ -4563,9 +4600,10 @@ algorithm
 end PR_FIFO_FAIRrelabel;
 
 
-/******************************************
-  cheap matching implementations
- *****************************************/
+// =============================================================================
+// cheap matching implementations
+//
+// =============================================================================
 
 protected function cheapmatchingalgorithm
 "function cheapmatchingalgorithm, traverses all colums and look for a cheap matching, a unmatch row
@@ -5013,11 +5051,11 @@ algorithm
     end matchcontinue;
 end ks_rand_match_degree;
 
-/******************************************
- C-Implementation Stuff from
- Kamer Kaya, Johannes Langguth and Bora Ucar
- see: http://bmi.osu.edu/~kamer/index.html
- *****************************************/
+// =============================================================================
+// C-Implementation Stuff from
+// Kamer Kaya, Johannes Langguth and Bora Ucar
+// see: http://bmi.osu.edu/~kamer/index.html
+// =============================================================================
 
 public function DFSBExternal
 "function: DFSBExternal"
@@ -5613,9 +5651,10 @@ algorithm
   BackendDAEEXT.setIncidenceMatrix(nv,ne,nz,m);
 end matchingExternalsetIncidenceMatrix;
 
-/*****************************************************/
-/*              Util Functions                       */
-/*****************************************************/
+// =============================================================================
+// Util Functions
+//
+// =============================================================================
 
 public function isAssigned
 "author: Frenkel TUD 2012-05"
@@ -6074,9 +6113,10 @@ algorithm
   end matchcontinue;
 end getAssignment;
 
-/*************************************/
-/*   tests */
-/*************************************/
+// =============================================================================
+// tests
+//
+// =============================================================================
 
 public function testMatchingAlgorithms
 "function testMatchingAlgorithms, test all matching algorithms
