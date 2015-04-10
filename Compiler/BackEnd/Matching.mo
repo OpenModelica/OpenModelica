@@ -89,7 +89,8 @@ algorithm
 end PerfectMatching;
 
 public function RegularMatching "
-  This function returns at least a partial matching for singular systems."
+  This function returns at least a partial matching for singular systems.
+  Unmatched nodes are represented by -1."
   input BackendDAE.IncidenceMatrix m;
   input Integer nVars;
   input Integer nEqns;

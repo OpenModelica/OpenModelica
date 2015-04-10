@@ -1358,10 +1358,10 @@ algorithm
   if not perfectMatching then
     Error.addCompilerNotification("The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
     //BackendDump.dumpEqSystem(syst, "The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
+    fail();
   end if;
-  true := perfectMatching; // if this fails, the system is singular (mixed-determined)
 
-  // map to equations
+  // map artificial variables to redundant equations
   range := if nAddVars > 0 then List.intRange2(nVars+1, nVars+nAddVars) else {};
   redundantEqns := mapIndices(range, vec1);
 //print("{" + stringDelimitList(List.map(redundantEqns, intString),",") + "}\n");
@@ -1370,13 +1370,13 @@ algorithm
   (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared);
   (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m_, me, vec1, vec2, mapIncRowEqn);
 
-  // remove all unassigned equations
+  // remove redundant equations
   outRemovedEqns := BackendEquation.getEqns(redundantEqns, inEqns);
 //BackendDump.dumpEquationList(outRemovedEqns, "removed equations");
   outEqns := BackendEquation.equationDelete(inEqns, redundantEqns);
 //BackendDump.dumpEquationArray(outEqns, "remaining equations");
 
-  // map to variables
+  // map artificial equations to unfixed states
   range := if nAddEqs > 0 then List.intRange2(nEqns+1, nEqns+nAddEqs) else {};
   range := mapIndices(range, vec2);
 //print("{" + stringDelimitList(List.map(range, intString),",") + "}\n");
