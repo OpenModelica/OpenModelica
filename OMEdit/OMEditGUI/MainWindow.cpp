@@ -2419,6 +2419,11 @@ void MainWindow::switchToModelingPerspective()
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
+  // In case user has tabbed the dock widgets then make LibraryTreeWidget active.
+  QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryTreeDockWidget);
+  if (tabifiedDockWidgetsList.size() > 0) {
+    tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpLibraryTreeDockWidget);
+  }
 }
 
 void MainWindow::switchToPlottingPerspective()
@@ -2443,6 +2448,11 @@ void MainWindow::switchToPlottingPerspective()
   }
   mpVariablesDockWidget->show();
   mpPlotToolBar->setEnabled(true);
+  // In case user has tabbed the dock widgets then make VariablesWidget active.
+  QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpVariablesDockWidget);
+  if (tabifiedDockWidgetsList.size() > 0) {
+    tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
+  }
 }
 
 /*!
