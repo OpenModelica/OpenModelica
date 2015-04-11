@@ -11748,7 +11748,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case SUB(__) then '(<%e1%> - <%e2%>)'
   case MUL(__) then '(<%e1%> * <%e2%>)'
   case DIV(__) then '(<%e1%> / <%e2%>)'
-  case POW(__) then 'pow(<%e1%>, <%e2%>)'
+  case POW(__) then 'std::pow(<%e1%>, <%e2%>)'
   case AND(__) then '(<%e1%> && <%e2%>)'
   case OR(__)  then '(<%e1%> || <%e2%>)'
   case MUL_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
