@@ -2522,7 +2522,7 @@ annotation(preferredView="text",Documentation(info="<html>
 <ul>
 <li>simulate(A);plot({x,y,z});</li>
 <li>simulate(A);plot(x, externalWindow=true);</li>
-<li>simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,\"B.mat\",legend=false);</li>
+<li>simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,fileName=\"B.mat\",legend=false);</li>
 </ul>
 </html>"));
 end plot;
@@ -2533,7 +2533,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   Example command sequences:
   simulate(A);plotAll();
   simulate(A);plotAll(externalWindow=true);
-  simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");"
+  simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,fileName=\"B.mat\");"
 
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
@@ -2562,7 +2562,7 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   Writes the visulizations objects into the file \"model_name.visualize\"
 
   Example command sequence:
-  simulate(A,outputFormat=\"mat\");visualize(A);visualize(A,\"B.mat\");visualize(A,\"B.mat\", true);
+  simulate(A,outputFormat=\"mat\");visualize(A);visualize(A,fileName=\"B.mat\");visualize(A,fileName=\"B.mat\", true);
   "
   input TypeName className;
   input Boolean externalWindow = false "Opens the visualize in a new window";
