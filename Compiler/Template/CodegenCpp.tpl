@@ -2038,6 +2038,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
             std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(optv.size(), &optv[0]);
 
+            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+              <<
+              <%generateMeasureTimeEndCode("measuredSetupStartValues", "measuredSetupEndValues", "measureTimeArraySimulation[1]", "setup", "")%>
+              >>
+            %>
 
 
             //create Modelica system
@@ -2048,6 +2053,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
+              <%generateMeasureTimeEndCode("measuredSimStartValues", "measuredSimEndValues", "measureTimeArraySimulation[0]", "all", "")%>
               MeasureTime::getInstance()->writeToJson();
               >>
             %>

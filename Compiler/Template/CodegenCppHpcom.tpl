@@ -414,12 +414,11 @@ template simulationCppFile(SimCode simCode, Context context, Text& extraFuncs, T
       #endif
 
       /* Constructor */
-      <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
-        : SystemDefaultImplementation(globalSettings)
+      <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
+        : SystemDefaultImplementation(globalSettings,sim_data,sim_vars)
         , _algLoopSolverFactory(nonlinsolverfactory)
-        , _sim_data(sim_data)
         <%hpcomMemberVariableDefinition%>
-        <%MemberVariable(modelInfo, hpcOmMemory, useFlatArrayNotation,true)%>
+        <%MemberVariableInitialize(modelInfo,useFlatArrayNotation)%>
         <%simulationInitFile(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       {
         //I don't know why this line is necessary if we link statically, but without it a segfault occurs
@@ -1597,6 +1596,7 @@ template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Te
 
   let &additionalLinkerFlags_GCC = buffer ""
   let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then " $(INTEL_TBB_LIBRARIES) " else ""
+  let &additionalLinkerFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
 
   let &additionalLinkerFlags_MSVC = buffer ""
 
@@ -1637,32 +1637,6 @@ template MemberVariable(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Bool
     <%vars.extObjVars |> var =>
       MemberVariableDefine("void*",var, "extObjVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
       ;separator="\n"%>
-    >>
-  end match
-end MemberVariable;
-
-template MemberVariablePreVariables(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
- "Define membervariable in simulation file."
-::=
-  match modelInfo
-    case MODELINFO(vars=SIMVARS(__)) then
-    <<
-    //Variables saved for pre, edge and change operator
-    <%vars.algVars |> var =>
-      MemberVariableDefine2(var, "algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
-      ;separator="\n"%>
-    <%vars.discreteAlgVars |> var =>
-      MemberVariableDefine2(var, "algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
-      ;separator="\n"%>
-    <%vars.boolAlgVars |> var =>
-      MemberVariableDefine("bool",var, "boolVariables.algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
-      ;separator="\n"%>
-    <%vars.stringAlgVars |> var =>
-      MemberVariableDefine("string",var, "stringVariables.algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
-      ;separator="\n"%>
-    <%vars.intAlgVars |> var =>
-      MemberVariableDefine("int", var, "intVariables.algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
-      ;separator="\n"%>
     /*alias real vars*/
     <%vars.aliasVars |> var =>
       MemberVariableDefine2(var, "aliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
@@ -1675,13 +1649,16 @@ template MemberVariablePreVariables(ModelInfo modelInfo, Option<MemoryMap> hpcOm
     <%vars.boolAliasVars |> var =>
       MemberVariableDefine("bool ",var, "boolVariables.AliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
       ;separator="\n"%>
+    <%vars.stringAlgVars |> var =>
+      MemberVariableDefine2(var, "stringVariables.AliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
+      ;separator="\n"%>
     /*mixed array variables*/
     <%vars.mixedArrayVars |> arrVar =>
       MemberVariableDefine2(arrVar, "mixed", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
       ;separator="\n"%>
     >>
   end match
-end MemberVariablePreVariables;
+end MemberVariable;
 
 template MemberVariableDefine(String type, SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
 ::=
