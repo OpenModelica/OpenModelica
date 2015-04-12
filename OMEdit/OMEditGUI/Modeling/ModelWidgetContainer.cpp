@@ -121,6 +121,11 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
 GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent)
   : QGraphicsView(parent), mViewType(viewType), mSkipBackground(false)
 {
+  /* Ticket #3275
+   * Set the scroll bars policy to always on to avoid unnecessary resize events.
+   */
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   setFrameShape(QFrame::StyledPanel);
   setDragMode(QGraphicsView::RubberBandDrag);
   setAcceptDrops(true);
