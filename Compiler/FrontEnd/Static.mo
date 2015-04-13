@@ -12941,80 +12941,96 @@ algorithm
   end match;
 end consStrippedCref;
 
-protected function replaceEndEnter
-  "Single pass traversal that replaces end-expressions with the correct size-expression.
-  It uses a couple of stacks and crap to handle all of this :)."
-  input Absyn.Exp inExp;
-  input tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>> inTuple;
-  output Absyn.Exp outExp;
-  output tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>> outTuple;
-algorithm
-  (outExp,outTuple) := match (inExp,inTuple)
-    local
-      Absyn.Exp exp;
-      list<Absyn.Exp> crs;
-      list<Integer> li;
-      Integer i,ni;
-      list<Boolean> bs;
-      Boolean isCr,inc;
-    case (_,(crs,i::li,bs as (inc::_)))
-      equation
-        isCr = Absyn.isCref(inExp);
-        bs = if isCr then true::bs else false::bs;
-        ni = if isCr then 0 else i+1;
-        li = if inc then ni::li else i::li;
-        li = if isCr then 0::li else li;
-        crs = consStrippedCref(inExp,crs);
-      then (inExp,(crs,li,bs));
-  end match;
-end replaceEndEnter;
-
-protected function replaceEndExit
-  "Single pass traversal that replaces end-expressions with the correct size-expression.
-  It uses a couple of stacks and crap to handle all of this :)."
-  input Absyn.Exp inExp;
-  input tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>> inTuple;
-  output Absyn.Exp outExp;
-  output tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>> outTuple;
-algorithm
-  (outExp,outTuple) := match (inExp,inTuple)
-    local
-      Absyn.Exp cr,exp;
-      list<Absyn.Exp> crs;
-      Integer i;
-      list<Integer> li;
-      list<Boolean> bs;
-    case (Absyn.END(),(crs as (cr::_),li as (i::_),_::bs))
-      then (Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({cr,Absyn.INTEGER(i)},{})),(crs,li,bs));
-    case (cr as Absyn.CREF(_),(_::crs,_::li,_::bs))
-      then (cr,(crs,li,bs));
-    case (exp,(crs,li,_::bs)) then (exp,(crs,li,bs));
-  end match;
-end replaceEndExit;
-
 protected function replaceEnd
-  "Single pass traversal that replaces end-expressions with the correct size-expression.
-  It uses a couple of stacks and crap to handle all of this :)."
-  input Absyn.ComponentRef cr;
-  output Absyn.ComponentRef ocr;
+  "Replaces end-expressions in a cref with the appropriate size-expressions."
+  input Absyn.ComponentRef inCref;
+  output Absyn.ComponentRef outCref;
+protected
+  list<Absyn.ComponentRef> cr_parts;
+  Absyn.ComponentRef cr, cr_no_subs;
 algorithm
-  ocr := Absyn.mapCrefParts(cr, replaceEnd2);
+  //print("Before replace: " + Dump.printComponentRefStr(inCref) + "\n");
+  outCref :: cr_parts := Absyn.crefExplode(inCref);
+
+  if not Absyn.crefIsIdent(outCref) then
+    outCref := inCref;
+    return;
+  end if;
+
+  if Absyn.crefIsFullyQualified(inCref) then
+    outCref := Absyn.crefMakeFullyQualified(outCref);
+  end if;
+
+  outCref := replaceEndInSubs(Absyn.crefStripLastSubs(outCref), Absyn.crefLastSubs(outCref));
+
+  for cr in cr_parts loop
+    cr_no_subs := Absyn.crefStripLastSubs(cr);
+    outCref := Absyn.joinCrefs(outCref, cr_no_subs);
+    outCref := replaceEndInSubs(outCref, Absyn.crefLastSubs(cr));
+  end for;
+  //print("After replace: " + Dump.printComponentRefStr(outCref) + "\n");
 end replaceEnd;
 
-protected function replaceEnd2
-  "Single pass traversal that replaces end-expressions with the correct size-expression.
-  It uses a couple of stacks and crap to handle all of this :)."
-  input Absyn.ComponentRef cr;
-  output Absyn.ComponentRef ocr;
+protected function replaceEndInSubs
+  input Absyn.ComponentRef inCref;
+  input list<Absyn.Subscript> inSubscripts;
+  output Absyn.ComponentRef outCref = inCref;
 protected
-  Absyn.ComponentRef stripcr;
+  list<Absyn.Subscript> subs = {};
+  Absyn.Subscript new_sub;
+  Integer i = 1;
 algorithm
-  // print("replaceEnd start " + Dump.printExpStr(Absyn.CREF(cr)) + "\n");
-  stripcr := Absyn.crefStripLastSubs(cr);
-  // print("stripCref        " + Dump.printExpStr(Absyn.CREF(stripcr)) + "\n");
-  (ocr,_) := Absyn.traverseExpBidirCref(cr,replaceEndEnter,replaceEndExit,({Absyn.CREF(stripcr)},{0},{true}));
-  // print("replaceEnd  end  " + Dump.printExpStr(Absyn.CREF(ocr)) + "\n");
-end replaceEnd2;
+  if listEmpty(inSubscripts) then
+    return;
+  end if;
+
+  for sub in inSubscripts loop
+    new_sub := replaceEndInSub(sub, i, inCref);
+    subs := new_sub :: subs;
+    i := i + 1;
+  end for;
+  
+  outCref := Absyn.crefSetLastSubs(outCref, listReverse(subs));
+end replaceEndInSubs;
+
+protected function replaceEndInSub
+  input Absyn.Subscript inSubscript;
+  input Integer inDimIndex;
+  input Absyn.ComponentRef inCref;
+  output Absyn.Subscript outSubscript;
+algorithm
+  outSubscript := match inSubscript
+    case Absyn.SUBSCRIPT()
+      then Absyn.SUBSCRIPT(replaceEndTraverser(inSubscript.subscript, (inCref, inDimIndex)));
+
+    else inSubscript;
+  end match;
+end replaceEndInSub;
+
+protected function replaceEndTraverser
+  input Absyn.Exp inExp;
+  input tuple<Absyn.ComponentRef, Integer> inTuple;
+  output Absyn.Exp outExp;
+algorithm
+  outExp := match inExp
+    local
+      Absyn.ComponentRef cr;
+      Integer i;
+
+    case Absyn.END()
+      algorithm
+        (cr, i) := inTuple;
+      then
+        Absyn.CALL(Absyn.CREF_IDENT("size", {}),
+          Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.INTEGER(i)}, {}));
+
+    case Absyn.CREF()
+      then Absyn.CREF(replaceEnd(inExp.componentRef));
+      
+    else Absyn.traverseExpShallow(inExp, inTuple, replaceEndTraverser);
+
+  end match;
+end replaceEndTraverser;
 
 protected function fixTupleMetaModelica
   input list<DAE.Exp> exps;

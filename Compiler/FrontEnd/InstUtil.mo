@@ -3034,7 +3034,7 @@ algorithm
     Integer cnt;
     case( Absyn.CREF(cr),(id,cnt))
       equation
-        Absyn.CREF_IDENT(id2,_) = Absyn.crefGetFirst(cr);
+        id2 = Absyn.crefFirstIdent(cr);
         // prefix == first part of cref
         0 = stringCompare(id2,id);
         cr1 = Absyn.crefStripFirst(cr);

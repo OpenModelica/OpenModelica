@@ -128,6 +128,8 @@ the backend. The current implementation doesn't handle cases in which the
   output Connect.Sets outSets;
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
+protected
+  Absyn.InnerOuter io;
 algorithm
   if match inIdent
     case "Integer" then true;
@@ -138,8 +140,11 @@ algorithm
     Error.addSourceMessage(Error.RESERVED_IDENTIFIER, {inIdent}, info);
     fail();
   end if;
-    (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-    matchcontinue (inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
+
+  io := SCode.prefixesInnerOuter(inPrefixes);
+
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
+  matchcontinue (inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
       inIdent, inClass, inAttributes, inPrefixes, inDimensionLst,
       inIntegerLst, inInstDims, inImpl, inComment, info, inGraph, inSets,
       componentDefinitionParentEnv)
@@ -168,7 +173,7 @@ algorithm
       String nInner, typeName, fullName;
       Absyn.Path typePath;
       String innerScope;
-      Absyn.InnerOuter io, ioInner;
+      Absyn.InnerOuter ioInner;
       Option<InnerOuter.InstResult> instResult;
       SCode.Prefixes pf;
       UnitAbsyn.InstStore store;
@@ -181,7 +186,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         // only inner!
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyInner(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
@@ -223,7 +227,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         // only outer!
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyOuter(io);
 
         // we should have here any kind of modification!
@@ -245,7 +248,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr as SCode.ATTR(direction=Absyn.OUTPUT()),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // only outer!
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyOuter(io);
 
         // we should have NO modifications on only outer!
@@ -287,7 +289,6 @@ algorithm
     case (cache,env,ih,store,_,mod,pre,n,_,_,pf,_,_,_,_,_,_,graph,csets,_)
       equation
         // only outer!
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyOuter(io);
 
         // we should have NO modifications on only outer!
@@ -333,7 +334,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // only outer!
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyOuter(io);
 
         // no modifications!
@@ -378,7 +378,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         // only outer!
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyOuter(io);
 
         // no modifications!
@@ -413,7 +412,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr as SCode.ATTR(direction=Absyn.OUTPUT()) ,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // both inner and outer
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isInnerOuter(io);
 
         // the inner outer must be in an instance that is part of a State Machine
@@ -462,7 +460,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // both inner and outer
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isInnerOuter(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
@@ -514,7 +511,6 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // no inner no outer
-        io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isNotInnerOuter(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
@@ -551,16 +547,16 @@ protected function instVar_dispatch "A component element in a class may consist 
   input ClassInf.State inState;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input String inIdent;
+  input String inName;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
-  input DAE.Dimensions inDimensionLst;
-  input list<DAE.Subscript> inIntegerLst;
+  input list<DAE.Dimension> inDimensions;
+  input list<DAE.Subscript> inIndices;
   input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inBoolean;
-  input SCode.Comment inSCodeComment;
-  input SourceInfo info;
+  input Boolean inImpl;
+  input SCode.Comment inComment;
+  input SourceInfo inInfo;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   output FCore.Cache outCache;
@@ -571,91 +567,52 @@ protected function instVar_dispatch "A component element in a class may consist 
   output Connect.Sets outSets;
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
+protected
+  String comp_name;
+  list<DAE.Dimension> dims;
+  SCode.Element cls;
+  DAE.Mod type_mods, mod;
+  SCode.Attributes attr;
+  DAE.ElementSource source;
 algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inClass,inAttributes,inPrefixes,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeComment,info,inGraph,inSets)
-    local
-      DAE.Dimensions dims;
-      FCore.Graph compenv,env;
-      DAE.DAElist dae;
-      Connect.Sets csets;
-      DAE.Type ty;
-      ClassInf.State ci_state;
-      DAE.Mod mod;
-      Prefix.Prefix pre;
-      String n,id;
-      SCode.Element cl,cl2;
-      SCode.Attributes attr;
-      list<DAE.Subscript> idxs;
-      InstDims inst_dims;
-      Boolean impl;
-      SCode.Comment comment;
-      FCore.Cache cache;
-      Absyn.Path p1;
-      String str;
-      ConnectionGraph.ConnectionGraph graph;
-      InstanceHierarchy ih;
-      DAE.Mod type_mods;
-      SCode.Prefixes pf;
-      UnitAbsyn.InstStore store;
-      DAE.ElementSource source;
-      SCode.Variability vt;
+  try
+    comp_name := Absyn.pathString(PrefixUtil.prefixPath(Absyn.IDENT(inName), inPrefix));
+    Error.updateCurrentComponent(comp_name, inInfo);
 
-    // impl component environment dae elements for component Variables of userdefined type,
-    // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
-    // appear to be an array, they can. Therefore we need to collect
-    // the full dimensionality and call instVar2
-    case (cache,env,ih,store,ci_state,mod,pre,n,SCode.CLASS(),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
-      equation
-        // Collect dimensions
-        p1 = Absyn.IDENT(n);
-        p1 = PrefixUtil.prefixPath(p1,pre);
-        str = Absyn.pathString(p1);
-        Error.updateCurrentComponent(str,info);
-        (cache, dims as (_ :: _),cl,type_mods) = InstUtil.getUsertypeDimensions(cache, env, ih, pre, inClass, inst_dims, impl);
+    (outCache, dims, cls, type_mods) :=
+      InstUtil.getUsertypeDimensions(inCache, inEnv, inIH, inPrefix, inClass, inInstDims, inImpl);
 
-        //type_mods = Mod.addEachIfNeeded(type_mods, dims);
-        //mod = Mod.addEachIfNeeded(mod, inDimensionLst);
-
-        dims = listAppend(inDimensionLst, dims);
-        mod = Mod.merge(mod, type_mods, env, pre);
-
-        attr = InstUtil.propagateClassPrefix(attr,pre);
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
-          instVar2(cache, env, ih, store, ci_state, mod, pre, n, cl, attr,
-            pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        (cache,dae) = addArrayVarEquation(cache, env, ih, ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty),SCode.elementInfo(inClass));
-        Error.updateCurrentComponent("",Absyn.dummyInfo);
-      then
-        (cache,compenv,ih,store,dae,csets,ty,graph);
-
-    // Generic case: fall through
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets)
-      equation
-        p1 = Absyn.IDENT(n);
-        p1 = PrefixUtil.prefixPath(p1,pre);
-        str = Absyn.pathString(p1);
-        Error.updateCurrentComponent(str,info);
-        // print("instVar: " + str + " in scope " + FGraph.printGraphPathStr(env) + "\t mods: " + Mod.printModStr(mod) + "\n");
-
-        // The prefix is handled in other parts of the code. Applying it too soon gives wrong results: // attr = InstUtil.propagateClassPrefix(attr,pre);
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
-          instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
-            pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
-        source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        cache = InstFunction.addRecordConstructorFunction(cache,env,Types.arrayElementType(ty),SCode.elementInfo(inClass));
-        Error.updateCurrentComponent("",Absyn.dummyInfo);
-      then
-        (cache,compenv,ih,store,dae,csets,ty,graph);
-
+    if listEmpty(dims) then
+      // No dimensions from userdefined type.
+      dims := inDimensions;
+      cls := inClass;
+      mod := inMod;
+      attr := inAttributes;
     else
-      equation
-        Error.updateCurrentComponent("",Absyn.dummyInfo);
-      then fail();
-  end matchcontinue;
+      // Userdefined array type, e.g. type Point = Real[3].
+      dims := listAppend(inDimensions, dims);
+      mod := Mod.merge(inMod, type_mods, inEnv, inPrefix);
+      attr := InstUtil.propagateClassPrefix(inAttributes, inPrefix);
+    end if;
+
+    (outCache, outEnv, outIH, outStore, outDae, outSets, outType, outGraph) :=
+      instVar2(outCache, inEnv, inIH, inStore, inState, mod, inPrefix, inName,
+        cls, attr, inPrefixes, dims, inIndices, inInstDims, inImpl, inComment,
+        inInfo, inGraph, inSets);
+
+    source := DAEUtil.createElementSource(inInfo, FGraph.getScopePath(inEnv),
+      PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
+    (outCache, outDae) := addArrayVarEquation(outCache, inEnv, outIH, inState,
+      outDae, outType, mod, NFInstUtil.toConst(SCode.attrVariability(attr)),
+      inPrefix, inName, source);
+    outCache := InstFunction.addRecordConstructorFunction(outCache, inEnv,
+      Types.arrayElementType(outType), SCode.elementInfo(inClass));
+    
+    Error.updateCurrentComponent("", Absyn.dummyInfo);
+  else
+    Error.updateCurrentComponent("", Absyn.dummyInfo);
+    fail();
+  end try;
 end instVar_dispatch;
 
 protected function addArrayVarEquation
@@ -673,7 +630,7 @@ protected function addArrayVarEquation
   output FCore.Cache outCache;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outDae) := matchcontinue (inCache,inEnv,inIH,inState,inDae,inType,mod,const,pre,n,source)
+  (outCache,outDae) := matchcontinue (inDae, const)
     local
       FCore.Cache cache;
       list<DAE.Element> dae;
@@ -684,13 +641,13 @@ algorithm
       DAE.Type ty;
 
     // Don't add array equations if +scalarizeBindings is set.
-    case (_, _, _, _, _, _, _, _, _, _, _)
+    case (_, _)
       equation
         true = Config.scalarizeBindings();
       then
         (inCache, inDae);
 
-    case (_,_,_,_,DAE.DAE(dae),_,_,DAE.C_VAR(),_,_,_)
+    case (DAE.DAE(dae), DAE.C_VAR())
       equation
         false = ClassInf.isFunctionOrRecord(inState);
         ty = Types.simplifyType(inType);
@@ -703,6 +660,7 @@ algorithm
         eq = DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
         // print("Creating array equation for " + PrefixUtil.printPrefixStr(pre) + "." + n + " of const " + DAEUtil.constStr(const) + " in classinf " + ClassInf.printStateStr(inState) + "\n");
       then (cache,DAE.DAE(eq::dae));
+
     else (inCache,inDae);
   end matchcontinue;
 end addArrayVarEquation;
@@ -1328,6 +1286,122 @@ algorithm
   end match;
 end stripRecordDefaultBindingsFromElement;
 
+protected function checkDimensionGreaterThanZero
+  input DAE.Dimension inDim;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input SourceInfo info;
+algorithm
+  _ := match inDim
+    local
+      String dim_str, cr_str;
+      DAE.ComponentRef cr;
+
+    case DAE.DIM_INTEGER()
+      algorithm
+        if inDim.integer < 0 then
+          dim_str := ExpressionDump.dimensionString(inDim);
+          cr := DAE.CREF_IDENT(inIdent, DAE.T_REAL_DEFAULT, {});
+          cr_str := ComponentReference.printComponentRefStr(
+            PrefixUtil.prefixCrefNoContext(inPrefix, cr));
+          Error.addSourceMessageAndFail(Error.NEGATIVE_DIMENSION_INDEX,
+           {dim_str, cr_str}, info);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end checkDimensionGreaterThanZero;
+
+protected function checkArrayModDimSize
+  "This function checks that the dimension of a modifier is the same as the
+   modified components dimension. Only the first dimension is checked, since
+   this function is meant to be called in instArray which is called recursively
+   for a component's dimensions."
+  input DAE.Mod mod;
+  input DAE.Dimension inDimension;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input SourceInfo inInfo;
+algorithm
+  _ := match mod
+    // Only check modifiers which are not marked with 'each'.
+    case DAE.MOD(eachPrefix = SCode.NOT_EACH())
+      algorithm
+        List.map4_0(mod.subModLst, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo);
+      then ();
+    else ();
+  end match;
+end checkArrayModDimSize;
+
+protected function checkArraySubModDimSize
+  input DAE.SubMod inSubMod;
+  input DAE.Dimension inDimension;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input SourceInfo inInfo;
+algorithm
+  _ := match inSubMod
+    local
+      String name;
+      Option<DAE.EqMod> eqmod;
+
+    // Don't check quantity, because Dymola doesn't and as a result the MSL
+    // contains some type errors.
+    case DAE.NAMEMOD(ident = "quantity") then ();
+
+    case DAE.NAMEMOD(ident = name, mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(),
+        eqModOption = eqmod))
+      equation
+        name = inIdent + "." + name;
+        true = checkArrayModBindingDimSize(eqmod, inDimension, inPrefix, name, inInfo);
+      then
+        ();
+
+    else ();
+  end match;
+end checkArraySubModDimSize;
+
+protected function checkArrayModBindingDimSize
+  input Option<DAE.EqMod> inBinding;
+  input DAE.Dimension inDimension;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input SourceInfo inInfo;
+  output Boolean outIsCorrect;
+algorithm
+  outIsCorrect := matchcontinue inBinding
+    local
+      DAE.Exp exp;
+      DAE.Type ty;
+      DAE.Dimension ty_dim;
+      Integer dim_size1, dim_size2;
+      String exp_str, exp_ty_str, dims_str;
+      DAE.Dimensions ty_dims;
+
+    case SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))
+      equation
+        ty_dim = Types.getDimensionNth(ty, 1);
+        dim_size1 = Expression.dimensionSize(inDimension);
+        dim_size2 = Expression.dimensionSize(ty_dim);
+        true = dim_size1 <> dim_size2;
+        // If the dimensions are not equal, print an error message.
+        exp_str = ExpressionDump.printExpStr(exp);
+        exp_ty_str = Types.unparseType(ty);
+        // We don't know the complete expected type, so lets assume that the
+        // rest of the expression's type is correct (will be caught later anyway).
+        _ :: ty_dims = Types.getDimensions(ty);
+        dims_str = ExpressionDump.dimensionsString(inDimension :: ty_dims);
+        Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
+          {exp_str, exp_ty_str, dims_str}, inInfo);
+      then
+        false;
+
+    else true;
+  end matchcontinue;
+end checkArrayModBindingDimSize;
+
 protected function instArray
 "When an array is instantiated by instVar, this function is used
   to go through all the array elements and instantiate each array
@@ -1361,178 +1435,9 @@ protected function instArray
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  checkDimensionGreaterThanZero(inDimension,inPrefix,inIdent,info);
+  checkDimensionGreaterThanZero(inDimension, inPrefix, inIdent, info);
   checkArrayModDimSize(inMod, inDimension, inPrefix, inIdent, info);
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
-    instArray2(inCache, inEnv, inIH, inStore, inState, inMod, inPrefix, inIdent,
-      inElement, inPrefixes, inInteger, inDimension, inDimensionLst,
-      inIntegerLst, inInstDims, inBoolean, inComment, info, inGraph, inSets);
-end instArray;
 
-protected function checkDimensionGreaterThanZero
-  input DAE.Dimension inDim;
-  input Prefix.Prefix inPrefix;
-  input String inIdent;
-  input SourceInfo info;
-algorithm
-  _ := match (inDim,inPrefix,inIdent,info)
-    local
-      Integer i;
-      Boolean b;
-      String str1,str2;
-    case (DAE.DIM_INTEGER(i),_,_,_)
-      equation
-        checkDimensionGreaterThanZero2(i < 0,inDim,inPrefix,inIdent,info);
-      then ();
-    else ();
-  end match;
-end checkDimensionGreaterThanZero;
-
-protected function checkDimensionGreaterThanZero2
-  input Boolean isError;
-  input DAE.Dimension inDim;
-  input Prefix.Prefix inPrefix;
-  input String inIdent;
-  input SourceInfo info;
-algorithm
-  _ := match (isError,inDim,inPrefix,inIdent,info)
-    local
-      Integer i;
-      Boolean b;
-      String str1,str2;
-    case (true,_,_,_,_)
-      equation
-        str1 = ExpressionDump.dimensionString(inDim);
-        str2 = ComponentReference.printComponentRefStr(PrefixUtil.prefixCrefNoContext(inPrefix,DAE.CREF_IDENT(inIdent,DAE.T_REAL_DEFAULT,{})));
-        Error.addSourceMessage(Error.NEGATIVE_DIMENSION_INDEX, {str1,str2}, info);
-      then fail();
-    else ();
-  end match;
-end checkDimensionGreaterThanZero2;
-
-protected function checkArrayModDimSize
-  "This function checks that the dimension of a modifier is the same as the
-   modified components dimension. Only the first dimension is checked, since
-   this function is meant to be called in instArray which is called recursively
-   for a component's dimensions."
-  input DAE.Mod mod;
-  input DAE.Dimension inDimension;
-  input Prefix.Prefix inPrefix;
-  input String inIdent;
-  input SourceInfo inInfo;
-algorithm
-  _ := match mod
-    // Only check modifiers which are not marked with 'each'.
-    case DAE.MOD(eachPrefix = SCode.NOT_EACH())
-      equation
-        List.map4_0(mod.subModLst, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo);
-      then ();
-    else ();
-  end match;
-end checkArrayModDimSize;
-
-protected function checkArraySubModDimSize
-  input DAE.SubMod inSubMod;
-  input DAE.Dimension inDimension;
-  input Prefix.Prefix inPrefix;
-  input String inIdent;
-  input SourceInfo inInfo;
-algorithm
-  _ := match(inSubMod, inDimension, inPrefix, inIdent, inInfo)
-    local
-      String name;
-      Option<DAE.EqMod> eqmod;
-
-    // Don't check quantity, because Dymola doesn't and as a result the MSL
-    // contains some type errors.
-    case (DAE.NAMEMOD(ident = "quantity"), _, _, _, _) then ();
-
-    case (DAE.NAMEMOD(ident = name, mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(),
-        eqModOption = eqmod)), _, _, _, _)
-      equation
-        name = inIdent + "." + name;
-        true = checkArrayModBindingDimSize(eqmod, inDimension, inPrefix, name, inInfo);
-      then
-        ();
-
-    else ();
-  end match;
-end checkArraySubModDimSize;
-
-protected function checkArrayModBindingDimSize
-  input Option<DAE.EqMod> inBinding;
-  input DAE.Dimension inDimension;
-  input Prefix.Prefix inPrefix;
-  input String inIdent;
-  input SourceInfo inInfo;
-  output Boolean outIsCorrect;
-algorithm
-  outIsCorrect := matchcontinue(inBinding, inDimension, inPrefix, inIdent, inInfo)
-    local
-      DAE.Exp exp;
-      DAE.Type ty;
-      DAE.Dimension ty_dim;
-      Integer dim_size1, dim_size2;
-      String exp_str, exp_ty_str, dims_str;
-      DAE.Dimensions ty_dims;
-
-    case (SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty))), _, _, _, _)
-      equation
-        ty_dim = Types.getDimensionNth(ty, 1);
-        dim_size1 = Expression.dimensionSize(inDimension);
-        dim_size2 = Expression.dimensionSize(ty_dim);
-        true = dim_size1 <> dim_size2;
-        // If the dimensions are not equal, print an error message.
-        exp_str = ExpressionDump.printExpStr(exp);
-        exp_ty_str = Types.unparseType(ty);
-        // We don't know the complete expected type, so lets assume that the
-        // rest of the expression's type is correct (will be caught later anyway).
-        _ :: ty_dims = Types.getDimensions(ty);
-        dims_str = ExpressionDump.dimensionsString(inDimension :: ty_dims);
-        Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
-          {exp_str, exp_ty_str, dims_str}, inInfo);
-      then
-        false;
-
-    else true;
-  end matchcontinue;
-end checkArrayModBindingDimSize;
-
-
-
-protected function instArray2
-"When an array is instantiated by instVar, this function is used
-  to go through all the array elements and instantiate each array
-  element separately."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input UnitAbsyn.InstStore inStore;
-  input ClassInf.State inState;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input String inIdent;
-  input tuple<SCode.Element, SCode.Attributes> inElement;
-  input SCode.Prefixes inPrefixes;
-  input Integer inInteger;
-  input DAE.Dimension inDimension;
-  input DAE.Dimensions inDimensionLst;
-  input list<DAE.Subscript> inIntegerLst;
-  input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inBoolean;
-  input SCode.Comment inComment;
-  input SourceInfo info;
-  input ConnectionGraph.ConnectionGraph inGraph;
-  input Connect.Sets inSets;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output UnitAbsyn.InstStore outStore;
-  output DAE.DAElist outDae;
-  output Connect.Sets outSets;
-  output DAE.Type outType;
-  output ConnectionGraph.ConnectionGraph outGraph;
-algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inElement,inPrefixes,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,inGraph,inSets)
     local
@@ -1644,7 +1549,7 @@ algorithm
           attr, pf, dims, (s :: idxs), inst_dims, impl, comment, info, graph, csets);
         i_1 = i + 1;
         (cache, _, ih, store, dae2, csets, _, graph) =
-          instArray2(cache, env, ih, store, ci_state, mod, pre, n, (cl,
+          instArray(cache, env, ih, store, ci_state, mod, pre, n, (cl,
           attr), pf, i_1, DAE.DIM_ENUM(enum_type, l, enum_size), dims, idxs,
           inst_dims, impl, comment, info, graph, csets);
         daeLst = DAEUtil.joinDaes(dae1, dae2);
@@ -1688,7 +1593,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end instArray2;
+end instArray;
 
 protected function instArrayDimInteger
 "When an array is instantiated by instVar, this function is used to go through all the array elements and instantiate each array element separately.

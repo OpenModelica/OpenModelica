@@ -3945,20 +3945,6 @@ algorithm
   end match;
 end pathToCrefWithSubs;
 
-public function crefFirstIdent "
-Returns the base-name of the componentReference"
-  input ComponentRef inComponentRef;
-  output String str;
-algorithm str := match(inComponentRef)
-  local
-    String ret;
-    ComponentRef cr;
-  case(CREF_IDENT(ret,_)) then ret;
-  case(CREF_QUAL(ret,_,_)) then ret;
-  case(CREF_FULLYQUALIFIED(cr)) then crefFirstIdent(cr);
-end match;
-end crefFirstIdent;
-
 public function crefLastIdent
   "Returns the last identifier in a component reference."
   input ComponentRef inComponentRef;
@@ -4037,6 +4023,33 @@ algorithm
         res;
   end match;
 end crefLastSubs;
+
+public function crefSetLastSubs
+  input ComponentRef inCref;
+  input list<Subscript> inSubscripts;
+  output ComponentRef outCref = inCref;
+algorithm
+  outCref := match outCref
+    case CREF_IDENT()
+      algorithm
+        outCref.subscripts := inSubscripts;
+      then
+        outCref;
+
+    case CREF_QUAL()
+      algorithm
+        outCref.componentRef := crefSetLastSubs(outCref.componentRef, inSubscripts);
+      then
+        outCref;
+
+    case CREF_FULLYQUALIFIED()
+      algorithm
+        outCref.componentRef := crefSetLastSubs(outCref.componentRef, inSubscripts);
+      then
+        outCref;
+
+  end match;
+end crefSetLastSubs;
 
 public function crefHasSubscripts "This function finds if a cref has subscripts"
   input ComponentRef inComponentRef;
@@ -4171,20 +4184,28 @@ algorithm
   end match;
 end joinCrefs;
 
-public function crefGetFirst "Returns first ident from a ComponentRef"
-  input ComponentRef inComponentRef;
-  output ComponentRef outComponentRef;
+public function crefFirstIdent "Returns first ident from a ComponentRef"
+  input ComponentRef inCref;
+  output Ident outIdent;
 algorithm
-  outComponentRef:=
-  match (inComponentRef)
-    local
-      Ident i;
-      ComponentRef cr;
-    case (CREF_IDENT(name = i)) then CREF_IDENT(i,{});
-    case (CREF_QUAL(name = i)) then CREF_IDENT(i,{});
-    case (CREF_FULLYQUALIFIED(cr)) then crefGetFirst(cr);
+  outIdent := match inCref
+    case CREF_IDENT() then inCref.name;
+    case CREF_QUAL() then inCref.name;
+    case CREF_FULLYQUALIFIED() then crefFirstIdent(inCref.componentRef);
   end match;
-end crefGetFirst;
+end crefFirstIdent;
+
+public function crefFirstCref
+  "Returns the first part of a cref."
+  input ComponentRef inCref;
+  output ComponentRef outCref;
+algorithm
+  outCref := match inCref
+    case CREF_QUAL() then CREF_IDENT(inCref.name, inCref.subscripts);
+    case CREF_FULLYQUALIFIED() then crefFirstCref(inCref.componentRef);
+    else inCref;
+  end match;
+end crefFirstCref;
 
 public function crefStripFirst "Strip the first ident from a ComponentRef"
   input ComponentRef inComponentRef;
@@ -4197,6 +4218,16 @@ algorithm
     case CREF_FULLYQUALIFIED(componentRef = cr) then crefStripFirst(cr);
   end match;
 end crefStripFirst;
+
+public function crefIsFullyQualified
+  input ComponentRef inCref;
+  output Boolean outIsFullyQualified;
+algorithm
+  outIsFullyQualified := match inCref
+    case CREF_FULLYQUALIFIED() then true;
+    else false;
+  end match; 
+end crefIsFullyQualified;
 
 public function crefMakeFullyQualified
   "Makes a component reference fully qualified unless it already is."
@@ -6271,6 +6302,201 @@ public function makeSubscript
 algorithm
   outSubscript := SUBSCRIPT(inExp);
 end makeSubscript;
+
+public function crefExplode
+  "Splits a cref into parts."
+  input ComponentRef inCref;
+  input list<ComponentRef> inAccum = {};
+  output list<ComponentRef> outCrefParts;
+algorithm
+  outCrefParts := match inCref
+    case CREF_QUAL() then crefExplode(inCref.componentRef, crefFirstCref(inCref) :: inAccum);
+    else listReverse(inCref :: inAccum);
+  end match;
+end crefExplode;
+
+public function traverseExpShallow<ArgT>
+  "Calls the given function on each subexpression (non-recursively) of the given
+   expression, sending in the extra argument to each call."
+  input Exp inExp;
+  input ArgT inArg;
+  input FuncT inFunc;
+  output Exp outExp = inExp;
+
+  partial function FuncT
+    input Exp inExp;
+    input ArgT inArg;
+    output Exp outExp;
+  end FuncT;
+algorithm
+  _ := match outExp
+    local
+      Exp e1, e2;
+
+    case BINARY()
+      algorithm
+        outExp.exp1 := inFunc(outExp.exp1, inArg);
+        outExp.exp2 := inFunc(outExp.exp2, inArg);
+      then
+        ();
+
+    case UNARY()
+      algorithm
+        outExp.exp := inFunc(outExp.exp, inArg);
+      then
+        ();
+
+    case LBINARY()
+      algorithm
+        outExp.exp1 := inFunc(outExp.exp1, inArg);
+        outExp.exp2 := inFunc(outExp.exp2, inArg);
+      then
+        ();
+
+    case LUNARY()
+      algorithm
+        outExp.exp := inFunc(outExp.exp, inArg);
+      then
+        ();
+
+    case RELATION()
+      algorithm
+        outExp.exp1 := inFunc(outExp.exp1, inArg);
+        outExp.exp2 := inFunc(outExp.exp2, inArg);
+      then
+        ();
+
+    case IFEXP()
+      algorithm
+        outExp.ifExp := inFunc(outExp.ifExp, inArg);
+        outExp.trueBranch := inFunc(outExp.trueBranch, inArg);
+        outExp.elseBranch := inFunc(outExp.elseBranch, inArg);
+        outExp.elseIfBranch := list((inFunc(Util.tuple21(e), inArg),
+          inFunc(Util.tuple22(e), inArg)) for e in outExp.elseIfBranch);
+      then
+        ();
+
+    case CALL()
+      algorithm
+        outExp.functionArgs := traverseExpShallowFuncArgs(outExp.functionArgs,
+          inArg, inFunc);
+      then
+        ();
+
+    case PARTEVALFUNCTION()
+      algorithm
+        outExp.functionArgs := traverseExpShallowFuncArgs(outExp.functionArgs,
+          inArg, inFunc);
+      then
+        ();
+
+    case ARRAY()
+      algorithm
+        outExp.arrayExp := list(inFunc(e, inArg) for e in outExp.arrayExp);
+      then
+        ();
+
+    case MATRIX()
+      algorithm
+        outExp.matrix := list(list(inFunc(e, inArg) for e in lst) for lst in
+            outExp.matrix);
+      then
+        ();
+
+    case RANGE()
+      algorithm
+        outExp.start := inFunc(outExp.start, inArg);
+        outExp.step := Util.applyOption1(outExp.step, inFunc, inArg);
+        outExp.stop := inFunc(outExp.stop, inArg);
+      then
+        ();
+
+    case TUPLE()
+      algorithm
+        outExp.expressions := list(inFunc(e, inArg) for e in outExp.expressions);
+      then
+        ();
+
+    case AS()
+      algorithm
+        outExp.exp := inFunc(outExp.exp, inArg);
+      then
+        ();
+
+    case CONS()
+      algorithm
+        outExp.head := inFunc(outExp.head, inArg);
+        outExp.rest := inFunc(outExp.rest, inArg);
+      then
+        ();
+
+    case LIST()
+      algorithm
+        outExp.exps := list(inFunc(e, inArg) for e in outExp.exps);
+      then
+        ();
+
+    case DOT()
+      algorithm
+        outExp.exp := inFunc(outExp.exp, inArg);
+        outExp.index := inFunc(outExp.index, inArg);
+      then
+        ();
+
+    else ();
+  end match;
+end traverseExpShallow;
+
+protected function traverseExpShallowFuncArgs<ArgT>
+  input FunctionArgs inArgs;
+  input ArgT inArg;
+  input FuncT inFunc;
+  output FunctionArgs outArgs = inArgs;
+
+  partial function FuncT
+    input Exp inExp;
+    input ArgT inArg;
+    output Exp outExp;
+  end FuncT;
+algorithm
+  outArgs := match outArgs
+    case FUNCTIONARGS()
+      algorithm
+        outArgs.args := list(inFunc(arg, inArg) for arg in outArgs.args);
+      then
+        outArgs;
+
+    case FOR_ITER_FARG()
+      algorithm
+        outArgs.exp := inFunc(outArgs.exp, inArg);
+        outArgs.iterators := list(traverseExpShallowIterator(it, inArg, inFunc)
+          for it in outArgs.iterators);
+      then
+        outArgs;
+
+  end match;
+end traverseExpShallowFuncArgs;
+
+protected function traverseExpShallowIterator<ArgT>
+  input ForIterator inIterator;
+  input ArgT inArg;
+  input FuncT inFunc;
+  output ForIterator outIterator;
+
+  partial function FuncT
+    input Exp inExp;
+    input ArgT inArg;
+    output Exp outExp;
+  end FuncT;
+protected
+  String name;
+  Option<Exp> guard_exp, range_exp;
+algorithm
+  ITERATOR(name, guard_exp, range_exp) := inIterator;
+  guard_exp := Util.applyOption1(guard_exp, inFunc, inArg); 
+  range_exp := Util.applyOption1(range_exp, inFunc, inArg); 
+  outIterator := ITERATOR(name, guard_exp, range_exp);
+end traverseExpShallowIterator;
 
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;
