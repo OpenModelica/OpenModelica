@@ -68,6 +68,7 @@ encapsulated package Error
 "
 
 public import Util;
+public import Flags;
 
 public
 uniontype Severity "severity of message"
@@ -920,24 +921,20 @@ public function addMessage "Implementation of Relations
   is looked up in the message table."
   input Message inErrorMsg;
   input MessageTokens inMessageTokens;
+protected
+  MessageType msg_type;
+  Severity severity;
+  String msg_str;
+  ErrorID error_id;
+  Util.TranslatableContent msg;
 algorithm
-  _ := match (inErrorMsg,inMessageTokens)
-    local
-      MessageType msg_type;
-      Severity severity;
-      String msg_str;
-      ErrorID error_id;
-      MessageTokens tokens;
-      Util.TranslatableContent msg;
-    case (MESSAGE(error_id, msg_type, severity, msg), tokens)
-      equation
-        //print(" adding message: " + intString(error_id) + "\n");
-        msg_str = Util.translateContent(msg);
-        ErrorExt.addMessage(error_id, msg_type, severity, msg_str, tokens);
-        //print(" succ add " + msg_type_str + " " + severity_string + ",  " + msg + "\n");
-      then
-        ();
-  end match;
+  if not Flags.isSet(Flags.DISABLE_WARNING_MSG) then
+    //print(" adding message: " + intString(error_id) + "\n");
+    MESSAGE(error_id, msg_type, severity, msg) := inErrorMsg;  
+    msg_str := Util.translateContent(msg);
+    ErrorExt.addMessage(error_id, msg_type, severity, msg_str, inMessageTokens);
+    //print(" succ add " + msg_type_str + " " + severity_string + ",  " + msg + "\n");
+  end if;
 end addMessage;
 
 public function addSourceMessage "

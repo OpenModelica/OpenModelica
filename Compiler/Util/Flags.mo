@@ -434,6 +434,8 @@ constant DebugFlag EXTENDS_DYN_OPT = DEBUG_FLAG(132, "extendsDynOpt", false,
   Util.gettext("generat extends NLP, move loops in the optimization problem as constraints. hint: using intial guess from file!"));
 constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(133, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
+constant DebugFlag DISABLE_WARNING_MSG = DEBUG_FLAG(134, "disableWarnings", false,
+  Util.gettext("Disables Warning/Error Massage."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -574,7 +576,8 @@ constant list<DebugFlag> allDebugFlags = {
   ADVANCE_TEARING,
   CONSTJAC,
   EXTENDS_DYN_OPT,
-  REDUCE_DYN_OPT
+  REDUCE_DYN_OPT,
+  DISABLE_WARNING_MSG
 };
 
 public
