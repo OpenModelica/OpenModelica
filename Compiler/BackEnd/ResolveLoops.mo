@@ -2417,7 +2417,7 @@ algorithm
     //update b
     for j in 1:m loop
       arrayUpdate(cA,j, arrayGet(b,iter-1 + j));
-    end for;  
+    end for;
 
     h2 := Expression.makeScalarProduct(v, cA);
     h2 := Expression.expDiv(h2, h);
