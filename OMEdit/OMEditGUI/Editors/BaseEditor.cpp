@@ -97,7 +97,12 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   while (block.isValid() && top <= event->rect().bottom()) {
     /* paint line numbers */
     if (block.isVisible() && bottom >= event->rect().top()) {
-      QString number = QString::number(blockNumber + 1);
+      QString number;
+      if (mpBaseEditor->getModelWidget()) {
+        number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart);
+      } else {
+        number = QString::number(blockNumber + 1);
+      }
       // make the current highlighted line number darker
       if (blockNumber == textCursor().blockNumber()) {
         painter.setPen(QColor(64, 64, 64));
@@ -173,6 +178,11 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
   */
 void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
 {
+  if (mpBaseEditor->getModelWidget()) {
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
+    int lineNumberDifferenceFromStart = lineNumberStart - 1;
+    lineNumber -= lineNumberDifferenceFromStart;
+  }
   const QTextBlock &block = document()->findBlockByNumber(lineNumber - 1); // -1 since text index start from 0
   if (block.isValid()) {
     QTextCursor cursor(block);
@@ -882,7 +892,13 @@ GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
 //! Reimplementation of QDialog::exec
 int GotoLineDialog::exec()
 {
-  mpLineNumberLabel->setText(tr("Enter line number (1 to %1):").arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount())));
+  if (mpBaseEditor->getModelWidget()) {
+    int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
+    mpLineNumberLabel->setText(tr("Enter line number (%1 to %2):").arg(QString::number(lineNumberStart))
+                               .arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount() + lineNumberStart - 1)));
+  } else {
+    mpLineNumberLabel->setText(tr("Enter line number (1 to %1):").arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount())));
+  }
   QIntValidator *intValidator = new QIntValidator(this);
   intValidator->setRange(1, mpBaseEditor->getPlainTextEdit()->blockCount());
   mpLineNumberTextBox->setValidator(intValidator);
