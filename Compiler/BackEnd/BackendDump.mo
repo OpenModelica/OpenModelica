@@ -2655,68 +2655,41 @@ algorithm
   end match;
 end optBooleanString;
 
-public function dumpIncidenceMatrix
-"author: PA
-  Prints the incidence matrix on stdout."
+public function dumpIncidenceMatrix "Prints incidence matrix on stdout."
   input BackendDAE.IncidenceMatrix m;
 protected
-  Integer mlen;
-  String mlen_str;
-  list<list<Integer>> m_1;
+  Integer rowIndex=0;
 algorithm
-  print("\nIncidence Matrix (row: equation)\n");
-  print(UNDERLINE + "\n");
-  mlen := arrayLength(m);
-  mlen_str := intString(mlen);
-  print("number of rows: ");
-  print(mlen_str);
-  print("\n");
-  m_1 := arrayList(m);
-  dumpIncidenceMatrix2(m_1,1);
+  print("\nIncidence Matrix (row: equation)\n" + UNDERLINE + "\n");
+  print("number of rows: " + intString(arrayLength(m)));
+
+  for row in m loop
+    rowIndex := rowIndex+1;
+    print("\n" + intString(rowIndex) + ":");
+    for i in row loop
+      print(" " + intString(i));
+    end for;
+  end for;
   print("\n");
 end dumpIncidenceMatrix;
 
-public function dumpIncidenceMatrixT
-"author: PA
-  Prints the transposed incidence matrix on stdout."
-  input BackendDAE.IncidenceMatrix m;
+public function dumpIncidenceMatrixT "Prints the transposed incidence matrix on stdout."
+  input BackendDAE.IncidenceMatrixT mT;
 protected
-  Integer mlen;
-  String mlen_str;
-  list<list<Integer>> m_1;
+  Integer rowIndex=0;
 algorithm
-  print("\nTranspose Incidence Matrix (row: var)\n");
-  print(UNDERLINE + "\n");
-  mlen := arrayLength(m);
-  mlen_str := intString(mlen);
-  print("number of rows: ");
-  print(mlen_str);
-  print("\n");
-  m_1 := arrayList(m);
-  dumpIncidenceMatrix2(m_1,1);
+  print("\nTransposed Incidence Matrix (row: equation)\n" + UNDERLINE + "\n");
+  print("number of rows: " + intString(arrayLength(mT)));
+
+  for row in mT loop
+    rowIndex := rowIndex+1;
+    print("\n" + intString(rowIndex) + ":");
+    for i in row loop
+      print(" " + intString(i));
+    end for;
+  end for;
   print("\n");
 end dumpIncidenceMatrixT;
-
-protected function dumpIncidenceMatrix2
-"author: PA
-  Helper function to dumpIncidenceMatrix (+T)."
-  input list<list<Integer>> inIntegerLstLst;
-  input Integer rowIndex;
-algorithm
-  _ := match (inIntegerLstLst,rowIndex)
-    local
-      list<Integer> row;
-      list<list<Integer>> rows;
-    case ({},_) then ();
-    case ((row :: rows),_)
-      equation
-        print(intString(rowIndex));print(":");
-        dumpIncidenceRow(row);
-        dumpIncidenceMatrix2(rows,rowIndex+1);
-      then
-        ();
-  end match;
-end dumpIncidenceMatrix2;
 
 public function dumpIncidenceRow
 "author: PA
@@ -2913,89 +2886,33 @@ algorithm
   end matchcontinue;
 end dumpMatching2;
 
-public function dumpMatchingVars "author: PA
-  prints the matching information on stdout."
-  input array<Integer> v;
+public function dumpMatchingVars "Prints matching information on stdout."
+  input array<Integer> ass1 "eqn := ass1[var]";
 protected
-  Integer len;
-  String len_str;
+  Integer varIndex=0;
 algorithm
-  print("Matching\n");
-  print(UNDERLINE + "\n");
-  len := arrayLength(v);
-  len_str := intString(len);
-  print(len_str);
-  print(" variables\n");
-  dumpMatching2Vars(v, 1, len);
+  print("\nMatching\n" + UNDERLINE + "\n");
+  print(intString(arrayLength(ass1)) + " variables\n");
+
+  for i in ass1 loop
+    varIndex := varIndex+1;
+    print("var " + intString(varIndex) + " is solved in eqn " + intString(i) + "\n");
+  end for;
 end dumpMatchingVars;
 
-protected function dumpMatching2Vars "author: PA
-  Helper function to dumpMatching."
-  input array<Integer> v;
-  input Integer i;
-  input Integer len;
-algorithm
-  _ := matchcontinue (v,i,len)
-    local
-      Integer eqn;
-      String s,s2;
-    case (_,_,_)
-      equation
-        true = intLe(i,len);
-        s = intString(i);
-        eqn = v[i];
-        s2 = intString(eqn);
-        print("var " + s + " is solved in eqn " + s2 + "\n");
-        dumpMatching2Vars(v, i+1, len);
-      then
-        ();
-    else
-      then
-        ();
-  end matchcontinue;
-end dumpMatching2Vars;
-
-public function dumpMatchingEqns "author: PA
-  prints the matching information on stdout."
-  input array<Integer> v;
+public function dumpMatchingEqns "Prints matching information on stdout."
+  input array<Integer> ass2 "var := ass2[eqn]";
 protected
-  Integer len;
-  String len_str;
+  Integer eqnIndex=0;
 algorithm
-  print("Matching\n");
-  print(UNDERLINE + "\n");
-  len := arrayLength(v);
-  len_str := intString(len);
-  print(len_str);
-  print(" equations\n");
-  dumpMatching2Eqns(v, 1, len);
-end dumpMatchingEqns;
+  print("\nMatching\n" + UNDERLINE + "\n");
+  print(intString(arrayLength(ass2)) + " equations\n");
 
-protected function dumpMatching2Eqns "author: PA
-  Helper function to dumpMatching."
-  input array<Integer> v;
-  input Integer i;
-  input Integer len;
-algorithm
-  _ := matchcontinue (v,i,len)
-    local
-      Integer eqn;
-      String s,s2;
-    case (_,_,_)
-      equation
-        true = intLe(i,len);
-        s = intString(i);
-        eqn = v[i];
-        s2 = intString(eqn);
-        print("eqn " + s + " is solved for var " + s2 + "\n");
-        dumpMatching2Eqns(v, i+1, len);
-      then
-        ();
-    else
-      then
-        ();
-  end matchcontinue;
-end dumpMatching2Eqns;
+  for i in ass2 loop
+    eqnIndex := eqnIndex+1;
+    print("eqn " + intString(eqnIndex) + " is solved for var " + intString(i) + "\n");
+  end for;
+end dumpMatchingEqns;
 
 public function dumpMarkedEqns
 "Dumps only the equations given as list of indexes to a string."
