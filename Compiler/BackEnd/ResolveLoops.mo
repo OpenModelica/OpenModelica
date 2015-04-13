@@ -2323,7 +2323,8 @@ algorithm
   //qrDecomposition3(ax, n, false, "x");
 
   // A*x = b -> R*x = Q'b
-  (R, Qb, oeqns, ovars, oshared) := qrDecomposition(A, n, b, oeqns, ovars, offset, oshared);
+  //(R, Qb, oeqns, ovars, oshared) := qrDecomposition(A, n, b, oeqns, ovars, offset, oshared);
+  (R, Qb, oeqns, ovars, oshared) := qrDecompositionHouseholder(A, n, b, oeqns, ovars, offset, oshared);
 
   // R*x = Q'*b where x is scaled
   for i in n:-1:1 loop
@@ -2335,6 +2336,157 @@ algorithm
   end for;
 
 end solveLinearSystem4;
+
+protected function qrDecompositionHouseholder
+"
+  QR-Decomposition based on Householder
+  author: Vitalij Ruge
+"
+  input array<DAE.Exp> A;
+  input Integer n;
+  input array<DAE.Exp> ib;
+  input BackendDAE.EquationArray ieqns;
+  input BackendDAE.Variables ivars;
+  input Integer offset;
+  input BackendDAE.Shared ishared;
+  output array<DAE.Exp> R = A;
+  output array<DAE.Exp> b = ib;
+  output BackendDAE.EquationArray oeqns = ieqns;
+  output BackendDAE.Variables ovars = ivars;
+  output BackendDAE.Shared oshared = ishared;
+
+protected
+  array<DAE.Exp> cA = arrayCreate(n,DAE.RCONST(0.0)) "column of A";
+  array<DAE.Exp> v = arrayCreate(n,DAE.RCONST(0.0)) "vec in dyadic tensor";
+  DAE.Exp alpha;
+  DAE.Exp y1;
+  DAE.Exp h,h2;
+  DAE.Exp e1,e2,e;
+  Integer m "cuurrent size";
+  Integer nn = n-1;
+  Integer idxVars = 1 "index for tmp vars";
+  Integer shift;
+algorithm
+  //qrDecomposition3(A,n,true,"A");
+
+  for iter in 1:nn loop
+    m := n - iter + 1;
+
+    //first column
+    qrGet_cA(A,iter,1,n,v);
+    y1 := arrayGet(v,1);
+
+    alpha :=  qrCalc_alpha(v,y1,m);
+    (alpha, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(alpha, "QR$a$" + intString(iter), offset, oeqns, ovars, oshared);
+
+    // calc v
+    e := Expression.expAdd(y1,alpha);
+    (e, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(e, "QR$y1$" + intString(iter), offset, oeqns, ovars, oshared);
+    arrayUpdate(v,1, e);
+
+    // helper for const factor
+    h := Expression.expAdd(y1,alpha);
+    h := Expression.expMul(alpha,h);
+    h := Expression.negate(h);
+    (h, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(h, "QR$h$" + intString(iter), offset, oeqns, ovars, oshared);
+
+    shift := (iter-1)*n + iter;
+    //update R
+    arrayUpdate(R, shift, Expression.negate(alpha));
+    for j in 2:m loop
+      arrayUpdate(R, shift + (j-1)*n, DAE.RCONST(0.0));
+    end for;
+
+    for col in 2:m loop
+      qrGet_cA(A,iter,col,n,cA);
+      h2 := Expression.makeScalarProduct(v, cA);
+      h2 := Expression.expDiv(h2,h);
+     (h2, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(h2, "QR$h2$" + intString(idxVars), offset, oeqns, ovars, oshared);
+      idxVars := idxVars + 1;
+      //vec add
+      for j in 1:m loop
+         e1 := arrayGet(cA,j);
+         e2 := arrayGet(v,j);
+         e := Expression.expAdd(e1,Expression.expMul(h2, e2));
+         (e, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(e, "QR$R$" + intString(idxVars), offset, oeqns, ovars, oshared);
+         idxVars := idxVars + 1;
+         //update A
+         arrayUpdate(A, shift + (j-1)*n + col-1, e);
+      end for;
+    end for;
+    //update b
+    for j in 1:m loop
+      arrayUpdate(cA,j, arrayGet(b,iter-1 + j));
+    end for;  
+
+    h2 := Expression.makeScalarProduct(v, cA);
+    h2 := Expression.expDiv(h2, h);
+    (h2, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(h2, "QR$b_$" + intString(idxVars), offset, oeqns, ovars, oshared);
+    idxVars := idxVars + 1;
+
+    //vec add
+    for j in 1:m loop
+      e1 := arrayGet(cA, j);
+      e2 := arrayGet(v,j);
+      e := Expression.expAdd(e1,Expression.expMul(h2, e2));
+      e := Expression.expand(e);
+      e := ExpressionSimplify.simplify2(e);
+      (e, oeqns, ovars, oshared) := BackendEquation.makeTmpEqnForExp(e, "QR$b$" + intString(idxVars), offset, oeqns, ovars, oshared);
+      idxVars := idxVars + 1;
+      //update b
+      arrayUpdate(b, iter-1+j, e);
+    end for;
+
+  end for;
+  //qrDecomposition3(A,n,true,"R");
+
+end qrDecompositionHouseholder;
+
+protected function qrGet_cA
+"
+  helper for QR-Decomposition based on Householder
+  return column j in A for iteration iter
+  author: Vitalij Ruge
+"
+  input array<DAE.Exp> A;
+  input Integer iter "iteration";
+  input Integer j "column";
+  input Integer n "size";
+  input array<DAE.Exp> cA "output";
+protected
+  Integer shift = (iter-1)*n + iter + j - 1;
+  Integer m = n-iter+1;
+algorithm
+
+  for i in 1:m loop
+    arrayUpdate(cA, i, arrayGet(A,shift+(i-1)*n));
+  end for;
+
+  for i in m+1:n loop
+    arrayUpdate(cA, i, DAE.RCONST(0.0));
+  end for;
+
+end qrGet_cA;
+
+protected function qrCalc_alpha
+"
+  helper for QR-Decomposition based on Householder
+  calculate -> min loss of significance
+  author: Vitalij Ruge
+"
+  input array<DAE.Exp> y;
+  input DAE.Exp y1;
+  input Integer m;
+  output DAE.Exp alpha;
+protected
+  DAE.Exp sgn_y1 = Expression.makeSign(y1);
+  DAE.Exp norm_y = Expression.lenVec(y);
+algorithm
+  norm_y := Expression.makeSum1(list( Expression.expPow(arrayGet(y,j), DAE.RCONST(2.0)) for j in 1:m ));
+  norm_y := Expression.makePureBuiltinCall("sqrt",{norm_y},DAE.T_REAL_DEFAULT);
+  alpha := Expression.expMul(sgn_y1,norm_y);
+end qrCalc_alpha;
+
 
 protected function qrDecomposition
 "

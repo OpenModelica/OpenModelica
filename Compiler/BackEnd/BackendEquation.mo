@@ -2231,11 +2231,11 @@ protected
   DAE.ComponentRef cr;
   DAE.ComponentRef cr_time = ComponentReference.makeCrefIdent("time", DAE.T_REAL_DEFAULT , {});
   BackendDAE.Var tmpvar;
-  String name_ = "OMC__HELPER__VAR" + intString(offset) + "$" + name;
+  String name_ = "__OMC__" + intString(offset) + "$" + name;
   DAE.Exp x, y;
   BackendDAE.Equation eqn;
   list<BackendDAE.Var> eqnVars, eqnKnVars, inputsKnVars, paramKnVars;
-  BackendDAE.Variables knowVars = BackendVariable.daeKnVars(oshared);
+  BackendDAE.Variables knowVars;
   Boolean b;
 
 algorithm
@@ -2251,12 +2251,13 @@ algorithm
     eqn := BackendDAE.EQUATION(x, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     //BackendDump.printEquation(eqn);
     eqnVars := equationVars(eqn, ivars);
-    eqnKnVars := equationVars(eqn, knowVars);
-
-    (inputsKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isInput);
-
-    b := List.isEmpty(eqnVars) and List.isEmpty(inputsKnVars) and not Expression.expHasCref(y,cr_time);
-
+    b := List.isEmpty(eqnVars) and not Expression.expHasCref(y,cr_time);
+    if b then
+      knowVars := BackendVariable.daeKnVars(oshared);
+      eqnKnVars := equationVars(eqn, knowVars);
+      (inputsKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isInput);
+       b := List.isEmpty(inputsKnVars);
+    end if;
     if b then
       tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
       (paramKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isParam);
