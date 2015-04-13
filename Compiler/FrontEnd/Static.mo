@@ -12989,7 +12989,7 @@ algorithm
     subs := new_sub :: subs;
     i := i + 1;
   end for;
-  
+
   outCref := Absyn.crefSetLastSubs(outCref, listReverse(subs));
 end replaceEndInSubs;
 
@@ -13026,7 +13026,7 @@ algorithm
 
     case Absyn.CREF()
       then Absyn.CREF(replaceEnd(inExp.componentRef));
-      
+
     else Absyn.traverseExpShallow(inExp, inTuple, replaceEndTraverser);
 
   end match;

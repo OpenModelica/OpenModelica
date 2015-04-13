@@ -4226,7 +4226,7 @@ algorithm
   outIsFullyQualified := match inCref
     case CREF_FULLYQUALIFIED() then true;
     else false;
-  end match; 
+  end match;
 end crefIsFullyQualified;
 
 public function crefMakeFullyQualified
@@ -6493,8 +6493,8 @@ protected
   Option<Exp> guard_exp, range_exp;
 algorithm
   ITERATOR(name, guard_exp, range_exp) := inIterator;
-  guard_exp := Util.applyOption1(guard_exp, inFunc, inArg); 
-  range_exp := Util.applyOption1(range_exp, inFunc, inArg); 
+  guard_exp := Util.applyOption1(guard_exp, inFunc, inArg);
+  range_exp := Util.applyOption1(range_exp, inFunc, inArg);
   outIterator := ITERATOR(name, guard_exp, range_exp);
 end traverseExpShallowIterator;
 

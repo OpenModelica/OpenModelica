@@ -607,7 +607,7 @@ algorithm
       inPrefix, inName, source);
     outCache := InstFunction.addRecordConstructorFunction(outCache, inEnv,
       Types.arrayElementType(outType), SCode.elementInfo(inClass));
-    
+
     Error.updateCurrentComponent("", Absyn.dummyInfo);
   else
     Error.updateCurrentComponent("", Absyn.dummyInfo);
