@@ -53,9 +53,11 @@ enum DASSL_JACOBIAN
 
 typedef struct DASSL_DATA{
 
-  int dasslSteps;        /* if TRUE then dassl internal steps are used to store results */
-  int dasslRootFinding;     /* if TRUE then the internal root finding is used */
-  int dasslJacobian;      /* specifices the method to calculate the jacobian matrix */
+  int dasslSteps;               /* if TRUE then dassl internal steps are used to store results */
+  unsigned int dasslStepsFreq;  /* value specifies the output frequency regarding to time steps. Used in dasslSteps mode. */
+  double dasslStepsTime;        /* value specifies the time increment when output happens. Used in dasslSteps mode. */
+  int dasslRootFinding;         /* if TRUE then the internal root finding is used */
+  int dasslJacobian;            /* specifices the method to calculate the jacobian matrix */
   int dasslAvoidEventRestart;   /* if TRUE then no restart after an event is performed */
 
   unsigned int* dasslStatistics;

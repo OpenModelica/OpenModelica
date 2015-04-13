@@ -313,6 +313,31 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   }
   infoStreamPrint(LOG_SOLVER, 0, "use equidistant time grid %s", dasslData->dasslSteps?"NO":"YES");
 
+  /* check if Flags FLAG_NOEQUIDISTANT_OUT_FREQ or FLAG_NOEQUIDISTANT_OUT_TIME are set */
+  if (dasslData->dasslSteps){
+    if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ])
+    {
+      dasslData->dasslStepsFreq = atoi(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_FREQ]);
+    }
+    else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME])
+    {
+      dasslData->dasslStepsTime = atof(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_TIME]);
+      dasslData->rwork[1] = dasslData->dasslStepsTime;
+      dasslData->info[6] = 1;
+      infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", dasslData->rwork[1]);
+    } else {
+      dasslData->dasslStepsFreq = 1;
+      dasslData->dasslStepsTime = 0.0;
+    }
+
+    if  (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ] && omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
+      warningStreamPrint(LOG_STDOUT, 0, "The flags are  \"noEquidistantOutputFrequency\" "
+                                     "and \"noEquidistantOutputTime\" are in opposition "
+                                     "to each other. The flag \"noEquidistantOutputFrequency\" superiors.");
+     }
+     infoStreamPrint(LOG_SOLVER, 0, "as the output frequency control is used: %d", dasslData->dasslStepsFreq);
+     infoStreamPrint(LOG_SOLVER, 0, "as the output frequency time step control is used: %f", dasslData->dasslStepsTime);
+  }
 
   /* if FLAG_DASSL_JACOBIAN is set, choose dassl jacobian calculation method */
   if (omc_flag[FLAG_DASSL_JACOBIAN])
@@ -506,6 +531,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   unsigned int ui = 0;
   int retVal = 0;
   int saveJumpState;
+  unsigned int dasslStepsOutputCounter = 1;
   threadData_t *threadData = data->threadData;
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
@@ -645,7 +671,23 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
        */
       RHSFinalFlag = 1;
       updateContinuousSystem(data);
-      sim_result.emit(&sim_result, data);
+
+      if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ]){
+        /* output every n-th time step */
+        if (dasslStepsOutputCounter >= dasslData->dasslStepsFreq){
+          sim_result.emit(&sim_result, data);
+          dasslStepsOutputCounter = 0; /* next line set it to one */
+        }
+        dasslStepsOutputCounter++;
+      } else if (omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]){
+        /* output when time>=k*timeValue */
+        if (solverInfo->currentTime > dasslStepsOutputCounter * dasslData->dasslStepsTime){
+          sim_result.emit(&sim_result, data);
+          dasslStepsOutputCounter++;
+        }
+      } else {
+        sim_result.emit(&sim_result, data);
+      }
       RHSFinalFlag = 0;
 
     }
