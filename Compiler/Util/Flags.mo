@@ -434,8 +434,6 @@ constant DebugFlag EXTENDS_DYN_OPT = DEBUG_FLAG(132, "extendsDynOpt", false,
   Util.gettext("generat extends NLP, move loops in the optimization problem as constraints. hint: using intial guess from file!"));
 constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(133, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
-constant DebugFlag DISABLE_WARNING_MSG = DEBUG_FLAG(134, "disableWarnings", false,
-  Util.gettext("Disables Warning/Error Massage."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -576,8 +574,7 @@ constant list<DebugFlag> allDebugFlags = {
   ADVANCE_TEARING,
   CONSTJAC,
   EXTENDS_DYN_OPT,
-  REDUCE_DYN_OPT,
-  DISABLE_WARNING_MSG
+  REDUCE_DYN_OPT
 };
 
 public
@@ -1021,7 +1018,7 @@ constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(66, "cppFlags",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({""}), NONE(),
   Util.gettext("Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-Wall)"));
 
-  constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquations",
+constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquations",
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Disables module")),
@@ -1033,6 +1030,9 @@ constant ConfigFlag CPP_FLAGS = CONFIG_FLAG(66, "cppFlags",
     })),
     Util.gettext("Specifies method that removes simple equations."));
 
+constant ConfigFlag DEMO_MODE = CONFIG_FLAG(68, "demoMode",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Disable Warning/Error Massages."));
 
 
 protected
@@ -1106,7 +1106,8 @@ constant list<ConfigFlag> allConfigFlags = {
   CSE_EACHCALL,
   MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM,
   CPP_FLAGS,
-  REMOVE_SIMPLE_EQUATIONS
+  REMOVE_SIMPLE_EQUATIONS,
+  DEMO_MODE
 };
 
 public function new

@@ -928,7 +928,7 @@ protected
   ErrorID error_id;
   Util.TranslatableContent msg;
 algorithm
-  if not Flags.isSet(Flags.DISABLE_WARNING_MSG) then
+  if not Flags.getConfigBool(Flags.DEMO_MODE) then
     //print(" adding message: " + intString(error_id) + "\n");
     MESSAGE(error_id, msg_type, severity, msg) := inErrorMsg;
     msg_str := Util.translateContent(msg);
