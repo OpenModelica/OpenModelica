@@ -3220,7 +3220,7 @@ public function generateCrefsExpFromExp
   input DAE.ComponentRef inCrefPrefix;
   output DAE.Exp outCrefExp;
 algorithm
-  outCrefExp := match(inExp,inCrefPrefix)
+  outCrefExp := match inExp
     local
       String name;
       DAE.Type ty;
@@ -3231,27 +3231,33 @@ algorithm
       Boolean b;
       DAE.CallAttributes attr;
 
-    case (DAE.CREF(componentRef=DAE.WILD()), _) then inExp;
+    case DAE.CREF(componentRef=DAE.WILD()) then inExp;
 
-    case (DAE.ARRAY(ty=ty, scalar=b, array=explst), _)
+    case DAE.ARRAY(ty=ty, scalar=b, array=explst)
       equation
         explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
       then DAE.ARRAY(ty, b, explst);
 
-    case (DAE.CALL(path=p1,expLst=explst,attr=attr as DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
+    case DAE.CALL(path=p1,expLst=explst,attr=attr as DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2))))
       equation
         true = Absyn.pathEqual(p1,p2) "is record constructor";
         explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
       then
         DAE.CALL(p1,explst,attr);
 
-    case (DAE.CREF(componentRef=cr,ty=ty),_)
+    case DAE.CREF(componentRef=cr,ty=ty)
       equation
         name = ComponentReference.crefModelicaStr(cr);
         cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
         e = makeCrefExp(cr, ty);
       then
         e;
+    case DAE.UNARY(exp=e) 
+      then negate(generateCrefsExpFromExp(e, inCrefPrefix)); /*ToDo: check*/
+    else
+      equation
+        print("Expression.generateCrefsExpFromExp: fail for" + ExpressionDump.printExpStr(inExp) + "\n");
+      then fail();
   end match;
 end generateCrefsExpFromExp;
 
@@ -3296,6 +3302,15 @@ algorithm
         {e};
 
     case (DAE.CREF(),NONE()) then {inExp};
+
+    case (DAE.UNARY(exp=e),_)
+      then generateCrefsExpLstFromExp(e, inCrefPrefix);/*ToDo: check*/
+
+    else
+      equation
+        print("Expression.generateCrefsExpLstFromExp: fail for" + ExpressionDump.printExpStr(inExp) + "\n");
+      then fail();
+
   end match;
 end generateCrefsExpLstFromExp;
 

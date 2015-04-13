@@ -7015,6 +7015,9 @@ match lhsexp
     ; separator="\n"
     %>
     >>
+  /*TODO check*/
+  case ARRAY(__) then
+    algStmtAssignArrWithRhsExpStr(lhsexp, rhsExpStr, context, &preExp, &varDecls, &auxFunction)
   else
     error(sourceInfo(), 'algStmtAssignWithRhsExpStr: Unhandled lhs expression. <%ExpressionDump.printExpStr(lhsexp)%>')
 end algStmtAssignWithRhsExpStr;
