@@ -185,6 +185,7 @@ private:
   QList<SimulationOutputWidget*> mSimulationOutputWidgetsList;
   LibraryTreeNode *mpLibraryTreeNode;
   QString mClassName;
+  QString mFileName;
   bool mIsReSimulate;
 
   void setUpForm();

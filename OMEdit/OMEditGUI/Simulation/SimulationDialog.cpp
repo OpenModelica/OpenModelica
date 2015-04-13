@@ -541,6 +541,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
   if (!isReSimulate) {
     mIsReSimulate = false;
     mClassName = mpLibraryTreeNode->getNameStructure();
+    mFileName = mpLibraryTreeNode->getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulation).append(" - ").append(mClassName));
     mpSimulationHeading->setText(QString(Helper::simulation).append(" - ").append(mClassName));
     // if the class has experiment annotation then read it.
@@ -562,6 +563,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
   } else {
     mIsReSimulate = true;
     mClassName = simulationOptions.getClassName();
+    mFileName = simulationOptions.getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::reSimulation).append(" - ").append(mClassName));
     mpSimulationHeading->setText(QString(Helper::reSimulation).append(" - ").append(mClassName));
     // Simulation Interval
@@ -929,7 +931,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setIsValid(true);
   simulationOptions.setReSimulate(mIsReSimulate);
   simulationOptions.setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
-  simulationOptions.setFileName(mpLibraryTreeNode->getFileName());
+  simulationOptions.setFileName(mFileName);
   return simulationOptions;
 }
 
