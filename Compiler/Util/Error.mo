@@ -930,7 +930,7 @@ protected
 algorithm
   if not Flags.isSet(Flags.DISABLE_WARNING_MSG) then
     //print(" adding message: " + intString(error_id) + "\n");
-    MESSAGE(error_id, msg_type, severity, msg) := inErrorMsg;  
+    MESSAGE(error_id, msg_type, severity, msg) := inErrorMsg;
     msg_str := Util.translateContent(msg);
     ErrorExt.addMessage(error_id, msg_type, severity, msg_str, inMessageTokens);
     //print(" succ add " + msg_type_str + " " + severity_string + ",  " + msg + "\n");
