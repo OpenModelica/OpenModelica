@@ -150,7 +150,7 @@ void SimController::StartVxWorks(SimSettings simsettings,string modelKey)
     {
         boost::shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey).lock();
         IGlobalSettings* global_settings = _config->getGlobalSettings();
-    
+
         global_settings->useEndlessSim(true);
         global_settings->setStartTime(simsettings.start_time);
         global_settings->setEndTime(simsettings.end_time);
@@ -163,16 +163,16 @@ void SimController::StartVxWorks(SimSettings simsettings,string modelKey)
         global_settings->setAlarmTime(simsettings.timeOut);
         global_settings->setLogType(simsettings.logType);
         global_settings->setOutputPointType(simsettings.outputPointType);
-    
+
         /*boost::shared_ptr<SimManager>*/ _simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
-    
+
         ISolverSettings* solver_settings = _config->getSolverSettings();
         solver_settings->setLowerLimit(simsettings.lower_limit);
         solver_settings->sethInit(simsettings.lower_limit);
         solver_settings->setUpperLimit(simsettings.upper_limit);
         solver_settings->setRTol(simsettings.tolerance);
         solver_settings->setATol(simsettings.tolerance);
-    
+
         _simMgr->initialize();
     }
     catch( ModelicaSimulationError& ex)
@@ -194,9 +194,9 @@ void SimController::Start(SimSettings simsettings, string modelKey)
     try
     {
         boost::shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey).lock();
-    
+
         IGlobalSettings* global_settings = _config->getGlobalSettings();
-    
+
         global_settings->setStartTime(simsettings.start_time);
         global_settings->setEndTime(simsettings.end_time);
         global_settings->sethOutput(simsettings.step_size);
