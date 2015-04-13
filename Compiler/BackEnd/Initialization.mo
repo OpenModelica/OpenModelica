@@ -1552,7 +1552,7 @@ protected function consistencyCheck "
   output list<Integer> outInconsistentEquations "If this list is not empty then the initialization problem is inconsistent and has no solution.";
   output list<Integer> outUncheckedEquations "These equations need to be checked numerically.";
 algorithm
-  (outConsistentEquations, outInconsistentEquations, outUncheckedEquations) := matchcontinue(inRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn)
+  (outConsistentEquations, outInconsistentEquations, outUncheckedEquations) := matchcontinue(inRedundantEqns)
     local
       list<Integer> outRange, resiRange, flatComps, markedComps;
       list<Integer> outListComps, outLoopListComps, restRedundantEqns;
@@ -1564,10 +1564,10 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.EquationArray substEqns;
 
-    case ({}, _, _, _, _, _, _, _, _, _)
+    case {}
     then ({}, {}, {});
 
-    case (currRedundantEqn::restRedundantEqns, _, _, _, _, _, _, _, _, _) equation
+    case currRedundantEqn::restRedundantEqns equation
       nVars = BackendVariable.varsSize(inVars);
       _ = BackendDAEUtil.equationSize(inEqns);
     //BackendDump.dumpMatchingVars(vecVarToEqs);
@@ -1616,7 +1616,8 @@ algorithm
     //BackendDump.dumpEquationArray(substEqns, "substEqns");
     then (consistentEquations, inconsistentEquations, uncheckedEquations);
 
-    case (currRedundantEqn::restRedundantEqns, _, _, _, _, _, _, _, _, _) equation
+    // add current equation to list of inconsistent equations
+    case currRedundantEqn::restRedundantEqns equation
       (consistentEquations, inconsistentEquations, uncheckedEquations) = consistencyCheck(restRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn);
     then (consistentEquations, currRedundantEqn::inconsistentEquations, uncheckedEquations);
   end matchcontinue;
@@ -1627,28 +1628,28 @@ protected function isVarExplicitSolvable
   input Integer inVarID;
   output Boolean outSolvable;
 algorithm
-  outSolvable := matchcontinue(inElem, inVarID)
+  outSolvable := matchcontinue(inElem)
     local
       Integer id;
       BackendDAE.AdjacencyMatrixElementEnhanced elem;
       Boolean b;
 
-    case ({}, _)
+    case {}
     then true;
 
-    //case ((id, BackendDAE.SOLVABILITY_SOLVED())::elem, _) equation
+    //case (id, BackendDAE.SOLVABILITY_SOLVED())::elem equation
     //  true = intEq(id, inVarID);
     //then false;
 
-    case ((id, BackendDAE.SOLVABILITY_UNSOLVABLE())::_, _) equation
+    case (id, BackendDAE.SOLVABILITY_UNSOLVABLE())::_ equation
       true = intEq(id, inVarID);
     then false;
 
-    case ((id, BackendDAE.SOLVABILITY_NONLINEAR())::_, _) equation
+    case (id, BackendDAE.SOLVABILITY_NONLINEAR())::_ equation
       true = intEq(id, inVarID);
     then false;
 
-    case ((_, _)::elem, _) equation
+    case (_, _)::elem equation
       b = isVarExplicitSolvable(elem, inVarID);
     then b;
   end matchcontinue;
@@ -1665,14 +1666,14 @@ algorithm
       list<Integer> currComp, listComps, loopListComps;
       list<list<Integer>> restComps;
 
-    case ({})
+    case {}
     then ({}, {});
 
-    case ({currIndex}::restComps) equation
+    case {currIndex}::restComps equation
       (listComps, loopListComps) = splitStrongComponents(restComps);
     then (currIndex::listComps, loopListComps);
 
-    case (currComp::restComps) equation
+    case currComp::restComps equation
       (listComps, loopListComps) = splitStrongComponents(restComps);
       loopListComps = listAppend(currComp, loopListComps);
     then (listComps, loopListComps);
@@ -1717,20 +1718,17 @@ protected
   list<Integer> varList;
   list<Integer> markedEqns;
 algorithm
-  outMarkedEqns := matchcontinue (inUnassignedEqn, inVecVarToEq, inM, inFlatComps, inLoopListComps)
-    case (_, _, _, _, _) equation
-      false = listMember(inUnassignedEqn, inLoopListComps);
-      varList = inM[inUnassignedEqn];
-      markedEqns = compsMarker2(varList, inVecVarToEq, inM, inFlatComps, {}, inLoopListComps);
+  try
+    false := listMember(inUnassignedEqn, inLoopListComps);
+    varList := inM[inUnassignedEqn];
+    markedEqns := compsMarker2(varList, inVecVarToEq, inM, inFlatComps, {}, inLoopListComps);
 
-      outMarkedEqns = downCompsMarker(listReverse(inFlatComps), inVecVarToEq, inM, inFlatComps, markedEqns, inLoopListComps);
-    then outMarkedEqns;
-
-    else equation
-      // TODO: change the message
-      Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
-    then fail();
-  end matchcontinue;
+    outMarkedEqns := downCompsMarker(listReverse(inFlatComps), inVecVarToEq, inM, inFlatComps, markedEqns, inLoopListComps);
+  else
+    // TODO: change the message
+    Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
+    fail();
+  end try;
 end compsMarker;
 
 protected function compsMarker2
@@ -1742,23 +1740,23 @@ protected function compsMarker2
   input list<Integer> inLoopListComps;
   output list<Integer> outMarkedEqns;
 algorithm
-  outMarkedEqns := matchcontinue (inVarList, inVecVarToEq, inM, inFlatComps, inMarkedEqns, inLoopListComps)
+  outMarkedEqns := matchcontinue (inVarList)
     local
       Integer indexVar, indexEq;
       list<Integer> var_list2, var_list3;
       list<Integer> markedEqns;
 
-    case ({}, _, _, _, _, _) equation
+    case {} equation
     then inMarkedEqns;
 
-    case (indexVar::var_list2, _, _, _, _, _) equation
+    case indexVar::var_list2 equation
       indexEq = inVecVarToEq[indexVar];
       false = listMember(indexEq, inLoopListComps);
       false = listMember(indexEq, inMarkedEqns);
       markedEqns = compsMarker2(var_list2, inVecVarToEq, inM, inFlatComps, inMarkedEqns, inLoopListComps);
     then indexEq::markedEqns;
 
-    case (indexVar::var_list2, _, _, _, _, _) equation
+    case indexVar::var_list2 equation
       indexEq = inVecVarToEq[indexVar];
       false = listMember(indexEq, inLoopListComps);
       true = listMember(indexEq, inMarkedEqns);
@@ -1780,23 +1778,23 @@ protected function downCompsMarker
   input list<Integer> inLoopListComps;
   output list<Integer> outMarkedEqns;
 algorithm
-  outMarkedEqns := matchcontinue (unassignedEqns, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps)
+  outMarkedEqns := matchcontinue (unassignedEqns)
     local
       list<Integer> unassignedEqns2, var_list;
       Integer indexUnassigned, marker;
       list<Integer> markedEqns;
 
-    case ({}, _, _, _, _, _)
+    case {}
     then inMarkedEqns;
 
-    case (indexUnassigned::unassignedEqns2, _, _, _, _, _) equation
+    case indexUnassigned::unassignedEqns2 equation
       true = listMember(indexUnassigned, inMarkedEqns);
       var_list = m[indexUnassigned];
       markedEqns = compsMarker2(var_list, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
       markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, markedEqns, inLoopListComps);
     then markedEqns;
 
-    case (_::unassignedEqns2, _, _, _, _, _) equation
+    case _::unassignedEqns2 equation
       markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
     then markedEqns;
   end matchcontinue;
@@ -1813,7 +1811,7 @@ protected function setupVarReplacements
   input BackendDAE.Shared inShared;
   output BackendVarTransform.VariableReplacements outRepls;
 algorithm
-  outRepls := matchcontinue (inMarkedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME)
+  outRepls := matchcontinue (inMarkedEqns)
     local
       Integer markedEqn;
       list<Integer> markedEqns;
@@ -1827,10 +1825,10 @@ algorithm
       DAE.Exp exp, exp1, x;
       DAE.FunctionTree funcs;
 
-    case ({}, _, _, _, _, _, _)
+    case {}
     then inRepls;
 
-    case (markedEqn::markedEqns, _, _, _, _,  _, _) equation
+    case markedEqn::markedEqns equation
       indexVar = inVecEqToVar[markedEqn];
       true = isVarExplicitSolvable(inME[markedEqn], indexVar);
       var = BackendVariable.getVarAt(inVars, indexVar);
@@ -1850,7 +1848,7 @@ algorithm
       repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, repls, inMapIncRowEqn, inME, inShared);
     then repls;
 
-    case (_::markedEqns, _, _, _, _, _, _) equation
+    case _::markedEqns equation
       repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME, inShared);
     then repls;
   end matchcontinue;
@@ -1886,7 +1884,7 @@ protected function getConsistentEquation "author: mwenzler"
   output Boolean outConsistent;
   output list<Integer> outRemovedEqns;    // problem with parameter in the equation
 algorithm
-  (outUnassignedEqns, outConsistent, outRemovedEqns) := matchcontinue(inUnassignedEqn, inEqns, inEqnsOrig, inM, vecVarToEqs, vars, shared, counter)
+  (outUnassignedEqns, outConsistent, outRemovedEqns) := matchcontinue(inUnassignedEqn)
     local
       Integer currEqID, currVarID, currID, nVars, nEqns;
       list<Integer> unassignedEqns, unassignedEqns2, listVar, removedEqns;
@@ -1907,22 +1905,22 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> list_inEqns;
 
-    case (currID, _, _, _, _, _, _, _) equation
+    case _ equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
-      eqn = BackendEquation.equationNth1(inEqns, currID);
+      eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
       (exp, _) = ExpressionSimplify.simplify(exp);
       true = Expression.isZero(exp);
       //((_, listParameter))=parameterCheck((exp, {}));
       //false=intGt(listLength(listParameter), 0);
-      eqn = BackendEquation.equationNth1(inEqnsOrig, currID);
+      eqn = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
-    then ({currID}, true, {});
+    then ({inUnassignedEqn}, true, {});
 
-    case (_, _, _, _, _, _, _, _) equation
+    case _ equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intGt(counter, nEqns-nVars);
@@ -1930,12 +1928,12 @@ algorithm
       Error.addCompilerError("Initialization problem is structural singular. Please, check the initial conditions.");
     then ({}, true, {});
 
-    case (currID, _, _, _, _, _, _, _) equation
+    case _ equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
 
-      eqn = BackendEquation.equationNth1(inEqns, currID);
+      eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
       (exp, _) = ExpressionSimplify.simplify(exp);
@@ -1944,15 +1942,15 @@ algorithm
       ((_, listParameter))=parameterCheck((exp, {}));
       false=intGt(listLength(listParameter), 0);
 
-      eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
+      eqn2 = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerError("The initialization problem is inconsistent due to the following equation: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
     then ({}, false, {});
 
-    case (currID, _, _, _, _, _, _, _) equation
+    case _ equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
-      eqn = BackendEquation.equationNth1(inEqns, currID);
+      eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
       (exp, _) = ExpressionSimplify.simplify(exp);
@@ -1962,24 +1960,24 @@ algorithm
       true=intGt(listLength(listParameter), 0);
 
       list_inEqns=BackendEquation.equationList(inEqns);
-      list_inEqns = List.set(list_inEqns, currID, eqn);
+      list_inEqns = List.set(list_inEqns, inUnassignedEqn, eqn);
       eqns = BackendEquation.listEquation(list_inEqns);
       funcs = BackendDAEUtil.getFunctions(shared);
       system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
       (_, m, _, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.NORMAL(), SOME(funcs));
-      listVar=m[currID];
+      listVar=m[inUnassignedEqn];
       false=intEq(0, listLength(listVar));
 
-      _ = BackendEquation.equationNth1(inEqnsOrig, currID);
+      _ = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
     then ({}, false, {});
 
-    case (currID, _, _, _, _, _, _, _) equation
-      //true = intEq(listLength(inM[currID]), 0);
+    case _ equation
+      //true = intEq(listLength(inM[inUnassignedEqn]), 0);
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
-      eqn = BackendEquation.equationNth1(inEqns, currID);
+      eqn = BackendEquation.equationNth1(inEqns, inUnassignedEqn);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
       (exp, _) = ExpressionSimplify.simplify(exp);
@@ -1988,9 +1986,9 @@ algorithm
       ((_, listParameter))=parameterCheck((exp, {}));
       true=intGt(listLength(listParameter), 0);
 
-      eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
+      eqn2 = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerWarning("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
-    then ({}, true, {currID});
+    then ({}, true, {inUnassignedEqn});
   end matchcontinue;
 end getConsistentEquation;
 
