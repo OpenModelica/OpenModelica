@@ -3252,7 +3252,7 @@ algorithm
         e = makeCrefExp(cr, ty);
       then
         e;
-    case DAE.UNARY(exp=e) 
+    case DAE.UNARY(exp=e)
       then negate(generateCrefsExpFromExp(e, inCrefPrefix)); /*ToDo: check*/
     else
       equation
