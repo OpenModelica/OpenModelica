@@ -1983,7 +1983,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of Tarjan\n\n");
       end if;
-      (order,causal) = Tarjan(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,true);
+      (order,causal) = Tarjan(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of Tarjan\n" + BORDER + "\n\n");
       end if;
@@ -2028,7 +2028,7 @@ algorithm
         print("\n" + BORDER + "\nBEGINNING of Tarjan\n\n");
       end if;
       tvars = listAppend(tvars,tvarsIn);
-      (order,causal) = Tarjan(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn,true);
+      (order,causal) = Tarjan(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,{},mapEqnIncRow,mapIncRowEqn);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of Tarjan\n" + BORDER + "\n\n");
       end if;
@@ -3013,38 +3013,36 @@ protected function Tarjan "Modified matching algorithm according to Tarjan.
   input list<Integer> eqQueueIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
-  input Boolean assignable;
   output list<list<Integer>> orderOut;
   output Boolean causal;
 protected
-  list<Integer> subOrder,unassigned,eqQueue;
-  list<list<Integer>> order;
-  Boolean ass;
+  list<Integer> subOrder,unassigned,eqQueue=eqQueueIn;
+  list<list<Integer>> order=orderIn;
+  Boolean assignable = true;
 algorithm
-  if assignable then
+  while assignable loop
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nTarjanAssignment:\n");
     end if;
-    (eqQueue,order,ass) := TarjanAssignment(eqQueueIn,mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn);
-    (orderOut,causal) := Tarjan(mIn,mtIn,meIn,metIn,ass1In,ass2In,order,eqQueue,mapEqnIncRow,mapIncRowEqn,ass);
-  else
-    ((_,unassigned)) := Array.fold(ass1In,getUnassigned,(1,{}));
+    (eqQueue,order,assignable) := TarjanAssignment(eqQueue,mIn,mtIn,meIn,metIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn);
+  end while;
+
+  ((_,unassigned)) := Array.fold(ass1In,getUnassigned,(1,{}));
     if listEmpty(unassigned) then
-      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\ncausal\n");
-      end if;
-      subOrder := listGet(orderIn,1);
-      subOrder := listReverse(subOrder);
-      order := List.deletePositions(orderIn,{0});
-      orderOut := subOrder::order;
-      causal := true;
-    else
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\nnoncausal\n");
-      end if;
-      orderOut := orderIn;
-      causal := false;
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("\ncausal\n");
     end if;
+    subOrder := listGet(order,1);
+    subOrder := listReverse(subOrder);
+    order := List.deletePositions(order,{0});
+    orderOut := subOrder::order;
+    causal := true;
+  else
+    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("\nnoncausal\n");
+    end if;
+    orderOut := order;
+    causal := false;
   end if;
 end Tarjan;
 
