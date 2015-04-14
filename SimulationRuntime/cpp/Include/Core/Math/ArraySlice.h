@@ -91,7 +91,7 @@ template<class T>
 class ArraySlice: public BaseArray<T> {
  public:
   ArraySlice(BaseArray<T> &baseArray, const vector<Slice> &slice)
-    : BaseArray<T>(baseArray.isStatic())
+    : BaseArray<T>(baseArray.isStatic(), true)
     , _baseArray(baseArray)
     , _isets(slice.size())
     , _idxs(slice.size())
@@ -215,6 +215,13 @@ class ArraySlice: public BaseArray<T> {
   virtual T* getData() {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                   "Can't get pointer to write to ArraySlice");
+  }
+
+  virtual void getDataCopy(T data[], size_t n) const {
+    if (n != _nelems)
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                    "Wrong number of elements in getDataCopy");
+    getDataDim(1, data);
   }
 
   virtual const T* getData() const {
