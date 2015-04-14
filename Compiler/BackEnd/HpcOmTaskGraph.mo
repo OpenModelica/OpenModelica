@@ -4393,7 +4393,7 @@ algorithm
   commCosts := getCommCostsOnly(commCosts);
   // estimate the executionCosts
   exeCostsLst := List.flatten(List.map3(List.intRange(listLength(compsLst)),estimateCosts0,compsLst,eqSystems,shared));
-  
+
   //overwrite old values
   compIdx := 1;
   for exeCost in exeCostsLst loop

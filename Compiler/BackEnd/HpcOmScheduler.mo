@@ -215,7 +215,7 @@ algorithm
         //find the best thread for scheduling
         threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
         ((threadId, threadFinishTime)) = getThreadFinishTimesMin(1,threadFinishTimes,-1,0.0);
-        
+
         tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
         threadTasks = arrayGet(allThreadTasks,threadId);
         simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
@@ -6284,8 +6284,8 @@ algorithm
   oTypeString := match(iTask)
     case(HpcOmSimCode.SCHEDULED_TASK()) then "Scheduled task";
     case(HpcOmSimCode.CALCTASK()) then "Calctask";
-    case(HpcOmSimCode.CALCTASK_LEVEL()) then "Calctask level";  
-    case(HpcOmSimCode.DEPTASK()) then "Deptask";  
+    case(HpcOmSimCode.CALCTASK_LEVEL()) then "Calctask level";
+    case(HpcOmSimCode.DEPTASK()) then "Deptask";
     case(HpcOmSimCode.PREFETCHTASK()) then "Prefetch task";
     case(HpcOmSimCode.TASKEMPTY()) then "Empty task";
     else then "Unknown";

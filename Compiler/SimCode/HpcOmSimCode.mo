@@ -41,7 +41,7 @@ encapsulated package HpcOmSimCode
       Option<HpcOmSimCode.Schedule> daeSchedule;
       Option<HpcOmSimCode.Schedule> odeSchedule;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
-    end HPCOMDATA;  
+    end HPCOMDATA;
   end HpcOmData;
 
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way

@@ -3462,9 +3462,9 @@ package HpcOmSimCode
       Option<Schedule> daeSchedule;
       Option<Schedule> odeSchedule;
       Option<MemoryMap> hpcOmMemory;
-    end HPCOMDATA;  
+    end HPCOMDATA;
   end HpcOmData;
-  
+
   uniontype CommunicationInfo //stores more detailed information about a communication (edge)
     record COMMUNICATION_INFO
       list<SimCodeVar.SimVar> floatVars; //the float, int and boolean variables that have to be transfered
