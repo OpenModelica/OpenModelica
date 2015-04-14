@@ -74,6 +74,46 @@ public constant Integer FONTSIZE_STANDARD   = 12;
 public constant Integer FONTSIZE_BIG   = 20;
 public constant Integer FONTSIZE_SMALL   = 8;
 
+//----------------------------
+//  Visualization
+//----------------------------
+
+public uniontype Visualization
+  record SHAPE
+    String ident;
+    String shapeType;
+    array<list<DAE.Exp>> T;
+    array<DAE.Exp> r;
+    array<DAE.Exp> r_shape;
+    array<DAE.Exp> lengthDir;
+    array<DAE.Exp> widthDir;
+    DAE.Exp length;
+    DAE.Exp width;
+    DAE.Exp height;
+    DAE.Exp extra;
+    array<DAE.Exp> color;
+    DAE.Exp specularCoeff;
+  end SHAPE;
+end Visualization;
+
+public uniontype VisualizationTPL
+  record SHAPE_TPL
+    String ident;
+    String shapeType;
+    array<list<String>> T;
+    array<String> r;
+    array<String> r_shape;
+    array<String> lengthDir;
+    array<String> widthDir;
+    String length;
+    String width;
+    String height;
+    String extra;
+    array<String> color;
+    String specularCoeff;
+  end SHAPE_TPL;
+end VisualizationTPL;
+
 // -------------------------
 // Data structures
 // -------------------------
@@ -558,6 +598,14 @@ end compareAttributeTarget0;
 // -------------------------
 // Dump
 // -------------------------
+
+public function dumpVis "author: waurich TUD 
+  Dumps the graph into a *.xml-file."
+  input array<VisualizationTPL> visIn;
+  input String iFileName;
+algorithm
+  Tpl.tplNoret2(GraphMLDumpTpl.dumpVisualization, visIn, iFileName);
+end dumpVis;
 
 public function dumpGraph "author: marcusw
   Dumps the graph into a *.graphml-file."

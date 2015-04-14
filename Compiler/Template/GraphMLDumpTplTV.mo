@@ -83,6 +83,11 @@ interface package GraphMLDumpTplTV
       input Real r;
       output Integer i;
     end realInt;
+  
+    function realString
+      input Real r;
+      output String s;
+    end realString;
 
     function arrayList
       replaceable type TypeVar subtypeof Any;
@@ -131,8 +136,27 @@ interface package GraphMLDumpTplTV
       replaceable type TypeB subtypeof Any;
     end tuple22;
   end Util;
-
+   
   package GraphML
+    
+  uniontype VisualizationTPL
+    record SHAPE_TPL
+      String ident;
+      String shapeType;
+      array<list<String>> T;
+      array<String> r;
+      array<String> r_shape;
+      array<String> lengthDir;
+      array<String> widthDir;
+      String length;
+      String width;
+      String height;
+      String extra;
+      array<String> color;
+      String specularCoeff;
+    end SHAPE_TPL;
+  end VisualizationTPL;
+    
     uniontype GraphInfo
       record GRAPHINFOARR
         array<Graph> graphs;

@@ -6,6 +6,7 @@ package GraphMLDumpTpl
 
 import interface GraphMLDumpTplTV;
 
+
 template dumpGraphInfo(GraphML.GraphInfo graphInfo, String fileName)
 ::=
   let()= textFile(dumpGraphInfoInternal(graphInfo), fileName)
@@ -356,6 +357,67 @@ template dumpShapeType(GraphML.ShapeType shape)
             >>
     end match
 end dumpShapeType;
+
+//------------------------------------
+// Section for Visualization XML Dump
+//------------------------------------
+
+template dumpVisualization(array<GraphML.VisualizationTPL> vis, String fileName)
+::=
+  let()= textFile(dumpVisualization1(vis), fileName)
+  ""
+end dumpVisualization;
+
+template dumpVisualization1(array<GraphML.VisualizationTPL> visArr)
+::=
+  let visDump = arrayList(visArr) |> vis => dumpVis(vis) ; separator="\n"
+  <<
+  <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+  <visualization>
+  <%visDump%>
+  </visualization>
+  >>
+end dumpVisualization1;
+
+template dumpVis(GraphML.VisualizationTPL vis)
+::=
+    match vis
+        case vis as SHAPE_TPL(__) then
+          let colorDump = arrayList(color) |> col => <<
+          <%(col)%>
+          >> ; separator=";"
+          let rDump = dumpVec(arrayList(r))
+          let r_shapeDump = dumpVec(arrayList(r_shape))
+          let lDDump = dumpVec(arrayList(lengthDir))
+          let wDDump = dumpVec(arrayList(widthDir))
+          let TDump = arrayList(T) |> T0 => <<
+          <%dumpVec(T0)%>
+          >> ; separator=";"
+            <<
+              <shape>
+                  <ident><%ident%></ident>
+                  <type><%shapeType%></type>
+                  <T>{<%TDump%>}</T>
+                  <r><%rDump%></r>
+                  <r_shape><%r_shapeDump%></r_shape>
+                  <lengthDir><%lDDump%></lengthDir>
+                  <widthDir><%wDDump%></widthDir>
+                  <length><%length%></length>
+                  <width><%width%></width>
+                  <height><%height%></height>
+                  <extra><%extra%></extra>
+                  <color>{<%colorDump%>}</color>
+                  <specularCoeff><%specularCoeff%></specularCoeff>                  
+              </shape>
+            >>
+    end match
+end dumpVis;
+
+template dumpVec (list<String> vector)
+::=
+let vecDump = vector |> vec => <<<%vec%>>> ; separator=";"
+<<{<%vecDump%>}>>
+end dumpVec;
 
 annotation(__OpenModelica_Interface="susan");
 end GraphMLDumpTpl;

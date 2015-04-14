@@ -102,6 +102,7 @@ import SymbolicJacobian;
 import System;
 import Util;
 import ValuesUtil;
+import HpcOmTaskGraph;
 
 // =============================================================================
 // section for public function for SimCodeTV
@@ -1557,7 +1558,10 @@ algorithm
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
 
       backendMapping = setUpBackendMapping(inBackendDAE);
-
+      if Flags.isSet(Flags.VISUAL_XML) then
+        HpcOmTaskGraph.visualizationInfoXML(inBackendDAE, filenamePrefix);
+      end if;
+           
       // fcall(Flags.FAILTRACE, print, "is that Cpp? : " + Dump.printBoolStr(ifcpp) + "\n");
 
       // generate initDAE before replacing pre(alias)!
@@ -1751,6 +1755,8 @@ algorithm
       // adrpo: collect all the files from SourceInfo and DAE.ElementSource
       // simCode = collectAllFiles(simCode);
       // print("*** SimCode -> collect all files done!: " + realString(clock()) + "\n");
+           
+      
       if Flags.isSet(Flags.DUMP_SIMCODE) then
           dumpSimCode(simCode);
       end if;

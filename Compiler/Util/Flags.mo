@@ -434,7 +434,8 @@ constant DebugFlag EXTENDS_DYN_OPT = DEBUG_FLAG(132, "extendsDynOpt", false,
   Util.gettext("generat extends NLP, move loops in the optimization problem as constraints. hint: using intial guess from file!"));
 constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(133, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
-
+constant DebugFlag VISUAL_XML = DEBUG_FLAG(134, "visxml", false,
+  Util.gettext("Outputs a xml-file that contains information for visualization."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -574,7 +575,8 @@ constant list<DebugFlag> allDebugFlags = {
   ADVANCE_TEARING,
   CONSTJAC,
   EXTENDS_DYN_OPT,
-  REDUCE_DYN_OPT
+  REDUCE_DYN_OPT,
+  VISUAL_XML
 };
 
 public
