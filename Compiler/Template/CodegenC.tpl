@@ -554,7 +554,7 @@ template simulationFile(SimCode simCode, String guid)
   "Generates code for main C file for simulation target."
 ::=
   match simCode
-    case simCode as SIMCODE(__) then
+    case simCode as SIMCODE(hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
     let mainInit = if boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM)) then
                      <<
@@ -603,7 +603,7 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionDAE(allEquations, whenClauses, modelNamePrefixStr)%>
 
-    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""),hpcOmSchedule, modelNamePrefixStr)%>
+    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.odeSchedule, modelNamePrefixStr)%>
 
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);

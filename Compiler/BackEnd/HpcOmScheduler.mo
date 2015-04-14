@@ -173,8 +173,6 @@ algorithm
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
         true = List.isNotEmpty(predecessors); //in this case the node has predecessors
-        //print("Handle1 task " + intString(index) + " with " + intString(listLength(predecessors)) + " child nodes and "
-        //      + intString(listLength(successorIdc)) + " parent nodes.\n");
 
         //get last child finished time
         lastChild = getTaskWithHighestFinishTime(predecessors, NONE());
@@ -213,29 +211,16 @@ algorithm
           HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
       equation
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        //!print("Handle2 task " + intString(index) + " with 0 child nodes and " + intString(listLength(successorIdc))
-        //!      + " parent nodes.\n");
-        //print("\tChildren: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
 
         //find the best thread for scheduling
         threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
         ((threadId, threadFinishTime)) = getThreadFinishTimesMin(1,threadFinishTimes,-1,0.0);
-
-        //!print("\tZeile 226\t Scheduling task " + intString(index) + " to thread " + intString(threadId) + "\n");
-        //print("\tZeile 230\t" + stringDelimitList(List.map(listGet(arrayList(allThreadTasks), threadId), dumpTask), "\t\t"));
-        //!print("\tZeile 228\t" + stringDelimitList(List.map(arrayList(threadFinishTimes),realString), "\t\t") + "\n");
-
-        //MF: Schreibe in Array iThreadReadyTimes an Index threadID den Wert threadFinishTime
+        
         tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
         threadTasks = arrayGet(allThreadTasks,threadId);
         simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
-        //print("\tEq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
-        //print("\tSimcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
-        //simEqIdc = List.sort(simEqIdc,intGt);
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
-        //!print("\n\tZeile 243\t" + stringDelimitList(List.map(listGet(arrayList(allThreadTasks), threadId), dumpTask), "\t\t"));
-        //print("Successors: " + stringDelimitList(List.map(successorIdc, intString), ",") + "\n");
         //add all successors with refcounter = 1
         (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
         tmpNodeList = listAppend(tmpNodeList, rest);
@@ -406,18 +391,15 @@ algorithm
           HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
       equation
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        //print("Handle2 task " + intString(index) + "\n");//+ " with 0 child nodes and " + intString(listLength(successorIdc))
-              //+ " parent nodes.\n");
-        //print("\tChildren: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
 
-        //! Randomly chose thread for scheduling
+        //Randomly chose thread for scheduling
         threadId = System.intRandom(iNumberOfThreads)+1;
         //print("ThreadId= " + intString(threadId) + "\n");
 
         threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
         threadFinishTime = arrayGet(threadFinishTimes, threadId);
 
-        //! Update array containg thread finish times.
+        // Update array containg thread finish times.
         tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
         threadTasks = arrayGet(allThreadTasks, threadId);
 
@@ -1051,7 +1033,6 @@ algorithm
       equation
         true = intLe(iIndex, arrayLength(iTaskGraphT));
         refCount = listLength(arrayGet(iTaskGraphT, iIndex));
-        //newTask := convertNodeToTask(iIndex, iTaskGraphMeta);
         newTask = iConverterFunc(iIndex, iTaskGraphMeta);
         tmpTasks = arrayUpdate(iTasks, iIndex, (newTask,refCount));
         tmpTasks = convertTaskGraphToTasks1(iTaskGraphMeta,iTaskGraphT,iIndex+1,iConverterFunc,tmpTasks);
@@ -1292,7 +1273,7 @@ algorithm
       then intGt(weightingTask1,weightingTask2);
     else
       equation
-        print("HpcOmScheduler.compareTasksByWeighting can only compare CALCTASKs!\n");
+        print("HpcOmScheduler.compareTasksByWeighting can only compare CALCTASKs! Task 1 has type " + getTaskTypeString(iTask1) + " and task 2 has type " + getTaskTypeString(iTask2) + "\n");
       then fail();
   end match;
 end compareTasksByWeighting;
@@ -1368,6 +1349,12 @@ protected
   Integer threadIdx;
 algorithm
   oString := match(iTask)
+    case(HpcOmSimCode.SCHEDULED_TASK(compIdx=compIdx,numThreads=numThreads,taskSchedule=taskSchedule))
+      equation
+      s = "Scheduled Task (comp: "+intString(compIdx)+", numThreads: "+intString(numThreads)+"):\n------------------------------------------------------\n";
+      s = s +"\t"+ System.stringReplace(dumpSchedule(taskSchedule),"\n","\n\t");
+      s = s + "------------------------------------------------------\n";
+      then s;
     case(HpcOmSimCode.CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
       then ("Calculation task with index " + intString(index) + " including the equations: "+stringDelimitList(List.map(eqIdc,intString),", ")+ " is finished at  " + realString(timeFinished) + "\n");
     case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc, threadIdx=NONE()))
@@ -1379,12 +1366,6 @@ algorithm
         s = "Dependency task ";
         s = s + (if outgoing then "(outgoing)" else "(incoming)");
         s = s + " between " + intString(sourceIndex) + " and " + intString(targetIndex) + "\n";
-      then s;
-    case(HpcOmSimCode.SCHEDULED_TASK(compIdx=compIdx,numThreads=numThreads,taskSchedule=taskSchedule))
-      equation
-      s = "Scheduled Task (comp: "+intString(compIdx)+", numThreads: "+intString(numThreads)+"):\n------------------------------------------------------\n";
-      s = s +"\t"+ System.stringReplace(dumpSchedule(taskSchedule),"\n","\n\t");
-      s = s + "------------------------------------------------------\n";
       then s;
     case(HpcOmSimCode.TASKEMPTY())
       then "empty task\n";
@@ -3418,10 +3399,8 @@ protected
   SimCodeVar.SimVars vars;
   list<SimCode.Function> functions;
   SimCode.Files files;
-  Option<HpcOmSimCode.Schedule> hpcOmSchedule;
+  HpcOmSimCode.HpcOmData hpcomData;
   Option<SimCode.BackendMapping> backendMapping;
-  Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
-  list<SimCode.SimEqSystem> equationsForConditions;
   //modelinfo stuff
   SimCode.ModelInfo modelInfo;
   Absyn.Path name;
@@ -3437,7 +3416,7 @@ algorithm
   SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy,
     initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations,
     algorithmAndEquationAsserts,equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
-    makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct):=simCodeIn;
+    makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, crefToSimVarHT, backendMapping, modelStruct):=simCodeIn;
   SimCode.MODELINFO(name=name,description=description,directory=directory,varInfo=varInfo,vars=vars,functions=functions,labels=labels) := modelInfo;
   SimCode.VARINFO(numZeroCrossings=numZeroCrossings, numTimeEvents=numTimeEvents, numRelations=numRelations, numMathEventFunctions=numMathEventFunctions, numStateVars=numStateVars,
     numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numIntAlgVars=numIntAlgVars, numBoolAlgVars=numBoolAlgVars, numAlgAliasVars=numAlgAliasVars, numIntAliasVars=numIntAliasVars,
@@ -3472,7 +3451,7 @@ algorithm
   modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);
   simCodeOut := SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
     parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-    discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
+    discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, crefToSimVarHT,backendMapping, modelStruct);
   idxAssOut := ass;
 end TDS_assignNewSimEqSysIdxs;
 
@@ -5615,9 +5594,10 @@ author:Waurich TUD 2013-12"
   input Integer numProcIn;
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  input String inSystemName; //e.g. "ODE system" or "DAE system"
   output String criticalPathInfoOut;
 algorithm
-  criticalPathInfoOut := match(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn)
+  criticalPathInfoOut := match(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn,inSystemName)
     local
       list<HpcOmSimCode.Task> outgoingDepTasks;
       list<Real> levelCosts;
@@ -5628,16 +5608,16 @@ algorithm
       array<list<HpcOmSimCode.Task>> threadTasks;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       String criticalPathInfo;
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=false),_,_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=false),_,_,_,_)
       equation
         criticalPathInfo = analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
       then
         criticalPathInfo;
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=true),_,_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=true),_,_,_,_)
       equation
         criticalPathInfo = analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
       then criticalPathInfo;
-    case(HpcOmSimCode.THREADSCHEDULE(outgoingDepTasks=outgoingDepTasks),_,_,_)
+    case(HpcOmSimCode.THREADSCHEDULE(outgoingDepTasks=outgoingDepTasks),_,_,_,_)
       equation
         if Flags.isSet(Flags.HPCOM_DUMP) then
           print("the number of locks: "+intString(listLength(outgoingDepTasks))+"\n");
@@ -5656,10 +5636,10 @@ algorithm
           print("the cpCosts: "+realString(cpCostsWoC)+"\n");
         end if;
         if realLe(speedUpMax,2.0) then
-          print("There is no parallel potential for this model!\n");
+          print("There is no parallel potential in the " + inSystemName + " model!\n");
         end if;
         if realLe(serTime,20000.0) then
-          print("This model is not big enough to perform an effective parallel simulation!\n");
+          print("The " + inSystemName + " model is not big enough to perform an effective parallel simulation!\n");
         end if;
         printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProcIn);
       then
@@ -6295,6 +6275,22 @@ algorithm
     else -1;
   end match;
 end getTaskIdx;
+
+protected function getTaskTypeString "Returns the type of the given task as string.
+  author: marcusw"
+  input HpcOmSimCode.Task iTask;
+  output String oTypeString;
+algorithm
+  oTypeString := match(iTask)
+    case(HpcOmSimCode.SCHEDULED_TASK()) then "Scheduled task";
+    case(HpcOmSimCode.CALCTASK()) then "Calctask";
+    case(HpcOmSimCode.CALCTASK_LEVEL()) then "Calctask level";  
+    case(HpcOmSimCode.DEPTASK()) then "Deptask";  
+    case(HpcOmSimCode.PREFETCHTASK()) then "Prefetch task";
+    case(HpcOmSimCode.TASKEMPTY()) then "Empty task";
+    else then "Unknown";
+  end match;
+end getTaskTypeString;
 
 protected function isCalcTask "checks if the given task is a calcTask.
 author:Waurich TUD 2013-11"

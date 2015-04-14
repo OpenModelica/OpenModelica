@@ -300,9 +300,7 @@ package SimCode
       list<JacobianMatrix> jacobianMatrixes;
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
-      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
-      Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
-      list<SimEqSystem> equationsForConditions;
+      HpcOmSimCode.HpcOmData hpcomData;
       Option<FmiModelStructure> modelStructure;
     end SIMCODE;
 
@@ -3459,6 +3457,14 @@ package HpcOmSimCodeMain
 end HpcOmSimCodeMain;
 
 package HpcOmSimCode
+  uniontype HpcOmData
+    record HPCOMDATA
+      Option<Schedule> daeSchedule;
+      Option<Schedule> odeSchedule;
+      Option<MemoryMap> hpcOmMemory;
+    end HPCOMDATA;  
+  end HpcOmData;
+  
   uniontype CommunicationInfo //stores more detailed information about a communication (edge)
     record COMMUNICATION_INFO
       list<SimCodeVar.SimVar> floatVars; //the float, int and boolean variables that have to be transfered

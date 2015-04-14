@@ -4362,7 +4362,7 @@ algorithm
   end matchcontinue;
 end createCosts;
 
-protected function estimateCosts "estimates the communication and execution costs very roughly so hpcom can work with something when there is no prof_xml
+public function estimateCosts "estimates the communication and execution costs very roughly so hpcom can work with something when there is no prof_xml
 author: Waurich TUD 09-2013"
   input BackendDAE.BackendDAE daeIn;
   input TaskGraphMeta taskGraphMetaIn;
@@ -4383,6 +4383,7 @@ protected
   list<BackendDAE.StrongComponents> compsLst;
   array<list<Integer>> compParamMapping;
   array<ComponentInfo> compInformations;
+  Integer compIdx;
 algorithm
   BackendDAE.DAE(eqs=eqSystems, shared=shared) := daeIn;
   compsLst := List.map(eqSystems,BackendDAEUtil.getStrongComponents);
@@ -4392,7 +4393,14 @@ algorithm
   commCosts := getCommCostsOnly(commCosts);
   // estimate the executionCosts
   exeCostsLst := List.flatten(List.map3(List.intRange(listLength(compsLst)),estimateCosts0,compsLst,eqSystems,shared));
-  exeCosts := listArray(exeCostsLst);
+  
+  //overwrite old values
+  compIdx := 1;
+  for exeCost in exeCostsLst loop
+    arrayUpdate(exeCosts, compIdx, exeCost);
+    compIdx := compIdx + 1;
+  end for;
+
   taskGraphMetaOut := TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
 end estimateCosts;
 
@@ -5803,7 +5811,7 @@ algorithm
       compNames2 = arrayCreate(numNewComps,"assert");
       compDescs2 = listArray(List.map(eqLst,BackendDump.equationString));
       nodeMark2 = arrayCreate(numNewComps,-2);
-      exeCosts2 = arrayCreate(numNewComps,(1,1.0));
+      exeCosts2 = arrayCreate(numNewComps,(1,30.0)); //TODO: Estimate them correctly!
       compInformations2 = arrayCreate(numNewComps, COMPONENTINFO(false, false, true));
       inComps1 = arrayAppend(inComps1,inComps2);
       compNames1 = arrayAppend(compNames1,compNames2);

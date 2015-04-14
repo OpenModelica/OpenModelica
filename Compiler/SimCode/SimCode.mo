@@ -115,9 +115,7 @@ uniontype SimCode
     list<JacobianMatrix> jacobianMatrixes;
     Option<SimulationSettings> simulationSettingsOpt;
     String fileNamePrefix;
-    Option<HpcOmSimCode.Schedule> hpcOmSchedule;
-    Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
-    list<SimEqSystem> equationsForConditions;
+    HpcOmSimCode.HpcOmData hpcomData;
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
     Option<BackendMapping> backendMapping;

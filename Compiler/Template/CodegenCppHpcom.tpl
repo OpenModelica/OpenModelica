@@ -16,20 +16,20 @@ import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when
 template translateModel(SimCode simCode)
 ::=
   match simCode
-    case SIMCODE(modelInfo = MODELINFO(__), makefileParams= MAKEFILE_PARAMS(__)) then
+    case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__), hpcomData = HPCOMDATA(__)) then
       let target  = simulationCodeTarget()
       let &extraFuncs = buffer "" /*BUFD*/
       let &extraFuncsDecl = buffer "" /*BUFD*/
       let preVarsCount = getPreVarsCount(simCode)
       let stateDerVectorName = "__zDot"
-      let useMemoryOptimization = HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)
+      let useMemoryOptimization = HpcOmMemory.useHpcomMemoryOptimization(hpcomData.hpcOmMemory)
 
       let() = textFile(simulationMainFile(target, simCode, &extraFuncs, &extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else "")), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
       let() = textFile(simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
                       generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)), "",
                       generateAdditionalProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)),
-                      MemberVariable(modelInfo, hpcOmMemory,stringBool(useMemoryOptimization),false), false),
+                      MemberVariable(modelInfo, hpcomData.hpcOmMemory, stringBool(useMemoryOptimization),false), false),
                       'OMCpp<%fileNamePrefix%>.h')
       let() = textFile(simulationCppFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>.cpp')
       let() = textFile(simulationFunctionsHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "",modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
@@ -95,9 +95,9 @@ end generateAdditionalIncludes;
 template generateAdditionalPublicMemberDeclaration(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
 ::=
   match simCode
-    case SIMCODE(modelInfo = MODELINFO(__)) then
-      if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) then
-        let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
+    case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
+      if(HpcOmMemory.useHpcomMemoryOptimization(hpcomData.hpcOmMemory)) then
+        let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcomData.hpcOmMemory)
         <<
         <%addHpcomArrayHeaders%>
 
@@ -136,9 +136,9 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& ext
  "Generates class declarations."
 ::=
   match simCode
-    case SIMCODE(modelInfo = MODELINFO(__)) then
-      let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
-      let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
+    case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
+      let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcomData.odeSchedule)
+      let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcomData.odeSchedule)
       let type = getConfigString(HPCOM_CODE)
 
       <<
@@ -180,11 +180,11 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& ext
   end match
 end generateAdditionalProtectedMemberDeclaration;
 
-template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
+template getAddHpcomStructHeaders(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+  match odeScheduleOpt
+    case SOME(odeSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("openmp") then
           <<
@@ -207,11 +207,11 @@ template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
   end match
 end getAddHpcomStructHeaders;
 
-template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
+template getAddHpcomFunctionHeaders(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
+  match odeScheduleOpt
+    case SOME(odeSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -221,27 +221,27 @@ template getAddHpcomFunctionHeaders(Option<Schedule> hpcOmScheduleOpt)
           >>
         else ""
       end match
-    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
-      let locks = hpcOmSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "lock", type); separator="\n"
+    case SOME(odeSchedule as THREADSCHEDULE(__)) then
+      let locks = odeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "lock", type); separator="\n"
       match type
         case ("openmp") then
           <<
           >>
         else
-          let headers = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadFunctionHeaderDecl(i0); separator="\n"
+          let headers = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadFunctionHeaderDecl(i0); separator="\n"
           <<
           <%headers%>
           >>
       end match
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+    case SOME(odeSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("openmp") then
           <<
           >>
         case ("tbb") then
-          let voidfuncs = hpcOmSchedule.tasks |> task => getAddHpcomFuncHeadersTaskDep(task); separator="\n"
+          let voidfuncs = odeSchedule.tasks |> task => getAddHpcomFuncHeadersTaskDep(task); separator="\n"
           <<
-          <%getAddHpcomStructHeaders(hpcOmScheduleOpt)%>
+          <%getAddHpcomStructHeaders(odeScheduleOpt)%>
 
           <%voidfuncs%>
           >>
@@ -268,11 +268,11 @@ template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
   end match
 end getAddHpcomVarArrays;
 
-template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
+template getAddHpcomVarHeaders(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
+  match odeScheduleOpt
+    case SOME(odeSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -285,11 +285,11 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
           >>
         else ""
       end match
-    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
-      let locks = hpcOmSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "lock", type); separator="\n"
+    case SOME(odeSchedule as THREADSCHEDULE(__)) then
+      let locks = odeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "lock", type); separator="\n"
       match type
         case ("openmp") then
-          let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
+          let threadDecl = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
           <<
           <%locks%>
           <%threadDecl%>
@@ -299,9 +299,9 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
           //MF Todo BLABLUB
           >>
         else
-          let threadDecl = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadHeaderDecl(i0, type); separator="\n"
-          let thLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock", type); separator="\n"
-          let thLocks1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadDecl = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadHeaderDecl(i0, type); separator="\n"
+          let thLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock", type); separator="\n"
+          let thLocks1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock1", type); separator="\n"
           <<
           bool terminateThreads;
           UPDATETYPE command;
@@ -311,7 +311,7 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
           <%threadDecl%>
           >>
       end match
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+    case SOME(odeSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("openmp") then
           << >>
@@ -396,10 +396,10 @@ template simulationCppFile(SimCode simCode, Context context, Text& extraFuncs, T
  "Generates code for main cpp file for simulation target."
 ::=
   match simCode
-    case SIMCODE(modelInfo = MODELINFO(__)) then
-      let hpcomConstructorExtension = getHpcomConstructorExtension(hpcOmSchedule, lastIdentOfPath(modelInfo.name), dotPath(modelInfo.name))
-      let hpcomMemberVariableDefinition = getHpcomMemberVariableDefinition(hpcOmSchedule)
-      let hpcomDestructorExtension = getHpcomDestructorExtension(hpcOmSchedule)
+    case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
+      let hpcomConstructorExtension = getHpcomConstructorExtension(hpcomData.odeSchedule, lastIdentOfPath(modelInfo.name), dotPath(modelInfo.name))
+      let hpcomMemberVariableDefinition = getHpcomMemberVariableDefinition(hpcomData.odeSchedule)
+      let hpcomDestructorExtension = getHpcomDestructorExtension(hpcomData.odeSchedule)
       let type = getConfigString(HPCOM_CODE)
       let className = lastIdentOfPath(modelInfo.name)
       <<
@@ -536,11 +536,11 @@ template simulationCppFile(SimCode simCode, Context context, Text& extraFuncs, T
   end match
 end simulationCppFile;
 
-template getHpcomMemberVariableDefinition(Option<Schedule> hpcOmScheduleOpt)
+template getHpcomMemberVariableDefinition(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
+  match odeScheduleOpt
+    case SOME(odeSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -550,13 +550,13 @@ template getHpcomMemberVariableDefinition(Option<Schedule> hpcOmScheduleOpt)
           ,<%initializeBarrierByName("levelBarrier","",getConfigInt(NUM_PROC),type)%>
           >>
         else ""
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+    case SOME(odeSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("tbb") then
           <<
           ,_tbbGraph()
           ,_tbbStartNode(_tbbGraph)
-          ,_tbbNodeList(<%listLength(hpcOmSchedule.tasks)%>,NULL)
+          ,_tbbNodeList(<%listLength(odeSchedule.tasks)%>,NULL)
           >>
         else ""
       end match
@@ -564,11 +564,11 @@ template getHpcomMemberVariableDefinition(Option<Schedule> hpcOmScheduleOpt)
   end match
 end getHpcomMemberVariableDefinition;
 
-template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr, String fullModelName)
+template getHpcomConstructorExtension(Option<Schedule> odeScheduleOpt, String modelNamePrefixStr, String fullModelName)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
+  match odeScheduleOpt
+    case SOME(odeSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -580,22 +580,22 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
             <<
             #ifdef MEASURETIME_MODELFUNCTIONS
             MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom);
-            measureTimeSchedulerArrayHpcom = std::vector<MeasureTimeData>(<%listLength(hpcOmSchedule.tasksOfLevels)%>);
+            measureTimeSchedulerArrayHpcom = std::vector<MeasureTimeData>(<%listLength(odeSchedule.tasksOfLevels)%>);
             measuredSchedulerStartValues = MeasureTime::getZeroValues();
             measuredSchedulerEndValues = MeasureTime::getZeroValues();
-            <%List.intRange(listLength(hpcOmSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateODE_level_<%levelIdx%>");'; separator="\n"%>
+            <%List.intRange(listLength(odeSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateODE_level_<%levelIdx%>");'; separator="\n"%>
             #endif //MEASURETIME_MODELFUNCTIONS
             >>
           %>
           >>
         else ""
       end match
-    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
-      let initlocks = hpcOmSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "lock", type); separator="\n"
-      let assignLocks = hpcOmSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "lock", type); separator="\n"
+    case SOME(odeSchedule as THREADSCHEDULE(__)) then
+      let initlocks = odeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "lock", type); separator="\n"
+      let assignLocks = odeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "lock", type); separator="\n"
       match type
         case ("openmp") then
-          let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+          let threadFuncs = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
           <<
           <%threadFuncs%>
           <%initlocks%>
@@ -605,11 +605,11 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
           //MF: Initialize MPI related stuff - nothing todo?
           >>
         else
-          let threadFuncs = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
-          let threadLocksInit = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadLocksInit1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadAssignLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadAssignLocks1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadFuncs = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+          let threadLocksInit = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksInit1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadAssignLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
           <<
           terminateThreads = false;
           command = IContinuous::UNDEF_UPDATE;
@@ -625,10 +625,10 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
           <%threadFuncs%>
           >>
       end match
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+    case SOME(odeSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("tbb") then
-          let tbbVars = generateTbbConstructorExtension(hpcOmSchedule.tasks, modelNamePrefixStr)
+          let tbbVars = generateTbbConstructorExtension(odeSchedule.tasks, modelNamePrefixStr)
           <<
           <%tbbVars%>
           >>
@@ -638,11 +638,11 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
 end getHpcomConstructorExtension;
 
 
-template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
+template getHpcomDestructorExtension(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
+  match odeScheduleOpt
+    case SOME(odeSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -654,8 +654,8 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
           _levelBarrier.wait();
           >>
         else ""
-    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
-      let destroylocks = hpcOmSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "lock", type); separator="\n"
+    case SOME(odeSchedule as THREADSCHEDULE(__)) then
+      let destroylocks = odeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "lock", type); separator="\n"
       match type
         case ("openmp") then
           <<
@@ -666,11 +666,11 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
           //MF: Destruct MPI related stuff - nothing at the moment.
           >>
         else
-          let destroyThreads = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_destroyThread(i0, type); separator="\n"
-          let threadLocksDel = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadLocksDel1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock1", type); separator="\n"
-          let joinThreads = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_joinThread(i0, type); separator="\n"
-          let threadReleaseLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
+          let destroyThreads = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_destroyThread(i0, type); separator="\n"
+          let threadLocksDel = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksDel1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock1", type); separator="\n"
+          let joinThreads = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_joinThread(i0, type); separator="\n"
+          let threadReleaseLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
           terminateThreads = true;
           <%threadReleaseLocks%>
@@ -680,7 +680,7 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
           <%threadLocksDel1%>
           <%destroyThreads%>
           >>
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+    case SOME(odeSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("tbb") then
           <<
@@ -698,8 +698,8 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
   let &varDecls = buffer "" /*BUFD*/
 
   match simCode
-    case SIMCODE(modelInfo = MODELINFO(__)) then
-      let parCode = generateParallelEvaluateOde(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
+    case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
+      let parCode = generateParallelEvaluateOde(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcomData.odeSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
       <%equationFunctions(allEquations,whenClauses, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,false)%>
 
@@ -714,7 +714,7 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
 end update;
 
 template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>> odeEquations, Absyn.Path name,
-                 list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<Schedule> hpcOmScheduleOpt, Context context,
+                 list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<Schedule> odeScheduleOpt, Context context,
                  String modelNamePrefixStr, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -730,12 +730,12 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
 
   let type = getConfigString(HPCOM_CODE)
 
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as EMPTYSCHEDULE(__)) then
+  match odeScheduleOpt
+    case SOME(odeSchedule as EMPTYSCHEDULE(__)) then
         <<
         <%CodegenCpp.createEvaluate(odeEquations, whenClauses, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, context, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
         >>
-    case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevels)) then
+    case SOME(odeSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevels)) then
       let odeEqs = tasksOfLevels |> tasks => function_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
 
       match type
@@ -786,12 +786,12 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
           }
           >>
      end match
-   case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true, tasksOfLevels=tasksOfLevels)) then
+   case SOME(odeSchedule as LEVELSCHEDULE(useFixedAssignments=true, tasksOfLevels=tasksOfLevels)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
           let &mainThreadCode = buffer "" /*BUFD*/
-          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(hpcOmSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
+          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(odeSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
           let threadLocks = List.intRange(getConfigInt(NUM_PROC)) |> tt => createLockByLockName('threadLock<%tt%>', "", type); separator="\n"
           <<
           <%eqsFuncs%>
@@ -810,10 +810,10 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
           >>
         else ""
       end match
-   case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
+   case SOME(odeSchedule as THREADSCHEDULE(__)) then
       match type
         case ("openmp") then
-          let taskEqs = function_HPCOM_Thread(allEquationsPlusWhen,hpcOmSchedule.threadTasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          let taskEqs = function_HPCOM_Thread(allEquationsPlusWhen,odeSchedule.threadTasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
           <%functionHead%>
@@ -832,9 +832,9 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
           >>
         else
           let &mainThreadCode = buffer "" /*BUFD*/
-          let threadFuncs = List.intRange(arrayLength(hpcOmSchedule.threadTasks)) |> threadIdx => generateThreadFunc(allEquationsPlusWhen, arrayGet(hpcOmSchedule.threadTasks, threadIdx), type, intSub(threadIdx, 1), modelNamePrefixStr, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
-          let threadAssignLocks1 = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadReleaseLocks = List.rest(arrayList(hpcOmSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadFuncs = List.intRange(arrayLength(odeSchedule.threadTasks)) |> threadIdx => generateThreadFunc(allEquationsPlusWhen, arrayGet(odeSchedule.threadTasks, threadIdx), type, intSub(threadIdx, 1), modelNamePrefixStr, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
+          let threadAssignLocks1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadReleaseLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
           <%threadFuncs%>
 
@@ -848,10 +848,10 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
           }
           >>
       end match
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+    case SOME(odeSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("openmp") then
-          let taskEqs = function_HPCOM_TaskDep(hpcOmSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          let taskEqs = function_HPCOM_TaskDep(odeSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
           <%functionHead%>
@@ -863,7 +863,7 @@ template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, lis
           >>
         case ("tbb") then
 
-          let taskFuncs = function_HPCOM_TaskDep_voidfunc(hpcOmSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          let taskFuncs = function_HPCOM_TaskDep_voidfunc(odeSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
           //void functions for functionhandling in tbb_nodes

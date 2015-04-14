@@ -34,6 +34,16 @@ encapsulated package HpcOmSimCode
   public import HashTableCrILst;
   public import SimCodeVar;
 
+  public constant HpcOmData emptyHpcomData = HPCOMDATA(NONE(), NONE(), NONE());
+
+  public uniontype HpcOmData
+    record HPCOMDATA
+      Option<HpcOmSimCode.Schedule> daeSchedule;
+      Option<HpcOmSimCode.Schedule> odeSchedule;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+    end HPCOMDATA;  
+  end HpcOmData;
+
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way
     record MEMORYMAP_ARRAY
       array<tuple<Integer,Integer>> positionMapping; //map each simCodeVar to a memory (array) position and to arrayIdx
