@@ -768,30 +768,24 @@ public function tarjanAlgorithm "author: PA
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> ass2 "ass[eqnindx]=varindx";
   output list<list<Integer>> outComps;
+protected
+  Integer n;
+  list<list<Integer>> comps;
+  array<Integer> number, lowlink;
+  array<Boolean> stackflag;
 algorithm
-  outComps :=
-  matchcontinue (mt,ass2)
-    local
-      Integer n;
-      list<list<Integer>> comps;
-      array<Integer> number,lowlink;
-      array<Boolean> stackflag;
-    case (_,_)
-      equation
-        n = arrayLength(ass2);
-        number = arrayCreate(n,0);
-        lowlink = arrayCreate(n,0);
-        stackflag = arrayCreate(n,false);
-        (_,comps) = strongConnectMain(mt, ass2, number, lowlink, stackflag, n, 1, {}, {});
-      then
-        comps;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/function tarjansAlgorithm failed
+  try
+    n := arrayLength(ass2);
+    number := arrayCreate(n,0);
+    lowlink := arrayCreate(n,0);
+    stackflag := arrayCreate(n,false);
+    (_, outComps) := strongConnectMain(mt, ass2, number, lowlink, stackflag, n, 1, {}, {});
+  else
+    Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/function tarjansAlgorithm failed
 The sorting of the equations could not be done. (strongComponents failed)
 Use +d=failtrace for more information."});
-      then fail();
-  end matchcontinue;
+    fail();
+  end try;
 end tarjanAlgorithm;
 
 public function strongConnectMain
@@ -801,47 +795,21 @@ public function strongConnectMain
   input array<Integer> lowlink;
   input array<Boolean> stackflag;
   input Integer n;
-  input Integer w;
+  input Integer inW;
   input list<Integer> istack;
   input list<list<Integer>> icomps;
-  output list<Integer> ostack;
-  output list<list<Integer>> ocomps;
+  output list<Integer> ostack = istack;
+  output list<list<Integer>> ocomps = icomps;
+protected
+  Integer w = inW;
 algorithm
-  (ostack,ocomps) := strongConnectMain2(w>n,mt,a2,number,lowlink,stackflag,n,w,istack,icomps);
+  while w <= n loop
+    (ostack, ocomps) := strongConnectMain3(mt, a2, number, lowlink, stackflag, n, w, ostack, ocomps);
+    w := w+1;
+  end while;
 end strongConnectMain;
 
-protected function strongConnectMain2
-  input Boolean stop;
-  input BackendDAE.IncidenceMatrixT mt;
-  input array<Integer> a2;
-  input array<Integer> number;
-  input array<Integer> lowlink;
-  input array<Boolean> stackflag;
-  input Integer n;
-  input Integer w;
-  input list<Integer> istack;
-  input list<list<Integer>> icomps;
-  output list<Integer> ostack;
-  output list<list<Integer>> ocomps;
-algorithm
-  (ostack,ocomps) := match (stop,mt,a2,number,lowlink,stackflag,n,w,istack,icomps)
-    local
-      Integer num;
-      list<Integer> stack;
-      list<list<Integer>> comps;
-
-    case (true,_,_,_,_,_,_,_,_,_)
-      then (istack,icomps);
-    else
-      equation
-        (stack,comps) = strongConnectMain3(intEq(number[w],0),mt,a2,number,lowlink,stackflag,n,w,istack,icomps);
-        (stack,comps) = strongConnectMain2(w+1>n,mt,a2,number,lowlink, stackflag, n, w + 1, stack, comps);
-      then (stack,comps);
-  end match;
-end strongConnectMain2;
-
 protected function strongConnectMain3
-  input Boolean doCalc;
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> a2;
   input array<Integer> number;
@@ -851,21 +819,12 @@ protected function strongConnectMain3
   input Integer w;
   input list<Integer> istack;
   input list<list<Integer>> icomps;
-  output list<Integer> ostack;
-  output list<list<Integer>> ocomps;
+  output list<Integer> ostack = istack;
+  output list<list<Integer>> ocomps = icomps;
 algorithm
-  (ostack,ocomps) := match (doCalc,mt,a2,number,lowlink,stackflag,n,w,istack,icomps)
-    local
-      Integer num;
-      list<Integer> stack;
-      list<list<Integer>> comps;
-
-    case (true,_,_,_,_,_,_,_,_,_)
-      equation
-        (_,stack,comps) = strongConnect(mt,a2,number,lowlink,stackflag,0,w,istack,icomps);
-      then (stack,comps);
-    else (istack,icomps);
-  end match;
+  if intEq(number[w], 0) then
+    (_, ostack, ocomps) := strongConnect(mt, a2, number, lowlink, stackflag, 0, w, ostack, ocomps);
+  end if;
 end strongConnectMain3;
 
 protected function strongConnect "author: PA
@@ -888,32 +847,24 @@ protected function strongConnect "author: PA
   output Integer oi;
   output list<Integer> ostack;
   output list<list<Integer>> ocomps;
+protected
+  list<Integer> eqns;
+  list<Integer> stack_2;
+  list<list<Integer>> comps_1;
+  list<Integer> comp;
 algorithm
-  (oi,ostack,ocomps):=
-  matchcontinue (mt,a2,number,lowlink,stackflag,i,v,stack,comps)
-    local
-      Integer i_1;
-      list<Integer> stack_1,eqns,stack_2,stack_3,comp;
-      list<list<Integer>> comps_1,comps_2;
-    case (_,_,_,_,_,_,_,_,_)
-      equation
-        i_1 = i + 1;
-        arrayUpdate(number,v,i_1);
-        arrayUpdate(lowlink,v,i_1);
-        stack_1 = (v :: stack);
-        arrayUpdate(stackflag,v,true);
-        eqns = reachableNodes(v, mt, a2);
-        (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, mt, a2, number, lowlink, stackflag, i_1, v, stack_1, comps);
-        (stack_3,comp) = checkRoot(v, stack_2, number, lowlink, stackflag);
-        comps_2 = consIfNonempty(comp, comps_1);
-      then
-        (i_1,stack_3,comps_2);
-    else
-      equation
-        Debug.traceln("- BackendDAETransform.strongConnect failed for eqn " + intString(v));
-      then
-        fail();
-  end matchcontinue;
+  try
+    arrayUpdate(number, v, i+1);
+    arrayUpdate(lowlink, v, i+1);
+    arrayUpdate(stackflag, v, true);
+    eqns := reachableNodes(v, mt, a2);
+    (oi, stack_2, comps_1) := iterateReachableNodes(eqns, mt, a2, number, lowlink, stackflag, i+1, v, v::stack, comps);
+    (ostack, comp) := checkRoot(v, stack_2, number, lowlink, stackflag);
+    ocomps := consIfNonempty(comp, comps_1);
+  else
+    Debug.traceln("- BackendDAETransform.strongConnect failed for eqn " + intString(v));
+    fail();
+  end try;
 end strongConnect;
 
 protected function consIfNonempty "author: PA
@@ -989,20 +940,19 @@ protected function iterateReachableNodes
   output list<Integer> outStack;
   output list<list<Integer>> outComps;
 algorithm
-  (outI,outStack,outComps) := match (eqns,mt,a2,number,lowlink,stackflag,i,v,istack,icomps)
+  (outI,outStack,outComps) := match (eqns)
     local
-      Integer i1,lv,lw,minv,w,nw,nv;
-      list<Integer> stack,ws;
-      list<list<Integer>> comps_1,comps_2,comps;
+      Integer i1,w;
+      list<Integer> stack, ws;
+      list<list<Integer>> comps;
 
-    // empty case
-    case ({},_,_,_,_,_,_,_,_,_) then (i,istack,icomps);
+    case {}
+    then (i, istack, icomps);
 
-    case (w :: ws,_,_,_,_,_,i1,_,stack,comps)
-      equation
-        (i1,stack,comps) = iterateReachableNodes2(w, mt, a2, number, lowlink, stackflag, i1, v, stack, comps);
-        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i1, v, stack, comps);
-      then (i1,stack,comps);
+    case w::ws equation
+      (i1,stack,comps) = iterateReachableNodes2(w, mt, a2, number, lowlink, stackflag, i, v, istack, icomps);
+      (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i1, v, stack, comps);
+    then (i1, stack, comps);
   end match;
 end iterateReachableNodes;
 
@@ -1017,40 +967,25 @@ protected function iterateReachableNodes2
   input Integer v;
   input list<Integer> istack;
   input list<list<Integer>> icomps;
-  output Integer outI;
-  output list<Integer> outStack;
-  output list<list<Integer>> outComps;
+  output Integer outI = i;
+  output list<Integer> outStack = istack;
+  output list<list<Integer>> outComps = icomps;
+protected
+  Integer lv, lw, minv, nw, nv;
 algorithm
-  (outI,outStack,outComps):= matchcontinue (eqn,mt,a2,number,lowlink,stackflag,i,v,istack,icomps)
-    local
-      Integer i1,lv,lw,minv,w,nw,nv;
-      list<Integer> stack,ws;
-      list<list<Integer>> comps_1,comps_2,comps;
-
-    // nw is 0
-    case (w,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intEq(number[w],0);
-        (i1,stack,comps_1) = strongConnect(mt, a2, number, lowlink, stackflag, i, w, istack, icomps);
-        lv = lowlink[v];
-        lw = lowlink[w];
-        minv = intMin(lv, lw);
-        arrayUpdate(lowlink,v,minv);
-      then (i1,stack,comps_1);
-
-    // nw
-    case (w,_,_,_,_,_,_,_,_,_)
-      equation
-        nw = number[w];
-        nv = lowlink[v];
-        (nw < nv) = true;
-        true = stackflag[w];
-        arrayUpdate(lowlink,v,nw);
-      then (i,istack,icomps);
-
-    else (i,istack,icomps);
-
-  end matchcontinue;
+  if intEq(number[eqn], 0) then
+    (outI, outStack, outComps) := strongConnect(mt, a2, number, lowlink, stackflag, i, eqn, istack, icomps);
+    lv := lowlink[v];
+    lw := lowlink[eqn];
+    minv := intMin(lv, lw);
+    arrayUpdate(lowlink, v, minv);
+  else
+    nw := number[eqn];
+    nv := lowlink[v];
+    if nw < nv and stackflag[eqn] then
+      arrayUpdate(lowlink, v, nw);
+    end if;
+  end if;
 end iterateReachableNodes2;
 
 protected function checkRoot "author: PA
