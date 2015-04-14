@@ -6036,9 +6036,9 @@ algorithm
   allVarLst := listAppend(listAppend(knownVarLst,allVarLst),aliasVarLst);
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
   //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printViusalization),"\n")+"\n");
-  
+
   //convert to template type and dump
-  visualsTPL := List.map(visuals,convertToTPLvis);  
+  visualsTPL := List.map(visuals,convertToTPLvis);
   GraphML.dumpVis(listArray(visualsTPL), fileName+"_visual.xml");
 end visualizationInfoXML;
 
@@ -6068,7 +6068,7 @@ algorithm
       for i in List.intRange(3) loop
         T0 := arrayGet(T,i);
         T0tpl := List.map(T0,ExpressionDump.printExpStr);
-        Ttpl := arrayUpdate(Ttpl,i,T0tpl);       
+        Ttpl := arrayUpdate(Ttpl,i,T0tpl);
       end for;
     then GraphML.SHAPE_TPL(ident, shapeType, Ttpl, rTPL, r_shapeTpl, lengthDirTPL, widthDirTPL, ExpressionDump.printExpStr(length), ExpressionDump.printExpStr(width), ExpressionDump.printExpStr(height), ExpressionDump.printExpStr(extra), colorTPL,  ExpressionDump.printExpStr(specularCoeff));
   end match;
@@ -6095,7 +6095,7 @@ algorithm
       name := Util.stringReplaceChar(name,"$",".");
       true := stringEqual(stringCharListString(prefix),"Shape$");
       vis := GraphML.SHAPE(name,"",arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
-                           arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)), 
+                           arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)),
                            DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1), arrayCreate(3,DAE.RCONST(-1)), DAE.RCONST(-1));
       (allVars,vis) := List.fold(allVarsIn,fillVisualizationObjects1,({},vis));
     then (vis,allVarsIn);
@@ -6178,7 +6178,7 @@ algorithm
     then (vars, vis);
   else
     algorithm
-      (vars,vis) := tplIn; 
+      (vars,vis) := tplIn;
     then (varIn::vars, vis);
   end matchcontinue;
 end fillVisualizationObjects1;
@@ -6202,7 +6202,7 @@ algorithm
       array<list<DAE.Exp>> T;
   case(DAE.CREF_IDENT(ident="shapeType"),BackendDAE.VAR(bindExp=SOME(DAE.SCONST(svalue))), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     then (GraphML.SHAPE(ident, svalue, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-      
+
   case(DAE.CREF_QUAL(ident="R",componentRef=DAE.CREF_IDENT(ident="T", subscriptLst = {DAE.INDEX(DAE.ICONST(pos)),DAE.INDEX(DAE.ICONST(pos1))})),BackendDAE.VAR(bindExp=bind), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if Util.isSome(bind) then exp := Util.getOption(bind);
@@ -6228,7 +6228,7 @@ algorithm
       end if;
       r_shape := arrayUpdate(r_shape,pos,exp);
     then (GraphML.SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-   
+
   case(DAE.CREF_IDENT(ident="lengthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if Util.isSome(bind) then exp := Util.getOption(bind);
@@ -6236,7 +6236,7 @@ algorithm
       end if;
       lengthDir := arrayUpdate(lengthDir,pos,exp);
     then (GraphML.SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-      
+
   case(DAE.CREF_IDENT(ident="widthDirection", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if Util.isSome(bind) then exp := Util.getOption(bind);
@@ -6244,14 +6244,14 @@ algorithm
       end if;
       widthDir := arrayUpdate(widthDir,pos,exp);
     then (GraphML.SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
- 
+
   case(DAE.CREF_IDENT(ident="length"),BackendDAE.VAR(bindExp=bind), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if Util.isSome(bind) then length := Util.getOption(bind);
       else length := BackendVariable.varExp(var);
       end if;
     then (GraphML.SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-      
+
   case(DAE.CREF_IDENT(ident="width"),BackendDAE.VAR(bindExp=bind), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if Util.isSome(bind) then width := Util.getOption(bind);
@@ -6265,14 +6265,14 @@ algorithm
       else height := BackendVariable.varExp(var);
       end if;
     then (GraphML.SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-            
+
    case(DAE.CREF_IDENT(ident="extra"),BackendDAE.VAR(bindExp=bind), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if Util.isSome(bind) then extra := Util.getOption(bind);
       else extra := BackendVariable.varExp(var);
       end if;
     then (GraphML.SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-            
+
   case(DAE.CREF_IDENT(ident="color", subscriptLst = {DAE.INDEX(DAE.ICONST(pos))}),BackendDAE.VAR(bindExp=bind), GraphML.SHAPE(ident=ident, shapeType=shapeType, T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir, length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff))
     algorithm
       if Util.isSome(bind) then exp := Util.getOption(bind);
@@ -6287,7 +6287,7 @@ algorithm
       else specularCoeff := BackendVariable.varExp(var);
       end if;
     then (GraphML.SHAPE(ident, shapeType, T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
-      
+
   else
     algorithm
       BackendDAE.VAR(bindExp=bind) := var;
@@ -6311,12 +6311,12 @@ algorithm
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(GraphML.SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height))
-  then ("SHAPE "+ident+" '"+shapeType + "' r{"+stringDelimitList(List.map(arrayList(r),ExpressionDump.printExpStr),",")+"}" + 
+  then ("SHAPE "+ident+" '"+shapeType + "' r{"+stringDelimitList(List.map(arrayList(r),ExpressionDump.printExpStr),",")+"}" +
         " lD{"+stringDelimitList(List.map(arrayList(lengthDir),ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.map(arrayList(widthDir),ExpressionDump.printExpStr),",")+"}"+
         " color("+stringDelimitList(List.map(arrayList(color),ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
         " T {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}");
   else
-    then "-"; 
+    then "-";
   end match;
 end printViusalization;
 

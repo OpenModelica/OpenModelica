@@ -83,7 +83,7 @@ interface package GraphMLDumpTplTV
       input Real r;
       output Integer i;
     end realInt;
-  
+
     function realString
       input Real r;
       output String s;
@@ -136,9 +136,9 @@ interface package GraphMLDumpTplTV
       replaceable type TypeB subtypeof Any;
     end tuple22;
   end Util;
-   
+
   package GraphML
-    
+
   uniontype VisualizationTPL
     record SHAPE_TPL
       String ident;
@@ -156,7 +156,7 @@ interface package GraphMLDumpTplTV
       String specularCoeff;
     end SHAPE_TPL;
   end VisualizationTPL;
-    
+
     uniontype GraphInfo
       record GRAPHINFOARR
         array<Graph> graphs;

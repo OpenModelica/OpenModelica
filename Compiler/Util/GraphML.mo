@@ -599,7 +599,7 @@ end compareAttributeTarget0;
 // Dump
 // -------------------------
 
-public function dumpVis "author: waurich TUD 
+public function dumpVis "author: waurich TUD
   Dumps the graph into a *.xml-file."
   input array<VisualizationTPL> visIn;
   input String iFileName;

@@ -407,7 +407,7 @@ template dumpVis(GraphML.VisualizationTPL vis)
                   <height><%height%></height>
                   <extra><%extra%></extra>
                   <color>{<%colorDump%>}</color>
-                  <specularCoeff><%specularCoeff%></specularCoeff>                  
+                  <specularCoeff><%specularCoeff%></specularCoeff>
               </shape>
             >>
     end match
