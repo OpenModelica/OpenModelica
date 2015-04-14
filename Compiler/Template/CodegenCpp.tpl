@@ -6251,7 +6251,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     sparse_inserter *__Asparse; //sparse
 
- 
+
     bool* _conditions;
 
      boost::shared_ptr<DiscreteEvents> _discrete_events;
