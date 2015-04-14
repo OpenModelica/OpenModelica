@@ -3017,7 +3017,7 @@ protected function Tarjan "Modified matching algorithm according to Tarjan.
   output list<list<Integer>> orderOut;
   output Boolean causal;
 protected
-  list<Integer> ass1,ass2,subOrder,unassigned,eqQueue;
+  list<Integer> subOrder,unassigned,eqQueue;
   list<list<Integer>> order;
   Boolean ass;
 algorithm
@@ -3029,7 +3029,7 @@ algorithm
     (orderOut,causal) := Tarjan(mIn,mtIn,meIn,metIn,ass1In,ass2In,order,eqQueue,mapEqnIncRow,mapIncRowEqn,ass);
   else
     ((_,unassigned)) := Array.fold(ass1In,getUnassigned,(1,{}));
-  if listEmpty(unassigned) then
+    if listEmpty(unassigned) then
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\ncausal\n");
       end if;
