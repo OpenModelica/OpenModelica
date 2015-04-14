@@ -507,7 +507,7 @@ template simulationCppFile(SimCode simCode, Context context, Text& extraFuncs, T
       <%Update(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
       <%DefaultImplementationCode(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-      <%checkForDiscreteEvents(discreteModelVars,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%checkForDiscreteEvents(discreteModelVars,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
       <%giveZeroFunc1(zeroCrossings,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
       <%setConditions(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>

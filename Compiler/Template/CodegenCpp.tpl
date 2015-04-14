@@ -3191,7 +3191,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%Update(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
     <%DefaultImplementationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-    <%checkForDiscreteEvents(discreteModelVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
+    <%checkForDiscreteEvents(discreteModelVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
     <%giveZeroFunc1(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
     <%setConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -6244,15 +6244,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
       boost::shared_ptr<AMATRIX> __A; //dense
      //b vector
-     StatArrayDim1<double,<%size%> > __b;
+     StatArrayDim1<double,<%size%>,false > __b;
     >>
     %>
 
 
     sparse_inserter *__Asparse; //sparse
 
-    //b vector
-    //boost::multi_array<double,1> __b;
+ 
     bool* _conditions;
 
      boost::shared_ptr<DiscreteEvents> _discrete_events;
@@ -8574,6 +8573,25 @@ cref2simvar(aliascref, simCode ) |> var  as SIMVAR(__)=>
        startValue(var.type_)
 end getAliasInitVal2;
 
+
+template getVarFromAliasName(ComponentRef varname, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+ cref2simvar(varname, simCode ) |> var  as SIMVAR(__)=>
+ getVarFromAliasName2(var.aliasvar,varname,context, &preExp, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName,useFlatArrayNotation)
+end getVarFromAliasName;
+
+
+template getVarFromAliasName2(AliasVariable aliasvar,ComponentRef origvarname, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+ match aliasvar
+    case NOALIAS(__) then '<%cref1(origvarname, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
+    case ALIAS(__) then '<%cref1(varName, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
+    case NEGATEDALIAS(__) then '<%cref1(varName, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
+end getVarFromAliasName2;
 
 template startValue(DAE.Type ty)
 ::=
@@ -13367,9 +13385,10 @@ template expTypeFromOpFlag(Operator op, Integer flag)
   else "expTypeFromOpFlag:ERROR"
 end expTypeFromOpFlag;
 
-template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Boolean useFlatArrayNotation)
+template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/,Boolean useFlatArrayNotation)
 ::=
-
+   let &preExp = buffer ""
+  let &varDecls = buffer ""
   let changediscreteVars = (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
        'if (_discrete_events->changeDiscreteVar(<%cref(var, useFlatArrayNotation)%>)) {  return true; }'
        ;separator="\n")
@@ -13378,6 +13397,8 @@ template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode sim
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::checkForDiscreteEvents()
   {
+    <%varDecls%>
+    <%preExp%>
     <%changediscreteVars%>
     return false;
   }
