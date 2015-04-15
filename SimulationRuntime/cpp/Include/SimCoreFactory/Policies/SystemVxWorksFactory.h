@@ -28,7 +28,7 @@ public:
         boost::shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData, simVars);
         return system;
     }
-    
+
     boost::shared_ptr<ISimData> createSimData()
     {
         boost::shared_ptr<ISimData> simData = ObjectFactory<CreationPolicy>::_factory->LoadSimData();
@@ -40,10 +40,10 @@ public:
         boost::shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData, simVars);
         return system;
     }
-    
+
     boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
     {
-    	boost::shared_ptr<ISimVars> simVars = ObjectFactory<CreationPolicy>::_factory->LoadSimVars(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i);
+      boost::shared_ptr<ISimVars> simVars = ObjectFactory<CreationPolicy>::_factory->LoadSimVars(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i);
         return simVars;
     }
 

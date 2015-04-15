@@ -24,7 +24,7 @@ SimController::~SimController()
 
 boost::weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string modelKey)
 {
-	
+
     //if the model is already loaded
     std::map<string,boost::shared_ptr<IMixedSystem> >::iterator iter = _systems.find(modelKey);
     if(iter != _systems.end())
