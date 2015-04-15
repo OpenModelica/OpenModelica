@@ -1395,7 +1395,7 @@ algorithm
     local
       Real exeCost, estimate;
       list<Real> restCosts;
-      BackendDAE.compInfo compInfo;
+      BackendDAE.CompInfo compInfo;
       BackendDAE.EqSystem eqSys;
       BackendDAE.StrongComponent comp;
       list<BackendDAE.EqSystem> eqSysRest;

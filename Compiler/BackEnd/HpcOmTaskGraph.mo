@@ -4414,7 +4414,7 @@ author: Waurich TUD 2013-09"
 protected
   BackendDAE.StrongComponents comps;
   BackendDAE.EqSystem eqSys;
-  list<BackendDAE.compInfo> compsInfos;
+  list<BackendDAE.CompInfo> compsInfos;
 algorithm
   comps := listGet(compsLstIn,systIdx);
   eqSys := listGet(eqSystemsIn,systIdx);
@@ -4424,7 +4424,7 @@ end estimateCosts0;
 
 public function calculateCosts "calculates the estimated costs for a compInfo. this has been benchmarked using the Cpp runtime
 author: Waurich TUD 2014-12"
-  input BackendDAE.compInfo compInfo;
+  input BackendDAE.CompInfo compInfo;
   output tuple<Integer,Real> exeCost;
 algorithm
   exeCost := matchcontinue(compInfo)
@@ -4432,7 +4432,7 @@ algorithm
       Integer numAdds,numMul,numDiv,numOth,numTrig,numRel,numLog,numFuncs, costs, ops,ops1, offset,size;
       Real allOpCosts,tornCosts,otherCosts,dens;
       BackendDAE.StrongComponent comp;
-      BackendDAE.compInfo allOps, torn, other;
+      BackendDAE.CompInfo allOps, torn, other;
 
     case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
       equation
@@ -4456,6 +4456,13 @@ algorithm
         (ops1,otherCosts) = calculateCosts(other);
         allOpCosts = realAdd(realAdd(3000.0,realMul(7.62,realPow(intReal(size),3.0))),realAdd(realMul(2.0,tornCosts),realMul(1.4,otherCosts)));
       then (ops+ops1,allOpCosts);
+
+    case(BackendDAE.NO_COMP(numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
+      equation
+        ops = numAdds+numMul+numOth+numTrig+numRel+numLog;
+        offset = 50;  // this was just estimated, not benchmarked
+        costs = offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
+     then (ops,intReal(costs));
 
       else
         equation
@@ -5776,6 +5783,7 @@ algorithm
       TaskGraph graph;
       TaskGraphMeta graphData;
       BackendDAE.EquationArray remEqs;
+      BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqLst;
       list<list<DAE.ComponentRef>> crefsLst;
       list<tuple<Integer,Integer>> tplLst;
@@ -5791,7 +5799,8 @@ algorithm
       array<ComponentInfo> compInformations1, compInformations2;
   case(_,_,_)
     equation
-      BackendDAE.DAE(shared = BackendDAE.SHARED(removedEqs=remEqs)) = dae;
+      BackendDAE.DAE(shared = shared) = dae;
+      BackendDAE.SHARED(removedEqs=remEqs) = shared;
       TASKGRAPHMETA(varCompMapping=varCompMap) = graphDataIn;
       eqLst = BackendEquation.equationList(remEqs);
       numNewComps = listLength(eqLst);
@@ -5811,7 +5820,7 @@ algorithm
       compNames2 = arrayCreate(numNewComps,"assert");
       compDescs2 = listArray(List.map(eqLst,BackendDump.equationString));
       nodeMark2 = arrayCreate(numNewComps,-2);
-      exeCosts2 = arrayCreate(numNewComps,(1,30.0)); //TODO: Estimate them correctly!
+      exeCosts2 = listArray(List.map1(eqLst,estimateEquationCosts,shared));
       compInformations2 = arrayCreate(numNewComps, COMPONENTINFO(false, false, true));
       inComps1 = arrayAppend(inComps1,inComps2);
       compNames1 = arrayAppend(compNames1,compNames2);
@@ -5825,6 +5834,20 @@ algorithm
   else (graphIn,graphDataIn);
   end matchcontinue;
 end appendRemovedEquations;
+
+protected function estimateEquationCosts"estimates costs for equations.
+author: Waurich TUD 2015-04"
+  input BackendDAE.Equation eqIn;
+  input BackendDAE.Shared sharedIn;
+  output tuple<Integer,Real> tplOut; //<Operations,Costs>
+protected
+  Integer  numAdd,numMul,numDiv,numTrig,numRel,numOth, numFuncs, numLog;
+  BackendDAE.CompInfo compInfo;
+algorithm
+  (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) := BackendEquation.traverseExpsOfEquation(eqIn,function BackendDAEOptimize.countOperationsExp(shared=sharedIn),(0,0,0,0,0,0,0,0));
+  compInfo := BackendDAE.NO_COMP(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
+  tplOut := calculateCosts(compInfo);
+end estimateEquationCosts;
 
 protected function printNodeVars
   input list<tuple<Integer,Integer>> nodes;

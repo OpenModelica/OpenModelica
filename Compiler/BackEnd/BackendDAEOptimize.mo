@@ -1818,7 +1818,7 @@ protected function countOperations0 "author: Frenkel TUD 2011-05"
   output BackendDAE.Shared outShared = inShared;
   output Boolean outChanged = inChanged;
 protected
-  list<BackendDAE.compInfo> compInfos;
+  list<BackendDAE.CompInfo> compInfos;
   BackendDAE.StrongComponents comps;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
@@ -1829,8 +1829,8 @@ public function countOperationstraverseComps "author: Frenkel TUD 2012-05"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input list<BackendDAE.compInfo> compInfosIn;
-  output list<BackendDAE.compInfo> compInfosOut;
+  input list<BackendDAE.CompInfo> compInfosIn;
+  output list<BackendDAE.CompInfo> compInfosOut;
 algorithm
   compInfosOut :=  matchcontinue (inComps,isyst,ishared,compInfosIn)
     local
@@ -1842,7 +1842,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       BackendDAE.Equation eqn;
-      BackendDAE.compInfo compInfo, allOps, torn,other;
+      BackendDAE.CompInfo compInfo, allOps, torn,other;
       list<BackendDAE.Equation> eqnlst;
       BackendDAE.Jacobian jac;
       DAE.FunctionTree funcs;
@@ -1998,8 +1998,8 @@ end getNumJacEntries;
 protected function countOperationsJac
   input BackendDAE.Jacobian inJac;
   input BackendDAE.Shared shared;
-  input BackendDAE.compInfo compInfoIn;
-  output BackendDAE.compInfo compInfoOut;
+  input BackendDAE.CompInfo compInfoIn;
+  output BackendDAE.CompInfo compInfoOut;
 algorithm
   compInfoOut := match(inJac,shared,compInfoIn)
     local

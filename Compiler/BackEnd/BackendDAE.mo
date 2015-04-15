@@ -708,7 +708,7 @@ uniontype DifferentiationType "Define the behaviour of differentiation method fo
   end GENERIC_GRADIENT;
 end DifferentiationType;
 
-public uniontype compInfo"types to count operations for the components"
+public uniontype CompInfo"types to count operations for the components"
   record COUNTER // single equation
    StrongComponent comp;
    Integer numAdds;
@@ -723,19 +723,30 @@ public uniontype compInfo"types to count operations for the components"
 
   record SYSTEM//linear system of equations
    StrongComponent comp;
-   compInfo allOperations;
+   CompInfo allOperations;
    Integer size;
    Real density;
   end SYSTEM;
 
   record TORN_ANALYSE//torn system of equations
    StrongComponent comp;
-   compInfo tornEqs;
-   compInfo otherEqs;
+   CompInfo tornEqs;
+   CompInfo otherEqs;
    Integer tornSize;
   end TORN_ANALYSE;
+  
+  record NO_COMP // assert...
+   Integer numAdds;
+   Integer numMul;
+   Integer numDiv;
+   Integer numTrig;
+   Integer numRelations;
+   Integer numLog; // logical operations
+   Integer numOth; // pow,...
+   Integer funcCalls;
+  end NO_COMP;
 
-end compInfo;
+end CompInfo;
 
 
 annotation(__OpenModelica_Interface="backend");

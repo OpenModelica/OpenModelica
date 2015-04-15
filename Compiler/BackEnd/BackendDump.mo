@@ -3526,13 +3526,13 @@ end dumpNrOfEquations;
 
 public function dumpCompInfo"dumps the information about the operations in the component.
 author Waurich TUD 2014-04"
-  input BackendDAE.compInfo compInfo;
+  input BackendDAE.CompInfo compInfo;
 algorithm
   print(printCompInfo(compInfo));
 end dumpCompInfo;
 
 protected function printCompInfo""
-  input BackendDAE.compInfo compInfo;
+  input BackendDAE.CompInfo compInfo;
   output String sOut;
 algorithm
   sOut := matchcontinue(compInfo)
@@ -3540,7 +3540,7 @@ algorithm
       Integer numAdds,numMul,numDiv,numOth,numTrig,numRel,numLog,numFuncs, size;
       Real dens;
       String s;
-      BackendDAE.compInfo allOps, tornEqs ,otherEqs;
+      BackendDAE.CompInfo allOps, tornEqs ,otherEqs;
       BackendDAE.StrongComponent comp;
       case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
         equation
@@ -3565,6 +3565,11 @@ algorithm
           s = "TS "+printComponent(comp)+"\tsize|"+intString(size)+"\n";
           s = s + "\tthe torn eqs:\t"+ printCompInfo(tornEqs);
           s = s + "\tthe other eqs:\t" + printCompInfo(otherEqs);
+        then s;
+      case(BackendDAE.NO_COMP(numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
+        equation
+          s = "NC";
+          s = s+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n";
         then s;
       else
         then "Dont know this compInfo\n";
