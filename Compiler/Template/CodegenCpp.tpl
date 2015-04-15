@@ -4406,7 +4406,7 @@ template extFunCall(Function fun, Text &preExp, Text &varDecls, Text &inputAssig
 ::=
 match fun
 case EXTERNAL_FUNCTION(__) then
-  let _ = (biVars |> bivar => 
+  let _ = (biVars |> bivar =>
            extFunCallBiVar(bivar, &preExp, &varDecls, simCode,
                            &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
                            stateDerVectorName, useFlatArrayNotation);
@@ -4665,11 +4665,11 @@ template extFunCallF77(Function fun, Text &preExp,
   case EXTERNAL_FUNCTION(__) then
     let funName = underscorePath(name)
     let args = (extArgs |> arg =>
-      extArgF77(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, 
-                &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, 
+      extArgF77(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode,
+                &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
                 stateDerVectorName, useFlatArrayNotation, &outputAllocate);
       separator=", ")
-    let returnVar = match extReturn 
+    let returnVar = match extReturn
       case SIMEXTARG(cref=c) then '<%contextCref2(c, contextFunction)%>'
     let returnAssign = if returnVar then '<%returnVar%> = '
     <<
@@ -4679,7 +4679,7 @@ template extFunCallF77(Function fun, Text &preExp,
 end extFunCallF77;
 
 
-template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls, 
+template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
   Text &inputAssign, Text &outputAssign, SimCode simCode, Text& extraFuncs,
   Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName,
   Boolean useFlatArrayNotation, Text &outputAllocate)
