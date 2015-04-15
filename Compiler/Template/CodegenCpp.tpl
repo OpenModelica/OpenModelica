@@ -4888,12 +4888,7 @@ case var as VARIABLE(__) then
   (match var.value
     case SOME(exp) then
 
-  let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let &varInits += defaultValue
-  let var_name = if outStruct then
-        '<%extVarName(var.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' else
-        '<%contextCref(var.name, contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-    let defaultValue1 = '<%var_name%>.assign(<%daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);<%\n%>'
+      let defaultValue1 = '<%varName%>.assign(<%daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);<%\n%>'
       let &varInits += defaultValue1
     ""
     else
@@ -4922,7 +4917,7 @@ template setDims(Text testinstDimsInit, String varName , Text &varInits, String 
   match testinstDimsInit
     case "" then let &varInits += ''
     ""
-    else let &varInits += '<%varName%>.setDims(<%instDimsInit%>);/*setDims 1*/'
+    else let &varInits += '<%varName%>.setDims(<%instDimsInit%>);<%\n%>'
     ""
     end match
 end setDims;
@@ -4990,7 +4985,7 @@ match var
 case var as VARIABLE(__) then
   match value
   case SOME(CREF(componentRef = cr)) then
-    if outStruct then '<%contextCref(cr,contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> =  <%outStruct%>.targTest9<%i%><%\n%>' else '<%\n%>'
+    '<%contextCref(cr,contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> =  <%outStruct%>.targTest9<%i%><%\n%>'
   case SOME(arr as ARRAY(__)) then
     let arrayExp = '<%daeExp(arr, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
     <<
