@@ -807,7 +807,7 @@ algorithm
     // BackendDump.dumpMatchingVars(ass1);
     // BackendDump.dumpMatchingEqns(ass2);
 
-    comps := BackendDAETransform.tarjanAlgorithm(mT, ass2);
+    comps := BackendDAETransform.Tarjan(m, ass1);
     // BackendDump.dumpComponentsOLD(comps);
     comps := mapListIndices(comps, ass2) "map to var indices" ;
     // BackendDump.dumpComponentsOLD(comps);
@@ -1560,7 +1560,6 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       Integer nVars, nEqns, currRedundantEqn, redundantEqn;
       list<list<Integer>> comps;
-      BackendDAE.IncidenceMatrixT mT;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.EquationArray substEqns;
 
@@ -1577,11 +1576,8 @@ algorithm
     //BackendDump.dumpList(inRedundantEqns, "inRedundantEqns: ");
     //BackendDump.dumpIncidenceMatrix(inM);
 
-      mT = BackendDAEUtil.transposeMatrix(inM, nVars+nAddVars);
-    //BackendDump.dumpIncidenceMatrix(inM);
-
       // get the sorting and algebraic loops
-      comps = BackendDAETransform.tarjanAlgorithm(mT, vecEqsToVar);
+      comps = BackendDAETransform.Tarjan(inM, vecVarToEqs);
       flatComps = List.flatten(comps);
     //BackendDump.dumpComponentsOLD(comps);
 

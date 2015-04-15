@@ -253,6 +253,22 @@ algorithm
   end for;
 end BBCheapMatching;
 
+public function invertMatching "author: lochel
+  ass1 <-> ass2"
+  input array<Integer> inAss;
+  output array<Integer> outAss;
+protected
+  Integer N = arrayLength(inAss);
+  Integer j;
+algorithm
+  outAss := arrayCreate(N, -1);
+  for i in 1:N loop
+    j := arrayGet(inAss, i);
+    if j > 0 then
+      arrayUpdate(outAss, inAss[i], i);
+    end if;
+  end for;
+end invertMatching;
 
 // =============================================================================
 // Matching Algorithms
