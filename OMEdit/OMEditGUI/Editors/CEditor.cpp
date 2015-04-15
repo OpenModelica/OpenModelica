@@ -63,8 +63,8 @@ void CEditor::showContextMenu(QPoint point)
  * \brief CHighlighter::CHighlighter
  * \param pTextDocument
  */
-CHighlighter::CHighlighter(QTextDocument *pTextDocument)
-  : QSyntaxHighlighter(pTextDocument)
+CHighlighter::CHighlighter(QPlainTextEdit *pPlainTextEdit)
+  : QSyntaxHighlighter(pPlainTextEdit->document())
 {
   initializeSettings();
 }
@@ -72,10 +72,10 @@ CHighlighter::CHighlighter(QTextDocument *pTextDocument)
 //! Initialized the syntax highlighter with default values.
 void CHighlighter::initializeSettings()
 {
-  QTextDocument *pTextDocument = qobject_cast<QTextDocument*>(parent());
   QFont font;
   font.setFamily(Helper::monospacedFontInfo.family());
-  pTextDocument->setDefaultFont(font);
+  mpPlainTextEdit->document()->setDefaultFont(font);
+  mpPlainTextEdit->setTabStopWidth(4 * QFontMetrics(font).width(QLatin1Char(' ')));
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;

@@ -627,7 +627,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpTransformationsEditor = new TransformationsEditor(this);
   ModelicaTextHighlighter *pModelicaTextHighlighter;
   pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
-                                                         mpTransformationsEditor->getPlainTextEdit()->document());
+                                                         mpTransformationsEditor->getPlainTextEdit());
   connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
   pTSourceEditorVerticalLayout->setSpacing(1);

@@ -1787,7 +1787,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
                      "end HelloWorld;\n");
   mpPreviewPlainTextBox->setPlainText(previewText);
   // highlight preview textbox
-  ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextBox->document());
+  ModelicaTextHighlighter *pModelicaTextHighlighter = new ModelicaTextHighlighter(this, mpPreviewPlainTextBox);
   connect(this, SIGNAL(updatePreview()), pModelicaTextHighlighter, SLOT(settingsChanged()));
   connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pModelicaTextHighlighter, SLOT(settingsChanged()));
   // set fonts & colors groupbox layout

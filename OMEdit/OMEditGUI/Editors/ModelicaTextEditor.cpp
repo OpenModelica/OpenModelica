@@ -617,21 +617,22 @@ void ModelicaTextEditor::toggleCommentSelection()
 //! @brief A syntax highlighter for ModelicaEditor.
 
 //! Constructor
-ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextEditorPage *pModelicaTextEditorPage, QTextDocument *pTextDocument)
-  : QSyntaxHighlighter(pTextDocument)
+ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextEditorPage *pModelicaTextEditorPage, QPlainTextEdit *pPlainTextEdit)
+  : QSyntaxHighlighter(pPlainTextEdit->document())
 {
   mpModelicaTextEditorPage = pModelicaTextEditorPage;
+  mpPlainTextEdit = pPlainTextEdit;
   initializeSettings();
 }
 
 //! Initialized the syntax highlighter with default values.
 void ModelicaTextHighlighter::initializeSettings()
 {
-  QTextDocument *pTextDocument = qobject_cast<QTextDocument*>(parent());
   QFont font;
   font.setFamily(mpModelicaTextEditorPage->getFontFamilyComboBox()->currentFont().family());
   font.setPointSizeF(mpModelicaTextEditorPage->getFontSizeSpinBox()->value());
-  pTextDocument->setDefaultFont(font);
+  mpPlainTextEdit->document()->setDefaultFont(font);
+  mpPlainTextEdit->setTabStopWidth(mpModelicaTextEditorPage->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;

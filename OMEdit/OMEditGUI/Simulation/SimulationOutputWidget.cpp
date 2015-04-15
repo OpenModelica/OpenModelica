@@ -320,7 +320,7 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
     BaseEditor *pEditor;
     if (StringHandler::isCFile(fileInfo.suffix())) {
       pEditor = new CEditor(mpMainWindow);
-      CHighlighter *pCHighlighter = new CHighlighter(pEditor->getPlainTextEdit()->document());
+      CHighlighter *pCHighlighter = new CHighlighter(pEditor->getPlainTextEdit());
       Q_UNUSED(pCHighlighter);
     } else {
       pEditor = new TextEditor(mpMainWindow);

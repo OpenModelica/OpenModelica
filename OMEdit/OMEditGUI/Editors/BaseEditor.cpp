@@ -388,6 +388,20 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     pEvent->setModifiers(Qt::NoModifier);
   }
   QPlainTextEdit::keyPressEvent(pEvent);
+  /* If user has pressed enter then a new line is inserted.
+   * Indent the new line based on the indentation of previous line.
+   */
+  /*! @todo We should add formatter classes to handle this based on editor language i.e Modelica or C/C++. */
+  if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return) {
+    const ModelicaTabSettings modelicaTabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
+    QTextCursor cursor = textCursor();
+    const QTextBlock previousBlock = cursor.block().previous();
+    QString indentText = previousBlock.text();
+    cursor.beginEditBlock();
+    cursor.insertText(indentText.left(modelicaTabSettings.firstNonSpace(indentText)));
+    cursor.endEditBlock();
+    setTextCursor(cursor);
+  }
 }
 
 BaseEditor::BaseEditor(MainWindow *pMainWindow)

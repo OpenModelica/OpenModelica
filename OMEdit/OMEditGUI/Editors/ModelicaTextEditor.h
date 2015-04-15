@@ -80,9 +80,9 @@ public:
   };
   ModelicaTabSettings();
   void setTabPolicy(int tabPolicy) {mTabPolicy = (TabPolicy)tabPolicy;}
-  TabPolicy getTabPolicy() {return mTabPolicy;}
+  TabPolicy getTabPolicy() const {return mTabPolicy;}
   void setTabSize(int tabSize) {mTabSize = tabSize;}
-  int getTabSize() {return mTabSize;}
+  int getTabSize() const {return mTabSize;}
   void setIndentSize(int indentSize) {mIndentSize = indentSize;}
   int getIndentSize() {return mIndentSize;}
 
@@ -127,13 +127,14 @@ class ModelicaTextHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  ModelicaTextHighlighter(ModelicaTextEditorPage *pModelicaTextEditorPage, QTextDocument *pTextDocument = 0);
+  ModelicaTextHighlighter(ModelicaTextEditorPage *pModelicaTextEditorPage, QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
   ModelicaTextEditorPage *mpModelicaTextEditorPage;
+  QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
     QRegExp mPattern;

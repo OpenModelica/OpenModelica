@@ -2009,7 +2009,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpEditor = new ModelicaTextEditor(this);
     MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
     mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextEditorPage(),
-                                                            mpEditor->getPlainTextEdit()->document());
+                                                            mpEditor->getPlainTextEdit());
     mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
     connect(pMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
     mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);

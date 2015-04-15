@@ -42,6 +42,7 @@ TextEditor::TextEditor(ModelWidget *pModelWidget)
 {
   //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
   mpPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpPlainTextEdit->setTabStopWidth(4 * QFontMetrics(mpPlainTextEdit->font()).width(QLatin1Char(' ')));
 }
 
 TextEditor::TextEditor(MainWindow *pMainWindow)
@@ -49,6 +50,7 @@ TextEditor::TextEditor(MainWindow *pMainWindow)
 {
   //! @todo for now set the font of TextEditor to default monospaced font. Later define settings for it and read from there.
   mpPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpPlainTextEdit->setTabStopWidth(4 * QFontMetrics(mpPlainTextEdit->font()).width(QLatin1Char(' ')));
 }
 
 /*!

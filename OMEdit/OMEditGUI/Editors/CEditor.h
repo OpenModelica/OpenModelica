@@ -58,12 +58,13 @@ class CHighlighter : public QSyntaxHighlighter
 {
   Q_OBJECT
 public:
-  CHighlighter(QTextDocument *pTextDocument = 0);
+  CHighlighter(QPlainTextEdit *pPlainTextEdit = 0);
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
   virtual void highlightBlock(const QString &text);
 private:
+  QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
     QRegExp mPattern;
