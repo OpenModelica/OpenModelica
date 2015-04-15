@@ -4,14 +4,14 @@ extern "C" ISimController* createSimController(PATH library_path, PATH modelicas
 extern "C" ISettingsFactory* createSettingsFactory(PATH library_path,PATH modelicasystem_path);
 extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path);
 extern "C" ISimData* createSimData();
-extern "C" IMixedSystem* createModelCG(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor, boost::shared_ptr<ISimData> simData);
+extern "C" ISimVars* createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i);
 extern "C" ISolver* createRTEuler(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolver* createRTRK(IMixedSystem* system, ISolverSettings* settings);
 extern "C" ISolverSettings* createRTEulerSettings(IGlobalSettings* globalSettings);
 extern "C" ISolverSettings* createRTRKSettings(IGlobalSettings* globalSettings);
 extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings);
 extern "C" INonLinSolverSettings* createKinsolSettings();
-extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simdata);
+extern "C" IMixedSystem* createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simdata, boost::shared_ptr<ISimVars> sim_vars);
 
 VxWorksFactory::VxWorksFactory(string library_path, string modelicasystem_path)
     : _library_path(library_path)
@@ -42,9 +42,9 @@ boost::shared_ptr<IAlgLoopSolverFactory>  VxWorksFactory::LoadAlgLoopSolverFacto
 
 }
 
-boost::shared_ptr<IMixedSystem> VxWorksFactory::LoadSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simData)
+boost::shared_ptr<IMixedSystem> VxWorksFactory::LoadSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolver, boost::shared_ptr<ISimData> simData, boost::shared_ptr<ISimVars> simVars)
 {
-    IMixedSystem* system = createModelicaSystem(globalSettings, nonlinsolver, simData);
+    IMixedSystem* system = createModelicaSystem(globalSettings, nonlinsolver, simData, simVars);
     return boost::shared_ptr<IMixedSystem>(system);
 }
 
@@ -125,3 +125,9 @@ boost::shared_ptr<INonLinSolverSettings> VxWorksFactory::LoadAlgLoopSolverSettin
   }
     return boost::shared_ptr<INonLinSolverSettings>(solver_settings);
 }
+boost::shared_ptr<ISimVars> VxWorksFactory::LoadSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
+{
+    ISimVars* simVars = createSimVars(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i);
+    return boost::shared_ptr<ISimVars>(simVars);
+}
+

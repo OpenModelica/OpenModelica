@@ -7,6 +7,7 @@
 #include "LibrariesConfig.h"
 #endif
 
+
 SimController::SimController(PATH library_path, PATH modelicasystem_path)
     : SimControllerPolicy(library_path, modelicasystem_path, library_path)
     , _initialized(false)
@@ -23,6 +24,7 @@ SimController::~SimController()
 
 boost::weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string modelKey)
 {
+	
     //if the model is already loaded
     std::map<string,boost::shared_ptr<IMixedSystem> >::iterator iter = _systems.find(modelKey);
     if(iter != _systems.end())
