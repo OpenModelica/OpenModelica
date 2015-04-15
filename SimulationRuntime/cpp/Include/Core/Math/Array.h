@@ -68,7 +68,7 @@ public:
   virtual void assign(const T* data) = 0;
   virtual void assign(const BaseArray<T>& otherArray) = 0;
   virtual std::vector<size_t> getDims() const = 0;
-  virtual size_t getDim(size_t dim) const = 0; // { getDims()[dim - 1]; }
+  virtual int getDim(size_t dim) const = 0; // { (int)getDims()[dim - 1]; }
 
   virtual size_t getNumElems() const = 0;
   virtual size_t getNumDims() const = 0;
@@ -335,9 +335,9 @@ public:
   }
 
 
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
-    return size;
+    return (int)size;
   }
 
   /*
@@ -572,9 +572,9 @@ public:
   }
 
 
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
-    return size;
+    return (int)size;
   }
 
   /*
@@ -860,13 +860,13 @@ public:
   /*
   Returns number of elements
   */
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
     switch (dim) {
     case 1:
-      return size1;
+      return (int)size1;
     case 2:
-      return size2;
+      return (int)size2;
     default:
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
     }
@@ -1086,13 +1086,13 @@ public:
     return v;
   }
 
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
     switch (dim) {
     case 1:
-      return size1;
+      return (int)size1;
     case 2:
-      return size2;
+      return (int)size2;
     default:
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
     }
@@ -1260,15 +1260,15 @@ public:
   Assignment operator to assign static array
   \@rhs array of type StatArrayDim3
   */
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
     switch (dim) {
     case 1:
-      return size1;
+      return (int)size1;
     case 2:
-      return size2;
+      return (int)size2;
     case 3:
-      return size3;
+      return (int)size3;
     default:
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
     }
@@ -1745,9 +1745,9 @@ public:
     return ex;
   }
 
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
-    return _multi_array.shape()[dim - 1];
+    return (int)_multi_array.shape()[dim - 1];
   }
   /*
   access to data (read-only)
@@ -1928,9 +1928,9 @@ public:
     return ex;
   }
 
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
-    return _multi_array.shape()[dim - 1];
+    return (int)_multi_array.shape()[dim - 1];
   }
 
   virtual size_t getNumElems() const
@@ -2072,9 +2072,9 @@ public:
     return ex;
   }
 
-  virtual size_t getDim(size_t dim) const
+  virtual int getDim(size_t dim) const
   {
-    return _multi_array.shape()[dim - 1];
+    return (int)_multi_array.shape()[dim - 1];
   }
 
   virtual T& operator()(const vector<size_t>& idx)
@@ -2208,9 +2208,9 @@ ex.assign( shape, shape + 4 );
 return ex;
 }
 
-virtual size_t getDim(size_t dim) const
+virtual int getDim(size_t dim) const
 {
-return _multi_array.shape()[dim - 1];
+return (int)_multi_array.shape()[dim - 1];
 }
 
 virtual T& operator()(size_t i, size_t j, size_t k, size_t l)
@@ -2318,9 +2318,9 @@ ex.assign( shape, shape + 5 );
 return ex;
 }
 
-virtual size_t getDim(size_t dim) const
+virtual int getDim(size_t dim) const
 {
-return _multi_array.shape()[dim - 1];
+return (int)_multi_array.shape()[dim - 1];
 }
 
 virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m)

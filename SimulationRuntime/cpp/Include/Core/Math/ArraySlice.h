@@ -187,7 +187,7 @@ class ArraySlice: public BaseArray<T> {
     return dims;
   }
 
-  virtual size_t getDim(size_t reducedDim) const {
+  virtual int getDim(size_t reducedDim) const {
     size_t dim, size, rdim = 1;
     const BaseArray<int> *iset;
     vector< vector<size_t> >::const_iterator dit;
@@ -198,7 +198,7 @@ class ArraySlice: public BaseArray<T> {
       case 0:
         // all indices
         if (reducedDim == rdim++)
-          return _baseArray.getDim(dim);
+          return (int)_baseArray.getDim(dim);
         break;
       case 1:
         // reduction
@@ -206,7 +206,7 @@ class ArraySlice: public BaseArray<T> {
       default:
         // regular index mapping
         if (reducedDim == rdim++)
-          return size;
+          return (int)size;
       }
     }
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDim out of range");

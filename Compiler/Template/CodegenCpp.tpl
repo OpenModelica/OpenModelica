@@ -10640,12 +10640,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp, Text &varDecls, SimC
   case SIZE(exp=CREF(__), sz=SOME(dim)) then
     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let dimPart = daeExp(dim, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let resVar = tempDecl("size_t", &varDecls /*BUFD*/)
-    let typeStr = '<%expTypeArray(exp.ty)%>'
-  //previous multiarray let &preExp += '<%resVar%> = <%expPart%>.shape()[<%dimPart%>-1];<%\n%>'
-    //previous multiarray
-  let &preExp += '<%resVar%> = <%expPart%>.getDim(<%dimPart%>);<%\n%>'
-    resVar
+    '<%expPart%>.getDim(<%dimPart%>)'
   else "size(X) not implemented"
 end daeExpSize;
 
