@@ -734,7 +734,7 @@ public uniontype CompInfo"types to count operations for the components"
    CompInfo otherEqs;
    Integer tornSize;
   end TORN_ANALYSE;
-  
+
   record NO_COMP // assert...
    Integer numAdds;
    Integer numMul;
