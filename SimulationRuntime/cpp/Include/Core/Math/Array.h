@@ -1762,7 +1762,8 @@ public:
   */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDataCopy for one dim dynamic array not supported");
+     const T* array_data = _multi_array.data();
+    memcpy(data, array_data, n * sizeof( T ) );
   }
   /*
   access to data (read-only)
@@ -1961,7 +1962,8 @@ public:
   */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDataCopy for one dim dynamic array not supported");
+    const T* array_data = _multi_array.data();
+    memcpy(data, array_data, n * sizeof( T ) );
   }
 
 private:
@@ -2106,7 +2108,8 @@ public:
   */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDataCopy for one dim dynamic array not supported");
+     const T* array_data = _multi_array.data();
+    memcpy(data, array_data, n * sizeof( T ) );
   }
   /*
   access to data (read-only)
