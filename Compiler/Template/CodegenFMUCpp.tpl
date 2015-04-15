@@ -759,7 +759,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   OMCPP_LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory -lOMCppMath_static
   OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/omc/cpp"
-  MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables
+  MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -llapack -lblas
   BOOST_LIBRARIES = -lboost_system -lboost_filesystem -lboost_program_options
   LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
 

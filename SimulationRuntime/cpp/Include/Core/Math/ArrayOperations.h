@@ -92,3 +92,7 @@ void cross_array( BaseArray<T> & a ,BaseArray<T> & b, BaseArray<T> & res );
 
 void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
 void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
+
+/* permutes dims for external F77, including optional bool/int conversion */
+template <typename S, typename T>
+void convertExternalF77(const BaseArray<S> &s, BaseArray<T> &d);

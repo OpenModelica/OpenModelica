@@ -366,6 +366,27 @@ void convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b)
   }
 }
 
+/* permutes dims for external F77, including optional bool/int conversion */
+template <typename S, typename T>
+void convertExternalF77(const BaseArray<S> &s, BaseArray<T> &d) {
+  if (s.getNumDims() != d.getNumDims() || s.getNumDims() > 2)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Unsupported dimensions in convertToF77");
+  vector<size_t> dims = s.getDims();
+  if (s.getNumDims() == 1) {
+    d.resize(dims);
+    for (size_t i = 1; i <= dims[0]; i++)
+      d(i) = s(i);
+  }
+  else {
+    std::swap(dims[0], dims[1]);
+    d.resize(dims);
+    for (size_t i = 1; i <= dims[0]; i++)
+      for (size_t j = 1; j <= dims[1]; j++)
+        d(i, j) = s(j, i);
+  }
+}
+
 /*
 Explicit template instantiation for double, int, bool
 */
@@ -431,6 +452,11 @@ template std::pair <bool,bool> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<bo
 
 void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
 void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
+
+template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<double> &s, BaseArray<double> &d);
+template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<int> &s, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<bool> &s, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<int> &s, BaseArray<bool> &d);
 
 /*
  template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim1<double, 3>;
