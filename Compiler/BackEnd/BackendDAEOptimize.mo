@@ -4068,7 +4068,7 @@ algorithm
       osyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
       osystlst := osyst::osystlst;
     end for;
-  else 
+  else
     osystlst := systlst;
   end if;
 
