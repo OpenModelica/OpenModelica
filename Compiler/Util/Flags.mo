@@ -438,6 +438,9 @@ constant DebugFlag VISUAL_XML = DEBUG_FLAG(134, "visxml", false,
   Util.gettext("Outputs a xml-file that contains information for visualization."));
 constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(135, "addScaledVars", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state"));
+constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(136, "addScaledVarsInput", false,
+  Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input"));
+
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -580,7 +583,8 @@ constant list<DebugFlag> allDebugFlags = {
   EXTENDS_DYN_OPT,
   REDUCE_DYN_OPT,
   VISUAL_XML,
-  ADD_SCALED_VARS
+  ADD_SCALED_VARS,
+  ADD_SCALED_VARS_INPUT
 };
 
 public

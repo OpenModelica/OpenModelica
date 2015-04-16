@@ -4003,7 +4003,7 @@ public function addedScaledVars
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := if Flags.isSet(Flags.ADD_SCALED_VARS) then
+  outDAE := if Flags.isSet(Flags.ADD_SCALED_VARS)  or Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
               addedScaledVarsWork(inDAE)
              else
               inDAE;
@@ -4039,14 +4039,15 @@ algorithm
   BackendDAE.SHARED(knownVars=knvars) := oshared;
   kvarlst := BackendVariable.varList(knvars);
   lst_inputs := List.select(kvarlst, BackendVariable.isVarOnTopLevelAndInputNoDerInput);
-
-  for syst in systlst loop
-    BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := syst;
-    varlst := BackendVariable.varList(vars);
-    // get vars
-    lst_states := List.select(varlst, BackendVariable.isStateVar);
-    //BackendDump.printVarList(lst_states);
-    for v in lst_states loop
+  // states
+  if Flags.isSet(Flags.ADD_SCALED_VARS) then
+    for syst in systlst loop
+     BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := syst;
+     varlst := BackendVariable.varList(vars);
+     // get vars
+     lst_states := List.select(varlst, BackendVariable.isStateVar);
+     //BackendDump.printVarList(lst_states);
+     for v in lst_states loop
       cref := BackendVariable.varCref(v);
       tmpv := BackendVariable.createVar(cref, "__OMC$scaled_state");
       y := Expression.crefExp(cref);
@@ -4055,21 +4056,27 @@ algorithm
       (y_norm,_) := ExpressionSimplify.simplify(y_norm);
 
       // lhs
-        cref := BackendVariable.varCref(tmpv);
-        lhs := Expression.crefExp(cref);
-        eqn := BackendDAE.EQUATION(lhs, y_norm, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+      cref := BackendVariable.varCref(tmpv);
+      lhs := Expression.crefExp(cref);
+      eqn := BackendDAE.EQUATION(lhs, y_norm, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
 
-        //print("\n" + BackendDump.equationString(eqn));
-        eqns := BackendEquation.addEquation(eqn, eqns);
-        vars := BackendVariable.addVar(tmpv, vars);
+      //print("\n" + BackendDump.equationString(eqn));
+      eqns := BackendEquation.addEquation(eqn, eqns);
+      vars := BackendVariable.addVar(tmpv, vars);
 
+      end for;
+      osyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+      osystlst := osyst::osystlst;
     end for;
-    osyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
-    osystlst := osyst::osystlst;
-  end for;
+  else 
+    osystlst := systlst;
+  end if;
 
   // inputs
+  if Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
     //BackendDump.printVarList(lst_inputs);
+    BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) :: osystlst := osystlst;
+
     for v in lst_inputs loop
       cref := BackendVariable.varCref(v);
       tmpv := BackendVariable.createVar(cref, "__OMC$scaled_input");
@@ -4088,6 +4095,9 @@ algorithm
         vars := BackendVariable.addVar(tmpv, vars);
 
     end for;
+    osyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+    osystlst := osyst::osystlst;
+  end if;
 
   outDAE := BackendDAE.DAE(osystlst, oshared);
 end addedScaledVarsWork;
