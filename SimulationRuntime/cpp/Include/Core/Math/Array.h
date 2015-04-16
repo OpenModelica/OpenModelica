@@ -51,6 +51,20 @@ struct CopyCArray2RefArray
 
 
 /*
+Operator class to assign a reference array  to a reference array
+*/
+template<class T>
+struct RefArray2RefArray
+{
+    T* operator()(T* val,T* val2)
+    {
+        *val=val2;
+        return val;
+    }
+};
+
+
+/*
 Base class for all dynamic and static arrays
 */
 template<class T>class BaseArray
@@ -66,7 +80,7 @@ public:
   */
   virtual T& operator()(const vector<size_t>& idx) = 0;
   virtual void assign(const T* data) = 0;
-  virtual void assign(const BaseArray<T>& otherArray) = 0;
+    virtual void assign(const BaseArray<T>& b) = 0;
   virtual std::vector<size_t> getDims() const = 0;
   virtual int getDim(size_t dim) const = 0; // { (int)getDims()[dim - 1]; }
 
@@ -198,96 +212,114 @@ public:
 
   ~StatArrayDim1() {}
 
-  /*
-  Assignment operator to assign arry of type base array to static array
-  \@rhs any array of type BaseArray
-  */
-  StatArrayDim1<T,size>& operator=(BaseArray<T>& rhs)
-  {
-    checkArray("assign data to reference array is not supported");
-    if (this != &rhs)
+    /*
+    Assignment operator to assign array of type base array to static array
+    a=b
+    \@b any array of type BaseArray
+    */
+    StatArrayDim1<T,size>& operator=(BaseArray<T>& b)
+    {
+        if (this != &b)
+        {
+            if(isRef)
+            {
+                if(b.isReference()) //a (this) is reference array , b is reference array
+                {
+                    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"array assign from reference array not supported");
+                }
+                else        //a (this) is reference array , b is local array
+                {
+                    const T* data = b.getData();
+                    std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+                }
+            }
+            else          //a (this) is local array , b could be local array or reference array
+            {
+                b.getDataCopy(_array_data.begin(), size);
+            }
+        }
+        return *this;
+
+
+
+    }
+    /*
+    Assignment operator to assign static array
+    \@b array of type StatArrayDim1
+
+    StatArrayDim1<T,size>& operator=(const StatArrayDim1<T,size>& b)
     {
 
-      try
-      {
-        if(rhs.isStatic())
-        {
-          if(rhs.isReference())
-            {
-              rhs.getDataCopy(_array_data.begin(), size);
-            }
-            else
-            {
 
-            StatArrayDim1<T,size>&  a = dynamic_cast<StatArrayDim1<T,size>&  >(rhs);
-            _array_data = a._array_data;
-          }
+
+    checkArray("assign data to reference array is not supported");
+    if (this != &b)
+    {
+    _array_data= b._array_data;
+    }
+    return *this;
+    }*/
+
+
+    /*
+    Resize array method
+    \@dims vector with new dimension sizes
+    static array could not be resized
+    */
+    virtual void resize(const std::vector<size_t>& dims)
+    {
+        checkArray("resize  reference array is not supported");
+        if (dims != getDims())
+            std::runtime_error("Cannot resize static array!");
+    }
+    /*
+    Assigns data to array
+    \@data  new array data
+    a.assign(data)
+    */
+    virtual void assign(const T* data)
+    {
+        if(isRef)
+        {
+            std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
         }
         else
         {
-          const T* data = rhs.getData();
-          memcpy( _array_data.begin(), data, size * sizeof( T ) );
+            memcpy( _array_data.begin(), data, size * sizeof( T ) );
         }
-      }
-      catch(std::bad_exception & be)
-      {
-        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
 
-      }
+   }
 
-    }
-    return *this;
-  }
-  /*
-  Assignment operator to assign static array
-  \@rhs array of type StatArrayDim1
-  */
-  StatArrayDim1<T,size>& operator=(const StatArrayDim1<T,size>& rhs)
-  {
-    checkArray("assign data to reference array is not supported");
-    if (this != &rhs)
+    /*
+    Assigns array data to array
+    \@b any array of type BaseArray
+    a.assign(b)
+    */
+    virtual void assign(const BaseArray<T>& b)
     {
-      _array_data= rhs._array_data;
-    }
-    return *this;
-  }
-  /*
-  Resize array method
-  \@dims vector with new dimension sizes
-  static array could not be resized
-  */
-  virtual void resize(const std::vector<size_t>& dims)
-  {
-    checkArray("resize  reference array is not supported");
-    if (dims != getDims())
-      std::runtime_error("Cannot resize static array!");
-  }
-  /*
-  Assigns data to array
-  \@data  new array data
-  */
-  virtual void assign(const T* data)
-  {
-    checkArray("assign data to reference array is not supported");
-    memcpy( _array_data.begin(), data, size * sizeof( T ) );
-  }
 
-  /*
-  Assigns array data to array
-  \@otherArray any array of type BaseArray
-  */
-  virtual void assign(const BaseArray<T>& otherArray)
-  {
-    checkArray("assign data to reference array is not supported");
-    const T* data_otherarray = otherArray.getData();
-
-    memcpy( _array_data.begin(), data_otherarray, size * sizeof( T ) );
+        if(isRef)
+        {
+            if(b.isReference())  //a (this) is reference array , b is reference array
+            {
+                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"array assign from reference array not supported");
+            }
+            else         //a (this) is reference array , b is local array
+            {
+                const T* data = b.getData();
+                std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+            }
+        }
+        else          //a (this) is local array , b could be local array or reference array
+        {
+            b.getDataCopy(_array_data.begin(), size);
+        }
 
   }
 
   /*
   Index operator to access array element
-  \@idx  vector of indeces
+  \@idx  vector of indices
   */
   virtual T& operator()(const vector<size_t>& idx)
   {
@@ -479,55 +511,52 @@ public:
       std::runtime_error("Cannot resize static array!");
   }
 
-  StatArrayDim1<string,size>& operator=(BaseArray<string>& rhs)
-  {
-    if (this != &rhs)
+    StatArrayDim1<string,size>& operator=(BaseArray<string>& b)
     {
-
-      try
-      {
-        if(rhs.isStatic())
+        if (this != &b)
         {
-          StatArrayDim1<string,size>&  a = dynamic_cast<StatArrayDim1<string,size>&  >(rhs);
-          _array_data = a._array_data;
-          for(int i=0;i<size;i++)
-          {
-            _c_array_data[i]=_array_data[i].c_str();
-          }
+
+            try
+            {
+                if(b.isStatic())
+                {
+                    StatArrayDim1<string,size>&  a = dynamic_cast<StatArrayDim1<string,size>&  >(b);
+                    _array_data = a._array_data;
+                    for(int i=0;i<size;i++)
+                    {
+                        _c_array_data[i]=_array_data[i].c_str();
+                    }
+                }
+                else
+                {
+                    for(size_t i=0;i<size;i++)
+                    {
+                        _array_data[i]=b(i);
+                        _c_array_data[i]=_array_data[i].c_str();
+                    }
+                }
+            }
+            catch(std::bad_exception & be)
+            {
+                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
+
+            }
+
         }
-        else
-        {
-          for(size_t i=0;i<size;i++)
-          {
-            _array_data[i]=rhs(i);
-            _c_array_data[i]=_array_data[i].c_str();
-          }
-
-
-
-        }
-      }
-      catch(std::bad_exception & be)
-      {
-        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
-
-      }
-
+        return *this;
     }
-    return *this;
-  }
-  StatArrayDim1<string,size>& operator=(const StatArrayDim1<string,size>& rhs)
-  {
-    if (this != &rhs)
+    StatArrayDim1<string,size>& operator=(const StatArrayDim1<string,size>& b)
     {
-      _array_data= rhs._array_data;
-      for(int i=0;i<size;i++)
-      {
-        _c_array_data[i]=_array_data[i].c_str();
-      }
+        if (this != &b)
+        {
+            _array_data= b._array_data;
+            for(int i=0;i<size;i++)
+            {
+                _c_array_data[i]=_array_data[i].c_str();
+            }
+        }
+        return *this;
     }
-    return *this;
-  }
 
   virtual void assign(const string data[])
   {
@@ -540,13 +569,13 @@ public:
   }
 
 
-  virtual void assign(const BaseArray<string>& otherArray)
-  {
-    for(int i=0;i<size;i++)
+    virtual void assign(const BaseArray<string>& b)
     {
-      _array_data[i]=otherArray(i);
-      _c_array_data[i]=_array_data[i].c_str();
-    }
+        for(int i=0;i<size;i++)
+        {
+            _array_data[i]=b(i);
+            _c_array_data[i]=_array_data[i].c_str();
+        }
 
   }
   virtual string& operator()(const vector<size_t>& idx)
@@ -688,115 +717,114 @@ public:
     checkArray("assign data to reference array is not supported");
     _array_data = otherarray._array_data;
   }
-  /*
-  Assignment operator to assign static array to static array
-  \@rhs  array of type StatArrayDim2
-  */
-  StatArrayDim2<T,size1,size2,fortran,isRef>& operator=(const StatArrayDim2<T,size1,size2,fortran,isRef>& rhs)
-  {
-    checkArray("assign data to reference array is not supported");
-    if (this != &rhs)
+    /*
+    Assignment operator to assign static array to static array
+    \@b  array of type StatArrayDim2
+
+    StatArrayDim2<T,size1,size2,fortran,isRef>& operator=(const StatArrayDim2<T,size1,size2,fortran,isRef>& b)
     {
-      _array_data = rhs._array_data;
+    checkArray("assign data to reference array is not supported");
+    if (this != &b)
+    {
+    _array_data = b._array_data;
     }
     return *this;
-  }
-  /*
-  Assignment operator to assign array of type base array to static array
-  \@rhs any array of type BaseArray
-  */
-  StatArrayDim2<T,size1,size2,fortran,isRef>& operator=(BaseArray<T>& rhs)
-  {
-    checkArray("assign data to reference array is not supported");
-    if (this != &rhs)
+    }
+    */
+    /*
+    Assignment operator to assign array of type base array to static array
+    a=b
+    \@b any array of type BaseArray
+    */
+    StatArrayDim2<T,size1,size2,fortran,isRef>& operator=(BaseArray<T>& b)
     {
-      try
-      {
-        if(rhs.isReference())
+
+        if (this != &b)
         {
-          rhs.getDataCopy(_array_data.begin(), size1*size2);
+            if(isRef)
+            {
+                if(b.isReference()) //a (this) is reference array , b is reference array
+                {
+                    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"array assign from reference array not supported");
+                }
+                else        //a (this) is reference array , b is local array
+                {
+                    const T* data = b.getData();
+                    std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+                }
+            }
+            else          //a (this) is local array , b could be local array or reference array
+            {
+                b.getDataCopy(_array_data.begin(), size1*size2);
+            }
         }
-        else
+        return *this;
+    }
+
+    ~StatArrayDim2(){}
+    /*
+    Appends one dimensional array in column i
+    \@b array of type StatArrayDim1
+    \@i column number
+    */
+    void append(size_t i,const StatArrayDim1<T,size2>& b)
+    {
+        checkArray("assign data to reference array is not supported");
+        const T* data = b.getData();
+        memcpy( _array_data.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
+
+
+    }
+    /*
+    Resize array method
+    \@dims vector with new dimension sizes
+    static array could not be resized
+    */
+    virtual void resize(const std::vector<size_t>& dims)
+    {
+        checkArray("resize  reference array is not supported");
+        if (dims != getDims())
+            std::runtime_error("Cannot resize static array!");
+    }
+    /*
+    Assigns array data to array
+    \@b any array of type BaseArray
+    a.assign(b)
+    */
+    virtual void assign(const BaseArray<T>& b)
+    {
+        if(isRef)
         {
-          StatArrayDim2<T,size1,size2,fortran,isRef>& a = dynamic_cast<StatArrayDim2<T,size1,size2,fortran,isRef>& >(rhs);
-          _array_data = a._array_data;
+            if(b.isReference()) //a (this) is reference array , b is reference array
+            {
+                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"array assign from reference array not supported");
+            }
+            else        //a (this) is reference array , b is local array
+            {
+                const T* data = b.getData();
+                std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+            }
         }
-      }
-      catch(std::bad_exception & be)
-      {
-        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
-      }
-
+        else          //a (this) is local array , b could be local array or reference array
+        {
+            b.getDataCopy(_array_data.begin(), size1*size2);
+        }
     }
-    return *this;
-  }
-
-  ~StatArrayDim2(){}
-  /*
-  Appends one dimensional array in column i
-  \@rhs array of type StatArrayDim1
-  \@i column number
-  */
-  void append(size_t i,const StatArrayDim1<T,size2>& rhs)
-  {
-    checkArray("assign data to reference array is not supported");
-    const T* data = rhs.getData();
-    memcpy( _array_data.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
-
-
-  }
-  /*
-  Resize array method
-  \@dims vector with new dimension sizes
-  static array could not be resized
-  */
-  virtual void resize(const std::vector<size_t>& dims)
-  {
-    checkArray("resize  reference array is not supported");
-    if (dims != getDims())
-      std::runtime_error("Cannot resize static array!");
-  }
-  /*
-  Assigns array data to array
-  \@otherArray any array of type BaseArray
-  */
-  virtual void assign(const BaseArray<T>& otherArray)
-  {
-
-    if(isRef)
+    /*
+    Assigns array data to array
+    \@data array data
+    a.assign(data)
+    */
+    virtual void assign(const T* data)
     {
-      if(otherArray.isReference())
-        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"array assign from reference array not supported");
-      const T* data = otherArray.getData();
-      std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-    }
-    else
-    {
-
-      const T* data_otherarray = otherArray.getData();
-      memcpy( _array_data.begin(), data_otherarray, size1*size2 * sizeof( T ) );
-    }
-
-
-
-
-
-  }
-  /*
-  Assigns array data to array
-  \@data array data
-  */
-  virtual void assign(const T* data)
-  {
-
-    if(isRef)
-    {
-      std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-    }
-    else
-    {
-      memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
-    }
+        if(isRef) //a (this) is reference array
+        {
+            std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+        }
+        else //a (this) is local array 
+        {
+            memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
+        }
 
   }
 
@@ -973,58 +1001,58 @@ public:
   {
     _array_data = otherarray._array_data;
 
-    for(int i=0;i<size1;i++)
-    {
-      for(int j=0;j<size2;j++)
-      {
-        _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
-      }
-    }
-  }
-  StatArrayDim2<string,size1,size2>& operator=(const StatArrayDim2<string,size1,size2>& rhs)
-  {
-    if (this != &rhs)
-    {
-      _array_data = rhs._array_data;
-      for(int i=0;i<size1;i++)
-      {
-        for(int j=0;j<size2;j++)
-        {
-          _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
-        }
-      }
-    }
-    return *this;
-  }
-
-  StatArrayDim2<string,size1,size2>& operator=(BaseArray<string>& rhs)
-  {
-    if (this != &rhs)
-    {
-      try
-      {
-        StatArrayDim2<string,size1,size2>& a = dynamic_cast<StatArrayDim2<string,size1,size2>& >(rhs);
-        _array_data = a._array_data;
         for(int i=0;i<size1;i++)
         {
-          for(int j=0;j<size2;j++)
-          {
-            _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
-          }
+            for(int j=0;j<size2;j++)
+            {
+                _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+            }
         }
-      }
-      catch(std::bad_exception & be)
-      {
-        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
-      }
     }
-    return *this;
-  }
+    StatArrayDim2<string,size1,size2>& operator=(const StatArrayDim2<string,size1,size2>& b)
+    {
+        if (this != &b)
+        {
+            _array_data = b._array_data;
+            for(int i=0;i<size1;i++)
+            {
+                for(int j=0;j<size2;j++)
+                {
+                    _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+                }
+            }
+        }
+        return *this;
+    }
+
+    StatArrayDim2<string,size1,size2>& operator=(BaseArray<string>& b)
+    {
+        if (this != &b)
+        {
+            try
+            {
+                StatArrayDim2<string,size1,size2>& a = dynamic_cast<StatArrayDim2<string,size1,size2>& >(b);
+                _array_data = a._array_data;
+                for(int i=0;i<size1;i++)
+                {
+                    for(int j=0;j<size2;j++)
+                    {
+                        _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+                    }
+                }
+            }
+            catch(std::bad_exception & be)
+            {
+                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
+            }
+        }
+        return *this;
+    }
 
   ~StatArrayDim2(){}
 
-  void append(size_t i,const StatArrayDim1<string,size2>& rhs)
-  {
+    void append(size_t i,const StatArrayDim1<string,size2>& b)
+    {
 
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"append not supported for 2-dim string array");
   }
@@ -1035,21 +1063,21 @@ public:
       std::runtime_error("Cannot resize static array!");
   }
 
-  virtual void assign(const BaseArray<string>& otherArray)
-  {
-    std::vector<size_t> v;
-    v = otherArray.getDims();
-    const string* data_otherarray = otherArray.getData();
-    std::copy(data_otherarray,data_otherarray+size1*size2,_array_data.begin());
-    for(int i=0;i<size1;i++)
+    virtual void assign(const BaseArray<string>& b)
     {
-      for(int j=0;j<size2;j++)
-      {
-        const char* c_str_data = _array_data[size2*i + j].c_str();
-        _c_array_data[size2*i + j ] = c_str_data;
-      }
+        std::vector<size_t> v;
+        v = b.getDims();
+        const string* data_otherarray = b.getData();
+        std::copy(data_otherarray,data_otherarray+size1*size2,_array_data.begin());
+        for(int i=0;i<size1;i++)
+        {
+            for(int j=0;j<size2;j++)
+            {
+                const char* c_str_data = _array_data[size2*i + j].c_str();
+                _c_array_data[size2*i + j ] = c_str_data;
+            }
+        }
     }
-  }
 
   virtual void assign(const string data[])//)const T (&data) [size1*size2]
   {
@@ -1199,39 +1227,58 @@ public:
   ~StatArrayDim3()
   {}
 
-  /*
-  Assigns array data to array
-  \@otherArray any array of type BaseArray
-  */
-  virtual  void assign(const BaseArray<T>& otherArray)
-  {
-    checkArray("assign data to reference array is not supported");
-    std::vector<size_t> v;
-    v = otherArray.getDims();
-    const T* data_otherarray = otherArray.getData();
-    memcpy( _array_data.begin(), data_otherarray, size1*size2*size3 * sizeof( T ) );
+    /*
+    Assigns array data to array
+    \@b any array of type BaseArray
+    a.assign(b)
+    */
+    virtual  void assign(const BaseArray<T>& b)
+    {
+        if(isRef)
+        {
+            if(b.isReference()) //a (this) is reference array , b is reference array
+            {
+                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"array assign from reference array not supported");
+            }
+            else        //a (this) is reference array , b is local array
+            {
+                const T* data = b.getData();
+                std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2*size3,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+            }
+        }
+        else          //a (this) is local array , b could be local array or reference array
+        {
+            b.getDataCopy(_array_data.begin(), size1*size2*size3);
+        }
 
-  }
-  /*
-  Assigns array data to array
-  \@data array data
-  */
-  virtual void assign(const T* data)
-  {
-    checkArray("assign data to reference array is not supported");
-    memcpy( _array_data.begin(), data, size1*size2*size3 * sizeof( T ) );
-  }
-  /*
-  Appends two dimensional array in column i
-  \@rhs array of type StatArrayDim2
-  \@i column number
-  */
-  void append(size_t i,const StatArrayDim2<T,size2,size3>& rhs)
-  {
-    checkArray("assign data to reference array is not supported");
-    const T* data = rhs.getData();
-    memcpy( _array_data.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
-  }
+    }
+    /*
+    Assigns array data to array
+    \@data array data
+    a.assign(data)
+    */
+    virtual void assign(const T* data)
+    {
+        if(isRef) //a (this) is reference array
+        {
+            std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2*size3,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+        }
+        else //a (this) is local array 
+        {
+            memcpy( _array_data.begin(), data, size1*size2 *size3*  sizeof( T ) );
+        }
+    }
+    /*
+    Appends two dimensional array in column i
+    \@b array of type StatArrayDim2
+    \@i column number
+    */
+    void append(size_t i,const StatArrayDim2<T,size2,size3>& b)
+    {
+        checkArray("assign data to reference array is not supported");
+        const T* data = b.getData();
+        memcpy( _array_data.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
+    }
 
   /*
   Resize array method
@@ -1274,16 +1321,47 @@ public:
     }
   }
 
-
-  StatArrayDim3<T,size1,size2,size3>& operator=(const StatArrayDim3<T,size1,size2,size3>& rhs)
-  {
-    checkArray("assign data to reference array is not supported");
-    if (this != &rhs)
+    /*
+    StatArrayDim3<T,size1,size2,size3>& operator=(const StatArrayDim3<T,size1,size2,size3>& b)
     {
-      _array_data = rhs._array_data;
+
+
+    checkArray("assign data to reference array is not supported");
+    if (this != &b)
+    {
+    _array_data = b._array_data;
     }
     return *this;
-  }
+    }
+    */
+    /*
+    Assignment operator to assign static array
+    \@b array of type StatArrayDim3
+    a=b
+    */
+    StatArrayDim3<T,size1,size2,size3>& operator=(const BaseArray<T>& b)
+    {
+        if (this != &b)
+        {
+            if(isRef)
+            {
+                if(b.isReference()) //a (this) is reference array , b is reference array
+                {
+                    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"array assign from reference array not supported");
+                }
+                else        //a (this) is reference array , b is local array
+                {
+                    const T* data = b.getData();
+                    std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2*size3,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
+                }
+            }
+            else          //a (this) is local array , b could be local array or reference array
+            {
+                b.getDataCopy(_array_data.begin(), size1*size2*size3);
+            }
+        }
+        return *this;
+    } 
 
   /*
   Index operator to access array element
@@ -1640,17 +1718,17 @@ public:
     _multi_array.reindex(1);
   }
 
-  DynArrayDim1(const BaseArray<T>& otherArray)
-    :BaseArray<T>(false,false)
-  {
-    std::vector<size_t> v = otherArray.getDims();
-    if(v.size()!=1)
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim1");
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-    const T* data_otherarray = otherArray.getData();
-    _multi_array.assign(data_otherarray,data_otherarray+v[0]);
-  }
+    DynArrayDim1(const BaseArray<T>& b)
+        :BaseArray<T>(false,false)
+    {
+        std::vector<size_t> v = b.getDims();
+        if(v.size()!=1)
+            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim1");
+        _multi_array.resize(v);
+        _multi_array.reindex(1);
+        const T* data_otherarray = b.getData();
+        _multi_array.assign(data_otherarray,data_otherarray+v[0]);
+    }
 
 
   ~DynArrayDim1()
@@ -1675,19 +1753,19 @@ public:
     }
   }
 
-  virtual  void assign(const BaseArray<T>& otherArray)
-  {
-    std::vector<size_t> v = otherArray.getDims();
-
-    resize(v);
-    const T* data_otherarray = otherArray.getData();
-    _multi_array.assign(data_otherarray,data_otherarray+ v[0]);
-    /*for (int i = 1; i <= v[0]; i++)
+    virtual  void assign(const BaseArray<T>& b)
     {
-    //double tmp =  otherArray(i);
-    _multi_array[i] = otherArray(i);
-    }
-    */
+        std::vector<size_t> v = b.getDims();
+
+        resize(v);
+        const T* data_otherarray = b.getData();
+        _multi_array.assign(data_otherarray,data_otherarray+ v[0]);
+        /*for (int i = 1; i <= v[0]; i++)
+        {
+        //double tmp =  b(i);
+        _multi_array[i] = b(i);
+        }
+        */
 
   }
 
@@ -1711,18 +1789,18 @@ public:
     //double tmp = _multi_array[index];
     return _multi_array[index];
   }
-  DynArrayDim1<T>& operator=(const DynArrayDim1<T>& rhs)
-  {
-    if (this != &rhs)
+    DynArrayDim1<T>& operator=(const DynArrayDim1<T>& b)
     {
-      std::vector<size_t> v = rhs.getDims();
-      _multi_array.resize(v);
-      _multi_array.reindex(1);
-      _multi_array = rhs._multi_array;
+        if (this != &b)
+        {
+            std::vector<size_t> v = b.getDims();
+            _multi_array.resize(v);
+            _multi_array.reindex(1);
+            _multi_array = b._multi_array;
 
+        }
+        return *this;
     }
-    return *this;
-  }
   void setDims(size_t size1)
   {
     std::vector<size_t> v;
@@ -1819,15 +1897,15 @@ public:
     _multi_array=dynarray._multi_array;
   }
 
-  DynArrayDim2(const BaseArray<T>& otherArray)
-    :BaseArray<T>(false,false)
-  {
-    std::vector<size_t> v = otherArray.getDims();
-    if(v.size()!=2)
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim2");
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-    otherArray.getDataCopy(_multi_array.data(), v[0]*v[1]);
+    DynArrayDim2(const BaseArray<T>& b)
+        :BaseArray<T>(false,false)
+    {
+        std::vector<size_t> v = b.getDims();
+        if(v.size()!=2)
+            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim2");
+        _multi_array.resize(v);
+        _multi_array.reindex(1);
+        b.getDataCopy(_multi_array.data(), v[0]*v[1]);
 
   }
 
@@ -1851,39 +1929,39 @@ public:
     }
   }
 
-  /*void assign(DynArrayDim2<T> otherArray)
-  {
-  _multi_array.resize(otherArray.getDims());
-  _multi_array.reindex(1);
-  const T* data = otherArray._multi_array.data();
-  _multi_array.assign(data, data + otherArray._multi_array.num_elements());
-  }
-  */
-  virtual  void assign(const BaseArray<T>& otherArray)
-  {
-    std::vector<size_t> v = otherArray.getDims();
-    resize(v);
-    otherArray.getDataCopy(_multi_array.data(), v[0]*v[1]);
-
-  }
-  void append(size_t i,const DynArrayDim1<T>& rhs)
-  {
-
-    const T* data = rhs.getData();
-    boost::multi_array<T, 1>  a;
-    std::vector<size_t> v = rhs.getDims();
-    a.resize(v);
-    a.reindex(1);
-    _multi_array[i]=a;
-  }
-  DynArrayDim2<T>& operator=(const DynArrayDim2<T>& rhs)
-  {
-    if (this != &rhs)  //oder if (*this != rhs)
+    /*void assign(DynArrayDim2<T> b)
     {
-      std::vector<size_t> v = rhs.getDims();
-      _multi_array.resize(v);
-      _multi_array.reindex(1);
-      _multi_array = rhs._multi_array;
+    _multi_array.resize(b.getDims());
+    _multi_array.reindex(1);
+    const T* data = b._multi_array.data();
+    _multi_array.assign(data, data + b._multi_array.num_elements());
+    }
+    */
+    virtual  void assign(const BaseArray<T>& b)
+    {
+        std::vector<size_t> v = b.getDims();
+        resize(v);
+        b.getDataCopy(_multi_array.data(), v[0]*v[1]);
+
+    }
+    void append(size_t i,const DynArrayDim1<T>& b)
+    {
+
+        const T* data = b.getData();
+        boost::multi_array<T, 1>  a;
+        std::vector<size_t> v = b.getDims();
+        a.resize(v);
+        a.reindex(1);
+        _multi_array[i]=a;
+    }
+    DynArrayDim2<T>& operator=(const DynArrayDim2<T>& b)
+    {
+        if (this != &b)  //oder if (*this != b)
+        {
+            std::vector<size_t> v = b.getDims();
+            _multi_array.resize(v);
+            _multi_array.reindex(1);
+            _multi_array = b._multi_array;
 
     }
     return *this;
@@ -1981,38 +2059,38 @@ public:
     _multi_array.reindex(1);
   }
 
-  DynArrayDim3(size_t size1, size_t size2, size_t size3)
-    :BaseArray<T>(false,false)
-  {
-    std::vector<size_t> v;
-    v.push_back(size1);
-    v.push_back(size2);
-    v.push_back(size3);
-    _multi_array.resize(v);//
-    _multi_array.reindex(1);
-  }
-  DynArrayDim3(const BaseArray<T>& otherArray)
-    :BaseArray<T>(false,false)
-  {
-    std::vector<size_t> v = otherArray.getDims();
-    if(v.size()!=3)
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim3");
+    DynArrayDim3(size_t size1, size_t size2, size_t size3)
+        :BaseArray<T>(false,false)
+    {
+        std::vector<size_t> v;
+        v.push_back(size1);
+        v.push_back(size2);
+        v.push_back(size3);
+        _multi_array.resize(v);//
+        _multi_array.reindex(1);
+    }
+    DynArrayDim3(const BaseArray<T>& b)
+        :BaseArray<T>(false,false)
+    {
+        std::vector<size_t> v = b.getDims();
+        if(v.size()!=3)
+            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim3");
+        _multi_array.resize(v);
+        _multi_array.reindex(1);
+        const T* data_otherarray = b.getData();
+        _multi_array.assign(data_otherarray,data_otherarray+v[0]*v[1]*v[3]);
+    }
+    ~DynArrayDim3(){}
+    /*
+    void assign(DynArrayDim3<T> b)
+    {
+    std::vector<size_t> v = b.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-    const T* data_otherarray = otherArray.getData();
-    _multi_array.assign(data_otherarray,data_otherarray+v[0]*v[1]*v[3]);
-  }
-  ~DynArrayDim3(){}
-  /*
-  void assign(DynArrayDim3<T> otherArray)
-  {
-  std::vector<size_t> v = otherArray.getDims();
-  _multi_array.resize(v);
-  _multi_array.reindex(1);
-  T* data = otherArray._multi_array.data();
-  _multi_array.assign(data, data + v[0]*v[1]*v[2]);
-  }
-  */
+    T* data = b._multi_array.data();
+    _multi_array.assign(data, data + v[0]*v[1]*v[2]);
+    }
+    */
 
   virtual void resize(const std::vector<size_t>& dims)
   {
@@ -2023,25 +2101,25 @@ public:
     }
   }
 
-  virtual void assign(const T* data)
-  {
-    _multi_array.assign(data, data + _multi_array.num_elements() );
-  }
-  virtual  void assign(const BaseArray<T>& otherArray)
-  {
-    std::vector<size_t> v = otherArray.getDims();
-    resize(v);
-    const T* data = otherArray.getData();
-    _multi_array.assign(data, data + v[0]*v[1]*v[2]);
-  }
-  DynArrayDim3<T>& operator=(const DynArrayDim3<T>& rhs)
-  {
-    if (this != &rhs)
+    virtual void assign(const T* data)
     {
-      std::vector<size_t> v = rhs.getDims();
-      _multi_array.resize(v);
-      _multi_array.reindex(1);
-      _multi_array = rhs._multi_array;
+        _multi_array.assign(data, data + _multi_array.num_elements() );
+    }
+    virtual  void assign(const BaseArray<T>& b)
+    {
+        std::vector<size_t> v = b.getDims();
+        resize(v);
+        const T* data = b.getData();
+        _multi_array.assign(data, data + v[0]*v[1]*v[2]);
+    }
+    DynArrayDim3<T>& operator=(const DynArrayDim3<T>& b)
+    {
+        if (this != &b)
+        {
+            std::vector<size_t> v = b.getDims();
+            _multi_array.resize(v);
+            _multi_array.reindex(1);
+            _multi_array = b._multi_array;
 
     }
     return *this;
