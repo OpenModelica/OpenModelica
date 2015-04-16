@@ -114,7 +114,7 @@ algorithm
     else
       Array.setRange(1, nVars, vMark, false);
       Array.setRange(1, nEqns, eMark, false);
-      (outPerfectMatching, _) := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v, {});
+      outPerfectMatching := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v);
     end if;
     i := i+1;
   end while;
@@ -163,8 +163,14 @@ algorithm
     else
       Array.setRange(1,nVars,vMark,false);
       Array.setRange(1,nEqns,eMark,false);
-      (success, mEqns) := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v, {});
+      success := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v);
       if not success then
+        mEqns := {};
+        for j in 1:nEqns loop
+          if eMark[j] then
+            mEqns:=j::mEqns;
+          end if;
+        end for;
         (_,i,outSys,outShared,assign_v_e,assign_e_v,outArg) := sssHandler({mEqns},i,outSys,outShared,assign_v_e,assign_e_v,outArg);
         BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
         //nEqns := BackendDAEUtil.systemSize(outSys);
@@ -193,40 +199,33 @@ protected function BBPathFound
   input array<Boolean> vMark;
   input array<Integer> assign_v_e;
   input array<Integer> assign_e_v;
-  input list<Integer> inMEqns;
   output Boolean success = false;
-  output list<Integer> outMEqns=inMEqns;
 protected
   Integer j;
-  list<Integer> vars;
 algorithm
-  if not eMark[i] then
-    outMEqns := i::outMEqns;
-    arrayUpdate(eMark,i,true);
-  end if;
-  vars := m[i];
-  while not success and (listLength(vars) > 0) loop
-    j::vars := vars;
+  arrayUpdate(eMark,i,true);
+  for j in m[i] loop
     // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and assign_v_e[j] <= 0) then
+    if (j>0 and arrayGet(assign_v_e, j) <= 0) then
       success := true;
-      arrayUpdate(assign_v_e,j,i);
-      arrayUpdate(assign_e_v,i,j);
+      arrayUpdate(assign_v_e, j, i);
+      arrayUpdate(assign_e_v, i, j);
+      return;
     end if;
-  end while;
-  vars := m[i];
-  while not success and (listLength(vars) > 0) loop
-    j::vars := vars;
+  end for;
+
+  for j in m[i] loop
     // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and not vMark[j]) then
-      arrayUpdate(vMark,j,true);
-      (success, outMEqns) := BBPathFound(assign_v_e[j], m, eMark, vMark, assign_v_e, assign_e_v, outMEqns);
+    if (j>0 and not arrayGet(vMark, j)) then
+      arrayUpdate(vMark, j, true);
+      success := BBPathFound(arrayGet(assign_v_e, j), m, eMark, vMark, assign_v_e, assign_e_v);
       if success then
-        arrayUpdate(assign_v_e,j,i);
-        arrayUpdate(assign_e_v,i,j);
+        arrayUpdate(assign_v_e, j, i);
+        arrayUpdate(assign_e_v, i, j);
+        return;
       end if;
     end if;
-  end while;
+  end for;
 end BBPathFound;
 
 protected function BBCheapMatching
