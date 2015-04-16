@@ -97,6 +97,7 @@ protected:
   QAction *mpFindReplaceAction;
   QAction *mpClearFindReplaceTextsAction;
   QAction *mpGotoLineNumberAction;
+  QAction *mpShowTabsAndSpacesAction;
   QAction *mpToggleBreakpointAction;
   QAction *mpToggleCommentSelectionAction;
   DocumentMarker *mpDocumentMarker;
@@ -114,6 +115,7 @@ public slots:
   void showFindReplaceWidget();
   void clearFindReplaceTexts();
   void showGotoLineNumberDialog();
+  void showTabsAndSpaces(bool On);
   void toggleBreakpoint();
   virtual void toggleCommentSelection() = 0;
   void indentOrUnindent(bool doIndent);

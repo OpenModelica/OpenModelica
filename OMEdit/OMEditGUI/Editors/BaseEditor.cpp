@@ -476,6 +476,11 @@ void BaseEditor::createActions()
   mpGotoLineNumberAction->setStatusTip(tr("Shows the Go to Line Number window"));
   mpGotoLineNumberAction->setShortcut(QKeySequence("Ctrl+l"));
   connect(mpGotoLineNumberAction, SIGNAL(triggered()), SLOT(showGotoLineNumberDialog()));
+  // ShowTabsAndSpaces action
+  mpShowTabsAndSpacesAction = new QAction(tr("Show Tabs and Spaces"), this);
+  mpShowTabsAndSpacesAction->setStatusTip(tr("Shows the Tabs and Spaces"));
+  mpShowTabsAndSpacesAction->setCheckable(true);
+  connect(mpShowTabsAndSpacesAction, SIGNAL(triggered(bool)), SLOT(showTabsAndSpaces(bool)));
   /* Toggle breakpoint action */
   mpToggleBreakpointAction = new QAction(tr("Toggle Breakpoint"), this);
   connect(mpToggleBreakpointAction, SIGNAL(triggered()), SLOT(toggleBreakpoint()));
@@ -497,6 +502,8 @@ QMenu* BaseEditor::createStandardContextMenu()
   pMenu->addAction(mpFindReplaceAction);
   pMenu->addAction(mpClearFindReplaceTextsAction);
   pMenu->addAction(mpGotoLineNumberAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpShowTabsAndSpacesAction);
   return pMenu;
 }
 
@@ -573,6 +580,22 @@ void BaseEditor::showGotoLineNumberDialog()
 {
   GotoLineDialog *pGotoLineWidget = new GotoLineDialog(this);
   pGotoLineWidget->exec();
+}
+
+/*!
+ * \brief BaseEditor::showTabsAndSpaces
+ * Shows/hide tabs and spaces for the editor.
+ * \param On
+ */
+void BaseEditor::showTabsAndSpaces(bool On)
+{
+  QTextOption textOption = mpPlainTextEdit->document()->defaultTextOption();
+  if (On) {
+    textOption.setFlags(textOption.flags() | QTextOption::ShowTabsAndSpaces);
+  } else {
+    textOption.setFlags(textOption.flags() & ~QTextOption::ShowTabsAndSpaces);
+  }
+  mpPlainTextEdit->document()->setDefaultTextOption(textOption);
 }
 
 /**
