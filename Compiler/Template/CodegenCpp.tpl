@@ -12771,8 +12771,6 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let &afterExp = buffer "" /*BUFD*/
   let crefs = (expExpLst |> e => ExpressionDump.printExpStr(e) ;separator=", ")
   let marker = '(<%crefs%>) = <%ExpressionDump.printExpStr(exp)%>'
-  let &preExp += '/* algStmtTupleAssign: preExp buffer created for <%marker%> */<%\n%>'
-  let &afterExp += '/* algStmtTupleAssign: afterExp buffer created for <%marker%> */<%\n%>'
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   //previous multi_array let rhsStr = 'boost::get<<%i1%>>(<%retStruct%>.data)'
 
@@ -12781,12 +12779,11 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
                     writeLhsCref(cr, rhsStr, context, &afterExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                   ;separator="\n";empty)
   <<
-  /* algStmtTupleAssign: preExp printout <%marker%>*/
-
+  // algStmtTupleAssign: preExp printout <%marker%>
   <%preExp%>
-  /* algStmtTupleAssign: writeLhsCref <%marker%> */
+  // algStmtTupleAssign: writeLhsCref
   <%lhsCrefs%>
-  /* algStmtTupleAssign: afterExp printout <%marker%> */
+  // algStmtTupleAssign: afterExp
   <%afterExp%>
   >>
 
