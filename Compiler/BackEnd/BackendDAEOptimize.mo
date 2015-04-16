@@ -4077,16 +4077,16 @@ algorithm
       norm := BackendVariable.getVarNominalValue(v);
       y_norm := Expression.expDiv(y,norm);
       (y_norm,_) := ExpressionSimplify.simplify(y_norm);
-      
+
       // lhs
         cref := BackendVariable.varCref(tmpv);
         lhs := Expression.crefExp(cref);
         eqn := BackendDAE.EQUATION(lhs, y_norm, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         //print("\n" + BackendDump.equationString(eqn));
-        
+
         eqns := BackendEquation.addEquation(eqn, eqns);
         vars := BackendVariable.addVar(tmpv, vars);
-      
+
     end for;
 
   outDAE := BackendDAE.DAE(osystlst, oshared);
