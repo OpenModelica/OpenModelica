@@ -10702,12 +10702,11 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       >>)
   let firstValue = (match ri.path
      case IDENT(name="array") then
-       let length = tempDecl("size_t",&tmpVarDecls)
+       let length = tempDecl("int", &tmpVarDecls)
        let &rangeExpPre += '<%length%> = 0;<%\n%>'
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let loopVar = '<%iter.id%>_loopVar'
-         let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = max(<%length%>,(<%loopVar%>.getDim(1)));<%\n%>'
+         let &rangeExpPre += '<%length%> = max(<%length%>, <%loopVar%>.getDim(1));<%\n%>'
          "")
       <<
        <%arrIndex%> = 1;
