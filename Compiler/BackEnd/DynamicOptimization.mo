@@ -120,7 +120,7 @@ protected
   list<BackendDAE.Var> tG = findTimeGrid(varlst);
   list<Integer> ind;
 algorithm
-  if listLength(tG) > 0 then
+  if not listEmpty(tG) then
     ind := BackendVariable.getVarIndexFromVars(tG, ov);
     for i in ind loop
       ov := BackendVariable.setVarKindForVar(i, BackendDAE.OPT_TGRID(), ov);

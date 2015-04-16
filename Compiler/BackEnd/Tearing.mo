@@ -2008,7 +2008,7 @@ algorithm
     // hier (sehr kleine Listen, wird einmal am Anfang gemacht und immer wenn neue unsolvables dazugekommen sind,
     // max so oft wie es tvars gibt)
       tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
-      if listLength(tVar_never)<>0 then
+      if not listEmpty(tVar_never) then
         Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
       end if;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2622,7 +2622,7 @@ algorithm
   counts2 := listReverse(counts2);
   // 12. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points2
   points2 := List.threadMap(counts1,counts2,intAdd);
-  points2 := if listLength(points2)==0 then {0} else points2;
+  points2 := if listEmpty(points2) then {0} else points2;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nPoints: "+ stringDelimitList(List.map(points2,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
   end if;

@@ -429,7 +429,7 @@ public function iterationVarsinRelations
   output list<Integer> indexes;
 algorithm
   (_, (_,(indexes, _))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingRelationsforIterationVars, ({}, inVars)));
-  mixedSystem := if listLength(indexes)>0 then true else false;
+  mixedSystem := not listEmpty(indexes);
 end iterationVarsinRelations;
 
 protected function traversingRelationsforIterationVars

@@ -215,7 +215,7 @@ algorithm
   // Identify modes in the system
   modes := identifyModes(shared);
   names := List.map(BaseHashTable.hashTableKeyList(modes), ComponentReference.crefLastIdent);
-  if (listLength(names) > 0) then
+  if (not listEmpty(names)) then
     if DEBUG_SMDUMP then
       print("***** SMF-stateMachineElab States: ***** \n" + stringDelimitList(names, ",")  + "\n");
       print("***** SMF-stateMachineElab ModeTable: ***** \n");
@@ -888,7 +888,7 @@ algorithm
   systOut := List.fold(vars, BackendVariable.addVarDAE, systIn);
   systOut := BackendEquation.equationsAddDAE(wrappedEqs, systOut);
   sharedOut := List.fold(knowns, BackendVariable.addNewKnVarDAE, sharedIn);
-  if (listLength(wrappedEqs) > 0) then
+  if (not listEmpty(wrappedEqs)) then
     sharedOut := wrapAddTimeEventHack({timeEvent}, sharedOut);
   end if;
 end wrapHack;

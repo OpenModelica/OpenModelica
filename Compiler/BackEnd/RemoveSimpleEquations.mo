@@ -4996,7 +4996,7 @@ algorithm
         end if;
         (HTStartExpToInt,HTNominalExpToInt) = getThisAttributes(cr1,cr_eq_lst,inAliasVars,HTStartExpToInt,HTNominalExpToInt);
         tplExpIndList = BaseHashTable.hashTableList(HTStartExpToInt);
-        if listLength(tplExpIndList)>0 then
+        if not listEmpty(tplExpIndList) then
           e = getDominantAttributeValue(tplExpIndList);
           v = BackendVariable.setVarStartValue(v,e);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
@@ -5005,7 +5005,7 @@ algorithm
           end if;
         end if;
         tplExpIndList = BaseHashTable.hashTableList(HTNominalExpToInt);
-        if listLength(tplExpIndList)>0 then
+        if not listEmpty(tplExpIndList) then
           e = getDominantAttributeValue(tplExpIndList);
           v = BackendVariable.setVarNominalValue(v,e);
           if Flags.isSet(Flags.DEBUG_ALIAS) then
