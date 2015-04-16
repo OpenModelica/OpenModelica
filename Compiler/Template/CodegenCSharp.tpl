@@ -425,7 +425,6 @@ const int
 
     public override int OutputsCount   { get { return NO; } }
     public override int InputsCount    { get { return NI; } }
-    public override int InitialResidualsCount { get { return NR; } }
     public override int ExternalObjectsCount { get { return NEXT; } }
 
     public override int LinearSystemsCount { get { return NLS; } }
