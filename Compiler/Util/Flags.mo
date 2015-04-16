@@ -436,6 +436,9 @@ constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(133, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
 constant DebugFlag VISUAL_XML = DEBUG_FLAG(134, "visxml", false,
   Util.gettext("Outputs a xml-file that contains information for visualization."));
+constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(135, "addScaledVars", false,
+  Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state"));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -576,7 +579,8 @@ constant list<DebugFlag> allDebugFlags = {
   CONSTJAC,
   EXTENDS_DYN_OPT,
   REDUCE_DYN_OPT,
-  VISUAL_XML
+  VISUAL_XML,
+  ADD_SCALED_VARS
 };
 
 public
@@ -733,6 +737,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "constantLinearSystem",
     "simplifysemiLinear",
     "solveLinearSystem",
+    "addScaledVars",
     "removeSimpleEquations",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",

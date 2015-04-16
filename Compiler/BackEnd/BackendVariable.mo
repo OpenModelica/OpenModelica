@@ -1673,6 +1673,19 @@ algorithm
                           NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end createAliasDerVar;
 
+public function createVar
+"Creates a  variable with <input> as cref"
+  input DAE.ComponentRef inCref;
+  input String prependStringCref;
+  output BackendDAE.Var outVar;
+protected
+  BackendDAE.Var var;
+  DAE.ComponentRef cr;
+algorithm
+  cr := ComponentReference.appendStringLastIdent(prependStringCref, inCref);
+  outVar := makeVar(cr);
+end createVar;
+
 public function createDummyVar
 "Creates variable with $dummy."
   output BackendDAE.Var outVar;

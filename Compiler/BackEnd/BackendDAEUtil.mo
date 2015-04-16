@@ -7710,6 +7710,7 @@ algorithm
                         (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", false),
                         (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear", false),
                         (BackendDAEOptimize.removeConstants, "removeConstants", false),
+                        (BackendDAEOptimize.addedScaledVars, "addScaledVars", false),
                         (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
                         (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),
