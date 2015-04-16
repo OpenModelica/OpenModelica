@@ -821,7 +821,7 @@ public:
         {
             std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
         }
-        else //a (this) is local array 
+        else //a (this) is local array
         {
             memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
         }
@@ -1263,7 +1263,7 @@ public:
         {
             std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2*size3,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
         }
-        else //a (this) is local array 
+        else //a (this) is local array
         {
             memcpy( _array_data.begin(), data, size1*size2 *size3*  sizeof( T ) );
         }
@@ -1361,7 +1361,7 @@ public:
             }
         }
         return *this;
-    } 
+    }
 
   /*
   Index operator to access array element
