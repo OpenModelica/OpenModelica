@@ -54,15 +54,15 @@ class Draw_LineArrow:public QGraphicsPathItem
 
     //checking the mouse position to resize and move line
     bool isMouseClickedOnStartHandle(const QPointF pnt);
-  bool isMouseClickedOnEndHandle(const QPointF pnt);
-  bool isMouseClickedOnRotateHandle(const QPointF pnt);
+    bool isMouseClickedOnEndHandle(const QPointF pnt);
+    bool isMouseClickedOnRotateHandle(const QPointF pnt);
     bool isMouseClickedOnShape(const QPointF pnt);
     bool get_line(QPointF pnt);
-  bool isClickedOnHandleOrShape(QPointF point);
+    bool isClickedOnHandleOrShape(QPointF point);
 
     QPainterPath getLineArrow(QPointF pnt);
-  //writes the shapes and shapes attributes to an image
-  void drawImage(QPainter *painter,QString &text,QPointF point);
+    //writes the shapes and shapes attributes to an image
+    void drawImage(QPainter *painter,QString &text,QPointF point);
 
     void setEdgeRects();
     void updateEdgeRects();
@@ -74,17 +74,17 @@ class Draw_LineArrow:public QGraphicsPathItem
     void setRotate(const QPointF &pnt,const QPointF &pnt1);
     void setScale(float x,float y);
 
-  //show handles
-  void showHandles();
-  //hide handles
-  void hideHandles();
+    //show handles
+    void showHandles();
+    //hide handles
+    void hideHandles();
 
-   //rotate the shapes
-   void rotateShape(float angle);
+    //rotate the shapes
+    void rotateShape(float angle);
 
-   //gets the min and max of linearrow points
-   QPointF getMinPoint();
-   QPointF getMaxPoint();
+    //gets the min and max of linearrow points
+    QPointF getMinPoint();
+    QPointF getMaxPoint();
 
     virtual QPointF getTranslate(){return QPointF(0,0);}
     virtual float getRotate(float angle){return 0;}
@@ -100,7 +100,7 @@ class Draw_LineArrow:public QGraphicsPathItem
     void print();
 
     float angle;
-  bool isObjectSelected;
+    bool isObjectSelected;
     QVector<QPointF> arrow_pnts;
     ~Draw_LineArrow(){}
 

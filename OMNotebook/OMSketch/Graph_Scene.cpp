@@ -1340,16 +1340,15 @@ void Graph_Scene::draw_line_move(QPointF pnt,QPointF pnt1)
 
 void Graph_Scene::draw_line_state(QPointF pnt, QPointF pnt1)
 {
-
     if(line && (lines.isEmpty())&&!line->getPolyLineDrawn() && objectToDraw==1)
     {
-      line->setEndPoint(pnt1);
+        line->setEndPoint(pnt1);
     }
 
-    if((lines.size()>=1)&&!line->getPolyLineDrawn() && objectToDraw==1)
+    if(line && (lines.size()>=1)&&!line->getPolyLineDrawn() && objectToDraw==1)
     {
-      line->setEndPoint(pnt1);
-      line->setPolyLineDrawn(false);
+        line->setEndPoint(pnt1);
+        line->setPolyLineDrawn(false);
     }
 
     if(line && line->getPolyLineDrawn())
@@ -1542,56 +1541,56 @@ void Graph_Scene::draw_linearrow_state(QPointF pnt, QPointF pnt1)
     if(linearrow && linearrow->getMode()==false && objectToDraw==7)
     {
 
-    Draw_LineArrow *linearrow2 = new Draw_LineArrow();
-      linearrow2=linearrow;
+        Draw_LineArrow *linearrow2 = new Draw_LineArrow();
+        linearrow2=linearrow;
 
-    removeItem(linearrow2->item);
-    removeItem(linearrow->item);
+        removeItem(linearrow2->item);
+        removeItem(linearrow->item);
         last_pnt=pnt1;
 
 
-    //qDebug()<<"line strt point "<<linearrow2->getStartPnt()<<"\n";
+        //qDebug()<<"line strt point "<<linearrow2->getStartPnt()<<"\n";
         linearrow2->bounding_strt_pnt = linearrow2->getStartPnt();
         linearrow2->bounding_end_pnt = linearrow2->getEndPnt();
-    //qDebug()<<"return items coords "<<linearrow2->getLineArrow(linearrow2->getStartPnt()).boundingRect().bottomRight()<<"\n";
-    linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(linearrow2->getStartPnt()));
-    addItem(linearrow2->item);
-    linearrow2->setEdgeRects();
-    //qDebug()<<"line arrow item "<<linearrow2->item->boundingRect().topLeft()<<"  "<<linearrow2->item->boundingRect().bottomRight()<<"\n";
+        //qDebug()<<"return items coords "<<linearrow2->getLineArrow(linearrow2->getStartPnt()).boundingRect().bottomRight()<<"\n";
+        linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(linearrow2->getStartPnt()));
+        addItem(linearrow2->item);
+        linearrow2->setEdgeRects();
+        //qDebug()<<"line arrow item "<<linearrow2->item->boundingRect().topLeft()<<"  "<<linearrow2->item->boundingRect().bottomRight()<<"\n";
 
         addItem(linearrow2->Strt_Rect);
         addItem(linearrow2->End_Rect);
         addItem(linearrow2->Rot_Rect);
 
-    linearrow->setMode(true);
+        linearrow->setMode(true);
 
-    linearrow2->setMode(true);
-    linearrow2->isObjectSelected=true;
+        linearrow2->setMode(true);
+        linearrow2->isObjectSelected=true;
 
-    //qDebug()<<"line length "<<linearrow2->arrow_pnts[0]<<" "<<linearrow2->arrow_pnts[1]<<" "<<linearrow2->arrow_pnts[3]<<"\n";
+        //qDebug()<<"line length "<<linearrow2->arrow_pnts[0]<<" "<<linearrow2->arrow_pnts[1]<<" "<<linearrow2->arrow_pnts[3]<<"\n";
 
-    qDebug()<<"line ptns "<<linearrow2->getMinPoint()<<"  "<<linearrow2->getMaxPoint()<<"\n";
+        qDebug()<<"line ptns "<<linearrow2->getMinPoint()<<"  "<<linearrow2->getMaxPoint()<<"\n";
 
-    linearrows[linearrows.size()-1] = linearrow2;
-    object->setObjectPos(linearrow2->getMinPoint(),linearrow2->getMaxPoint());
-    object->pnts=linearrow->arrow_pnts;
+        linearrows[linearrows.size()-1] = linearrow2;
+        object->setObjectPos(linearrow2->getMinPoint(),linearrow2->getMaxPoint());
+        object->pnts=linearrow->arrow_pnts;
         object->setObjects(7,linearrows.size()-1);
         object->ObjectIndx=linearrows.size()-1;
         object->pen=pen;
         objects.push_back(object);
-    objectToDraw=0;
-    objectToEdit=7;
-      }
+        objectToDraw=0;
+        objectToEdit=7;
+    }
 
     if(linearrow && linearrow->getMode()==true)
     {
 
         if(linearrow->getState()==1)
         {
-       object7->setObjectPos(linearrow->item->boundingRect().topLeft(),linearrow->item->boundingRect().bottomRight());
-       object7->pnts=linearrow->arrow_pnts;
+           object7->setObjectPos(linearrow->item->boundingRect().topLeft(),linearrow->item->boundingRect().bottomRight());
+           object7->pnts=linearrow->arrow_pnts;
            linearrow->setState(0);
-       objectToEdit=7;
+           objectToEdit=7;
         }
 
         if(linearrow->getState()==2)

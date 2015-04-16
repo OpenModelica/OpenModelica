@@ -505,7 +505,7 @@ namespace IAEX
   * \author Anders Fernström
   * \date 2006-03-02
   *
-  * Updates all chapter counter in a documetn
+  * Updates all chapter counter in a document
   */
   class UpdateChapterCounters : public Command
   {
