@@ -357,10 +357,6 @@ void ModelicaTextEditor::setModelicaTextDocument(QTextDocument *doc)
 {
   ModelicaTextDocumentLayout *docLayout = qobject_cast<ModelicaTextDocumentLayout*>(doc->documentLayout());
   if (!docLayout) {
-    QTextOption opt = doc->defaultTextOption();
-    opt.setTextDirection(Qt::LeftToRight);
-    opt.setFlags(opt.flags() | QTextOption::IncludeTrailingSpaces | QTextOption::AddSpaceForLineAndParagraphSeparators);
-    doc->setDefaultTextOption(opt);
     docLayout = new ModelicaTextDocumentLayout(doc);
     doc->setDocumentLayout(docLayout);
   }
