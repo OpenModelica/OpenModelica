@@ -27,11 +27,11 @@ size_t getNextIndex(vector<size_t> idx,size_t k);
 Concatenates n real arrays along the k:th dimension.
 */
 template < typename T >
-void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x );
+void cat_array(int k, vector<BaseArray<T>* >& x, BaseArray<T>& a);
 
 
 template < typename T >
-void transpose_array (BaseArray< T >& a, BaseArray< T >&  x );
+void transpose_array(BaseArray< T >& x, BaseArray< T >& a);
 
 /*
 creates an array (d) for passed multi array  shape (sp) and initialized it with elements from passed source array (s)

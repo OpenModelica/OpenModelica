@@ -1,5 +1,6 @@
 #include <Core/Modelica.h>
 #include <Core/Math/ArrayOperations.h>
+#include <Core/Math/ArraySlice.h>
 #include <sstream>
 #include <stdio.h>
 using namespace std;
@@ -19,7 +20,7 @@ size_t getNextIndex(vector<size_t> idx,size_t k)
 Concatenates n real arrays along the k:th dimension.
 */
 template < typename T >
-void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x )
+void cat_array(int k, vector<BaseArray<T>* >& x, BaseArray<T>& a)
 {
     unsigned int new_k_dim_size = 0;
     unsigned int n = x.size();
@@ -159,19 +160,26 @@ void promote_array(unsigned int n,BaseArray<T>& s,BaseArray<T>& d)
    d.assign( data );
 }
 
-
+/**
+ * permutes the first two dimensions of x into a
+ */
 template < typename T >
-void transpose_array (BaseArray< T >& a, BaseArray< T >&  x )
+void transpose_array(BaseArray< T >& x, BaseArray< T >& a)
 
 {
-    if(a.getNumDims()!=2 || x.getNumDims()!=2)
-       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Erro in transpose_array, number of dimensions does not match");
-
-    vector<size_t> ex = x.getDims();
-    std::swap( ex[0], ex[1] );
-    a.setDims(ex);
-    a.assign(x);
-
+  size_t ndims = x.getNumDims();
+  if(ndims < 2 || ndims != a.getNumDims())
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Wrong dimensions in transpose_array");
+  vector<size_t> ex = x.getDims();
+  std::swap(ex[0], ex[1]);
+  a.setDims(ex);
+  vector<Slice> sx(ndims);
+  vector<Slice> sa(ndims);
+  for (int i = 1; i <= x.getDim(1); i++) {
+    sa[1] = sx[0] = Slice(i);
+    ArraySlice<T>(a, sa).assign(ArraySlice<T>(x, sx));
+  }    
 }
 
 template < typename T>
@@ -390,13 +398,13 @@ void convertExternalF77(const BaseArray<S> &s, BaseArray<T> &d) {
 /*
 Explicit template instantiation for double, int, bool
 */
-template  void BOOST_EXTENSION_EXPORT_DECL cat_array<double>(int k,BaseArray<double>& a, vector<BaseArray<double>* >& x);
-template  void BOOST_EXTENSION_EXPORT_DECL cat_array<int>(int k,BaseArray<int>& a, vector<BaseArray<int>* >& x);
-template  void BOOST_EXTENSION_EXPORT_DECL cat_array<bool>(int k,BaseArray<bool>& a, vector<BaseArray<bool>* >& x);
+template  void BOOST_EXTENSION_EXPORT_DECL cat_array<double>(int k, vector<BaseArray<double>* >& x, BaseArray<double>& a);
+template  void BOOST_EXTENSION_EXPORT_DECL cat_array<int>(int k, vector<BaseArray<int>* >& x, BaseArray<int>& a);
+template  void BOOST_EXTENSION_EXPORT_DECL cat_array<bool>(int k, vector<BaseArray<bool>* >& x, BaseArray<bool>& a);
 
-template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<double>& a, BaseArray< double >& x);
-template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<int>& a, BaseArray< int >& x);
-template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<bool>& a, BaseArray< bool >& x);
+template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<double>& x, BaseArray< double >& a);
+template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<int>& x, BaseArray< int >& a);
+//template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<bool>& x, BaseArray< bool >& a);
 
 template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n, BaseArray<double>& s, BaseArray<double>& d);
 template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n, BaseArray<int>& s, BaseArray<int>& d);

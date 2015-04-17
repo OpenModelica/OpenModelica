@@ -11556,7 +11556,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     'vector<BaseArray<<%ty_str%>>* > <%tvar%>_list;
      <%tvar%>_list.push_back(&<%a0str%>);
      <%arrays_exp%>
-     cat_array<<%ty_str%> >(<%dim_exp%>,<%tvar%>, <%tvar%>_list );
+     cat_array<<%ty_str%>>(<%dim_exp%>, <%tvar%>_list, <%tvar%>);
     '
     '<%tvar%>'
 
@@ -11584,7 +11584,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let type_str = expTypeFromExpShort(A)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += 'transpose_array< <%type_str%> >(<%tvar%>,<%var1%>);<%\n%>'
+    let &preExp += 'transpose_array<<%type_str%>>(<%var1%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
 
    case CALL(path=IDENT(name="cross"), expLst={v1, v2},attr=CALL_ATTR(ty=ty as T_ARRAY(dims=dims))) then
