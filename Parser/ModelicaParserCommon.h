@@ -41,7 +41,7 @@ extern "C" {
 
 #define UNBOX_OFFSET 1
 
-extern pthread_key_t modelicaParserKey;
+DLLDirection extern pthread_key_t modelicaParserKey;
 
 #define omc_first_comment ((parser_members*)pthread_getspecific(modelicaParserKey))->first_comment
 #define ModelicaParser_filename_OMC ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_OMC
@@ -81,6 +81,7 @@ typedef struct antlr_members_struct {
 #define optimica_enabled() (ModelicaParser_flags&PARSE_OPTIMICA)
 #define code_expressions_enabled() (ModelicaParser_flags&PARSE_CODE_EXPRESSION)
 #define flat_modelica_enabled() (ModelicaParser_flags&PARSE_FLAT)
+#define parse_expression_enabled() (ModelicaParser_flags&PARSE_EXPRESSION)
 
 #ifdef __cplusplus
 }

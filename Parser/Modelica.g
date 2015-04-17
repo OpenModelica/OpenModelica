@@ -1304,7 +1304,11 @@ primary returns [void* ast]
   | LBRACE for_or_el=for_or_expression_list RBRACE
     {
       if (!for_or_el.isFor) {
-        modelicaParserAssert(MMC_NILHDR != MMC_GETHDR(for_or_el.ast) || metamodelica_enabled(), "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        modelicaParserAssert(
+          MMC_NILHDR != MMC_GETHDR(for_or_el.ast) ||
+          metamodelica_enabled() ||
+          parse_expression_enabled(), /* allow {} in mos scripts */ 
+          "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = Absyn__ARRAY(for_or_el.ast);
       } else {
         $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("array"), mmc_mk_nil()),for_or_el.ast);
