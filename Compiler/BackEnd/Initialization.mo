@@ -803,7 +803,7 @@ algorithm
 
     // match the system
     // ass1 and ass2 should be {1, 2, ..., nParam}
-    (ass1, ass2) := Matching.PerfectMatching(m, nParam, nParam);
+    (ass1, ass2) := Matching.PerfectMatching(m);
     // BackendDump.dumpMatchingVars(ass1);
     // BackendDump.dumpMatchingEqns(ass2);
 

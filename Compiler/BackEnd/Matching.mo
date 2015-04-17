@@ -70,22 +70,13 @@ protected import System;
 public function PerfectMatching "
   This function fails if there is no perfect matching for the given system."
   input BackendDAE.IncidenceMatrix m;
-  input Integer nVars;
-  input Integer nEqns;
   output array<Integer> assign_v_e;
   output array<Integer> assign_e_v;
 protected
   Boolean perfectMatching;
+  Integer N = arrayLength(m);
 algorithm
-  (assign_v_e, assign_e_v, perfectMatching) := RegularMatching(m, nVars, nEqns);
-
-  if not perfectMatching then
-    if Flags.isSet(Flags.FAILTRACE) then
-      Debug.traceln("- Matching.PerfectMatching failed: Singular System!");
-    end if;
-    // Error.addCompilerWarning("Singular System!");
-    fail();
-  end if;
+  (assign_v_e, assign_e_v, true) := RegularMatching(m, N, N);
 end PerfectMatching;
 
 public function RegularMatching "
@@ -199,11 +190,10 @@ protected function BBPathFound
   input array<Boolean> vMark;
   input array<Integer> assign_v_e;
   input array<Integer> assign_e_v;
-  output Boolean success = false;
-protected
-  Integer j;
+  output Boolean success=false;
 algorithm
-  arrayUpdate(eMark,i,true);
+  arrayUpdate(eMark, i, true);
+
   for j in m[i] loop
     // negative entries in adjacence matrix belong to states!!!
     if (j>0 and arrayGet(assign_v_e, j) <= 0) then
@@ -4747,7 +4737,7 @@ protected function ks_rand_cheapmatching1
   input array<Integer> ass1;
   input array<Integer> ass2;
 algorithm
-  _  := matchcontinue (i,ne,onecolums,onerows,col_degrees,row_degrees,randarr,m,mT,ass1,ass2)
+  _ := matchcontinue (i,ne,onecolums,onerows,col_degrees,row_degrees,randarr,m,mT,ass1,ass2)
     local
       list<Integer> onecolums1,onerows1;
       Integer c;
@@ -4816,7 +4806,7 @@ protected function ks_rand_cheapmatching3
   output list<Integer> outonerows;
   output Integer outR;
 algorithm
-  (outonerows,outR)  := matchcontinue(e_id,rows,row_degrees,c,ass1,ass2,onerows,inR)
+  (outonerows,outR) := matchcontinue(e_id,rows,row_degrees,c,ass1,ass2,onerows,inR)
     local
         list<Integer> rest,stack,statck1;
         Integer r,r_1;
@@ -4856,7 +4846,7 @@ protected function ks_rand_cheapmatching4
   input list<Integer> inStack;
   output list<Integer> outStack;
 algorithm
-  outStack  := matchcontinue(cols,count,col_degrees,ass1,inStack)
+  outStack := matchcontinue(cols,count,col_degrees,ass1,inStack)
     local
         list<Integer> rest,stack;
         Integer c;
@@ -4940,7 +4930,7 @@ protected function ks_rand_match
   input array<Integer> ass1;
   input array<Integer> ass2;
 algorithm
-  _  := matchcontinue (stack1,stack2,degrees1,degrees2,m1,m2,ass1,ass2)
+  _ := matchcontinue (stack1,stack2,degrees1,degrees2,m1,m2,ass1,ass2)
     local
       Integer e;
       list<Integer> rest,lst,stack;
@@ -5003,7 +4993,7 @@ protected function ks_rand_match1
   input array<Integer> ass2;
   output list<Integer> outStack;
 algorithm
-  outStack  := matchcontinue(i,entries,stack,degrees1,degrees2,incidence,ass1,ass2)
+  outStack := matchcontinue(i,entries,stack,degrees1,degrees2,incidence,ass1,ass2)
     local
         list<Integer> rest,lst;
         Integer e;
@@ -5031,7 +5021,7 @@ protected function ks_rand_match_degree
   input list<Integer> inStack;
   output list<Integer> outStack;
 algorithm
-  outStack  := matchcontinue(entries,degrees,ass,inStack)
+  outStack := matchcontinue(entries,degrees,ass,inStack)
     local
         list<Integer> rest,stack;
         Integer e;
