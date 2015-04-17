@@ -864,12 +864,12 @@ assign_clause_a returns [void* ast]
   e1=simple_expression
     ( (ASSIGN|eq=EQUALS) e2=expression[metamodelica_enabled()]
       {
-        modelicaParserAssert(eq==0,"Algorithms can not contain equations ('='), use assignments (':=') instead", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
+        modelicaParserAssert(eq == 0,"Algorithms can not contain equations ('='), use assignments (':=') instead", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
         {
           int looks_like_cref = (MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__CREF_3dBOX1));
           int looks_like_call = ((MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__TUPLE_3dBOX1)) && (MMC_GETHDR(e2.ast) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2)));
           int looks_like_der_cr = !looks_like_cref && !looks_like_call && call_looks_like_der_cr(e1);
-          modelicaParserAssert(eq!=0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
+          modelicaParserAssert(eq != 0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
               "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
               assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
           if (looks_like_der_cr && !metamodelica_enabled()) {
@@ -1307,7 +1307,7 @@ primary returns [void* ast]
         modelicaParserAssert(
           MMC_NILHDR != MMC_GETHDR(for_or_el.ast) ||
           metamodelica_enabled() ||
-          parse_expression_enabled(), /* allow {} in mos scripts */ 
+          parse_expression_enabled(), /* allow {} in mos scripts */
           "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = Absyn__ARRAY(for_or_el.ast);
       } else {
