@@ -251,31 +251,31 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual T& operator()(size_t i) {
-    accessElement(1, i);
+    return accessElement(1, i);
   }
 
   virtual const T& operator()(size_t i) const {
-    accessElement(1, i);
+    return accessElement(1, i);
   }
 
   virtual T& operator()(size_t i, size_t j) {
-    accessElement(2, i, j);
+    return accessElement(2, i, j);
   }
 
   virtual const T& operator()(size_t i, size_t j) const {
-    accessElement(2, i, j);
+    return accessElement(2, i, j);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k) {
-    accessElement(3, i, j, k);
+   return accessElement(3, i, j, k);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l) {
-    accessElement(4, i, j, k, l);
+   return accessElement(4, i, j, k, l);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) {
-    accessElement(5, i, j, k, l, m);
+    return accessElement(5, i, j, k, l, m);
   }
 
  protected:
