@@ -18,7 +18,7 @@ template translateModel(SimCode simCode)
         let &extraFuncsDecl = buffer "" /*BUFD*/
         let()= textFile(simulationMainFile(target, simCode , &extraFuncs , &extraFuncsDecl, "", "", "", ""), 'OMCpp<%fileNamePrefix%>Main.cpp')
         let()= textFile(simulationCppFile(simCode, contextOther, &extraFuncs, &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
-        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", MemberVariable(modelInfo, false), false), 'OMCpp<%fileNamePrefix%>.h')
+        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", MemberVariable(modelInfo, false), MemberVariablePreVariables(modelInfo,false), false), 'OMCpp<%fileNamePrefix%>.h')
         let()= textFile(simulationFunctionsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
         let()= textFile(simulationFunctionsFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, externalFunctionIncludes, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
         let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
@@ -77,7 +77,7 @@ template translateFunctions(FunctionCode functionCode)
 end translateFunctions;
 
 template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes,
-                              String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, Boolean useFlatArrayNotation)
+                              String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, String memberPreVariableDefinitions, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -85,7 +85,7 @@ case SIMCODE(__) then
    <<
    <%generateHeaderIncludeString(simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)%>
    <%additionalIncludes%>
-   <%generateClassDeclarationCode(simCode ,context, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalPublicMembers, additionalProtectedMembers, memberVariableDefinitions, useFlatArrayNotation)%>
+   <%generateClassDeclarationCode(simCode ,context, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalPublicMembers, additionalProtectedMembers, memberVariableDefinitions, memberPreVariableDefinitions, useFlatArrayNotation)%>
    >>
 end simulationHeaderFile;
 
@@ -6158,7 +6158,8 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
 end generateAlgloopHeaderInlcudeString;
 
 template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,
-                                      String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, Boolean useFlatArrayNotation)
+                                      String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, 
+                                      String memberPreVariableDefinitions, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
 match simCode
@@ -6259,7 +6260,7 @@ match modelInfo
       boost::shared_ptr<DiscreteEvents> _discrete_events;
 
       <%memberVariableDefinitions%>
-      <%MemberVariablePreVariables(modelInfo,useFlatArrayNotation)%>
+      <%memberPreVariableDefinitions%>
       <%conditionvariables%>
       Functions* _functions;
 
@@ -6871,7 +6872,6 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end MemberVariablePreVariables;
 
-
 template MemberVariableInitialize(ModelInfo modelInfo, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
@@ -6902,7 +6902,8 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   ;separator="\n"%>
   >>
 end MemberVariableInitialize;
-template MemberVariableInitialize2(SimVar simVar, Boolean useFlatArrayNotation, String type,Text& indices)
+
+template MemberVariableInitialize2(SimVar simVar, Boolean useFlatArrayNotation, String type, Text& indices)
 ::=
 
 match simVar
@@ -6945,12 +6946,7 @@ match simVar
         var_init
         else ''
       end match
-
-
 end MemberVariableInitialize2;
-
-
-
 
 template MemberVariableAlgloop(ModelInfo modelInfo, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."

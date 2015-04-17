@@ -8,7 +8,7 @@
 #include <boost/circular_buffer.hpp>
 #include <iostream>
 #include <Core/System/IContinuous.h>
-#include <Core/SimulationSettings//IGlobalSettings.h>
+#include <Core/SimulationSettings/IGlobalSettings.h>
 #endif
 
 /*****************************************************************************/

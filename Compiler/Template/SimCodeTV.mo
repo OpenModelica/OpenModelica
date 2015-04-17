@@ -2990,6 +2990,7 @@ package Flags
 
   constant DebugFlag PARMODAUTO;
   constant DebugFlag HPCOM;
+  constant DebugFlag HPCOM_MEMORY_OPT;
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
   constant DebugFlag MODEL_INFO_JSON;
@@ -3532,13 +3533,8 @@ package HpcOmSimCode
 end HpcOmSimCode;
 
 package HpcOmMemory
-  function useHpcomMemoryOptimization
-    input Option<HpcOmSimCode.MemoryMap> iMemoryMapOpt;
-    output Boolean oUseMemoryOptimization;
-  end useHpcomMemoryOptimization;
-
   function getPositionMappingByArrayName
-    input HpcOmSimCode.MemoryMap iMemoryMap;
+    input Option<HpcOmSimCode.MemoryMap> iMemoryMapOpt;
     input DAE.ComponentRef iVarName;
     output Option<tuple<Integer,Integer>> oResult;
   end getPositionMappingByArrayName;

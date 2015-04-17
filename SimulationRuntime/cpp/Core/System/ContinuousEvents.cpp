@@ -4,7 +4,7 @@
 #include <Core/Math/Functions.h>
 
 
-ContinuousEvents::ContinuousEvents() : _countinous_system(NULL), _mixed_system(NULL), _conditions0(NULL), _conditions1(NULL)
+ContinuousEvents::ContinuousEvents() : _event_system(NULL), _countinous_system(NULL), _mixed_system(NULL), _conditions0(NULL), _conditions1(NULL)
 {
 }
 
