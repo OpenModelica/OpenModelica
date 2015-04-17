@@ -2330,10 +2330,9 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     // get start and end connectors
     Component *pStartConnectorComponent = 0;
     Component *pEndConnectorComponent = 0;
-    bool isExpandableConnector = false;
     if (pStartComponent) {
       pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pStartComponent->getClassName() + ")");
-      isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
+      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
       // if a component type is connector then we only get one item in startComponentList
       // check the startcomponentlist
       if (startComponentList.size() < 2 || isExpandableConnector) {
@@ -2352,9 +2351,8 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     if (pEndComponent) {
       // if a component type is connector then we only get one item in endComponentList
       // check the endcomponentlist
-      isExpandableConnector = false;
       pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getClassName() + ")");
-      isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
+      bool isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
       if (endComponentList.size() < 2 || isExpandableConnector) {
         pEndConnectorComponent = pEndComponent;
       } else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getClassName())) {
