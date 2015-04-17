@@ -27,10 +27,10 @@ template translateModel(SimCode simCode)
       let() = textFile(simulationMainFile(target, simCode, &extraFuncs, &extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else "")), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
       let() = textFile(simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
-                      generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)), 
+                      generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)),
                       generateAdditionalPublicMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, ""),
                       generateAdditionalProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)),
-                      MemberVariable(modelInfo, hpcomData.hpcOmMemory, stringBool(useMemoryOptimization),false), 
+                      MemberVariable(modelInfo, hpcomData.hpcOmMemory, stringBool(useMemoryOptimization),false),
                       //MemberVariablePreVariables(modelInfo, hpcomData.hpcOmMemory, stringBool(useMemoryOptimization),false), false),
                       CodegenCpp.MemberVariablePreVariables(modelInfo,false), false),
                       'OMCpp<%fileNamePrefix%>.h')
@@ -261,19 +261,19 @@ template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap, Boolean creat
       match hpcomMemoryMap
         case(MEMORYMAP_ARRAY(__)) then
           <<
-          <%if intGt(floatArraySize,0) then 
+          <%if intGt(floatArraySize,0) then
               if(createConstructorDeclaration) then
                 'varArray1(new double[<%floatArraySize%>]),'
               else
                 'double *varArray1; //float variables <%floatArraySize%>'
           %>
-          <%if intGt(intArraySize,0) then 
+          <%if intGt(intArraySize,0) then
               if(createConstructorDeclaration) then
                 'varArray2(new int[<%intArraySize%>]),'
               else
                 'int *varArray2; //int variables <%intArraySize%>'
           %>
-          <%if intGt(boolArraySize,0) then 
+          <%if intGt(boolArraySize,0) then
               if(createConstructorDeclaration) then
                 'varArray3(new bool[<%boolArraySize%>]),'
               else
@@ -1931,7 +1931,7 @@ template MemberVariableInitialize1(SimVar simVar, Option<MemoryMap> hpcOmMemoryO
 ::=
   match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-    
+
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       MemberVariableInitialize2(simVar, HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,name), hpcOmMemoryOpt, createDefaultInitialization, useFlatArrayNotation, type, indices)
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
@@ -1988,7 +1988,7 @@ match simVar
               >>
             else
               if createDefaultInitialization then CodegenCpp.MemberVariableInitialize2(simVar, useFlatArrayNotation, type, indices) else ''
-          end match       
+          end match
     /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
       match(optVarArrayAssignment)

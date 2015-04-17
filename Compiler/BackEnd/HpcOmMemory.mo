@@ -341,7 +341,7 @@ encapsulated package HpcOmMemory
           else
             tmpMemoryMap = HpcOmSimCode.MEMORYMAP_UNIFORM();
           end if;
-          
+
           //print cache map
           //printCacheMap(cacheMap);
           //evaluateCacheBehaviour(cacheMap, iTaskGraphT, nodeSimCodeVarMapping, scVarCLMapping, iNumberOfThreads, numCL, iSchedulerInfo);
@@ -1385,7 +1385,7 @@ encapsulated package HpcOmMemory
     print("HpcOmMemory.createCacheMapFromThreadAndSharedCLs: Thread bool cache lines\n");
     List.map_0(cacheLinesBool, function printCacheLineMap(iCacheVariables = cacheVariables));
     print("\n");
-    
+
     cacheLinesFloat := listAppend(cacheLinesFloat, List.map(Util.tuple31(partlyFilledCacheLines), getCacheLineMapOfPartlyFilledCacheLine));
     print("HpcOmMemory.createCacheMapFromThreadAndSharedCLs: Partly float cache lines\n");
     List.map_0(List.map(Util.tuple31(partlyFilledCacheLines), getCacheLineMapOfPartlyFilledCacheLine), function printCacheLineMap(iCacheVariables = cacheVariables));

@@ -6158,7 +6158,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
 end generateAlgloopHeaderInlcudeString;
 
 template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,
-                                      String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, 
+                                      String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions,
                                       String memberPreVariableDefinitions, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
