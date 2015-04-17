@@ -66,6 +66,7 @@ void CEditor::showContextMenu(QPoint point)
 CHighlighter::CHighlighter(QPlainTextEdit *pPlainTextEdit)
   : QSyntaxHighlighter(pPlainTextEdit->document())
 {
+  mpPlainTextEdit = pPlainTextEdit;
   initializeSettings();
 }
 
