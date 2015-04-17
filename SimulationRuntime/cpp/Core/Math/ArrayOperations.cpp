@@ -179,7 +179,7 @@ void transpose_array(BaseArray< T >& x, BaseArray< T >& a)
   for (int i = 1; i <= x.getDim(1); i++) {
     sa[1] = sx[0] = Slice(i);
     ArraySlice<T>(a, sa).assign(ArraySlice<T>(x, sx));
-  }    
+  }
 }
 
 template < typename T>
