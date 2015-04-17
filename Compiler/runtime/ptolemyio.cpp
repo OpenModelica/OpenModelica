@@ -111,7 +111,6 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
       stream.getline(buf,255);
 
       if (string(buf).find("DataSet:") == 1) {
-        j = datasize;
         break;
       }
       string values(buf);

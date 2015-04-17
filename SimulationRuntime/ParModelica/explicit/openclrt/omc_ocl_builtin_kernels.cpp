@@ -33,7 +33,7 @@
 /*
 
  This file contains functions used to call and execute custom kernels or
- algoritms on OpnCL devices. For example a matrix multiplication or
+ algoritms on OpenCL devices. For example a matrix multiplication or
  transpose can be computed with this kernels if the user has not provided
  the algorithm explicitly.
  e.g. in Modelica
