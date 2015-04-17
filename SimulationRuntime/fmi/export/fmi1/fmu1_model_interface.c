@@ -39,7 +39,7 @@
 #include "simulation/simulation_input_xml.h"
 
 /*
-pthread_key_t fmu1_thread_data_key;
+DLLExport pthread_key_t fmu1_thread_data_key;
 */
 
 // array of value references of states
@@ -171,8 +171,9 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
       "fmiInstantiateModel: GUID=%s", GUID);
   /* intialize modelData */
   fmu1_model_interface_setupDataStruc(comp->fmuData);
+  useStream[LOG_STDOUT] = 1;
+  useStream[LOG_ASSERT] = 1;
   initializeDataStruc(comp->fmuData);
-
   /* setup model data with default start data */
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData);

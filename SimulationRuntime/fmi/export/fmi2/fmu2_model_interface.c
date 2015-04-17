@@ -39,7 +39,7 @@
 #include "simulation/simulation_input_xml.h"
 
 /*
-pthread_key_t fmu2_thread_data_key;
+DLLExport pthread_key_t fmu2_thread_data_key;
 */
 
 fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);
@@ -319,6 +319,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->state = modelInstantiated;
   /* intialize modelData */
   fmu2_model_interface_setupDataStruc(comp->fmuData);
+  useStream[LOG_STDOUT] = 1;
+  useStream[LOG_ASSERT] = 1;
   initializeDataStruc(comp->fmuData);
   /* setup model data with default start data */
   setDefaultStartValues(comp);
