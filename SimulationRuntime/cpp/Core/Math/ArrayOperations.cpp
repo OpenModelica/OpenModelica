@@ -404,7 +404,7 @@ template  void BOOST_EXTENSION_EXPORT_DECL cat_array<bool>(int k, vector<BaseArr
 
 template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<double>& x, BaseArray< double >& a);
 template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<int>& x, BaseArray< int >& a);
-//template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<bool>& x, BaseArray< bool >& a);
+template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<bool>& x, BaseArray< bool >& a);
 
 template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n, BaseArray<double>& s, BaseArray<double>& d);
 template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n, BaseArray<int>& s, BaseArray<int>& d);

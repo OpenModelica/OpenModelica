@@ -183,11 +183,11 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual const T* getData() const {
-    if (_tmp_data.size() == 0)
+    if (_tmp_data.num_elements() == 0)
       // allocate on first use
-      _tmp_data.resize(getNumElems());
-    getDataDim(1, &_tmp_data[0]);
-    return &_tmp_data[0];
+      _tmp_data.resize(boost::extents[getNumElems()]);
+    getDataDim(1, _tmp_data.data());
+    return _tmp_data.data();
   }
 
   virtual size_t getNumElems() const {
@@ -226,11 +226,11 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k) {
-   return accessElement(3, i, j, k);
+    return accessElement(3, i, j, k);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l) {
-   return accessElement(4, i, j, k, l);
+    return accessElement(4, i, j, k, l);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) {
@@ -243,7 +243,7 @@ class ArraySlice: public BaseArray<T> {
   vector< vector<size_t> > _idxs;  // created index sets per dimension
   vector<size_t> _dims;            // dimensions of array slice
   mutable vector<size_t> _baseIdx; // idx into underlying array
-  mutable vector<T> _tmp_data;     // contiguous storage for const T* getData()
+  mutable boost::multi_array<T, 1> _tmp_data; // storage for const T* getData()
 
   // recursive method for muli-dimensional assignment of raw data
   size_t setDataDim(size_t dim, const T* data) {
