@@ -668,10 +668,9 @@ Two dimensional static array, implements BaseArray interface methods
 @ T type of the array
 @size1  size of dimension one
 @size2  size of dimension two
-@fortran use of column wise order (fortran style) or row wise order for array data
 @isRef if true the array data points to the simvar memory
 */
-template<typename T ,std::size_t size1,std::size_t size2,bool fortran=false,bool isRef = false>
+template<typename T, std::size_t size1, std::size_t size2, bool isRef = false>
 class StatArrayDim2 : public BaseArray<T>
 {
 
@@ -710,7 +709,7 @@ public:
   Constuctor for two dimensional array
   copies data from otherarray in array memory
   */
-  StatArrayDim2(const StatArrayDim2<T,size1,size2,fortran,isRef>& otherarray)
+  StatArrayDim2(const StatArrayDim2<T,size1,size2,isRef>& otherarray)
     :BaseArray<T>(true,isRef)
     ,_ref_init(false)
   {
@@ -721,7 +720,7 @@ public:
     Assignment operator to assign static array to static array
     \@b  array of type StatArrayDim2
 
-    StatArrayDim2<T,size1,size2,fortran,isRef>& operator=(const StatArrayDim2<T,size1,size2,fortran,isRef>& b)
+    StatArrayDim2<T,size1,size2,isRef>& operator=(const StatArrayDim2<T,size1,size2,isRef>& b)
     {
     checkArray("assign data to reference array is not supported");
     if (this != &b)
@@ -736,7 +735,7 @@ public:
     a=b
     \@b any array of type BaseArray
     */
-    StatArrayDim2<T,size1,size2,fortran,isRef>& operator=(BaseArray<T>& b)
+    StatArrayDim2<T,size1,size2,isRef>& operator=(BaseArray<T>& b)
     {
 
         if (this != &b)
@@ -835,9 +834,9 @@ public:
   virtual T& operator()(const vector<size_t>& idx)
   {
     if(isRef)
-      return *(_ref_array_data[size2*(idx[0] - 1) + idx[1] - 1]); //row wise order
+      return *(_ref_array_data[idx[0]-1 + size1*(idx[1]-1)]);
     else
-      return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
+      return _array_data[idx[0]-1 + size1*(idx[1]-1)];
   };
   /*
   Index operator to access array element
@@ -846,21 +845,10 @@ public:
   */
   inline virtual T& operator()(size_t i, size_t j)
   {
-
-    if(fortran)
-    {
-      if(isRef)
-        return *(_ref_array_data[size1*(j - 1) + i - 1]); //column wise order
-      else
-        return _array_data[size1*(j - 1) + i - 1]; //column wise order
-    }
+    if(isRef)
+      return *(_ref_array_data[i-1 + size1*(j-1)]);
     else
-    {
-      if(isRef)
-        return *(_ref_array_data[size2*(i - 1) + j - 1]); //row wise order
-      else
-        return _array_data[size2*(i - 1) + j - 1]; //row wise order
-    }
+      return _array_data[i-1 + size1*(j-1)];
   }
 
   /*
@@ -869,10 +857,7 @@ public:
   */
   inline virtual const T& operator()(size_t i, size_t j) const
   {
-    if (fortran)
-      return _array_data[size1*(j - 1) + i - 1]; //column wise order
-    else
-      return _array_data[size2*(i - 1) + j - 1]; //row wise order
+    return _array_data[i-1 + size1*(j-1)];
   }
 
   /*
@@ -985,7 +970,7 @@ public:
     {
       for(int j=0;j<size2;j++)
       {
-        _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+        _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
       }
     }
   }
@@ -1005,7 +990,7 @@ public:
         {
             for(int j=0;j<size2;j++)
             {
-                _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+                _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
             }
         }
     }
@@ -1018,7 +1003,7 @@ public:
             {
                 for(int j=0;j<size2;j++)
                 {
-                    _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+                    _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
                 }
             }
         }
@@ -1037,7 +1022,7 @@ public:
                 {
                     for(int j=0;j<size2;j++)
                     {
-                        _c_array_data[size2*i + j ] = _array_data[size2*i + j].c_str();
+                        _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
                     }
                 }
             }
@@ -1073,8 +1058,8 @@ public:
         {
             for(int j=0;j<size2;j++)
             {
-                const char* c_str_data = _array_data[size2*i + j].c_str();
-                _c_array_data[size2*i + j ] = c_str_data;
+                const char* c_str_data = _array_data[i + size1*j].c_str();
+                _c_array_data[i + size1*j] = c_str_data;
             }
         }
     }
@@ -1086,23 +1071,23 @@ public:
     {
       for(int j=0;j<size2;j++)
       {
-        const char* c_str_data = _array_data[size2*i + j].c_str();
-        _c_array_data[size2*i + j ] = c_str_data;
+        const char* c_str_data = _array_data[i + size1*j].c_str();
+        _c_array_data[i + size1*j] = c_str_data;
       }
     }
   }
   virtual string& operator()(const vector<size_t>& idx)
   {
-    return _array_data[size2*(idx[0] - 1) + idx[1] - 1]; //row wise order
+    return _array_data[idx[0]-1 + size1*(idx[1]-1)];
   };
 
   inline virtual string& operator()(size_t i, size_t j)
   {
-    return _array_data[size2*(i - 1) + j - 1]; //row wise order
+    return _array_data[i-1 + size1*(j-1)];
   }
   inline virtual const string& operator()(size_t i, size_t j) const
   {
-    return _array_data[size2*(i - 1) + j - 1];//row wise order
+    return _array_data[i-1 + size1*(j-1)];
   }
 
 
@@ -1369,13 +1354,10 @@ public:
   */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    //row-major order
     if(isRef)
-      return *(_ref_array_data[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))]);
+      return *(_ref_array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
     else
-      return _array_data[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))];
-    //column-major order
-    //return _array_data[(idx[2] - 1)*size2*size1 +   (idx[1] - 1)*size1 + (idx[0] - 1)];
+      return _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   };
 
   /*
@@ -1386,13 +1368,10 @@ public:
   */
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
-    //row-major order
     if(isRef)
-      return *(_ref_array_data[(k - 1) + size3*((j-1)+size2*(i-1))]);
+      return *(_ref_array_data[i-1 + size1*(j-1 + size2*(k-1))]);
     else
-      return _array_data[(k - 1) + size3*((j-1)+size2*(i-1))];
-    //column-major order
-    //return _array_data[(k - 1)*size2*size1 +   (j - 1)*size1 + (i - 1)];
+      return _array_data[i-1 + size1*(j-1 + size2*(k-1))];
   }
   /*
   Returns number of elements
@@ -1884,12 +1863,14 @@ template<typename T >class DynArrayDim2 : public BaseArray<T>
 public:
   DynArrayDim2()
     :BaseArray<T>(false,false)
+    ,_multi_array(boost::extents[0][0], boost::fortran_storage_order())
   {
     _multi_array.reindex(1);
   }
 
   DynArrayDim2(const DynArrayDim2<T>& dynarray)
     :BaseArray<T>(false,false)
+    ,_multi_array(boost::extents[0][0], boost::fortran_storage_order())
   {
     //assign(dynarray);
     setDims(dynarray.getDim(1), dynarray.getDim(2));
@@ -1899,6 +1880,7 @@ public:
 
     DynArrayDim2(const BaseArray<T>& b)
         :BaseArray<T>(false,false)
+        ,_multi_array(boost::extents[0][0], boost::fortran_storage_order())
     {
         std::vector<size_t> v = b.getDims();
         if(v.size()!=2)
@@ -1911,6 +1893,7 @@ public:
 
   DynArrayDim2(size_t size1, size_t size2)
     :BaseArray<T>(false,false)
+    ,_multi_array(boost::extents[size1][size2], boost::fortran_storage_order())
   {
     std::vector<size_t> v;
     v.push_back(size1);
@@ -2055,12 +2038,15 @@ template<typename T> class DynArrayDim3 : public BaseArray<T>
 public:
   DynArrayDim3()
     :BaseArray<T>(false,false)
+    ,_multi_array(boost::extents[0][0][0], boost::fortran_storage_order())
   {
     _multi_array.reindex(1);
   }
 
     DynArrayDim3(size_t size1, size_t size2, size_t size3)
         :BaseArray<T>(false,false)
+        ,_multi_array(boost::extents[size1][size2][size3],
+                      boost::fortran_storage_order())
     {
         std::vector<size_t> v;
         v.push_back(size1);
@@ -2071,6 +2057,7 @@ public:
     }
     DynArrayDim3(const BaseArray<T>& b)
         :BaseArray<T>(false,false)
+        ,_multi_array(boost::extents[0][0][0], boost::fortran_storage_order())
     {
         std::vector<size_t> v = b.getDims();
         if(v.size()!=3)

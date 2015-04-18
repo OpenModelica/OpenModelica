@@ -374,25 +374,64 @@ void convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b)
   }
 }
 
-/* permutes dims for external F77, including optional bool/int conversion */
+/**
+ * helper for assignRowMajorData
+ * recursive function for muli-dimensional assignment of raw data
+ */
 template <typename S, typename T>
-void convertExternalF77(const BaseArray<S> &s, BaseArray<T> &d) {
-  if (s.getNumDims() != d.getNumDims() || s.getNumDims() > 2)
+static size_t assignRowMajorDim(size_t dim, const S* data,
+                                BaseArray<T> &array, vector<size_t> idx) {
+  size_t processed = 0;
+  size_t size = array.getDim(dim);
+  for (size_t i = 1; i <= size; i++) {
+    idx[dim - 1] = i;
+    if (dim < idx.size())
+      processed += assignRowMajorDim(dim + 1, data + processed, array, idx);
+    else
+      array(idx) = data[processed++];
+  }
+  return processed;
+}
+
+template <typename S, typename T>
+void assignRowMajorData(const S *data, BaseArray<T> &array) {
+  assignRowMajorDim(1, data, array, vector<size_t>(array.getNumDims()));
+}
+
+/**
+ * helper for convertArrayLayout
+ * recursive function for changing between row and column major
+ */
+template <typename S, typename T>
+static void convertArrayDim(size_t dim,
+                            const BaseArray<S> &s, vector<size_t> &sidx,
+                            BaseArray<S> &d, vector<size_t> &didx) {
+  size_t size = s.getDim(dim);
+  for (size_t i = 1; i <= size; i++) {
+    didx[dim - i] = sidx[dim - 1] = i;
+    if (dim < sidx.size())
+      convertArrayDim(dim + 1, s, sidx, d, didx);
+    else
+      d(didx) = s(sidx);
+  }
+}
+
+/**
+ * permutes dims between row and column major storage layout,
+ * including optional type conversion if supported in assignment from S to T
+ */
+template <typename S, typename T>
+void convertArrayLayout(const BaseArray<S> &s, BaseArray<T> &d) {
+  size_t ndims = s.getNumDims();
+  if (ndims != d.getNumDims())
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
-                                  "Unsupported dimensions in convertToF77");
-  vector<size_t> dims = s.getDims();
-  if (s.getNumDims() == 1) {
-    d.resize(dims);
-    for (size_t i = 1; i <= dims[0]; i++)
-      d(i) = s(i);
-  }
-  else {
-    std::swap(dims[0], dims[1]);
-    d.resize(dims);
-    for (size_t i = 1; i <= dims[0]; i++)
-      for (size_t j = 1; j <= dims[1]; j++)
-        d(i, j) = s(j, i);
-  }
+                                  "Wrong dimensions in convertArrayLayout");
+  vector<size_t> sdims = s.getDims();
+  vector<size_t> ddims(ndims);
+  for (size_t dim = 1; dim <= ndims; dim++)
+    ddims[ndims - dim] = sdims[dim - 1];
+  d.resize(ddims);
+  convertDim(1, s, vector<size_t>(ndims), d, vector<size_t>(ndims));
 }
 
 /*
@@ -461,10 +500,10 @@ template std::pair <bool,bool> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<bo
 void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
 void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
 
-template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<double> &s, BaseArray<double> &d);
-template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<int> &s, BaseArray<int> &d);
-template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<bool> &s, BaseArray<int> &d);
-template void BOOST_EXTENSION_EXPORT_DECL convertExternalF77(const BaseArray<int> &s, BaseArray<bool> &d);
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const double *data, BaseArray<double> &d);
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const int *data, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const bool *data, BaseArray<bool> &d);
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const string *data, BaseArray<string> &d);
 
 /*
  template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim1<double, 3>;

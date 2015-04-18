@@ -4694,10 +4694,10 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
       let extType = extTypeF77(ty, false)
       let extName = '<%varName%>_ext'
       let nDims = listLength(dims)
-      if boolOr(intGt(listLength(dims), 1), stringEq(elType, "bool")) then
+      if stringEq(elType, "bool") then
         let &varDecls += 'DynArrayDim<%nDims%><<%extType%>> <%extName%>;<%\n%>'
-        let &inputAssign += 'convertExternalF77<<%elType%>, <%extType%>>(<%varName%>, <%extName%>);<%\n%>'
-        let &outputAssign += if intGt(oi, 0) then 'convertExternalF77<<%extType%>, <%elType%>>(<%extName%>, <%varName%>);<%\n%>'
+        let &inputAssign += 'convertBoolToInt(<%varName%>, <%extName%>);<%\n%>'
+        let &outputAssign += if intGt(oi, 0) then 'convertIntToBool(<%extName%>, <%varName%>);<%\n%>'
         <<
         <%extName%>.getData()
         >>
@@ -6362,7 +6362,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%match eq case SES_LINEAR(__) then
         let size = listLength(vars)
         <<
-        typedef  StatArrayDim2<double,<%size%>,<%size%>,true,false>  AMATRIX;
+        typedef StatArrayDim2<double,<%size%>,<%size%>,false> AMATRIX;
         >>
     %>
 
@@ -7241,10 +7241,6 @@ match simVar
           <<
           <%typeString%>& <%arrayName%>;
           >>
-        case "2" then
-        <<
-          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>,false,true> <%arrayName%>;
-        >>
         else
         <<
          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>,true> <%arrayName%>;
@@ -10834,7 +10830,8 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp, Text &varDecls, Si
            //default matrix assign
            <%StatArrayDim%><%arrayVar%>;
            <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
-           <%arrayVar%>.assign( <%arrayVar%>_data );<%\n%>'
+           //<%arrayVar%>.assign( <%arrayVar%>_data );
+           assignRowMajorData(<%arrayVar%>_data, <%arrayVar%>);<%\n%>'
            ''
         else
            let &preExp += '
@@ -11001,7 +10998,9 @@ template daeExpArray2(list<Exp> array,String arrayVar,String ArrayType,String ar
 let params = (array |> e =>  '<%daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
 let &preExp +=  <<
                   <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
-                  <%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>
+                  //<%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);
+                  <%ArrayType%> <%arrayVar%>;
+                  assignRowMajorData(<%arrayVar%>_data, <%arrayVar%>);<%\n%>
                 >>
 
 params
@@ -13112,7 +13111,8 @@ template literalExpConstImpl(Exp lit, Integer index) "These should all be declar
     <<
     //arrayflats
     <%arrayTypeStr%> <%name%>_data[] = {<%data%>};
-      <%name%>.assign(<%name%>_data);
+    //<%name%>.assign(<%name%>_data);
+    assignRowMajorData(<%name%>_data, <%name%>);
     >>
 
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')

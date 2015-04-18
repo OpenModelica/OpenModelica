@@ -155,11 +155,11 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual void assign(const T* data) {
-    setDataDim(1, data);
+    setDataDim(_idxs.size(), data);
   }
 
   virtual void assign(const BaseArray<T>& otherArray) {
-    setDataDim(1, otherArray.getData());
+    setDataDim(_idxs.size(), otherArray.getData());
   }
 
   virtual std::vector<size_t> getDims() const {
@@ -179,14 +179,14 @@ class ArraySlice: public BaseArray<T> {
     if (n != getNumElems())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Wrong number of elements in getDataCopy");
-    getDataDim(1, data);
+    getDataDim(_idxs.size(), data);
   }
 
   virtual const T* getData() const {
     if (_tmp_data.num_elements() == 0)
       // allocate on first use
       _tmp_data.resize(boost::extents[getNumElems()]);
-    getDataDim(1, _tmp_data.data());
+    getDataDim(_idxs.size(), _tmp_data.data());
     return _tmp_data.data();
   }
 
@@ -257,8 +257,8 @@ class ArraySlice: public BaseArray<T> {
         _baseIdx[dim - 1] = iset->getNumElems() > 0? (*iset)(i): i;
       else
         _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
-      if (dim < _idxs.size())
-        processed += setDataDim(dim + 1, data + processed);
+      if (dim > 1)
+        processed += setDataDim(dim - 1, data + processed);
       else
         _baseArray(_baseIdx) = data[processed++];
     }
@@ -277,8 +277,8 @@ class ArraySlice: public BaseArray<T> {
         _baseIdx[dim - 1] = iset->getNumElems() > 0? (*iset)(i): i;
       else
         _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
-      if (dim < _idxs.size())
-        processed += getDataDim(dim + 1, data + processed);
+      if (dim > 1)
+        processed += getDataDim(dim - 1, data + processed);
       else
         data[processed++] = _baseArray(_baseIdx);
     }
