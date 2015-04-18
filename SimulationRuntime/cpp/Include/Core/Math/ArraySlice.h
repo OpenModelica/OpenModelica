@@ -102,8 +102,6 @@ class ArraySlice: public BaseArray<T> {
                                     "Wrong dimensions for ArraySlice");
     // create an explicit index set per dimension,
     // except for all indices that are indicated with an empty index set
-    _ndims = 0;
-    _nelems = 1;
     size_t dim;
     vector<Slice>::const_iterator sit;
     vector< vector<size_t> >::iterator dit = _idxs.begin();
@@ -125,8 +123,9 @@ class ArraySlice: public BaseArray<T> {
       if (dit->size() == 1)
         // prefill constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = (*dit)[0];
-      _ndims += dit->size() == 1? 0: 1;
-      _nelems *= dit->size() != 0? dit->size(): _baseArray.getDim(dim);
+      else
+        // store dimension of array slice
+        _dims.push_back(dit->size() != 0? dit->size(): _baseArray.getDim(dim));
       dit++;
     }
   }
@@ -164,52 +163,11 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual std::vector<size_t> getDims() const {
-    vector<size_t> dims;
-    size_t dim, size;
-    const BaseArray<int> *iset;
-    vector< vector<size_t> >::const_iterator dit;
-    for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      iset = _isets[dim - 1];
-      size = iset? iset->getNumElems(): dit->size();
-      switch (size) {
-      case 0:
-        // all indices
-        dims.push_back(_baseArray.getDim(dim));
-        break;
-      case 1:
-        // reduction
-        break;
-      default:
-        // regular index mapping
-        dims.push_back(size);
-      }
-    }
-    return dims;
+    return _dims;
   }
 
-  virtual int getDim(size_t reducedDim) const {
-    size_t dim, size, rdim = 1;
-    const BaseArray<int> *iset;
-    vector< vector<size_t> >::const_iterator dit;
-    for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      iset = _isets[dim - 1];
-      size = iset? iset->getNumElems(): dit->size();
-      switch (size) {
-      case 0:
-        // all indices
-        if (reducedDim == rdim++)
-          return (int)_baseArray.getDim(dim);
-        break;
-      case 1:
-        // reduction
-        break;
-      default:
-        // regular index mapping
-        if (reducedDim == rdim++)
-          return (int)size;
-      }
-    }
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDim out of range");
+  virtual int getDim(size_t sliceDim) const {
+    return (int)_dims[sliceDim];
   }
 
   virtual T* getData() {
@@ -218,7 +176,7 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual void getDataCopy(T data[], size_t n) const {
-    if (n != _nelems)
+    if (n != getNumElems())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Wrong number of elements in getDataCopy");
     getDataDim(1, data);
@@ -227,17 +185,18 @@ class ArraySlice: public BaseArray<T> {
   virtual const T* getData() const {
     if (_tmp_data.size() == 0)
       // allocate on first use
-      _tmp_data.resize(_nelems);
+      _tmp_data.resize(getNumElems());
     getDataDim(1, &_tmp_data[0]);
     return &_tmp_data[0];
   }
 
   virtual size_t getNumElems() const {
-    return _nelems;
+    return std::accumulate(_dims.begin(), _dims.end(),
+                           1, std::multiplies<size_t>());
   }
 
   virtual size_t getNumDims() const {
-    return _ndims;
+    return _dims.size();
   }
 
   virtual void setDims(const std::vector<size_t> &v) {
@@ -282,8 +241,7 @@ class ArraySlice: public BaseArray<T> {
   BaseArray<T> &_baseArray;        // underlying array
   vector<const BaseArray<int>*> _isets; // given index sets per dimension
   vector< vector<size_t> > _idxs;  // created index sets per dimension
-  size_t _ndims;                   // number of reduced dimensions
-  size_t _nelems;                  // number of elements
+  vector<size_t> _dims;            // dimensions of array slice
   mutable vector<size_t> _baseIdx; // idx into underlying array
   mutable vector<T> _tmp_data;     // contiguous storage for const T* getData()
 
@@ -328,7 +286,7 @@ class ArraySlice: public BaseArray<T> {
   }
 
   T& accessElement(size_t ndims, ...) const {
-    if (ndims != _ndims)
+    if (ndims != _dims.size())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Wrong dimensions accessing ArraySlice");
     size_t dim, size, i;
