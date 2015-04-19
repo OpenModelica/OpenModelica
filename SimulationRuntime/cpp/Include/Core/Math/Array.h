@@ -80,7 +80,7 @@ public:
   */
   virtual T& operator()(const vector<size_t>& idx) = 0;
   virtual void assign(const T* data) = 0;
-    virtual void assign(const BaseArray<T>& b) = 0;
+  virtual void assign(const BaseArray<T>& b) = 0;
   virtual std::vector<size_t> getDims() const = 0;
   virtual int getDim(size_t dim) const = 0; // { (int)getDims()[dim - 1]; }
 
@@ -1766,17 +1766,18 @@ public:
 
   virtual T& operator()(const vector<size_t>& idx)
   {
-    return _multi_array[idx[0]];
-  };
+    //return _multi_array[idx[0]];
+    return _multi_array.data()[idx[0]-1];
+  }
   inline virtual T& operator()(size_t index)
   {
-    //double tmp = _multi_array[index];
-    return _multi_array[index];
+    //return _multi_array[index];
+    return _multi_array.data()[index-1];
   }
   inline virtual const T& operator()(size_t index) const
   {
-    //double tmp = _multi_array[index];
-    return _multi_array[index];
+    //return _multi_array[index];
+    return _multi_array.data()[index-1];
   }
     DynArrayDim1<T>& operator=(const DynArrayDim1<T>& b)
     {
@@ -1959,15 +1960,18 @@ public:
   }
   virtual T& operator()(const vector<size_t>& idx)
   {
-    return _multi_array[idx[0]][idx[1]];
-  };
+    //return _multi_array[idx[0]][idx[1]];
+    return _multi_array.data()[idx[0]-1 + _multi_array.shape()[0]*(idx[1]-1)];
+  }
   inline virtual T& operator()(size_t i, size_t j)
   {
-    return _multi_array[i][j];
+    //return _multi_array[i][j];
+    return _multi_array.data()[i-1 + _multi_array.shape()[0]*(j-1)];
   }
   inline virtual const T& operator()(size_t i, size_t j) const
   {
-    return _multi_array[i][j];
+    //return _multi_array[i][j];
+    return _multi_array.data()[i-1 + _multi_array.shape()[0]*(j-1)];
   }
 
   void setDims(size_t size1, size_t size2)
@@ -2148,11 +2152,15 @@ public:
 
   virtual T& operator()(const vector<size_t>& idx)
   {
-    return _multi_array[idx[0]][idx[1]][idx[2]];
-  };
+    //return _multi_array[idx[0]][idx[1]][idx[2]];
+    const size_t *shape = _multi_array.shape();
+    return _multi_array.data()[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1))];
+  }
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
-    return _multi_array[i][j][k];
+    //return _multi_array[i][j][k];
+    const size_t *shape = _multi_array.shape();
+    return _multi_array.data()[i-1 + shape[0]*(j-1 + shape[1]*(k-1))];
   }
 
   virtual size_t getNumElems() const
