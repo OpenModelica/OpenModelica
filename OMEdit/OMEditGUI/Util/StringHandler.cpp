@@ -656,31 +656,6 @@ QString StringHandler::removeFirstLastQuotes(QString value)
   return value;
 }
 
-//! Returns the last word from a string.
-//! @param value is the string which is parsed.
-QString StringHandler::getSubStringFromDots(QString value)
-{
-  if (value.isEmpty())
-  {
-    return "";
-  }
-  value = value.trimmed();
-  QStringList list = value.split(".", QString::SkipEmptyParts);
-  return list.at(list.count() - 1);
-}
-
-//! Removes the last dot from the string.
-//! @param value is the string which is parsed.
-QString StringHandler::removeLastDot(QString value)
-{
-  if (value.isEmpty())
-  {
-    return "";
-  }
-  value = value.trimmed();
-  return value.remove((value.length() - 1), 1);
-}
-
 QStringList StringHandler::getStrings(QString value)
 {
   return getStrings(value, '{', '}');
@@ -817,39 +792,6 @@ QString StringHandler::getFirstWordBeforeDot(QString value)
   {
     return value;
   }
-}
-
-QString StringHandler::removeLastSlashWord(QString value)
-{
-  if (value.isEmpty())
-  {
-    return "";
-  }
-  value = value.trimmed();
-
-  int pos = value.lastIndexOf('/');
-  if (pos >= 0)
-  {
-    return value.mid(0, (pos));
-  }
-  else
-  {
-    return value;
-  }
-}
-
-QString StringHandler::removeComment(QString value)
-{
-  if (value.isEmpty())
-  {
-    return "";
-  }
-  value = value.trimmed();
-
-  int startPos = value.indexOf("/*");
-  int endPos = value.indexOf("*/");
-  // + 2 to remove */ from the string as well.
-  return value.remove(startPos, (endPos - startPos) + 2);
 }
 
 QString StringHandler::getModifierValue(QString value)
@@ -1154,25 +1096,6 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
     return dirName;
   }
   return QString();
-}
-
-QString StringHandler::createTooltip(QVariantMap info, QString name, QString path)
-{
-  if (info.keys().size() < 12) {
-    return path;
-  } else {
-    QString tooltip = QString(Helper::type).append(": ").append(info["restriction"].toString()).append("<br />")
-        .append(Helper::name).append(" ").append(name).append("<br />")
-        .append(Helper::description).append(": ").append(info["comment"].toString()).append("<br />");
-    tooltip.append(Helper::errorLocation).append(": ").append(QString(info["fileName"].toString()).replace("\\", "/")).append("<br />");
-    tooltip.append(tr("Path")).append(": ").append(path);
-    return tooltip;
-  }
-}
-
-QString StringHandler::createTooltip(QString name, QString location)
-{
-  return QString(Helper::name).append(": ").append(name).append("<br />").append(Helper::fileLocation).append(": ").append(location);
 }
 
 void StringHandler::setLastOpenDirectory(QString lastOpenDirectory)

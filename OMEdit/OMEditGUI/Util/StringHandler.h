@@ -104,16 +104,12 @@ public:
   static QString removeFirstLastCurlBrackets(QString value);
   static QString removeFirstLastBrackets(QString value);
   static QString removeFirstLastQuotes(QString value);
-  static QString getSubStringFromDots(QString value);
-  static QString removeLastDot(QString value);
   static QStringList getStrings(QString value);
   static QStringList getStrings(QString value, char start, char end);
   static QString getLastWordAfterDot(QString value);
   static QString getFirstWordBeforeDot(QString value);
-  static QString removeLastSlashWord(QString value);
   /* Handles quoted identifiers A.B.'C.D' -> A.B, A.B.C.D -> A.B.C */
   static QString removeLastWordAfterDot(QString value);
-  static QString removeComment(QString value);
   static QString getModifierValue(QString value);
   static QString escapeString(QString value);
   // Returns "" if the string is not a standard Modelica string. Else it unparses it into normal form.
@@ -131,8 +127,6 @@ public:
   static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
                                  QString * selectedFilter = 0);
   static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0);
-  static QString createTooltip(QVariantMap info, QString name, QString path);
-  static QString createTooltip(QString name, QString location);
   static void setLastOpenDirectory(QString lastOpenDirectory);
   static QString getLastOpenDirectory();
   static QStringList getDialogAnnotation(QString componentAnnotation);
