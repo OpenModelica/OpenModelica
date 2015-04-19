@@ -2613,6 +2613,9 @@ bool ModelWidget::modelicaEditorTextChanged()
     pOMCProxy->deleteClass(mpLibraryTreeNode->getNameStructure());
     QString className = classNames.first();
     classNames.removeFirst();
+    pLibraryTreeWidget->removeFromExpandedLibraryTreeNodesList(mpLibraryTreeNode);
+    mpLibraryTreeNode->setExpanded(false);
+    refresh();
     /*
       if user has used within keyword in the text to move the class in a package then,
       - Find the current parent of the class and then remove the class from it and move it to the new parent.
