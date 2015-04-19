@@ -201,7 +201,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      return settings;
 
 }
-std::pair<boost::shared_ptr<ISimController>,SimSettings> 
+std::pair<boost::shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
                              std::map<std::string, std::string> &opts)
 {
