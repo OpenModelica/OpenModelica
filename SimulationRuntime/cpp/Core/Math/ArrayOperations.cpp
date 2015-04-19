@@ -375,6 +375,30 @@ void convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b)
 }
 
 /**
+ * helper for assignRowMajorData
+ * recursive function for muli-dimensional assignment of raw data
+ */
+template <typename S, typename T>
+static size_t assignRowMajorDim(size_t dim, const S* data,
+                                BaseArray<T> &array, vector<size_t> idx) {
+  size_t processed = 0;
+  size_t size = array.getDim(dim);
+  for (size_t i = 1; i <= size; i++) {
+    idx[dim - 1] = i;
+    if (dim < idx.size())
+      processed += assignRowMajorDim(dim + 1, data + processed, array, idx);
+    else
+      array(idx) = data[processed++];
+  }
+  return processed;
+}
+
+template <typename S, typename T>
+void assignRowMajorData(const S *data, BaseArray<T> &array) {
+  assignRowMajorDim(1, data, array, vector<size_t>(array.getNumDims()));
+}
+
+/**
  * helper for convertArrayLayout
  * recursive function for changing between row and column major
  */
@@ -475,6 +499,11 @@ template std::pair <bool,bool> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<bo
 
 void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
 void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
+
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const double *data, BaseArray<double> &d);
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const int *data, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const bool *data, BaseArray<bool> &d);
+template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const string *data, BaseArray<string> &d);
 
 /*
  template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim1<double, 3>;

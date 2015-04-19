@@ -10784,18 +10784,21 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp, Text &varDecls, Si
            let vars = daeExpMatrixRow2(row, context, &varDecls, &preExp, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
               '<%vars%>'
            ;separator=",")
-           let &preExp += '
-           //default matrix assign
-           <%StatArrayDim%><%arrayVar%>;
-           <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
-           //<%arrayVar%>.assign( <%arrayVar%>_data );
-           assignRowMajorData(<%arrayVar%>_data, <%arrayVar%>);<%\n%>'
+           let &preExp +=
+             <<
+             //default matrix assign
+             <%StatArrayDim%> <%arrayVar%>;
+             <%arrayTypeStr%> <%arrayVar%>_data[] = {<%params%>};
+             assignRowMajorData(<%arrayVar%>_data, <%arrayVar%>);<%\n%>
+             >>
            ''
         else
-           let &preExp += '
-            //optimized matrix assign/
-            <%StatArrayDim%><%arrayVar%>;
-            <%arrayVar%>.assign( <%vars%> );<%\n%>'
+           let &preExp +=
+             <<
+             //optimized matrix assign
+             <%StatArrayDim%> <%arrayVar%>;
+             <%arrayVar%>.assign( <%vars%> );<%\n%>
+             >>
         ''
   end match
 
@@ -10916,7 +10919,7 @@ case ARRAY(array=_::_, ty = arraytype) then
                                >>
                                <<
                                <%ArrayType%> <%arrayVar%>;
-                                createArray_<%arrayVar%>(<%arrayVar%>);<%\n%>
+                               createArray_<%arrayVar%>(<%arrayVar%>);<%\n%>
                                >>
 
 
@@ -10954,12 +10957,11 @@ template daeExpArray2(list<Exp> array,String arrayVar,String ArrayType,String ar
  "Generates code for an array expression."
 ::=
 let params = (array |> e =>  '<%daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-let &preExp +=  <<
-                  <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
-                  //<%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);
-                  <%ArrayType%> <%arrayVar%>;
-                  assignRowMajorData(<%arrayVar%>_data, <%arrayVar%>);<%\n%>
-                >>
+let &preExp +=
+  <<
+  <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
+  <%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>
+  >>
 
 params
 end daeExpArray2;
@@ -10977,15 +10979,15 @@ let &preExpSubArrays = buffer ""
 let funcs = (array |> e hasindex i0 fromindex intAdd(intMul(idx, multiplicator),1) =>
        let subArraycall = daeExp(e, context, &preExpSubArrays, &funcVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
        <<
-          <%arrayVar%>.append(<%i0%>,<%subArraycall%>);
+       <%arrayVar%>.append(<%i0%>, <%subArraycall%>);
        >> ;separator="\n")
        let & extraFuncs +=
        <<
        void <%extraFuncsNamespace%>::createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>)
        {
-        <%funcVarDecls%>
-        <%preExpSubArrays%>
-        <%funcs%>
+         <%funcVarDecls%>
+         <%preExpSubArrays%>
+         <%funcs%>
        }
        >>
 funcCall
@@ -13069,7 +13071,6 @@ template literalExpConstImpl(Exp lit, Integer index) "These should all be declar
     <<
     //arrayflats
     <%arrayTypeStr%> <%name%>_data[] = {<%data%>};
-    //<%name%>.assign(<%name%>_data);
     assignRowMajorData(<%name%>_data, <%name%>);
     >>
 
