@@ -92,10 +92,3 @@ void cross_array( BaseArray<T> & a ,BaseArray<T> & b, BaseArray<T> & res );
 
 void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
 void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
-
-/**
- * assign data with row major order to BaseArray with arbitrary storage layout,
- * including optional type conversion if supported in assignment from S to T
- */
-template <typename S, typename T>
-void assignRowMajorData(const S *data, BaseArray<T> &array);

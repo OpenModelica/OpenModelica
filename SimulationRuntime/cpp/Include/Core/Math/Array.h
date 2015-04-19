@@ -762,17 +762,20 @@ public:
 
     ~StatArrayDim2(){}
     /*
-    Appends one dimensional array in column i
+    Copies one dimensional array to row i
     \@b array of type StatArrayDim1
-    \@i column number
+    \@i row number
     */
     void append(size_t i,const StatArrayDim1<T,size2>& b)
     {
         checkArray("assign data to reference array is not supported");
         const T* data = b.getData();
-        memcpy( _array_data.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
-
-
+        T *array_data = _array_data.c_array() + i-1;
+        for (size_t j = 1; j <= size2; j++) {
+          //(*this)(i, j) = b(j);
+          *array_data = *data++;
+          array_data += size1;
+        }
     }
     /*
     Resize array method
@@ -1254,15 +1257,22 @@ public:
         }
     }
     /*
-    Appends two dimensional array in column i
+    Copies two dimensional array to row i
     \@b array of type StatArrayDim2
-    \@i column number
+    \@i row number
     */
     void append(size_t i,const StatArrayDim2<T,size2,size3>& b)
     {
         checkArray("assign data to reference array is not supported");
         const T* data = b.getData();
-        memcpy( _array_data.begin()+(i-1)*size2*size3, data, size2 *size3*sizeof( T ) );
+        T *array_data = _array_data.c_array() + i-1;
+        for (size_t k = 1; k <= size3; k++) {
+          for (size_t j = 1; j <= size2; j++) {
+            //(*this)(i, j, k) = b(j, k);
+            *array_data = *data++;
+            array_data += size1;
+          }
+        }
     }
 
   /*
@@ -1669,7 +1679,7 @@ boost::array< boost::array< boost::array< boost::array<boost::array<T,size5>,siz
 
 template<typename T>class DynArrayDim1 : public BaseArray<T>
 {
-
+  friend class DynArrayDim2<T>;
 public:
 
 
@@ -1927,15 +1937,9 @@ public:
         b.getDataCopy(_multi_array.data(), v[0]*v[1]);
 
     }
-    void append(size_t i,const DynArrayDim1<T>& b)
+    void append(size_t i, const DynArrayDim1<T>& b)
     {
-
-        const T* data = b.getData();
-        boost::multi_array<T, 1>  a;
-        std::vector<size_t> v = b.getDims();
-        a.resize(v);
-        a.reindex(1);
-        _multi_array[i]=a;
+        _multi_array[i] = b._multi_array;
     }
     DynArrayDim2<T>& operator=(const DynArrayDim2<T>& b)
     {
@@ -2415,3 +2419,32 @@ throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "error in assing array: Arra
 std::transform(otherArray._ref_array_data.c_array(),otherArray._ref_array_data.c_array() +size1*size2,_ref_array_data.c_array(),AssignArrayVarToArrayVar<T>());
 
 */
+
+/**
+ * Helper for assignRowMajorData
+ * Recursive treatment of an arbitrary number of dimensions
+ */
+template <typename S, typename T>
+static size_t assignRowMajorDim(size_t dim, const S* data,
+                                BaseArray<T> &array, vector<size_t> idx) {
+  size_t processed = 0;
+  size_t ndims = idx.size();
+  size_t size = array.getDim(dim);
+  for (size_t i = 1; i <= size; i++) {
+    idx[dim - 1] = i;
+    if (dim < ndims)
+      processed += assignRowMajorDim(dim + 1, data + processed, array, idx);
+    else
+      array(idx) = data[processed++];
+  }
+  return processed;
+}
+
+/**
+ * Assign data with row major order to BaseArray with arbitrary storage layout,
+ * including optional type conversion if supported in assignment from S to T.
+ */
+template <typename S, typename T>
+void assignRowMajorData(const S *data, BaseArray<T> &array) {
+  assignRowMajorDim(1, data, array, vector<size_t>(array.getNumDims()));
+}
