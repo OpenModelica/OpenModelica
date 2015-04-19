@@ -70,7 +70,6 @@ void SimulationProcessThread::compileModel()
   QString numProcs;
   SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
   if (simulationOptions.getNumberOfProcessors() == 0) {
-    //numProcs = mpSimulationOutputWidget->getMainWindow()->getOMCProxy()->sendCommand();->numProcessors();
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());
   } else {
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());

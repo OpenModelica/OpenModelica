@@ -801,7 +801,7 @@ QString StringHandler::getFirstWordBeforeDot(QString value)
   int pos;
   if (value.startsWith('\'')) {
     int i = 1;
-    while (value[i] != '\'' && i<value.size()-2 && value[i+1] != '\\') {
+    while (value[i] != '\'' && i<value.size()-1 && value[i+1] != '\\') {
       i++;
     }
     pos = i+1;

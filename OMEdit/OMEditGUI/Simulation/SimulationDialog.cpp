@@ -735,7 +735,11 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   qreal stopTime = mpStopTimeTextBox->text().toDouble();
   simulationOptions.setStepSize((stopTime - startTime)/mpNumberofIntervalsSpinBox->value());
   simulationOptions.setOutputFormat(mpOutputFormatComboBox->currentText());
-  simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+  if (!mpFileNameTextBox->text().isEmpty()) {
+    simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+  } else if (mClassName.contains('\'')) {
+    simulationOptions.setFileNamePrefix("_omcQuot_" + QByteArray(mClassName.toStdString().c_str()).toHex());
+  }
   simulationOptions.setVariableFilter(mpVariableFilterTextBox->text());
   simulationOptions.setProtectedVariables(mpProtectedVariablesCheckBox->isChecked());
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
@@ -1144,6 +1148,8 @@ void SimulationDialog::simulate()
     simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
     if (!mpFileNameTextBox->text().isEmpty()) {
       simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+    } else if (mClassName.contains('\'')) {
+      simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(QByteArray(mClassName.toStdString().c_str()).toHex()).append("\"");
     }
     if (!mpVariableFilterTextBox->text().isEmpty()) {
       simulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");
