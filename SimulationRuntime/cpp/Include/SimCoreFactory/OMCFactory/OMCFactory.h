@@ -12,7 +12,7 @@ struct SimSettings;
 class OMCFactory
 {
 public:
-    OMCFactory();
+  OMCFactory();
   OMCFactory(PATH library_path, PATH modelicasystem_path);
   virtual ~OMCFactory();
 
@@ -20,7 +20,15 @@ public:
   LOADERRESULT LoadLibrary(string libName, type_map& current_map);
   LOADERRESULT UnloadLibrary(shared_library lib);
 
-    virtual std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc, const char* argv[]);
+  /**
+   * Create SimController and SimSettings.
+   * @param argc number of command line arguments
+   * @param argv command line arguments of main function
+   * @param opts default options that are overridden with argv
+   */
+  virtual std::pair<boost::shared_ptr<ISimController>,SimSettings>
+    createSimulation(int argc, const char* argv[],
+                     std::map<std::string, std::string> &opts);
 
 protected:
   SimSettings ReadSimulationParameter(int argc, const char* argv[]);

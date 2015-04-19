@@ -1934,8 +1934,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     }
   #endif
 
-  #include <boost/algorithm/string.hpp>
-
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -1943,10 +1941,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   int main(int argc, const char* argv[])
   #endif
   {
-
-
+      // default program options
       std::map<std::string, std::string> opts;
-      std::map<std::string, std::string>::const_iterator it;
       opts["-s"] = "<%start%>";
       opts["-e"] = "<%end%>";
       opts["-f"] = "<%stepsize%>";
@@ -1957,44 +1953,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-m"] = "<%moLib%>";
       opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-o"] = "<%settings.outputFormat%>";
-      std::vector<const char *> optv;
-      optv.push_back(argv[0]);
-      std::string override;                // OMEdit override option
-      for (int i = 1; i < argc; i++) {
-          if ((it = opts.find(argv[i])) != opts.end() && i < argc - 1)
-              opts[it->first] = argv[++i]; // regular override
-          else if (strncmp(argv[i], "-override=", 10) == 0) {
-              std::map<std::string, std::string> supported = map_list_of
-                  ("startTime", "-s")("stopTime", "-e")("stepSize", "-f")
-                  ("tolerance", "-y")("solver", "-i")("outputFormat", "-o");
-              std::vector<std::string> strs;
-              boost::split(strs, argv[i], boost::is_any_of(",="));
-              for (int j = 1; j < strs.size(); j++) {
-                  if ((it = supported.find(strs[j])) != supported.end()
-                      && j < strs.size() - 1) {
-                      opts[it->second] = strs[++j];
-                  }
-                  else {
-                      // leave untreated overrides
-                      if (override.size() > 0)
-                          override += ",";
-                      else
-                          override = "-override=";
-                      override += strs[j];
-                      if (j < strs.size() - 1)
-                          override += "=" + strs[++j];
-                  }
-              }
-              if (override.size() > 10)
-                  optv.push_back(override.c_str());
-          }
-          else
-              optv.push_back(argv[i]);     // pass through
-      }
-      for (it = opts.begin(); it != opts.end(); it++) {
-          optv.push_back(it->first.c_str());
-          optv.push_back(it->second.c_str());
-      }
 
       <%
       match(getConfigString(PROFILING_LEVEL))
@@ -2048,7 +2006,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             //SimController to start simulation
 
 
-            std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(optv.size(), &optv[0]);
+            std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv, opts);
 
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
