@@ -167,7 +167,7 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual int getDim(size_t sliceDim) const {
-    return (int)_dims[sliceDim];
+    return (int)_dims[sliceDim - 1];
   }
 
   virtual T* getData() {
