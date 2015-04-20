@@ -66,6 +66,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Matching;
+protected import Sorting;
 protected import SimCodeUtil;
 
 // =============================================================================
@@ -807,7 +808,7 @@ algorithm
     // BackendDump.dumpMatchingVars(ass1);
     // BackendDump.dumpMatchingEqns(ass2);
 
-    comps := BackendDAETransform.Tarjan(m, ass1);
+    comps := Sorting.Tarjan(m, ass1);
     // BackendDump.dumpComponentsOLD(comps);
     comps := mapListIndices(comps, ass2) "map to var indices" ;
     // BackendDump.dumpComponentsOLD(comps);
@@ -1577,7 +1578,7 @@ algorithm
     //BackendDump.dumpIncidenceMatrix(inM);
 
       // get the sorting and algebraic loops
-      comps = BackendDAETransform.Tarjan(inM, vecVarToEqs);
+      comps = Sorting.Tarjan(inM, vecVarToEqs);
       flatComps = List.flatten(comps);
     //BackendDump.dumpComponentsOLD(comps);
 

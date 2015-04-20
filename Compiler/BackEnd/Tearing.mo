@@ -60,6 +60,7 @@ protected import Util;
 protected import SCode;
 protected import SCodeDump;
 protected import SimCodeUtil;
+protected import Sorting;
 
 // =============================================================================
 // section for type definitions
@@ -401,7 +402,7 @@ algorithm
   lowlink := arrayCreate(size,0);
   stackflag := arrayCreate(size,false);
   number := setIntArray(residual,number,size);
-  (_,othercomps) := BackendDAETransform.strongConnectMain(mt1, ass2, number, lowlink, stackflag, size, 1, {}, {});
+  (_,othercomps) := Sorting.StrongConnectForIndexReduction(mt1, ass2, number, lowlink, stackflag, size, 1, {}, {});
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\nOtherEquationsOrder:\n");
      BackendDump.dumpComponentsOLD(othercomps);

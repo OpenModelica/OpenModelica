@@ -74,6 +74,7 @@ protected import Initialization;
 protected import IOStream;
 protected import List;
 protected import SCode;
+protected import Sorting;
 protected import System;
 protected import Util;
 
@@ -3001,28 +3002,23 @@ protected function dumpComponentsGraphStr2 "help function"
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  output list<String> lst;
+  output list<String> lst = {};
+protected
+  list<list<Integer>> llst;
+  list<Integer> eqns;
+  list<String> strLst,slst;
+  String str;
 algorithm
-  lst := matchcontinue(i,n,m,mT,ass1,ass2)
-    local
-      list<list<Integer>> llst;
-      list<Integer> eqns;
-      list<String> strLst,slst;
-      String str;
-    case(_,_,_,_,_,_) equation
-      true = (i > n);
-      then {};
-    case(_,_,_,_,_,_)
-      equation
-        eqns = BackendDAETransform.reachableNodes(i, mT, ass2);
-        llst = List.map(eqns,List.create);
-        llst = List.map1(llst, List.consr, i);
-        slst = List.map(llst,intListStr);
-        str = stringDelimitList(slst,",");
-        str = stringAppendList({"{",str,"}"});
-        strLst = dumpComponentsGraphStr2(i+1,n,m,mT,ass1,ass2);
-      then str::strLst;
-  end matchcontinue;
+  if i <= n then
+    eqns := Sorting.reachableNodes(i, mT, ass2);
+    llst := List.map(eqns, List.create);
+    llst := List.map1(llst, List.consr, i);
+    slst := List.map(llst, intListStr);
+    str := stringDelimitList(slst, ",");
+    str := stringAppendList({"{", str, "}"});
+    strLst := dumpComponentsGraphStr2(i+1, n, m, mT, ass1, ass2);
+    lst := str::strLst;
+  end if;
 end dumpComponentsGraphStr2;
 
 public function dumpList "author: PA

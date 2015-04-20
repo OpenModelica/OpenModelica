@@ -68,6 +68,7 @@ protected import MathematicaDump;
 protected import Print;
 protected import SCode;
 protected import SCodeUtil;
+protected import Sorting;
 protected import System;
 protected import Util;
 
@@ -1088,7 +1089,7 @@ compsOut:=matchcontinue(m,mt,ass1,ass2)
     then {{1}};
   case(_,_,_,_)
     equation
-       failure(_=BackendDAETransform.tarjanAlgorithm(mt,ass2));
+       failure(_=Sorting.TarjanForIndexReduction(mt,ass2));
 
        print("TarjanAlgorithm failed\n");
        Error.clearMessages();
@@ -1098,7 +1099,7 @@ compsOut:=matchcontinue(m,mt,ass1,ass2)
       comps;
   case(_,_,_,_)
     equation
-       comps=BackendDAETransform.tarjanAlgorithm(mt,ass2);
+       comps=Sorting.TarjanForIndexReduction(mt,ass2);
     then
       comps;
 end matchcontinue;

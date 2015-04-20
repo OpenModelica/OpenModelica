@@ -160,6 +160,7 @@ if true then /* Suppress output */
     "../BackEnd/OpenTURNS.mo",
     "../BackEnd/RemoveSimpleEquations.mo",
     "../BackEnd/ResolveLoops.mo",
+    "../BackEnd/Sorting.mo",
     "../BackEnd/SymbolicJacobian.mo",
     "../BackEnd/SynchronousFeatures.mo",
     "../BackEnd/StateMachineFeatures.mo",

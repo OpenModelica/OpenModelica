@@ -74,6 +74,7 @@ protected import InlineArrayEquations;
 protected import List;
 protected import Matching;
 protected import SCode;
+protected import Sorting;
 protected import System;
 protected import Util;
 protected import Values;
@@ -2014,7 +2015,7 @@ algorithm
         Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
         BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(vec1, vec2);
-        comps = BackendDAETransform.tarjanAlgorithm(mT1,vec2);
+        comps = Sorting.TarjanForIndexReduction(mT1, vec2);
         // remove blocks without differentiated equations
         comps = List.select1(comps, selectBlock, ne);
         //  BackendDump.dumpComponentsOLD(comps);

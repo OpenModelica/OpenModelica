@@ -59,6 +59,7 @@ protected import HashSet;
 protected import HashTable4;
 protected import List;
 protected import Matching;
+protected import Sorting;
 protected import SymbolicJacobian;
 protected import Util;
 
@@ -1518,7 +1519,7 @@ algorithm
   //  BackendDump.dumpIncidenceMatrix(m);
   //  BackendDump.dumpIncidenceMatrixT(mt);
   ass := listArray(range);
-  comps := BackendDAETransform.tarjanAlgorithm(mt, ass);
+  comps := Sorting.TarjanForIndexReduction(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
   ((order,linkslst)) := List.fold(comps,getOrder,({},{}));
   //  print("order: " + stringDelimitList(List.map(order,intString),", ") + "\n");
@@ -1533,7 +1534,7 @@ algorithm
   omark := getOrphansOrderEdvanced4(linkslst,m,mt,mark,rowmarks,order,{});
   //  BackendDump.dumpIncidenceMatrix(m);
   mt := BackendDAEUtil.transposeMatrix(m,arrayLength(mt));
-  comps := BackendDAETransform.tarjanAlgorithm(mt, ass);
+  comps := Sorting.TarjanForIndexReduction(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
   sortvorphans := List.flatten(listReverse(comps));
   // map back to global indexes

@@ -85,6 +85,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import HashSet;
 protected import List;
+protected import Sorting;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
@@ -242,7 +243,7 @@ algorithm
         markarr = arrayCreate(size,-1);
         (knvars,cache,repl,repleval,mark) = evaluateSelectedParameters(selectedParameter,knvars,m,inieqns,cache,graph,1,markarr,repl,repleval);
         // replace evaluated parameter in parameters
-        comps = BackendDAETransform.tarjanAlgorithm(mt, ass);
+        comps = Sorting.TarjanForIndexReduction(mt, ass);
          // evaluate vars with bind expression consists of evaluated vars
         (knvars,repl,repleval,cache,mark) = traverseParameterSorted(comps,knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval);
         if Flags.isSet(Flags.DUMP_EA_REPL) then
