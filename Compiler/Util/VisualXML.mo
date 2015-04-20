@@ -107,7 +107,7 @@ algorithm
   allVarLst := listAppend(listAppend(knownVarLst,allVarLst),aliasVarLst);
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printViusalization),"\n")+"\n");
-  
+
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
 end visualizationInfoXML;

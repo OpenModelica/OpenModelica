@@ -78,7 +78,7 @@ interface package VisualXMLTplTV
       input Integer i2;
       output Boolean b;
     end intGt;
-  
+
     function intString
       input Integer i;
       output String s;
@@ -143,26 +143,26 @@ interface package VisualXMLTplTV
   end Util;
 
   package VisualXML
-    
-		uniontype Visualization
-		  record SHAPE
-		    String ident;
-		    String shapeType;
-		    array<list<DAE.Exp>> T;
-		    array<DAE.Exp> r;
-		    array<DAE.Exp> r_shape;
-		    array<DAE.Exp> lengthDir;
-		    array<DAE.Exp> widthDir;
-		    DAE.Exp length;
-		    DAE.Exp width;
-		    DAE.Exp height;
-		    DAE.Exp extra;
-		    array<DAE.Exp> color;
-		    DAE.Exp specularCoeff;
-		  end SHAPE;
-		end Visualization;
+
+    uniontype Visualization
+      record SHAPE
+        String ident;
+        String shapeType;
+        array<list<DAE.Exp>> T;
+        array<DAE.Exp> r;
+        array<DAE.Exp> r_shape;
+        array<DAE.Exp> lengthDir;
+        array<DAE.Exp> widthDir;
+        DAE.Exp length;
+        DAE.Exp width;
+        DAE.Exp height;
+        DAE.Exp extra;
+        array<DAE.Exp> color;
+        DAE.Exp specularCoeff;
+      end SHAPE;
+    end Visualization;
   end VisualXML;
-  
+
   package ExpressionDump
     function printExpStr
       input DAE.Exp e;
@@ -363,165 +363,165 @@ package DAE
       Pattern pattern;
     end PATTERN;
   end Exp;
-  
-	uniontype Operator
-	  record ADD
-	    Type ty;
-	  end ADD;
-	
-	  record SUB
-	    Type ty;
-	  end SUB;
-	
-	  record MUL
-	    Type ty;
-	  end MUL;
-	
-	  record DIV
-	    Type ty;
-	  end DIV;
-	
-	  record POW
-	    Type ty;
-	  end POW;
-	
-	  record UMINUS
-	    Type ty;
-	  end UMINUS;
-	
-	  record UMINUS_ARR
-	    Type ty;
-	  end UMINUS_ARR;
-	
-	  record ADD_ARR
-	    Type ty;
-	  end ADD_ARR;
-	
-	  record SUB_ARR
-	    Type ty;
-	  end SUB_ARR;
-	
-	  record MUL_ARR "Element-wise array multiplication"
-	    Type ty;
-	  end MUL_ARR;
-	
-	  record DIV_ARR
-	    Type ty;
-	  end DIV_ARR;
-	
-	  record MUL_ARRAY_SCALAR " {a,b,c} * s"
-	    Type ty "type of the array" ;
-	  end MUL_ARRAY_SCALAR;
-	
-	  record ADD_ARRAY_SCALAR " {a,b,c} .+ s"
-	    Type ty "type of the array";
-	  end ADD_ARRAY_SCALAR;
-	
-	  record SUB_SCALAR_ARRAY "s .- {a,b,c}"
-	    Type ty "type of the array" ;
-	  end SUB_SCALAR_ARRAY;
-	
-	  record MUL_SCALAR_PRODUCT " {a,b,c} * {c,d,e} => a*c+b*d+c*e"
-	    Type ty "type of the array" ;
-	  end MUL_SCALAR_PRODUCT;
-	
-	  record MUL_MATRIX_PRODUCT "M1 * M2, matrix dot product"
-	    Type ty "{{..},..}  {{..},{..}}" ;
-	  end MUL_MATRIX_PRODUCT;
-	
-	  record DIV_ARRAY_SCALAR "{a, b} / c"
-	    Type ty  "type of the array";
-	  end DIV_ARRAY_SCALAR;
-	
-	  record DIV_SCALAR_ARRAY "c / {a,b}"
-	    Type ty "type of the array" ;
-	  end DIV_SCALAR_ARRAY;
-	
-	  record POW_ARRAY_SCALAR
-	    Type ty "type of the array" ;
-	  end POW_ARRAY_SCALAR;
-	
-	  record POW_SCALAR_ARRAY
-	    Type ty "type of the array" ;
-	  end POW_SCALAR_ARRAY;
-	
-	  record POW_ARR "Power of a matrix: {{1,2,3},{4,5.0,6},{7,8,9}}^2"
-	    Type ty "type of the array";
-	  end POW_ARR;
-	
-	  record POW_ARR2 "elementwise power of arrays: {1,2,3}.^{3,2,1}"
-	    Type ty "type of the array";
-	  end POW_ARR2;
-	
-	  record AND
-	    Type ty;
-	  end AND;
-	
-	  record OR
-	    Type ty;
-	  end OR;
-	
-	  record NOT
-	    Type ty;
-	  end NOT;
-	
-	  record LESS
-	    Type ty;
-	  end LESS;
-	
-	  record LESSEQ
-	    Type ty;
-	  end LESSEQ;
-	
-	  record GREATER
-	    Type ty;
-	  end GREATER;
-	
-	  record GREATEREQ
-	    Type ty;
-	  end GREATEREQ;
-	
-	  record EQUAL
-	    Type ty;
-	  end EQUAL;
-	
-	  record NEQUAL
-	    Type ty;
-	  end NEQUAL;
-	
-	  record USERDEFINED
-	    Absyn.Path fqName "The FQ name of the overloaded operator function" ;
-	  end USERDEFINED;
-	
-	end Operator;
+
+  uniontype Operator
+    record ADD
+      Type ty;
+    end ADD;
+
+    record SUB
+      Type ty;
+    end SUB;
+
+    record MUL
+      Type ty;
+    end MUL;
+
+    record DIV
+      Type ty;
+    end DIV;
+
+    record POW
+      Type ty;
+    end POW;
+
+    record UMINUS
+      Type ty;
+    end UMINUS;
+
+    record UMINUS_ARR
+      Type ty;
+    end UMINUS_ARR;
+
+    record ADD_ARR
+      Type ty;
+    end ADD_ARR;
+
+    record SUB_ARR
+      Type ty;
+    end SUB_ARR;
+
+    record MUL_ARR "Element-wise array multiplication"
+      Type ty;
+    end MUL_ARR;
+
+    record DIV_ARR
+      Type ty;
+    end DIV_ARR;
+
+    record MUL_ARRAY_SCALAR " {a,b,c} * s"
+      Type ty "type of the array" ;
+    end MUL_ARRAY_SCALAR;
+
+    record ADD_ARRAY_SCALAR " {a,b,c} .+ s"
+      Type ty "type of the array";
+    end ADD_ARRAY_SCALAR;
+
+    record SUB_SCALAR_ARRAY "s .- {a,b,c}"
+      Type ty "type of the array" ;
+    end SUB_SCALAR_ARRAY;
+
+    record MUL_SCALAR_PRODUCT " {a,b,c} * {c,d,e} => a*c+b*d+c*e"
+      Type ty "type of the array" ;
+    end MUL_SCALAR_PRODUCT;
+
+    record MUL_MATRIX_PRODUCT "M1 * M2, matrix dot product"
+      Type ty "{{..},..}  {{..},{..}}" ;
+    end MUL_MATRIX_PRODUCT;
+
+    record DIV_ARRAY_SCALAR "{a, b} / c"
+      Type ty  "type of the array";
+    end DIV_ARRAY_SCALAR;
+
+    record DIV_SCALAR_ARRAY "c / {a,b}"
+      Type ty "type of the array" ;
+    end DIV_SCALAR_ARRAY;
+
+    record POW_ARRAY_SCALAR
+      Type ty "type of the array" ;
+    end POW_ARRAY_SCALAR;
+
+    record POW_SCALAR_ARRAY
+      Type ty "type of the array" ;
+    end POW_SCALAR_ARRAY;
+
+    record POW_ARR "Power of a matrix: {{1,2,3},{4,5.0,6},{7,8,9}}^2"
+      Type ty "type of the array";
+    end POW_ARR;
+
+    record POW_ARR2 "elementwise power of arrays: {1,2,3}.^{3,2,1}"
+      Type ty "type of the array";
+    end POW_ARR2;
+
+    record AND
+      Type ty;
+    end AND;
+
+    record OR
+      Type ty;
+    end OR;
+
+    record NOT
+      Type ty;
+    end NOT;
+
+    record LESS
+      Type ty;
+    end LESS;
+
+    record LESSEQ
+      Type ty;
+    end LESSEQ;
+
+    record GREATER
+      Type ty;
+    end GREATER;
+
+    record GREATEREQ
+      Type ty;
+    end GREATEREQ;
+
+    record EQUAL
+      Type ty;
+    end EQUAL;
+
+    record NEQUAL
+      Type ty;
+    end NEQUAL;
+
+    record USERDEFINED
+      Absyn.Path fqName "The FQ name of the overloaded operator function" ;
+    end USERDEFINED;
+
+  end Operator;
 
   uniontype ComponentRef
-	  record CREF_QUAL
-	    Ident ident;
-	    Type identType "type of the identifier, without considering the subscripts";
-	    list<Subscript> subscriptLst;
-	    ComponentRef componentRef;
-	  end CREF_QUAL;
-	
-	  record CREF_IDENT
-	    Ident ident;
-	    Type identType "type of the identifier, without considering the subscripts";
-	    list<Subscript> subscriptLst;
-	  end CREF_IDENT;
-	
-	  record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
-	    Ident ident;
-	    Integer index;
-	    Type identType "type of the identifier, without considering the subscripts";
-	    list<Subscript> subscriptLst;
-	  end CREF_ITER;
-	
-	  record OPTIMICA_ATTR_INST_CREF "An Optimica component reference with the time instant in it. e.g x2(finalTime)"
-	    ComponentRef componentRef;
-	    String instant;
-	  end OPTIMICA_ATTR_INST_CREF;
-	
-	  record WILD end WILD;
+    record CREF_QUAL
+      Ident ident;
+      Type identType "type of the identifier, without considering the subscripts";
+      list<Subscript> subscriptLst;
+      ComponentRef componentRef;
+    end CREF_QUAL;
+
+    record CREF_IDENT
+      Ident ident;
+      Type identType "type of the identifier, without considering the subscripts";
+      list<Subscript> subscriptLst;
+    end CREF_IDENT;
+
+    record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
+      Ident ident;
+      Integer index;
+      Type identType "type of the identifier, without considering the subscripts";
+      list<Subscript> subscriptLst;
+    end CREF_ITER;
+
+    record OPTIMICA_ATTR_INST_CREF "An Optimica component reference with the time instant in it. e.g x2(finalTime)"
+      ComponentRef componentRef;
+      String instant;
+    end OPTIMICA_ATTR_INST_CREF;
+
+    record WILD end WILD;
   end ComponentRef;
 end DAE;
 
