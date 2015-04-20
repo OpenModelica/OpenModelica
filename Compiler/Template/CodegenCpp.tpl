@@ -13,10 +13,9 @@ template translateModel(SimCode simCode)
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__)) then
         let target  = simulationCodeTarget()
-        let preVarsCount = getPreVarsCount(simCode)
         let &extraFuncs = buffer "" /*BUFD*/
         let &extraFuncsDecl = buffer "" /*BUFD*/
-        let()= textFile(simulationMainFile(target, simCode , &extraFuncs , &extraFuncsDecl, "", "", "", ""), 'OMCpp<%fileNamePrefix%>Main.cpp')
+        let()= textFile(simulationMainFile(target, simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "", numRealvars(modelInfo), numIntvars(modelInfo), numBoolvars(modelInfo), getPreVarsCount(modelInfo)), 'OMCpp<%fileNamePrefix%>Main.cpp')
         let()= textFile(simulationCppFile(simCode, contextOther, &extraFuncs, &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
         let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", MemberVariable(modelInfo, false), MemberVariablePreVariables(modelInfo,false), false), 'OMCpp<%fileNamePrefix%>.h')
         let()= textFile(simulationFunctionsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
@@ -38,7 +37,7 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationStateSelectionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
         let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
-        let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", preVarsCount),'OMCpp<%fileNamePrefix%>Extension.cpp')
+        let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
@@ -366,18 +365,15 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
 end simulationWriteOutputHeaderFile;
 
 
-template getPreVarsCount(SimCode simCode)
+template getPreVarsCount(ModelInfo modelInfo)
 ::=
-  match simCode
-    case SIMCODE(modelInfo=MODELINFO(__)) then
-      match modelInfo
-        case MODELINFO(varInfo=VARINFO(__)) then
-          let allVarCount = intAdd(intAdd(intAdd(varInfo.numAlgAliasVars,varInfo.numAlgVars),varInfo.numDiscreteReal ), intAdd(intAdd(varInfo.numIntAliasVars,varInfo.numIntAlgVars), intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolAliasVars, intMul(2,varInfo.numStateVars)))))
-          <<
-          <%allVarCount%>
-          >>
-      end match
-    else ''
+  match modelInfo
+    case MODELINFO(varInfo=VARINFO(__)) then
+      let allVarCount = intAdd(intAdd(intAdd(varInfo.numAlgAliasVars,varInfo.numAlgVars),varInfo.numDiscreteReal ), intAdd(intAdd(varInfo.numIntAliasVars,varInfo.numIntAlgVars), intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolAliasVars, intMul(2,varInfo.numStateVars)))))
+      <<
+      <%allVarCount%>
+      >>
+    end match
 end getPreVarsCount;
 
 
@@ -971,7 +967,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
    >>
 end simulationWriteOutputAliasVarsCppFile;
 
-template simulationExtensionCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String preVarsCount)
+template simulationExtensionCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
@@ -1573,7 +1569,9 @@ case SIMCODE( makefileParams=params as MAKEFILE_PARAMS(__)) then
   ".sh")
 end simulationMainRunScriptSuffix;
 
-template simulationMainFile(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, String additionalPreRunCommands, String additionalPostRunCommands)
+template simulationMainFile(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, 
+                            String additionalIncludes, String additionalPreRunCommands, String additionalPostRunCommands,
+                            String numRealVars, String numIntVars, String numBoolVars, String numPreVars)
  "Generates code for header file for simulation target."
 ::=
 match target
@@ -2017,7 +2015,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
             //create Modelica system
             boost::weak_ptr<ISimData> simData = simulation.first->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
-            boost::weak_ptr<ISimVars> simVars = simulation.first->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealvars(modelInfo)%>,<%numIntvars(modelInfo)%>,<%numBoolvars(modelInfo)%>,<%getPreVarsCount(simCode)%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
+            boost::weak_ptr<ISimVars> simVars = simulation.first->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
             boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
             simulation.first->Start(simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
@@ -6847,18 +6845,22 @@ match simVar
       let arrayName = arraycref2(name,dims)
       let typeString = variableType(type_)
       let array_num_elem =  arrayNumElements(name, v.numArrayElement)
-      match dims
-        case "0" then
-           let index = sumStringDelimit2Int(indices,",")
-           let var_init = ',<%arrayName%>(_sim_vars->init<%type%>Var(<%index%>))'
-           let &indices += ',1'
-          var_init
-        else
-          let index = sumStringDelimit2Int(indices,",")
-          let size =  sumStringDelimit2Int(array_num_elem,",")
-          let var_init = ',<%arrayName%>(_sim_vars->init<%type%>ArrayVar((<%size%>),<%index%>))'
-          let &indices += ',<%size%>'
-          var_init
+      if(useFlatArrayNotation) then
+        let var_init = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableInitializeFlatArray(cref(crefLocal,useFlatArrayNotation),type,indices); separator="\n"
+        var_init
+      else  
+        match dims
+          case "0" then
+            let index = sumStringDelimit2Int(indices,",")
+            let var_init = ',<%arrayName%>(_sim_vars->init<%type%>Var(<%index%>))'
+            let &indices += ',1'
+            var_init
+          else
+            let index = sumStringDelimit2Int(indices,",")
+            let size =  sumStringDelimit2Int(array_num_elem,",")
+            let var_init = ',<%arrayName%>(_sim_vars->init<%type%>ArrayVar((<%size%>),<%index%>))'
+            let &indices += ',<%size%>'
+            var_init
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
 
@@ -6874,6 +6876,14 @@ match simVar
         else ''
       end match
 end MemberVariableInitialize2;
+
+template MemberVariableInitializeFlatArray(String varName, String type, Text& indices)
+::=
+  let index = sumStringDelimit2Int(indices,",")
+  let var_init = ',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
+  let &indices += ',1'
+  var_init
+end MemberVariableInitializeFlatArray;
 
 template MemberVariableAlgloop(ModelInfo modelInfo, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
@@ -7886,7 +7896,7 @@ template numStateVarIndex(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-<%intAdd(varInfo.numAlgVars,intAdd(varInfo.numAlgAliasVars,varInfo.numDiscreteReal))%>
+<%intSub(stringInt(numRealvars(modelInfo)), intMul(2,varInfo.numStateVars))%>
 >>
 end numStateVarIndex;
 

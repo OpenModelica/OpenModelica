@@ -244,7 +244,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include <System/SimVars.h>
 
   ISimVars *<%modelIdentifier%>FMU::createSimVars() {
-    return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%getPreVarsCount(simCode)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
+    return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
   }
 
   // constructor

@@ -51,7 +51,7 @@ encapsulated package HpcOmSimCode
       Integer intArraySize; //arrayIdx: 2
       Integer boolArraySize; //arrayIdx: 3
       HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
-      list<Integer> otherVars; //a list of not optimized variables
+      tuple<list<Integer>, list<Integer>, list<Integer>> otherVars; //a list of not optimized variables (float, int bool)
     end MEMORYMAP_ARRAY;
     record MEMORYMAP_UNIFORM
     end MEMORYMAP_UNIFORM;

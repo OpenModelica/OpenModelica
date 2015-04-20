@@ -3528,6 +3528,7 @@ package HpcOmSimCode
       Integer intArraySize;
       Integer boolArraySize;
       HashTableCrILst.HashTable scVarNameIdxMapping;
+      tuple<list<Integer>, list<Integer>, list<Integer>> otherVars;
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 end HpcOmSimCode;
