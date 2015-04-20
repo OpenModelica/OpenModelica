@@ -71,7 +71,7 @@ int& SimVars::initIntVar(size_t i)
 *  \param [in] i index in simvars memory
 *  \return simvar variable
 */
-bool& SimVars::initBoolVar(unsigned int i)
+bool& SimVars::initBoolVar(size_t i)
 {
   if (i < _dim_bool)
     return _bool_vars.get()->get()[i];
