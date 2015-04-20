@@ -1569,7 +1569,7 @@ case SIMCODE( makefileParams=params as MAKEFILE_PARAMS(__)) then
   ".sh")
 end simulationMainRunScriptSuffix;
 
-template simulationMainFile(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, 
+template simulationMainFile(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,
                             String additionalIncludes, String additionalPreRunCommands, String additionalPostRunCommands,
                             String numRealVars, String numIntVars, String numBoolVars, String numPreVars)
  "Generates code for header file for simulation target."
@@ -6848,7 +6848,7 @@ match simVar
       if(useFlatArrayNotation) then
         let var_init = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableInitializeFlatArray(cref(crefLocal,useFlatArrayNotation),type,indices); separator="\n"
         var_init
-      else  
+      else
         match dims
           case "0" then
             let index = sumStringDelimit2Int(indices,",")
