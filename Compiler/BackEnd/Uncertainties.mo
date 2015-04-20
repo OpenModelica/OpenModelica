@@ -1089,7 +1089,7 @@ compsOut:=matchcontinue(m,mt,ass1,ass2)
     then {{1}};
   case(_,_,_,_)
     equation
-       failure(_=Sorting.TarjanForIndexReduction(mt,ass2));
+       failure(_=Sorting.TarjanOld(mt,ass2));
 
        print("TarjanAlgorithm failed\n");
        Error.clearMessages();
@@ -1099,7 +1099,7 @@ compsOut:=matchcontinue(m,mt,ass1,ass2)
       comps;
   case(_,_,_,_)
     equation
-       comps=Sorting.TarjanForIndexReduction(mt,ass2);
+       comps=Sorting.TarjanOld(mt,ass2);
     then
       comps;
 end matchcontinue;

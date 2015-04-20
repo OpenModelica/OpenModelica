@@ -3010,7 +3010,7 @@ protected
   String str;
 algorithm
   if i <= n then
-    eqns := Sorting.reachableNodes(i, mT, ass2);
+    eqns := Sorting.reachableEquations(i, mT, ass2);
     llst := List.map(eqns, List.create);
     llst := List.map1(llst, List.consr, i);
     slst := List.map(llst, intListStr);

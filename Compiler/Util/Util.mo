@@ -907,6 +907,12 @@ algorithm
   end match;
 end isSome;
 
+public function intGreaterZero
+  "Returns true if integer value is greater zero (> 0)"
+  input Integer v;
+  output Boolean res = v > 0;
+end intGreaterZero;
+
 public function intPositive
   "Returns true if integer value is positive (>= 0)"
   input Integer v;

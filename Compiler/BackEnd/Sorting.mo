@@ -38,11 +38,11 @@ encapsulated package Sorting
 
 public import BackendDAE;
 
-protected import BackendDAEUtil;
 protected import BackendDump;
 protected import Debug;
 protected import Error;
 protected import List;
+protected import Util;
 
 public function Tarjan "author: lochel"
   input BackendDAE.IncidenceMatrix m;
@@ -96,7 +96,7 @@ algorithm
   outIndex := outIndex + 1;
   outS := eqn::outS;
 
-  // Consider successors of v
+  // Consider successors of eqn
   for i in m[eqn] loop
     if i > 0 then // just consider positive items
       eqn2 := arrayGet(ass1, i);
@@ -178,17 +178,14 @@ algorithm
   outS := eqn::outS;
 
   // Consider successors of eqn
-  var := ass2[eqn];
-  for eqn2 in mT[var] loop
-    if eqn <> eqn2 then
-      if arrayGet(number, eqn2) == -1 then
-        // Successor eqn2 has not yet been visited; recurse on it
-        (outS, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outS, outIndex, number, lowlink, onStack, outComponents);
-        arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
-      elseif arrayGet(onStack, eqn2) then
-        // Successor eqn2 is in stack S and hence in the current SCC
-        arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
-      end if;
+  for eqn2 in reachableEquations(eqn, mT, ass2) loop
+    if arrayGet(number, eqn2) == -1 then
+      // Successor eqn2 has not yet been visited; recurse on it
+      (outS, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outS, outIndex, number, lowlink, onStack, outComponents);
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
+    elseif arrayGet(onStack, eqn2) then
+      // Successor eqn2 is in stack S and hence in the current SCC
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
     end if;
   end for;
 
@@ -206,7 +203,7 @@ algorithm
   end if;
 end StrongConnectTransposed;
 
-public function TarjanForIndexReduction "author: PA
+public function TarjanOld "author: PA
   This is the second part of the BLT sorting. It takes the variable
   assignments and the incidence matrix as input and identifies strong
   components, i.e. subsystems of equations.
@@ -227,16 +224,16 @@ algorithm
     number := arrayCreate(n, 0);
     lowlink := arrayCreate(n, 0);
     stackflag := arrayCreate(n, false);
-    (_, outComps) := StrongConnectForIndexReduction(mt, ass2, number, lowlink, stackflag, n, 1, {}, {});
+    (_, outComps) := StrongConnectOld(mt, ass2, number, lowlink, stackflag, n, 1, {}, {});
   else
-    Error.addInternalError("TarjanForIndexReduction failed
+    Error.addInternalError("TarjanOld failed
 The sorting of the equations could not be done. (strongComponents failed)
 Use +d=failtrace for more information.", sourceInfo());
     fail();
   end try;
-end TarjanForIndexReduction;
+end TarjanOld;
 
-public function StrongConnectForIndexReduction
+public function StrongConnectOld
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> a2;
   input array<Integer> number;
@@ -255,7 +252,7 @@ algorithm
     (ostack, ocomps) := strongConnectMain3(mt, a2, number, lowlink, stackflag, n, w, ostack, ocomps);
     w := w+1;
   end while;
-end StrongConnectForIndexReduction;
+end StrongConnectOld;
 
 protected function strongConnectMain3
   input BackendDAE.IncidenceMatrixT mt;
@@ -301,7 +298,7 @@ algorithm
     arrayUpdate(number, v, i+1);
     arrayUpdate(lowlink, v, i+1);
     arrayUpdate(stackflag, v, true);
-    eqns := reachableNodes(v, mt, a2);
+    eqns := reachableEquations(v, mt, a2);
     (oi, stack_2, comps_1) := iterateReachableNodes(eqns, mt, a2, number, lowlink, stackflag, i+1, v, v::stack, comps);
     (ostack, comp) := checkRoot(v, stack_2, number, lowlink, stackflag);
     ocomps := consIfNonempty(comp, comps_1);
@@ -326,7 +323,7 @@ algorithm
   end match;
 end consIfNonempty;
 
-public function reachableNodes "author: PA
+public function reachableEquations "author: PA
   Returns a list of reachable nodes (equations), corresponding
   to those equations that uses the solved variable of this equation.
   The edges of the graph that identifies strong components/blocks are
@@ -335,17 +332,17 @@ public function reachableNodes "author: PA
   of n2, i.e. the equation of n1 must be solved before the equation of n2."
   input Integer eqn;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> a2;
-  output list<Integer> outIntegerLst;
+  input array<Integer> ass2 "var := ass2[eqn]";
+  output list<Integer> outEqNodes;
 protected
   Integer var;
   list<Integer> reachable;
 algorithm
-  var := a2[eqn] "Got the variable that is solved in the equation";
-  reachable := if var > 0 then mT[var] else {} "Got the equations of that variable";
-  reachable := BackendDAEUtil.removeNegative(reachable);
-  outIntegerLst := List.removeOnTrue(eqn, intEq, reachable);
-end reachableNodes;
+  var := ass2[eqn] "get the variable that is solved in given equation";
+  reachable := if var > 0 then mT[var] else {} "get the equations that depend on that variable";
+  reachable := List.select(reachable, Util.intGreaterZero) "just keep positive integers";
+  outEqNodes := List.removeOnTrue(eqn, intEq, reachable);
+end reachableEquations;
 
 protected function iterateReachableNodes
   input list<Integer> eqns;
