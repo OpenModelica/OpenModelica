@@ -47,24 +47,18 @@ class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
       return array;
     }
 };
-
+/**
+ *  SimVars class, implements ISimVars interface
+ *  SimVars stores all model variable in continuous block of memory 
+ */
 class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
 {
   public:
-    /*
-     Constructor for SimVars, stores all model variable in continuous block of memory
-     @dim_real  number of all real variables (real algebraic vars,discrete algebraic vars, state vars, der state vars)
-     @dim_int   number of all integer variables integer algebraic vars
-     @dim_bool  number of all bool variables (boolean algebraic vars)
-     @dim_pre_vars number of all pre variables (real algebraic vars,discrete algebraic vars, boolean algebraic vars, integer algebraic vars, state vars, der state vars)
-     @dim_state_vars number of all state variables
-     @state_index start index of state vector in real_vars list
-     */
     SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
     virtual ~SimVars();
     virtual double& initRealVar(size_t i);
     virtual int& initIntVar(size_t i);
-    virtual bool& initBoolVar(unsigned int i);
+    virtual bool& initBoolVar(size_t i);
     virtual double* getStateVector();
     virtual double* getDerStateVector();
     virtual const double* getRealVarsVector() const;
@@ -77,6 +71,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual double* initRealArrayVar(size_t size, size_t start_index);
     virtual int* initIntArrayVar(size_t size, size_t start_index);
     virtual bool* initBoolArrayVar(size_t size, size_t start_index);
+    virtual void initRealAliasArray(int indices[] ,size_t n,double*ref_data[] );
+    virtual void initIntAliasArray(int indices[] ,size_t n,int*ref_data[] );
+    virtual void initBoolAliasArray(int indices[] ,size_t n,bool*ref_data[] );
     virtual void savePreVariables();
     virtual void initPreVariables();
     virtual double& getPreVar(double& var);
@@ -86,6 +83,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual void setPreVar(int& var);
     virtual void setPreVar(bool& var);
   private:
+    double* getRealVar(size_t i);
+    int* getIntVar(size_t i);
+    bool* getBoolVar(size_t i);
     size_t _dim_real;  //number of all real variables (real algebraic vars,discrete algebraic vars, state vars, der state vars)
     size_t _dim_int;  // number of all integer variables (integer algebraic vars)
     size_t _dim_bool;  // number of all bool variables (boolean algebraic vars)
