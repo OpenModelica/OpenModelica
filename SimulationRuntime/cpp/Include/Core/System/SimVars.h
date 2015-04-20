@@ -49,7 +49,7 @@ class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
 };
 /**
  *  SimVars class, implements ISimVars interface
- *  SimVars stores all model variable in continuous block of memory 
+ *  SimVars stores all model variable in continuous block of memory
  */
 class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
 {

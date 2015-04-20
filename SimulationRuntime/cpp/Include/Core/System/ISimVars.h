@@ -34,7 +34,7 @@ public:
 
      /*Methods for pre- variables*/
 
-    
+
      virtual void savePreVariables() = 0;
      virtual void initPreVariables()= 0;
      /*access methods for pre-variable*/

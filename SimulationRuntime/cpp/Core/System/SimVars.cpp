@@ -2,7 +2,7 @@
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include "FactoryExport.h"
 #include <Core/System/SimVars.h>
-#include <boost/lambda/bind.hpp> 
+#include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 
 
@@ -326,7 +326,7 @@ double* SimVars::getRealVar(size_t i)
    if(i<_dim_real)
     return &_real_vars.get()->get()[i];
   else
-    throw std::runtime_error("Wrong variable index"); 
+    throw std::runtime_error("Wrong variable index");
 }
 /**\brief returns a pointer to a int simvar variable in simvar array
  *  \param [in] i index  of simvar in simvar array
