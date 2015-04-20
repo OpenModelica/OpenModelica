@@ -102,7 +102,7 @@ import SymbolicJacobian;
 import System;
 import Util;
 import ValuesUtil;
-import HpcOmTaskGraph;
+import VisualXML;
 
 // =============================================================================
 // section for public function for SimCodeTV
@@ -1559,7 +1559,7 @@ algorithm
 
       backendMapping = setUpBackendMapping(inBackendDAE);
       if Flags.isSet(Flags.VISUAL_XML) then
-        HpcOmTaskGraph.visualizationInfoXML(inBackendDAE, filenamePrefix);
+        VisualXML.visualizationInfoXML(inBackendDAE, filenamePrefix);
       end if;
 
       // fcall(Flags.FAILTRACE, print, "is that Cpp? : " + Dump.printBoolStr(ifcpp) + "\n");

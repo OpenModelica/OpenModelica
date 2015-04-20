@@ -224,6 +224,7 @@ if true then /* Suppress output */
     "../Template/Tpl.mo",
     "../Template/TplParser.mo",
     "../Template/Unparsing.mo",
+	"../Template/VisualXMLTpl.mo",
 
   // "Global";
     "../Global/Global.mo",
@@ -289,7 +290,8 @@ if true then /* Suppress output */
     "../Util/Socket.mo",
     "../Util/System.mo",
     "../Util/Util.mo",
-    "../Util/VarTransform.mo"
+    "../Util/VarTransform.mo",
+	"../Util/VisualXML.mo"
   };
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then
