@@ -15,7 +15,7 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 /// typedef for sparse matrices
 typedef double* SparsityPattern;
-typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+
 
 class IMixedSystem
 {

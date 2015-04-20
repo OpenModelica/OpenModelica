@@ -171,6 +171,7 @@ typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 typedef boost::function<bool (unsigned int)> getCondition_type;
 typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
+typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
 #include <Core/Utils/Modelica/ModelicaSimulationError.h>
 #include <Core/Math/Array.h>
 #include <Core/System/IStateSelection.h>

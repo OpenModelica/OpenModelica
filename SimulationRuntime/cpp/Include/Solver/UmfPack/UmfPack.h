@@ -3,10 +3,14 @@
 #include <Core/System/IAlgLoop.h>                // Interface to AlgLoo
 #include <Core/Solver/IAlgLoopSolver.h>        // Export function from dll
 #include <Core/Solver/ILinSolverSettings.h>
-#include <Core/Math/SparseMatrix.h>
 #include <Solver/UmfPack/UmfPackSettings.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+#include <cstring>
 #include <iostream>
-
 
 class UmfPack : public IAlgLoopSolver
 {
@@ -27,7 +31,7 @@ private:
     ITERATIONSTATUS _iterationStatus;
     ILinSolverSettings *_umfpackSettings;
     IAlgLoop *_algLoop;
-    sparse_matrix * _jacs;
+    boost::shared_ptr<SparseMatrix> _jacs;
     double * _jacd;
     double * _rhs;
     double * _x;

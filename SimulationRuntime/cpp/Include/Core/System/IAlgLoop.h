@@ -1,6 +1,5 @@
 #pragma once
-struct sparse_matrix;
-
+#include <Core/Modelica.h>
 /*****************************************************************************/
 /**
 
@@ -52,7 +51,7 @@ public:
   virtual void getRHS(double* res) = 0;
 
   virtual void getSystemMatrix(double* A_matrix) = 0;
-  virtual void getSystemMatrix(sparse_matrix *) {};
+  virtual void getSystemMatrix(boost::shared_ptr<SparseMatrix>) {};
 
   virtual bool isLinear() = 0;
   virtual bool isLinearTearing() = 0;
