@@ -3286,7 +3286,7 @@ match eq
 
      case SES_LINEAR(__) then
     <<
-     ,__Asparse(NULL)
+     ,__Asparse()
     >>
     %>
 
@@ -3304,11 +3304,6 @@ match eq
      <% match eq
       case SES_LINEAR(__) then
       <<
-      if(__Asparse != NULL)
-          delete __Asparse;
-
-      /* if(__A != NULL)
-          delete __A;*/
       >>
      %>
    }
@@ -3385,10 +3380,10 @@ match simCode
         {
            if(_useSparseFormat)
            {
-             if(__Asparse == NULL)
-                __Asparse = new sparse_inserter;
+             if(! __Asparse)
+                __Asparse = boost::shared_ptr<SparseMatrix>( new SparseMatrix);
 
-             evaluate(__Asparse);
+             evaluate(__Asparse.get());
            }
            else
            {
@@ -5360,7 +5355,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      {
         <%alocateLinearSystem(eq)%>
         if(_useSparseFormat)
-          <%modelname%>Algloop<%index%>::initialize(__Asparse);
+          <%modelname%>Algloop<%index%>::initialize(__Asparse.get());
         else
         {
           fill_array(*__A,0.0);
@@ -5423,7 +5418,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   {
 
    }
-  void <%modelname%>Algloop<%index%>::getSystemMatrix(sparse_matrix* A_matrix)
+  void <%modelname%>Algloop<%index%>::getSystemMatrix(SparseMatrix* A_matrix)
   {
 
    }
@@ -5437,11 +5432,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
            "memcpy(A_matrix,__A->getData(),_dimAEq*_dimAEq*sizeof(double));"
           %>
      }
-     void <%modelname%>Algloop<%index%>::getSystemMatrix(sparse_matrix* A_matrix)
+     void <%modelname%>Algloop<%index%>::getSystemMatrix(SparseMatrix* A_matrix)
      {
           <% match eq
           case SES_LINEAR(__) then
-          "A_matrix->build(*__Asparse);"
+          "*A_matrix=*__Asparse;"
           %>
      }
    >>
@@ -5792,7 +5787,7 @@ case SES_LINEAR(__) then
    let size = listLength(vars)
    <<
     if(_useSparseFormat)
-      __Asparse = new sparse_inserter;
+      __Asparse = boost::shared_ptr<SparseMatrix> (new SparseMatrix);
     else
       __A = boost::shared_ptr<AMATRIX>( new AMATRIX());
    >>
@@ -6364,7 +6359,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     %>
 
 
-    sparse_inserter *__Asparse; //sparse
+    boost::shared_ptr<SparseMatrix> __Asparse; //sparse
 
 
     bool* _conditions;
@@ -6741,7 +6736,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     >>%>
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void getSystemMatrix(double* A_matrix);
-    virtual void getSystemMatrix(sparse_matrix* A_matrix);
+    virtual void getSystemMatrix(SparseMatrix* A_matrix);
     virtual bool isLinear();
     virtual bool isLinearTearing();
     virtual bool isConsistent();
