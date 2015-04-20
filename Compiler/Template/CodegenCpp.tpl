@@ -4506,9 +4506,9 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
     let extCStr = if stringEq(elType, "string") then '.getCStrData()'
     if boolOr(intGt(listLength(dims), 1), stringEq(elType, "bool")) then
       let tmp = match dimsStr
-        case "" then 
+        case "" then
           tempDecl('DynArrayDim<%listLength(dims)%><<%extType%>>', &varDecls /*BUFD*/)
-        else 
+        else
           tempDecl('StatArrayDim<%dimStr%><<%extType%>, <%dimsStr%>>', &varDecls /*BUFD*/)
       let &inputAssign += 'convertArrayLayout(<%name%>, <%tmp%>);'
       let &outputAssign += if intGt(oi, 0) then 'convertArrayLayout(<%tmp%>, <%name%>);'
