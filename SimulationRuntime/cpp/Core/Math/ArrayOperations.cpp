@@ -378,9 +378,9 @@ void convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b)
  * helper for assignRowMajorData
  * recursive function for muli-dimensional assignment of raw data
  */
-template <typename S, typename T>
-static size_t assignRowMajorDim(size_t dim, const S* data,
-                                BaseArray<T> &array, vector<size_t> idx) {
+template <typename T>
+static size_t assignRowMajorDim(size_t dim, const T* data,
+                                BaseArray<T> &array, vector<size_t> &idx) {
   size_t processed = 0;
   size_t size = array.getDim(dim);
   for (size_t i = 1; i <= size; i++) {
@@ -393,9 +393,10 @@ static size_t assignRowMajorDim(size_t dim, const S* data,
   return processed;
 }
 
-template <typename S, typename T>
-void assignRowMajorData(const S *data, BaseArray<T> &array) {
-  assignRowMajorDim(1, data, array, vector<size_t>(array.getNumDims()));
+template <typename T>
+void assignRowMajorData(const T *data, BaseArray<T> &array) {
+  vector<size_t> idx(array.getNumDims());
+  assignRowMajorDim(1, data, array, idx);
 }
 
 /**
@@ -404,11 +405,12 @@ void assignRowMajorData(const S *data, BaseArray<T> &array) {
  */
 template <typename S, typename T>
 static void convertArrayDim(size_t dim,
-                            const BaseArray<S> &s, vector<size_t> &sidx,
-                            BaseArray<S> &d, vector<size_t> &didx) {
+                            BaseArray<S> &s, vector<size_t> &sidx,
+                            BaseArray<T> &d, vector<size_t> &didx) {
+  size_t ndims = s.getNumDims();
   size_t size = s.getDim(dim);
   for (size_t i = 1; i <= size; i++) {
-    didx[dim - i] = sidx[dim - 1] = i;
+    didx[ndims - dim] = sidx[dim - 1] = i;
     if (dim < sidx.size())
       convertArrayDim(dim + 1, s, sidx, d, didx);
     else
@@ -421,7 +423,7 @@ static void convertArrayDim(size_t dim,
  * including optional type conversion if supported in assignment from S to T
  */
 template <typename S, typename T>
-void convertArrayLayout(const BaseArray<S> &s, BaseArray<T> &d) {
+void convertArrayLayout(BaseArray<S> &s, BaseArray<T> &d) {
   size_t ndims = s.getNumDims();
   if (ndims != d.getNumDims())
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
@@ -431,7 +433,7 @@ void convertArrayLayout(const BaseArray<S> &s, BaseArray<T> &d) {
   for (size_t dim = 1; dim <= ndims; dim++)
     ddims[ndims - dim] = sdims[dim - 1];
   d.resize(ddims);
-  convertDim(1, s, vector<size_t>(ndims), d, vector<size_t>(ndims));
+  convertArrayDim(1, s, sdims, d, ddims);
 }
 
 /*
@@ -499,6 +501,12 @@ template std::pair <bool,bool> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<bo
 
 void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
 void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
+
+template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<double> &s, BaseArray<double> &d);
+template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<int> &s, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<bool> &s, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<int> &s, BaseArray<bool> &d);
+template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<string> &s, BaseArray<string> &d);
 
 template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const double *data, BaseArray<double> &d);
 template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const int *data, BaseArray<int> &d);

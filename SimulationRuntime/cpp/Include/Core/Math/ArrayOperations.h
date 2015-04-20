@@ -94,8 +94,14 @@ void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArra
 void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
 
 /**
- * assign data with row major order to BaseArray with arbitrary storage layout,
+ * Permutes dims between row and column major storage layout,
  * including optional type conversion if supported in assignment from S to T
  */
 template <typename S, typename T>
-void assignRowMajorData(const S *data, BaseArray<T> &array);
+  void convertArrayLayout(BaseArray<S> &s, BaseArray<T> &d);
+
+/**
+ * Assign data with row major order to BaseArray with arbitrary storage layout
+ */
+template <typename T>
+  void assignRowMajorData(const T *data, BaseArray<T> &array);

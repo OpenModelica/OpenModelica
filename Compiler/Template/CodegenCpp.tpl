@@ -4467,9 +4467,9 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
     //let name = if oi then 'out.targTest5<%oi%>' else contextCref2(c,contextFunction)
   let name = contextCref2(c,contextFunction)
     let shortTypeStr = expTypeShort(t)
-  let boolCast = extCBoolCast(extArg, &preExp, &varDecls, &inputAssign /*BUFD*/, &outputAssign /*BUFD*/, &outputAllocate)
+  let arrayArg = extCArrayArg(extArg, &preExp, &varDecls, &inputAssign /*BUFD*/, &outputAssign /*BUFD*/, &outputAllocate)
   <<
-  <%boolCast%>
+  <%arrayArg%>
   >>
 
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
@@ -4491,44 +4491,31 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
 end extArg;
 
 
-template extCBoolCast(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, Text &inputAssign /*BUFD*/, Text &outputAssign /*BUFD*/, Text &outputAllocate)
-"Function to allocate memory for output and to cast the output to the right data type"
+template extCArrayArg(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, Text &inputAssign /*BUFD*/, Text &outputAssign /*BUFD*/, Text &outputAllocate)
+ "Function to convert arrays to external C"
 ::=
-  match extArg
-  case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
+match extArg
+case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
   let name = contextCref2(c,contextFunction)
-   match type_
-    case T_ARRAY(__)then
-  let dimStr = listLength(dims)
-     let dimsStr = checkDimension(dims)
-
-    match ty
-       case T_BOOL(__) then
-         let tmp = match dimsStr
-
-           case "" then tempDecl('DynArrayDim<%listLength(dims)%><int>', &varDecls /*BUFD*/)
-              else   tempDecl('StatArrayDim<%dimStr%><int,<%dimsStr%> > ', &varDecls /*BUFD*/)
-              end match
-           if(iI)
-            then
-               let _ = inputAssignTest(c, contextFunction, tmp, &inputAssign)
-          <<
-               <%tmp%>.getData()
-              >>
-            else
-            let _ = outputAssignTest(c, contextFunction, tmp, &outputAssign)
-            let &outputAllocate += '<%tmp%>.setDims(<%name%>.getDims());'
-            <<
-                <%tmp%>.getData()
-            >>
-       case T_STRING(__) then
-            '(<%extType2(t,iI,true)%>)<%name%>.getCStrData()/*testfuncdata*/ '
-       else
-        '(<%extType2(t,iI,true)%>)<%name%>.getData()/*testfuncdata2*/ '
-    end match
-end extCBoolCast;
-
-
+  match type_
+  case T_ARRAY(__)then
+    let dimStr = listLength(dims)
+    let dimsStr = checkDimension(dims)
+    let elType = expTypeShort(ty)
+    let extType = extType2(ty, true, false)
+    let extCStr = if stringEq(elType, "string") then '.getCStrData()'
+    if boolOr(intGt(listLength(dims), 1), stringEq(elType, "bool")) then
+      let tmp = match dimsStr
+        case "" then 
+          tempDecl('DynArrayDim<%listLength(dims)%><<%extType%>>', &varDecls /*BUFD*/)
+        else 
+          tempDecl('StatArrayDim<%dimStr%><<%extType%>, <%dimsStr%>>', &varDecls /*BUFD*/)
+      let &inputAssign += 'convertArrayLayout(<%name%>, <%tmp%>);'
+      let &outputAssign += if intGt(oi, 0) then 'convertArrayLayout(<%tmp%>, <%name%>);'
+      '<%tmp%>.getData()<%extCStr%>'
+    else
+      '<%name%>.getData()<%extCStr%>'
+end extCArrayArg;
 
 
 template inputAssignTest(DAE.ComponentRef cref, Context context, Text tmp, Text &inputAssign /*BUFD*/)
