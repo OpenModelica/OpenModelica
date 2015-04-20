@@ -3003,7 +3003,6 @@ algorithm
 end calculateJacobianRowLst;
 
 protected function calculateJacobianRow2 "author: PA
-  Helper function to calculateJacobianRow
   Differentiates expression for each variable cref.
   inputs: (DAE.Exp,
              BackendDAE.Variables,
@@ -3021,55 +3020,48 @@ protected function calculateJacobianRow2 "author: PA
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
   output BackendDAE.Shared oShared;
 algorithm
-  (outLst, oShared) := matchcontinue (inExp,vars,eqn_indx,inIntegerLst,differentiateIfExp,iShared,source,iAcc)
+  (outLst, oShared) := matchcontinue (inIntegerLst)
     local
-      DAE.Exp e,e_1,e_2,dcrexp;
+      DAE.Exp e, e_1, e_2, dcrexp;
       BackendDAE.Var v;
-      DAE.ComponentRef cr,dcr;
+      DAE.ComponentRef cr, dcr;
       list<tuple<Integer, Integer, BackendDAE.Equation>> es;
       Integer vindx;
       list<Integer> vindxs;
       String str;
-      DAE.FunctionTree ft;
       BackendDAE.Shared shared;
-      Boolean b;
-    case (_,_,_,{},_,_,_,_) then (iAcc, iShared);
-    case (_,_,_,vindx::vindxs,_,_,_,_)
-      equation
-        v = BackendVariable.getVarAt(vars, vindx);
-        cr = BackendVariable.varCref(v);
-        true = BackendVariable.isStateVar(v);
-        dcr = ComponentReference.crefPrefixDer(cr);
-        dcrexp = Expression.crefExp(cr);
-        dcrexp = DAE.CALL(Absyn.IDENT("der"),{dcrexp},DAE.callAttrBuiltinReal);
-        ((e,_)) = Expression.replaceExp(inExp, dcrexp, Expression.crefExp(dcr));
-        _ = BackendDAEUtil.getFunctions(iShared);
-        (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(e, dcr, vars, iShared);
-        (e_2,_) = ExpressionSimplify.simplify(e_1);
-        es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
-        (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
-      then
-        (es, shared);
 
-    case (_,_,_,vindx::vindxs,_,_,_,_)
-      equation
-        v = BackendVariable.getVarAt(vars, vindx);
-        cr = BackendVariable.varCref(v);
-        _ = BackendDAEUtil.getFunctions(iShared);
-        (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(inExp, cr, vars, iShared);
-        (e_2,_) = ExpressionSimplify.simplify(e_1);
-        es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
-        (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
-      then
-        (es, shared);
+    case {}
+    then (iAcc, iShared);
 
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = ExpressionDump.printExpStr(inExp);
-        Debug.traceln("- BackendDAE.calculateJacobianRow2 failed on " + str);
-      then
-        fail();
+    case vindx::vindxs equation
+      v = BackendVariable.getVarAt(vars, vindx);
+      cr = BackendVariable.varCref(v);
+      true = BackendVariable.isStateVar(v);
+      dcr = ComponentReference.crefPrefixDer(cr);
+      dcrexp = Expression.crefExp(cr);
+      dcrexp = DAE.CALL(Absyn.IDENT("der"), {dcrexp}, DAE.callAttrBuiltinReal);
+      ((e, _)) = Expression.replaceExp(inExp, dcrexp, Expression.crefExp(dcr));
+      (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(e, dcr, vars, iShared);
+      (e_2, _) = ExpressionSimplify.simplify(e_1);
+      es = calculateJacobianRow3(eqn_indx, vindx, e_2, source, iAcc);
+      (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
+    then (es, shared);
+
+    case vindx::vindxs equation
+      v = BackendVariable.getVarAt(vars, vindx);
+      cr = BackendVariable.varCref(v);
+      (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(inExp, cr, vars, iShared);
+      (e_2, _) = ExpressionSimplify.simplify(e_1);
+      es = calculateJacobianRow3(eqn_indx, vindx, e_2, source, iAcc);
+      (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
+    then (es, shared);
+
+    else equation
+      true = Flags.isSet(Flags.FAILTRACE);
+      str = ExpressionDump.printExpStr(inExp);
+      Debug.traceln("- BackendDAE.calculateJacobianRow2 failed on " + str);
+    then fail();
   end matchcontinue;
 end calculateJacobianRow2;
 
