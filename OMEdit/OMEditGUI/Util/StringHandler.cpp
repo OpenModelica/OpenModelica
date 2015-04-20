@@ -725,6 +725,13 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
   return list;
 }
 
+/*!
+ * \brief wordsBeforeAfterLastDot
+ * Helper for StringHandler::getLastWordAfterDot() and StringHandler::removeLastWordAfterDot()
+ * \param value
+ * \param lastWord
+ * \return
+ */
 static QString wordsBeforeAfterLastDot(QString value, bool lastWord)
 {
   if (value.isEmpty())
@@ -756,20 +763,38 @@ static QString wordsBeforeAfterLastDot(QString value, bool lastWord)
   }
 }
 
+/*!
+ * \brief StringHandler::getLastWordAfterDot
+ * Returns the last word after dot.
+ * \param value
+ * \return
+ */
 QString StringHandler::getLastWordAfterDot(QString value)
 {
-  return wordsBeforeAfterLastDot(value,true);
+  return wordsBeforeAfterLastDot(value, true);
 }
 
+/*!
+ * \brief StringHandler::removeLastWordAfterDot
+ * Removes the last word after dot and returns the remaining string.
+ * \param value
+ * \return
+ */
 QString StringHandler::removeLastWordAfterDot(QString value)
 {
-  return wordsBeforeAfterLastDot(value,false);
+  return wordsBeforeAfterLastDot(value, false);
 }
 
-QString StringHandler::getFirstWordBeforeDot(QString value)
+/*!
+ * \brief wordsBeforeAfterFirstDot
+ * Helper for StringHandler::getFirstWordBeforeDot() and StringHandler::removeFirstWordAfterDot()
+ * \param value
+ * \param firstWord
+ * \return
+ */
+static QString wordsBeforeAfterFirstDot(QString value, bool firstWord)
 {
-  if (value.isEmpty())
-  {
+  if (value.isEmpty()) {
     return "";
   }
   value = value.trimmed();
@@ -784,14 +809,37 @@ QString StringHandler::getFirstWordBeforeDot(QString value)
     pos = value.indexOf('.');
   }
 
-  if (pos >= 0)
-  {
-    return value.mid(0, (pos));
-  }
-  else
-  {
+  if (pos >= 0) {
+    if (firstWord) {
+      return value.mid(0, (pos));
+    } else {
+      return value.mid((pos + 1), (value.length() - 1));
+    }
+  } else {
     return value;
   }
+}
+
+/*!
+ * \brief StringHandler::getFirstWordBeforeDot
+ * Returns the first word before dot.
+ * \param value
+ * \return
+ */
+QString StringHandler::getFirstWordBeforeDot(QString value)
+{
+  return wordsBeforeAfterFirstDot(value, true);
+}
+
+/*!
+ * \brief StringHandler::removeFirstWordAfterDot
+ * Removes the first word before dot and returns the remaining string.
+ * \param value
+ * \return
+ */
+QString StringHandler::removeFirstWordAfterDot(QString value)
+{
+  return wordsBeforeAfterFirstDot(value, false);
 }
 
 QString StringHandler::getModifierValue(QString value)
@@ -1402,3 +1450,18 @@ QColor StringHandler::getSimulationMessageTypeColor(StringHandler::SimulationMes
   }
 }
 
+/*!
+ * \brief StringHandler::makeClassNameRelative
+ * Removes the first characters matching with droppedClassName from draggedClassName.
+ * \param draggedClassName
+ * \param droppedClassName
+ * \return
+ */
+QString StringHandler::makeClassNameRelative(QString draggedClassName, QString droppedClassName)
+{
+  if (getFirstWordBeforeDot(draggedClassName).compare(getFirstWordBeforeDot(droppedClassName)) == 0) {
+    return makeClassNameRelative(removeFirstWordAfterDot(draggedClassName), removeFirstWordAfterDot(droppedClassName));
+  } else {
+    return draggedClassName;
+  }
+}

@@ -106,10 +106,11 @@ public:
   static QString removeFirstLastQuotes(QString value);
   static QStringList getStrings(QString value);
   static QStringList getStrings(QString value, char start, char end);
-  static QString getLastWordAfterDot(QString value);
-  static QString getFirstWordBeforeDot(QString value);
   /* Handles quoted identifiers A.B.'C.D' -> A.B, A.B.C.D -> A.B.C */
+  static QString getLastWordAfterDot(QString value);
   static QString removeLastWordAfterDot(QString value);
+  static QString getFirstWordBeforeDot(QString value);
+  static QString removeFirstWordAfterDot(QString value);
   static QString getModifierValue(QString value);
   static QString escapeString(QString value);
   // Returns "" if the string is not a standard Modelica string. Else it unparses it into normal form.
@@ -145,6 +146,7 @@ public:
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
   static QString getSimulationMessageTypeString(StringHandler::SimulationMessageType type);
   static QColor getSimulationMessageTypeColor(StringHandler::SimulationMessageType type);
+  static QString makeClassNameRelative(QString draggedClassName, QString droppedClassName);
 protected:
   static QString mLastOpenDir;
 };

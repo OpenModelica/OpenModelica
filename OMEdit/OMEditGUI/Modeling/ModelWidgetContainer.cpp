@@ -514,8 +514,9 @@ void GraphicsView::addComponentObject(Component *pComponent)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   // Add the component to model in OMC Global Scope.
-  pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), pComponent->getClassName(),
-                                           mpModelWidget->getLibraryTreeNode()->getNameStructure(), pComponent->getPlacementAnnotation());
+  QString className = StringHandler::makeClassNameRelative(pComponent->getClassName(), mpModelWidget->getLibraryTreeNode()->getNameStructure());
+  pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
+                                           pComponent->getPlacementAnnotation());
   // make the model modified
   mpModelWidget->setModelModified();
   // add the component to the local list
