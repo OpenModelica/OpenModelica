@@ -4518,19 +4518,6 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
 end extCArrayArg;
 
 
-template inputAssignTest(DAE.ComponentRef cref, Context context, Text tmp, Text &inputAssign /*BUFD*/)
-::=
-  let &inputAssign += 'convertBoolToInt(<%contextCref2(cref,context)%>, <%tmp%>); '
-  ""
-
-end inputAssignTest;
-
-template outputAssignTest(DAE.ComponentRef cref, Context context, Text tmp, Text &outputAssign /*BUFD*/)
-::=
-  let &outputAssign += 'convertIntToBool(<%tmp%>,<%contextCref2(cref,context)%>); '
-  ""
-end outputAssignTest;
-
 template daeExternalCExp(Exp exp, Context context, Text &preExp /*BUFP*/,Text &varDecls /*BUFP*/, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Like daeExp, but also converts the type to external C"
 ::=
