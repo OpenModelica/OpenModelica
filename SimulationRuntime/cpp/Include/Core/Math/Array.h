@@ -1,6 +1,6 @@
 #pragma once
 
-/** 
+/**
 * forward declaration
 */
 template <class T> class DynArrayDim1;
@@ -258,8 +258,8 @@ public:
         }
         return *this;
     }
-    
-  
+
+
    /**
     *Resize array method
     *@param dims vector with new dimension sizes
@@ -712,7 +712,7 @@ public:
      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"initialization for a non reference array with reference data not allowed");
     }
   }
-  
+
   /**
   * Constuctor for two dimensional array
   * empty array
@@ -733,7 +733,7 @@ public:
     checkArray("assign data to reference array is not supported");
     _array_data = otherarray._array_data;
   }
-  
+
    /**
     * Assignment operator to assign array of type base array to static array
     * a=b
@@ -1336,7 +1336,7 @@ public:
     }
   }
 
-  
+
    /**
     * Assignment operator to assign static array
     * @param b array of type StatArrayDim3
@@ -1516,8 +1516,8 @@ public:
   {
   }
 
- 
- 
+
+
   virtual void resize(const std::vector<size_t>& dims)
   {
     if (dims != getDims())
@@ -1534,7 +1534,7 @@ public:
         resize(v);
         const T* data_otherarray = b.getData();
         _multi_array.assign(data_otherarray,data_otherarray+ v[0]);
-       
+
 
   }
 
