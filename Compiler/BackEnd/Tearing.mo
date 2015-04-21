@@ -320,7 +320,6 @@ protected
   DAE.FunctionTree funcs;
   list<Integer> asslst1, asslst2;
   list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
-  array<Boolean> activeSet;
 algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n" + BORDER + "\nBEGINNING of omcTearing\n\n");
@@ -336,9 +335,9 @@ algorithm
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
      //  DumpGraphML.dumpSystem(subsyst,ishared,NONE(),"System" + intString(size) + ".graphml");
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-     print("\n\n###BEGIN print Strong Component#####################\n(Function:omcTearing)\n");
-     BackendDump.printEqSystem(subsyst);
-     print("\n###END print Strong Component#######################\n(Function:omcTearing)\n\n\n");
+    print("\n\n###BEGIN print Strong Component#####################\n(Function:omcTearing)\n");
+    BackendDump.printEqSystem(subsyst);
+    print("\n###END print Strong Component#######################\n(Function:omcTearing)\n\n\n");
   end if;
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -398,8 +397,7 @@ algorithm
   mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,ass1,ass2,mt1);
 
   // run tarjan to get order of other equations
-  activeSet := Matching.getAssignedArray(ass2);
-  othercomps := Sorting.TarjanTransposedPartial(mt1, ass2, activeSet);
+  othercomps := Sorting.TarjanTransposed(mt1, ass2);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\nOtherEquationsOrder:\n");
      BackendDump.dumpComponentsOLD(othercomps);
@@ -571,27 +569,6 @@ algorithm
         getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
   end matchcontinue;
 end getOtherEqSysIncidenceMatrix;
-
-
-protected function setIntArray "author: Frenkel TUD 2012-08"
-  input list<Integer> inLst;
-  input array<Integer> arr;
-  input Integer value;
-  output array<Integer> oarr;
-algorithm
-  oarr := match(inLst,arr,value)
-    local
-      Integer indx;
-      list<Integer> rest;
-    case(indx::rest,_,_)
-      equation
-        arrayUpdate(arr,indx,value);
-      then
-        setIntArray(rest,arr,value);
-    case({},_,_) then arr;
-  end match;
-end setIntArray;
-
 
 protected function getDependenciesOfVars " function to determine which variables are influenced by the tvars"
   input list<list<Integer>> iComps;
@@ -3425,29 +3402,6 @@ algorithm
     else lst;
   end matchcontinue;
 end selectFromList_help;
-
-
-protected function replaceAt "replaces entry at position in given list by given value
-  author:Waurich TUD 2012-11"
-  input Integer inElement;
-  input Integer inPosition;
-  input list<Integer> inList;
-  output list<Integer> outList;
-algorithm
-  outList := match(inElement, inPosition, inList)
-    local
-      Integer e;
-      list<Integer> rest;
-    case (_,-1, _ :: _) then inList;
-    case (_, 0, _ :: rest) then inElement :: rest;
-    case (_, _, e :: rest)
-      equation
-        (inPosition >= 1) = true;
-        rest = replaceAt(inElement, inPosition - 1, rest);
-      then
-        e :: rest;
-  end match;
-end replaceAt;
 
 
 protected function deleteEntriesFromIncidenceMatrix "Deletes given entries from matrix. Applicable on Incidence and on transposed Incidence.

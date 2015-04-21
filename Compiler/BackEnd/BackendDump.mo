@@ -73,8 +73,8 @@ protected import GraphvizDump;
 protected import Initialization;
 protected import IOStream;
 protected import List;
+protected import Matching;
 protected import SCode;
-protected import Sorting;
 protected import System;
 protected import Util;
 
@@ -3011,7 +3011,7 @@ protected
   String str;
 algorithm
   if i <= n then
-    eqns := Sorting.reachableEquations(i, mT, ass2);
+    eqns := Matching.reachableEquations(i, mT, ass2);
     llst := List.map(eqns, List.create);
     llst := List.map1(llst, List.consr, i);
     slst := List.map(llst, intListStr);

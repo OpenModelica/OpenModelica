@@ -5644,6 +5644,27 @@ end matchingExternalsetIncidenceMatrix;
 //
 // =============================================================================
 
+public function reachableEquations "author: lochel
+  Returns a list of reachable nodes (equations), corresponding
+  to those equations that uses the solved variable of this equation.
+  The edges of the graph that identifies strong components/blocks are
+  dependencies between blocks. A directed edge e = (n1, n2) means
+  that n1 solves for a variable (e.g. \'a\') that is used in the equation
+  of n2, i.e. the equation of n1 must be solved before the equation of n2."
+  input Integer eqn;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> ass2 "var := ass2[eqn]";
+  output list<Integer> outEqNodes;
+protected
+  Integer var;
+  list<Integer> reachable;
+algorithm
+  var := ass2[eqn] "get the variable that is solved in given equation";
+  reachable := if var > 0 then mT[var] else {} "get the equations that depend on that variable";
+  reachable := List.select(reachable, Util.intGreaterZero) "just keep positive integers";
+  outEqNodes := List.removeOnTrue(eqn, intEq, reachable);
+end reachableEquations;
+
 public function isAssigned
 "author: Frenkel TUD 2012-05"
   input array<Integer> ass;
