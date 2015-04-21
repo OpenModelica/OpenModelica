@@ -5665,6 +5665,21 @@ algorithm
   outEqNodes := List.removeOnTrue(eqn, intEq, reachable);
 end reachableEquations;
 
+public function incomingEquations "author: lochel
+  Returns a list of incoming nodes (equations), corresponding
+  to those variables that occur in this equation."
+  input Integer eqn;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  output list<Integer> outEqNodes;
+protected
+  list<Integer> vars;
+algorithm
+  vars := List.select(m[eqn], Util.intGreaterZero) "just keep positive integers";
+  outEqNodes := list(arrayGet(ass1, var) for var guard(arrayGet(ass1, var) > 0) in vars);
+  outEqNodes := List.removeOnTrue(eqn, intEq, outEqNodes);
+end incomingEquations;
+
 public function isAssigned
 "author: Frenkel TUD 2012-05"
   input array<Integer> ass;

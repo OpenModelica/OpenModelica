@@ -10,7 +10,7 @@
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * RECIPIENT'stack ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
@@ -45,17 +45,19 @@ protected import List;
 protected import Matching;
 protected import Util;
 
-public function Tarjan "author: lochel"
+public function Tarjan "author: lochel
+  This sorting algorithm only considers equations e that have a matched variable v with e = ass1[v]."
   input BackendDAE.IncidenceMatrix m;
   input array<Integer> ass1 "eqn := ass1[var]";
   output list<list<Integer>> outComponents = {} "eqn indices";
 protected
   Integer index = 0;
-  list<Integer> S = {};
+  list<Integer> stack = {};
 
   array<Integer> number, lowlink;
   array<Boolean> onStack;
   Integer N = arrayLength(ass1);
+  Integer eqn;
 algorithm
   //BackendDump.dumpIncidenceMatrix(m);
   //BackendDump.dumpMatchingVars(ass1);
@@ -64,9 +66,10 @@ algorithm
   lowlink := arrayCreate(N, -1);
   onStack := arrayCreate(N, false);
 
-  for eqn in 1:N loop
-    if number[eqn] == -1 then
-      (S, index, outComponents) := StrongConnect(m, ass1, eqn, S, index, number, lowlink, onStack, outComponents);
+  for var in 1:N loop
+    eqn := ass1[var];
+    if eqn > 0 and number[eqn] == -1 then
+      (stack, index, outComponents) := StrongConnect(m, ass1, eqn, stack, index, number, lowlink, onStack, outComponents);
     end if;
   end for;
 
@@ -77,13 +80,13 @@ protected function StrongConnect "author: lochel"
   input BackendDAE.IncidenceMatrix m;
   input array<Integer> ass1 "eqn := ass1[var]";
   input Integer eqn;
-  input list<Integer> S;
+  input list<Integer> stack;
   input Integer index;
   input array<Integer> number;
   input array<Integer> lowlink;
   input array<Boolean> onStack;
   input list<list<Integer>> inComponents;
-  output list<Integer> outS = S;
+  output list<Integer> outStack = stack;
   output Integer outIndex = index;
   output list<list<Integer>> outComponents = inComponents;
 protected
@@ -95,36 +98,31 @@ algorithm
   arrayUpdate(lowlink, eqn, outIndex);
   arrayUpdate(onStack, eqn, true);
   outIndex := outIndex + 1;
-  outS := eqn::outS;
+  outStack := eqn::outStack;
 
   // Consider successors of eqn
-  for i in m[eqn] loop
-    if i > 0 then // just consider positive items
-      eqn2 := arrayGet(ass1, i);
-      if eqn <> eqn2 then
-        if number[eqn2] == -1 then
-          // Successor eqn2 has not yet been visited; recurse on it
-          (outS, outIndex, outComponents) := StrongConnect(m, ass1, eqn2, outS, outIndex, number, lowlink, onStack, outComponents);
-          arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
-        elseif onStack[eqn2] then
-          // Successor eqn2 is in stack S and hence in the current SCC
-          arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
-        end if;
-      end if;
+  for eqn2 in Matching.incomingEquations(eqn, m, ass1) loop
+    if arrayGet(number, eqn2) == -1 then
+      // Successor eqn2 has not yet been visited; recurse on it
+      (outStack, outIndex, outComponents) := StrongConnect(m, ass1, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
+    elseif arrayGet(onStack, eqn2) then
+      // Successor eqn2 is in stack stack and hence in the current SCC
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
     end if;
   end for;
 
   // If eqn is a root node, pop the stack and generate an SCC
   if lowlink[eqn] == number[eqn] then
-    eqn2::outS := outS;
+    eqn2::outStack := outStack;
     arrayUpdate(onStack, eqn2, false);
     SCC := {eqn2};
     while eqn <> eqn2 loop
-      eqn2::outS := outS;
+      eqn2::outStack := outStack;
       arrayUpdate(onStack, eqn2, false);
       SCC := eqn2::SCC;
     end while;
-    outComponents := SCC::outComponents;
+    outComponents := listReverse(SCC)::outComponents;
   end if;
 end StrongConnect;
 
@@ -135,7 +133,7 @@ public function TarjanTransposed "author: lochel
   output list<list<Integer>> outComponents = {} "eqn indices";
 protected
   Integer index = 0;
-  list<Integer> S = {};
+  list<Integer> stack = {};
 
   array<Integer> number, lowlink;
   array<Boolean> onStack;
@@ -150,7 +148,7 @@ algorithm
 
   for eqn in 1:N loop
     if number[eqn] == -1 and ass2[eqn] > 0 then
-      (S, index, outComponents) := StrongConnectTransposed(mT, ass2, eqn, S, index, number, lowlink, onStack, outComponents);
+      (stack, index, outComponents) := StrongConnectTransposed(mT, ass2, eqn, stack, index, number, lowlink, onStack, outComponents);
     end if;
   end for;
 end TarjanTransposed;
@@ -159,13 +157,13 @@ protected function StrongConnectTransposed "author: lochel"
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> ass2 "var := ass2[eqn]";
   input Integer eqn;
-  input list<Integer> S;
+  input list<Integer> stack;
   input Integer index;
   input array<Integer> number;
   input array<Integer> lowlink;
   input array<Boolean> onStack;
   input list<list<Integer>> inComponents;
-  output list<Integer> outS = S;
+  output list<Integer> outStack = stack;
   output Integer outIndex = index;
   output list<list<Integer>> outComponents = inComponents;
 protected
@@ -177,27 +175,27 @@ algorithm
   arrayUpdate(lowlink, eqn, outIndex);
   arrayUpdate(onStack, eqn, true);
   outIndex := outIndex + 1;
-  outS := eqn::outS;
+  outStack := eqn::outStack;
 
   // Consider successors of eqn
   for eqn2 in Matching.reachableEquations(eqn, mT, ass2) loop
     if arrayGet(number, eqn2) == -1 then
       // Successor eqn2 has not yet been visited; recurse on it
-      (outS, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outS, outIndex, number, lowlink, onStack, outComponents);
+      (outStack, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
       arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
     elseif arrayGet(onStack, eqn2) then
-      // Successor eqn2 is in stack S and hence in the current SCC
+      // Successor eqn2 is in stack stack and hence in the current SCC
       arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
     end if;
   end for;
 
   // If eqn is a root node, pop the stack and generate an SCC
   if lowlink[eqn] == number[eqn] then
-    eqn2::outS := outS;
+    eqn2::outStack := outStack;
     arrayUpdate(onStack, eqn2, false);
     SCC := {eqn2};
     while eqn <> eqn2 loop
-      eqn2::outS := outS;
+      eqn2::outStack := outStack;
       arrayUpdate(onStack, eqn2, false);
       SCC := eqn2::SCC;
     end while;
