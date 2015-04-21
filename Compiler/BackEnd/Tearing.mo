@@ -397,8 +397,8 @@ algorithm
   mt1 := arrayCreate(size,{});
   m1 := getOtherEqSysIncidenceMatrix(m,size,1,ass2,ass1,m1);
   mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,ass1,ass2,mt1);
-  
-  // run tarjan to get order of other equations  
+
+  // run tarjan to get order of other equations
   activeSet := Matching.getAssignedArray(ass2);
   othercomps := Sorting.TarjanTransposedPartial(mt1, ass2, activeSet);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
