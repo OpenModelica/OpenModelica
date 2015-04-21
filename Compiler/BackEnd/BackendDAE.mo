@@ -597,7 +597,7 @@ uniontype Solvability
   record SOLVABILITY_NONLINEAR "The variable occurs non-linear in the equation." end SOLVABILITY_NONLINEAR;
   record SOLVABILITY_UNSOLVABLE "The variable occurs in the equation, but it is not possible to solve
                      the equation for it." end SOLVABILITY_UNSOLVABLE;
-  record SOLVABILITY_SOLVABLE "It is possible to solve the equation for the variable, it is not considered 
+  record SOLVABILITY_SOLVABLE "It is possible to solve the equation for the variable, it is not considered
                      how the variable occurs in the equation." end SOLVABILITY_SOLVABLE;
 end Solvability;
 

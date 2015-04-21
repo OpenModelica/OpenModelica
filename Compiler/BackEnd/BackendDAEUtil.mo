@@ -5098,10 +5098,10 @@ algorithm
         // try to solve for x (1*x = f(y))
         _ = ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(-1));
      then (Expression.makeConstOne(tp),true);
-    else 
-	  equation
-	    f = Differentiate.differentiateExpSolve(e, cr, functions);
-	 then (f,false);
+    else
+    equation
+      f = Differentiate.differentiateExpSolve(e, cr, functions);
+   then (f,false);
   end matchcontinue;
 end tryToSolveOrDerive;
 

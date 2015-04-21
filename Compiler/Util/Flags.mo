@@ -1044,7 +1044,7 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
 constant ConfigFlag DEMO_MODE = CONFIG_FLAG(68, "demoMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Disable Warning/Error Massages."));
-  
+
 constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(69, "dynamicTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime)"));
