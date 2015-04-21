@@ -95,7 +95,7 @@ algorithm
   try
     BackendDAE.EQSYSTEM(vars, eqs, SOME(_), SOME(mt), BackendDAE.MATCHING(ass1=ass1, ass2=ass2), stateSets=stateSets, partitionKind=partitionKind) := inSystem;
 
-    comps := Sorting.TarjanOld(mt, ass2);
+    comps := Sorting.TarjanTransposed(mt, ass2);
 
     markarray := arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
     outComps := analyseStrongComponentsScalar(comps, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray, {});

@@ -199,7 +199,7 @@ algorithm
       arrayUpdate(onStack, eqn2, false);
       SCC := eqn2::SCC;
     end while;
-    outComponents := SCC::outComponents;
+    outComponents := listReverse(SCC)::outComponents;
   end if;
 end StrongConnectTransposed;
 
