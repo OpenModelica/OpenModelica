@@ -924,7 +924,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(45, "tearingHeuristic",
     ("MC1", Util.gettext("Original cellier with consideration of impossible assignments and discrete Vars.")),
     ("MC2", Util.gettext("Modified cellier, drop first step.")),
     ("MC11", Util.gettext("Modified MC1, new last step 'count impossible assignments'.")),
-    ("MC21", Util.gettext("Modified MC2, , new last step 'count impossible assignments'.")),
+    ("MC21", Util.gettext("Modified MC2, new last step 'count impossible assignments'.")),
     ("MC12", Util.gettext("Modified MC1, step 'count impossible assignments' before last step.")),
     ("MC22", Util.gettext("Modified MC2, step 'count impossible assignments' before last step.")),
     ("MC13", Util.gettext("Modified MC1, build sum of impossible assignment and causalizable equations, choose var with biggest sum.")),
@@ -1044,6 +1044,10 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
 constant ConfigFlag DEMO_MODE = CONFIG_FLAG(68, "demoMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Disable Warning/Error Massages."));
+  
+constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(69, "dynamicTearing",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime)"));
 
 
 protected
@@ -1118,7 +1122,8 @@ constant list<ConfigFlag> allConfigFlags = {
   MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM,
   CPP_FLAGS,
   REMOVE_SIMPLE_EQUATIONS,
-  DEMO_MODE
+  DEMO_MODE,
+  DYNAMIC_TEARING
 };
 
 public function new

@@ -1978,7 +1978,7 @@ algorithm
         hovvars = BackendVariable.listVar1(statecandidates);
         eqns1 = BackendEquation.listEquation(eqnslst);
         syst = BackendDAE.EQSYSTEM(hovvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-        (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared);
+        (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         m1 = incidenceMatrixfromEnhanced2(me,hovvars);
         mT1 = BackendDAEUtil.transposeMatrix(m1,nfreeStates);
         //  BackendDump.printEqSystem(syst);
@@ -2036,7 +2036,7 @@ algorithm
         vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         // get advanced incidence Matrix
-        (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared);
+        (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpAdjacencyMatrixEnhanced(me);
           BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
@@ -2523,7 +2523,7 @@ algorithm
         //  BackendDump.printEqSystem(syst);
         //  BackendDump.dumpMatching(listArray(ass1));
         //  BackendDump.dumpMatching(listArray(ass2));
-        (_,_,_,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,iShared);
+        (_,_,_,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,iShared,false);
         ass1arr = listArray(ass1);
         nass1arr = arrayLength(ass1arr);
         (dstates1,states1) = checkAssignment(1,nass1arr,ass1arr,vars,{},{});
@@ -4002,7 +4002,7 @@ algorithm
   (eqnslst,_) := InlineArrayEquations.getScalarArrayEqns(inEqnsLst);
   eqns := BackendEquation.listEquation(eqnslst);
   syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-  (me,_,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared);
+  (me,_,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared,false);
   m := incidenceMatrixfromEnhanced2(me,vars);
   // match the equations, umatched are constrained equations
   nv := BackendVariable.varsSize(vars);

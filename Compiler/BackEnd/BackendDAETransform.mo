@@ -507,7 +507,7 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
     then ({eqn}, varlst, e);
 
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst), eqns, vars) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)), eqns, vars) equation
       eqnlst = BackendEquation.getEqns(elst, eqns);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst, Util.tuple21), eqns);
@@ -559,7 +559,7 @@ algorithm
     case BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst)
     then ({e}, vlst);
 
-    case BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst) equation
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)) equation
       elst1 = List.map(eqnvartpllst, Util.tuple21);
       vlst1 = List.flatten(List.map(eqnvartpllst, Util.tuple22));
       elst = listAppend(elst1, elst);

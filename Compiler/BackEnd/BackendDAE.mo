@@ -437,14 +437,22 @@ uniontype StrongComponent
   end SINGLEIFEQUATION;
 
   record TORNSYSTEM
-    list<Integer> tearingvars;
-    list<Integer> residualequations;
-    list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+    TearingSet strictTearingSet;
+    Option<TearingSet> casualTearingSet;
     Boolean linear;
     Jacobian jac;
     Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";
   end TORNSYSTEM;
 end StrongComponent;
+
+public
+uniontype TearingSet
+  record TEARINGSET
+    list<Integer> tearingvars;
+    list<Integer> residualequations;
+    list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+  end TEARINGSET;
+end TearingSet;
 
 public
 type StateSets = list<StateSet> "List of StateSets";
@@ -589,6 +597,8 @@ uniontype Solvability
   record SOLVABILITY_NONLINEAR "The variable occurs non-linear in the equation." end SOLVABILITY_NONLINEAR;
   record SOLVABILITY_UNSOLVABLE "The variable occurs in the equation, but it is not possible to solve
                      the equation for it." end SOLVABILITY_UNSOLVABLE;
+  record SOLVABILITY_SOLVABLE "It is possible to solve the equation for the variable, it is not considered 
+                     how the variable occurs in the equation." end SOLVABILITY_SOLVABLE;
 end Solvability;
 
 public

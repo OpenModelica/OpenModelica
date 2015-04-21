@@ -195,7 +195,7 @@ algorithm
         // strongComponent is a linear tornSystem
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
-        BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
+        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl), linear = linear) = comp;
         true = linear;
         true = intLe(listLength(tvarIdcs),3);
         //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
@@ -330,7 +330,7 @@ algorithm
       list<Integer> varIdcs, otherVars;
       list<BackendDAE.Var> varLst;
       list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-  case(BackendDAE.TORNSYSTEM(tearingvars=varIdcs,otherEqnVarTpl=otherEqnVarTpl),BackendDAE.EQSYSTEM(orderedVars=vars))
+  case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=varIdcs,otherEqnVarTpl=otherEqnVarTpl)),BackendDAE.EQSYSTEM(orderedVars=vars))
     equation
       _ = List.flatten(List.map(otherEqnVarTpl,Util.tuple22));
       //varIdcs = listAppend(varIdcs,otherVars);
@@ -2197,7 +2197,7 @@ algorithm
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
       dumpEquationSystemBipartiteGraph2(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+graphName);
     then ();
-  case((BackendDAE.TORNSYSTEM(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs)),_,_,_)
+  case((BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs))),_,_,_)
     equation
       //gather equations ans variables
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
@@ -2560,7 +2560,7 @@ algorithm
   case({},_,_,_,_,_,_)
     equation
     then (compIdxIn,taskLstIn);
-  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_,_,_)
+     case((comp as BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTplIdcs)))::rest,_,_,_,_,_,_)
     equation
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
       varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);

@@ -3935,7 +3935,7 @@ algorithm
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
 
     // TORNSYSTEM
-    case (_, _, BackendDAE.TORNSYSTEM(tearingvars=tf, residualequations=rf, otherEqnVarTpl=eqnvartpllst, jac = jacobian, linear=b, mixedSystem=mixedSystem))
+    case (_, _, BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=tf, residualequations=rf, otherEqnVarTpl=eqnvartpllst), jac = jacobian, linear=b, mixedSystem=mixedSystem))
       equation
         (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, tf, rf, eqnvartpllst, jacobian, isyst, ishared, iuniqueEqIndex, mixedSystem, itempvars);
         tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);

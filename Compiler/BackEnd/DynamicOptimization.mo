@@ -575,7 +575,7 @@ algorithm
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
     then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(residualequations=eindex,tearingvars=vindx)))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex,tearingvars=vindx))))
     equation
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
     then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);

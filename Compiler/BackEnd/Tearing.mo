@@ -59,7 +59,6 @@ protected import Matching;
 protected import Util;
 protected import SCode;
 protected import SCodeDump;
-protected import SimCodeUtil;
 protected import Sorting;
 
 // =============================================================================
@@ -341,7 +340,7 @@ algorithm
      BackendDump.printEqSystem(subsyst);
      print("\n###END print Strong Component#######################\n(Function:omcTearing)\n\n\n");
   end if;
-  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared);
+  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n\nAdjacencyMatrixEnhanced:\n");
      BackendDump.dumpAdjacencyMatrixEnhanced(me);
@@ -421,7 +420,7 @@ algorithm
      print("* No of tVars: "+intString(tornsize)+"\n");
      print("*\n* tVars: "+ stringDelimitList(List.map(tvars,intString),",") + "\n");
      print("*\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n*\n*");
-     BackendDAE.TORNSYSTEM(tearingvars=tvars,residualequations=residual) := ocomp;
+     BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=tvars,residualequations=residual)) := ocomp;
      print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+ stringDelimitList(List.map(tvars,intString),",") + "\n* =====\n");
      print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n");
   end if;
@@ -511,6 +510,12 @@ algorithm
     case ((_,BackendDAE.SOLVABILITY_UNSOLVABLE())::rest)
       then
         unsolvable(rest);
+    case ((e,BackendDAE.SOLVABILITY_SOLVABLE())::rest)
+      equation
+        b1 = intLe(e,0);
+        b1 = if b1 then unsolvable(rest) else false;
+      then
+        b1;
   end match;
 end unsolvable;
 
@@ -1504,6 +1509,7 @@ algorithm
     case BackendDAE.SOLVABILITY_LINEAR(b=b) then false;
     case BackendDAE.SOLVABILITY_NONLINEAR() then false;
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then false;
+    case BackendDAE.SOLVABILITY_SOLVABLE() then true;
   end match;
 end solvable;
 
@@ -1627,10 +1633,10 @@ algorithm
         eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
         linear = getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem),true);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, eqnvartpllst), NONE(), linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (BackendDAE.TORNSYSTEM({}, {}, {}, false, BackendDAE.EMPTY_JACOBIAN(),mixedSystem),false);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}), NONE(), false, BackendDAE.EMPTY_JACOBIAN(),mixedSystem),false);
   end matchcontinue;
 end omcTearing4;
 
@@ -1757,7 +1763,7 @@ algorithm
   end if;
 
   // Get advanced incidence matrix
-  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared);
+  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nAdjacencyMatrixEnhanced:\n");
@@ -1823,7 +1829,7 @@ algorithm
   // assign otherEqnVarTpl:
   otherEqnVarTpl := assignOtherEqnVarTpl(List.flatten(order),eindex,vindx,ass2,mapEqnIncRow,{});
   linear := getLinearfromJacType(jacType);
-  ocomp := BackendDAE.TORNSYSTEM(OutTVars,residual,otherEqnVarTpl,linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl),NONE(),linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem);
   outRunMatching := true;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing\n" + BORDER + "\n\n");
@@ -1957,9 +1963,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of selectTearingVar\n\n");
       end if;
-    SimCodeUtil.execStat("\n\nTIC\n\n");
       tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
-    SimCodeUtil.execStat("\n\nTIMETVAR\n\n");
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of selectTearingVar\n" + BORDER + "\n\n");
       end if;

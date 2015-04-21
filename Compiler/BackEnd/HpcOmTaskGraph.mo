@@ -985,7 +985,7 @@ algorithm
         (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
-    case(BackendDAE.TORNSYSTEM(tearingvars=varIdc),_,_,_,_,_,_)
+    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=varIdc)),_,_,_,_,_,_)
       equation
         (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
@@ -1223,7 +1223,7 @@ algorithm
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
-    case (BackendDAE.TORNSYSTEM(residualequations=resEqns,otherEqnVarTpl = otherEqVars),_,_,_,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,otherEqnVarTpl = otherEqVars)),_,_,_,_,_)
       equation
         eqns = List.map(otherEqVars,Util.tuple21);
         (eqnVars, paramVars) = getVarsByEqns(listAppend(resEqns,eqns), iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
@@ -1398,7 +1398,7 @@ algorithm
         arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
-    case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_,_,(iVarOffset,iEqOffset),_)
+    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl)),_,_,_,(iVarOffset,iEqOffset),_)
       equation
       ((othereqs,othervars)) = List.fold(tearEqVarTpl,othersInTearComp,(({},{})));
       compVarIdc = listAppend(othervars,compVarIdc);

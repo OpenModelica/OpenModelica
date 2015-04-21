@@ -511,7 +511,7 @@ algorithm
         arg = inFunc({eqn}, inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
-    case (BackendDAE.TORNSYSTEM(residualequations=elst, otherEqnVarTpl=eqnvartpllst)::rest, _, _, _)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=elst, otherEqnVarTpl=eqnvartpllst))::rest, _, _, _)
       equation
         // collect alle equations
         eqnlst = BackendEquation.getEqns(elst, iEqns);

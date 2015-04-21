@@ -1256,7 +1256,7 @@ algorithm
         result = getOrderedEqs2(rest,eqns,vars,result);
       then
         result;
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst)::rest,_,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst))::rest,_,_,_)
       equation
         vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
         varlst1 = List.map1r(vlst1, BackendVariable.getVarAt, vars);

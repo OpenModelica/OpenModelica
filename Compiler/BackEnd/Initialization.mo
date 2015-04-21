@@ -672,7 +672,7 @@ algorithm
         then ("equation system w/o analytic Jacobian:\n", vlst);
       case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NO_ANALYTIC())
         then ("equation system w/o analytic Jacobian:\n", vlst);
-      case BackendDAE.TORNSYSTEM(tearingvars = vlst, linear = false)
+      case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = vlst), linear = false)
         then ("torn nonlinear equation system:\n", vlst);
       else ("", {});
       // If the component is none of these types, do nothing.
@@ -1368,7 +1368,7 @@ algorithm
 //print("{" + stringDelimitList(List.map(redundantEqns, intString),",") + "}\n");
 
   // symbolic consistency check
-  (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared);
+  (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared,false);
   (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m_, me, vec1, vec2, mapIncRowEqn);
 
   // remove redundant equations

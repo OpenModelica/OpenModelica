@@ -1011,7 +1011,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst,linear=b)::rest,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst),linear=b)::rest,_,_)
       equation
         s = if b then "linear" else "nonlinear";
         print("torn " + s + " Equationsystem:\n");
@@ -1215,7 +1215,7 @@ algorithm
         s = stringDelimitList(ls, ", ");
         tmpStr = "WhenEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
-    case BackendDAE.TORNSYSTEM(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst,linear=b)
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),linear=b)
       equation
         ls = List.map(eqnvartpllst, tupleString);
         s = stringDelimitList(ls, ", ");
@@ -1310,7 +1310,7 @@ algorithm
         s2 = stringAppendList({"WhenEquation ",sl," {",s,"}"});
       then
         s2;
-   case BackendDAE.TORNSYSTEM(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst,linear=b)
+   case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),linear=b)
       equation
         ls = List.map(eqnvartpllst, tupleString);
         s = stringDelimitList(ls, ", ");
@@ -2822,6 +2822,7 @@ algorithm
     case BackendDAE.SOLVABILITY_LINEAR(b=b) then "variable(" + boolString(b) + ")";
     case BackendDAE.SOLVABILITY_NONLINEAR() then "nonlinear";
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then "unsolvable";
+    case BackendDAE.SOLVABILITY_SOLVABLE() then "solvable";
   end match;
 end dumpSolvability;
 
@@ -3487,12 +3488,12 @@ algorithm
       e = listLength(ilst);
     then ((seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e::e_nj),meqsys,teqsys));
 
-    case (BackendDAE.TORNSYSTEM(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst,linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl))) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl))) equation
       d = listLength(ilst);
       e = listLength(eqnvartpllst);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e)::te_l,te_nl)));
 
-    case (BackendDAE.TORNSYSTEM(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst,linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl))) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl))) equation
       d = listLength(ilst);
       e = listLength(eqnvartpllst);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl)));

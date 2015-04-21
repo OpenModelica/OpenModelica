@@ -1924,7 +1924,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst, linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst), linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         comp = List.first(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -1946,7 +1946,7 @@ algorithm
         compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-    case (BackendDAE.TORNSYSTEM(residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst, linear = false)::rest,_,BackendDAE.SHARED(),_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst), linear = false)::rest,_,BackendDAE.SHARED(),_)
       equation
         comp = List.first(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -4432,7 +4432,7 @@ algorithm
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=linear)::rest, _) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst), linear=linear)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
 

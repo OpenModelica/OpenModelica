@@ -1843,7 +1843,7 @@ algorithm
   varLst := List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
   vars := BackendVariable.listVar1(varLst);
   subSys := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-  (me,meT,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
+  (me,meT,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared,false);
   ass1 := arrayCreate(size,-1);
   ass2 := arrayCreate(size,-1);
 
@@ -1860,7 +1860,7 @@ algorithm
 
   // dump system as graphML
   //subSys := BackendDAE.EQSYSTEM(vars,replEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-  //(me2,_,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared);
+  //(me2,_,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared,false);
   //HpcOmEqSystems.dumpEquationSystemBipartiteGraphSolve2(vars,replEqs,me2,varAtts,eqAtts,"shuffle_post");
 
   // the new eqSystem

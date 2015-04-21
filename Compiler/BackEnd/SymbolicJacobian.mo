@@ -1317,7 +1317,7 @@ algorithm
 
         result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
       then result;
-    case(BackendDAE.TORNSYSTEM(residualequations=eqns,tearingvars=vars,otherEqnVarTpl=otherEqnVarTpl)::rest,result,_,_,_,_,_,_)
+    case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eqns,tearingvars=vars,otherEqnVarTpl=otherEqnVarTpl))::rest,result,_,_,_,_,_,_)
       equation
         inputVarsLst = List.map(otherEqnVarTpl,Util.tuple22);
         vars1 = List.flatten(inputVarsLst);
@@ -2323,7 +2323,7 @@ algorithm
       String name;
       Boolean mixedSystem;
 
-      case (BackendDAE.TORNSYSTEM(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl, linear=b, mixedSystem=mixedSystem), _, _, _)
+      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), linear=b, mixedSystem=mixedSystem), _, _, _)
         equation
           true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
           // get iteration vars
@@ -2361,7 +2361,7 @@ algorithm
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
-      then (BackendDAE.TORNSYSTEM(iterationvarsInts, residualequations, otherEqnVarTpl, b, jacobian, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl), NONE(), b, jacobian, mixedSystem), shared);
 
       // do not touch linear and constand systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
