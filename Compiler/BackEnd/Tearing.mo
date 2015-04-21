@@ -1786,7 +1786,6 @@ algorithm
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
   // Look for unsolvable discrete variables because this leads to causalization error
-  // hier (wahrscheinlich relativ kleine Listen, wird nur einmal gemacht)
   unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
   if not listEmpty(unsolvableDiscretes) then
     Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
@@ -1996,7 +1995,6 @@ algorithm
       end if;
       // find out if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
-    // hier (sehr kleine Listen, da nur neue unsolvables, wird so oft gemacht wie eine neue tvar gesucht wird)
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
       (tvars, order) = TearingSystemCellier(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
      then
@@ -2007,7 +2005,6 @@ algorithm
     equation
       // First choose unsolvables and 'always'-vars as tVars
       tvars = List.unique(listAppend(Unsolvables,tSel_always));
-    // hier (sehr kleine Listen, wird einmal am Anfang gemacht und immer wenn neue unsolvables dazugekommen sind,
     // max so oft wie es tvars gibt)
       tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
       if not listEmpty(tVar_never) then
@@ -2041,7 +2038,6 @@ algorithm
       end if;
       // find out if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
-    // hier (sehr kleine Listen,da nur neue unsolvables, nach jeder wahl von unsolvables als tvars, max so oft ie es tvars gibt)
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
       (tvars, order) = TearingSystemCellier(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
      then
@@ -2677,7 +2673,6 @@ algorithm
     print("3rd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(Variables in the equations from (2nd))\n\n");
   end if;
   // 4. Remove the discrete variables and the variables with attribute tearingSelect=never
-  // hier
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2686,7 +2681,6 @@ algorithm
   // 4.1 Check if potentialTVars is empty, if yes, choose all unassigned non-discrete variables without attribute tearingSelect=never as potentialTVars
   if listEmpty(potentialTVars) then
     ((_,potentialTVars)) := Array.fold(ass1In,getUnassigned,(1,{}));
-  // hier
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
     (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
   if listEmpty(potentialTVars) then
@@ -2872,7 +2866,6 @@ protected
   Integer size,num,indx,Var;
 algorithm
   (me,ass1In,selEqs,selVars,cVars,num,indx,counts) := inValue;
-  // hier (für jede potentielle tearing variable, aber relativ kleine lsiten)
   // interEqs := List.intersectionOnTrue(row,selEqs,intEq);
   interEqs := List.intersectionIntN(row,selEqs,arrayLength(ass1In));
   Var := listGet(selVars,indx);
@@ -3080,7 +3073,6 @@ algorithm
   end if;
   // leave only equations in queue which are still not assigned and save in eqQueueOut
   // and choose only equations from assEq_coll which are not already in queue and save in assEq_coll
-  // hier (vor jeder zuweisung, relativ kleine listen)
   (eqQueueOut,assEq_coll,_) := List.intersection1OnTrue(assEq_coll,eqQueueIn,intEq);
   eqQueueOut := listAppend(eqQueueOut,assEq_coll);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
