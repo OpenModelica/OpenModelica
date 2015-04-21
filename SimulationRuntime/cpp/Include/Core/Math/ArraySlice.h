@@ -91,7 +91,7 @@ template<class T>
 class ArraySlice: public BaseArray<T> {
  public:
   ArraySlice(BaseArray<T> &baseArray, const vector<Slice> &slice)
-    : BaseArray<T>(baseArray.isStatic(), true)
+    : BaseArray<T>(baseArray.isStatic(), false)
     , _baseArray(baseArray)
     , _isets(slice.size())
     , _idxs(slice.size())

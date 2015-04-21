@@ -60,11 +60,22 @@ struct RefArray2RefArray
 {
     T* operator()(T* val,T* val2)
     {
-        val=val2;
         return val;
     }
 };
 
+/**
+* Operator class to copy the values of a reference array to a reference array
+*/
+template<class T>
+struct CopyRefArray2RefArray
+{
+  T* operator()(T* val, const T* val2)
+  {
+    *val = *val2;
+    return val;
+  }
+};
 
 /**
 * Base class for all dynamic and static arrays
@@ -229,6 +240,21 @@ public:
   }
 
   ~StatArrayDim1() {}
+
+ /**
+  * Assigns reference array data to array
+  * @param b array of type StatArrayDim1<T,size,true>
+  */
+  void assign(const StatArrayDim1<T,size,true> &b)
+  {
+    if (isRef) {
+      T **refs = _ref_array_data.c_array();
+      std::transform(refs, refs + size, b._ref_array_data.data(),
+                     refs, CopyRefArray2RefArray<T>());
+    }
+    else
+      b.getDataCopy(_array_data.begin(), size);
+  }
 
    /**
     * Assignment operator to assign array of type base array to static array
@@ -835,6 +861,21 @@ public:
   }
 
  /**
+  * Assigns reference array data to array
+  * @param b array of type StatArrayDim2<T,size1,size2,true>
+  */
+  void assign(const StatArrayDim2<T,size1,size2,true> &b)
+  {
+    if (isRef) {
+      T **refs = _ref_array_data.c_array();
+      std::transform(refs, refs + size1*size2, b._ref_array_data.data(),
+                     refs, CopyRefArray2RefArray<T>());
+    }
+    else
+      b.getDataCopy(_array_data.begin(), size1*size2);
+  }
+
+ /**
   * Index operator to access array element
   * @param idx  vector of indices
   */
@@ -1234,6 +1275,21 @@ public:
 
   ~StatArrayDim3()
   {}
+
+ /**
+  * Assigns reference array data to array
+  * @param b array of type StatArrayDim3<T,size1,size2,size3,true>
+  */
+  void assign(const StatArrayDim3<T,size1,size2,size3,true> &b)
+  {
+    if (isRef) {
+      T **refs = _ref_array_data.c_array();
+      std::transform(refs, refs + size1*size2*size3, b._ref_array_data.data(),
+                     refs, CopyRefArray2RefArray<T>());
+    }
+    else
+      b.getDataCopy(_array_data.begin(), size1*size2*size3);
+  }
 
    /**
     * Assigns array data to array
