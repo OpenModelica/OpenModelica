@@ -100,5 +100,5 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     boost::unordered_map<const int*, unsigned int> _pre_int_vars_idx;
     boost::unordered_map<const bool*, unsigned int> _pre_bool_vars_idx;
     //Stores all variables occurred before an event
-    boost::shared_array<double> _pre_vars;
+    double* _pre_vars;
 };

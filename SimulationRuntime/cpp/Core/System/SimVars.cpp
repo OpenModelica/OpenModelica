@@ -17,6 +17,7 @@
 */
 SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index):
     _dim_real(dim_real), _dim_int(dim_int), _dim_bool(dim_bool), _dim_pre_vars(dim_pre_vars), _dim_z(dim_state_vars), _z_i(state_index)
+ ,_pre_vars(NULL)
 {
   if (_dim_real + _dim_int + _dim_bool > _dim_pre_vars)
     throw std::runtime_error("Wrong pre variable size");
@@ -28,7 +29,7 @@ SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pr
   if(dim_real>0)
   _real_vars = boost::shared_ptr<AlignedArray<double> >(new AlignedArray<double>(dim_real));
   if (dim_pre_vars > 0)
-    _pre_vars = boost::shared_array<double>(new double[dim_pre_vars]);
+    _pre_vars =  new double[dim_pre_vars];
   //initialize all model variables
   if (dim_bool > 0)
     std::fill(_bool_vars.get()->get(), _bool_vars.get()->get() + dim_bool, false);
@@ -40,7 +41,8 @@ SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pr
 
 SimVars::~SimVars()
 {
-
+  if (_pre_vars)
+      delete [] _pre_vars;
 }
 /**
 *  \brief Initialize scalar real model variables in simvars memory
@@ -246,11 +248,11 @@ void SimVars::initBoolAliasArray(int indices[] ,size_t n,bool*ref_data[] )
 void SimVars::savePreVariables()
 {
   if(_dim_real>0)
-    std::copy(_real_vars.get()->get(), _real_vars.get()->get() + _dim_real, _pre_vars.get());
+    std::copy(_real_vars.get()->get(), _real_vars.get()->get() + _dim_real, _pre_vars);
   if(_dim_int>0)
-    std::copy(_int_vars.get()->get(), _int_vars.get()->get() + _dim_int, _pre_vars.get() + _dim_real);
+    std::copy(_int_vars.get()->get(), _int_vars.get()->get() + _dim_int, _pre_vars + _dim_real);
   if (_dim_bool > 0)
-    std::copy(_bool_vars.get()->get(), _bool_vars.get()->get() + _dim_bool, _pre_vars.get() + _dim_real + _dim_int);
+    std::copy(_bool_vars.get()->get(), _bool_vars.get()->get() + _dim_bool, _pre_vars + _dim_real + _dim_int);
 }
 /**
 *  \brief Maps a model variable address to an index in the simvars memory
