@@ -306,22 +306,22 @@ protected
   list<list<Integer>> othercomps;
   BackendDAE.EqSystem syst,subsyst;
   BackendDAE.Shared shared;
-  array<Integer> ass1,ass2,columark,number,lowlink;
+  array<Integer> ass1,ass2,ass22,columark;
   Integer size,tornsize,mark;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendDAE.IncidenceMatrix m,m1;
-  BackendDAE.IncidenceMatrix mt,mt1;
+  BackendDAE.IncidenceMatrix mt,mt1,mt11;
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   DAE.FunctionTree funcs;
-  array<Boolean> stackflag;
   list<Integer> asslst1, asslst2;
   list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
+  array<Boolean> activeSet;
 algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n" + BORDER + "\nBEGINNING of omcTearing\n\n");
@@ -397,12 +397,10 @@ algorithm
   mt1 := arrayCreate(size,{});
   m1 := getOtherEqSysIncidenceMatrix(m,size,1,ass2,ass1,m1);
   mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,ass1,ass2,mt1);
-  // run tarjan to get order of other equations
-  number := arrayCreate(size,0);
-  lowlink := arrayCreate(size,0);
-  stackflag := arrayCreate(size,false);
-  number := setIntArray(residual,number,size);
-  (_,othercomps) := Sorting.StrongConnectOld(mt1, ass2, number, lowlink, stackflag, size, 1, {}, {});
+  
+  // run tarjan to get order of other equations  
+  activeSet := Matching.getAssignedArray(ass2);
+  othercomps := Sorting.TarjanTransposedPartial(mt1, ass2, activeSet);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\nOtherEquationsOrder:\n");
      BackendDump.dumpComponentsOLD(othercomps);
@@ -570,8 +568,7 @@ algorithm
 end getOtherEqSysIncidenceMatrix;
 
 
-protected function setIntArray
-"  author: Frenkel TUD 2012-08"
+protected function setIntArray "author: Frenkel TUD 2012-08"
   input list<Integer> inLst;
   input array<Integer> arr;
   input Integer value;

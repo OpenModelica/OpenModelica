@@ -5706,6 +5706,20 @@ algorithm
   end match;
 end getUnassigned;
 
+public function getAssignedArray "author: lochel"
+  input array<Integer> ass;
+  output array<Boolean> outIsAssigned;
+protected
+  Integer N = arrayLength(ass);
+algorithm
+  outIsAssigned := arrayCreate(N, false);
+  for i in 1:N loop
+    if ass[i] > 0 then
+      arrayUpdate(outIsAssigned, i, true);
+    end if;
+  end for;
+end getAssignedArray;
+
 public function getAssigned
 "author: Frenkel TUD 2012-05
   return all Indixes with ass[indx]>0, traverses the
