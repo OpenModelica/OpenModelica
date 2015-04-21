@@ -7636,7 +7636,10 @@ protected
   list<SimCodeVar.SimVar> stateVars;
   list<SimCodeVar.SimVar> derivativeVars;
   list<SimCodeVar.SimVar> algVars;
+  list<SimCodeVar.SimVar> intAlgVars;
   list<SimCodeVar.SimVar> discreteAlgVars;
+  list<SimCodeVar.SimVar> aliasVars;
+  list<SimCodeVar.SimVar> intAliasVars;
   list<SimCodeVar.SimVar> paramVars;
   list<SimCodeVar.SimVar> intParamVars;
   list<SimCodeVar.SimVar> constVars;
@@ -7645,12 +7648,15 @@ protected
   list<SimCode.Function> functions;
 algorithm
   SimCode.MODELINFO(vars=simVars, varInfo=varInfo, functions=functions) := modelInfo;
-  SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,paramVars=paramVars,intParamVars=intParamVars, constVars=constVars,intConstVars=intConstVars,stringConstVars=stringConstVars) := simVars;
+  SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,intAlgVars=intAlgVars,discreteAlgVars=discreteAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,paramVars=paramVars,intParamVars=intParamVars, constVars=constVars,intConstVars=intConstVars,stringConstVars=stringConstVars) := simVars;
   SimCode.VARINFO(numStateVars=nsv,numAlgVars=nalgv) := varInfo;
   dumpVarLst(stateVars,"stateVars ("+intString(nsv)+")");
   dumpVarLst(derivativeVars,"derivativeVars");
   dumpVarLst(algVars,"algVars ("+intString(nalgv)+")");
+  dumpVarLst(intAlgVars,"intAlgVars");
   dumpVarLst(discreteAlgVars,"discreteAlgVars");
+  dumpVarLst(aliasVars,"aliasVars");
+  dumpVarLst(intAliasVars,"intAliasVars");
   dumpVarLst(paramVars,"paramVars");
   dumpVarLst(intParamVars,"intParamVars");
   dumpVarLst(constVars,"constVars");
