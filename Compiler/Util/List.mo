@@ -187,13 +187,6 @@ algorithm
   end match;
 end fromOption;
 
-public function isEmpty<T>
-  "DEPRECATED: Replace with builtin listEmpty when bootstrapping is used!
-   Returns true if the given list is empty, otherwise false."
-  input list<T> inList;
-  output Boolean outIsEmpty = listEmpty(inList);
-end isEmpty;
-
 public function isNotEmpty<T>
   "Returns true if the given list is not empty, otherwise false."
   input list<T> inList;

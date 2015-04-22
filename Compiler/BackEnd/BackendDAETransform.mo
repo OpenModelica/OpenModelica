@@ -357,11 +357,11 @@ algorithm
 
     case BackendDAE.ARRAY_EQUATION(left=DAE.ARRAY(array=expLst)) algorithm
       (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, Expression.expEqual);
-    then List.isEmpty(expLst);
+    then listEmpty(expLst);
 
     case BackendDAE.ARRAY_EQUATION(right=DAE.ARRAY(array=expLst)) algorithm
       (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, Expression.expEqual);
-    then List.isEmpty(expLst);
+    then listEmpty(expLst);
 
     else false;
   end matchcontinue;

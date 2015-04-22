@@ -1350,7 +1350,7 @@ algorithm
   Matching.matchingExternalsetIncidenceMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
   BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
   BackendDAEEXT.getAssignment(vec2, vec1);
-  perfectMatching := 0 == listLength(Matching.getUnassigned(nVars+nAddVars, vec1, {}));
+  perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, vec1, {}));
   // (vec1, vec2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
   //BackendDump.dumpMatchingVars(vec1);
   //BackendDump.dumpMatchingEqns(vec2);

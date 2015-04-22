@@ -716,7 +716,7 @@ algorithm
       opt_varlst := List.appendNoCopy(opt_varlst, objMayer);
       opt_varlst := List.appendNoCopy(opt_varlst, objLagrange);
 
-      if not List.isEmpty(opt_varlst) then
+      if not listEmpty(opt_varlst) then
         try
           tmpsyst := BackendDAEUtil.reduceEqSystem(syst, shared, opt_varlst);
           //BackendDump.dumpEqSystem(syst,"IN_TMP:reduceDynamicOptimization");

@@ -585,7 +585,7 @@ algorithm
   size := listLength(eqsIn);
   (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT,numAuxiliaryVars=numAuxiliaryVars),({},{},resEqsIn));
   numAux := numAuxiliaryVars-listLength(varIdcs);
-  if List.isEmpty(varIdcs) then numIterNew:=0;
+  if listEmpty(varIdcs) then numIterNew:=0;
     else numIterNew := numIter;
     end if;
   //take the non-assigned vars only
@@ -1528,7 +1528,7 @@ algorithm
   summands := getSummands(eq);
   (summands,_) := List.map_2(summands,ExpressionSimplify.simplify);
   ((offsetLst,coeffs)) := List.fold(crefs,getEqSystem3,(summands,{}));
-  if List.isEmpty(offsetLst) then offset := DAE.RCONST(0.0); else   offset::offsetLst := offsetLst; end if;
+  if listEmpty(offsetLst) then offset := DAE.RCONST(0.0); else   offset::offsetLst := offsetLst; end if;
   offset := List.fold(offsetLst,Expression.expAdd,offset);
   offset := Expression.negate(offset);
   LINSYS(dim=dim,matrixA=matrixA, vectorB = vectorB, vectorX=vectorX) := sys;

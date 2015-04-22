@@ -380,7 +380,7 @@ algorithm
   varLst := BackendDAEUtil.getAllVarLst(dae2);
   varLst := List.select(varLst,BackendVariable.varHasDistributionAttribute);
 
-  Error.assertion(not List.isEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...", Absyn.dummyInfo);
+  Error.assertion(not listEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...", Absyn.dummyInfo);
   dists := List.map(varLst,BackendVariable.varDistribution);
   (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae2);
 

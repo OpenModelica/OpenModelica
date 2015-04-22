@@ -2354,7 +2354,7 @@ encapsulated package HpcOmMemory
           varInfo = BaseHashTable.get(componentRef, iHashTable);
           varIdx = List.first(varInfo) + List.second(varInfo);
           //Delete state variable first
-          if(boolNot(List.isEmpty(iVarList))) then
+          if(boolNot(listEmpty(iVarList))) then
             varHead = List.first(iVarList);
             if(intEq(varHead, varIdx)) then
               iVarList = List.rest(iVarList);

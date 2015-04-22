@@ -2396,7 +2396,7 @@ algorithm
     case (_)
       equation
         _ = refRef(inRef); // node exists
-        b = List.isEmpty(refRefTargetScope(inRef)); // with non empty scope
+        b = listEmpty(refRefTargetScope(inRef)); // with non empty scope
       then
         b;
 

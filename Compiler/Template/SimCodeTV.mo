@@ -2717,12 +2717,6 @@ package List
     output list<Type_a> outParts;
   end restOrEmpty;
 
-  function isEmpty
-    replaceable type TypeVar subtypeof Any;
-    input list<TypeVar> inList;
-    output Boolean outIsEmpty;
-  end isEmpty;
-
   function setDifference
     replaceable type ElementType subtypeof Any;
     input list<ElementType> inList1;

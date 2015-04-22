@@ -925,7 +925,7 @@ algorithm
   dstmt := listReverse(List.fold2(stmt, expandStatement, kind, inSubscripts, {}));
   alg := DAE.ALGORITHM_STMTS(dstmt);
   el := if isInitial then DAE.INITIALALGORITHM(alg,DAE.emptyElementSource) else DAE.ALGORITHM(alg,DAE.emptyElementSource);
-  outAccumEl := if List.isEmpty(dstmt) then inAccumEl else el::inAccumEl;
+  outAccumEl := if listEmpty(dstmt) then inAccumEl else el::inAccumEl;
 end expandStatements;
 
 protected function expandStatementsList

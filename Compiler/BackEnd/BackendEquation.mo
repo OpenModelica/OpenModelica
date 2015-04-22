@@ -2251,17 +2251,17 @@ algorithm
     eqn := BackendDAE.EQUATION(x, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     //BackendDump.printEquation(eqn);
     eqnVars := equationVars(eqn, ivars);
-    b := List.isEmpty(eqnVars) and not Expression.expHasCref(y,cr_time);
+    b := listEmpty(eqnVars) and not Expression.expHasCref(y,cr_time);
     if b then
       knowVars := BackendVariable.daeKnVars(oshared);
       eqnKnVars := equationVars(eqn, knowVars);
       (inputsKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isInput);
-       b := List.isEmpty(inputsKnVars);
+       b := listEmpty(inputsKnVars);
     end if;
     if b then
       tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
       (paramKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isParam);
-      if List.isEmpty(paramKnVars) then
+      if listEmpty(paramKnVars) then
         tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.CONST());
       else
         tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.PARAM());
