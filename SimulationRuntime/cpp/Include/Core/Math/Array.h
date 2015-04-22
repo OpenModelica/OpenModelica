@@ -349,7 +349,7 @@ public:
   {
     return (int)size;
   }
-  
+
   /**
    * Returns number of dimensions
    */
