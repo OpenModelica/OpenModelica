@@ -16,12 +16,9 @@ Makefile: OMNotebookGUI.pro rc_omnotebook.rc
 	$(QMAKE)
 
 clean: Makefile
-	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) omc_communication.* Makefile
+	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) Makefile
 
-omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
-	@IDLCMD@ $<
-
-$(NAME): Makefile OMNotebook.config omc_communication.cc
+$(NAME): Makefile OMNotebook.config
 	$(MAKE) -f Makefile
 
 build: $(NAME)

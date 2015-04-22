@@ -97,30 +97,8 @@ namespace IAEX
     mainWindow = new QMainWindow();
     QDir dir;
 
-    // 2005-10-25 AF, added a check if omc is running, otherwise
-    // try to start it
-    // 2006-02-09 AF, Start of OMC have been moved to omcineractice-
-    // environment
-    OmcInteractiveEnvironment* omcEnv;
-    try
-    {
-      OmcInteractiveEnvironment* omcEnv = OmcInteractiveEnvironment::getInstance();
-    }
-    catch( exception &e )
-    {
-      e.what();
-      if( !OmcInteractiveEnvironment::startOMC() )
-      {
-        QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, OMNotebook will therefore be unable to evaluate Modelica expressions." );
-        exit( -1 );
-      }
-    }
-
-    SleeperThread::msleep( 3000 );
-
     // when last window closed, the applicaiton should quit also
-    QObject::connect(app_, SIGNAL(lastWindowClosed()),
-      app_, SLOT(quit()));
+    QObject::connect(app_, SIGNAL(lastWindowClosed()), app_, SLOT(quit()));
 
     //Create a commandCenter.
     cmdCenter_ = new CellCommandCenter(this);
@@ -131,9 +109,7 @@ namespace IAEX
     // 2006-04-10 AF, use environment variable to find xml files
     QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
 
-//    if( openmodelica.isEmpty() )
-    QDir d(openmodelica);
-    if(!d.exists(openmodelica))
+    if(!QDir().exists(openmodelica))
     {
       QMessageBox::critical( 0, "OpenModelica Error", "The environment variable OPENMODELICAHOME="+openmodelica+" is not a valid directory" );
       exit(1);
@@ -253,6 +229,7 @@ namespace IAEX
         // 2006-02-27 AF, use environment variable to find DrModelica
         // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
         QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
+        //QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/QuickTour/HelloWorld.onb";
 
         if( dir.exists( drmodelica ))
           open(drmodelica);

@@ -53,12 +53,9 @@ namespace IAEX
    class InputCellDelegate
    {
    public:
-      virtual QString getResult() = 0;
-    virtual QString getError() = 0;          // Added 2006-02-02 AF
-      virtual void evalExpression(const QString expr) = 0;
-    virtual void closeConnection() = 0;        // Added 2006-02-02 AF
-    virtual void reconnect() = 0;            // Added 2006-02-02 AF
-    virtual bool startDelegate() = 0;          // Added 2006-02-09 AF
+     virtual QString getResult() = 0;
+     virtual QString getError() = 0;          // Added 2006-02-02 AF
+     virtual void evalExpression(const QString expr) = 0;
    };
 
 }

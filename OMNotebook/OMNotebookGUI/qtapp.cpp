@@ -56,6 +56,8 @@
 #include <sys/time.h>
 #endif
 
+#include "meta/meta_modelica.h"
+
 using namespace std;
 using namespace IAEX;
 
@@ -69,6 +71,8 @@ int main(int argc, char *argv[])
   limits.rlim_cur = limits.rlim_max;
   setrlimit(RLIMIT_STACK, &limits);
 #endif
+
+  MMC_INIT();
 
   try
   {

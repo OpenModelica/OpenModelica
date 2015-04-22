@@ -48,60 +48,12 @@ EvalThread::~EvalThread()
 {
 }
 
-void EvalThread::exceptionInEval(exception &e)
-{
-  // 2006-0-09 AF, try to reconnect to OMC first.
-  try
-  {
-    delegate_->closeConnection();
-    delegate_->reconnect();
-    run();
-  }
-  catch( exception &e )
-  {
-    // unable to reconnect, ask if user want to restart omc.
-    QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
-    int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-      msg,
-      QMessageBox::Yes | QMessageBox::Default,
-      QMessageBox::No );
-
-    if( result == QMessageBox::Yes )
-    {
-      delegate_->closeConnection();
-      if( delegate_->startDelegate() )
-      {
-        // 2006-03-14 AF, wait before trying to reconnect,
-        // give OMC time to start up
-        msleep(1000);
-        try
-        {
-          delegate_->reconnect();
-          run();
-        }
-        catch( exception &e )
-        {
-          e.what();
-          QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctlly with OMC.</B>") );
-        }
-      }
-    }
-  }
-}
-
 QMutex evalMutex; // adrpo 2009-01-19
 
 void EvalThread::run()
 {
   evalMutex.lock(); // lock so NO other threads can enter this part!
-  try
-  {
-    delegate_->evalExpression(expr);
-  }
-  catch( exception &e )
-  {
-    exceptionInEval(e);
-  }
+  delegate_->evalExpression(expr);
   res = delegate_->getResult();
   error = delegate_->getError();
   evalMutex.unlock(); // unlock so other threads can enter this part!

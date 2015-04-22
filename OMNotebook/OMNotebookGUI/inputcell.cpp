@@ -1123,28 +1123,6 @@ namespace IAEX
       QString expr = input_->toPlainText();
       //expr = expr.simplified();
 
-
-      QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
-      if( openmodelica.isEmpty() )
-        QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
-
-      if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-        openmodelica += "tmp/";
-      else
-        openmodelica += "/tmp/";
-
-      QString imagename = "omc_tmp_plot.png";
-
-      QDir dir1 = QDir::current();
-      QString filename1 = dir1.absolutePath();
-
-      QDir dir2 = QDir::current(); dir2.setPath( openmodelica );
-      QString filename2 = dir2.absolutePath();
-      if( !filename1.endsWith( "/" ) ) filename1 += "/";
-      filename1 += imagename;
-      if( !filename2.endsWith( "/" ) ) filename2 += "/";
-      filename2 += imagename;
-
       // 2006-02-17 AF,
       evaluated_ = true;
       setClosed(false);
@@ -1157,20 +1135,7 @@ namespace IAEX
       //output_->setPlainText( "{evaluating expression}" );
       output_->update();
       QCoreApplication::processEvents();
-
-
-      // 2006-02-02 AF, Added try-catch
-      try
-      {
-        delegate()->evalExpression( expr );
-      }
-      catch( exception &e )
-      {
-        exceptionInEval(e);
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
-      }
+      delegate()->evalExpression(expr);
 
       // 2005-11-24 AF, added check to see if the user wants to quit
       if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
@@ -1184,19 +1149,7 @@ namespace IAEX
       // get the result
       QString res = delegate()->getResult();
       QString error;
-
-      // 2006-02-02 AF, Added try-catch
-      try
-      {
-        error = delegate()->getError();
-      }
-      catch( exception &e )
-      {
-        exceptionInEval(e);
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
-      }
+      error = delegate()->getError();
 
       {
         // check if resualt is empty
@@ -1212,11 +1165,6 @@ namespace IAEX
       }
 
       ++numEvals_;
-      /* remove the image */
-      if( dir1.exists( imagename ))
-        dir1.remove( imagename );
-      if( dir2.exists( imagename ))
-        dir2.remove( imagename );
 
       contentChanged();
 
@@ -1228,56 +1176,6 @@ namespace IAEX
 
     input_->blockSignals(false);
     output_->blockSignals(false);
-  }
-
-  /*!
-   * \author Anders Fernström
-   * \date 2006-02-02
-   * \date 2006-02-09 (update)
-   *
-   *\brief Method for handleing exceptions in eval()
-   */
-  void InputCell::exceptionInEval(exception &e)
-  {
-    // 2006-0-09 AF, try to reconnect to OMC first.
-    try
-    {
-      delegate_->closeConnection();
-      delegate_->reconnect();
-      eval();
-    }
-    catch( exception &e )
-    {
-      // unable to reconnect, ask if user want to restart omc.
-      QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
-      int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-        msg,
-        QMessageBox::Yes | QMessageBox::Default,
-        QMessageBox::No );
-
-      if( result == QMessageBox::Yes )
-      {
-        delegate_->closeConnection();
-        if( delegate_->startDelegate() )
-        {
-          // 2006-03-14 AF, wait before trying to reconnect,
-          // give OMC time to start up
-          SleeperThread::msleep( 1000 );
-
-          //delegate_->closeConnection();
-          try
-          {
-            delegate_->reconnect();
-            eval();
-          }
-          catch( exception &e )
-          {
-            QMessageBox::critical( 0, tr("Communication Error"),
-              tr("<B>Unable to communication correctlly with OMC.</B>") );
-          }
-        }
-      }
-    }
   }
 
   /*!

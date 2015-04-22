@@ -529,6 +529,8 @@ namespace IAEX {
 
     connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
 
+    connect(this, SIGNAL(plotVariables(QStringList)), this, SLOT(plotVariablesSlot(QStringList)));
+
     imageFile=0;
   }
 
@@ -1314,7 +1316,39 @@ namespace IAEX {
     input_->setPlainText(expr);
   }
 
-  void GraphCell::plotVariables(QStringList lst)
+  void GraphCell::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
+                                       const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
+                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
+                                       const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
+                                       const char *variables)
+  {
+    GraphCell *pGraphCell = (GraphCell*)p;
+    if (pGraphCell) {
+      QStringList lst;
+      lst << ""; // yes the first one has to be empty.
+      lst << filename;
+      lst << title;
+      lst << grid;
+      lst << plotType;
+      lst << logX;
+      lst << logY;
+      lst << xLabel;
+      lst << yLabel;
+      lst << x1;
+      lst << x2;
+      lst << y1;
+      lst << y2;
+      lst << curveWidth;
+      lst << curveStyle;
+      lst << legendPosition;
+      lst << footer;
+      lst << autoScale;
+      lst << QString(variables).split(" ", QString::SkipEmptyParts);
+      emit pGraphCell->plotVariables(lst);  // yes we need to use signal & slot since command is executed in different thread.
+    }
+  }
+
+  void GraphCell::plotVariablesSlot(QStringList lst)
   {
     try
     {
@@ -1372,31 +1406,12 @@ namespace IAEX {
 
       // Only the text, no html tags. /AF
       QString expr = input_->toPlainText();
-
-      emit newExpr(expr);
-
-      QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
-      if( openmodelica.isEmpty() )
-        QMessageBox::critical( 0,
-           "OpenModelica Error",
-           "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
-
-      if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-        openmodelica += "tmp/";
-      else
-        openmodelica += "/tmp/";
-
-      QString imagename = "omc_tmp_plot.png";
-
-      QDir dir1 = QDir::current();
-      QString filename1 = dir1.absolutePath();
-
-      QDir dir2 = QDir::current(); dir2.setPath( openmodelica );
-      QString filename2 = dir2.absolutePath();
-      if( !filename1.endsWith( "/" ) ) filename1 += "/";
-      filename1 += imagename;
-      if( !filename2.endsWith( "/" ) ) filename2 += "/";
-      filename2 += imagename;
+      // Before evaluating any expression set the plot callback pointer and function.
+      OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
+      env->threadData_->plotClassPointer = this;
+      env->threadData_->plotCB = GraphCell::PlotCallbackFunction;
+      // Before evaluating any expression also hide the PlotWindow. If callback function is called it will show it.
+      mpPlotWindow->hide();
 
       // 2006-02-17 AF,
       evaluated_ = true;
@@ -1421,24 +1436,13 @@ namespace IAEX {
 
       {
         guard->lock();
-        try
-        {
-          // adrpo:FIXME! WRONG! TODO! this is wrong!
-          //       the commands should be sent to OMC in the same sequence
-          //       they appear in the notebook, otherwise a simulate command
-          //       might finish later than a plot!
-          EvalThread* et = new EvalThread(getDelegate(), expr);
-          connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
-          et->start();
-        }
-        catch( exception &e )
-        {
-          guard->unlock();
-          exceptionInEval(e);
-          input_->blockSignals(false);
-          output_->blockSignals(false);
-          return;
-        }
+        // adrpo:FIXME! WRONG! TODO! this is wrong!
+        //       the commands should be sent to OMC in the same sequence
+        //       they appear in the notebook, otherwise a simulate command
+        //       might finish later than a plot!
+        EvalThread* et = new EvalThread(getDelegate(), expr);
+        connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+        et->start();
       }
 
       input_->blockSignals(false);
@@ -1454,34 +1458,6 @@ namespace IAEX {
 
     delete sender();
     guard->unlock();
-    // if the result is one the plot commands output.
-    QStringList resLst = StringHandler::unparseStrings(res);
-    if (resLst.size() > 0)
-    {
-      if (resLst.at(0).compare("_omc_PlotResult") == 0)
-      {
-        plotVariables(resLst);
-        res = "";
-      }
-      else { mpPlotWindow->hide(); }
-    }
-    // if user has mixed plot command with other OMC commands.
-    // we must extract the plot command result.
-    else if (res.contains("_omc_PlotResult"))
-    {
-      QString plotResult = res.mid(res.indexOf("_omc_PlotResult"));
-      plotResult.prepend("{\"");
-      QStringList resLst = StringHandler::unparseStrings(plotResult);
-      if (resLst.size() > 0)
-      {
-        if (resLst.at(0).compare("_omc_PlotResult") == 0)
-        {
-          plotVariables(resLst);
-        }
-        else { mpPlotWindow->hide(); }
-      }
-    }
-    else { mpPlotWindow->hide(); }
 
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
     {
@@ -1581,49 +1557,6 @@ namespace IAEX {
     case Error:
       emit newState("Error");
       break;
-    }
-  }
-
-  void GraphCell::exceptionInEval(exception &e)
-  {
-    // 2006-0-09 AF, try to reconnect to OMC first.
-    try
-    {
-      delegate_->closeConnection();
-      delegate_->reconnect();
-      eval();
-    }
-    catch( exception &e )
-    {
-      // unable to reconnect, ask if user want to restart omc.
-      QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
-      int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-        msg,
-        QMessageBox::Yes | QMessageBox::Default,
-        QMessageBox::No );
-
-      if( result == QMessageBox::Yes )
-      {
-        delegate_->closeConnection();
-        if( delegate_->startDelegate() )
-        {
-          // 2006-03-14 AF, wait before trying to reconnect,
-          // give OMC time to start up
-          SleeperThread::msleep( 1000 );
-
-          //delegate_->closeConnection();
-          try
-          {
-            delegate_->reconnect();
-            eval();
-          }
-          catch( exception &e )
-          {
-            e.what();
-            QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctly with OMC.</B>") );
-          }
-        }
-      }
     }
   }
 

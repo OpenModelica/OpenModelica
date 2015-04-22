@@ -88,20 +88,25 @@ namespace IAEX
     virtual bool isEditable();
     virtual bool isEvaluated();              // Added 2005-11-23 AF
 
-    void plotVariables(QStringList lst);
+    static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid,
+                                     const char* plotType, const char* logX, const char* logY, const char* xLabel, const char* yLabel,
+                                     const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
+                                     const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
+                                     const char* variables);
 
   signals:
+    void plotVariables(QStringList lst);
     void heightChanged();
     void textChanged();
     void textChanged( bool );
     void clickedOutput( Cell* );          // Added 2006-02-03 AF
     void forwardAction( int );            // Added 2006-04-27 AF
-    void newExpr(QString);
     void updatePos(int, int);
     void newState(QString);
     void setStatusMenu(QList<QAction*>);
 
   public slots:
+    void plotVariablesSlot(QStringList lst);
     void eval();
     void command();                  // Added 2005-12-15 AF
     void nextCommand();                // Added 2005-12-15 AF
@@ -147,7 +152,6 @@ namespace IAEX
     void createPlotWindow();
 
     void createChapterCounter();
-    void exceptionInEval(exception &e);          // Added 2006-02-02 AF
     void setOutputStyle();                // Added 2006-04-21 AF
 
   private:

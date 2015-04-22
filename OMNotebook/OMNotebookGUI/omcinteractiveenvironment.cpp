@@ -46,6 +46,16 @@
 #include "omcinteractiveenvironment.h"
 #include "../../Compiler/runtime/omc_config.h"
 
+extern "C" {
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
+void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
+void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
+int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
+void* omc_Main_init(void *threadData, void *args);
+void* omc_Main_readSettings(void *threadData, void *args);
+}
+
 using namespace std;
 
 namespace IAEX
@@ -74,16 +84,19 @@ namespace IAEX
   *
   * \brief Implements evaluation for modelica code.
   */
-  OmcInteractiveEnvironment::OmcInteractiveEnvironment():comm_(OmcCommunicator::getInstance()),result_(""),error_("")
+  OmcInteractiveEnvironment::OmcInteractiveEnvironment():result_(""),error_("")
   {
-    //Communicate with Omc.
-    if(!comm_.isConnected())
-    {
-      if(!comm_.establishConnection())
-      {
-        throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
-      }
-    }
+    threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
+    void *st = 0;
+    MMC_TRY_TOP_INTERNAL()
+    omc_Main_init(threadData, mmc_mk_nil());
+    st = omc_Main_readSettings(threadData, mmc_mk_nil());
+    MMC_CATCH_TOP()
+    threadData_ = threadData;
+    symbolTable_ = st;
+    threadData_->plotClassPointer = 0;
+    threadData_->plotCB = 0;
+    return;
   }
 
   OmcInteractiveEnvironment::~OmcInteractiveEnvironment()
@@ -120,136 +133,41 @@ namespace IAEX
    */
   void OmcInteractiveEnvironment::evalExpression(const QString expr)
   {
-    //omcMutex.lock();
-    // 2006-02-02 AF, Added try-catch
-    try
-    {
-      error_.clear(); // clear any error!
-      // call OMC with expression
-      result_ = comm_.callOmc(expr);
-      // see if there are any errors if the expr is not "quit()"
-      if( !expr.endsWith("quit()", Qt::CaseSensitive ) )
-      {
-        error_ = comm_.callOmc( "getErrorString()" );
-        // cerr << "result:" << result_.toStdString() << " error:" << error_.toStdString() << endl;
-        if( error_.size() > 2 )
-        {
-          error_ = QString( "OMC-ERROR: \n" ) + error_;
-        }
-        else // no errors, clear the error.
-          error_.clear();
-      }
+    error_.clear(); // clear any error!
+    // call OMC with expression
+    void *reply_str = NULL;
+    threadData_t *threadData = threadData_;
+    MMC_TRY_TOP_INTERNAL()
+
+    MMC_TRY_STACK()
+
+    if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expr.toStdString().c_str()), symbolTable_, &reply_str, &symbolTable_)) {
+      return;
     }
-    catch( exception &e )
-    {
-      //omcMutex.unlock();
-      throw e;
+    result_ = MMC_STRINGDATA(reply_str);
+    result_ = result_.trimmed();
+    reply_str = NULL;
+    // see if there are any errors if the expr is not "quit()"
+    if (!omc_Main_handleCommand(threadData, mmc_mk_scon("getErrorString()"), symbolTable_, &reply_str, &symbolTable_)) {
+      return;
     }
-    //omcMutex.unlock();
-  }
-
-  /*!
-   * \author Anders FernstrÃ¶m
-   * \date 2006-02-02
-   *
-   *\brief Method for closing connection to OMC
-   */
-  void OmcInteractiveEnvironment::closeConnection()
-  {
-    comm_.closeConnection();
-  }
-
-  /*!
-   * \author Anders FernstrÃ¶m
-   * \date 2006-02-02
-   *
-   *\brief Method for closing reconnection to OMC
-   */
-  void OmcInteractiveEnvironment::reconnect()
-  {
-    //Communicate with Omc.
-    if(!comm_.isConnected())
-    {
-      if(!comm_.establishConnection())
-      {
-        throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
-      }
-    }
-  }
-
-  /*!
-   * \author Anders FernstrÃ¶m
-   * \date 2006-02-09
-   *
-   *\brief Method for starting OMC
-   */
-  bool OmcInteractiveEnvironment::startDelegate()
-  {
-    // if not connected and can not establish connection,
-    // try to start OMC
-    if( !comm_.isConnected() && !comm_.establishConnection() )
-    {
-      return  OmcInteractiveEnvironment::startOMC();
-    }
-    else
-      return false;
-  }
-
-  /*!
-   * \author Anders FernstrÃ¶m
-   * \date 2006-02-09
-   * \date 2006-03-14 (update)
-   *
-   *\brief Ststic method for starting OMC
-   *
-   * 2006-02-28 AF, added code so the environment variable OPENMODELICAHOME
-   * is used to locate omc.exe.
-   * 2006-03-14 AF, changed so omnotebook uses qt to start omc
-   */
-  bool OmcInteractiveEnvironment::startOMC()
-  {
-    bool flag = false;
-
-    try
-    {
-      const char *omhome = getenv("OPENMODELICAHOME");
-
-      QString omc;
-#ifdef WIN32
-      omc = QString( omhome ) + "/bin/omc.exe";
-#else /* unix */
-      omc = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME)+"/bin/omc");
-#endif
-
-      QStringList parameters;
-      parameters << "+d=interactiveCorba" << QString("+corbaObjectReferenceFilePath=").append(QDir::tempPath());
-
-      // 2006-03-14 AF, create qt process
-      QProcess *omcProcess = new QProcess();
-
-      fprintf(stdout, "Starting omc: %s\n", omc.toStdString().c_str());
-      // 2006-03-14 AF, start omc
-      omcProcess->start( omc, parameters );
-
-      // give time to start up..
-      if( omcProcess->waitForStarted(7000) )
-        flag = true;
-      else
-        flag = false;
-//#ifdef _MSC_VER
-//      _sleep(1);
-//#else
-//      sleep(1);
-//#endif
-
-    }
-    catch( exception &e )
-    {
-      QString msg = e.what();
-      QMessageBox::warning( 0, "Error", msg, "OK" );
+    error_ = MMC_STRINGDATA(reply_str);
+    error_ = error_.trimmed();
+    if( error_.size() > 2 ) {
+      error_ = QString( "OMC-ERROR: \n" ) + error_;
+    } else { // no errors, clear the error.
+      error_.clear();
     }
 
-    return flag;
+    MMC_ELSE()
+      result_ = "";
+      error_ = "";
+      fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n    Include the following trace:\n");
+      printStacktraceMessages();
+      fflush(NULL);
+    MMC_CATCH_STACK()
+
+    MMC_CATCH_TOP(result_ = "");
   }
 
   /*!
@@ -296,7 +214,7 @@ namespace IAEX
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
     env->evalExpression(QString("getInstallationDirectoryPath()"));
     QString result = env->getResult();
-    result.remove( "\"" );
+    result = result.remove( "\"" );
     return result;
   }
 
@@ -305,6 +223,7 @@ namespace IAEX
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
     env->evalExpression(QString("getTempDirectoryPath()"));
     QString result = env->getResult();
+    result = result.replace("\\", "/");
     result.remove( "\"" );
     return result+"/OpenModelica/";
   }

@@ -2708,39 +2708,6 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
       return;
     }
   }
-
-
-
-  // 2006-02-09 AF, if last window, ask if OMC also should be closed
-  if( application()->documentViewList().size() == 1 || closing_ )
-  {
-    try
-    {
-      OmcInteractiveEnvironment *omc = OmcInteractiveEnvironment::getInstance();
-
-      int result = QMessageBox::question( 0, tr("Close OMC"),
-                                          "OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
-                                          QMessageBox::Ok | QMessageBox::Default,
-                                          QMessageBox::No, QMessageBox::Cancel );
-
-      if( result == QMessageBox::Ok )
-      {
-        QString quit = "quit()";
-        omc->evalExpression( quit );
-      }
-      else if(result == QMessageBox::Cancel)
-      {
-        event->ignore();
-        return;
-      }
-    }
-    catch( exception &e )
-    {
-      e.what();
-    }
-  }
-
-
 }
 
 /*!

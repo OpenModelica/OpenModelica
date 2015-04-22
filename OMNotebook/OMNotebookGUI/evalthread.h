@@ -47,7 +47,6 @@ public:
   EvalThread(InputCellDelegate* delegate_, QString expr, QObject * parent = 0);
   ~EvalThread();
   void run();
-  void exceptionInEval(exception &e);
   QString getResult() { return res; }
   QString getError() { return error; }
 

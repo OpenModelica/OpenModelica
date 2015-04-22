@@ -35,7 +35,7 @@
 
 #include <QtCore/QString>
 
-#include "omc_communicator.h"
+#include "meta/meta_modelica.h"
 #include "inputcelldelegate.h"
 
 namespace IAEX
@@ -47,14 +47,13 @@ namespace IAEX
     virtual ~OmcInteractiveEnvironment();
 
   public:
+    threadData_t *threadData_;
+    void *symbolTable_;
+
     static OmcInteractiveEnvironment* getInstance();
     virtual QString getResult();
     virtual QString getError();
     virtual void evalExpression(const QString expr);
-    virtual void closeConnection();
-    virtual void reconnect();
-    virtual bool startDelegate();
-    static bool startOMC();
     static QString OMCVersion();
     static bool setPlotSilent(QString silent);
     static QString OpenModelicaHome();
@@ -62,7 +61,6 @@ namespace IAEX
 
   private:
     static OmcInteractiveEnvironment* selfInstance;
-    OmcCommunicator &comm_;
     QString result_;
     QString error_;
   };

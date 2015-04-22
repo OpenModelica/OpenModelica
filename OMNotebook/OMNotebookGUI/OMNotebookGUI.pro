@@ -12,8 +12,6 @@ TEMPLATE = app
 SOURCES += \
     cellapplication.cpp \
     cellparserfactory.cpp \
-    omc_communicator.cpp \
-    omc_communication.cc \
     stylesheet.cpp \
     cellcommandcenter.cpp \
     chaptercountervisitor.cpp \
@@ -66,7 +64,6 @@ SOURCES += \
     ../../OMEdit/OMEditGUI/Util/Helper.cpp
 
 HEADERS += \
-    omc_communication.h \
     application.h \
     command.h \
     serializingvisitor.h \
@@ -122,7 +119,6 @@ HEADERS += \
     graphcell.h \
     evalthread.h \
     indent.h \
-    omc_communicator.h \
     ../OMSketch/Tools.h \
     ../OMSketch/Sketch_files.h \
     ../OMSketch/Shapes.h \
@@ -152,26 +148,21 @@ FORMS += ImageSizeDlg.ui \
 # -------For OMNIorb
 win32 {
   QMAKE_LFLAGS += -enable-auto-import
-  DEFINES += __x86__ \
-             __NT__ \
-             __OSVERSION__=4 \
-             __WIN32__
-  CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
-  CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
-  USE_CORBA = USE_OMNIORB
+  DEFINES += IMPORT_INTO=1
   PLOTLIBS = -L../../build/lib/omc -lOMPlot -lomqwt
   PLOTINC = ../../3rdParty/qwt/build/include \
             ../../OMPlot/OMPlotGUI
+  OMCLIBS = -L../../build/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
+  OMCINC = ../../build/include/omc/c
 } else {
   include(OMNotebook.config)
 }
 #---------End OMNIorb
 
-DEFINES += $${USE_CORBA}
-LIBS += $${CORBALIBS} \
-        $${PLOTLIBS}
-INCLUDEPATH += $${CORBAINC} \
-               $${PLOTINC} \
+LIBS += $${PLOTLIBS} \
+        $${OMCLIBS}
+INCLUDEPATH += $${PLOTINC} \
+               $${OMCINC} \
                ../OMSketch \
                ../../
 

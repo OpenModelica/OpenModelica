@@ -135,7 +135,6 @@ namespace IAEX
     void createInputCell();
     void createOutputCell();
     void createChapterCounter();
-    void exceptionInEval(exception &e);          // Added 2006-02-02 AF
     void setOutputStyle();                // Added 2006-04-21 AF
 
   private:
