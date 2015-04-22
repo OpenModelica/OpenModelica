@@ -181,8 +181,8 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
   modelInfoInit(&(comp->fmuData->modelData.modelDataXml));
 
-  strcpy(comp->instanceName, instanceName);
-  strcpy(comp->GUID, GUID);
+  strcpy((char*)comp->instanceName, (const char*)instanceName);
+  strcpy((char*)comp->GUID, (const char*)GUID);
   comp->functions = functions;
   comp->loggingOn = loggingOn;
   comp->state = modelInstantiated;
@@ -222,8 +222,8 @@ void fmiFreeModelInstance(fmiComponent c)
       "fmiFreeModelInstance");
 
   /* free instanceName & GUID */
-  if (comp->instanceName) comp->functions.freeMemory(comp->instanceName);
-  if (comp->GUID) comp->functions.freeMemory(comp->GUID);
+  if (comp->instanceName) comp->functions.freeMemory((void*)comp->instanceName);
+  if (comp->GUID) comp->functions.freeMemory((void*)comp->GUID);
   /* free comp */
   comp->functions.freeMemory(comp);
 }

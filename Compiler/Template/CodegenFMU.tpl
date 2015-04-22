@@ -1253,7 +1253,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVars(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
-        <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVars(var, "String", "") ;separator="\n"%>
         default:
             return "";
     }
@@ -1445,7 +1445,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVars(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
-        <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVars(var, "String", "") ;separator="\n"%>
         default:
             return "";
     }
@@ -1521,6 +1521,12 @@ match simVar
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
   else
+  if stringEq(arrayName, "stringVars")
+  then
+  <<
+  case <%cref(name)%>_ : return MMC_STRINGDATA(comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]); break;
+  >>
+  else
   <<
   case <%cref(name)%>_ : return comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]; break;
   >>
@@ -1532,6 +1538,12 @@ template SwitchParameters(SimVar simVar, String arrayName)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
+  if stringEq(arrayName,  "stringParameter")
+  then
+  <<
+  case <%cref(name)%>_ : return MMC_STRINGDATA(comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]); break;
+  >>
+  else
   <<
   case <%cref(name)%>_ : return comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]; break;
   >>
@@ -1579,8 +1591,14 @@ match simVar
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
   else
+  if stringEq(arrayName, "stringVars")
+  then
   <<
-  case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]=value; break;
+  case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>] = mmc_mk_scon(value); break;
+  >>
+  else
+  <<
+  case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>] = value; break;
   >>
 end SwitchVarsSet;
 
@@ -1590,8 +1608,14 @@ template SwitchParametersSet(SimVar simVar, String arrayName)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
+  if stringEq(arrayName, "stringParameter")
+  then
   <<
-  case <%cref(name)%>_ : comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]=value; break;
+  case <%cref(name)%>_ : comp->fmuData->simulationInfo.<%arrayName%>[<%index%>] = mmc_mk_scon(value); break;
+  >>
+  else
+  <<
+  case <%cref(name)%>_ : comp->fmuData->simulationInfo.<%arrayName%>[<%index%>] = value; break;
   >>
 end SwitchParametersSet;
 
