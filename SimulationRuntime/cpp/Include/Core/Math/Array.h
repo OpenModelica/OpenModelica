@@ -1511,19 +1511,6 @@ class DynArray : public BaseArray<T>
     return ndims;
   }
 
-  typedef typename boost::multi_array<T, ndims>::const_iterator const_iterator;
-  typedef typename boost::multi_array<T, ndims>::iterator iterator;
-
-  iterator begin()
-  {
-    return _multi_array.begin();
-  }
-
-  iterator end()
-  {
-    return _multi_array.end();
-  }
-
  protected:
   boost::multi_array<T, ndims> _multi_array;
 };
@@ -1600,6 +1587,19 @@ class DynArrayDim1 : public DynArray<T, 1>
   {
     _multi_array.resize(boost::extents[size1]);
     _multi_array.reindex(1);
+  }
+
+  typedef typename boost::multi_array<T, ndims>::const_iterator const_iterator;
+  typedef typename boost::multi_array<T, ndims>::iterator iterator;
+
+  iterator begin()
+  {
+    return _multi_array.begin();
+  }
+
+  iterator end()
+  {
+    return _multi_array.end();
   }
 
  private:
