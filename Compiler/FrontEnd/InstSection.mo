@@ -5148,12 +5148,13 @@ protected function getIteratorType
   input SourceInfo info;
   output DAE.Type oty;
 algorithm
-  oty := match (ty,id,info)
+  oty := match ty
     local
       String str;
-    case (DAE.T_ARRAY(ty = oty),_,_) then oty;
-    case (DAE.T_METALIST(ty = oty),_,_) then Types.boxIfUnboxedType(oty);
-    case (DAE.T_METAARRAY(ty = oty),_,_) then Types.boxIfUnboxedType(oty);
+    case DAE.T_ARRAY(ty = oty) then oty;
+    case DAE.T_METALIST(ty = oty) then Types.boxIfUnboxedType(oty);
+    case DAE.T_METAARRAY(ty = oty) then Types.boxIfUnboxedType(oty);
+    case DAE.T_METATYPE(ty = oty) then getIteratorType(ty.ty, id, info);
     else
       equation
         str = Types.unparseType(ty);

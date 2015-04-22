@@ -10361,12 +10361,12 @@ function: elabCref
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
-  (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplicit,performVectorization,inPrefix,evalCref,info)
+  (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplicit,inPrefix)
     local
       DAE.ComponentRef c_1;
       DAE.Const const,const1,const2,constCref,constSubs;
       DAE.TypeSource tySource;
-      DAE.Type t,origt;
+      DAE.Type t,origt, sub_ty;
       DAE.Type tt;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
       FCore.Graph env;
@@ -10389,7 +10389,7 @@ algorithm
       DAE.Binding binding "equation modification";
 
     // wildcard
-    case (cache,_,Absyn.WILD(),_,_,_,_,_)
+    case (cache, _, Absyn.WILD(), _, _)
       equation
         t = DAE.T_ANYTYPE_DEFAULT;
         et = Types.simplifyType(t);
@@ -10398,7 +10398,7 @@ algorithm
         (cache,SOME((crefExp,DAE.PROP(t, DAE.C_VAR()),DAE.dummyAttrVar)));
 
     // Boolean => {false, true}
-    case (cache, _, Absyn.CREF_IDENT(name = "Boolean"), _, _, _, _, _)
+    case (cache, _, Absyn.CREF_IDENT(name = "Boolean"), _, _)
       equation
         exp = Expression.makeScalarArray({DAE.BCONST(false), DAE.BCONST(true)}, DAE.T_BOOL_DEFAULT);
         t = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
@@ -10407,51 +10407,49 @@ algorithm
 
     // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
     // No vectorization is performed
-    case (cache,env,Absyn.CREF_IDENT(name=id, subscripts={Absyn.SUBSCRIPT(e)}),impl,_,pre,_,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        (cache,SOME((exp1,DAE.PROP(DAE.T_METAARRAY(ty = t), const1),attr))) = elabCref1(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,evalCref,info);
-        (cache,exp2,DAE.PROP(DAE.T_INTEGER(), const2),_) = elabExpInExpression(cache,env,e,impl,NONE(),false,pre,info);
-        const = Types.constAnd(const1,const2);
-        expASUB = Expression.makeASUB(exp1,{exp2});
-      then
-        (cache,SOME((expASUB,DAE.PROP(t, const),attr)));
+    case (cache, env, Absyn.CREF_IDENT(name = id, subscripts = {Absyn.SUBSCRIPT(e)}), impl, pre)
+      algorithm
+        true := Config.acceptMetaModelicaGrammar();
+        // Elaborate the cref without the subscript.
+        (cache, SOME((exp1, DAE.PROP(t, const1), attr))) :=
+          elabCref1(cache, env, Absyn.CREF_IDENT(id, {}), false, false, pre, evalCref, info);
 
-    // a normal cref, fully-qualified and lookupVar failed in some weird way in the previous case
-    case (cache,env,Absyn.CREF_FULLYQUALIFIED(c),impl,doVect,pre,_,_)
-      equation
-        c = replaceEnd(c);
-        env = FGraph.topScope(env);
-        (cache,c_1,constSubs,hasZeroSizeDim) = elabCrefSubs(cache, env, inEnv, c, pre, Prefix.NOPRE(), impl, false, info);
-        (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
-        // variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), constSubs);
-        // attr = DAEUtil.setAttrVariability(attr, variability);
-        // get the binding if is a constant
-        (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
-        const = constCref; // Types.constAnd(constCref, constSubs);
-        t = fixEnumerationType(t);
-        (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
+        // Check that the type is a MetaModelica array, and get the element type.
+        t := Types.metaArrayElementType(t);
+
+        // Elaborate the subscript.
+        (cache,exp2,DAE.PROP(sub_ty, const2),_) :=
+          elabExpInExpression(cache,env,e,impl,NONE(),false,pre,info);
+
+        // Unbox the subscript if it's boxed, since it will be converted to an
+        // arrayGet/arrayUpdate in code generation.
+        if Types.isMetaBoxedType(sub_ty) then
+          sub_ty := Types.unboxedType(sub_ty);
+          exp2 := DAE.UNBOX(exp2, sub_ty);
+        end if;
+
+        true := Types.isScalarInteger(sub_ty);
+        const := Types.constAnd(const1,const2);
+        exp := Expression.makeASUB(exp1,{exp2});
       then
-        (cache,SOME((exp,DAE.PROP(t, const),attr)));
+        (cache, SOME((exp, DAE.PROP(t, const), attr)));
 
     // a normal cref
-    case (cache,env,c,impl,doVect,pre,_,_)
-      equation
-        c = replaceEnd(c);
-        (cache,c_1,constSubs,hasZeroSizeDim) = elabCrefSubs(cache, env, env, c, pre, Prefix.NOPRE(), impl, false, info);
-        (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
-        // variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), constSubs);
-        // attr = DAEUtil.setAttrVariability(attr, variability);
+    case (cache, env, c, impl, pre)
+      algorithm
+        c := replaceEnd(c);
+        env := if Absyn.crefIsFullyQualified(inComponentRef) then FGraph.topScope(inEnv) else inEnv;
+        (cache,c_1,constSubs,hasZeroSizeDim) := elabCrefSubs(cache, env, inEnv, c, pre, Prefix.NOPRE(), impl, false, info);
+        (cache,attr,t,binding,forIteratorConstOpt,splicedExpData) := Lookup.lookupVar(cache, env, c_1);
         // get the binding if is a constant
-        (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
-        const = constCref; // Types.constAnd(constCref, constSubs);
-        t = fixEnumerationType(t);
-        (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
+        (cache,exp,const,attr) := elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, performVectorization, splicedExpData, pre, evalCref, info);
+        t := fixEnumerationType(t);
+        (exp,const) := evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
       then
         (cache,SOME((exp,DAE.PROP(t, const),attr)));
 
     // An enumeration type => array of enumeration literals.
-    case (cache, env, c, _, _, _, _, _)
+    case (cache, env, c, _, _)
       equation
         c = replaceEnd(c);
         path = Absyn.crefToPath(c);
@@ -10465,7 +10463,7 @@ algorithm
         (cache,SOME((exp,DAE.PROP(t, DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));
 
     // MetaModelica Partial Function
-    case (cache,env,c,_,_,_,_,_)
+    case (cache, env, c, _, _)
       equation
         // true = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
@@ -10489,14 +10487,14 @@ algorithm
         (cache,SOME((exp,DAE.PROP(t,DAE.C_VAR()),DAE.dummyAttrConst /* RO */)));
 
     // MetaModelica extension
-    case (cache,_,Absyn.CREF_IDENT("NONE",{}),_,_,_,_,_)
+    case (cache, _, Absyn.CREF_IDENT("NONE",{}), _, _)
       equation
         true = Config.acceptMetaModelicaGrammar();
         Error.addSourceMessage(Error.META_NONE_CREF, {}, info);
       then
         (cache,NONE());
 
-    case (_,env,c,_,_,_,_,_)
+    case (_, env, c, _, _)
       equation
         // enabled with +d=failtrace
         true = Flags.isSet(Flags.FAILTRACE);
@@ -10522,12 +10520,13 @@ algorithm
       then
         (cache,NONE());*/
 
-    case (cache,env,c,impl,_,pre,_,_)
+    case (cache, env, c, impl, pre)
       equation
         failure((_,_,_,_) = elabCrefSubs(cache,env, env,c, pre, Prefix.NOPRE(),impl,false,info));
         s = Dump.printComponentRefStr(c);
         scope = FGraph.printGraphPathStr(env);
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {s,scope}, info); // - no need to add prefix info since problem only depends on the scope?
+        // No need to add prefix info since problem only depends on the scope?
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {s,scope}, info);
       then
         (cache,NONE());
   end matchcontinue;
@@ -12184,6 +12183,8 @@ algorithm
     case DAE.T_ARRAY(ty = DAE.T_INTEGER()) then DAE.SLICE(inDaeExp);
     case DAE.T_ARRAY(ty = DAE.T_ENUMERATION()) then DAE.SLICE(inDaeExp);
     case DAE.T_ARRAY(ty = DAE.T_BOOL()) then DAE.SLICE(inDaeExp);
+    case DAE.T_METABOXED()
+      then elabSubscriptType(inType.ty, inAbsynExp, inDaeExp, inInfo);
 
     else
       equation

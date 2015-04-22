@@ -6938,7 +6938,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
     (match expTypeFromExpShort(exp)
       case "metatype" then
         // MetaModelica Array
-        (match exp case ASUB(exp=arr, sub={idx}) then
+        (match exp1 case ASUB(exp=arr, sub={idx}) then
         let &preExp = buffer ""
         let arr1 = daeExp(arr, context, &preExp, &varDecls, &auxFunction)
         let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
@@ -7858,29 +7858,30 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
         let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
             daeDimensionExp(exp, context, &preExp, &varDecls, &auxFunction)
             ;separator=", ")
-        match context
-          case FUNCTION_CONTEXT(__) then
-            match ty
-              case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
-              let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-              <<
-               (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
-              >>
-              case (T_COMPLEX(complexClassType = record_state)) then
-              let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-              <<
-               (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
-              >>
-              else
-              <<
-              (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-              >>
-          case PARALLEL_FUNCTION_CONTEXT(__) then
-            <<
-            (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-            >>
+        match cr
+          case CREF_IDENT(identType = T_METATYPE(ty = T_METAARRAY()))
+          case CREF_IDENT(identType = T_METAARRAY()) then
+            'arrayGet(<%arrName%>, <%dimsValuesStr%>)'
           else
-            error(sourceInfo(),'This should have been handled in the new daeExpCrefRhsSimContext function. <%printExpStr(ecr)%>')
+            match context
+              case FUNCTION_CONTEXT(__) then
+                match ty
+                  case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))
+                  case (T_COMPLEX(complexClassType = record_state)) then
+                    let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+                    <<
+                     (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
+                    >>
+                  else
+                    <<
+                    (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                    >>
+              case PARALLEL_FUNCTION_CONTEXT(__) then
+                <<
+                (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                >>
+              else
+                error(sourceInfo(),'This should have been handled in the new daeExpCrefRhsSimContext function. <%printExpStr(ecr)%>')
       else
         match context
         case FUNCTION_CONTEXT(__)
@@ -7893,7 +7894,8 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
           let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
           let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
           tmp
-        else error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDump.printExpStr(ecr)%>')
+        else
+          error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDump.printExpStr(ecr)%>')
   case ecr then
     error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
 end daeExpCrefRhsFunContext;

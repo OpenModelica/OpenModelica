@@ -6311,6 +6311,7 @@ public function crefExplode
 algorithm
   outCrefParts := match inCref
     case CREF_QUAL() then crefExplode(inCref.componentRef, crefFirstCref(inCref) :: inAccum);
+    case CREF_FULLYQUALIFIED() then crefExplode(inCref.componentRef, inAccum);
     else listReverse(inCref :: inAccum);
   end match;
 end crefExplode;

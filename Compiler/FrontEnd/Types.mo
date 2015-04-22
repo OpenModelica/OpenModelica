@@ -942,33 +942,15 @@ end getDimensionSizes;
 public function getDimensions
 "Returns the dimensions of a Type."
   input DAE.Type inType;
-  output DAE.Dimensions outIntegerLst;
+  output DAE.Dimensions outDimensions;
 algorithm
-  outIntegerLst := matchcontinue (inType)
-    local
-      DAE.Dimensions res;
-      Type tp;
-      DAE.Dimensions dims;
-
-    case (DAE.T_ARRAY(dims = dims,ty = tp))
-      equation
-        res = getDimensions(tp);
-        res = listAppend(dims, res);
-      then
-        res;
-
-    case (DAE.T_METAARRAY(ty = tp))
-      equation
-        res = getDimensions(tp);
-      then
-        (DAE.DIM_UNKNOWN() :: res);
-
-    case (DAE.T_SUBTYPE_BASIC(complexType =tp))
-      then
-        getDimensions(tp);
-
+  outDimensions := match inType
+    case DAE.T_ARRAY() then listAppend(inType.dims, getDimensions(inType.ty));
+    case DAE.T_METAARRAY() then DAE.DIM_UNKNOWN() :: getDimensions(inType.ty);
+    case DAE.T_SUBTYPE_BASIC() then getDimensions(inType.complexType);
+    case DAE.T_METATYPE() then getDimensions(inType.ty);
     else {};
-  end matchcontinue;
+  end match;
 end getDimensions;
 
 public function getDimensionNth
@@ -5540,6 +5522,16 @@ algorithm
   end match;
 end isBoxedType;
 
+public function isMetaBoxedType
+  input DAE.Type inType;
+  output Boolean outIsMetaBoxed;
+algorithm
+  outIsMetaBoxed := match inType
+    case DAE.T_METABOXED() then true;
+    else false;
+  end match;
+end isMetaBoxedType;
+
 public function boxIfUnboxedType
   input DAE.Type ty;
   output DAE.Type outType;
@@ -8741,6 +8733,16 @@ algorithm
     else false;
   end match;
 end arrayHasUnknownDims;
+
+public function metaArrayElementType
+  input DAE.Type inType;
+  output DAE.Type outType;
+algorithm
+  outType := match inType
+    case DAE.T_METAARRAY() then inType.ty;
+    case DAE.T_METATYPE() then metaArrayElementType(inType.ty);
+  end match;
+end metaArrayElementType;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

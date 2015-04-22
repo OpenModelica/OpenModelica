@@ -2661,6 +2661,9 @@ algorithm
 
     case(t as DAE.T_UNKNOWN(_), _) then t;
 
+    case (DAE.T_METAARRAY(), {DAE.INDEX()}) then inType.ty;
+    case (DAE.T_METAARRAY(), {_}) then inType;
+
     case (t,s)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
