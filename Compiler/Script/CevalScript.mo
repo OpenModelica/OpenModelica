@@ -2994,24 +2994,24 @@ algorithm
         // check if plot callback is defined
         b = System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
-	        // create the path till OMPlot
-	        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-	        // create the list of arguments for OMPlot
-	        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
-	        call = stringAppendList({"\"",str2,"\""," ",str3});
-	        0 = System.spawnCall(str2, call);
+          // create the path till OMPlot
+          str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+          // create the list of arguments for OMPlot
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+          call = stringAppendList({"\"",str2,"\""," ",str3});
+          0 = System.spawnCall(str2, call);
         elseif b then
           logXStr = boolString(logX);
-	        logYStr = boolString(logY);
-	        x1Str = realString(x1);
-	        x2Str = realString(x2);
-	        y1Str = realString(y1);
-	        y2Str = realString(y2);
-	        curveWidthStr = realString(curveWidth);
-	        curveStyleStr = intString(curveStyle);
-	        autoScaleStr = boolString(autoScale);
-	        System.plotCallBack(externalWindow,filename,title,gridStr,"plotall",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,"");
-	      end if;
+          logYStr = boolString(logY);
+          x1Str = realString(x1);
+          x2Str = realString(x2);
+          y1Str = realString(y1);
+          y2Str = realString(y2);
+          curveWidthStr = realString(curveWidth);
+          curveStyleStr = intString(curveStyle);
+          autoScaleStr = boolString(autoScale);
+          System.plotCallBack(externalWindow,filename,title,gridStr,"plotall",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,"");
+        end if;
       then
         (cache,Values.BOOL(true),st);
 
@@ -3057,24 +3057,24 @@ algorithm
         // check if plot callback is defined
         b = System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
-	        // create the path till OMPlot
-	        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-	        // create the list of arguments for OMPlot
-	        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
-	        call = stringAppendList({"\"",str2,"\""," ",str3});
-	        0 = System.spawnCall(str2, call);
+          // create the path till OMPlot
+          str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+          // create the list of arguments for OMPlot
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          call = stringAppendList({"\"",str2,"\""," ",str3});
+          0 = System.spawnCall(str2, call);
         elseif b then
           logXStr = boolString(logX);
-	        logYStr = boolString(logY);
-	        x1Str = realString(x1);
-	        x2Str = realString(x2);
-	        y1Str = realString(y1);
-	        y2Str = realString(y2);
-	        curveWidthStr = realString(curveWidth);
-	        curveStyleStr = intString(curveStyle);
-	        autoScaleStr = boolString(autoScale);
-	        System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
-	      end if;
+          logYStr = boolString(logY);
+          x1Str = realString(x1);
+          x2Str = realString(x2);
+          y1Str = realString(y1);
+          y2Str = realString(y2);
+          curveWidthStr = realString(curveWidth);
+          curveStyleStr = intString(curveStyle);
+          autoScaleStr = boolString(autoScale);
+          System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+        end if;
       then
         (cache,Values.BOOL(true),st);
 
@@ -3377,24 +3377,24 @@ algorithm
         // check if plot callback is defined
         b = System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
-	        // create the path till OMPlot
-	        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-	        // create the list of arguments for OMPlot
-	        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
-	        call = stringAppendList({"\"",str2,"\""," ",str3});
-	        0 = System.spawnCall(str2, call);
+          // create the path till OMPlot
+          str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+          // create the list of arguments for OMPlot
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          call = stringAppendList({"\"",str2,"\""," ",str3});
+          0 = System.spawnCall(str2, call);
         elseif b then
           logXStr = boolString(logX);
-	        logYStr = boolString(logY);
-	        x1Str = realString(x1);
-	        x2Str = realString(x2);
-	        y1Str = realString(y1);
-	        y2Str = realString(y2);
-	        curveWidthStr = realString(curveWidth);
-	        curveStyleStr = intString(curveStyle);
-	        autoScaleStr = boolString(autoScale);
-	        System.plotCallBack(externalWindow,filename,title,gridStr,"plotparametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
-	      end if;
+          logYStr = boolString(logY);
+          x1Str = realString(x1);
+          x2Str = realString(x2);
+          y1Str = realString(y1);
+          y2Str = realString(y2);
+          curveWidthStr = realString(curveWidth);
+          curveStyleStr = intString(curveStyle);
+          autoScaleStr = boolString(autoScale);
+          System.plotCallBack(externalWindow,filename,title,gridStr,"plotparametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+        end if;
       then
         (cache,Values.BOOL(true),st);
 
