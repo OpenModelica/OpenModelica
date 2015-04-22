@@ -521,131 +521,205 @@ public:
 };
 
 /**
-* One dimensional static array, implements BaseArray interface methods
-* @param T type of the array
-* @param size dimension of array
-*/
-template<typename T, std::size_t size>
-class StatArrayDim1 : public BaseArray<T>
+ * Static array, implements BaseArray interface methods
+ * @param T type of the array
+ * @param nelems number of elements of array
+ */
+template<typename T, std::size_t nelems>
+class StatArray : public BaseArray<T>
 {
-public:
- /**
-  * Constuctor for one dimensional array
-  * if reference array it uses data from simvars memory
-  * else it copies data  in array memory
-  */
-  StatArrayDim1(T* data)
+ public:
+  /**
+   * Constuctor for static array
+   * if reference array it uses data from simvars memory
+   * else it copies data  in array memory
+   */
+  StatArray(T* data)
     :BaseArray<T>(true, false)
   {
-    memcpy( _array_data.begin(), data, size * sizeof( T ) );
+    memcpy(_array_data.begin(), data, nelems*sizeof(T));
   }
 
- /**
-  * Constuctor for one dimensional array
-  * copies data from otherarray in array memory
-  */
-  StatArrayDim1(const StatArrayDim1<T,size>& otherarray)
+  /**
+   * Constuctor for static array
+   * copies data from otherarray in array memory
+   */
+  StatArray(const StatArray<T, nelems>& otherarray)
     :BaseArray<T>(true, false)
   {
     _array_data = otherarray._array_data;
   }
 
- /**
-  * Constuctor for one dimensional array
-  * copies data  from dynamic array in array memory
-  */
-  StatArrayDim1(const DynArrayDim1<T>& otherarray)
-    :BaseArray<T>(true, false)
-  {
-    memcpy( _array_data.begin(), otherarray.getData(), size * sizeof( T ) );
-  }
-
- /**
-  * Constuctor for one dimensional array
-  * empty array
-  */
-  StatArrayDim1()
+  /**
+   * Default constuctor for static array
+   * empty array
+   */
+  StatArray()
     :BaseArray<T>(true,false)
   {
   }
 
+  ~StatArray() {}
+
+  /**
+   * Assignment operator to assign array of type base array to static array
+   * a=b
+   * @param b any array of type BaseArray
+   */
+  StatArray<T, nelems>& operator=(BaseArray<T>& b)
+  {
+    if (this != &b)
+    {
+      b.getDataCopy(_array_data.begin(), nelems);
+    }
+    return *this;
+  }
+
+  /**
+   * Resize array method
+   * @param dims vector with new dimension sizes
+   * static array could not be resized
+   */
+  virtual void resize(const std::vector<size_t>& dims)
+  {
+    if (dims != BaseArray<T>::getDims())
+      std::runtime_error("Cannot resize static array!");
+  }
+
+  /**
+   * Assigns data to array
+   * @param data  new array data
+   * a.assign(data)
+   */
+  virtual void assign(const T* data)
+  {
+    memcpy(_array_data.begin(), data, nelems*sizeof(T));
+  }
+
+  /**
+   * Assigns array data to array
+   * @param b any array of type BaseArray
+   * a.assign(b)
+   */
+  virtual void assign(const BaseArray<T>& b)
+  {
+    b.getDataCopy(_array_data.begin(), nelems);
+  }
+
+  /**
+   * Access to data
+   */
+  virtual T* getData()
+  {
+    return _array_data.c_array();
+  }
+
+  /**
+   * Access to data (read-only)
+   */
+  virtual const T* getData() const
+  {
+    return _array_data.data();
+  }
+
+  /**
+   * Copies the array data of size n in the data array
+   * data has to be allocated before getDataCopy is called
+   */
+  virtual void getDataCopy(T data[], size_t n) const
+  {
+    memcpy(data, _array_data.begin(), n*sizeof(T));
+  }
+
+  /**
+   * Returns number of elements
+   */
+  virtual size_t getNumElems() const
+  {
+    return nelems;
+  }
+
+  virtual void setDims(const std::vector<size_t>& v) {}
+
+ protected:
+  //static array data
+  boost::array<T,nelems> _array_data;
+};
+
+/**
+* One dimensional static array, specializes StatArray
+* @param T type of the array
+* @param size dimension of array
+*/
+template<typename T, std::size_t size>
+class StatArrayDim1 : public StatArray<T, size>
+{
+ public:
+  /**
+   * Constuctor for one dimensional array
+   * if reference array it uses data from simvars memory
+   * else it copies data  in array memory
+   */
+  StatArrayDim1(T* data)
+    :StatArray<T, size>(data) {}
+
+  /**
+   * Constuctor for one dimensional array
+   * copies data from otherarray in array memory
+   */
+  StatArrayDim1(const StatArrayDim1<T,size>& otherarray)
+    :StatArray<T, size>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for one dimensional array
+   * copies data  from dynamic array in array memory
+   */
+  StatArrayDim1(const DynArrayDim1<T>& otherarray)
+    :StatArray<T, size>(otherarray.getData())
+  {
+  }
+
+  /**
+   * Constuctor for one dimensional array
+   * empty array
+   */
+  StatArrayDim1()
+    :StatArray<T, size>() {}
+
   ~StatArrayDim1() {}
 
-   /**
-    * Assignment operator to assign array of type base array to static array
-    * a=b
-    * @param b any array of type BaseArray
-    */
-    StatArrayDim1<T,size>& operator=(BaseArray<T>& b)
-    {
-        if (this != &b)
-        {
-          b.getDataCopy(_array_data.begin(), size);
-        }
-        return *this;
-    }
-
-   /**
-    *Resize array method
-    *@param dims vector with new dimension sizes
-    *static array could not be resized
-    */
-    virtual void resize(const std::vector<size_t>& dims)
-    {
-        if (dims != getDims())
-            std::runtime_error("Cannot resize static array!");
-    }
-
-   /**
-    * Assigns data to array
-    * @param data  new array data
-    * a.assign(data)
-    */
-    virtual void assign(const T* data)
-    {
-      memcpy( _array_data.begin(), data, size * sizeof( T ) );
-    }
-
-   /**
-    * Assigns array data to array
-    * @param b any array of type BaseArray
-    * a.assign(b)
-    */
-    virtual void assign(const BaseArray<T>& b)
-    {
-      b.getDataCopy(_array_data.begin(), size);
-    }
-
- /**
-  * Index operator to access array element
-  * @param idx  vector of indices
-  */
+  /**
+   * Index operator to access array element
+   * @param idx  vector of indices
+   */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    return _array_data[idx[0]-1];
+    return StatArray<T, size>::_array_data[idx[0]-1];
   }
 
- /**
-  * Index operator to access array element
-  * @param index  index
-  */
+  /**
+   * Index operator to access array element
+   * @param index  index
+   */
   inline virtual T& operator()(size_t index)
   {
-    return _array_data[index - 1];
+    return StatArray<T, size>::_array_data[index - 1];
   }
 
- /**
-  * Index operator to read array element
-  * @param index  index
-  */
-  inline virtual const T& operator()(unsigned int index) const
+  /**
+   * Index operator to read array element
+   * @param index  index
+   */
+  inline virtual const T& operator()(size_t index) const
   {
-    return _array_data[index - 1];
+    return StatArray<T, size>::_array_data[index - 1];
   }
 
- /**
-  * Return sizes of dimensions
-  */
+  /**
+   * Return sizes of dimensions
+   */
   virtual std::vector<size_t> getDims() const
   {
     std::vector<size_t> v;
@@ -653,72 +727,36 @@ public:
     return v;
   }
 
-
+  /**
+   * Return sizes of one dimension
+   */
   virtual int getDim(size_t dim) const
   {
     return (int)size;
   }
 
- /**
-  * Access to c-array data
-  */
-  virtual T* getData()
-  {
-    return _array_data.c_array();
-  }
-
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
-  virtual void getDataCopy(T data[], size_t n) const
-  {
-    memcpy(data,  _array_data.begin(), n * sizeof( T ) );
-  }
-
- /**
-  * Access to data (read-only)
-  */
-  virtual const T* getData() const
-  {
-    return _array_data.data();
-  }
-
- /**
-  * Returns number of elements
-  */
-
-  virtual size_t getNumElems() const
-  {
-    return size;
-  }
-
- /**
-  * Returns number of dimensions
-  */
-
+  /**
+   * Returns number of dimensions
+   */
   virtual size_t getNumDims() const
   {
     return 1;
   }
 
-  virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t size1)  { }
 
-  typedef typename boost::array<T,size>::const_iterator                              const_iterator;
-  typedef typename  boost::array<T,size>::iterator                                   iterator;
+  typedef typename boost::array<T,size>::const_iterator const_iterator;
+  typedef typename boost::array<T,size>::iterator iterator;
+
   iterator begin()
   {
-    return   _array_data.begin();
-  }
-  iterator end()
-  {
-    return   _array_data.end();
+    return StatArray<T, size>::_array_data.begin();
   }
 
-private:
-  //static array data
-  boost::array<T,size> _array_data;
+  iterator end()
+  {
+    return StatArray<T, size>::_array_data.end();
+  }
 };
 
 /**
@@ -924,128 +962,75 @@ private:
   boost::array<const char*, size> _c_array_data;
 };
 
-
 /**
-* Two dimensional static array, implements BaseArray interface methods
-* @param T type of the array
-* @param size1  size of dimension one
-* @param size2  size of dimension two
-*/
+ * Two dimensional static array, specializes StatArray
+ * @param T type of the array
+ * @param size1  size of dimension one
+ * @param size2  size of dimension two
+ */
 template<typename T, std::size_t size1, std::size_t size2>
-class StatArrayDim2 : public BaseArray<T>
+class StatArrayDim2 : public StatArray<T, size1*size2>
 {
-public:
- /**
-  * Constuctor for two dimensional array
-  * if reference array it uses data from simvars memory
-  * else it copies data  in array memory
-  */
+ public:
+  /**
+   * Constuctor for two dimensional array
+   * if reference array it uses data from simvars memory
+   * else it copies data  in array memory
+   */
   StatArrayDim2(T* data)
-    :BaseArray<T>(true, false)
+    :StatArray<T, size1*size2>(data) {}
+
+  /**
+   * Default constuctor for two dimensional array
+   * empty array
+   */
+  StatArrayDim2()
+    :StatArray<T, size1*size2>() {}
+
+  /**
+   * Constuctor for two dimensional array
+   * copies data from otherarray in array memory
+   */
+  StatArrayDim2(const StatArrayDim2<T, size1, size2>& otherarray)
+    :StatArray<T, size1*size2>(otherarray)
   {
-    memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
+  }
+
+  ~StatArrayDim2(){}
+
+  /**
+   * Copies one dimensional array to row i
+   * @param b array of type StatArrayDim1
+   * @param i row number
+   */
+  void append(size_t i,const StatArrayDim1<T,size2>& b)
+  {
+    const T* data = b.getData();
+    T *array_data = StatArray<T, size1*size2>::getData() + i-1;
+    for (size_t j = 1; j <= size2; j++) {
+      //(*this)(i, j) = b(j);
+      *array_data = *data++;
+      array_data += size1;
+    }
   }
 
   /**
-  * Constuctor for two dimensional array
-  * empty array
-  */
-  StatArrayDim2()
-    :BaseArray<T>(true, false)
-  {
-  }
-
- /**
-  * Constuctor for two dimensional array
-  * copies data from otherarray in array memory
-  */
-  StatArrayDim2(const StatArrayDim2<T,size1,size2>& otherarray)
-    :BaseArray<T>(true, false)
-  {
-    _array_data = otherarray._array_data;
-  }
-
-   /**
-    * Assignment operator to assign array of type base array to static array
-    * a=b
-    * @param b any array of type BaseArray
-    */
-    StatArrayDim2<T,size1,size2>& operator=(BaseArray<T>& b)
-    {
-
-        if (this != &b)
-        {
-            b.getDataCopy(_array_data.begin(), size1*size2);
-        }
-        return *this;
-    }
-
-    ~StatArrayDim2(){}
-
-   /**
-    * Copies one dimensional array to row i
-    * \@param b array of type StatArrayDim1
-    * \@param i row number
-    */
-    void append(size_t i,const StatArrayDim1<T,size2>& b)
-    {
-        const T* data = b.getData();
-        T *array_data = _array_data.c_array() + i-1;
-        for (size_t j = 1; j <= size2; j++) {
-          //(*this)(i, j) = b(j);
-          *array_data = *data++;
-          array_data += size1;
-        }
-    }
-
-   /**
-    * Resize array method
-    * static array could not be resized
-    * @param dims vector with new dimension sizes
-    */
-    virtual void resize(const std::vector<size_t>& dims)
-    {
-        if (dims != getDims())
-            std::runtime_error("Cannot resize static array!");
-    }
-
-   /**
-    * Assigns array data to array
-    * @param b any array of type BaseArray
-    * a.assign(b)
-    */
-    virtual void assign(const BaseArray<T>& b)
-    {
-      b.getDataCopy(_array_data.begin(), size1*size2);
-    }
-
-   /**
-    * Assigns array data to array
-    * @param dims vector with new dimension sizes data array data
-    * a.assign(data)
-    */
-    virtual void assign(const T* data)
-    {
-      memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
-    }
-
- /**
-  * Index operator to access array element
-  * @param idx  vector of indices
-  */
+   * Index operator to access array element
+   * @param idx  vector of indices
+   */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    return _array_data[idx[0]-1 + size1*(idx[1]-1)];
+    return StatArray<T, size1*size2>::_array_data[idx[0]-1 + size1*(idx[1]-1)];
   }
 
- /**
-  * Index operator to access array element
-  * @param i  index 1
-  * @param j  index 2
-  */
+  /**
+   * Index operator to access array element
+   * @param i  index 1
+   * @param j  index 2
+   */
   inline virtual T& operator()(size_t i, size_t j)
   {
-    return _array_data[i-1 + size1*(j-1)];
+    return StatArray<T, size1*size2>::_array_data[i-1 + size1*(j-1)];
   }
 
  /**
@@ -1054,12 +1039,12 @@ public:
   */
   inline virtual const T& operator()(size_t i, size_t j) const
   {
-    return _array_data[i-1 + size1*(j-1)];
+    return StatArray<T, size1*size2>::_array_data[i-1 + size1*(j-1)];
   }
 
- /**
-  * Return sizes of dimensions
-  */
+  /**
+   * Return sizes of dimensions
+   */
   virtual std::vector<size_t> getDims() const
   {
     std::vector<size_t> v;
@@ -1068,9 +1053,9 @@ public:
     return v;
   }
 
- /**
-  * Returns number of elements
-  */
+  /**
+   * Return size of one dimension
+   */
   virtual int getDim(size_t dim) const
   {
     switch (dim) {
@@ -1083,51 +1068,16 @@ public:
     }
   }
 
-  virtual size_t getNumElems() const
-  {
-    return size1 * size2;
-  }
-
- /**
-  * Return sizes of dimensions
-  */
+  /**
+   * Return sizes of dimensions
+   */
   virtual size_t getNumDims() const
   {
     return 2;
   }
 
- /**
-  * Access to data
-  */
-  virtual T* getData()
-  {
-    return _array_data.c_array();
-  }
-
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
-  virtual void getDataCopy(T data[], size_t n) const
-  {
-    memcpy(data,  _array_data.begin(), n * sizeof( T ) );
-  }
-
- /**
-  * Access to data (read-only)
-  */
-  virtual const T* getData() const
-  {
-    return _array_data.data();
-  }
-
-  virtual void setDims(const std::vector<size_t>& v) {  }
-  void setDims(size_t i,size_t j)  {  }
-private:
-  //static array data
-  boost::array<T, size2 * size1> _array_data;
+  void setDims(size_t i, size_t j) {}
 };
-
 
 /**
 * Specialization for string 2-dim arrays, implements BaseArray interface methods
@@ -1343,82 +1293,45 @@ private:
 template<typename T, std::size_t size1, std::size_t size2, std::size_t size3>
 class StatArrayDim3 : public BaseArray<T>
 {
-public:
- /**
-  * Constuctor for one dimensional array
-  * if reference array it uses data from simvars memory
-  * else it copies data  in array memory
-  */
+ public:
+  /**
+   * Constuctor for one dimensional array
+   * if reference array it uses data from simvars memory
+   * else it copies data  in array memory
+   */
   StatArrayDim3(T* data)
-    :BaseArray<T>(true, false)
-  {
-    memcpy( _array_data.begin(), data, size1*size2*size3 * sizeof( T ) );
-  }
+    :StatArray<T, size1*size2*size3>(data) {}
 
- /**
-  * Constuctor for two dimensional array
-  * empty array
-  */
+  /**
+   * Default constuctor for two dimensional array
+   * empty array
+   */
   StatArrayDim3()
-    :BaseArray<T>(true, false)
+    :StatArray<T, size1*size2*size3>() {}
+
+  ~StatArrayDim3() {}
+
+  /**
+   * Copies two dimensional array to row i
+   * @param b array of type StatArrayDim2
+   * @param i row number
+   */
+  void append(size_t i, const StatArrayDim2<T,size2,size3>& b)
   {
+    const T* data = b.getData();
+    T *array_data = StatArray<T, size1*size2*size3>::getData() + i-1;
+    for (size_t k = 1; k <= size3; k++) {
+      for (size_t j = 1; j <= size2; j++) {
+        //(*this)(i, j, k) = b(j, k);
+        *array_data = *data++;
+        array_data += size1;
+      }
+    }
   }
 
-  ~StatArrayDim3()
-  {}
-
-   /**
-    * Assigns array data to array
-    * @param b any array of type BaseArray
-    * a.assign(b)
-    */
-    virtual  void assign(const BaseArray<T>& b)
-    {
-      b.getDataCopy(_array_data.begin(), size1*size2*size3);
-    }
-
-   /**
-    * Assigns array data to array
-    * @param data array data
-    * a.assign(data)
-    */
-    virtual void assign(const T* data)
-    {
-      memcpy( _array_data.begin(), data, size1*size2*size3*sizeof( T ) );
-    }
-
-   /**
-    * Copies two dimensional array to row i
-    * @param b array of type StatArrayDim2
-    * @param i row number
-    */
-    void append(size_t i,const StatArrayDim2<T,size2,size3>& b)
-    {
-        const T* data = b.getData();
-        T *array_data = _array_data.c_array() + i-1;
-        for (size_t k = 1; k <= size3; k++) {
-          for (size_t j = 1; j <= size2; j++) {
-            //(*this)(i, j, k) = b(j, k);
-            *array_data = *data++;
-            array_data += size1;
-          }
-        }
-    }
-
- /**
-  * Resize array method
-  * @param dims vector with new dimension sizes
-  * static array could not be resized
-  */
-  virtual void resize(const std::vector<size_t>& dims)
-  {
-    if (dims != getDims())
-      std::runtime_error("Cannot resize static array!");
-  }
-
- /**
-  * Return sizes of dimensions
-  */
+  /**
+   * Return sizes of dimensions
+   */
   virtual std::vector<size_t> getDims() const
   {
     std::vector<size_t> v;
@@ -1428,10 +1341,9 @@ public:
     return v;
   }
 
- /**
-  * Assignment operator to assign static array
-  * @param rhs array of type StatArrayDim3
-  */
+  /**
+   * Return sizes of one dimension
+   */
   virtual int getDim(size_t dim) const
   {
     switch (dim) {
@@ -1446,143 +1358,95 @@ public:
     }
   }
 
-   /**
-    * Assignment operator to assign static array
-    * @param b array of type StatArrayDim3
-    * a=b
-    */
-    StatArrayDim3<T,size1,size2,size3>& operator=(const BaseArray<T>& b)
-    {
-        if (this != &b)
-        {
-          b.getDataCopy(_array_data.begin(), size1*size2*size3);
-        }
-        return *this;
-    }
-
- /**
-  * Index operator to access array element
-  * @param idx  vector of indices
-  */
+  /**
+   * Index operator to access array element
+   * @param idx  vector of indices
+   */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    return _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
+    return StatArray<T, size1*size2*size3>::
+      _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   }
 
- /**
-  * Index operator to access array element
-  * @param i  index 1
-  * @param j  index 2
-  * @param k  index 3
-  */
+  /**
+   * Index operator to access array element
+   * @param i  index 1
+   * @param j  index 2
+   * @param k  index 3
+   */
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
-    return _array_data[i-1 + size1*(j-1 + size2*(k-1))];
+    return StatArray<T, size1*size2*size3>::
+      _array_data[i-1 + size1*(j-1 + size2*(k-1))];
   }
 
- /**
-  * Returns number of elements
-  */
-  virtual size_t getNumElems() const
-  {
-    return size1 * size2 * size3;
-  }
-
- /**
-  * Return sizes of dimensions
-  */
+  /**
+   * Return sizes of dimensions
+   */
   virtual size_t getNumDims() const
   {
     return 3;
   }
 
-  virtual void setDims(const std::vector<size_t>& v) { }
-  void setDims(size_t i,size_t j,size_t k)  { }
-
- /**
-  * Access to data
-  */
-  virtual T* getData()
-  {
-    return _array_data.c_array();
-  }
-
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
-  virtual void getDataCopy(T data[], size_t n) const
-  {
-    memcpy(data,  _array_data.begin(), n * sizeof( T ) );
-  }
-
- /**
-  * Access to data (read-only)
-  */
-  virtual const T* getData() const
-  {
-    return _array_data.data();
-  }
-
-private:
-  //static array data
-  boost::array<T, size2 * size1*size3> _array_data;
+  void setDims(size_t i, size_t j, size_t k) {}
 };
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-template<typename T>class DynArrayDim1 : public BaseArray<T>
+/**
+ * Dynamically allocated array, implements BaseArray interface methods
+ * @param T type of the array
+ * @param ndims number of dimensions of array
+ */
+template<typename T, size_t ndims>
+class DynArray : public BaseArray<T>
 {
-  friend class DynArrayDim2<T>;
-public:
-
-
-  DynArrayDim1()
+ public:
+  /**
+   * Constructor for given sizes
+   */
+  DynArray()
     :BaseArray<T>(false,false)
+    ,_multi_array(vector<size_t>(ndims, 0), boost::fortran_storage_order())
   {
     _multi_array.reindex(1);
   }
 
-  DynArrayDim1(const DynArrayDim1<T>& dynarray)
+  /**
+   * Copy constructor for DynArray
+   */
+  DynArray(const DynArray<T,ndims>& dynarray)
     :BaseArray<T>(false,false)
+    ,_multi_array(dynarray.getDims(), boost::fortran_storage_order())
   {
-    //assign(dynarray);
-    setDims(dynarray.getDim(1));
     _multi_array.reindex(1);
-    _multi_array=dynarray._multi_array;
+    _multi_array = dynarray._multi_array;
   }
 
-  DynArrayDim1(size_t size1)
+  /**
+   * Copy constructor for a general BaseArray
+   */
+  DynArray(const BaseArray<T>& b)
     :BaseArray<T>(false,false)
+    ,_multi_array(b.getDims(), boost::fortran_storage_order())
   {
-    std::vector<size_t> v;
-    v.push_back(size1);
-    _multi_array.resize(v);//
     _multi_array.reindex(1);
+    b.getDataCopy(_multi_array.data(), _multi_array.num_elements());
   }
 
-    DynArrayDim1(const BaseArray<T>& b)
-        :BaseArray<T>(false,false)
-    {
-        std::vector<size_t> v = b.getDims();
-        if(v.size()!=1)
-            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim1");
-        _multi_array.resize(v);
-        _multi_array.reindex(1);
-        const T* data_otherarray = b.getData();
-        _multi_array.assign(data_otherarray,data_otherarray+v[0]);
-    }
+  ~DynArray() {}
 
-
-  ~DynArrayDim1()
+  virtual void assign(const BaseArray<T>& b)
   {
+    std::vector<size_t> v = b.getDims();
+    _multi_array.resize(v);
+    const T* data_otherarray = b.getData();
+    _multi_array.assign(data_otherarray,
+                        data_otherarray + _multi_array.num_elements());
   }
 
-
+  virtual void assign(const T* data)
+  {
+    _multi_array.assign(data, data + _multi_array.num_elements());
+  }
 
   virtual void resize(const std::vector<size_t>& dims)
   {
@@ -1593,95 +1457,45 @@ public:
     }
   }
 
-    virtual  void assign(const BaseArray<T>& b)
-    {
-        std::vector<size_t> v = b.getDims();
-
-        resize(v);
-        const T* data_otherarray = b.getData();
-        _multi_array.assign(data_otherarray,data_otherarray+ v[0]);
-
-
-  }
-
-  virtual void assign(const T* data)
+  virtual void setDims(const std::vector<size_t>& dims)
   {
-    _multi_array.assign(data, data + _multi_array.num_elements() );
-  }
-
-
-  virtual T& operator()(const vector<size_t>& idx)
-  {
-    //return _multi_array[idx[0]];
-    return _multi_array.data()[idx[0]-1];
-  }
-  inline virtual T& operator()(size_t index)
-  {
-    //return _multi_array[index];
-    return _multi_array.data()[index-1];
-  }
-  inline virtual const T& operator()(size_t index) const
-  {
-    //return _multi_array[index];
-    return _multi_array.data()[index-1];
-  }
-    DynArrayDim1<T>& operator=(const DynArrayDim1<T>& b)
-    {
-        if (this != &b)
-        {
-            std::vector<size_t> v = b.getDims();
-            _multi_array.resize(v);
-            _multi_array.reindex(1);
-            _multi_array = b._multi_array;
-
-        }
-        return *this;
-    }
-  void setDims(size_t size1)
-  {
-    std::vector<size_t> v;
-    v.push_back(size1);
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-  }
-
-  virtual void setDims(const std::vector<size_t>& v)
-  {
-    _multi_array.resize(v);
+    _multi_array.resize(dims);
     _multi_array.reindex(1);
   }
 
   virtual std::vector<size_t> getDims() const
   {
     const size_t* shape = _multi_array.shape();
-    std::vector<size_t> ex;
-    ex.assign( shape, shape + 1 );
-    return ex;
+    std::vector<size_t> dims;
+    dims.assign(shape, shape + ndims);
+    return dims;
   }
 
   virtual int getDim(size_t dim) const
   {
     return (int)_multi_array.shape()[dim - 1];
   }
- /**
-  * access to data (read-only)
-  */
+
+  /**
+   * access to array data
+   */
   virtual T* getData()
   {
     return _multi_array.data();
   }
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
+
+  /**
+   * Copies the array data of size n in the data array
+   * data has to be allocated before getDataCopy is called
+   */
   virtual void getDataCopy(T data[], size_t n) const
   {
-     const T* array_data = _multi_array.data();
-    memcpy(data, array_data, n * sizeof( T ) );
+    memcpy(data, _multi_array.data(), n*sizeof(T));
   }
- /**
-  * access to data (read-only)
-  */
+
+  /**
+   * access to data (read-only)
+   */
   virtual const T* getData() const
   {
     return _multi_array.data();
@@ -1691,13 +1505,14 @@ public:
   {
     return _multi_array.num_elements();
   }
+
   virtual size_t getNumDims() const
   {
-    return 1;
+    return ndims;
   }
 
-  typedef typename boost::multi_array<T, 1>::const_iterator const_iterator;
-  typedef typename boost::multi_array<T, 1>::iterator iterator;
+  typedef typename boost::multi_array<T, ndims>::const_iterator const_iterator;
+  typedef typename boost::multi_array<T, ndims>::iterator iterator;
 
   iterator begin()
   {
@@ -1709,102 +1524,152 @@ public:
     return _multi_array.end();
   }
 
-private:
-  boost::multi_array<T, 1> _multi_array;
+ protected:
+  boost::multi_array<T, ndims> _multi_array;
 };
 
-
-template<typename T >class DynArrayDim2 : public BaseArray<T>
+/**
+ * Dynamically allocated one dimensional array, specializes DynArray
+ * @param T type of the array
+ */
+template<typename T>
+class DynArrayDim1 : public DynArray<T, 1>
 {
-
-public:
-  DynArrayDim2()
-    :BaseArray<T>(false,false)
-    ,_multi_array(boost::extents[0][0], boost::fortran_storage_order())
+  friend class DynArrayDim2<T>;
+ public:
+  DynArrayDim1()
+    :DynArray<T, 1>()
+    ,_multi_array(DynArray<T, 1>::_multi_array)
   {
+  }
+
+  DynArrayDim1(const DynArrayDim1<T>& dynarray)
+    :DynArray<T, 1>(dynarray)
+    ,_multi_array(DynArray<T, 1>::_multi_array)
+  {
+  }
+
+  DynArrayDim1(const BaseArray<T>& b)
+    :DynArray<T, 1>(b)
+    ,_multi_array(DynArray<T, 1>::_multi_array)
+  {
+  }
+
+  DynArrayDim1(size_t size1)
+    :DynArray<T, 1>()
+    ,_multi_array(DynArray<T, 1>::_multi_array)
+  {
+    _multi_array.resize(boost::extents[size1]);
     _multi_array.reindex(1);
   }
 
-  DynArrayDim2(const DynArrayDim2<T>& dynarray)
-    :BaseArray<T>(false,false)
-    ,_multi_array(boost::extents[0][0], boost::fortran_storage_order())
+  ~DynArrayDim1()
   {
-    //assign(dynarray);
-    setDims(dynarray.getDim(1), dynarray.getDim(2));
-    _multi_array.reindex(1);
-    _multi_array=dynarray._multi_array;
   }
 
-    DynArrayDim2(const BaseArray<T>& b)
-        :BaseArray<T>(false,false)
-        ,_multi_array(boost::extents[0][0], boost::fortran_storage_order())
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    //return _multi_array[idx[0]];
+    return _multi_array.data()[idx[0]-1];
+  }
+
+  inline virtual T& operator()(size_t index)
+  {
+    //return _multi_array[index];
+    return _multi_array.data()[index-1];
+  }
+
+  inline virtual const T& operator()(size_t index) const
+  {
+    //return _multi_array[index];
+    return _multi_array.data()[index-1];
+  }
+
+  DynArrayDim1<T>& operator=(const DynArrayDim1<T>& b)
+  {
+    if (this != &b)
     {
-        std::vector<size_t> v = b.getDims();
-        if(v.size()!=2)
-            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim2");
-        _multi_array.resize(v);
-        _multi_array.reindex(1);
-        b.getDataCopy(_multi_array.data(), v[0]*v[1]);
-
-  }
-
-  DynArrayDim2(size_t size1, size_t size2)
-    :BaseArray<T>(false,false)
-    ,_multi_array(boost::extents[size1][size2], boost::fortran_storage_order())
-  {
-    std::vector<size_t> v;
-    v.push_back(size1);
-    v.push_back(size2);
-    _multi_array.resize(v);//
-    _multi_array.reindex(1);
-  }
-  ~DynArrayDim2(){}
-
-  virtual void resize(const std::vector<size_t>& dims)
-  {
-    if (dims != getDims())
-    {
-      _multi_array.resize(dims);
+      _multi_array.resize(b.getDims());
       _multi_array.reindex(1);
-    }
-  }
-    virtual  void assign(const BaseArray<T>& b)
-    {
-        std::vector<size_t> v = b.getDims();
-        resize(v);
-        b.getDataCopy(_multi_array.data(), v[0]*v[1]);
-
-    }
-    void append(size_t i, const DynArrayDim1<T>& b)
-    {
-        _multi_array[i] = b._multi_array;
-    }
-    DynArrayDim2<T>& operator=(const DynArrayDim2<T>& b)
-    {
-        if (this != &b)  //oder if (*this != b)
-        {
-            std::vector<size_t> v = b.getDims();
-            _multi_array.resize(v);
-            _multi_array.reindex(1);
-            _multi_array = b._multi_array;
-
+      _multi_array = b._multi_array;
     }
     return *this;
   }
-  virtual void assign(const T* data)
+
+  void setDims(size_t size1)
   {
-    _multi_array.assign(data, data + _multi_array.num_elements() );
+    _multi_array.resize(boost::extents[size1]);
+    _multi_array.reindex(1);
   }
+
+ private:
+  boost::multi_array<T, 1> &_multi_array; // refers to base class
+};
+
+/**
+ * Dynamically allocated two dimensional array, specializes DynArray
+ * @param T type of the array
+ */
+template<typename T>
+class DynArrayDim2 : public DynArray<T, 2>
+{
+ public:
+  DynArrayDim2()
+    :DynArray<T, 2>()
+    ,_multi_array(DynArray<T, 2>::_multi_array)
+  {
+  }
+
+  DynArrayDim2(const DynArrayDim2<T>& dynarray)
+    :DynArray<T, 2>(dynarray)
+    ,_multi_array(DynArray<T, 2>::_multi_array)
+  {
+  }
+
+  DynArrayDim2(const BaseArray<T>& b)
+    :DynArray<T, 2>(b)
+    ,_multi_array(DynArray<T, 2>::_multi_array)
+  {
+  }
+
+  DynArrayDim2(size_t size1, size_t size2)
+    :DynArray<T, 2>()
+    ,_multi_array(DynArray<T, 2>::_multi_array)
+  {
+    _multi_array.resize(boost::extents[size1][size2]);
+    _multi_array.reindex(1);
+  }
+
+  ~DynArrayDim2() {}
+
+  void append(size_t i, const DynArrayDim1<T>& b)
+  {
+    _multi_array[i] = b._multi_array;
+  }
+
+  DynArrayDim2<T>& operator=(const DynArrayDim2<T>& b)
+  {
+    if (this != &b)
+    {
+      _multi_array.resize(b.getDims());
+      _multi_array.reindex(1);
+      _multi_array = b._multi_array;
+    }
+    return *this;
+  }
+
   virtual T& operator()(const vector<size_t>& idx)
   {
     //return _multi_array[idx[0]][idx[1]];
     return _multi_array.data()[idx[0]-1 + _multi_array.shape()[0]*(idx[1]-1)];
   }
+
   inline virtual T& operator()(size_t i, size_t j)
   {
     //return _multi_array[i][j];
     return _multi_array.data()[i-1 + _multi_array.shape()[0]*(j-1)];
   }
+
   inline virtual const T& operator()(size_t i, size_t j) const
   {
     //return _multi_array[i][j];
@@ -1813,178 +1678,59 @@ public:
 
   void setDims(size_t size1, size_t size2)
   {
-    std::vector<size_t> v;
-    v.push_back(size1);
-    v.push_back(size2);
-    _multi_array.resize(v);
+    _multi_array.resize(boost::extents[size1][size2]);
     _multi_array.reindex(1);
   }
 
-  virtual void setDims(const std::vector<size_t>& v)
-  {
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-  }
-
-  virtual std::vector<size_t> getDims() const
-  {
-    const size_t* shape = _multi_array.shape();
-    std::vector<size_t> ex;
-    ex.assign( shape, shape + 2 );
-    return ex;
-  }
-
-  virtual int getDim(size_t dim) const
-  {
-    return (int)_multi_array.shape()[dim - 1];
-  }
-
-  virtual size_t getNumElems() const
-  {
-    return _multi_array.num_elements();
-  }
-  virtual size_t getNumDims() const
-  {
-    return 2;
-  }
-
- /**
-  * access to data
-  */
-  virtual T* getData()
-  {
-    return _multi_array.data();
-  }
- /**
-  * access to data (read-only)
-  */
-  virtual const T* getData() const
-  {
-    return _multi_array.data();
-  }
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
-  virtual void getDataCopy(T data[], size_t n) const
-  {
-    const T* array_data = _multi_array.data();
-    memcpy(data, array_data, n * sizeof( T ) );
-  }
-
-private:
-  boost::multi_array<T, 2> _multi_array;
+ private:
+  boost::multi_array<T, 2> &_multi_array; // refers to base class
 };
 
-
-template<typename T> class DynArrayDim3 : public BaseArray<T>
+/**
+ * Dynamically allocated three dimensional array, specializes DynArray
+ * @param T type of the array
+ */
+template<typename T>
+class DynArrayDim3 : public DynArray<T, 3>
 {
-  //friend class ArrayDim3<T, size1, size2, size3>;
 public:
   DynArrayDim3()
-    :BaseArray<T>(false,false)
-    ,_multi_array(boost::extents[0][0][0], boost::fortran_storage_order())
+    :DynArray<T, 3>(boost::extents[0][0][0])
+    ,_multi_array(DynArray<T, 3>::_multi_array)
   {
+  }
+
+  DynArrayDim3(const BaseArray<T>& b)
+    :DynArray<T, 3>(b)
+    ,_multi_array(DynArray<T, 3>::_multi_array)
+  {
+  }
+
+  DynArrayDim3(size_t size1, size_t size2, size_t size3)
+    :DynArray<T, 3>()
+    ,_multi_array(DynArray<T, 3>::_multi_array)
+  {
+    _multi_array.resize(boost::extents[size1][size2][size3]);
     _multi_array.reindex(1);
   }
 
-    DynArrayDim3(size_t size1, size_t size2, size_t size3)
-        :BaseArray<T>(false,false)
-        ,_multi_array(boost::extents[size1][size2][size3],
-                      boost::fortran_storage_order())
-    {
-        std::vector<size_t> v;
-        v.push_back(size1);
-        v.push_back(size2);
-        v.push_back(size3);
-        _multi_array.resize(v);//
-        _multi_array.reindex(1);
-    }
-    DynArrayDim3(const BaseArray<T>& b)
-        :BaseArray<T>(false,false)
-        ,_multi_array(boost::extents[0][0][0], boost::fortran_storage_order())
-    {
-        std::vector<size_t> v = b.getDims();
-        if(v.size()!=3)
-            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim3");
-        _multi_array.resize(v);
-        _multi_array.reindex(1);
-        const T* data_otherarray = b.getData();
-        _multi_array.assign(data_otherarray,data_otherarray+v[0]*v[1]*v[3]);
-    }
-    ~DynArrayDim3(){}
-   /**
-    void assign(DynArrayDim3<T> b)
-    {
-    std::vector<size_t> v = b.getDims();
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-    T* data = b._multi_array.data();
-    _multi_array.assign(data, data + v[0]*v[1]*v[2]);
-    }
-    */
+  ~DynArrayDim3(){}
 
-  virtual void resize(const std::vector<size_t>& dims)
+  DynArrayDim3<T>& operator=(const DynArrayDim3<T>& b)
   {
-    if (dims != getDims())
+    if (this != &b)
     {
-      _multi_array.resize(dims);
+      _multi_array.resize(b.getDims());
       _multi_array.reindex(1);
-    }
-  }
-
-    virtual void assign(const T* data)
-    {
-        _multi_array.assign(data, data + _multi_array.num_elements() );
-    }
-    virtual  void assign(const BaseArray<T>& b)
-    {
-        std::vector<size_t> v = b.getDims();
-        resize(v);
-        const T* data = b.getData();
-        _multi_array.assign(data, data + v[0]*v[1]*v[2]);
-    }
-    DynArrayDim3<T>& operator=(const DynArrayDim3<T>& b)
-    {
-        if (this != &b)
-        {
-            std::vector<size_t> v = b.getDims();
-            _multi_array.resize(v);
-            _multi_array.reindex(1);
-            _multi_array = b._multi_array;
-
+      _multi_array = b._multi_array;
     }
     return *this;
   }
 
-
   void setDims(size_t size1, size_t size2, size_t size3)
   {
-    std::vector<size_t> v;
-    v.push_back(size1);
-    v.push_back(size2);
-    v.push_back(size3);
-    _multi_array.resize(v);
+    _multi_array.resize(boost::extents[size1][size2][size3]);
     _multi_array.reindex(1);
-  }
-
-  virtual void setDims(const std::vector<size_t>& v)
-  {
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-  }
-
-  virtual std::vector<size_t> getDims() const
-  {
-    const size_t* shape = _multi_array.shape();
-    std::vector<size_t> ex;
-    ex.assign( shape, shape + 3 );
-    return ex;
-  }
-
-  virtual int getDim(size_t dim) const
-  {
-    return (int)_multi_array.shape()[dim - 1];
   }
 
   virtual T& operator()(const vector<size_t>& idx)
@@ -1993,6 +1739,7 @@ public:
     const size_t *shape = _multi_array.shape();
     return _multi_array.data()[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1))];
   }
+
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
     //return _multi_array[i][j][k];
@@ -2000,39 +1747,6 @@ public:
     return _multi_array.data()[i-1 + shape[0]*(j-1 + shape[1]*(k-1))];
   }
 
-  virtual size_t getNumElems() const
-  {
-    return _multi_array.num_elements();
-  }
-  virtual size_t getNumDims() const
-  {
-    return 3;
-  }
-
- /**
-  * access to data
-  */
-  virtual T* getData()
-  {
-    return _multi_array.data();
-  }
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
-  virtual void getDataCopy(T data[], size_t n) const
-  {
-     const T* array_data = _multi_array.data();
-    memcpy(data, array_data, n * sizeof( T ) );
-  }
- /**
-  * access to data (read-only)
-  */
-  virtual const T* getData() const
-  {
-    return _multi_array.data();
-  }
-
-private:
-  boost::multi_array<T, 3> _multi_array;
+ private:
+  boost::multi_array<T, 3> &_multi_array; // refers to base class
 };
