@@ -54,6 +54,9 @@ void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function
 int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
 void* omc_Main_init(void *threadData, void *args);
 void* omc_Main_readSettings(void *threadData, void *args);
+#ifdef WIN32
+void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
+#endif
 }
 
 using namespace std;
@@ -96,7 +99,12 @@ namespace IAEX
     symbolTable_ = st;
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
-    return;
+#ifdef WIN32
+    evalExpression(QString("getInstallationDirectoryPath()"));
+    QString result = getResult();
+    result = result.remove( "\"" );
+    omc_Main_setWindowsPaths(threadData, mmc_mk_scon(result.toStdString().c_str()));
+#endif
   }
 
   OmcInteractiveEnvironment::~OmcInteractiveEnvironment()
