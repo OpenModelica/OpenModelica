@@ -180,7 +180,7 @@ public:
     :BaseArray<T>(true, true)
   {
     std::transform(data, data + nelems,
-                   _ref_array_data.c_array(), CArray2RefArray<T>());
+                   _ref_array.c_array(), CArray2RefArray<T>());
   }
 
   /**
@@ -190,7 +190,7 @@ public:
   RefArray(T** ref_data)
     :BaseArray<T>(true, true)
   {
-    T **refs = _ref_array_data.c_array();
+    T **refs = _ref_array.c_array();
     std::transform(refs, refs + nelems, ref_data,
                    refs, RefArray2RefArray<T>());
   }
@@ -213,7 +213,7 @@ public:
    */
   virtual void assign(const T* data)
   {
-    T **refs = _ref_array_data.c_array();
+    T **refs = _ref_array.c_array();
     std::transform(refs, refs + nelems, data,
                    refs, CopyCArray2RefArray<T>());
   }
@@ -225,7 +225,7 @@ public:
   */
   virtual void assign(const BaseArray<T>& b)
   {
-    T **refs = _ref_array_data.c_array();
+    T **refs = _ref_array.c_array();
     if(b.isReference())
       std::transform(refs, refs + nelems, b.getDataReferences(),
                      refs, CopyRefArray2RefArray<T>());
@@ -256,7 +256,7 @@ public:
    */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    const T* const * simvars_data  = _ref_array_data.begin();
+    const T* const * simvars_data  = _ref_array.begin();
     std::transform(simvars_data, simvars_data + n, data, RefArray2CArray<T>());
   }
 
@@ -265,7 +265,7 @@ public:
    */
   virtual const T* const* getDataReferences() const
   {
-    return _ref_array_data.data();
+    return _ref_array.data();
   }
 
   /**
@@ -290,7 +290,7 @@ public:
 
 protected:
   //reference array data
-  boost::array<T*, nelems> _ref_array_data;
+  boost::array<T*, nelems> _ref_array;
 };
 
 /**
@@ -320,7 +320,7 @@ public:
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    return *(RefArray<T, size>::_ref_array_data[idx[0]-1]);
+    return *(RefArray<T, size>::_ref_array[idx[0]-1]);
   }
 
   /**
@@ -329,7 +329,7 @@ public:
    */
   inline virtual T& operator()(size_t index)
   {
-    return *(RefArray<T, size>::_ref_array_data[index-1]);
+    return *(RefArray<T, size>::_ref_array[index-1]);
   }
 
   /**
@@ -388,7 +388,7 @@ public:
   virtual T& operator()(const vector<size_t>& idx)
   {
     return *(RefArray<T, size1*size2>::
-             _ref_array_data[idx[0]-1 + size1*(idx[1]-1)]);
+             _ref_array[idx[0]-1 + size1*(idx[1]-1)]);
   }
 
   /**
@@ -399,7 +399,7 @@ public:
   inline virtual T& operator()(size_t i, size_t j)
   {
     return *(RefArray<T, size1*size2>::
-             _ref_array_data[i-1 + size1*(j-1)]);
+             _ref_array[i-1 + size1*(j-1)]);
   }
 
   /**
@@ -496,7 +496,7 @@ public:
   virtual T& operator()(const vector<size_t>& idx)
   {
     return *(RefArray<T, size1*size2*size3>::
-             _ref_array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
+             _ref_array[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
   }
 
   /**
@@ -508,7 +508,7 @@ public:
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
     return *(RefArray<T, size1*size2*size3>::
-             _ref_array_data[i-1 + size1*(j-1 + size2*(k-1))]);
+             _ref_array[i-1 + size1*(j-1 + size2*(k-1))]);
   }
 
   /**
@@ -524,11 +524,10 @@ public:
 * One dimensional static array, implements BaseArray interface methods
 * @param T type of the array
 * @param size dimension of array
-* @param isRef if true the array data points to the simvar memory
 */
-template<typename T, std::size_t size,bool isRef = false>class StatArrayDim1 : public BaseArray<T>
+template<typename T, std::size_t size>
+class StatArrayDim1 : public BaseArray<T>
 {
-
 public:
  /**
   * Constuctor for one dimensional array
@@ -536,68 +535,37 @@ public:
   * else it copies data  in array memory
   */
   StatArrayDim1(T* data)
-    :BaseArray<T>(true,isRef)
+    :BaseArray<T>(true, false)
   {
-    if(isRef)
-    {
-      std::transform(data,data +size,_ref_array_data.c_array(),CArray2RefArray<T>());
-      _ref_init =true;
-    }
-    else
-    {
-      memcpy( _array_data.begin(), data, size * sizeof( T ) );
-      _ref_init = false;
-    }
+    memcpy( _array_data.begin(), data, size * sizeof( T ) );
   }
- /**
-  * Constuctor for one dimensional array
-  * intialize array with reference data from simvars memory
-  */
-  StatArrayDim1(T** ref_data)
-    :BaseArray<T>(true,isRef)
-  {
-    if(isRef)
-    {
-      std::transform(_ref_array_data.c_array(),_ref_array_data.c_array()+size,ref_data ,_ref_array_data.c_array(),RefArray2RefArray<T>());
-      _ref_init =true;
-    }
-    else
-    {
-     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"initialization for a non reference array with reference data not allowed");
-    }
-  }
+
  /**
   * Constuctor for one dimensional array
   * copies data from otherarray in array memory
   */
   StatArrayDim1(const StatArrayDim1<T,size>& otherarray)
-    :BaseArray<T>(true,isRef)
-    ,_ref_init(false)
+    :BaseArray<T>(true, false)
   {
-    checkArray("assign data to reference array is not supported");
     _array_data = otherarray._array_data;
   }
+
  /**
   * Constuctor for one dimensional array
   * copies data  from dynamic array in array memory
   */
   StatArrayDim1(const DynArrayDim1<T>& otherarray)
-    :BaseArray<T>(true,isRef)
-    ,_ref_init(false)
+    :BaseArray<T>(true, false)
   {
-    checkArray("assign data to reference array is not supported");
-    const T* data_otherarray = otherarray.getData();
-    memcpy( _array_data.begin(), data_otherarray, size * sizeof( T ) );
+    memcpy( _array_data.begin(), otherarray.getData(), size * sizeof( T ) );
   }
-
 
  /**
   * Constuctor for one dimensional array
   * empty array
   */
   StatArrayDim1()
-    :BaseArray<T>(true,isRef)
-    ,_ref_init(false)
+    :BaseArray<T>(true,false)
   {
   }
 
@@ -612,28 +580,10 @@ public:
     {
         if (this != &b)
         {
-            if(isRef)
-            {
-                if(b.isReference()) //a (this) is reference array , b is reference array
-                {
-                    T **refs = _ref_array_data.c_array();
-                    std::transform(refs, refs + size, b.getDataReferences(),
-                                   refs, CopyRefArray2RefArray<T>());
-                }
-                else        //a (this) is reference array , b is local array
-                {
-                    const T* data = b.getData();
-                    std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-                }
-            }
-            else          //a (this) is local array , b could be local array or reference array
-            {
-                b.getDataCopy(_array_data.begin(), size);
-            }
+          b.getDataCopy(_array_data.begin(), size);
         }
         return *this;
     }
-
 
    /**
     *Resize array method
@@ -642,10 +592,10 @@ public:
     */
     virtual void resize(const std::vector<size_t>& dims)
     {
-        checkArray("resize  reference array is not supported");
         if (dims != getDims())
             std::runtime_error("Cannot resize static array!");
     }
+
    /**
     * Assigns data to array
     * @param data  new array data
@@ -653,16 +603,8 @@ public:
     */
     virtual void assign(const T* data)
     {
-        if(isRef)
-        {
-            std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-        }
-        else
-        {
-            memcpy( _array_data.begin(), data, size * sizeof( T ) );
-        }
-
-   }
+      memcpy( _array_data.begin(), data, size * sizeof( T ) );
+    }
 
    /**
     * Assigns array data to array
@@ -671,27 +613,8 @@ public:
     */
     virtual void assign(const BaseArray<T>& b)
     {
-
-        if(isRef)
-        {
-            if(b.isReference())  //a (this) is reference array , b is reference array
-            {
-                T **refs = _ref_array_data.c_array();
-                std::transform(refs, refs + size, b.getDataReferences(),
-                               refs, CopyRefArray2RefArray<T>());
-            }
-            else         //a (this) is reference array , b is local array
-            {
-                const T* data = b.getData();
-                std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-            }
-        }
-        else          //a (this) is local array , b could be local array or reference array
-        {
-            b.getDataCopy(_array_data.begin(), size);
-        }
-
-  }
+      b.getDataCopy(_array_data.begin(), size);
+    }
 
  /**
   * Index operator to access array element
@@ -699,11 +622,8 @@ public:
   */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    if(isRef)
-      return *(_ref_array_data[idx[0]-1]);
-    else
-      return _array_data[idx[0]-1];
-  };
+    return _array_data[idx[0]-1];
+  }
 
  /**
   * Index operator to access array element
@@ -711,13 +631,7 @@ public:
   */
   inline virtual T& operator()(size_t index)
   {
-    if(isRef)
-    {
-      T& var( *(_ref_array_data[index - 1]));
-      return var;
-    }
-    else
-      return _array_data[index - 1];
+    return _array_data[index - 1];
   }
 
  /**
@@ -726,12 +640,9 @@ public:
   */
   inline virtual const T& operator()(unsigned int index) const
   {
-
-    if(isRef)
-      return *(_ref_array_data[index - 1]);
-    else
-      return _array_data[index - 1];
+    return _array_data[index - 1];
   }
+
  /**
   * Return sizes of dimensions
   */
@@ -753,42 +664,24 @@ public:
   */
   virtual T* getData()
   {
-    checkArray("access data for reference array is not supported");
     return _array_data.c_array();
   }
+
  /**
   * Copies the array data of size n in the data array
   * data has to be allocated before getDataCopy is called
   */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    if(isRef)
-    {
-      const T* const * simvars_data  = _ref_array_data.begin();
-      std::transform(simvars_data,simvars_data +n,data,RefArray2CArray<T>());
-
-    }
-    else
-    {
-      memcpy(data,  _array_data.begin(), n * sizeof( T ) );
-
-    }
+    memcpy(data,  _array_data.begin(), n * sizeof( T ) );
   }
+
  /**
   * Access to data (read-only)
   */
   virtual const T* getData() const
   {
-    checkArray("assign data to reference array is not supported");
     return _array_data.data();
-  }
-
- /**
-  * Access to data references (read-only)
-  */
-  virtual const T* const* getDataReferences() const
-  {
-    return _ref_array_data.data();
   }
 
  /**
@@ -824,22 +717,8 @@ public:
   }
 
 private:
- /**
-  * Checks if array is a reference array and throws exception
-  * some array array operations are not possible for reference arrays
-  */
-  void checkArray(string error_msg) const
-  {
-    if(isRef)
-    {
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,error_msg);
-    }
-  }
   //static array data
   boost::array<T,size> _array_data;
-  //reference array data, only used if isRef = true
-  boost::array<T*,size> _ref_array_data;
-  bool _ref_init;
 };
 
 /**
@@ -1051,50 +930,20 @@ private:
 * @param T type of the array
 * @param size1  size of dimension one
 * @param size2  size of dimension two
-* @param isRef if true the array data points to the simvar memory
 */
-template<typename T, std::size_t size1, std::size_t size2, bool isRef = false>
+template<typename T, std::size_t size1, std::size_t size2>
 class StatArrayDim2 : public BaseArray<T>
 {
-
 public:
-
-
  /**
   * Constuctor for two dimensional array
   * if reference array it uses data from simvars memory
   * else it copies data  in array memory
   */
   StatArrayDim2(T* data)
-    :BaseArray<T>(true,isRef)
+    :BaseArray<T>(true, false)
   {
-    if(isRef)
-    {
-      std::transform(data,data +size1*size2,_ref_array_data.c_array(),CArray2RefArray<T>());
-      _ref_init =true;
-    }
-    else
-    {
-      memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
-      _ref_init = false;
-    }
-  }
-  /**
-  * Constuctor for two dimensional array
-  * intialize array with reference data from simvars memory
-  */
-  StatArrayDim2(T** ref_data)
-    :BaseArray<T>(true,isRef)
-  {
-    if(isRef)
-    {
-      std::transform(_ref_array_data.c_array(),_ref_array_data.c_array()+size1*size2,ref_data ,_ref_array_data.c_array(),RefArray2RefArray<T>());
-      _ref_init =true;
-    }
-    else
-    {
-     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"initialization for a non reference array with reference data not allowed");
-    }
+    memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
   }
 
   /**
@@ -1102,19 +951,17 @@ public:
   * empty array
   */
   StatArrayDim2()
-    :BaseArray<T>(true,isRef)
-    ,_ref_init(false)
+    :BaseArray<T>(true, false)
   {
   }
+
  /**
   * Constuctor for two dimensional array
   * copies data from otherarray in array memory
   */
-  StatArrayDim2(const StatArrayDim2<T,size1,size2,isRef>& otherarray)
-    :BaseArray<T>(true,isRef)
-    ,_ref_init(false)
+  StatArrayDim2(const StatArrayDim2<T,size1,size2>& otherarray)
+    :BaseArray<T>(true, false)
   {
-    checkArray("assign data to reference array is not supported");
     _array_data = otherarray._array_data;
   }
 
@@ -1123,34 +970,18 @@ public:
     * a=b
     * @param b any array of type BaseArray
     */
-    StatArrayDim2<T,size1,size2,isRef>& operator=(BaseArray<T>& b)
+    StatArrayDim2<T,size1,size2>& operator=(BaseArray<T>& b)
     {
 
         if (this != &b)
         {
-            if(isRef)
-            {
-                if(b.isReference()) //a (this) is reference array , b is reference array
-                {
-                    T **refs = _ref_array_data.c_array();
-                    std::transform(refs, refs + size1*size2, b.getDataReferences(),
-                                   refs, CopyRefArray2RefArray<T>());
-                }
-                else        //a (this) is reference array , b is local array
-                {
-                    const T* data = b.getData();
-                    std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-                }
-            }
-            else          //a (this) is local array , b could be local array or reference array
-            {
-                b.getDataCopy(_array_data.begin(), size1*size2);
-            }
+            b.getDataCopy(_array_data.begin(), size1*size2);
         }
         return *this;
     }
 
     ~StatArrayDim2(){}
+
    /**
     * Copies one dimensional array to row i
     * \@param b array of type StatArrayDim1
@@ -1158,7 +989,6 @@ public:
     */
     void append(size_t i,const StatArrayDim1<T,size2>& b)
     {
-        checkArray("assign data to reference array is not supported");
         const T* data = b.getData();
         T *array_data = _array_data.c_array() + i-1;
         for (size_t j = 1; j <= size2; j++) {
@@ -1167,6 +997,7 @@ public:
           array_data += size1;
         }
     }
+
    /**
     * Resize array method
     * static array could not be resized
@@ -1174,10 +1005,10 @@ public:
     */
     virtual void resize(const std::vector<size_t>& dims)
     {
-        checkArray("resize  reference array is not supported");
         if (dims != getDims())
             std::runtime_error("Cannot resize static array!");
     }
+
    /**
     * Assigns array data to array
     * @param b any array of type BaseArray
@@ -1185,25 +1016,9 @@ public:
     */
     virtual void assign(const BaseArray<T>& b)
     {
-        if(isRef)
-        {
-            if(b.isReference()) //a (this) is reference array , b is reference array
-            {
-                T **refs = _ref_array_data.c_array();
-                std::transform(refs, refs + size1*size2, b.getDataReferences(),
-                               refs, CopyRefArray2RefArray<T>());
-            }
-            else        //a (this) is reference array , b is local array
-            {
-                const T* data = b.getData();
-                std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-            }
-        }
-        else          //a (this) is local array , b could be local array or reference array
-        {
-            b.getDataCopy(_array_data.begin(), size1*size2);
-        }
+      b.getDataCopy(_array_data.begin(), size1*size2);
     }
+
    /**
     * Assigns array data to array
     * @param dims vector with new dimension sizes data array data
@@ -1211,16 +1026,8 @@ public:
     */
     virtual void assign(const T* data)
     {
-        if(isRef) //a (this) is reference array
-        {
-            std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-        }
-        else //a (this) is local array
-        {
-            memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
-        }
-
-  }
+      memcpy( _array_data.begin(), data, size1*size2 * sizeof( T ) );
+    }
 
  /**
   * Index operator to access array element
@@ -1228,11 +1035,9 @@ public:
   */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    if(isRef)
-      return *(_ref_array_data[idx[0]-1 + size1*(idx[1]-1)]);
-    else
-      return _array_data[idx[0]-1 + size1*(idx[1]-1)];
-  };
+    return _array_data[idx[0]-1 + size1*(idx[1]-1)];
+  }
+
  /**
   * Index operator to access array element
   * @param i  index 1
@@ -1240,10 +1045,7 @@ public:
   */
   inline virtual T& operator()(size_t i, size_t j)
   {
-    if(isRef)
-      return *(_ref_array_data[i-1 + size1*(j-1)]);
-    else
-      return _array_data[i-1 + size1*(j-1)];
+    return _array_data[i-1 + size1*(j-1)];
   }
 
  /**
@@ -1265,6 +1067,7 @@ public:
     v.push_back(size2);
     return v;
   }
+
  /**
   * Returns number of elements
   */
@@ -1292,67 +1095,37 @@ public:
   {
     return 2;
   }
+
  /**
   * Access to data
   */
   virtual T* getData()
   {
-    checkArray("access data for reference array is not supported");
-    return _array_data. c_array();
+    return _array_data.c_array();
   }
+
  /**
   * Copies the array data of size n in the data array
   * data has to be allocated before getDataCopy is called
   */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    if(isRef)
-    {
-      const T* const * simvars_data  = _ref_array_data.begin();
-      std::transform(simvars_data,simvars_data +n,data,RefArray2CArray<T>());
-    }
-    else
-    {
-      memcpy(data,  _array_data.begin(), n * sizeof( T ) );
-    }
+    memcpy(data,  _array_data.begin(), n * sizeof( T ) );
   }
+
  /**
   * Access to data (read-only)
   */
   virtual const T* getData() const
   {
-    checkArray("access data for reference array is not supported");
     return _array_data.data();
-  }
-
- /**
-  * Access to data references (read-only)
-  */
-  virtual const T* const* getDataReferences() const
-  {
-    return _ref_array_data.data();
   }
 
   virtual void setDims(const std::vector<size_t>& v) {  }
   void setDims(size_t i,size_t j)  {  }
 private:
- /**
-  * Checks if array is a reference array and throws exception
-  * some array array operations are not possible for reference arrays
-  */
-  void checkArray(string error_msg) const
-  {
-    if(isRef)
-    {
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,error_msg);
-    }
-  }
-
   //static array data
   boost::array<T, size2 * size1> _array_data;
-  //reference array data, only used if isRef = true
-  boost::array<T*, size2 * size1> _ref_array_data;
-  bool _ref_init;
 };
 
 
@@ -1560,71 +1333,34 @@ private:
 
 };
 
-
-
-
-
-
-
-
-
-
 /**
 * Three dimensional static array, implements BaseArray interface methods
 * @param  T type of the array
 * @param size1  size of dimension one
 * @param size2  size of dimension two
 * @param size3  size of dimension two
-* @param isRef if true the array data points to the simvar memory
 */
-template<typename T ,std::size_t size1, std::size_t size2, std::size_t size3,bool isRef = false> class StatArrayDim3 : public BaseArray<T>
+template<typename T, std::size_t size1, std::size_t size2, std::size_t size3>
+class StatArrayDim3 : public BaseArray<T>
 {
-
 public:
-
  /**
   * Constuctor for one dimensional array
   * if reference array it uses data from simvars memory
   * else it copies data  in array memory
   */
   StatArrayDim3(T* data)
-    :BaseArray<T>(true,isRef)
+    :BaseArray<T>(true, false)
   {
-    if(isRef)
-    {
-      std::transform(data,data +size1*size2*size3,_ref_array_data.c_array(),CArray2RefArray<T>());
-      _ref_init =true;
-    }
-    else
-    {
-      memcpy( _array_data.begin(), data, size1*size2*size3 * sizeof( T ) );
-      _ref_init = false;
-    }
+    memcpy( _array_data.begin(), data, size1*size2*size3 * sizeof( T ) );
   }
- /**
-  * Constuctor for one dimensional array
-  * intialize array with reference data from simvars memory
-  */
-  StatArrayDim3(T** ref_data)
-    :BaseArray<T>(true,isRef)
-  {
-    if(isRef)
-    {
-      std::transform(_ref_array_data.c_array(),_ref_array_data.c_array()+size1*size2*size3,ref_data ,_ref_array_data.c_array(),RefArray2RefArray<T>());
-      _ref_init =true;
-    }
-    else
-    {
-     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"initialization for a non reference array with reference data not allowed");
-    }
-  }
+
  /**
   * Constuctor for two dimensional array
   * empty array
   */
   StatArrayDim3()
-    :BaseArray<T>(true,isRef)
-    ,_ref_init(false)
+    :BaseArray<T>(true, false)
   {
   }
 
@@ -1638,26 +1374,9 @@ public:
     */
     virtual  void assign(const BaseArray<T>& b)
     {
-        if(isRef)
-        {
-            if(b.isReference()) //a (this) is reference array , b is reference array
-            {
-                T **refs = _ref_array_data.c_array();
-                std::transform(refs, refs + size1*size2*size3, b.getDataReferences(),
-                               refs, CopyRefArray2RefArray<T>());
-            }
-            else        //a (this) is reference array , b is local array
-            {
-                const T* data = b.getData();
-                std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2*size3,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-            }
-        }
-        else          //a (this) is local array , b could be local array or reference array
-        {
-            b.getDataCopy(_array_data.begin(), size1*size2*size3);
-        }
-
+      b.getDataCopy(_array_data.begin(), size1*size2*size3);
     }
+
    /**
     * Assigns array data to array
     * @param data array data
@@ -1665,15 +1384,9 @@ public:
     */
     virtual void assign(const T* data)
     {
-        if(isRef) //a (this) is reference array
-        {
-            std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2*size3,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-        }
-        else //a (this) is local array
-        {
-            memcpy( _array_data.begin(), data, size1*size2 *size3*  sizeof( T ) );
-        }
+      memcpy( _array_data.begin(), data, size1*size2*size3*sizeof( T ) );
     }
+
    /**
     * Copies two dimensional array to row i
     * @param b array of type StatArrayDim2
@@ -1681,7 +1394,6 @@ public:
     */
     void append(size_t i,const StatArrayDim2<T,size2,size3>& b)
     {
-        checkArray("assign data to reference array is not supported");
         const T* data = b.getData();
         T *array_data = _array_data.c_array() + i-1;
         for (size_t k = 1; k <= size3; k++) {
@@ -1700,10 +1412,10 @@ public:
   */
   virtual void resize(const std::vector<size_t>& dims)
   {
-    checkArray("resize  reference array is not supported");
     if (dims != getDims())
       std::runtime_error("Cannot resize static array!");
   }
+
  /**
   * Return sizes of dimensions
   */
@@ -1734,7 +1446,6 @@ public:
     }
   }
 
-
    /**
     * Assignment operator to assign static array
     * @param b array of type StatArrayDim3
@@ -1744,24 +1455,7 @@ public:
     {
         if (this != &b)
         {
-            if(isRef)
-            {
-                if(b.isReference()) //a (this) is reference array , b is reference array
-                {
-                    T **refs = _ref_array_data.c_array();
-                    std::transform(refs, refs + size1*size2*size3, b.getDataReferences(),
-                                   refs, CopyRefArray2RefArray<T>());
-                }
-                else        //a (this) is reference array , b is local array
-                {
-                    const T* data = b.getData();
-                    std::transform(_ref_array_data.c_array(),_ref_array_data.c_array() +size1*size2*size3,data,_ref_array_data.c_array(),CopyCArray2RefArray<T>());
-                }
-            }
-            else          //a (this) is local array , b could be local array or reference array
-            {
-                b.getDataCopy(_array_data.begin(), size1*size2*size3);
-            }
+          b.getDataCopy(_array_data.begin(), size1*size2*size3);
         }
         return *this;
     }
@@ -1772,11 +1466,8 @@ public:
   */
   virtual T& operator()(const vector<size_t>& idx)
   {
-    if(isRef)
-      return *(_ref_array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
-    else
-      return _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
-  };
+    return _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
+  }
 
  /**
   * Index operator to access array element
@@ -1786,11 +1477,9 @@ public:
   */
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
-    if(isRef)
-      return *(_ref_array_data[i-1 + size1*(j-1 + size2*(k-1))]);
-    else
-      return _array_data[i-1 + size1*(j-1 + size2*(k-1))];
+    return _array_data[i-1 + size1*(j-1 + size2*(k-1))];
   }
+
  /**
   * Returns number of elements
   */
@@ -1809,66 +1498,35 @@ public:
 
   virtual void setDims(const std::vector<size_t>& v) { }
   void setDims(size_t i,size_t j,size_t k)  { }
+
  /**
   * Access to data
   */
   virtual T* getData()
   {
-    checkArray("access data for reference array is not supported");
     return _array_data.c_array();
   }
+
  /**
   * Copies the array data of size n in the data array
   * data has to be allocated before getDataCopy is called
   */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    if(isRef)
-    {
-      const T* const * simvars_data  = _ref_array_data.begin();
-      std::transform(simvars_data,simvars_data +n,data,RefArray2CArray<T>());
-    }
-    else
-    {
-      memcpy(data,  _array_data.begin(), n * sizeof( T ) );
-    }
+    memcpy(data,  _array_data.begin(), n * sizeof( T ) );
   }
+
  /**
   * Access to data (read-only)
   */
   virtual const T* getData() const
   {
-    checkArray("access data for reference array is not supported");
     return _array_data.data();
   }
 
- /**
-  * Access to data references (read-only)
-  */
-  virtual const T* const* getDataReferences() const
-  {
-    return _ref_array_data.data();
-  }
-
 private:
- /**
-  * Checks if array is a reference array and throws exception
-  * some array array operations are not possible for reference arrays
-  */
-  void checkArray(string error_msg) const
-  {
-    if(isRef)
-    {
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,error_msg);
-    }
-  }
-
   //static array data
   boost::array<T, size2 * size1*size3> _array_data;
-  //reference array data, only used if isRef = true
-  boost::array<T*, size2 * size1*size3> _ref_array_data;
-  bool _ref_init;
-
 };
 
 
@@ -2378,7 +2036,3 @@ public:
 private:
   boost::multi_array<T, 3> _multi_array;
 };
-
-
-
-
