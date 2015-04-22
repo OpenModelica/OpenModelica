@@ -1041,11 +1041,9 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
     })),
     Util.gettext("Specifies method that removes simple equations."));
 
-
-constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(69, "dynamicTearing",
+constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(68, "dynamicTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime)"));
-
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
