@@ -599,5 +599,11 @@ algorithm
   outBoolean := not stringEq(Flags.getConfigString(Flags.PROFILING_LEVEL), "none");
 end profileFunctions;
 
+public function dynamicTearing
+  output Boolean outBoolean;
+algorithm
+  outBoolean := Flags.getConfigBool(Flags.DYNAMIC_TEARING);
+end dynamicTearing;
+
 annotation(__OpenModelica_Interface="util");
 end Config;
