@@ -196,7 +196,7 @@ algorithm
 
   for j in m[i] loop
     // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and arrayGet(assign_v_e, j) <= 0) then
+    if (j>0 and assign_v_e[j] <= 0) then
       success := true;
       arrayUpdate(assign_v_e, j, i);
       arrayUpdate(assign_e_v, i, j);
@@ -206,9 +206,9 @@ algorithm
 
   for j in m[i] loop
     // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and not arrayGet(vMark, j)) then
+    if (j>0 and not vMark[j]) then
       arrayUpdate(vMark, j, true);
-      success := BBPathFound(arrayGet(assign_v_e, j), m, eMark, vMark, assign_v_e, assign_e_v);
+      success := BBPathFound(assign_v_e[j], m, eMark, vMark, assign_v_e, assign_e_v);
       if success then
         arrayUpdate(assign_v_e, j, i);
         arrayUpdate(assign_e_v, i, j);
@@ -252,9 +252,9 @@ protected
 algorithm
   outAss := arrayCreate(N, -1);
   for i in 1:N loop
-    j := arrayGet(inAss, i);
+    j := inAss[i];
     if j > 0 then
-      arrayUpdate(outAss, inAss[i], i);
+      outAss[inAss[i]] := i;
     end if;
   end for;
 end invertMatching;
@@ -5676,7 +5676,7 @@ protected
   list<Integer> vars;
 algorithm
   vars := List.select(m[eqn], Util.intGreaterZero) "just keep positive integers";
-  outEqNodes := list(arrayGet(ass1, var) for var guard(arrayGet(ass1, var) > 0) in vars);
+  outEqNodes := list(ass1[var] for var guard(ass1[var] > 0) in vars);
   outEqNodes := List.removeOnTrue(eqn, intEq, outEqNodes);
 end incomingEquations;
 

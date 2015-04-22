@@ -102,13 +102,13 @@ algorithm
 
   // Consider successors of eqn
   for eqn2 in Matching.incomingEquations(eqn, m, ass1) loop
-    if arrayGet(number, eqn2) == -1 then
+    if number[eqn2] == -1 then
       // Successor eqn2 has not yet been visited; recurse on it
       (outStack, outIndex, outComponents) := StrongConnect(m, ass1, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
-    elseif arrayGet(onStack, eqn2) then
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
+    elseif onStack[eqn2] then
       // Successor eqn2 is in the stack and hence in the current SCC
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
     end if;
   end for;
 
@@ -179,13 +179,13 @@ algorithm
 
   // Consider successors of eqn
   for eqn2 in Matching.reachableEquations(eqn, mT, ass2) loop
-    if arrayGet(number, eqn2) == -1 then
+    if number[eqn2] == -1 then
       // Successor eqn2 has not yet been visited; recurse on it
       (outStack, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
-    elseif arrayGet(onStack, eqn2) then
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
+    elseif onStack[eqn2] then
       // Successor eqn2 is in the stack and hence in the current SCC
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
+      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
     end if;
   end for;
 
