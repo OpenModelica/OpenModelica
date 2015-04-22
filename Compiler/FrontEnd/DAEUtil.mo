@@ -6978,5 +6978,24 @@ algorithm
   end match;
 end toDAEInnerOuter;
 
+public function getAssertConditionCrefs"gets the crefs of the assert condition.
+author:Waurich 2015-04"
+  input DAE.Statement stmt;
+  input list<DAE.ComponentRef> crefsIn;
+  output list<DAE.ComponentRef> crefsOut;
+algorithm
+  crefsOut := match(stmt,crefsIn)
+    local
+      DAE.Exp cond;
+      list<DAE.ComponentRef> crefs;
+  case(DAE.STMT_ASSERT(cond=cond),_)
+    algorithm
+      crefs := Expression.extractCrefsFromExp(cond);
+    then (listAppend(crefsIn,crefs));
+    else
+    then crefsIn;
+  end match;
+end getAssertConditionCrefs;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;

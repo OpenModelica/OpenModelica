@@ -1535,7 +1535,9 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
-      list<BackendDAE.Equation> removedInitialEquationLst;
+      BackendDAE.Variables knownVars;
+      list<BackendDAE.Equation> removedInitialEquationLst, paramAsserts, remEqLst;
+      list<SimCode.SimEqSystem> paramAssertSimEqs;
 
       list<DAE.Exp> lits;
       list<SimCodeVar.SimVar> tempvars, jacobianSimvars;
@@ -1584,7 +1586,8 @@ algorithm
       // addInitialStmtsToAlgorithms
       dlow = BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
 
-      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs,
+      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knownVars,
+                                                        removedEqs=removedEqs,
                                                         constraints=constraints,
                                                         classAttrs=classAttributes,
                                                         symjacs=symJacs,
@@ -1602,7 +1605,8 @@ algorithm
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars, equationSccMapping, eqBackendSimCodeMapping,backendMapping) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, zeroCrossings, tempvars, 1, {}, {},backendMapping);
       highestSimEqIndex = uniqueEqIndex;
 
-      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+      (remEqLst,paramAsserts) = List.fold1(BackendEquation.equationList(removedEqs), getParamAsserts,knownVars,({},{}));
+      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseEquationArray(BackendEquation.listEquation(remEqLst), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
 
       // Assertions and crap
       // create parameter equations
@@ -1612,6 +1616,8 @@ algorithm
       ((uniqueEqIndex, maxValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
       (uniqueEqIndex, parameterEquations) = createParameterEquations(uniqueEqIndex, parameterEquations, primaryParameters, allPrimaryParameters);
+      ((uniqueEqIndex, paramAssertSimEqs)) = BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+      parameterEquations = listAppend(parameterEquations,paramAssertSimEqs);
 
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
@@ -1765,6 +1771,34 @@ algorithm
     then fail();
   end matchcontinue;
 end createSimCode;
+
+protected function getParamAsserts"splits the equationArray in variable-dependent and parameter-dependent equations.
+author: Waurich  TUD-2015-04"
+  input BackendDAE.Equation eqIn;
+  input BackendDAE.Variables vars;
+  input tuple<list<BackendDAE.Equation>, list<BackendDAE.Equation>> tplIn; //<var-dependent, param-dependent>
+  output tuple<list<BackendDAE.Equation>, list<BackendDAE.Equation>> tplOut;
+algorithm
+  tplOut := matchcontinue(eqIn,vars,tplIn)
+    local
+      list<DAE.Statement> stmts;
+      list<DAE.ComponentRef> crefs;
+      list<BackendDAE.Var> varLst;
+      list<list<BackendDAE.Var>> varLstLst;
+      list<BackendDAE.Equation> varDep,paramDep;
+  case(BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=stmts)),_,(varDep,paramDep))
+    algorithm
+      crefs := List.fold(stmts,DAEUtil.getAssertConditionCrefs,{});
+      (varLstLst,_) := List.map1_2(crefs,BackendVariable.getVar,vars);
+      varLst := List.flatten(varLstLst);
+      true := List.exist(varLst,BackendVariable.isParam);
+  then ((varDep,eqIn::paramDep));
+  else
+    algorithm
+     (varDep,paramDep) := tplIn;
+    then ((eqIn::varDep,paramDep));
+  end matchcontinue;
+end getParamAsserts;
 
 protected function addTempVars
   input list<SimCodeVar.SimVar> tempVars;
