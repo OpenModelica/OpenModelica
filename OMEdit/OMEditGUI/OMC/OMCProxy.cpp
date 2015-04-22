@@ -312,8 +312,6 @@ bool OMCProxy::initializeOMC()
   changeDirectory(tmpPath);
   // set the OpenModelicaLibrary variable.
   Helper::OpenModelicaLibrary = getModelicaPath();
-  // set plot to silent
-  sendCommand("setPlotSilent(true)");
   return true;
 }
 
