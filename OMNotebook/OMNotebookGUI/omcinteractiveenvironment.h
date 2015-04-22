@@ -55,7 +55,6 @@ namespace IAEX
     virtual QString getError();
     virtual void evalExpression(const QString expr);
     static QString OMCVersion();
-    static bool setPlotSilent(QString silent);
     static QString OpenModelicaHome();
     static QString TmpPath();
 

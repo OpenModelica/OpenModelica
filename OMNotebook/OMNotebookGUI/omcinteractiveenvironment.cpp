@@ -206,17 +206,6 @@ namespace IAEX
     return version;
   }
 
-  bool OmcInteractiveEnvironment::setPlotSilent(QString silent)
-  {
-    OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
-    env->evalExpression(QString("setPlotSilent("+silent+")"));
-    QString result = env->getResult();
-    if (result.toLower().compare("true") == 0)
-      return true;
-    else
-      return false;
-  }
-
   QString OmcInteractiveEnvironment::OpenModelicaHome()
   {
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
