@@ -49,6 +49,9 @@ void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function
 int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
 void* omc_Main_init(void *threadData, void *args);
 void* omc_Main_readSettings(void *threadData, void *args);
+#ifdef WIN32
+void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
+#endif
 }
 
 #include <stdlib.h>
@@ -302,6 +305,9 @@ bool OMCProxy::initializeOMC()
   // set OpenModelicaHome variable
   sendCommand("getInstallationDirectoryPath()");
   Helper::OpenModelicaHome = StringHandler::removeFirstLastQuotes(getResult());
+#ifdef WIN32
+  omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toStdString().c_str()));
+#endif
   /* set the tmp directory as the working directory */
   changeDirectory(tmpPath);
   // set the OpenModelicaLibrary variable.
