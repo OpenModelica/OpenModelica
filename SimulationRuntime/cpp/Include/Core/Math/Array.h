@@ -1407,7 +1407,6 @@ class DynArray : public BaseArray<T>
     :BaseArray<T>(false,false)
     ,_multi_array(vector<size_t>(ndims, 0), boost::fortran_storage_order())
   {
-    _multi_array.reindex(1);
   }
 
   /**
@@ -1417,7 +1416,6 @@ class DynArray : public BaseArray<T>
     :BaseArray<T>(false,false)
     ,_multi_array(dynarray.getDims(), boost::fortran_storage_order())
   {
-    _multi_array.reindex(1);
     _multi_array = dynarray._multi_array;
   }
 
@@ -1428,7 +1426,6 @@ class DynArray : public BaseArray<T>
     :BaseArray<T>(false,false)
     ,_multi_array(b.getDims(), boost::fortran_storage_order())
   {
-    _multi_array.reindex(1);
     b.getDataCopy(_multi_array.data(), _multi_array.num_elements());
   }
 
@@ -1453,14 +1450,12 @@ class DynArray : public BaseArray<T>
     if (dims != getDims())
     {
       _multi_array.resize(dims);
-      _multi_array.reindex(1);
     }
   }
 
   virtual void setDims(const std::vector<size_t>& dims)
   {
     _multi_array.resize(dims);
-    _multi_array.reindex(1);
   }
 
   virtual std::vector<size_t> getDims() const
@@ -1547,7 +1542,6 @@ class DynArrayDim1 : public DynArray<T, 1>
     ,_multi_array(DynArray<T, 1>::_multi_array)
   {
     _multi_array.resize(boost::extents[size1]);
-    _multi_array.reindex(1);
   }
 
   ~DynArrayDim1()
@@ -1562,13 +1556,13 @@ class DynArrayDim1 : public DynArray<T, 1>
 
   inline virtual T& operator()(size_t index)
   {
-    //return _multi_array[index];
+    //return _multi_array[index-1];
     return _multi_array.data()[index-1];
   }
 
   inline virtual const T& operator()(size_t index) const
   {
-    //return _multi_array[index];
+    //return _multi_array[index-1];
     return _multi_array.data()[index-1];
   }
 
@@ -1577,7 +1571,6 @@ class DynArrayDim1 : public DynArray<T, 1>
     if (this != &b)
     {
       _multi_array.resize(b.getDims());
-      _multi_array.reindex(1);
       _multi_array = b._multi_array;
     }
     return *this;
@@ -1586,11 +1579,10 @@ class DynArrayDim1 : public DynArray<T, 1>
   void setDims(size_t size1)
   {
     _multi_array.resize(boost::extents[size1]);
-    _multi_array.reindex(1);
   }
 
-  typedef typename boost::multi_array<T, ndims>::const_iterator const_iterator;
-  typedef typename boost::multi_array<T, ndims>::iterator iterator;
+  typedef typename boost::multi_array<T, 1>::const_iterator const_iterator;
+  typedef typename boost::multi_array<T, 1>::iterator iterator;
 
   iterator begin()
   {
@@ -1637,14 +1629,13 @@ class DynArrayDim2 : public DynArray<T, 2>
     ,_multi_array(DynArray<T, 2>::_multi_array)
   {
     _multi_array.resize(boost::extents[size1][size2]);
-    _multi_array.reindex(1);
   }
 
   ~DynArrayDim2() {}
 
   void append(size_t i, const DynArrayDim1<T>& b)
   {
-    _multi_array[i] = b._multi_array;
+    _multi_array[i-1] = b._multi_array;
   }
 
   DynArrayDim2<T>& operator=(const DynArrayDim2<T>& b)
@@ -1652,7 +1643,6 @@ class DynArrayDim2 : public DynArray<T, 2>
     if (this != &b)
     {
       _multi_array.resize(b.getDims());
-      _multi_array.reindex(1);
       _multi_array = b._multi_array;
     }
     return *this;
@@ -1660,26 +1650,25 @@ class DynArrayDim2 : public DynArray<T, 2>
 
   virtual T& operator()(const vector<size_t>& idx)
   {
-    //return _multi_array[idx[0]][idx[1]];
+    //return _multi_array[idx[0]-1][idx[1]-1];
     return _multi_array.data()[idx[0]-1 + _multi_array.shape()[0]*(idx[1]-1)];
   }
 
   inline virtual T& operator()(size_t i, size_t j)
   {
-    //return _multi_array[i][j];
+    //return _multi_array[i-1][j-1];
     return _multi_array.data()[i-1 + _multi_array.shape()[0]*(j-1)];
   }
 
   inline virtual const T& operator()(size_t i, size_t j) const
   {
-    //return _multi_array[i][j];
+    //return _multi_array[i-1][j-1];
     return _multi_array.data()[i-1 + _multi_array.shape()[0]*(j-1)];
   }
 
   void setDims(size_t size1, size_t size2)
   {
     _multi_array.resize(boost::extents[size1][size2]);
-    _multi_array.reindex(1);
   }
 
  private:
@@ -1711,7 +1700,6 @@ public:
     ,_multi_array(DynArray<T, 3>::_multi_array)
   {
     _multi_array.resize(boost::extents[size1][size2][size3]);
-    _multi_array.reindex(1);
   }
 
   ~DynArrayDim3(){}
@@ -1721,7 +1709,6 @@ public:
     if (this != &b)
     {
       _multi_array.resize(b.getDims());
-      _multi_array.reindex(1);
       _multi_array = b._multi_array;
     }
     return *this;
@@ -1730,19 +1717,18 @@ public:
   void setDims(size_t size1, size_t size2, size_t size3)
   {
     _multi_array.resize(boost::extents[size1][size2][size3]);
-    _multi_array.reindex(1);
   }
 
   virtual T& operator()(const vector<size_t>& idx)
   {
-    //return _multi_array[idx[0]][idx[1]][idx[2]];
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1];
     const size_t *shape = _multi_array.shape();
     return _multi_array.data()[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1))];
   }
 
   inline virtual T& operator()(size_t i, size_t j, size_t k)
   {
-    //return _multi_array[i][j][k];
+    //return _multi_array[i-1][j-1][k-1];
     const size_t *shape = _multi_array.shape();
     return _multi_array.data()[i-1 + shape[0]*(j-1 + shape[1]*(k-1))];
   }
