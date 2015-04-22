@@ -794,33 +794,33 @@ algorithm
   nParam := BackendVariable.varsSize(allParameters);
 
   if nParam > 0 then
-    // BackendDump.dumpVariables(allParameters, "all parameters");
-    // BackendDump.dumpEquationArray(allParameterEqns, "all parameter equations");
+    //BackendDump.dumpVariables(allParameters, "all parameters");
+    //BackendDump.dumpEquationArray(allParameterEqns, "all parameter equations");
 
     paramSystem := BackendDAE.EQSYSTEM(allParameters, allParameterEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-    (_, m, mT, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(paramSystem, BackendDAE.SOLVABLE(), NONE());
-    // BackendDump.dumpIncidenceMatrix(m);
-    // BackendDump.dumpIncidenceMatrix(mT);
+    (_, m, mT, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(paramSystem, BackendDAE.NORMAL(), NONE());
+    //BackendDump.dumpIncidenceMatrix(m);
+    //BackendDump.dumpIncidenceMatrixT(mT);
 
     // match the system
     // ass1 and ass2 should be {1, 2, ..., nParam}
     (ass1, ass2) := Matching.PerfectMatching(m);
-    // BackendDump.dumpMatchingVars(ass1);
-    // BackendDump.dumpMatchingEqns(ass2);
+    //BackendDump.dumpMatchingVars(ass1);
+    //BackendDump.dumpMatchingEqns(ass2);
 
     comps := Sorting.Tarjan(m, ass1);
-    // BackendDump.dumpComponentsOLD(comps);
-    comps := mapListIndices(comps, ass2) "map to var indices" ;
-    // BackendDump.dumpComponentsOLD(comps);
+    //BackendDump.dumpComponentsOLD(comps);
+    comps := mapListIndices(comps, ass2) "map to var indices (not really needed, since ass2 should be {1, 2, ..., nParam})" ;
+    //BackendDump.dumpComponentsOLD(comps);
 
     // flattern list and look for cyclic dependencies
     flatComps := list(flattenParamComp(comp, allParameters) for comp in comps);
-    // BackendDump.dumpIncidenceRow(flatComps);
+    //BackendDump.dumpIncidenceRow(flatComps);
 
     // select secondary parameters
     secondary := arrayCreate(nParam, 0);
     secondary := selectSecondaryParameters(flatComps, allParameters, mT, secondary);
-    // BackendDump.dumpMatchingVars(secondary);
+    //BackendDump.dumpMatchingVars(secondary);
 
     // get primary and secondary parameters
     for i in 1:nParam loop // for i in flatComps loop
@@ -1352,8 +1352,8 @@ algorithm
   BackendDAEEXT.getAssignment(vec2, vec1);
   perfectMatching := 0 == listLength(Matching.getUnassigned(nVars+nAddVars, vec1, {}));
   // (vec1, vec2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
-  // BackendDump.dumpMatchingVars(vec1);
-  // BackendDump.dumpMatchingEqns(vec2);
+  //BackendDump.dumpMatchingVars(vec1);
+  //BackendDump.dumpMatchingEqns(vec2);
 
   // check whether or not a complete matching was found
   if not perfectMatching then

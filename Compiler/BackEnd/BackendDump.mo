@@ -2679,7 +2679,7 @@ public function dumpIncidenceMatrixT "Prints the transposed incidence matrix on 
 protected
   Integer rowIndex=0;
 algorithm
-  print("\nTransposed Incidence Matrix (row: equation)\n" + UNDERLINE + "\n");
+  print("\nTransposed Incidence Matrix (row: variable)\n" + UNDERLINE + "\n");
   print("number of rows: " + intString(arrayLength(mT)));
 
   for row in mT loop

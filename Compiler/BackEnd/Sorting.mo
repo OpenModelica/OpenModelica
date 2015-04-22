@@ -107,7 +107,7 @@ algorithm
       (outStack, outIndex, outComponents) := StrongConnect(m, ass1, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
       arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
     elseif arrayGet(onStack, eqn2) then
-      // Successor eqn2 is in stack stack and hence in the current SCC
+      // Successor eqn2 is in the stack and hence in the current SCC
       arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
     end if;
   end for;
@@ -184,7 +184,7 @@ algorithm
       (outStack, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
       arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(lowlink, eqn2)));
     elseif arrayGet(onStack, eqn2) then
-      // Successor eqn2 is in stack stack and hence in the current SCC
+      // Successor eqn2 is in the stack and hence in the current SCC
       arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], arrayGet(number, eqn2)));
     end if;
   end for;
