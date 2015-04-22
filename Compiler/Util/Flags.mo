@@ -886,9 +886,9 @@ constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(37, "reductionMethod",
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
     Util.gettext("Sets the reduction method to be used."));
 
-constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(38, "plotSilent",
+constant ConfigFlag DEMO_MODE = CONFIG_FLAG(38, "demoMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."));
+  Util.gettext("Disable Warning/Error Massages."));
 
 constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(39, "locale",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
@@ -1041,9 +1041,6 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
     })),
     Util.gettext("Specifies method that removes simple equations."));
 
-constant ConfigFlag DEMO_MODE = CONFIG_FLAG(68, "demoMode",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Disable Warning/Error Massages."));
 
 constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(69, "dynamicTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1092,7 +1089,7 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_LABELED_SIMCODE,
   REDUCE_TERMS,
   REDUCTION_METHOD,
-  PLOT_SILENT,
+  DEMO_MODE,
   LOCALE_FLAG,
   DEFAULT_OPENCL_DEVICE,
   MAXTRAVERSALS,
@@ -1122,7 +1119,6 @@ constant list<ConfigFlag> allConfigFlags = {
   MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM,
   CPP_FLAGS,
   REMOVE_SIMPLE_EQUATIONS,
-  DEMO_MODE,
   DYNAMIC_TEARING
 };
 

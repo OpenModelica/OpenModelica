@@ -2460,20 +2460,6 @@ external "builtin";
 annotation(preferredView="text");
 end getPackages;
 
-function setPlotSilent "Sets the plotSilent flag."
-  input Boolean silent;
-  output Boolean success;
-algorithm
-  success := setCommandLineOptions("+plotSilent=" + String(silent));
-annotation(__OpenModelica_EarlyInline = true, preferredView="text");
-end setPlotSilent;
-
-function getPlotSilent "Returns true if plotSilent flag is set."
-  output Boolean plotSilent;
-external "builtin";
-annotation(preferredView="text");
-end getPlotSilent;
-
 partial function basePlotFunction "Extending this does not seem to work at the moment. A real shame; functions below are copy-paste and all need to be updated if the interface changes."
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String interpolation = "linear" "
@@ -2512,6 +2498,7 @@ function plot "Launches a plot window using OMPlot."
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
+  input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -2549,6 +2536,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
+  input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text");
@@ -2593,6 +2581,7 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
+  input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text");

@@ -928,7 +928,7 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
       FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.ComponentRef  crefCName;
@@ -2959,12 +2959,6 @@ algorithm
     case (cache,_,"checkCodeGraph",_,st,_)
       then (cache,Values.STRING("Error in checkCodeGraph"),st);
 
-    case (cache,_,"getPlotSilent",{},st,_)
-      equation
-        b = Config.getPlotSilent();
-      then
-        (cache,Values.BOOL(b),st);
-
     //plotAll(model)
     case (cache,env,"plotAll",
         {
@@ -2982,13 +2976,12 @@ algorithm
           Values.INTEGER(curveStyle),
           Values.STRING(legendPosition),
           Values.STRING(footer),
-          Values.BOOL(autoScale)
+          Values.BOOL(autoScale),
+          Values.BOOL(forceOMPlot)
         },
         st,
         _)
       equation
-        // check if plot is set to silent or not
-        false = Config.getPlotSilent();
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
@@ -2998,55 +2991,27 @@ algorithm
         str1 = System.pwd() + pd + filename;
         s1 = if System.os() == "Windows_NT" then ".exe" else "";
         filename = if System.regularFileExists(str1) then str1 else filename;
-        // create the path till OMPlot
-        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-        // create the list of arguments for OMPlot
-        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
-        call = stringAppendList({"\"",str2,"\""," ",str3});
-        0 = System.spawnCall(str2, call);
-      then
-        (cache,Values.BOOL(true),st);
-
-    /* in case plot is set to silent */
-    case (cache,env,"plotAll",
-        {
-          Values.BOOL(externalWindow),
-          Values.STRING(filename),
-          Values.STRING(title),
-          Values.STRING(gridStr),
-          Values.BOOL(logX),
-          Values.BOOL(logY),
-          Values.STRING(xLabel),
-          Values.STRING(yLabel),
-          Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
-          Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
-          Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle),
-          Values.STRING(legendPosition),
-          Values.STRING(footer),
-          Values.BOOL(autoScale)
-        },
-        st,
-        _)
-      equation
-        // check if plot is set to silent or not
-        true = Config.getPlotSilent();
-        // get the simulation filename
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        pd = System.pathDelimiter();
-        // create absolute path of simulation result file
-        str1 = System.pwd() + pd + filename;
-        filename = if System.regularFileExists(str1) then str1 else filename;
-        logXStr = boolString(logX);
-        logYStr = boolString(logY);
-        x1Str = realString(x1);
-        x2Str = realString(x2);
-        y1Str = realString(y1);
-        y2Str = realString(y2);
-        curveWidthStr = realString(curveWidth);
-        curveStyleStr = intString(curveStyle);
-        autoScaleStr = boolString(autoScale);
-        System.plotCallBack(externalWindow,filename,title,gridStr,"plotall",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,"");
+        // check if plot callback is defined
+        b = System.plotCallBackDefined();
+        if boolOr(forceOMPlot, boolNot(b)) then
+	        // create the path till OMPlot
+	        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+	        // create the list of arguments for OMPlot
+	        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+	        call = stringAppendList({"\"",str2,"\""," ",str3});
+	        0 = System.spawnCall(str2, call);
+        elseif b then
+          logXStr = boolString(logX);
+	        logYStr = boolString(logY);
+	        x1Str = realString(x1);
+	        x2Str = realString(x2);
+	        y1Str = realString(y1);
+	        y2Str = realString(y2);
+	        curveWidthStr = realString(curveWidth);
+	        curveStyleStr = intString(curveStyle);
+	        autoScaleStr = boolString(autoScale);
+	        System.plotCallBack(externalWindow,filename,title,gridStr,"plotall",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,"");
+	      end if;
       then
         (cache,Values.BOOL(true),st);
 
@@ -3071,12 +3036,11 @@ algorithm
           Values.INTEGER(curveStyle),
           Values.STRING(legendPosition),
           Values.STRING(footer),
-          Values.BOOL(autoScale)
+          Values.BOOL(autoScale),
+          Values.BOOL(forceOMPlot)
         },
         st,_)
       equation
-        // check if plot is set to silent or not
-        false = Config.getPlotSilent();
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         // seperate the variables
@@ -3090,59 +3054,27 @@ algorithm
         str1 = System.pwd() + pd + filename;
         s1 = if System.os() == "Windows_NT" then ".exe" else "";
         filename = if System.regularFileExists(str1) then str1 else filename;
-        // create the path till OMPlot
-        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-        // create the list of arguments for OMPlot
-        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
-        call = stringAppendList({"\"",str2,"\""," ",str3});
-        0 = System.spawnCall(str2, call);
-      then
-        (cache,Values.BOOL(true),st);
-
-    /* in case plot is set to silent */
-    case (cache,env,"plot",
-        {
-          Values.ARRAY(valueLst = cvars),
-          Values.BOOL(externalWindow),
-          Values.STRING(filename),
-          Values.STRING(title),
-          Values.STRING(gridStr),
-          Values.BOOL(logX),
-          Values.BOOL(logY),
-          Values.STRING(xLabel),
-          Values.STRING(yLabel),
-          Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
-          Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
-          Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle),
-          Values.STRING(legendPosition),
-          Values.STRING(footer),
-          Values.BOOL(autoScale)
-        },
-        st,_)
-      equation
-        // check if plot is set to silent or not
-        true = Config.getPlotSilent();
-        // get the variables list
-        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
-        // seperate the variables
-        str = stringDelimitList(vars_1,"\" \"");
-        // get the simulation filename
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        pd = System.pathDelimiter();
-        // create absolute path of simulation result file
-        str1 = System.pwd() + pd + filename;
-        filename = if System.regularFileExists(str1) then str1 else filename;
-        logXStr = boolString(logX);
-        logYStr = boolString(logY);
-        x1Str = realString(x1);
-        x2Str = realString(x2);
-        y1Str = realString(y1);
-        y2Str = realString(y2);
-        curveWidthStr = realString(curveWidth);
-        curveStyleStr = intString(curveStyle);
-        autoScaleStr = boolString(autoScale);
-        System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+        // check if plot callback is defined
+        b = System.plotCallBackDefined();
+        if boolOr(forceOMPlot, boolNot(b)) then
+	        // create the path till OMPlot
+	        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+	        // create the list of arguments for OMPlot
+	        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+	        call = stringAppendList({"\"",str2,"\""," ",str3});
+	        0 = System.spawnCall(str2, call);
+        elseif b then
+          logXStr = boolString(logX);
+	        logYStr = boolString(logY);
+	        x1Str = realString(x1);
+	        x2Str = realString(x2);
+	        y1Str = realString(y1);
+	        y2Str = realString(y2);
+	        curveWidthStr = realString(curveWidth);
+	        curveStyleStr = intString(curveStyle);
+	        autoScaleStr = boolString(autoScale);
+	        System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+	      end if;
       then
         (cache,Values.BOOL(true),st);
 
@@ -3426,12 +3358,11 @@ algorithm
           Values.INTEGER(curveStyle),
           Values.STRING(legendPosition),
           Values.STRING(footer),
-          Values.BOOL(autoScale)
+          Values.BOOL(autoScale),
+          Values.BOOL(forceOMPlot)
         },
         st,_)
       equation
-        // check if plot is set to silent or not
-        false = Config.getPlotSilent();
         // get the variables
         str = ValuesUtil.printCodeVariableName(cvar) + "\" \"" + ValuesUtil.printCodeVariableName(cvar2);
         // get OPENMODELICAHOME
@@ -3443,60 +3374,27 @@ algorithm
         str1 = System.pwd() + pd + filename;
         s1 = if System.os() == "Windows_NT" then ".exe" else "";
         filename = if System.regularFileExists(str1) then str1 else filename;
-        // create the path till OMPlot
-        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
-        // create the list of arguments for OMPlot
-        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
-        call = stringAppendList({"\"",str2,"\""," ",str3});
-        0 = System.spawnCall(str2, call);
-      then
-        (cache,Values.BOOL(true),st);
-
-    /* in case plot is set to silent */
-    case (cache,env,"plotParametric",
-        {
-          cvar,
-          cvar2,
-          Values.BOOL(externalWindow),
-          Values.STRING(filename),
-          Values.STRING(title),
-          Values.STRING(gridStr),
-          Values.BOOL(logX),
-          Values.BOOL(logY),
-          Values.STRING(xLabel),
-          Values.STRING(yLabel),
-          Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
-          Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
-          Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle),
-          Values.STRING(legendPosition),
-          Values.STRING(footer),
-          Values.BOOL(autoScale)
-        },
-        st,_)
-      equation
-        // check if plot is set to silent or not
-        true = Config.getPlotSilent();
-        // get the variables
-        str = ValuesUtil.printCodeVariableName(cvar);
-        str3 = ValuesUtil.printCodeVariableName(cvar2);
-        str = stringAppendList({str, " ", str3});
-        // get the simulation filename
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        pd = System.pathDelimiter();
-        // create absolute path of simulation result file
-        str1 = System.pwd() + pd + filename;
-        filename = if System.regularFileExists(str1) then str1 else filename;
-        logXStr = boolString(logX);
-        logYStr = boolString(logY);
-        x1Str = realString(x1);
-        x2Str = realString(x2);
-        y1Str = realString(y1);
-        y2Str = realString(y2);
-        curveWidthStr = realString(curveWidth);
-        curveStyleStr = intString(curveStyle);
-        autoScaleStr = boolString(autoScale);
-        System.plotCallBack(externalWindow,filename,title,gridStr,"plotparametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+        // check if plot callback is defined
+        b = System.plotCallBackDefined();
+        if boolOr(forceOMPlot, boolNot(b)) then
+	        // create the path till OMPlot
+	        str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+	        // create the list of arguments for OMPlot
+	        str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+	        call = stringAppendList({"\"",str2,"\""," ",str3});
+	        0 = System.spawnCall(str2, call);
+        elseif b then
+          logXStr = boolString(logX);
+	        logYStr = boolString(logY);
+	        x1Str = realString(x1);
+	        x2Str = realString(x2);
+	        y1Str = realString(y1);
+	        y2Str = realString(y2);
+	        curveWidthStr = realString(curveWidth);
+	        curveStyleStr = intString(curveStyle);
+	        autoScaleStr = boolString(autoScale);
+	        System.plotCallBack(externalWindow,filename,title,gridStr,"plotparametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
+	      end if;
       then
         (cache,Values.BOOL(true),st);
 

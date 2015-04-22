@@ -330,6 +330,11 @@ public function spawnCall
   external "C" outInteger=SystemImpl__spawnCall(path,str) annotation(Library = "omcruntime");
 end spawnCall;
 
+public function plotCallBackDefined
+  output Boolean outBoolean;
+  external "C" outBoolean=SystemImpl__plotCallBackDefined(OpenModelica.threadData()) annotation(Library = "omcruntime");
+end plotCallBackDefined;
+
 public function plotCallBack
   input Boolean externalWindow;
   input String filename;

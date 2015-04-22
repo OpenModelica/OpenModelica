@@ -302,12 +302,6 @@ algorithm
   Flags.setConfigBool(Flags.ORDER_CONNECTIONS, show);
 end setOrderConnections;
 
-public function getPlotSilent
-  output Boolean show;
-algorithm
-  show := Flags.getConfigBool(Flags.PLOT_SILENT);
-end getPlotSilent;
-
 public function getPreOptModules
   output list<String> outStringLst;
 algorithm
