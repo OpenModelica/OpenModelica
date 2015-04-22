@@ -3010,7 +3010,7 @@ algorithm
     /* in case plot is set to silent */
     case (cache,env,"plotAll",
         {
-          Values.BOOL(_),
+          Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
           Values.STRING(gridStr),
@@ -3046,11 +3046,9 @@ algorithm
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
         autoScaleStr = boolString(autoScale);
-        args = {"_omc_PlotResult",filename,title,gridStr,"plotAll",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr};
-        vals = List.map(args, ValuesUtil.makeString);
-        v = ValuesUtil.makeArray(vals);
+        System.plotCallBack(externalWindow,filename,title,gridStr,"plotall",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,"");
       then
-        (cache,v,st);
+        (cache,Values.BOOL(true),st);
 
     case (cache,_,"plotAll",_,st,_)
       then (cache,Values.BOOL(false),st);
@@ -3105,7 +3103,7 @@ algorithm
     case (cache,env,"plot",
         {
           Values.ARRAY(valueLst = cvars),
-          Values.BOOL(_),
+          Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
           Values.STRING(gridStr),
@@ -3128,7 +3126,7 @@ algorithm
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         // seperate the variables
-        _ = stringDelimitList(vars_1,"\" \"");
+        str = stringDelimitList(vars_1,"\" \"");
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
@@ -3144,12 +3142,9 @@ algorithm
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
         autoScaleStr = boolString(autoScale);
-        args = {"_omc_PlotResult",filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr};
-        args = listAppend(args, vars_1);
-        vals = List.map(args, ValuesUtil.makeString);
-        v = ValuesUtil.makeArray(vals);
+        System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
       then
-        (cache,v,st);
+        (cache,Values.BOOL(true),st);
 
     case (cache,_,"plot",_,st,_)
       then
@@ -3462,7 +3457,7 @@ algorithm
         {
           cvar,
           cvar2,
-          Values.BOOL(_),
+          Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
           Values.STRING(gridStr),
@@ -3485,6 +3480,7 @@ algorithm
         // get the variables
         str = ValuesUtil.printCodeVariableName(cvar);
         str3 = ValuesUtil.printCodeVariableName(cvar2);
+        str = stringAppendList({str, " ", str3});
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
@@ -3500,11 +3496,9 @@ algorithm
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
         autoScaleStr = boolString(autoScale);
-        args = {"_omc_PlotResult",filename,title,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str,str3};
-        vals = List.map(args, ValuesUtil.makeString);
-        v = ValuesUtil.makeArray(vals);
+        System.plotCallBack(externalWindow,filename,title,gridStr,"plotparametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
       then
-        (cache,v,st);
+        (cache,Values.BOOL(true),st);
 
     case (cache,_,"plotParametric",_,st,_)
       then (cache,Values.BOOL(false),st);

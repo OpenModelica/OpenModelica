@@ -89,6 +89,10 @@ extern const char* SystemImpl__basename(const char *str);
 extern int SystemImpl__systemCall(const char* str, const char* outFile);
 extern void* SystemImpl__systemCallParallel(void *lst, int numThreads);
 extern int SystemImpl__spawnCall(const char* path, const char* str);
+extern void SystemImpl__plotCallBack(threadData_t *threadData, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType,
+                                     const char* logX, const char* logY, const char* xLabel, const char* yLabel, const char* x1, const char* x2, const char* y1,
+                                     const char* y2, const char* curveWidth, const char* curveStyle, const char* legendPosition, const char* footer,
+                                     const char* autoScale, const char* variables);
 extern double SystemImpl__time(void);
 extern int SystemImpl__directoryExists(const char* str);
 extern int SystemImpl__createDirectory(const char *str);

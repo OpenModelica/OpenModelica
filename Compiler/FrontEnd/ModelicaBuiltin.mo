@@ -2513,7 +2513,6 @@ function plot "Launches a plot window using OMPlot."
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   output Boolean success "Returns true on success";
-  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<footer>\",\"<autoScale>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
 <p>Launches a plot window using OMPlot. Returns true on success.</p>
@@ -2551,7 +2550,6 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   output Boolean success "Returns true on success";
-  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<footer>\",\"<autoScale>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text");
 end plotAll;
@@ -2596,7 +2594,6 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   output Boolean success "Returns true on success";
-  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<footer>\",\"<autoScale>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text");
 end plotParametric;

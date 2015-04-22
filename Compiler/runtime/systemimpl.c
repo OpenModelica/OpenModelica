@@ -815,6 +815,18 @@ int SystemImpl__spawnCall(const char* path, const char* str)
   return ret_val;
 }
 
+void SystemImpl__plotCallBack(threadData_t *threadData, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType,
+                              const char* logX, const char* logY, const char* xLabel, const char* yLabel, const char* x1, const char* x2, const char* y1,
+                              const char* y2, const char* curveWidth, const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
+                              const char* variables)
+{
+  if (threadData->plotClassPointer && threadData->plotCB) {
+    PlotCallback pcb = threadData->plotCB;
+    pcb(threadData->plotClassPointer, externalWindow, filename, title, grid, plotType, logX, logY, xLabel, yLabel, x1, x2, y1, y2, curveWidth, curveStyle,
+        legendPosition, footer, autoScale, variables);
+  }
+}
+
 extern double SystemImpl__time(void)
 {
   clock_t cl = clock();

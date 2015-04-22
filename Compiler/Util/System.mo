@@ -330,6 +330,29 @@ public function spawnCall
   external "C" outInteger=SystemImpl__spawnCall(path,str) annotation(Library = "omcruntime");
 end spawnCall;
 
+public function plotCallBack
+  input Boolean externalWindow;
+  input String filename;
+  input String title;
+  input String grid;
+  input String plotType;
+  input String logX;
+  input String logY;
+  input String xLabel;
+  input String yLabel;
+  input String x1;
+  input String x2;
+  input String y1;
+  input String y2;
+  input String curveWidth;
+  input String curveStyle;
+  input String legendPosition;
+  input String footer;
+  input String autoScale;
+  input String variables;
+  external "C" SystemImpl__plotCallBack(OpenModelica.threadData(), externalWindow, filename, title, grid, plotType, logX, logY, xLabel, yLabel, x1, x2, y1, y2, curveWidth, curveStyle, legendPosition, footer, autoScale, variables) annotation(Library = "omcruntime");
+end plotCallBack;
+
 public function cd
   input String inString;
   output Integer outInteger;

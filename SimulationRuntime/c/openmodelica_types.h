@@ -144,6 +144,10 @@ enum {
   MAX_LOCAL_ROOTS
 };
 #define MAX_LOCAL_ROOTS 16
+typedef void (*PlotCallback)(void*, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
+    const char* logY, const char* xLabel, const char* yLabel, const char* x1, const char* x2, const char* y1, const char* y2,
+    const char* curveWidth, const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
+    const char* variables);
 typedef struct threadData_s {
   jmp_buf *mmc_jumper;
   jmp_buf *mmc_stack_overflow_jumper;
@@ -163,6 +167,8 @@ typedef struct threadData_s {
   errorStage currentErrorStage;
   struct threadData_s *parent;
   pthread_mutex_t parentMutex; /* Prevent children from all manipulating the parent at the same time */
+  void *plotClassPointer;
+  PlotCallback plotCB;
 } threadData_t;
 
 #if defined(__cplusplus)
