@@ -284,6 +284,8 @@ bool OMCProxy::initializeOMC()
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, mmc_mk_nil());
   st = omc_Main_readSettings(threadData, mmc_mk_nil());
+  threadData->plotClassPointer = mpMainWindow;
+  threadData->plotCB = MainWindow::PlotCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData, st);
   connect(mpOMCInterface, SIGNAL(logCommand(QString,QTime*)), this, SLOT(logCommand(QString,QTime*)));
@@ -304,6 +306,8 @@ bool OMCProxy::initializeOMC()
   changeDirectory(tmpPath);
   // set the OpenModelicaLibrary variable.
   Helper::OpenModelicaLibrary = getModelicaPath();
+  // set plot to silent
+  sendCommand("setPlotSilent(true)");
   return true;
 }
 

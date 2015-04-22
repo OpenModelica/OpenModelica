@@ -175,11 +175,7 @@ HEADERS  += Util/backtrace.h \
 win32 {
   QMAKE_LFLAGS += -enable-auto-import
 
-  DEFINES += __x86__ \
-    __NT__ \
-    __OSVERSION__=4 \
-    __WIN32__ \
-    IMPORT_INTO=1
+  DEFINES += IMPORT_INTO=1
 
   CONFIG(debug, debug|release) {
   LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rtd -lomnithread34_rtd \

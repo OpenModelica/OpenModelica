@@ -1047,6 +1047,97 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
   return pTransformationsWidget;
 }
 
+void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
+                                      const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
+                                      const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
+                                      const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
+                                      const char *variables)
+{
+  MainWindow *pMainWindow = (MainWindow*)p;
+  if (pMainWindow) {
+    QFileInfo fileInfo(filename);
+    pMainWindow->openResultFiles(QStringList() << filename);
+    if (!fileInfo.exists()) return;
+    OMPlot::PlotWindow *pPlotWindow = pMainWindow->getPlotWindowContainer()->getCurrentWindow();
+    if (pPlotWindow && !externalWindow) {
+      if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOT && strcmp(plotType, "plotparametric") == 0) {
+        pMainWindow->getPlotWindowContainer()->addParametricPlotWindow();
+      } else if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOTPARAMETRIC &&
+                 ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0))) {
+        pMainWindow->getPlotWindowContainer()->addPlotWindow();
+      }
+    } else if (externalWindow || pMainWindow->getPlotWindowContainer()->subWindowList().size() == 0) {
+      if ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0)) {
+        pMainWindow->getPlotWindowContainer()->addPlotWindow();
+      } else if (strcmp(plotType, "plotparametric") == 0) {
+        pMainWindow->getPlotWindowContainer()->addParametricPlotWindow();
+      }
+    }
+    // get the current window again and set plot arguments on it
+    pPlotWindow = pMainWindow->getPlotWindowContainer()->getCurrentWindow();
+    pPlotWindow->setTitle(QString(title));
+    pPlotWindow->setGrid(QString(grid));
+    if (QString(logX) == "true") {
+      pPlotWindow->setLogX(true);
+    } else if (QString(logX) == "false") {
+      pPlotWindow->setLogX(false);
+    } else {
+      throw OMPlot::PlotException("Invalid input" + QString(logX));
+    }
+    if (QString(logY) == "true") {
+      pPlotWindow->setLogY(true);
+    } else if (QString(logY) == "false") {
+      pPlotWindow->setLogY(false);
+    } else {
+      throw OMPlot::PlotException("Invalid input" + QString(logY));
+    }
+    pPlotWindow->setXLabel(QString(xLabel));
+    pPlotWindow->setYLabel(QString(yLabel));
+    pPlotWindow->setXRange(QString(x1).toDouble(), QString(x2).toDouble());
+    pPlotWindow->setYRange(QString(y1).toDouble(), QString(y2).toDouble());
+    pPlotWindow->setCurveWidth(QString(curveWidth).toDouble());
+    pPlotWindow->setCurveStyle(QString(curveStyle).toInt());
+    pPlotWindow->setLegendPosition(QString(legendPosition));
+    pPlotWindow->setFooter(QString(footer));
+    if (QString(autoScale) == "true") {
+      pPlotWindow->setAutoScale(true);
+    } else if (QString(autoScale) == "false") {
+      pPlotWindow->setAutoScale(false);
+    } else {
+      throw OMPlot::PlotException("Invalid input" + QString(autoScale));
+    }
+    // plot variables
+    QStringList variablesList = QString(variables).split(" ", QString::SkipEmptyParts);
+    VariablesTreeItem *pVariableTreeItem;
+    VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
+    bool state = pVariablesTreeModel->blockSignals(true);
+    foreach (QString variable, variablesList) {
+      variable = fileInfo.fileName() + "." + variable;
+      pVariableTreeItem = pVariablesTreeModel->findVariablesTreeItem(variable, pVariablesTreeModel->getRootVariablesTreeItem());
+      if (pVariableTreeItem) {
+        QModelIndex index = pVariablesTreeModel->variablesTreeItemIndex(pVariableTreeItem);
+        OMPlot::PlotCurve *pPlotCurve = 0;
+        foreach (OMPlot::PlotCurve *curve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+          if (curve->getNameStructure().compare(pVariableTreeItem->getVariableName()) == 0) {
+            pPlotCurve = curve;
+            break;
+          }
+        }
+        pVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
+        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), pPlotCurve);
+      }
+    }
+    // variables list is empty for plotAll
+    if (strcmp(plotType, "plotall") == 0) {
+      pVariableTreeItem = pVariablesTreeModel->findVariablesTreeItem(fileInfo.fileName(), pVariablesTreeModel->getRootVariablesTreeItem());
+      if (pVariableTreeItem) {
+        pMainWindow->getVariablesWidget()->getVariablesTreeModel()->plotAllVariables(pVariableTreeItem, pPlotWindow);
+      }
+    }
+    pVariablesTreeModel->blockSignals(state);
+  }
+}
+
 //! Opens the new model widget.
 void MainWindow::createNewModelicaClass()
 {

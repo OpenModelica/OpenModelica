@@ -585,10 +585,30 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
 void VariablesTreeModel::unCheckVariables(VariablesTreeItem *pVariablesTreeItem)
 {
   QList<VariablesTreeItem*> items = pVariablesTreeItem->getChildren();
-  for (int i = 0 ; i < items.size() ; i++)
-  {
+  for (int i = 0 ; i < items.size() ; i++) {
     items[i]->setData(0, Qt::Unchecked, Qt::CheckStateRole);
     unCheckVariables(items[i]);
+  }
+}
+
+void VariablesTreeModel::plotAllVariables(VariablesTreeItem *pVariablesTreeItem, PlotWindow *pPlotWindow)
+{
+  QList<VariablesTreeItem*> variablesTreeItems = pVariablesTreeItem->getChildren();
+  if (variablesTreeItems.size() == 0) {
+    QModelIndex index = variablesTreeItemIndex(pVariablesTreeItem);
+    OMPlot::PlotCurve *pPlotCurve = 0;
+    foreach (OMPlot::PlotCurve *curve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+      if (curve->getNameStructure().compare(pVariablesTreeItem->getVariableName()) == 0) {
+        pPlotCurve = curve;
+        break;
+      }
+    }
+    setData(index, Qt::Checked, Qt::CheckStateRole);
+    mpVariablesTreeView->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), pPlotCurve);
+  } else {
+    for (int i = 0 ; i < variablesTreeItems.size() ; i++) {
+      plotAllVariables(variablesTreeItems[i], pPlotWindow);
+    }
   }
 }
 

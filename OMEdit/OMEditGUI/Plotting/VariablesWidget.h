@@ -116,7 +116,8 @@ public:
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   bool removeVariableTreeItem(QString variable);
-  void unCheckVariables(VariablesTreeItem *pVariablelsTreeItem);
+  void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
+  void plotAllVariables(VariablesTreeItem *pVariablesTreeItem, OMPlot::PlotWindow *pPlotWindow);
 private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
