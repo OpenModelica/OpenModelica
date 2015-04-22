@@ -798,7 +798,7 @@ algorithm
     //BackendDump.dumpEquationArray(allParameterEqns, "all parameter equations");
 
     paramSystem := BackendDAE.EQSYSTEM(allParameters, allParameterEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-    (_, m, mT, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(paramSystem, BackendDAE.NORMAL(), NONE());
+    (m, mT) := BackendDAEUtil.incidenceMatrix(paramSystem, BackendDAE.NORMAL(), NONE());
     //BackendDump.dumpIncidenceMatrix(m);
     //BackendDump.dumpIncidenceMatrixT(mT);
 
@@ -1062,7 +1062,7 @@ protected
   Boolean b;
   BackendDAE.IncidenceMatrix mt;
 algorithm
-  (_, _, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), NONE());
+  (_, mt) := BackendDAEUtil.incidenceMatrix(inSystem, BackendDAE.NORMAL(), NONE());
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inSystem;
   (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
   outSystem := if b then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else inSystem;
@@ -1317,7 +1317,7 @@ algorithm
   nEqns := BackendDAEUtil.equationSize(inEqns);
   syst := BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
   funcs := BackendDAEUtil.getFunctions(inShared);
-  (syst, m_, _, _, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
+  (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
 //BackendDump.dumpEqSystem(syst, "fixInitialSystem");
 //BackendDump.dumpVariables(inInitVars, "selected initialization variables");
 //BackendDump.dumpIncidenceMatrix(m_);
@@ -1337,7 +1337,7 @@ algorithm
   nAddEqs := intMax(nVars-nEqns + inIndex, inIndex);
 //print("nAddEqs: " + intString(nAddEqs) + "\n");
   m_ := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
-  SOME(m) := BackendDAEUtil.copyIncidenceMatrix(SOME(m_)) "deep copy";
+  m := arrayCopy(m_) "deep copy";
 
   // modify incidence matrix for over-determined systems
   nAddVars := intMax(nEqns-nVars + inIndex, inIndex);
@@ -1961,7 +1961,7 @@ algorithm
       eqns = BackendEquation.listEquation(list_inEqns);
       funcs = BackendDAEUtil.getFunctions(shared);
       system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      (_, m, _, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.NORMAL(), SOME(funcs));
+      (m, _) = BackendDAEUtil.incidenceMatrix(system, BackendDAE.NORMAL(), SOME(funcs));
       listVar=m[inUnassignedEqn];
       false=intEq(0, listLength(listVar));
 

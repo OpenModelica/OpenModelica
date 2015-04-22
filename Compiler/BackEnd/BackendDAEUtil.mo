@@ -3861,7 +3861,7 @@ algorithm
   end matchcontinue;
 end addValuetoMatrix;
 
-public function copyIncidenceMatrix
+protected function copyIncidenceMatrix
   input Option<BackendDAE.IncidenceMatrix> inM;
   output Option<BackendDAE.IncidenceMatrix> outM;
 algorithm
