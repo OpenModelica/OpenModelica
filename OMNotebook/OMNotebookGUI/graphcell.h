@@ -131,7 +131,7 @@ namespace IAEX
     void setExpr(QString);
     void showVariableButton(bool);
 
-    void delegateFinished();
+    void delegateFinished(InputCellDelegate *delegate);
     void setState(int state);
 
   protected:

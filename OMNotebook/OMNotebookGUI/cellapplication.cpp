@@ -225,8 +225,8 @@ namespace IAEX
       {
         // 2006-02-27 AF, use environment variable to find DrModelica
         // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-        QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
-        //QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/QuickTour/HelloWorld.onb";
+        //QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
+        QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/QuickTour/HelloWorld.onb";
 
         if( dir.exists( drmodelica ))
           open(drmodelica);

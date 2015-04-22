@@ -145,7 +145,7 @@ HEADERS += \
 FORMS += ImageSizeDlg.ui \
     OtherDlg.ui \
     searchform.ui
-# -------For OMNIorb
+
 win32 {
   QMAKE_LFLAGS += -enable-auto-import
   DEFINES += IMPORT_INTO=1
@@ -157,7 +157,6 @@ win32 {
 } else {
   include(OMNotebook.config)
 }
-#---------End OMNIorb
 
 LIBS += $${PLOTLIBS} \
         $${OMCLIBS}

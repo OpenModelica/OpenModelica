@@ -1440,9 +1440,15 @@ namespace IAEX {
         //       the commands should be sent to OMC in the same sequence
         //       they appear in the notebook, otherwise a simulate command
         //       might finish later than a plot!
-        EvalThread* et = new EvalThread(getDelegate(), expr);
-        connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
-        et->start();
+
+        /*! @todo we can't use Qt threads with OpenModelica shared library. Use pthreads here.
+         * for now just call it without threads.
+         */
+//        EvalThread* et = new EvalThread(getDelegate(), expr);
+//        connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+//        et->start();
+        getDelegate()->evalExpression(expr);
+        delegateFinished(getDelegate());
       }
 
       input_->blockSignals(false);
@@ -1450,13 +1456,12 @@ namespace IAEX {
     }
   }
 
-  void GraphCell::delegateFinished()
+  void GraphCell::delegateFinished(InputCellDelegate *delegate)
   {
-    EvalThread* et = static_cast<EvalThread*>(sender());
-    QString res   = et->getResult();
-    QString error = et->getError();
+    QString res   = delegate->getResult();
+    QString error = delegate->getError();
 
-    delete sender();
+    //delete sender();
     guard->unlock();
 
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
