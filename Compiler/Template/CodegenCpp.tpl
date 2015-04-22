@@ -6287,7 +6287,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%match eq case SES_LINEAR(__) then
         let size = listLength(vars)
         <<
-        typedef StatArrayDim2<double,<%size%>,<%size%>,false> AMATRIX;
+        typedef StatArrayDim2<double,<%size%>,<%size%>> AMATRIX;
         >>
     %>
 
@@ -6326,7 +6326,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
       boost::shared_ptr<AMATRIX> __A; //dense
      //b vector
-     StatArrayDim1<double,<%size%>,false > __b;
+     StatArrayDim1<double,<%size%>> __b;
     >>
     %>
 
@@ -7174,13 +7174,13 @@ match simVar
       let typeString = variableType(type_)
       let array_dimensions =  arrayextentDims(name, v.numArrayElement)
       match dims
-        case "0" then
-          <<
-          <%typeString%>& <%arrayName%>;
-          >>
-        else
+      case "0" then
         <<
-         StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>,true> <%arrayName%>;
+        <%typeString%>& <%arrayName%>;
+        >>
+      else
+        <<
+        RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
         >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then

@@ -162,6 +162,364 @@ protected:
   bool _static;
   bool _isReference;
 };
+
+/**
+ * Base class for array of references to externally stored elements
+ * @param T type of the array
+ * @param nelems number of elements of array
+ */
+template<typename T, std::size_t nelems>
+class RefArray : public BaseArray<T>
+{
+public:
+  /**
+   * Constuctor for reference array
+   * it uses data from simvars memory
+   */
+  RefArray(T* data)
+    :BaseArray<T>(true, true)
+  {
+    std::transform(data, data + nelems,
+                   _ref_array_data.c_array(), CArray2RefArray<T>());
+  }
+
+  /**
+   * Constuctor for reference array
+   * intialize array with reference data from simvars memory
+   */
+  RefArray(T** ref_data)
+    :BaseArray<T>(true, true)
+  {
+    T **refs = _ref_array_data.c_array();
+    std::transform(refs, refs + nelems, ref_data,
+                   refs, RefArray2RefArray<T>());
+  }
+
+  /**
+   * Default constuctor for reference array
+   * empty array
+   */
+  RefArray()
+    :BaseArray<T>(true, true)
+  {
+  }
+
+  ~RefArray() {}
+
+  /**
+   * Assigns data to array
+   * @param data  new array data
+   * a.assign(data)
+   */
+  virtual void assign(const T* data)
+  {
+    T **refs = _ref_array_data.c_array();
+    std::transform(refs, refs + nelems, data,
+                   refs, CopyCArray2RefArray<T>());
+  }
+
+ /**
+  * Assigns array data to array
+  * @param b any array of type BaseArray
+  * a.assign(b)
+  */
+  virtual void assign(const BaseArray<T>& b)
+  {
+    T **refs = _ref_array_data.c_array();
+    if(b.isReference())
+      std::transform(refs, refs + nelems, b.getDataReferences(),
+                     refs, CopyRefArray2RefArray<T>());
+    else
+      std::transform(refs, refs + nelems, b.getData(),
+                     refs, CopyCArray2RefArray<T>());
+  }
+
+  /**
+   * Access to data (read-only)
+   */
+  virtual const T* getData() const
+  {
+    std::runtime_error("Access const data of reference array is not supported");
+  }
+
+  /**
+   * Access to c-array data
+   */
+  virtual T* getData()
+  {
+    std::runtime_error("Access data of reference array is not supported");
+  }
+
+  /**
+   * Copies the array data of size n in the data array
+   * data has to be allocated before getDataCopy is called
+   */
+  virtual void getDataCopy(T data[], size_t n) const
+  {
+    const T* const * simvars_data  = _ref_array_data.begin();
+    std::transform(simvars_data, simvars_data + n, data, RefArray2CArray<T>());
+  }
+
+  /**
+   * Access to data references (read-only)
+   */
+  virtual const T* const* getDataReferences() const
+  {
+    return _ref_array_data.data();
+  }
+
+  /**
+   * Returns number of elements
+   */
+  virtual size_t getNumElems() const
+  {
+    return nelems;
+  }
+
+  virtual void setDims(const std::vector<size_t>& v) {  }
+
+  /**
+   * Resize array method
+   * @param dims vector with new dimension sizes
+   * static array could not be resized
+   */
+  virtual void resize(const std::vector<size_t>& dims)
+  {
+    std::runtime_error("Resize reference array is not supported");
+  }
+
+protected:
+  //reference array data
+  boost::array<T*, nelems> _ref_array_data;
+};
+
+/**
+ * One dimensional static reference array, specializes RefArray
+ * @param T type of the array
+ * @param size dimension of array
+ */
+template<typename T, std::size_t size>
+class RefArrayDim1 : public RefArray<T, size>
+{
+public:
+  /**
+   * Constuctor for one dimensional reference array
+   * it uses data from simvars memory
+   */
+  RefArrayDim1(T* data) : RefArray<T,size>(data) { }
+
+  /**
+   * Constuctor for one dimensional reference array
+   * intialize array with reference data from simvars memory
+   */
+  RefArrayDim1(T** ref_data) : RefArray<T,size>(ref_data) { }
+
+  /**
+   * Index operator to access array element
+   * @param idx  vector of indices
+   */
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    return *(RefArray<T, size>::_ref_array_data[idx[0]-1]);
+  }
+
+  /**
+   * Index operator to access array element
+   * @param index  index
+   */
+  inline virtual T& operator()(size_t index)
+  {
+    return *(RefArray<T, size>::_ref_array_data[index-1]);
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size);
+    return v;
+  }
+
+  /**
+   * Return size of one dimension
+   */
+  virtual int getDim(size_t dim) const
+  {
+    return (int)size;
+  }
+  
+  /**
+   * Returns number of dimensions
+   */
+  virtual size_t getNumDims() const
+  {
+    return 1;
+  }
+};
+
+/**
+ * Two dimensional static reference array, specializes RefArray
+ * @param T type of the array
+ * @param size1  size of dimension one
+ * @param size2  size of dimension two
+ */
+template<typename T, std::size_t size1, std::size_t size2>
+class RefArrayDim2 : public RefArray<T, size1*size2>
+{
+public:
+ /**
+  * Constuctor for two dimensional reference array
+  * it uses data from simvars memory
+  */
+  RefArrayDim2(T* data) : RefArray<T,size1*size2>(data) { }
+
+ /**
+  * Constuctor for two dimensional reference array
+  * intialize array with reference data from simvars memory
+  */
+  RefArrayDim2(T** ref_data) : RefArray<T,size1*size2>(ref_data) { }
+
+  /**
+   * Index operator to access array element
+   * @param idx  vector of indices
+   */
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    return *(RefArray<T, size1*size2>::
+             _ref_array_data[idx[0]-1 + size1*(idx[1]-1)]);
+  }
+
+  /**
+   * Index operator to access array element
+   * @param i  index 1
+   * @param j  index 2
+   */
+  inline virtual T& operator()(size_t i, size_t j)
+  {
+    return *(RefArray<T, size1*size2>::
+             _ref_array_data[i-1 + size1*(j-1)]);
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size1);
+    v.push_back(size2);
+    return v;
+  }
+
+  /**
+   * Return size of one dimension
+   */
+  virtual int getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return (int)size1;
+    case 2:
+      return (int)size2;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual size_t getNumDims() const
+  {
+    return 2;
+  }
+};
+
+/**
+ * Three dimensional static reference array, specializes RefArray
+ * @param  T type of the array
+ * @param size1  size of dimension one
+ * @param size2  size of dimension two
+ * @param size3  size of dimension two
+ */
+template<typename T, std::size_t size1, std::size_t size2, std::size_t size3>
+class RefArrayDim3 : public RefArray<T, size1*size2*size3>
+{
+public:
+ /**
+  * Constuctor for three dimensional reference array
+  * it uses data from simvars memory
+  */
+  RefArrayDim3(T* data) : RefArray<T,size1*size2*size3>(data) { }
+
+ /**
+  * Constuctor for three dimensional reference array
+  * intialize array with reference data from simvars memory
+  */
+  RefArrayDim3(T** ref_data) : RefArray<T,size1*size2*size3>(ref_data) { }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size1);
+    v.push_back(size2);
+    v.push_back(size3);
+    return v;
+  }
+
+  /**
+   * Return size of one dimension
+   */
+  virtual int getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return (int)size1;
+    case 2:
+      return (int)size2;
+    case 3:
+      return (int)size3;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
+  }
+
+  /**
+   * Index operator to access array element
+   * @param idx  vector of indices
+   */
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    return *(RefArray<T, size1*size2*size3>::
+             _ref_array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
+  }
+
+  /**
+   * Index operator to access array element
+   * @param i  index 1
+   * @param j  index 2
+   * @param k  index 3
+   */
+  inline virtual T& operator()(size_t i, size_t j, size_t k)
+  {
+    return *(RefArray<T, size1*size2*size3>::
+             _ref_array_data[i-1 + size1*(j-1 + size2*(k-1))]);
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual size_t getNumDims() const
+  {
+    return 3;
+  }
+};
+
 /**
 * One dimensional static array, implements BaseArray interface methods
 * @param T type of the array
