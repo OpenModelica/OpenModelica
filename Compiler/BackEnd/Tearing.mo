@@ -2106,7 +2106,7 @@ algorithm
       // ascertain if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
-      
+
       // repeat until system is causal
       (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
 
@@ -2158,7 +2158,7 @@ algorithm
       // ascertain if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1In,ass2In,{});
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
-      
+
       // repeat until system is causal
       (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn);
 
@@ -2188,7 +2188,7 @@ algorithm
      TearingHeuristic potentialsFunc;
    case(_,_,_,_,_,_,_,_,_,_,_,_)
      equation
-     
+
        // get the funtion for the requested tearing heuristic
        heuristic = Config.getTearingHeuristic();
        potentialsFunc = match heuristic
@@ -2208,23 +2208,23 @@ algorithm
              Error.addInternalError("Unknown tearing heuristic: " + heuristic, sourceInfo());
           then fail();
        end match;
-       
+
        if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
          print("\n" + BORDER + "\nBEGINNING of TearingHeuristic\n\n");
          print("Chosen Heuristic: " + heuristic + "\n\n\n");
        end if;
-       
+
        // get potential tearing variables
        potentials = potentialsFunc(m,mt,me,meT,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
-       
+
        // check if selection succeeded
        true = intGe(listLength(potentials),1);
-       
+
        if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
          print("\nEND of TearingHeuristic\n" + BORDER + "\n\n");
        end if;
     then listGet(potentials,1);
-   
+
    else
      equation
        print("\nThe selection of a new tearing variable failed.");
@@ -2261,7 +2261,7 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // Cellier heuristic [MC1]
-  
+
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
   ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
@@ -2273,20 +2273,20 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
-  
+
   // 2. gather these columns in a new array (reduced mtIn)
   mtsel := Array.select(mtIn,selectedcols1);
-  
+
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols2 := List.unique(selectedcols2);
-  
+
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Variables from (1st) with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 5. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2294,11 +2294,11 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 6. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,potentials,_,_,_)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-  
+
   // 7. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2316,22 +2316,22 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC2]
-  
+
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
   mtsel := Array.select(mtIn,selectedcols0);
-  
+
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols1 := List.unique(selectedcols1);
-  
+
   // convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Non-discrete variables with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 2. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2339,11 +2339,11 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 3. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,potentials,_,_,_)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-  
+
   // 4. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2362,33 +2362,33 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC11]
-  
+
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
   ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
   end if;
-  
+
   // Without discrete:
   (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
-  
+
   // 2. gather these columns in a new array (reduced mtIn)
   mtsel := Array.select(mtIn,selectedcols1);
-  
+
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols2 := List.unique(selectedcols2);
-  
+
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Variables from (1st) with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 5. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2396,17 +2396,17 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 6. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,potentials,_,_,_)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-  
+
   // 7. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n3rd: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (2nd) causalizing most equations)\n\n");
   end if;
-  
+
   // 8. choose vars with the most impossible assignments
   (potentials,_,_) := countImpossibleAss(potentials,ass2In,metIn,{},{},0);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2424,22 +2424,22 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC21]
-  
+
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
   mtsel := Array.select(mtIn,selectedcols0);
-  
+
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols1 := List.unique(selectedcols1);
-  
+
   // convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Non-discrete variables with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 2. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2447,17 +2447,17 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 3. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,potentials,_,_,_)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-  
+
   // 4. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n2nd: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (1st) causalizing most equations)\n\n");
   end if;
-  
+
   // 5. choose vars with the most impossible assignments
   (potentials,_,_) := countImpossibleAss(potentials,ass2In,metIn,{},{},0);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2476,39 +2476,39 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC12]
-  
+
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
   ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
   end if;
-  
+
   // Without discrete:
   (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
-  
+
   // 2. gather these columns in a new array (reduced mtIn)
   mtsel := Array.select(mtIn,selectedcols1);
-  
+
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols2 := List.unique(selectedcols2);
-  
+
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Variables from (1st) with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 5. choose vars with the most impossible assignments
   (selectedcols1,_,_) := countImpossibleAss(selectedcols1,ass2In,metIn,{},{},0);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n3rd: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Variables from (2nd) with most incident impossible assignments)\n\n");
   end if;
-  
+
   // 6. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2516,11 +2516,11 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 7. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,potentials,_,_,_)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-  
+
   // 8. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2538,28 +2538,28 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // modified Cellier heuristic [MC22]
-  
+
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
   mtsel := Array.select(mtIn,selectedcols0);
-  
+
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols1 := List.unique(selectedcols1);
-  
+
   // convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Non-discrete variables with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 2. choose vars with the most impossible assignments
   (selectedcols1,_,_) := countImpossibleAss(selectedcols1,ass2In,metIn,{},{},0);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n2nd: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Variables from (1st) with most incident impossible assignments)\n\n");
   end if;
-  
+
   // 3. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2567,11 +2567,11 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 4. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,potentials,_,_,_)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-  
+
   // 5. convert indexes from msel2t to indexes from mtIn
   potentials := selectFromList(selectedcols1,potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2590,33 +2590,33 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // Cellier heuristic [MC13]
-  
+
   // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
   ((_,selectedcolsLst)) := Array.fold(mIn,findMostEntries,(0,{}));
   selectedcols1 := List.unique(List.flatten(selectedcolsLst));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
   end if;
-  
+
   // Without discrete:
   (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
-  
+
   // 2. gather these columns in a new array (reduced mtIn)
   mtsel := Array.select(mtIn,selectedcols1);
-  
+
   // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols2)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols2 := List.unique(selectedcols2);
-  
+
   // 4. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols1,selectedcols2);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Variables from (1st) with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 5. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2624,22 +2624,22 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 6. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,_,_,_,counts1)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
   counts1 := listReverse(counts1);
-  
+
   // 8. determine for each variable the number of impossible assignments and save them in counts2
   (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,metIn,{},{},0);
   counts2 := listReverse(counts2);
-  
+
   // 9. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
   points := List.threadMap(counts1,counts2,intAdd);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nPoints: "+ stringDelimitList(List.map(points,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
   end if;
-  
+
   // 10. Choose vars with most points as potentials and convert indexes
   potentials := maxListInt(points);
   potentials := selectFromList(selectedcols1,potentials);
@@ -2658,22 +2658,22 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel2t;
 algorithm
   // Cellier heuristic [MC23]
-  
+
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
   mtsel := Array.select(mtIn,selectedcols0);
-  
+
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols1 := List.unique(selectedcols1);
-  
+
   // 2. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Non-discrete variables with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 3. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2681,22 +2681,22 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,_,_,_,counts1)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
   counts1 := listReverse(counts1);
-  
+
   // 5. determine for each variable the number of impossible assignments and save them in counts2
   (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,metIn,{},{},0);
   counts2 := listReverse(counts2);
-  
+
   // 6. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
   points := List.threadMap(counts1,counts2,intAdd);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nPoints: "+ stringDelimitList(List.map(points,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
   end if;
-  
+
   // 7. Choose vars with most points as potentials and convert indexes
   potentials := maxListInt(points);
   potentials := selectFromList(selectedcols1,potentials);
@@ -2716,26 +2716,26 @@ protected
   Boolean b;
 algorithm
   // modified Cellier heuristic [MC231]
-  
+
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Start round 1:\n==============\n\n");
   end if;
-  
+
   // 0. Consider only non-discrete Vars
   varlst := List.intRange(arrayLength(mtIn));
   (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
   mtsel := Array.select(mtIn,selectedcols0);
-  
+
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   ((edges,_,selectedcols1)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   selectedcols1 := List.unique(selectedcols1);
-  
+
   // 2. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Non-discrete variables with most occurrence in equations (" + intString(edges) +" times))\n\n");
   end if;
-  
+
   // 3. select the rows(eqs) from mIn which could be causalized by knowing one more Var
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2743,22 +2743,22 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,_,_,_,counts1)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
   counts1 := listReverse(counts1);
-  
+
   // 5. determine for each variable the number of impossible assignments and save them in counts2
   (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,metIn,{},{},0);
   counts2 := listReverse(counts2);
-  
+
   // 6. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points1
   points1 := List.threadMap(counts1,counts2,intAdd);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nPoints: "+ stringDelimitList(List.map(points1,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
   end if;
-  
+
   // 7. Choose vars with most points as potentials and convert indexes
   potentials1 := maxListInt(points1);
   potpoints1 := listGet(points1,listGet(potentials1,1));
@@ -2766,33 +2766,33 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n2nd: "+ stringDelimitList(List.map(potentials1,intString),",")+"\n(Variables from (1st) with most points (" + intString(potpoints1) + " points) - potentials1)\n\n");
   end if;
-  
+
   // 8. choose non-discrete vars with edges-1 edges and write the indexes in a list
   ((_,_,selectedcols1)) := Array.fold(mtsel,findNEntries,(edges-1,1,{}));
   selectedcols1 := List.unique(selectedcols1);
-  
+
   // 9. convert indexes from mtsel to indexes from mtIn
   selectedcols1 := selectFromList(selectedcols0,selectedcols1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nStart round 2:\n==============\n\n1st: "+ stringDelimitList(List.map(selectedcols1,intString),",")+"\n(Variables with occurrence in " + intString(edges-1) + " equations)\n\n" + stringDelimitList(List.map(selectedrows,intString),",")+"\n(Equations which could be causalized by knowing one more Var)\n\n");
   end if;
-  
+
   // 10. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   msel2t := Array.select(mtIn,selectedcols1);
   ((_,_,_,_,_,_,_,counts1)) := Array.fold(msel2t,selectCausalVars,(meIn,ass1In,selectedrows,selectedcols1,{},0,1,{}));
   counts1 := listReverse(counts1);
-  
+
   // 11. determine for each variable the number of impossible assignments and save them in counts2
   (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,metIn,{},{},0);
   counts2 := listReverse(counts2);
-  
+
   // 12. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points2
   points2 := List.threadMap(counts1,counts2,intAdd);
   points2 := if listEmpty(points2) then {0} else points2;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nPoints: "+ stringDelimitList(List.map(points2,intString),",")+"\n(Sum of impossible assignments and causalizable equations)\n");
   end if;
-  
+
   // 13. Choose vars with most points as potentials and convert indexes
   potentials2 := maxListInt(points2);
   potpoints2 := listGet(points2,listGet(potentials2,1));
@@ -2800,7 +2800,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n2nd: "+ stringDelimitList(List.map(potentials2,intString),",")+"\n(Variables from (1st) with most points (" + intString(potpoints2) + " points) - potentials2)\n\n");
   end if;
-  
+
   // 14. choose potentials-set with most points
   b := intGe(potpoints1,potpoints2);
   potentials := if b then potentials1 else potentials2;
@@ -2819,34 +2819,34 @@ protected
   BackendDAE.IncidenceMatrix mtsel,msel;
 algorithm
   // Cellier heuristic [MC3]
-  
+
   // 1. Find all unassigned equations
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(assEq,intString),",")+"\n(All unassigned equations)\n\n");
   end if;
-  
+
   // 2. Determine the equations with size(equation)+1 variables and save them in causEq
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,1,{},{});
   causEq := listAppend(assEq_multi,assEq_single);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(causEq,intString),",")+"\n(Equations from (1st) which could be causalized by knowing one more variable)\n\n");
   end if;
-  
+
   // 3. Determine the variables in causEq
   msel := Array.select(mIn,causEq);
   potentialTVars := List.unique(List.flatten(arrayList(msel)));
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("3rd: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(Variables in the equations from (2nd))\n\n");
   end if;
-  
+
   // 4. Remove the discrete variables and the variables with attribute tearingSelect=never
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
   (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("4th: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All non-discrete variables from (3rd) without attribute 'never')\n\n");
   end if;
-  
+
   // 4.1 Check if potentialTVars is empty, if yes, choose all unassigned non-discrete variables without attribute tearingSelect=never as potentialTVars
   if listEmpty(potentialTVars) then
     ((_,potentialTVars)) := Array.fold(ass1In,getUnassigned,(1,{}));
@@ -2861,14 +2861,14 @@ algorithm
       print("\n4th: "+ stringDelimitList(List.map(potentialTVars,intString),",")+"\n(All unassigned non-discrete variables without attribute 'never')\n\n");
     end if;
   end if;
-  
+
   // 5.1 Determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
   mtsel := Array.select(mtIn,potentialTVars);
   ((_,_,_,_,_,_,_,counts1)) := Array.fold(mtsel,selectCausalVars,(meIn,ass1In,causEq,potentialTVars,{},0,1,{}));
-  
+
   // 5.2 Determine for each variable the number of impossible assignments and save them in counts2
   (_,counts2,_) := countImpossibleAss(potentialTVars,ass2In,metIn,{},{},0);
-  
+
   // 5.3 Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
   points := List.threadMapReverse(counts1,counts2,intAdd);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -2881,7 +2881,7 @@ algorithm
       print("    (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Points after preferring variables with attribute 'prefer')\n");
     end if;
   end if;
-  
+
   // 5.5 Avoid variables with annotation attribute 'tearingSelect=avoid'
   if not listEmpty(tSel_avoid) then
     points := preferAvoidVariables(potentialTVars, points, tSel_avoid, 0.334, 1);
@@ -2889,7 +2889,7 @@ algorithm
       print("    (Points): "+ stringDelimitList(List.map(points,intString),",")+"\n(Points after discrimination against variables with attribute 'avoid')\n");
     end if;
   end if;
-  
+
   // 6. Choose vars with most points and save them in bestPotentialTVars
   bestPotentialTVars := maxListInt(points);
   maxpoints := listGet(points,listGet(bestPotentialTVars,1));
@@ -2897,12 +2897,12 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n6th: "+ stringDelimitList(List.map(bestPotentialTVars,intString),",")+"\n(Variables from (4th) with most points [" + intString(maxpoints) + "])\n\n");
   end if;
-  
+
   // 7. Choose vars with most occurrence in equations as potentials
   mtsel := Array.select(mtIn,bestPotentialTVars);
   ((edges,_,potentials)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   potentials := List.unique(potentials);
-  
+
   // Convert indexes from mtsel to indexes from mtIn
   potentials := selectFromList(bestPotentialTVars,potentials);
   tVar := listGet(potentials,1);
@@ -2924,7 +2924,7 @@ protected
   BackendDAE.IncidenceMatrix mtsel;
 algorithm
   // Cellier heuristic [MC4]
-  
+
   // 1. Use heuristics MC1, MC2, MC11, MC21, MC12, MC22, MC13, MC23, MC231, MC3 to determine their potential sets
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Heuristic uses all modified Cellier-Heuristics\n\nHeuristic [MC1]\n"+ BORDER +"\n");
@@ -2978,24 +2978,24 @@ algorithm
     print("[MC231]: " + stringDelimitList(List.map(potentials9,intString),",")+"\n");
     print("[MC3]: " + stringDelimitList(List.map(potentials10,intString),",")+"\n\n");
   end if;
-  
+
   // 2. Collect all variables from different potential-sets in one list
   selectedvars := listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(potentials1,potentials2),potentials3),potentials4),potentials5),potentials6),potentials7),potentials8),potentials9),potentials10);
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedvars,intString),",")+"\n(All potentials)\n\n");
   end if;
-  
+
   // 3. determine potentials with most occurrence in potential sets
  (count,selectedvars,_) := countMultiples(arrayCreate(1,selectedvars));
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(selectedvars,intString),",")+"\n(Variables from (1st) occurring in most potential-sets (" + stringDelimitList(List.map(count,intString),",") + " sets))\n\n");
   end if;
-  
+
   // 4. Choose vars with most occurrence in equations as potentials
   mtsel := Array.select(mtIn,selectedvars);
   ((edges,_,potentials)) := Array.fold(mtsel,findMostEntries2,(0,1,{}));
   potentials := List.unique(potentials);
-  
+
   // 5. convert indexes from mtsel to indexes from mtIn
   potentials := selectFromList(selectedvars,potentials);
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -3239,11 +3239,11 @@ protected
 algorithm
   // select equations not assigned yet
   ((_,assEq)) := Array.fold(ass2In,getUnassigned,(1,{}));
-  
+
   // find equations with one variable
   (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,mIn,mapEqnIncRow,mapIncRowEqn,0,{},{});
   assEq := listAppend(assEq_multi,assEq_single);
-  
+
   // transform equationlist to equationlist with collective equations
   assEq_coll := List.map1r(assEq,arrayGet,mapIncRowEqn);
   assEq_coll := List.unique(assEq_coll);
@@ -3251,7 +3251,7 @@ algorithm
      print("New assEq: "+stringDelimitList(List.map(assEq,intString),",")+"\n");
      print("New assEq_coll: "+stringDelimitList(List.map(assEq_coll,intString),",")+"\n");
   end if;
-  
+
   // leave only equations in queue which are still not assigned and save in eqQueueOut
   // and choose only equations from assEq_coll which are not already in queue and save in assEq_coll
   (eqQueueOut,assEq_coll,_) := List.intersection1OnTrue(assEq_coll,eqQueueIn,intEq);
@@ -3259,7 +3259,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("eqQueue: {" + stringDelimitList(List.map(eqQueueOut,intString),",") + "}\n");
   end if;
-  
+
   // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the
   //       residual equation it is not possible to match starting from the variables, so this case is not considered.
   //       For other tearing structures this case has to be added.
