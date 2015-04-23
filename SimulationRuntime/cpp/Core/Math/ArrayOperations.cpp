@@ -257,6 +257,20 @@ void fill_array(BaseArray<T>& inputArray, T b)
   std::fill(data, data + nelems, b);
 };
 
+template <typename T>
+void pow_array_scalar(const BaseArray<double> &inputArray, T exponent,
+                      BaseArray<double> &outputArray)
+{
+  size_t nelems = inputArray.getNumElems();
+  if (outputArray.getNumElems() != nelems)
+    outputArray.setDims(inputArray.getDims());
+  const double *data = inputArray.getData();
+  double *dest = outputArray.getData();
+  double *end = dest + nelems;
+  while (dest != end)
+    *dest++ = pow(*data++, exponent);
+}
+
 template < typename T >
 void subtract_array(BaseArray<T>& leftArray, BaseArray<T>& rightArray, BaseArray<T>& resultArray)
 {
@@ -470,6 +484,9 @@ template void BOOST_EXTENSION_EXPORT_DECL divide_array(BaseArray<bool>& inputArr
 template void BOOST_EXTENSION_EXPORT_DECL fill_array(BaseArray<double>& inputArray, double b);
 template void BOOST_EXTENSION_EXPORT_DECL fill_array(BaseArray<int>& inputArray, int b);
 template void BOOST_EXTENSION_EXPORT_DECL fill_array(BaseArray<bool>& inputArray, bool b);
+
+template void BOOST_EXTENSION_EXPORT_DECL pow_array_scalar(const BaseArray<double> &inputArray, double exponent, BaseArray<double> &outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL pow_array_scalar(const BaseArray<double> &inputArray, int exponent, BaseArray<double> &outputArray);
 
 template void BOOST_EXTENSION_EXPORT_DECL subtract_array(BaseArray<double>& leftArray, BaseArray<double>& rightArray, BaseArray<double>& resultArray);
 template void BOOST_EXTENSION_EXPORT_DECL subtract_array(BaseArray<int>& leftArray, BaseArray<int>& rightArray, BaseArray<int>& resultArray);

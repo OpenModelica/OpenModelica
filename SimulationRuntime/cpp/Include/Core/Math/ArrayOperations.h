@@ -58,6 +58,12 @@ void divide_array( BaseArray<T> & inputArray ,const T &b, BaseArray<T> & outputA
 template < typename T >
 void fill_array( BaseArray<T> & inputArray , T b);
 
+/**
+ * Element wise exponentiation
+ */
+template <typename T>
+void pow_array_scalar(const BaseArray<double> &inputArray, T exponent, BaseArray<double> &outputArray);
+
 template < typename T >
 void subtract_array( BaseArray<T> & leftArray , BaseArray<T> & rightArray, BaseArray<T> & resultArray  );
 

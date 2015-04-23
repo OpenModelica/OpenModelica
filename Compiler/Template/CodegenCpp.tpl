@@ -11963,12 +11963,19 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case ADD_ARRAY_SCALAR(__) then "daeExpBinary:ERR ADD_ARRAY_SCALAR not supported"
   case SUB_SCALAR_ARRAY(__) then "daeExpBinary:ERR SUB_SCALAR_ARRAY not supported"
   case MUL_SCALAR_PRODUCT(__) then
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int>'
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int'
                         case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
                         else 'double'
     'dot_array<<%type%>>(<%e1%>, <%e2%>)'
   case DIV_SCALAR_ARRAY(__) then "daeExpBinary:ERR DIV_SCALAR_ARRAY not supported"
-  case POW_ARRAY_SCALAR(__) then "daeExpBinary:ERR POW_ARRAY_SCALAR not supported"
+  case POW_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
+    let dimstr = checkDimension(dims)
+    let type = "double"
+    let var = match dimstr // copy to contiguous memory and pow in situ
+      case "" then tempDecl1('DynArrayDim<%listLength(dims)%><<%type%>>', e1, &preExp)
+      else tempDecl1('StatArrayDim<%listLength(dims)%><<%type%>, <%dimstr%>>', e1, &preExp)
+    let &preExp += 'pow_array_scalar(<%var%>, <%e2%>, <%var%>);<%\n%>'
+    '<%var%>'
   case POW_SCALAR_ARRAY(__) then "daeExpBinary:ERR POW_SCALAR_ARRAY not supported"
   case POW_ARR(__) then "daeExpBinary:ERR POW_ARR not supported"
   case POW_ARR2(__) then "daeExpBinary:ERR POW_ARR2 not supported"
