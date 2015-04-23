@@ -5101,6 +5101,14 @@ algorithm
     else
     equation
       f = Differentiate.differentiateExpSolve(e, cr, functions);
+      f = match(f)
+          local DAE.Exp one;
+          /* der(f(x)) = c/y => c*x = y*lhs */
+          case DAE.BINARY(one,DAE.DIV(), DAE.CREF()) /*Note: 1/x => ln(x) => Expression.solve will solve it */
+          guard Expression.isConst(one) and not Expression.isZero(one)
+          then one;
+          else f;
+          end match;
    then (f,false);
   end matchcontinue;
 end tryToSolveOrDerive;
