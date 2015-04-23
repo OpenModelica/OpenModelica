@@ -187,8 +187,7 @@ win32 {
   DEFINES += IMPORT_INTO=1
 
   CONFIG(debug, debug|release) {
-  LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rtd -lomnithread34_rtd \
-    -L../../build/lib/omc -lOMPlot -lomqwtd \
+  LIBS += -L../../build/lib/omc -lOMPlot -lomqwtd \
     -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L../../Parser -lantlr3 \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
@@ -198,8 +197,7 @@ win32 {
     # -s will remove all symbol table and relocation information from the executable.
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE =
-    LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt \
-      -L../../build/lib/omc -lOMPlot -lomqwt \
+    LIBS += -L../../build/lib/omc -lOMPlot -lomqwt \
       -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
       -L../../Parser -lantlr3 \
       # required for backtrace

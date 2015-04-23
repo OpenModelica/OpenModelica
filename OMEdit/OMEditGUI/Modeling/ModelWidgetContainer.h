@@ -48,7 +48,6 @@
 #include <QtWebKit>
 #include <QtXmlPatterns>
 
-
 #include "Component.h"
 #include "StringHandler.h"
 #include "Helper.h"
