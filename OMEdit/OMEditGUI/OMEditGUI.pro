@@ -186,29 +186,23 @@ win32 {
 
   DEFINES += IMPORT_INTO=1
 
-  CONFIG(debug, debug|release) {
-  LIBS += -L../../build/lib/omc -lOMPlot -lomqwtd \
-    -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-    -L../../Parser -lantlr3 \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
-  } else {
+  CONFIG(release, debug|release) {
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
     # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
     # -s will remove all symbol table and relocation information from the executable.
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE =
-    LIBS += -L../../build/lib/omc -lOMPlot -lomqwt \
-      -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-      -L../../Parser -lantlr3 \
-      # required for backtrace
-      -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp \
-      -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
+    # required for backtrace
+    LIBS += -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
   }
+  LIBS += -L../../build/lib/omc -lOMPlot -lomqwt \
+    -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
+    -L../../Parser -lantlr3 \
+    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
   INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
     ../../3rdParty/qwt/build/include \
     ../../OMPlot/OMPlotGUI \
     ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include ../../build/include/omc/c
-
 } else { # Unix libraries and includes
   include(OMEdit.config)
   # On unix we use backtrace of execinfo.h which requires -rdynamic
@@ -217,7 +211,7 @@ win32 {
   # the -rdynamic linker option.  Note that names of "static" functions
   # are not exposed, and won't be available in the backtrace.
   CONFIG(release, debug|release){
-      QMAKE_LFLAGS_RELEASE += -rdynamic
+    QMAKE_LFLAGS_RELEASE += -rdynamic
   }
 }
 
