@@ -671,7 +671,7 @@ class StatArrayDim1 : public StatArray<T, size>
     :StatArray<T, size>(otherarray)
   {
   }
-  
+
   /**
    * Constuctor for one dimensional array
    * copies data  from dynamic array in array memory
@@ -699,7 +699,7 @@ class StatArrayDim1 : public StatArray<T, size>
     return StatArray<T, size>::_array_data[idx[0]-1];
   }
    /**
-   * Assignment operator to assign array of type base array to  two dim static array 
+   * Assignment operator to assign array of type base array to  two dim static array
    * a=b
    * @param b any array of type BaseArray
    */
@@ -1031,7 +1031,7 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
     return StatArray<T, size1*size2>::_array_data[idx[0]-1 + size1*(idx[1]-1)];
   }
   /**
-   * Assignment operator to assign array of type base array to  one dim static array 
+   * Assignment operator to assign array of type base array to  one dim static array
    * a=b
    * @param b any array of type BaseArray
    */
@@ -1384,7 +1384,7 @@ class StatArrayDim3 : public BaseArray<T>
       _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   }
 /**
-   * Assignment operator to assign array of type base array to  three dim static array 
+   * Assignment operator to assign array of type base array to  three dim static array
    * a=b
    * @param b any array of type BaseArray
    */
