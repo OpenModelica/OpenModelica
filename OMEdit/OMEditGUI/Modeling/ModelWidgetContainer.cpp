@@ -1310,6 +1310,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
           if (!isCreatingConnection()) {
             mpClickedComponent = pComponent;
           } else if (isCreatingConnection()) {
+            QApplication::restoreOverrideCursor();
             addConnection(pComponent);  // end the connection
             eventConsumed = true; // consume the event so that connection line or end component will not become selected
           }
@@ -1356,6 +1357,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     mpBitmapShapeAnnotation->updateEndExtent(snappedPoint);
     mpBitmapShapeAnnotation->update();
   } else if (mpClickedComponent) {
+    QApplication::setOverrideCursor(Qt::CrossCursor);
     addConnection(mpClickedComponent);  // start the connection
   }
   QGraphicsView::mouseMoveEvent(event);
@@ -1501,6 +1503,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
     emit keyPressRotateAntiClockwise();
   } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
+    QApplication::restoreOverrideCursor();
     removeConnection();
   } else {
     QGraphicsView::keyPressEvent(event);

@@ -197,8 +197,6 @@ public slots:
   void viewDocumentation();
 protected:
   virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
-  virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
-  virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };

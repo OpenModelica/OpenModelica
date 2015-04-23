@@ -1300,26 +1300,6 @@ void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
   }
 }
 
-//! Event when mouse cursor enters component icon.
-void Component::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
-{
-  Q_UNUSED(event);
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  if ((mType == StringHandler::Connector) &&
-      (pMainWindow->getConnectModeAction()->isChecked()) &&
-      (mpGraphicsView->getViewType() == StringHandler::Diagram) &&
-      (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())) {
-    QApplication::setOverrideCursor(Qt::CrossCursor);
-  }
-}
-
-//! Event when mouse cursor leaves component icon.
-void Component::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
-{
-  Q_UNUSED(event);
-  QApplication::restoreOverrideCursor();
-}
-
 void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
   Component *pComponent = getRootParentComponent();
