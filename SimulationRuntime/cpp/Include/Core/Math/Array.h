@@ -566,7 +566,7 @@ class StatArray : public BaseArray<T>
    * a=b
    * @param b any array of type BaseArray
    */
-  StatArray<T, nelems>& operator=(BaseArray<T>& b)
+  virtual StatArray<T, nelems>& operator=(BaseArray<T>& b)
   {
     if (this != &b)
     {
@@ -671,7 +671,7 @@ class StatArrayDim1 : public StatArray<T, size>
     :StatArray<T, size>(otherarray)
   {
   }
-
+  
   /**
    * Constuctor for one dimensional array
    * copies data  from dynamic array in array memory
@@ -698,7 +698,15 @@ class StatArrayDim1 : public StatArray<T, size>
   {
     return StatArray<T, size>::_array_data[idx[0]-1];
   }
-
+   /**
+   * Assignment operator to assign array of type base array to  two dim static array 
+   * a=b
+   * @param b any array of type BaseArray
+   */
+  virtual StatArrayDim1<T, size>& operator=(BaseArray<T>& b)
+  {
+    return StatArray<T, size>::operator=(b);
+  }
   /**
    * Index operator to access array element
    * @param index  index
@@ -1022,7 +1030,15 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
   {
     return StatArray<T, size1*size2>::_array_data[idx[0]-1 + size1*(idx[1]-1)];
   }
-
+  /**
+   * Assignment operator to assign array of type base array to  one dim static array 
+   * a=b
+   * @param b any array of type BaseArray
+   */
+  virtual StatArrayDim2<T, size1,size2>& operator=(BaseArray<T>& b)
+  {
+    return StatArray<T, size1*size2>::operator=(b);
+  }
   /**
    * Index operator to access array element
    * @param i  index 1
@@ -1367,7 +1383,15 @@ class StatArrayDim3 : public BaseArray<T>
     return StatArray<T, size1*size2*size3>::
       _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   }
-
+/**
+   * Assignment operator to assign array of type base array to  three dim static array 
+   * a=b
+   * @param b any array of type BaseArray
+   */
+  virtual StatArrayDim3<T, size1,size2,size3>& operator=(BaseArray<T>& b)
+  {
+    return StatArray<T, size1*size2*size3>::operator=(b);
+  }
   /**
    * Index operator to access array element
    * @param i  index 1
