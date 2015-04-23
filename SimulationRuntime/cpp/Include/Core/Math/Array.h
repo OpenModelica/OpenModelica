@@ -582,7 +582,7 @@ class StatArray : public BaseArray<T>
    */
   virtual void resize(const std::vector<size_t>& dims)
   {
-    if (dims != BaseArray<T>::getDims())
+    if (dims != this->getDims())
       std::runtime_error("Cannot resize static array!");
   }
 
