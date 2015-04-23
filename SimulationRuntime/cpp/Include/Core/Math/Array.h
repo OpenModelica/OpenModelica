@@ -705,7 +705,8 @@ class StatArrayDim1 : public StatArray<T, size>
    */
   virtual StatArrayDim1<T, size>& operator=(BaseArray<T>& b)
   {
-    return StatArray<T, size>::operator=(b);
+    StatArray<T, size>::operator=(b);
+     return *this;
   }
   /**
    * Index operator to access array element
@@ -1037,7 +1038,8 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
    */
   virtual StatArrayDim2<T, size1,size2>& operator=(BaseArray<T>& b)
   {
-    return StatArray<T, size1*size2>::operator=(b);
+    StatArray<T, size1*size2>::operator=(b);
+    return *this;
   }
   /**
    * Index operator to access array element
@@ -1390,7 +1392,8 @@ class StatArrayDim3 : public BaseArray<T>
    */
   virtual StatArrayDim3<T, size1,size2,size3>& operator=(BaseArray<T>& b)
   {
-    return StatArray<T, size1*size2*size3>::operator=(b);
+     StatArray<T, size1*size2*size3>::operator=(b);
+      return *this;
   }
   /**
    * Index operator to access array element
