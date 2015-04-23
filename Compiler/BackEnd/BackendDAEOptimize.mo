@@ -4137,7 +4137,7 @@ protected function symEulerWork
   input BackendDAE.BackendDAE inDAE;
   input Boolean b " true => add, false => remove euler equation";
   output BackendDAE.BackendDAE outDAE;
-protected 
+protected
   list<BackendDAE.EqSystem> systlst, osystlst = {};
   BackendDAE.EqSystem syst_;
   BackendDAE.Shared shared;
@@ -4213,7 +4213,7 @@ protected
   Integer idx;
   BackendDAE.VarKind kind;
 algorithm
-  kind := if b then BackendDAE.VARIABLE() else BackendDAE.STATE(0,NONE()); 
+  kind := if b then BackendDAE.VARIABLE() else BackendDAE.STATE(0,NONE());
   for cref in crlst loop
     (_, idx) := BackendVariable.getVar2(cref, ovars);
     ovars :=  BackendVariable.setVarKindForVar(idx, kind, ovars);

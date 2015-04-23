@@ -113,7 +113,7 @@ typedef struct SOLVER_INFO
     "lobatto2 [sundial/kinsol needed]",
     "lobatto4 [sundial/kinsol needed]",
     "lobatto6 [sundial/kinsol needed]",
-    "symbolic implicit euler, [compiler flag +symEuler needed]", 
+    "symbolic implicit euler, [compiler flag +symEuler needed]",
     "qss"
   };
 
