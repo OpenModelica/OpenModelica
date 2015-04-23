@@ -571,9 +571,10 @@ template getCppSign(SimCode simCode, SimVar simVar)
   "Get sign of variable in Cpp runtime, resolving aliases"
 ::=
 match simVar
-  case SIMVAR(__) then
+  case SIMVAR(type_=type_) then
     match aliasvar
-      case NEGATEDALIAS(__) then '-'
+      case NEGATEDALIAS(__) then
+        match type_ case T_BOOL(__) then '!' else '-'
       else ''
 end getCppSign;
 

@@ -8157,28 +8157,26 @@ case MODELINFO(varInfo=VARINFO(__)) then
 >>
 end numDerivativevars;
 
-template getAliasVar(AliasVariable aliasvar, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template getAliasSign(SimVar simVar)
+  "Get sign of alias variable, considering its data type"
+::=
+match simVar
+case SIMVAR(type_=type_) then
+  match aliasvar
+  case NEGATEDALIAS(__) then
+    match type_ case T_BOOL(__) then '!' else '-'
+  else ''
+end getAliasSign;
+
+template getAliasCRef(AliasVariable aliasvar, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Returns the alias Attribute of ScalarVariable."
 ::=
   let &varDeclsCref = buffer "" /*BUFD*/
   match aliasvar
-    case NOALIAS(__) then 'noAlias'
-    case ALIAS(__) then '<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>'
-    case NEGATEDALIAS(__) then '-<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>'
+    case ALIAS(__)
+    case NEGATEDALIAS(__) then '<%cref1(varName, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>'
     else 'noAlias'
-end getAliasVar;
-
-
-template getAliasVarName(AliasVariable aliasvar, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Returns the alias Attribute of ScalarVariable."
-::=
-  let &varDeclsCref = buffer "" /*BUFD*/
-  match aliasvar
-    case NOALIAS(__) then 'noAlias'
-    case ALIAS(__) then '<%cref1(varName, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>'
-    case NEGATEDALIAS(__) then '<%cref1(varName, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>'
-    else 'noAlias'
-end getAliasVarName;
+end getAliasCRef;
 
 //template for write variables for each time step
 template generateWriteOutputFunctionsForVars(ModelInfo modelInfo,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String className, Boolean useFlatArrayNotation)
@@ -8223,7 +8221,7 @@ template writeOutputVars(String functionName, list<SimVar> vars, Integer startIn
   {
     <%if(areAliasVars) then
     <<
-    <%vars |> SIMVAR(isProtected=false) hasindex i1 =>'(*v)(<%intAdd(startIndex, stringInt(i1))%>)=<%getAliasVar(aliasvar, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>;';separator="\n"%>
+    <%vars |> simVar as SIMVAR(isProtected=false) hasindex i1 =>'(*v)(<%intAdd(startIndex, stringInt(i1))%>) = <%getAliasSign(simVar)%><%getAliasCRef(aliasvar, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>;';separator="\n"%>
     >>
     else
     <<
@@ -8265,7 +8263,7 @@ template writeValueValst(list<SimVar> vars, Integer startIndex, Integer idx, Int
 ::=
   if(areAliasVars) then
     <<
-    <%vars |> SIMVAR(isProtected=false) hasindex i1 =>'(*v)(<%intAdd(intMul(idx,multiplicator),intAdd(startIndex, stringInt(i1)))%>)=<%getAliasVar(aliasvar, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>;';separator="\n"%>
+    <%vars |> simVar as SIMVAR(isProtected=false) hasindex i1 =>'(*v)(<%intAdd(intMul(idx,multiplicator),intAdd(startIndex, stringInt(i1)))%>) = <%getAliasSign(simVar)%><%getAliasCRef(aliasvar, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>;';separator="\n"%>
     >>
     else
     <<
@@ -8617,8 +8615,10 @@ template initAliasValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode
        let &preExp = buffer ""
        let &varDeclsCref = buffer ""
        let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-        '<%preExp%>
-         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>,<%initval%>);'
+       <<
+       <%preExp%>
+       set<%type%>StartValue(<%getAliasCRef(sv.aliasvar, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>, <%initval%>);
+       >>
     ;separator="\n"
 end initAliasValst;
 
@@ -8639,9 +8639,8 @@ template getAliasInitVal(AliasVariable aliasvar, Context context, Text &preExp, 
  "Returns the alias Attribute of ScalarVariable."
 ::=
    match aliasvar
-    case NOALIAS(__) then 'noAlias'
-    case ALIAS(__) then  getAliasInitVal2(varName, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    case NEGATEDALIAS(__) then  getAliasInitVal2(varName, context,preExp ,varDecls ,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    case ALIAS(__)
+    case NEGATEDALIAS(__) then getAliasInitVal2(varName, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else 'noAlias'
 
 end getAliasInitVal;
@@ -8674,8 +8673,8 @@ template getVarFromAliasName2(AliasVariable aliasvar,ComponentRef origvarname, C
 ::=
  match aliasvar
     case NOALIAS(__) then '<%cref1(origvarname, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
-    case ALIAS(__) then '<%cref1(varName, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
-    case NEGATEDALIAS(__) then '<%cref1(varName, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
+    case ALIAS(__)
+    case NEGATEDALIAS(__) then '<%cref1(varName, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
 end getVarFromAliasName2;
 
 template startValue(DAE.Type ty)
@@ -14960,11 +14959,11 @@ match simVar
   let description = if comment then '/* <%comment%> */'
   let varname = cref1(name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
   match aliasvar
-    case ALIAS(__) then 'z[<%valueReference%>] =<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%>;<%description%>'
-    case NEGATEDALIAS(__) then 'z[<%valueReference%>] =-<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%>; <%description%>'
+    case ALIAS(__)
+    case NEGATEDALIAS(__) then 'z[<%valueReference%>] = <%getAliasSign(simVar)%><%cref1(varName, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>; <%description%>'
   else
   <<
-  z[<%valueReference%>] = <%varname%> ; <%description%>
+  z[<%valueReference%>] = <%varname%>; <%description%>
   >>
 end giveVariablesDefault;
 
@@ -14976,8 +14975,8 @@ template setVariablesDefault(SimVar simVar, Integer valueReference, Integer inde
       let description = if comment then '/* "<%comment%>" */'
       let variablename = cref1(name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, varDecls, stateDerVectorName, useFlatArrayNotation)
       match aliasvar
-      case ALIAS(__) then '<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%> = z[<%intAdd(indexOffset, valueReference)%>];<%description%>'
-      case NEGATEDALIAS(__) then '<%cref1(varName,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls,stateDerVectorName,useFlatArrayNotation)%> =  -z[<%intAdd(indexOffset, valueReference)%>];<%description%>'
+      case ALIAS(__)
+      case NEGATEDALIAS(__) then '<%cref1(varName, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%> = <%getAliasSign(simVar)%>z[<%intAdd(indexOffset, valueReference)%>]; <%description%>'
       else
           <<
           <%variablename%> = z[<%intAdd(indexOffset, valueReference)%>]; <%description%>
