@@ -293,6 +293,9 @@ QString Helper::expandAll;
 QString Helper::collapseAll;
 QString Helper::version;
 QString Helper::unlimited;
+QString Helper::simulationOutput;
+QString Helper::cancelSimulation;
+QString Helper::tlmCoSimulation;
 
 void Helper::initHelperVariables()
 {
@@ -470,6 +473,9 @@ void Helper::initHelperVariables()
   Helper::collapseAll = tr("Collapse All");
   Helper::version = tr("Version:");
   Helper::unlimited = tr("unlimited");
+  Helper::simulationOutput = tr("Simulation Output");
+  Helper::cancelSimulation = tr("Cancel Simulation");
+  Helper::tlmCoSimulation = tr("TLM co-simulation");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -519,7 +525,7 @@ QString GUIMessages::getMessage(int type)
     case DELETE_AND_LOAD:
       return tr("Delete the existing class(es) before loading the file/library <b>%1</b>.");
     case REDEFINING_EXISTING_CLASSES:
-      return tr("Redefining class(es) <b>%1</b> which already exists.");
+      return tr("Redefining class(es) <b>%1</b> which already exist(s).");
     case MULTIPLE_TOP_LEVEL_CLASSES:
       return tr("Only single nonstructured entity is allowed to be stored in the file. <b>%1</b> contains following classes <b>%2</b>.");
     case CLOSE_INTERACTIVE_SIMULATION_TAB:

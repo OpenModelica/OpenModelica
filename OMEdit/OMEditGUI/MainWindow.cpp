@@ -42,6 +42,7 @@
 #include "VariablesWidget.h"
 #include "Helper.h"
 #include "SimulationOutputWidget.h"
+#include "TLMCoSimulationOutputWidget.h"
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false)
@@ -98,7 +99,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
     connect(mpOutputFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readOutputFile(qint64)));
     mpOutputFileDataNotifier->start();
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(outputFileName), Helper::scriptingKind,
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(outputFileName), Helper::scriptingKind,
                                                 Helper::errorLevel));
 
   }
@@ -113,7 +114,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
     connect(mpErrorFileDataNotifier, SIGNAL(bytesAvailable(qint64)), SLOT(readErrorFile(qint64)));
     mpErrorFileDataNotifier->start();
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(errorFileName), Helper::scriptingKind,
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Can't open file %1.").arg(errorFileName), Helper::scriptingKind,
                                                 Helper::errorLevel));
 
   }
@@ -166,6 +167,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   createMenus();
   // Create simulation dialog
   mpSimulationDialog = new SimulationDialog(this);
+  // Create TLM co-simulation dialog
+  mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -674,12 +677,9 @@ void MainWindow::openDroppedFile(QDropEvent *event)
     mpProgressBar->setValue(++progressValue);
     // check the file extension
     QRegExp resultFilesRegExp("\\b(mat|plt|csv)\\b");
-    if (fileInfo.suffix().compare("mo", Qt::CaseInsensitive) == 0)
-    {
+    if ((fileInfo.suffix().compare("mo", Qt::CaseInsensitive) == 0) || (fileInfo.suffix().compare("xml", Qt::CaseInsensitive) == 0)) {
       mpLibraryTreeWidget->openFile(fileInfo.absoluteFilePath(), Helper::utf8, false);
-    }
-    else if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1)
-    {
+    } else if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
       openResultFiles(QStringList(fileInfo.absoluteFilePath()));
     }
     else
@@ -832,7 +832,7 @@ void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
   showProgressBar();
   QString checkAllModelsResult = mpOMCProxy->checkAllModelsRecursive(pLibraryTreeNode->getNameStructure());
   if (!checkAllModelsResult.isEmpty()) {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, checkAllModelsResult, Helper::scriptingKind,
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, checkAllModelsResult, Helper::scriptingKind,
                                                 Helper::notificationLevel));
   }
   // hide progress bar
@@ -858,7 +858,7 @@ void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
   double version = mpOptionsDialog->getFMIPage()->getFMIExportVersion();
   QString FMUName = mpOptionsDialog->getFMIPage()->getFMUNameTextBox()->text();
   if (mpOMCProxy->translateModelFMU(pLibraryTreeNode->getNameStructure(), version, FMUName)) {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
                                                 .arg(FMUName.isEmpty() ? pLibraryTreeNode->getNameStructure() : FMUName)
                                                 .arg(mpOMCProxy->changeDirectory()), Helper::scriptingKind,
                                                 Helper::notificationLevel));
@@ -884,7 +884,7 @@ void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   if (mpOMCProxy->translateModelXML(pLibraryTreeNode->getNameStructure())) {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
                                                 .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
                                                 Helper::scriptingKind, Helper::notificationLevel));
   }
@@ -1215,6 +1215,58 @@ void MainWindow::showOpenTransformationFileDialog()
   showTransformationsWidget(fileName);
 }
 
+/*!
+  Creates a new TLM LibraryTreeNode & ModelWidget.\n
+  Slot activated when mpNewTLMFileAction triggered signal is raised.
+  */
+void MainWindow::createNewTLMFile()
+{
+  QString metaModelName = mpLibraryTreeWidget->getUniqueMetaModelName();
+  LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addTLMLibraryTreeNode(metaModelName, false);
+  pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+  mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+  mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true);
+}
+
+/*!
+  Opens the TLM file(s).\n
+  Slot activated when mpOpenTLMFileAction triggered signal is raised.
+  */
+void MainWindow::openTLMFile()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
+                                              NULL, Helper::xmlFileTypes, NULL);
+  if (fileNames.isEmpty())
+    return;
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames)
+  {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file))
+    {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    }
+    else
+    {
+      mpLibraryTreeWidget->openFile(file, Helper::utf8, false);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
 void MainWindow::loadSystemLibrary()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
@@ -1251,7 +1303,7 @@ void MainWindow::loadSystemLibrary()
 void MainWindow::readOutputFile(qint64 bytes)
 {
   QString data = mOutputFile.read(bytes);
-  mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
 /*!
@@ -1262,7 +1314,7 @@ void MainWindow::readOutputFile(qint64 bytes)
 void MainWindow::readErrorFile(qint64 bytes)
 {
   QString data = mErrorFile.read(bytes);
-  mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
+  mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, data, Helper::scriptingKind, Helper::notificationLevel));
 }
 
 void MainWindow::focusSearchClassWidget(bool visible)
@@ -1418,7 +1470,7 @@ void MainWindow::instantiatesModel()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1434,7 +1486,7 @@ void MainWindow::checkModel()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1450,7 +1502,7 @@ void MainWindow::checkAllModels()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1524,7 +1576,7 @@ void MainWindow::exportModelFMU()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1541,7 +1593,7 @@ void MainWindow::exportModelXML()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1558,7 +1610,7 @@ void MainWindow::exportModelFigaro()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1584,7 +1636,7 @@ void MainWindow::exportModelToOMNotebook()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1734,7 +1786,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
       hideProgressBar();
     }
   } else {
-    mpMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -1746,6 +1798,21 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
 void MainWindow::exportToClipboard()
 {
   exportModelAsImage(true);
+}
+
+/*!
+  Slot activated when mpTLMSimulateAction triggered signal is raised.\n
+  Starts the TLM simulation.
+  */
+void MainWindow::TLMSimulate()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+    if (pLibraryTreeNode && pLibraryTreeNode->isSaved()) {
+      mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+    }
+  }
 }
 
 void MainWindow::openConfigurationOptions()
@@ -2032,6 +2099,14 @@ void MainWindow::createActions()
   mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
+  // create new TLM file action
+  mpNewTLMFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New TLM File"), this);
+  mpNewTLMFileAction->setStatusTip(tr("Create New TLM File"));
+  connect(mpNewTLMFileAction, SIGNAL(triggered()), SLOT(createNewTLMFile()));
+  // create new TLM file action
+  mpOpenTLMFileAction = new QAction(QIcon(":/Resources/icons/open.png"), tr("Open TLM File"), this);
+  mpOpenTLMFileAction->setStatusTip(tr("Opens the TLM file(s)"));
+  connect(mpOpenTLMFileAction, SIGNAL(triggered()), SLOT(openTLMFile()));
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), tr("Save"), this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -2310,6 +2385,11 @@ void MainWindow::createActions()
   mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
   mpExportToClipboardAction->setEnabled(false);
   connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
+  // TLM simulate actions
+  mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulation, this);
+  mpTLMCoSimulationAction->setStatusTip(tr("starts the TLM co-simulation"));
+  mpTLMCoSimulationAction->setEnabled(false);
+  connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
 }
 
 //! Creates the menus
@@ -2328,6 +2408,10 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpLoadModelicaLibraryAction);
   pFileMenu->addAction(mpOpenResultFileAction);
   pFileMenu->addAction(mpOpenTransformationFileAction);
+  pFileMenu->addSeparator();
+  pFileMenu->addAction(mpNewTLMFileAction);
+  pFileMenu->addAction(mpOpenTLMFileAction);
+  pFileMenu->addSeparator();
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
@@ -2668,6 +2752,12 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
+  // TLM Simulation Toolbar
+  mpTLMSimulationToolbar = addToolBar(tr("TLM Simulation Toolbar"));
+  mpTLMSimulationToolbar->setObjectName("TLM Simulation Toolbar");
+  mpTLMSimulationToolbar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to TLM Simulation Toolbar
+  mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
 }
 
 //! when the dragged object enters the main window

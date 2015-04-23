@@ -62,6 +62,7 @@ class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
 class BitmapAnnotation;
+class TLMInterfacePointInfo;
 
 class Component : public QObject, public QGraphicsItem
 {
@@ -110,10 +111,12 @@ public:
   QAction* getAttributesAction();
   QAction* getViewClassAction();
   QAction* getViewDocumentationAction();
+  QAction* getTLMAttributesAction();
   ComponentInfo* getComponentInfo();
   QList<Component*> getInheritanceList();
   QList<ShapeAnnotation*> getShapesList();
   QList<Component*> getComponentsList();
+  QList<TLMInterfacePointInfo*> getInterfacepointsList();
   void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
   QPointF getOldScenePosition() {return mOldScenePosition;}
   void setOldPosition(QPointF oldPosition) {mOldPosition = oldPosition;}
@@ -121,12 +124,17 @@ public:
   void setComponentFlags(bool enable);
   QString getTransformationAnnotation();
   QString getPlacementAnnotation();
+  QString getTransformationOrigin();
+  QString getTransformationExtent();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void emitComponentTransformHasChanged() {emit componentTransformHasChanged();}
   void componentNameHasChanged(QString newName);
   void componentParameterHasChanged();
   QString getParameterDisplayString(QString parameterName);
+  void addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
+  void removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo);
+  void renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint);
 private:
   QString mName;
   QString mClassName;
@@ -146,6 +154,7 @@ private:
   QAction *mpAttributesAction;
   QAction *mpViewClassAction;
   QAction *mpViewDocumentationAction;
+  QAction *mpTLMAttributesAction;
   ResizerItem *mpBottomLeftResizerItem;
   ResizerItem *mpTopLeftResizerItem;
   ResizerItem *mpTopRightResizerItem;
@@ -161,6 +170,7 @@ private:
   QList<ShapeAnnotation*> mShapesList;
   QList<Component*> mComponentsList;
   QPointF mOldScenePosition;
+  QList<TLMInterfacePointInfo*> mInterfacePointsList;
   QPointF mOldPosition;
   void duplicateHelper(GraphicsView *pGraphicsView);
 signals:
@@ -195,6 +205,7 @@ public slots:
   void showAttributes();
   void viewClass();
   void viewDocumentation();
+  void showTLMAttributes();
 protected:
   virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);

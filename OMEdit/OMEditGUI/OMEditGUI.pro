@@ -35,7 +35,7 @@
  #
  #/
 
-QT += network core gui webkit xml svg
+QT += network core gui webkit xml xmlpatterns svg
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_es.ts \
@@ -73,6 +73,7 @@ SOURCES += main.cpp \
   Editors/DebuggerSourceEditor.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
+  Editors/TLMEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
   Component/Component.cpp \
   Annotations/ShapeAnnotation.cpp \
@@ -90,6 +91,9 @@ SOURCES += main.cpp \
   Simulation/SimulationOutputWidget.cpp \
   Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
+  Simulation/TLMCoSimulationDialog.cpp \
+  Simulation/TLMCoSimulationOutputWidget.cpp \
+  Simulation/TLMCoSimulationThread.cpp \
   FMI/ImportFMUDialog.cpp \
   Plotting/VariablesWidget.cpp \
   Options/NotificationsDialog.cpp \
@@ -130,6 +134,7 @@ HEADERS  += Util/backtrace.h \
   Editors/DebuggerSourceEditor.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
+  Editors/TLMEditor.h \
   Plotting/PlotWindowContainer.h \
   Component/Component.h \
   Annotations/ShapeAnnotation.h \
@@ -148,6 +153,10 @@ HEADERS  += Util/backtrace.h \
   Simulation/SimulationOutputWidget.h \
   Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
+  Simulation/TLMCoSimulationOptions.h \
+  Simulation/TLMCoSimulationDialog.h \
+  Simulation/TLMCoSimulationOutputWidget.h \
+  Simulation/TLMCoSimulationThread.h \
   FMI/ImportFMUDialog.h \
   Plotting/VariablesWidget.h \
   Options/NotificationsDialog.h \

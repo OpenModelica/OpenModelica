@@ -49,6 +49,10 @@ class MessagesWidget;
 class MessageItem
 {
 public:
+  enum MessageItemType {
+    Modelica,   /* Used to represent error messages of Modelica models. */
+    TLM         /* Used to represent error messages of TLM files. */
+  };
   QString mTime;
   QString mFileName;
   bool mReadOnly;
@@ -61,8 +65,9 @@ public:
   StringHandler::OpenModelicaErrorKinds mErrorKind;
   StringHandler::OpenModelicaErrors mErrorType;
 public:
-  MessageItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString errorKind,
+  MessageItem(MessageItemType type ,QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString errorKind,
               QString errorType);
+  MessageItemType getMessageItemType() {return mMessageItemType;}
   QString getTime() {return mTime;}
   QString getFileName() {return mFileName;}
   QString getLineStart() {return QString::number(mLineStart);}
@@ -70,6 +75,8 @@ public:
   QString getMessage() {return mMessage;}
   StringHandler::OpenModelicaErrorKinds getErrorKind() {return mErrorKind;}
   StringHandler::OpenModelicaErrors getErrorType() {return mErrorType;}
+private:
+  MessageItemType mMessageItemType;
 };
 
 class MessagesWidget : public QWidget

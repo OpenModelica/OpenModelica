@@ -65,6 +65,7 @@ public:
   void drawLineAnnotaion(QPainter *painter);
   QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QString getShapeAnnotation();
+  QString getTLMShapeAnnotation();
   void setStartComponent(Component *pStartComponent);
   Component* getStartComponent();
   void setEndComponent(Component *pEndComponent);

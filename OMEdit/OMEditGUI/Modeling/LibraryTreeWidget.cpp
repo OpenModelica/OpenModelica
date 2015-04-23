@@ -412,6 +412,8 @@ QIcon LibraryTreeNode::getModelicaNodeIcon()
 {
   if (mLibraryType == LibraryTreeNode::Text) {
     return QIcon(":/Resources/icons/txt.svg");
+  } else if (mLibraryType == LibraryTreeNode::TLM) {
+    return QIcon(":/Resources/icons/tlm-icon.svg");
   } else {
     switch (getRestriction()) {
       case StringHandler::Model:
@@ -561,6 +563,10 @@ void LibraryTreeWidget::createActions()
   mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadTextFileAction->setStatusTip(Helper::unloadClassTip);
   connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
+  // unload xml file Action
+  mpUnloadTLMFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadTLMFileAction->setStatusTip(Helper::unloadXMLTip);
+  connect(mpUnloadTLMFileAction, SIGNAL(triggered()), SLOT(unloadTLMFile()));
   // refresh Action
   mpRefreshAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::refresh, this);
   mpRefreshAction->setStatusTip(tr("Refresh the Modelica class"));
@@ -771,6 +777,25 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, bool isSave
   return pNewLibraryTreeNode;
 }
 
+LibraryTreeNode* LibraryTreeWidget::addTLMLibraryTreeNode(QString name, bool isSaved, int insertIndex)
+{
+  mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(name));
+//  QString fileName = "";
+  OMCInterface::getClassInformation_res classInformation;
+  LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::TLM, name, "", name,
+                                                             classInformation, "", isSaved, this);
+  pNewLibraryTreeNode->setIsDocumentationClass(false);
+
+  if (insertIndex == 0)
+    addTopLevelItem(pNewLibraryTreeNode);
+  else
+    insertTopLevelItem(insertIndex, pNewLibraryTreeNode);
+
+  mLibraryTreeNodesList.append(pNewLibraryTreeNode);
+  mpMainWindow->getStatusBar()->clearMessage();
+  return pNewLibraryTreeNode;
+}
+
 LibraryTreeNode* LibraryTreeWidget::getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity)
 {
   for (int i = 0 ; i < mLibraryTreeNodesList.size() ; i++)
@@ -907,6 +932,34 @@ bool LibraryTreeWidget::unloadTextFile(LibraryTreeNode *pLibraryTreeNode, bool a
   return true;
 }
 
+bool LibraryTreeWidget::unloadTLMFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion)
+{
+  if (askQuestion)
+  {
+    QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeNode->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer)
+    {
+      case QMessageBox::Yes:
+        // Yes was clicked. Don't return.
+        break;
+      case QMessageBox::No:
+        // No was clicked. Return
+        return false;
+      default:
+        // should never be reached
+        return false;
+    }
+  }
+  unloadLibraryTreeNodeAndModelWidget(pLibraryTreeNode);
+  return true;
+}
+
 void LibraryTreeWidget::unloadClassHelper(LibraryTreeNode *pLibraryTreeNode)
 {
   for (int i = 0 ; i < pLibraryTreeNode->childCount(); i++)
@@ -941,6 +994,8 @@ bool LibraryTreeWidget::saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
   mpMainWindow->showProgressBar();
   if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
     result = saveModelicaLibraryTreeNode(pLibraryTreeNode);
+  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
+    result = saveTLMLibraryTreeNode(pLibraryTreeNode);
   } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
     result = saveTextLibraryTreeNode(pLibraryTreeNode);
   } else {
@@ -968,6 +1023,20 @@ LibraryTreeNode* LibraryTreeWidget::findParentLibraryTreeNodeSavedInSameFile(Lib
   {
     return pLibraryTreeNode;
   }
+}
+
+QString LibraryTreeWidget::getUniqueMetaModelName(QString metaModelName, int number)
+{
+  QString newMetaModelName = QString(metaModelName).append(QString::number(number));
+  for (int i = 0; i < topLevelItemCount(); ++i)
+  {
+    LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(topLevelItem(i));
+    if (pLibraryTreeNode && pLibraryTreeNode->getName().compare(newMetaModelName, Qt::CaseSensitive) == 0) {
+      newMetaModelName = getUniqueMetaModelName(metaModelName, ++number);
+      break;
+    }
+  }
+  return newMetaModelName;
 }
 
 bool LibraryTreeWidget::isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode)
@@ -1148,6 +1217,46 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
                              .arg(tr("Unable to save the file. %1").arg(file.errorString())), Helper::ok);
     return false;
   }
+  return true;
+}
+
+bool LibraryTreeWidget::saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
+{
+  QString fileName;
+  if (pLibraryTreeNode->getFileName().isEmpty())
+  {
+    QString name = pLibraryTreeNode->getName();
+    fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
+                                              Helper::xmlFileTypes, NULL, "xml", &name);
+    if (fileName.isEmpty())   // if user press ESC
+      return false;
+  }
+  else
+  {
+    fileName = pLibraryTreeNode->getFileName();
+  }
+
+  QFile file(fileName);
+  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    QTextStream textStream(&file);
+    textStream.setCodec(Helper::utf8.toStdString().data());
+    textStream.setGenerateByteOrderMark(false);
+    textStream << pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+    file.close();
+    /* mark the file as saved and update the labels. */
+    pLibraryTreeNode->setIsSaved(true);
+    pLibraryTreeNode->setFileName(fileName);
+    if (pLibraryTreeNode->getModelWidget())
+    {
+      pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
+      pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
+    }
+  } else {
+    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                             .arg(tr("Unable to save the file. %1").arg(file.errorString())), Helper::ok);
+    return false;
+  }
+  getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
   return true;
 }
 
@@ -1473,6 +1582,9 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
       case LibraryTreeNode::Text:
         menu.addAction(mpUnloadTextFileAction);
         break;
+      case LibraryTreeNode::TLM:
+        menu.addAction(mpUnloadTLMFileAction);
+        break;
     }
     point.setY(point.y() + adjust);
     menu.exec(mapToGlobal(point));
@@ -1613,6 +1725,16 @@ void LibraryTreeWidget::unloadTextFile()
     unloadTextFile(pLibraryTreeNode);
 }
 
+void LibraryTreeWidget::unloadTLMFile()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty())
+    return;
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode)
+    unloadTLMFile(pLibraryTreeNode);
+}
+
 void LibraryTreeWidget::refresh()
 {
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
@@ -1657,9 +1779,9 @@ void LibraryTreeWidget::exportModelFigaro()
 void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists)
 {
   /* if the file doesn't exist then remove it from the recent files list. */
+  QFileInfo fileInfo(fileName);
   if (checkFileExists)
   {
-    QFileInfo fileInfo(fileName);
     if (!fileInfo.exists())
     {
       QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -1678,6 +1800,18 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
       return;
     }
   }
+  if (fileInfo.suffix().compare("mo") == 0) {
+    openModelicaFile(fileName, encoding, showProgress);
+  } else if (fileInfo.suffix().compare("xml") == 0) {
+    openTLMFile(fileInfo, showProgress);
+  } else {
+    QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                             .arg(tr("Unable to open the file, unknown file type.")), Helper::ok);
+  }
+}
+
+void LibraryTreeWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress)
+{
   // get the class names now to check if they are already loaded or not
   QStringList existingmodelsList;
   if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
@@ -1739,6 +1873,36 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
       }
     }
   }
+  if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
+}
+
+void LibraryTreeWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
+{
+  if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
+  // check if the file is already loaded.
+  for (int i = 0; i < topLevelItemCount(); ++i)
+  {
+    LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(topLevelItem(i));
+    if (pLibraryTreeNode && pLibraryTreeNode->getFileName().compare(fileInfo.absoluteFilePath()) == 0) {
+      QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+      pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                      .arg(fileInfo.fileName()).append("\n")
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileInfo.absoluteFilePath())));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+      return;
+    }
+  }
+  // create a LibraryTreeNode for new loaded TLM file.
+  LibraryTreeNode *pLibraryTreeNode = addTLMLibraryTreeNode(fileInfo.completeBaseName(), false);
+  pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+  pLibraryTreeNode->setIsSaved(true);
+  pLibraryTreeNode->setFileName(fileInfo.absoluteFilePath());
+  addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+  mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
 }
 

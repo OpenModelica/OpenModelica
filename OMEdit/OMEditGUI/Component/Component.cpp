@@ -398,6 +398,10 @@ void Component::createActions()
   mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, mpGraphicsView);
   mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
   connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
+  // TLM  attributes Action
+  mpTLMAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
+  mpTLMAttributesAction->setStatusTip(tr("Shows the component attributes"));
+  connect(mpTLMAttributesAction, SIGNAL(triggered()), SLOT(showTLMAttributes()));
 }
 
 void Component::createResizerItems()
@@ -577,6 +581,11 @@ QAction* Component::getViewDocumentationAction()
   return mpViewDocumentationAction;
 }
 
+QAction* Component::getTLMAttributesAction()
+{
+  return mpTLMAttributesAction;
+}
+
 ComponentInfo* Component::getComponentInfo()
 {
   return mpComponentInfo;
@@ -597,9 +606,11 @@ QList<Component*> Component::getComponentsList()
   return mComponentsList;
 }
 
-/*!
-  Sets the component flags.
-  */
+QList<TLMInterfacePointInfo*> Component::getInterfacepointsList()
+{
+  return mInterfacePointsList;
+}
+
 void Component::setComponentFlags(bool enable)
 {
   /*
@@ -670,6 +681,27 @@ QString Component::getPlacementAnnotation()
   }
   placementAnnotationString.append(")");
   return placementAnnotationString;
+}
+
+QString Component::getTransformationOrigin()
+{
+  // add the icon origin
+  QString transformationOrigin;
+  transformationOrigin.append("{").append(QString::number(mpTransformation->getOrigin().x())).append(",").append(QString::number(mpTransformation->getOrigin().y())).append("}");
+  return transformationOrigin;
+}
+
+QString Component::getTransformationExtent()
+{
+  QString transformationExtent;
+  // add extent points
+  QPointF extent1 = mpTransformation->getExtent1();
+  QPointF extent2 = mpTransformation->getExtent2();
+  transformationExtent.append("{").append(QString::number(extent1.x()));
+  transformationExtent.append(",").append(QString::number(extent1.y())).append(",");
+  transformationExtent.append(QString::number(extent2.x())).append(",");
+  transformationExtent.append(QString::number(extent2.y())).append("}");
+  return transformationExtent;
 }
 
 void Component::applyRotation(qreal angle)
@@ -751,6 +783,24 @@ QString Component::getParameterDisplayString(QString parameterName)
   return displayString;
 }
 
+void Component::addInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo)
+{
+  // Add the Interfacepoint to the list.
+  mInterfacePointsList.append(pTLMInterfacePointInfo);
+}
+
+void Component::removeInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo)
+{
+  // remove the Interfacepoint from the list.
+  mInterfacePointsList.removeOne(pTLMInterfacePointInfo);
+}
+
+void Component::renameInterfacePoint(TLMInterfacePointInfo *pTLMInterfacePointInfo, QString interfacePoint)
+{
+  // Set the new Interfacepoint.
+  pTLMInterfacePointInfo->setInterfaceName(interfacePoint);
+}
+
 void Component::duplicateHelper(GraphicsView *pGraphicsView)
 {
   Component *pComponent = pGraphicsView->getComponentList().last();
@@ -816,13 +866,41 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
 void Component::updatePlacementAnnotation()
 {
   // Add component annotation.
-  mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
-                              getPlacementAnnotation());
+  LibraryTreeNode *pLibraryTreeNode = mpGraphicsView->getModelWidget()->getLibraryTreeNode();
+  if(pLibraryTreeNode->getLibraryType()== LibraryTreeNode::TLM) {
+    QDomDocument doc;
+    doc.setContent(mpGraphicsView->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+    // Get the "Root" element
+    QDomElement docElem = doc.documentElement();
+    QDomElement subModels = docElem.firstChildElement();
+    while (!subModels.isNull()) {
+      if(subModels.tagName() == "SubModels")
+        break;
+      subModels = subModels.nextSiblingElement();
+    }
+    QDomElement subModel = subModels.firstChildElement();
+    while (!subModel.isNull()) {
+      if(subModel.tagName() == "SubModel" && subModel.attribute("Name") == mName) {
+        QDomElement annotation = subModel.firstChildElement("Annotation");
+        annotation.setAttribute("Visible", getTransformation()->getVisible()? "true" : "false");
+        annotation.setAttribute("Origin", getTransformationOrigin());
+        annotation.setAttribute("Extent", getTransformationExtent());
+        annotation.setAttribute("Rotation", QString::number(getTransformation()->getRotateAngle()));
+        break;
+      }
+      subModel = subModel.nextSiblingElement();
+    }
+    QString metaModelText = doc.toString();
+    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+  } else {
+    mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
+                                getPlacementAnnotation());
+  }
   // set the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
   /* When something is changed in the icon layer then update the LibraryTreeNode in the Library Browser */
-  if (mpGraphicsView->getViewType() == StringHandler::Icon)
-  {
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
     pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
   }
@@ -1288,15 +1366,29 @@ void Component::viewDocumentation()
   mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getDocumentationDockWidget()->show();
 }
 
+//! Slot that opens up the TLM component attributes dialog.
+void Component::showTLMAttributes()
+{
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  TLMComponentAttributes *pTLMComponentAttributes = new TLMComponentAttributes(this, pMainWindow);
+  pTLMComponentAttributes->show();
+}
+
 /*! Event when mouse is double clicked on a component.
  *  Shows the component properties dialog.
  */
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
-  if (!mpParentComponent) { // if root component is double clicked then show parameters.
-    mpGraphicsView->removeConnection();
-    emit showParameters();
+  LibraryTreeNode *pLibraryTreeNode = mpGraphicsView->getModelWidget()->getLibraryTreeNode();
+  if(pLibraryTreeNode->getLibraryType()== LibraryTreeNode::TLM)
+    emit showTLMAttributes();
+  else
+  {
+    if (!mpParentComponent) { // if root component is double clicked then show parameters.
+      mpGraphicsView->removeConnection();
+      emit showParameters();
+    }
   }
 }
 
@@ -1319,22 +1411,40 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
   menu.addAction(pComponent->getViewClassAction());
   menu.addAction(pComponent->getViewDocumentationAction());
   menu.addSeparator();
-  if (pComponent->isInheritedComponent()) {
-    mpGraphicsView->getDeleteAction()->setDisabled(true);
-    mpGraphicsView->getDuplicateAction()->setDisabled(true);
-    mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
-    mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
-    mpGraphicsView->getFlipHorizontalAction()->setDisabled(true);
-    mpGraphicsView->getFlipVerticalAction()->setDisabled(true);
+  LibraryTreeNode *pLibraryTreeNode = mpGraphicsView->getModelWidget()->getLibraryTreeNode();
+  if (pLibraryTreeNode) {
+    QMenu menu(mpGraphicsView);
+    switch (pLibraryTreeNode->getLibraryType()) {
+      case LibraryTreeNode::Modelica:
+      default:
+        menu.addAction(pComponent->getParametersAction());
+        menu.addAction(pComponent->getAttributesAction());
+        menu.addSeparator();
+        menu.addAction(pComponent->getViewClassAction());
+        menu.addAction(pComponent->getViewDocumentationAction());
+        menu.addSeparator();
+        if (pComponent->isInheritedComponent()) {
+          mpGraphicsView->getDeleteAction()->setDisabled(true);
+          mpGraphicsView->getDuplicateAction()->setDisabled(true);
+          mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
+          mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
+          mpGraphicsView->getFlipHorizontalAction()->setDisabled(true);
+          mpGraphicsView->getFlipVerticalAction()->setDisabled(true);
+        }
+        menu.addAction(mpGraphicsView->getDeleteAction());
+        menu.addAction(mpGraphicsView->getDuplicateAction());
+        menu.addSeparator();
+        menu.addAction(mpGraphicsView->getRotateClockwiseAction());
+        menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
+        menu.addAction(mpGraphicsView->getFlipHorizontalAction());
+        menu.addAction(mpGraphicsView->getFlipVerticalAction());
+        break;
+      case LibraryTreeNode::TLM:
+        menu.addAction(pComponent->getTLMAttributesAction());
+        break;
+    }
+    menu.exec(event->screenPos());
   }
-  menu.addAction(mpGraphicsView->getDeleteAction());
-  menu.addAction(mpGraphicsView->getDuplicateAction());
-  menu.addSeparator();
-  menu.addAction(mpGraphicsView->getRotateClockwiseAction());
-  menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
-  menu.addAction(mpGraphicsView->getFlipHorizontalAction());
-  menu.addAction(mpGraphicsView->getFlipVerticalAction());
-  menu.exec(event->screenPos());
 }
 
 QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)

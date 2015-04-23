@@ -196,4 +196,71 @@ public slots:
   void updateComponentAttributes();
 };
 
+class TLMComponentAttributes : public QDialog
+{
+  Q_OBJECT
+public:
+  TLMComponentAttributes(Component *pComponent, MainWindow *pMainWindow);
+  void setUpDialog();
+  void initializeDialog();
+private:
+  Component *mpComponent;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpStartCommandLabel;
+  QLineEdit *mpStartCommandTextBox;
+  Label *mpModelFileLabel;
+  QLineEdit *mpModelFileTextBox;
+  QPushButton *mpOkButton;
+  QDialogButtonBox *mpButtonBox;
+};
+
+class Component;
+class TLMInterfacePointInfo
+{
+public:
+  TLMInterfacePointInfo(QString name, QString className, QString interfaceName);
+  QString getName();
+  QString getClassName();
+  QString getInterfaceName();
+  void setInterfaceName(QString interfaceName);
+private:
+  QString mName;
+  QString mClassName;
+  QString mInterfaceName;
+};
+
+class LineAnnotation;
+class TLMConnectionAttributes : public QDialog
+{
+  Q_OBJECT
+public:
+  TLMConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow);
+  void setUpDialog();
+  void initializeDialog();
+private:
+  LineAnnotation *mpConnectionLineAnnotation;
+  MainWindow *mpMainWindow;
+  QList<TLMInterfacePointInfo*> mInterfacepointsList;
+  Label *mpStartComponentClassNameLabel;
+  QLineEdit *mpStartComponentClassNameTextBox;
+  QComboBox *mpStartComponentInterfacePointComboBox;
+  QComboBox *mpEndComponentInterfacePointComboBox;
+  Label *mpEndComponentClassNameLabel;
+  QLineEdit *mpEndComponentClassNameTextBox;
+  Label *mpDelayLabel;
+  QLineEdit *mpDelayTextBox;
+  Label *mpZfLabel;
+  QLineEdit *mpZfTextBox;
+  Label *mpZfrLabel;
+  QLineEdit *mpZfrTextBox;
+  Label *mpAlphapLabel;
+  QLineEdit *mpAlphaTextBox;
+  QPushButton *mpOkButton;
+  QDialogButtonBox *mpButtonBox;
+public slots:
+  void updateTLMConnectionAttributes();
+};
+
 #endif // COMPONENTPROPERTIES_H

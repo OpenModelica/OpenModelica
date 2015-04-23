@@ -123,6 +123,9 @@
         <file>Resources/icons/step-return.svg</file>
         <file>Resources/icons/breakpoint_enabled.svg</file>
         <file>Resources/icons/breakpoint_disabled.svg</file>
+        <file>Resources/icons/tlm-icon.svg</file>
         <file>Resources/icons/link-external.svg</file>
+        <file>Resources/icons/tlm-simulate.svg</file>
+        <file>Resources/XMLSchema/tlmModelDescription.xsd</file>
     </qresource>
 </RCC>

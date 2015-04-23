@@ -182,7 +182,7 @@ void SimulationOutputTree::keyPressEvent(QKeyEvent *event)
 SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptions, MainWindow *pMainWindow)
   : mSimulationOptions(simulationOptions), mpMainWindow(pMainWindow)
 {
-  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mSimulationOptions.getClassName()).arg(tr("Simulation Output")));
+  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mSimulationOptions.getClassName()).arg(Helper::simulationOutput));
   // progress label
   mpProgressLabel = new Label;
   mpProgressLabel->setTextFormat(Qt::RichText);
@@ -437,7 +437,7 @@ void SimulationOutputWidget::simulationProcessStarted()
   mpProgressLabel->setText(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
-  mpCancelButton->setText(tr("Cancel Simulation"));
+  mpCancelButton->setText(Helper::cancelSimulation);
   mpCancelButton->setEnabled(true);
   // save the last modified datetime of result file.
   QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getResultFileName()));

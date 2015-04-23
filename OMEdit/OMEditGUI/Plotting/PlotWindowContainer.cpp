@@ -115,7 +115,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     }
   }
   catch (PlotException &e) {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -139,7 +139,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->show();
   }
   catch (PlotException &e) {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    getMainWindow()->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

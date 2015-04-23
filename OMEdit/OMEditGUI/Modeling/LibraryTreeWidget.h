@@ -93,7 +93,8 @@ public:
   enum LibraryType {
     InvalidType, /* Used to catch errors */
     Modelica,   /* Used to represent Modelica models. */
-    Text       /* Used to represent text based files. */
+    Text,       /* Used to represent text based files. */
+    TLM         /* Used to represent TLM files. */
   };
   enum SaveContentsType {
     SaveInOneFile,
@@ -171,6 +172,7 @@ public:
   static bool sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2);
   LibraryTreeNode* addLibraryTreeNode(QString name, QString parentName = QString(""), bool isSaved = true, int insertIndex = 0);
   LibraryTreeNode* addLibraryTreeNode(QString name, bool isSaved, int insertIndex = 0);
+  LibraryTreeNode* addTLMLibraryTreeNode(QString name, bool isSaved, int insertIndex = 0);
   LibraryTreeNode* getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive);
   QList<LibraryTreeNode*> getLibraryTreeNodesList();
   void addLibraryComponentObject(LibraryComponent *libraryComponent);
@@ -180,9 +182,11 @@ public:
   void showProtectedClasses(bool enable);
   bool unloadClass(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
   bool unloadTextFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
+  bool unloadTLMFile(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
   void unloadClassHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
+  QString getUniqueMetaModelName(QString metaModelName = QString("MetaModel"), int number = 1);
   bool isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeNode* getLibraryTreeNodeFromFile(QString fileName, int lineNumber);
@@ -205,12 +209,14 @@ private:
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpUnloadTextFileAction;
+  QAction *mpUnloadTLMFileAction;
   QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   bool saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   bool saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
+  bool saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibraryTreeNode);
   bool setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath);
@@ -234,11 +240,14 @@ public slots:
   void duplicateClass();
   void unloadClass();
   void unloadTextFile();
+  void unloadTLMFile();
   void refresh();
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
+  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openTLMFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);
   void showModelWidget(LibraryTreeNode *pLibraryTreeNode = 0, bool newClass = false, bool extendsClass = false, QString text = QString());
   void openLibraryTreeNode(QString nameStructure);

@@ -884,7 +884,7 @@ void ComponentParameters::updateComponentParameters()
         mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue);
         valueChanged = true;
       } else {
-        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0,
+        mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                                      GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
                                                                      Helper::scriptingKind, Helper::errorLevel));
       }
@@ -1173,5 +1173,233 @@ void ComponentAttributes::updateComponentAttributes()
     }
   }
   mpComponent->getGraphicsView()->getModelWidget()->setModelModified();
+  accept();
+}
+
+/*!
+  \class TLMComponentAttributes
+  \brief A dialog for displaying TLM components attributes
+  */
+/*!
+  \param pComponent - pointer to Component
+  \param pMainWindow - pointer to MainWindow
+  */
+TLMComponentAttributes::TLMComponentAttributes(Component *pComponent, MainWindow *pMainWindow)
+  : QDialog(pMainWindow, Qt::WindowTitleHint)
+{
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("TLM Component Attributes")));
+  setAttribute(Qt::WA_DeleteOnClose);
+  setModal(true);
+  mpComponent = pComponent;
+  mpMainWindow = pMainWindow;
+  setUpDialog();
+  initializeDialog();
+}
+
+/*!
+  Creates the Dialog and set up attributes .
+  */
+void TLMComponentAttributes::setUpDialog()
+{
+  // Create the name label and text box
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  mpNameTextBox->setReadOnly(true);
+  // Create the start command label and text box
+  mpStartCommandLabel = new Label(tr("Start Command:"));
+  mpStartCommandTextBox = new QLineEdit;
+  mpStartCommandTextBox->setReadOnly(true);
+  // Create the model file label and text box
+  mpModelFileLabel = new Label(tr("Model File:"));
+  mpModelFileTextBox = new QLineEdit;
+  mpModelFileTextBox->setReadOnly(true);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(accept()));
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpStartCommandLabel, 1, 0);
+  pMainLayout->addWidget(mpStartCommandTextBox, 1, 1);
+  pMainLayout->addWidget(mpModelFileLabel, 2, 0);
+  pMainLayout->addWidget(mpModelFileTextBox, 2, 1);
+  pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+  Initialize the fields with default values.
+  */
+void TLMComponentAttributes::initializeDialog()
+{
+  // get component Name
+  mpNameTextBox->setText(mpComponent->getName());
+  mpNameTextBox->setCursorPosition(0);
+  mpStartCommandTextBox->setText("StartTLMOpenModelica");
+  mpModelFileTextBox->setText(mpComponent->getClassName()+".mo");
+}
+
+TLMInterfacePointInfo::TLMInterfacePointInfo(QString name, QString className, QString interfaceName)
+{
+  mName = name;
+  mClassName = className;
+  mInterfaceName = interfaceName;
+}
+
+QString TLMInterfacePointInfo::getName()
+{
+  return mName;
+}
+
+QString TLMInterfacePointInfo::getClassName()
+{
+  return mClassName;
+}
+
+QString TLMInterfacePointInfo::getInterfaceName()
+{
+  return mInterfaceName;
+}
+
+void TLMInterfacePointInfo::setInterfaceName(QString interfacePoint)
+{
+   mInterfaceName = interfacePoint;
+}
+
+/*!
+  \class TLMConnectiontAttributes
+  \brief A dialog for displaying TLM connection attributes
+  */
+/*!
+  \param pConnectionLineAnnotation - pointer to LineAnnotation
+  \param pMainWindow - pointer to MainWindow
+  */
+TLMConnectionAttributes::TLMConnectionAttributes(LineAnnotation *pConnectionLineAnnotation, MainWindow *pMainWindow)
+  : QDialog(pMainWindow, Qt::WindowTitleHint)
+{
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("TLM Connection Attributes")));
+  setAttribute(Qt::WA_DeleteOnClose);
+  setModal(true);
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
+  mpMainWindow = pMainWindow;
+  setUpDialog();
+  initializeDialog();
+}
+
+/*!
+  Creates the Dialog and set up attributes .
+  */
+void TLMConnectionAttributes::setUpDialog()
+{
+  // Create the start component class name label and text box
+  mpStartComponentClassNameLabel = new Label(tr("From:"));
+  mpStartComponentClassNameTextBox = new QLineEdit;
+  mpStartComponentClassNameTextBox->setReadOnly(true);
+  // Create the start component interface points  combo box
+  mpStartComponentInterfacePointComboBox = new QComboBox;
+  // Create the end component class name label and text box
+  mpEndComponentClassNameLabel = new Label(tr("To:"));
+  mpEndComponentClassNameTextBox = new QLineEdit;
+  mpEndComponentClassNameTextBox->setReadOnly(true);
+  // Create the end component interface points  combo box
+  mpEndComponentInterfacePointComboBox = new QComboBox;
+  // Create the delay label and text box
+  mpDelayLabel = new Label(tr("Delay:"));
+  mpDelayTextBox = new QLineEdit;
+
+  mpZfLabel = new Label(tr("Zf:"));
+  mpZfTextBox = new QLineEdit;
+  mpZfrLabel = new Label(tr("Zfr:"));
+  mpZfrTextBox = new QLineEdit;
+
+  // Create the alpha label and text box
+  mpAlphapLabel = new Label(tr("Alpha:"));
+  mpAlphaTextBox = new QLineEdit;
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateTLMConnectionAttributes()));
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpStartComponentClassNameLabel, 0, 0);
+  pMainLayout->addWidget(mpStartComponentClassNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpStartComponentInterfacePointComboBox, 0, 2);
+  pMainLayout->addWidget(mpEndComponentClassNameLabel, 1, 0);
+  pMainLayout->addWidget(mpEndComponentClassNameTextBox, 1, 1);
+  pMainLayout->addWidget(mpEndComponentInterfacePointComboBox, 1, 2);
+  pMainLayout->addWidget(mpDelayLabel, 2, 0);
+  pMainLayout->addWidget(mpDelayTextBox, 2, 1, 1, 3);
+  pMainLayout->addWidget(mpZfLabel,3, 0);
+  pMainLayout->addWidget(mpZfTextBox,3, 1, 1, 3);
+  pMainLayout->addWidget(mpZfrLabel, 4, 0);
+  pMainLayout->addWidget(mpZfrTextBox,4, 1, 1, 3);
+  pMainLayout->addWidget(mpAlphapLabel, 5, 0);
+  pMainLayout->addWidget(mpAlphaTextBox, 5, 1, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 4, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+  Initialize the fields with default values.
+  */
+void TLMConnectionAttributes::initializeDialog()
+{
+  mpStartComponentClassNameTextBox->setText(mpConnectionLineAnnotation->getStartComponent()->getName());
+  mpEndComponentClassNameTextBox->setText(mpConnectionLineAnnotation->getEndComponent()->getName());
+  mInterfacepointsList = mpConnectionLineAnnotation->getStartComponent()->getInterfacepointsList();
+  for( int i=0; i<mInterfacepointsList.count(); ++i )
+  {
+   mpStartComponentInterfacePointComboBox->addItem(mInterfacepointsList.at(i)->getInterfaceName());
+  }
+
+  mInterfacepointsList = mpConnectionLineAnnotation->getEndComponent()->getInterfacepointsList();
+  for( int i=0; i<mInterfacepointsList.count(); ++i )
+  {
+   mpEndComponentInterfacePointComboBox->addItem(mInterfacepointsList.at(i)->getInterfaceName());
+  }
+}
+
+/*!
+  Slot activated when mpOkButton clicked signal is raised.\n
+  Updates the TLM component attributes.
+  */
+void TLMConnectionAttributes::updateTLMConnectionAttributes()
+{
+  QDomDocument doc;
+  doc.setContent(mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+  // Get the Root MetaModel node
+  QDomElement docElem = doc.documentElement();
+
+  QDomElement connections = docElem.firstChildElement();
+  while (!connections.isNull())
+  {
+    if(connections.tagName() == "Connections")
+      break;
+    connections = connections.nextSiblingElement();
+  }
+
+  QDomElement connection = doc.createElement("Connection");
+  connection.setAttribute("From", mpStartComponentClassNameTextBox->text().append(".").append(mpStartComponentInterfacePointComboBox->currentText()));
+  connection.setAttribute("To", mpEndComponentClassNameTextBox->text().append(".").append(mpEndComponentInterfacePointComboBox->currentText()));
+  connection.setAttribute("Delay", mpDelayTextBox->text());
+  connection.setAttribute("Zf", mpZfTextBox->text());
+  connection.setAttribute("Zfr",mpZfrTextBox->text());
+  connection.setAttribute("alpha", mpAlphaTextBox->text());
+
+  QDomElement annotation = doc.createElement("Annotation");
+  annotation.setAttribute("Points", mpConnectionLineAnnotation->getTLMShapeAnnotation());
+  connection.appendChild(annotation);
+  connections.appendChild(connection);
+  QString metaModelText = doc.toString();
+
+  mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
   accept();
 }

@@ -42,6 +42,7 @@
 #include "LibraryTreeWidget.h"
 #include "MainWindow.h"
 #include "ShapePropertiesDialog.h"
+#include "ComponentProperties.h"
 
 CoOrdinateSystem::CoOrdinateSystem()
 {
@@ -448,6 +449,12 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
           /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
           pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
+        } else if(mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
+          type = StringHandler::Connector;
+          addComponentToView(name, className, "", position, 0, type, false);
+          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
+          /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
+          pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
         } else {
           addComponentToView(name, className, "", position, new ComponentInfo(""), type);
         }
@@ -505,18 +512,76 @@ void GraphicsView::addComponentToView(QString name, QString className, QString t
     pComponent->setSelected(true);
   }
   if (addObject)
+  {
     addComponentObject(pComponent);
+  }
   else
     mComponentsList.append(pComponent);
 }
 
 void GraphicsView::addComponentObject(Component *pComponent)
 {
-  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  // Add the component to model in OMC Global Scope.
-  QString className = StringHandler::makeClassNameRelative(pComponent->getClassName(), mpModelWidget->getLibraryTreeNode()->getNameStructure());
-  pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
-                                           pComponent->getPlacementAnnotation());
+  if (mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::Modelica) {
+    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    // Add the component to model in OMC Global Scope.
+    QString className = StringHandler::makeClassNameRelative(pComponent->getClassName(), mpModelWidget->getLibraryTreeNode()->getNameStructure());
+    pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), className, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
+                                             pComponent->getPlacementAnnotation());
+  } else if (mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
+    QDomDocument doc;
+    doc.setContent(mpModelWidget->getEditor()->getPlainTextEdit()->toPlainText());
+    // Get the "Root" element
+    QDomElement docElem = doc.documentElement();
+    QDomElement subModels = docElem.firstChildElement();
+    while (!subModels.isNull()) {
+      if(subModels.tagName() == "SubModels") break;
+      subModels = subModels.nextSiblingElement();
+    }
+    QDomElement subModel = doc.createElement("SubModel");
+    subModel.setAttribute("Name", pComponent->getName());
+    subModel.setAttribute("StartCommand", "StartTLMOpenModelica");
+    subModel.setAttribute("ExactStep", "false");
+    subModel.setAttribute("ModelFile", pComponent->getClassName());
+
+    QDomElement annotation = doc.createElement("Annotation");
+    annotation.setAttribute("Visible", pComponent->getTransformation()->getVisible()? "true" : "false");
+    annotation.setAttribute("Origin", pComponent->getTransformationOrigin());
+    annotation.setAttribute("Extent", pComponent->getTransformationExtent());
+    annotation.setAttribute("Rotation", QString::number(pComponent->getTransformation()->getRotateAngle()));
+    subModel.appendChild(annotation);
+
+    int i = -1;
+    QList<ComponentInfo*> componentInfoList = pComponent->getOMCProxy()->getComponents(pComponent->getClassName());
+    QString className = pComponent->getClassName();
+    foreach (ComponentInfo *pComponentInfo, componentInfoList) {
+      i++;
+      QString componentClassName = pComponentInfo->getClassName();
+      QString componentName = pComponentInfo->getName();
+      QList<ComponentInfo*> componentInfoList1 = pComponent->getOMCProxy()->getComponents(pComponentInfo->getClassName());
+      foreach (ComponentInfo *pComponentInfo, componentInfoList1) {
+        if (pComponentInfo->getName()== "interfaceName") {
+          QString value = "";
+          if (value.isEmpty() && !componentName.isEmpty()) {
+            value = pComponent->getOMCProxy()->getComponentModifierValue(className, QString(componentName).append(".").append(pComponentInfo->getName()));
+           }
+           if (value.isEmpty()) {
+              value = StringHandler::removeFirstLastQuotes(pComponent->getOMCProxy()->getParameterValue(componentClassName, pComponentInfo->getName()));
+           }
+           QDomElement interfaceName = doc.createElement("InterfacePoint");
+           interfaceName.setAttribute("Name",value );
+           subModel.appendChild(interfaceName);
+
+           TLMInterfacePointInfo *pTLMInterfacePointInfo;
+           pTLMInterfacePointInfo = new TLMInterfacePointInfo(pComponent->getName(), pComponent->getClassName(), value);
+           mpModelWidget->getDiagramGraphicsView()->getComponentObject(pComponent->getName())->addInterfacePoint(pTLMInterfacePointInfo);
+        }
+     }
+   }
+   subModels.appendChild(subModel);
+   QString metaModelText = doc.toString();
+   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+   pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+ }
   // make the model modified
   mpModelWidget->setModelModified();
   // add the component to the local list
@@ -551,9 +616,43 @@ void GraphicsView::deleteComponentObject(Component *pComponent)
   }
   // remove the component now from local list
   mComponentsList.removeOne(pComponent);
-  OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  // delete the component from OMC
-  pOMCProxy->deleteComponent(pComponent->getName(), mpModelWidget->getLibraryTreeNode()->getNameStructure());
+  if (mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
+  {
+    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    QDomDocument doc;
+    doc.setContent(pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+    // Get the "Root" element
+    QDomElement docElem = doc.documentElement();
+
+    // remove the component from TLM editor
+    QDomElement subModelsElement = docElem.firstChildElement();
+    while (!subModelsElement.isNull())
+    {
+      if(subModelsElement.tagName() == "SubModels")
+      {
+        QDomElement subModelElement = subModelsElement.firstChildElement();
+        while (!subModelElement.isNull())
+        {
+          if( subModelElement.tagName() == "SubModel" && subModelElement.attribute("Name") == pComponent->getName())
+          {
+            subModelsElement.removeChild(subModelElement);
+            break;
+          }
+          subModelElement = subModelElement.nextSiblingElement();
+        }
+        break;
+      }
+      subModelsElement = subModelsElement.nextSiblingElement();
+    }
+    QString metaModelText = doc.toString();
+    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+  }
+  else
+  {
+    OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+    // delete the component from OMC
+    pOMCProxy->deleteComponent(pComponent->getName(), mpModelWidget->getLibraryTreeNode()->getNameStructure());
+  }
 }
 
 Component* GraphicsView::getComponentObject(QString componentName)
@@ -596,10 +695,35 @@ QList<Component*> GraphicsView::getComponentList()
 
 void GraphicsView::createConnection(QString startComponentName, QString endComponentName)
 {
-  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  if (pMainWindow->getOMCProxy()->addConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
-                                                QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation())))
+  if (mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
   {
+    /* complete the connection */
+    setIsCreatingConnection(false);
+    mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+    mpConnectionLineAnnotation->setEndComponentName(endComponentName);
+    Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+    if (pEndComponent->getParentComponent())
+      pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
+    else
+      pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
+    // update the last point to the center of component
+    QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
+    mpConnectionLineAnnotation->updateEndPoint(newPos);
+    mpConnectionLineAnnotation->update();
+    mConnectionsList.append(mpConnectionLineAnnotation);
+    // show TLM connection attributes dialog
+    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    TLMConnectionAttributes *pTLMConnectionAttributes = new TLMConnectionAttributes(mpConnectionLineAnnotation, pMainWindow);
+    pTLMConnectionAttributes->show();
+    // make the model modified
+    mpModelWidget->setModelModified();
+  }
+  else
+  {
+    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    if (pMainWindow->getOMCProxy()->addConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
+                                                QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation())))
+    {
     /* Ticket #2450
        Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
        //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
@@ -620,6 +744,7 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
     mConnectionsList.append(mpConnectionLineAnnotation);
     // make the model modified
     mpModelWidget->setModelModified();
+    }
   }
 }
 
@@ -629,7 +754,42 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
 void GraphicsView::deleteConnection(QString startComponentName, QString endComponentName)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  pMainWindow->getOMCProxy()->deleteConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure());
+
+  if(mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
+  {
+    QDomDocument doc;
+    doc.setContent(pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+    // Get the "Root" element
+    QDomElement docElem = doc.documentElement();
+    // remove the connection annotations from TLM editor
+    QDomElement connections = docElem.firstChildElement();
+    // remove the connection  from TLM editor
+    while (!connections.isNull())
+    {
+      if(connections.tagName() == "Connections")
+      {
+        QDomElement connection = connections.firstChildElement();
+        while (!connection.isNull()&& connection.tagName() == "Connection" )
+        {
+          QString startName = StringHandler::getSubStringBeforeDots(connection.attribute("From"));
+          QString endName = StringHandler::getSubStringBeforeDots(connection.attribute("To"));
+          if(startName == startComponentName && endName == endComponentName)
+          {
+            connections.removeChild(connection);
+            break;
+          }
+          connection = connection.nextSiblingElement();
+        }
+        break;
+      }
+      connections = connections.nextSiblingElement();
+    }
+
+    QString metaModelText = doc.toString();
+    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+  }
+  else
+    pMainWindow->getOMCProxy()->deleteConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure());
   // make the model modified
   mpModelWidget->setModelModified();
 }
@@ -1122,7 +1282,7 @@ void GraphicsView::addClassAnnotation()
       pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
     }
   } else {
-    pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0,
+    pMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                                 tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
                                                                 Helper::scriptingKind, Helper::errorLevel));
   }
@@ -1954,6 +2114,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
   mpModelFilePathLabel = new Label(pLibraryTreeNode->getFileName());
   mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
   mpCursorPositionLabel = new Label;
+  // documentation view tool button
   mpFileLockToolButton = new QToolButton;
   mpFileLockToolButton->setIconSize(Helper::buttonIconSize);
   mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeNode->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
@@ -2041,6 +2202,71 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
     // set layout
     pMainLayout->addWidget(mpModelStatusBar);
+  } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
+    connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
+    connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
+    connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
+    pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
+    pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
+    pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
+    // icon graphics framework
+    mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
+    mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
+    mpIconGraphicsView->setScene(mpIconGraphicsScene);
+    mpIconGraphicsView->hide();
+    // diagram graphics framework
+    mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
+    mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
+    mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
+    mpDiagramGraphicsView->hide();
+    // create an xml editor for TLM
+    mpEditor = new TLMEditor(this);
+    if (mpLibraryTreeNode->getFileName().isEmpty()) {
+      QString defaultMetaModelText = QString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                                             "<!-- The root node is the meta-model -->\n"
+                                             "<Model Name=\"%1\">\n"
+                                             "  <!-- List of connected sub-models -->\n"
+                                             "  <SubModels>\n\n"
+                                             "  </SubModels>\n"
+                                             "  <!-- List of TLM connections -->\n"
+                                             "  <Connections>\n\n"
+                                             "  </Connections>\n"
+                                             "  <!-- Parameters for the simulation -->\n"
+                                             "  <SimulationParams StartTime=\"0\" StopTime=\"1\" />\n"
+                                             "</Model>").arg(mpLibraryTreeNode->getName());
+      mpEditor->getPlainTextEdit()->setPlainText(defaultMetaModelText);
+    } else {
+      QFile file(mpLibraryTreeNode->getFileName());
+      if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(mpLibraryTreeNode->getFileName())
+                              .arg(file.errorString()), Helper::ok);
+      } else {
+        mpEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
+        file.close();
+      }
+    }   
+    MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
+    mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getTLMEditorPage(),
+                                          mpEditor->getPlainTextEdit());
+    mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
+    connect(pMainWindow->getOptionsDialog(), SIGNAL(TLMSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
+    // only get the TLM components and connectors if the TLM is not a new class.
+    if (!newClass) {
+      getTLMComponents();
+      getTLMConnections();
+    }
+    mpIconGraphicsScene->clearSelection();
+    mpDiagramGraphicsScene->clearSelection();
+    mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
+    mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
+    mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
+    // set layout
+    pMainLayout->addWidget(mpModelStatusBar);
+    pMainLayout->addWidget(mpIconGraphicsView, 1);
+    pMainLayout->addWidget(mpDiagramGraphicsView, 1);
   }
   pMainLayout->addWidget(mpEditor, 1);
 }
@@ -2162,6 +2388,121 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
       }
     }
     i++;
+  }
+}
+
+/*!
+  Gets the components of the TLM and place them in the diagram GraphicsView.
+  */
+void ModelWidget::getTLMComponents()
+{
+  // get the components and thier annotation
+  QDomDocument TLMMetaModel;
+  TLMMetaModel.setContent(getEditor()->getPlainTextEdit()->toPlainText());
+
+  // Get the "Root" element
+  QDomElement rootElement = TLMMetaModel.documentElement();
+
+  QDomElement subModels = rootElement.firstChildElement();
+  while (!subModels.isNull())
+  {
+    if(subModels.tagName() == "SubModels")
+      break;
+    subModels = subModels.nextSiblingElement();
+  }
+
+  QDomElement subModel = subModels.firstChildElement();
+  while (!subModel.isNull())
+  {
+    if(subModel.tagName() == "SubModel")
+    {
+      QDomElement annotation = subModel.firstChildElement("Annotation");
+      if(annotation.tagName() == "Annotation" )
+      {
+        QString transformation = "Placement(";
+        transformation.append(annotation.attribute("Visible")).append(",").append(StringHandler::removeFirstLastCurlBrackets(annotation.attribute("Origin")));
+        transformation.append(",").append(StringHandler::removeFirstLastCurlBrackets(annotation.attribute("Extent")));
+        transformation.append(",0,0,0,-,-,-,-,").append(annotation.attribute("Rotation")).append(")");
+        // add the component to the the diagram view.
+        mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), subModel.attribute("ModelFile"), transformation,
+                                                 QPointF(0.0, 0.0), 0, StringHandler::Connector, false);
+      }
+    }
+    subModel = subModel.nextSiblingElement();
+  }
+}
+
+void ModelWidget::getTLMConnections()
+{
+  // get the components and thier annotations
+  QDomDocument doc;
+  doc.setContent(getEditor()->getPlainTextEdit()->toPlainText());
+
+  // Get the "Root" element
+  QDomElement docElem = doc.documentElement();
+
+  QDomElement connections = docElem.firstChildElement();
+  while (!connections.isNull())
+  {
+    if(connections.tagName() == "Connections")
+      break;
+    connections = connections.nextSiblingElement();
+  }
+
+  QDomElement connection = connections.firstChildElement("Connection");
+  while (!connection.isNull())
+  {
+    if(connection.tagName() == "Connection" )
+    {
+      QDomElement annotation = connection.firstChildElement("Annotation");
+      if(annotation.tagName() == "Annotation" )
+      {
+        // get start component
+        Component *pStartComponent = 0;
+        pStartComponent = mpDiagramGraphicsView->getComponentObject(StringHandler::getSubStringBeforeDots(connection.attribute("From")));
+        // get end component
+        Component *pEndComponent = 0;
+        pEndComponent = mpDiagramGraphicsView->getComponentObject(StringHandler::getSubStringBeforeDots(connection.attribute("To")));
+        // get start and end connectors
+        Component *pStartConnectorComponent = 0;
+        Component *pEndConnectorComponent = 0;
+        if (pStartComponent)
+        {
+          pStartConnectorComponent = pStartComponent;
+        }
+        if (pEndComponent)
+        {
+          pEndConnectorComponent = pEndComponent;
+        }
+        // get the connector annotations
+        QString connectionAnnotationString;
+        connectionAnnotationString.append("{Line(true, {0.0, 0.0}, 0, ").append(annotation.attribute("Points"));
+        connectionAnnotationString.append(", {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}");
+        QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
+        // Now parse the shapes available in list
+        foreach (QString shape, shapesList)
+        {
+          if (shape.startsWith("Line"))
+          {
+            shape = shape.mid(QString("Line").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, false, pStartConnectorComponent,
+                                                                           pEndConnectorComponent, mpDiagramGraphicsView);
+            if (pStartConnectorComponent)
+              pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+            pConnectionLineAnnotation->setStartComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("From")));
+            if (pEndConnectorComponent)
+              pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+            pConnectionLineAnnotation->setEndComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("To")));
+            pConnectionLineAnnotation->addPoint(QPointF(0, 0));
+            pConnectionLineAnnotation->drawCornerItems();
+            pConnectionLineAnnotation->setCornerItemsPassive();
+            mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
+          }
+        }
+      }
+    }
+    connection = connection.nextSiblingElement();
   }
 }
 
@@ -2349,7 +2690,7 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
         QString startComponentName = startComponentList.at(1);
         if (startComponentName.contains("["))
           startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-        pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
+         pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
       }
     }
     if (pEndComponent) {
@@ -2442,9 +2783,18 @@ void ModelWidget::refresh()
   mpDiagramGraphicsView->removeAllConnections();
   mpDiagramGraphicsView->scene()->clear();
   /* get model components, connection and shapes. */
-  getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
-  getModelComponents(getLibraryTreeNode()->getNameStructure());
-  getModelConnections(getLibraryTreeNode()->getNameStructure());
+  if (getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM)
+  {
+    getTLMComponents();
+    getTLMConnections();
+  }
+  else
+  {
+    getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
+    getModelComponents(getLibraryTreeNode()->getNameStructure());
+    getModelConnections(getLibraryTreeNode()->getNameStructure());
+  }
+
   QApplication::restoreOverrideCursor();
 }
 
@@ -2489,6 +2839,11 @@ void ModelWidget::showDiagramView(bool checked)
   if (checked) {
     ModelicaTextEditor *pModelicaTextEditor = dynamic_cast<ModelicaTextEditor*>(mpEditor);
     if (pModelicaTextEditor && !pModelicaTextEditor->validateModelicaText()) {
+      mpTextViewToolButton->setChecked(true);
+      return;
+    }
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
+    if (pTLMEditor && !pTLMEditor->TLMEditorFocusChanged()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
@@ -2574,7 +2929,7 @@ bool ModelWidget::modelicaEditorTextChanged()
   if (classNames.size() == 0) {
     if (!errorString.isEmpty()) {
       MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel));
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel));
     }
     return false;
   }
@@ -2684,6 +3039,39 @@ bool ModelWidget::modelicaEditorTextChanged()
   return true;
 }
 
+bool ModelWidget::TLMEditorTextChanged()
+{
+  QFile schemaFile(QString(":/Resources/XMLSchema/tlmModelDescription.xsd"));
+  schemaFile.open(QIODevice::ReadOnly);
+  const QString schemaText(QString::fromUtf8(schemaFile.readAll()));
+  const QByteArray schemaData = schemaText.toUtf8();
+  const QByteArray instanceData = mpEditor->getPlainTextEdit()->toPlainText().toUtf8();
+
+  MessageHandler messageHandler;
+  QXmlSchema schema;
+  schema.setMessageHandler(&messageHandler);
+  schema.load(schemaData);
+
+  bool errorOccurred = false;
+  if (!schema.isValid()) {
+      errorOccurred = true;
+  } else {
+      QXmlSchemaValidator validator(schema);
+      if (!validator.validate(instanceData))
+          errorOccurred = true;
+  }
+
+  if (errorOccurred) {
+      MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::TLM, getLibraryTreeNode()->getName(), false, messageHandler.line(), messageHandler.column(), 0, 0, messageHandler.statusMessage(), Helper::syntaxKind, Helper::errorLevel));
+//      return false;
+  }
+  setModelModified();
+  /* get the model components and connectors */
+  refresh();
+  return true;
+}
+
 void ModelWidget::closeEvent(QCloseEvent *event)
 {
   Q_UNUSED(event);
@@ -2746,6 +3134,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   }
   if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Text) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
+  }
+  else if (pModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM) {
+    pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   if (!checkPreferedView || pModelWidget->getLibraryTreeNode()->getLibraryType() != LibraryTreeNode::Modelica) {
     return;
@@ -2989,7 +3380,7 @@ void ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pItem)
 
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, text, xml;
+  bool enabled, modelica, text, TLM;
   ModelWidget *pModelWidget;
   LibraryTreeNode *pLibraryTreeNode;
   if (pSubWindow) {
@@ -2999,21 +3390,21 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
       modelica = true;
       text = false;
-      xml = false;
+      TLM = false;
     } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
       modelica = false;
       text = true;
-      xml = false;
+      TLM = false;
     } else {
       modelica = false;
       text = false;
-      xml = true;
+      TLM = true;
     }
   } else {
     enabled = false;
     modelica = false;
     text = false;
-    xml = false;
+    TLM = false;
     pModelWidget = 0;
     pLibraryTreeNode = 0;
   }
@@ -3040,6 +3431,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getExportAsImageAction()->setEnabled(enabled && modelica);
   getMainWindow()->getExportToClipboardAction()->setEnabled(enabled && modelica);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
+  getMainWindow()->getTLMSimulationAction()->setEnabled(enabled && TLM);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
     if (pModelWidget->getLibraryTreeNode()->isSystemLibrary()) {

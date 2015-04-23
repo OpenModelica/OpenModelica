@@ -1333,7 +1333,7 @@ void ExportFigaroDialog::exportModelFigaro()
   QString options = pFigaroPage->getFigaroOptionsTextBox()->text();
   QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
   if (mpMainWindow->getOMCProxy()->exportToFigaro(mpLibraryTreeNode->getNameStructure(), directory, library, mode, options, processor)) {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0,
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                                  GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
                                                                  Helper::scriptingKind, Helper::notificationLevel));
   }

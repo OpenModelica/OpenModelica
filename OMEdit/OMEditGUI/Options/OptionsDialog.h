@@ -48,6 +48,7 @@ class GeneralSettingsPage;
 class LibrariesPage;
 class ModelicaTextHighlighter;
 class ModelicaTextEditorPage;
+class TLMEditorPage;
 class GraphicalViewsPage;
 class SimulationPage;
 class MessagesPage;
@@ -59,6 +60,7 @@ class FigaroPage;
 class DebuggerPage;
 class FMIPage;
 class ModelicaTabSettings;
+class TLMTabSettings;
 
 class OptionsDialog : public QDialog
 {
@@ -69,6 +71,7 @@ public:
   void readGeneralSettings();
   void readLibrariesSettings();
   void readModelicaTextSettings();
+  void readTLMSettings();
   void readGraphicalViewsSettings();
   void readSimulationSettings();
   void readMessagesSettings();
@@ -82,6 +85,7 @@ public:
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveModelicaTextSettings();
+  void saveTLMSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
   void saveMessagesSettings();
@@ -98,6 +102,7 @@ public:
   MainWindow* getMainWindow() {return mpMainWindow;}
   GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
   ModelicaTextEditorPage* getModelicaTextEditorPage() {return mpModelicaTextEditorPage;}
+  TLMEditorPage* getTLMEditorPage() {return mpTLMEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
   SimulationPage* getSimulationPage() {return mpSimulationPage;}
   MessagesPage* getMessagesPage() {return mpMessagesPage;}
@@ -111,8 +116,10 @@ public:
   void saveDialogGeometry();
   void show();
   ModelicaTabSettings getModelicaTabSettings();
+  TLMTabSettings getTLMTabSettings();
 signals:
   void modelicaTextSettingsChanged();
+  void TLMSettingsChanged();
   void updateLineWrapping();
 public slots:
   void changePage(QListWidgetItem *current, QListWidgetItem *previous);
@@ -123,6 +130,7 @@ private:
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
   ModelicaTextEditorPage *mpModelicaTextEditorPage;
+  TLMEditorPage *mpTLMEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
   MessagesPage *mpMessagesPage;
@@ -341,6 +349,69 @@ private:
   QListWidgetItem *mpQuotesItem;
   QColor mCommentColor;
   QListWidgetItem *mpCommentItem;
+signals:
+  void updatePreview();
+public slots:
+  void setLineWrapping();
+  void pickColor();
+};
+
+class TLMEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  TLMEditorPage(OptionsDialog *pOptionsDialog);
+  QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
+  QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
+  QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
+  QCheckBox* getSyntaxHighlightingCheckbox() {return mpSyntaxHighlightingCheckbox;}
+  QCheckBox* getLineWrappingCheckbox() {return mpLineWrappingCheckbox;}
+  QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
+  DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
+  void addListItems();
+  void setTextRuleColor(QColor color);
+  QColor getTextRuleColor(){return mTextColor;}
+  void setQuotesRuleColor(QColor color);
+  QColor getQuotesRuleColor(){return mQuotesColor;}
+  void setCommentRuleColor(QColor color);
+  QColor getCommentRuleColor(){return mCommentColor;}
+  void setTagRuleColor(QColor color);
+  QColor getTagRuleColor(){return mTagColor;}
+  void setElementRuleColor(QColor color);
+  QColor getElementRuleColor(){return mElementColor;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpTabsAndIndentation;
+  Label *mpTabPolicyLabel;
+  QComboBox *mpTabPolicyComboBox;
+  Label *mpTabSizeLabel;
+  QSpinBox *mpTabSizeSpinBox;
+  Label *mpIndentSizeLabel;
+  QSpinBox *mpIndentSpinBox;
+  QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
+  QCheckBox *mpSyntaxHighlightingCheckbox;
+  QCheckBox *mpLineWrappingCheckbox;
+  QGroupBox *mpFontColorsGroupBox;
+  Label *mpFontFamilyLabel;
+  QFontComboBox *mpFontFamilyComboBox;
+  Label *mpFontSizeLabel;
+  DoubleSpinBox *mpFontSizeSpinBox;
+  Label *mpItemsLabel;
+  QListWidget *mpItemsList;
+  Label *mpItemColorLabel;
+  QPushButton *mpItemColorPickButton;
+  Label *mpPreviewLabel;
+  QPlainTextEdit *mpPreviewPlainTextBox;
+  QColor mTextColor;
+  QListWidgetItem *mpTextItem;
+  QColor mQuotesColor;
+  QListWidgetItem *mpQuotesItem;
+  QColor mCommentColor;
+  QListWidgetItem *mpCommentItem;
+  QColor mTagColor;
+  QListWidgetItem *mpTagItem;
+  QColor mElementColor;
+  QListWidgetItem *mpElementItem;
 signals:
   void updatePreview();
 public slots:

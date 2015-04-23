@@ -53,6 +53,7 @@ OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
   mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
+  mpTLMEditorPage = new TLMEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
   mpMessagesPage = new MessagesPage(this);
@@ -77,6 +78,8 @@ void OptionsDialog::readSettings()
   readLibrariesSettings();
   readModelicaTextSettings();
   emit modelicaTextSettingsChanged();
+  readTLMSettings();
+   emit TLMSettingsChanged();
   readGraphicalViewsSettings();
   readSimulationSettings();
   readMessagesSettings();
@@ -246,6 +249,45 @@ void OptionsDialog::readModelicaTextSettings()
   if (mpSettings->contains("textEditor/numberRuleColor")) {
     mpModelicaTextEditorPage->setNumberRuleColor(QColor(mpSettings->value("textEditor/numberRuleColor").toUInt()));
   }
+}
+
+//! Reads the TLM settings from omedit.ini
+void OptionsDialog::readTLMSettings()
+{
+  int currentIndex;
+  if (mpSettings->contains("textEditor/tabPolicy")) {
+    currentIndex = mpTLMEditorPage->getTabPolicyComboBox()->findData(mpSettings->value("TLMEditor/tabPolicy").toInt());
+    mpTLMEditorPage->getTabPolicyComboBox()->setCurrentIndex(currentIndex);
+  }
+  if (mpSettings->contains("TLMEditor/tabSize")) {
+    mpTLMEditorPage->getTabSizeSpinBox()->setValue(mpSettings->value("TLMEditor/tabSize").toInt());
+  }
+  if (mpSettings->contains("textEditor/indentSize")) {
+    mpTLMEditorPage->getIndentSpinBox()->setValue(mpSettings->value("TLMEditor/indentSize").toInt());
+  }
+  if (mpSettings->contains("textEditor/enableSyntaxHighlighting")) {
+    mpTLMEditorPage->getSyntaxHighlightingCheckbox()->setChecked(mpSettings->value("TLMEditor/enableSyntaxHighlighting").toBool());
+  }
+  if (mpSettings->contains("textEditor/enableLineWrapping")) {
+    mpTLMEditorPage->getLineWrappingCheckbox()->setChecked(mpSettings->value("TLMtEditor/enableLineWrapping").toBool());
+  }
+  if (mpSettings->contains("TLMEditor/fontFamily")){
+      // select font family item
+    currentIndex = mpTLMEditorPage->getFontFamilyComboBox()->findText(mpSettings->value("TLMEditor/fontFamily").toString(), Qt::MatchExactly);
+    mpTLMEditorPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
+  }
+  if (mpSettings->contains("TLMEditor/fontSize"))
+    mpTLMEditorPage->getFontSizeSpinBox()->setValue(mpSettings->value("TLMEditor/fontSize").toDouble());
+  if (mpSettings->contains("TLMEditor/textRuleColor"))
+    mpTLMEditorPage->setTextRuleColor(QColor(mpSettings->value("TLMEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains("TLMEditor/commentRuleColor"))
+    mpTLMEditorPage->setCommentRuleColor(QColor(mpSettings->value("TLMEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains("TLMEditor/tagRuleColor"))
+    mpTLMEditorPage->setTagRuleColor(QColor(mpSettings->value("TLMEditor/tagRuleColor").toUInt()));
+  if (mpSettings->contains("TLMEditor/quotesRuleColor"))
+    mpTLMEditorPage->setQuotesRuleColor(QColor(mpSettings->value("TLMEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains("TLMEditor/elementsRuleColor"))
+    mpTLMEditorPage->setElementRuleColor(QColor(mpSettings->value("TLMEditor/elementsRuleColor").toUInt()));
 }
 
 //! Reads the GraphicsViews section settings from omedit.ini
@@ -622,6 +664,22 @@ void OptionsDialog::saveModelicaTextSettings()
   mpSettings->setValue("textEditor/numberRuleColor", mpModelicaTextEditorPage->getNumberRuleColor().rgba());
 }
 
+//! Saves the TLM settings to omedit.ini
+void OptionsDialog::saveTLMSettings()
+{
+  mpSettings->setValue("TLMEditor/tabPolicy", mpTLMEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  mpSettings->setValue("TLMEditor/tabSize", mpTLMEditorPage->getTabSizeSpinBox()->value());
+  mpSettings->setValue("TLMEditor/indentSize", mpTLMEditorPage->getIndentSpinBox()->value());
+  mpSettings->setValue("TLMEditor/enableSyntaxHighlighting", mpTLMEditorPage->getSyntaxHighlightingCheckbox()->isChecked());
+  mpSettings->setValue("TLMEditor/enableLineWrapping", mpTLMEditorPage->getLineWrappingCheckbox()->isChecked());
+  mpSettings->setValue("TLMEditor/fontFamily", mpTLMEditorPage->getFontFamilyComboBox()->currentFont().family());
+  mpSettings->setValue("TLMEditor/fontSize", mpTLMEditorPage->getFontSizeSpinBox()->value());
+  mpSettings->setValue("TLMEditor/textRuleColor", mpTLMEditorPage->getTextRuleColor().rgba());
+  mpSettings->setValue("TLMEditor/commentRuleColor", mpTLMEditorPage->getCommentRuleColor().rgba());
+  mpSettings->setValue("TLMEditor/tagRuleColor", mpTLMEditorPage->getTagRuleColor().rgba());
+  mpSettings->setValue("TLMEditor/quotesRuleColor", mpTLMEditorPage->getQuotesRuleColor().rgba());
+  mpSettings->setValue("TLMEditor/elementsRuleColor", mpTLMEditorPage->getElementRuleColor().rgba());
+}
 //! Saves the GraphicsViews section settings to omedit.ini
 void OptionsDialog::saveGraphicalViewsSettings()
 {
@@ -831,6 +889,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pModelicaTextEditorItem = new QListWidgetItem(mpOptionsList);
   pModelicaTextEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pModelicaTextEditorItem->setText(tr("Modelica Text Editor"));
+  // TLM Item
+  QListWidgetItem *pTLMEditorItem = new QListWidgetItem(mpOptionsList);
+  pTLMEditorItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
+  pTLMEditorItem->setText(tr("TLM Editor"));
   // Graphical Views Item
   QListWidgetItem *pGraphicalViewsItem = new QListWidgetItem(mpOptionsList);
   pGraphicalViewsItem->setIcon(QIcon(":/Resources/icons/modeling.png"));
@@ -881,6 +943,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpGeneralSettingsPage);
   mpPagesWidget->addWidget(mpLibrariesPage);
   mpPagesWidget->addWidget(mpModelicaTextEditorPage);
+  mpPagesWidget->addWidget(mpTLMEditorPage);
   mpPagesWidget->addWidget(mpGraphicalViewsPage);
   mpPagesWidget->addWidget(mpSimulationPage);
   mpPagesWidget->addWidget(mpMessagesPage);
@@ -925,6 +988,14 @@ ModelicaTabSettings OptionsDialog::getModelicaTabSettings()
   return modelicaTabSettings;
 }
 
+TLMTabSettings OptionsDialog::getTLMTabSettings()
+{
+  TLMTabSettings tlmTabSettings;
+  tlmTabSettings.setTabPolicy(mpTLMEditorPage->getTabPolicyComboBox()->itemData(mpTLMEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  tlmTabSettings.setTabSize(mpTLMEditorPage->getTabSizeSpinBox()->value());
+  tlmTabSettings.setIndentSize(mpTLMEditorPage->getIndentSpinBox()->value());
+  return tlmTabSettings;
+}
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
@@ -953,6 +1024,9 @@ void OptionsDialog::saveSettings()
   emit modelicaTextSettingsChanged();
   // emit the signal so that all text editors can set line wrapping mode
   emit updateLineWrapping();
+  saveTLMSettings();
+  // emit the signal so that all syntax highlighters are updated
+  emit TLMSettingsChanged();
   saveGraphicalViewsSettings();
   saveSimulationSettings();
   saveMessagesSettings();
@@ -1979,6 +2053,267 @@ void ModelicaTextEditorPage::pickColor()
     setFunctionRuleColor(color);
   } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
     setQuotesRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
+    setCommentRuleColor(color);
+  }
+  emit updatePreview();
+}
+
+//! @class TLMEditorPage
+//! @brief Creates an interface for TLM Text settings.
+
+//! Constructor
+//! @param pOptionsDialog is the pointer to OptionsDialog
+TLMEditorPage::TLMEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // tabs and indentation groupbox
+  mpTabsAndIndentation = new QGroupBox(tr("Tabs and Indentation"));
+  // tab policy
+  mpTabPolicyLabel = new Label(tr("Tab Policy:"));
+  mpTabPolicyComboBox = new QComboBox;
+  mpTabPolicyComboBox->addItem(tr("Spaces Only"), 0);
+  mpTabPolicyComboBox->addItem(tr("Tabs Only"), 1);
+  // tab size
+  mpTabSizeLabel = new Label(tr("Tab Size:"));
+  mpTabSizeSpinBox = new QSpinBox;
+  mpTabSizeSpinBox->setRange(1, 20);
+  mpTabSizeSpinBox->setValue(4);
+  // indent size
+  mpIndentSizeLabel = new Label(tr("Indent Size:"));
+  mpIndentSpinBox = new QSpinBox;
+  mpIndentSpinBox->setRange(1, 20);
+  mpIndentSpinBox->setValue(2);
+  // set tabs & indentation groupbox layout
+  QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyComboBox, 0, 1);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeLabel, 1, 0);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpTabSizeSpinBox, 1, 1);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSizeLabel, 2, 0);
+  pTabsAndIndentationGroupBoxLayout->addWidget(mpIndentSpinBox, 2, 1);
+  mpTabsAndIndentation->setLayout(pTabsAndIndentationGroupBoxLayout);
+  // syntax highlight and text wrapping groupbox
+  mpSyntaxHighlightAndTextWrappingGroupBox = new QGroupBox(tr("Syntax Highlight and Text Wrapping"));
+  // syntax highlighting checkbox
+  mpSyntaxHighlightingCheckbox = new QCheckBox(tr("Enable Syntax Highlighting"));
+  mpSyntaxHighlightingCheckbox->setChecked(true);
+  // line wrap checkbox
+  mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
+  mpLineWrappingCheckbox->setChecked(true);
+  connect(mpLineWrappingCheckbox, SIGNAL(toggled(bool)), this, SLOT(setLineWrapping()));
+  // set Syntax Highlight & Text Wrapping groupbox layout
+  QGridLayout *pSyntaxHighlightAndTextWrappingGroupBoxLayout = new QGridLayout;
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpSyntaxHighlightingCheckbox, 0, 0);
+  pSyntaxHighlightAndTextWrappingGroupBoxLayout->addWidget(mpLineWrappingCheckbox, 1, 0);
+  mpSyntaxHighlightAndTextWrappingGroupBox->setLayout(pSyntaxHighlightAndTextWrappingGroupBoxLayout);
+  // fonts & colors groupbox
+  mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
+  // font family combobox
+  mpFontFamilyLabel = new Label(Helper::fontFamily);
+  mpFontFamilyComboBox = new QFontComboBox;
+  int currentIndex;
+  currentIndex = mpFontFamilyComboBox->findText(Helper::monospacedFontInfo.family(), Qt::MatchExactly);
+  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
+  connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SIGNAL(updatePreview()));
+  // font size combobox
+  mpFontSizeLabel = new Label(Helper::fontSize);
+  mpFontSizeSpinBox = new DoubleSpinBox;
+  mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpFontSizeSpinBox->setValue(Helper::monospacedFontInfo.pointSizeF());
+  mpFontSizeSpinBox->setSingleStep(1);
+  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(double)), SIGNAL(updatePreview()));
+  // Item color label and pick color button
+  mpItemColorLabel = new Label(tr("Item Color:"));
+  mpItemColorPickButton = new QPushButton(Helper::pickColor);
+  mpItemColorPickButton->setAutoDefault(false);
+  connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
+  // Items list
+  mpItemsLabel = new Label(tr("Items:"));
+  mpItemsList = new QListWidget;
+  mpItemsList->setItemDelegate(new ItemDelegate(mpItemsList));
+  mpItemsList->setMaximumHeight(90);
+  // Add items to list
+  addListItems();
+  // make first item in the list selected
+  mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
+  // preview textbox
+  mpPreviewLabel = new Label(tr("Preview:"));
+  mpPreviewPlainTextBox = new QPlainTextEdit;
+  mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
+  QString previewText;
+  previewText.append("<!-- The root node is the meta-model -->\n"
+                     "<Model Name=\"Pendulum\">\n"
+                     "\t<SubModels>\n"
+                     "\t\t<SubModel Name=\"shaft1\"\n"
+                     "\t\t\tStartCommand=\"StartTLMOpenModelica\"\n"
+                     "\t\t\tExactStep=\"0\"\n"
+                     "\t\t\tModelFile=\"shaft1.mo\">\n"
+                     "\t\t</SubModel>\n"
+                     "\t</SubModels>\n"
+                     "\t<Connections>\n"
+                     "\t\t<Connection From=\"shaft1.tlm\" To=\"shaft2.tlm\"\n"
+                     "\t\tDelay=\"1e-4\" Zf=\"1e4\" Zfr=\"1e2\" alpha=\"0.2\"/>\n"
+                     "\t</Connections>\n"
+                     "\t<SimulationParams ManagerPort=\"11113\"\n"
+                     "\t\tStartTime=\"0\"\n"
+                     "\t\tStopTime=\"1\"/>\n"
+                     "</Model>\n");
+  mpPreviewPlainTextBox->setPlainText(previewText);
+
+  // highlight preview textbox
+  TLMHighlighter *pTLMHighlighter = new TLMHighlighter(this, mpPreviewPlainTextBox);
+  connect(this, SIGNAL(updatePreview()), pTLMHighlighter, SLOT(settingsChanged()));
+  connect(mpSyntaxHighlightingCheckbox, SIGNAL(toggled(bool)), pTLMHighlighter, SLOT(settingsChanged()));
+  // set fonts & colors groupbox layout
+  QGridLayout *pFontsColorsGroupBoxLayout = new QGridLayout;
+  pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
+  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeLabel, 0, 1);
+  pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyComboBox, 1, 0);
+  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeSpinBox, 1, 1);
+  pFontsColorsGroupBoxLayout->addWidget(mpItemsLabel, 2, 0);
+  pFontsColorsGroupBoxLayout->addWidget(mpItemColorLabel, 2, 1);
+  pFontsColorsGroupBoxLayout->addWidget(mpItemsList, 3, 0);
+  pFontsColorsGroupBoxLayout->addWidget(mpItemColorPickButton, 3, 1, Qt::AlignTop);
+  pFontsColorsGroupBoxLayout->addWidget(mpPreviewLabel, 4, 0, 1, 2);
+  pFontsColorsGroupBoxLayout->addWidget(mpPreviewPlainTextBox, 5, 0, 1, 2);
+  mpFontColorsGroupBox->setLayout(pFontsColorsGroupBoxLayout);
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpTabsAndIndentation);
+  pMainLayout->addWidget(mpSyntaxHighlightAndTextWrappingGroupBox);
+  pMainLayout->addWidget(mpFontColorsGroupBox);
+  setLayout(pMainLayout);
+}
+
+//! Adds the TLM Text settings rules to the mpItemsList.
+void TLMEditorPage::addListItems()
+{
+  // don't change the Data of items as it is being used in TLMEditorPage::pickColor slot to identify the items
+  // Text
+  mpTextItem = new QListWidgetItem(mpItemsList);
+  mpTextItem->setText("Text");
+  mpTextItem->setData(Qt::UserRole, "Text");
+  setTextRuleColor(QColor(0, 0, 0)); // black
+  // Tag
+  mpTagItem = new QListWidgetItem(mpItemsList);
+  mpTagItem->setText("Tag");
+  mpTagItem->setData(Qt::UserRole, "Tag");
+  setTagRuleColor(QColor(0, 0, 255)); // blue
+  // Element
+  mpElementItem = new QListWidgetItem(mpItemsList);
+  mpElementItem->setText("Element");
+  mpElementItem->setData(Qt::UserRole, "Element");
+  setElementRuleColor(QColor(0, 0, 255)); // blue
+  // Quotes
+  mpQuotesItem = new QListWidgetItem(mpItemsList);
+  mpQuotesItem->setText("Quotes");
+  mpQuotesItem->setData(Qt::UserRole, "Quotes");
+  setQuotesRuleColor(QColor(139, 0, 0)); // dark red
+  // Comment
+  mpCommentItem = new QListWidgetItem(mpItemsList);
+  mpCommentItem->setText("Comment");
+  mpCommentItem->setData(Qt::UserRole, "Comment");
+  setCommentRuleColor(QColor(0, 150, 0)); // dark green
+}
+
+/*!
+ * \brief TLMEditorPage::setTextRuleColor
+ * \param color
+ */
+void TLMEditorPage::setTextRuleColor(QColor color)
+{
+  mTextColor = color;
+  mpTextItem->setForeground(color);
+}
+
+/*!
+ * \brief TLMEditorPage::setTagRuleColor
+ * \param color
+ */
+void TLMEditorPage::setTagRuleColor(QColor color)
+{
+  mTagColor = color;
+  mpTagItem->setForeground(color);
+}
+
+/*!
+ * \brief TLMEditorPage::setElementRuleColor
+ * \param color
+ */
+void TLMEditorPage::setElementRuleColor(QColor color)
+{
+  mElementColor = color;
+  mpElementItem->setForeground(color);
+}
+
+/*!
+ * \brief TLMEditorPage::setQuotesRuleColor
+ * \param color
+ */
+void TLMEditorPage::setQuotesRuleColor(QColor color)
+{
+  mQuotesColor = color;
+  mpQuotesItem->setForeground(color);
+}
+
+/*!
+ * \brief TLMtEditorPage::setCommentRuleColor
+ * \param color
+ */
+void TLMEditorPage::setCommentRuleColor(QColor color)
+{
+  mCommentColor = color;
+  mpCommentItem->setForeground(color);
+}
+
+/*!
+ * \brief TLMEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void TLMEditorPage::setLineWrapping()
+{
+  if (mpLineWrappingCheckbox->isChecked()) {
+    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpPreviewPlainTextBox->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
+}
+
+
+//! Picks a color for one of the TLM Text Settings rules.
+//! This method is called when mpColorPickButton clicked signal raised.
+void TLMEditorPage::pickColor()
+{
+  QListWidgetItem *item = mpItemsList->currentItem();
+  QColor initialColor;
+  // get the color of the item
+  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
+    initialColor = mTextColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
+    initialColor = mQuotesColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("tag") == 0) {
+    initialColor = mTagColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("element") == 0) {
+    initialColor = mElementColor;
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
+    initialColor = mCommentColor;
+  }
+  QColor color = QColorDialog::getColor(initialColor);
+  if (!color.isValid())
+    return;
+  // set the color of the item
+  if (item->data(Qt::UserRole).toString().toLower().compare("text") == 0) {
+   setTextRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("quotes") == 0) {
+    setQuotesRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("tag") == 0) {
+    setTagRuleColor(color);
+  } else if(item->data(Qt::UserRole).toString().toLower().compare("element") == 0) {
+    setElementRuleColor(color);
   } else if(item->data(Qt::UserRole).toString().toLower().compare("comment") == 0) {
     setCommentRuleColor(color);
   }

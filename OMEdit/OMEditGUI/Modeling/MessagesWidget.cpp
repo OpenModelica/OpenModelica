@@ -55,8 +55,9 @@
   \param kind - the error kind.
   \param level - the error level.
   */
-MessageItem::MessageItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message,
+MessageItem::MessageItem(MessageItemType type, QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message,
                          QString errorKind, QString errorType)
+  : mMessageItemType(type)
 {
   mTime = QTime::currentTime().toString();
   mFileName = filename;
@@ -185,10 +186,14 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   }
   QString linkFormat = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>");
   QString errorMessage;
-  QString message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
-  if (messageItem.getFileName().isEmpty()) { // if custom error message
+  QString message;
+  if(messageItem.getMessageItemType()== MessageItem::Modelica)
+    message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
+  else if(messageItem.getMessageItemType()== MessageItem::TLM)
+    message = messageItem.getMessage().remove("<p>");
+  if (messageItem.getFileName().isEmpty()&& !messageItem.getMessageItemType() != MessageItem::TLM ) { // if custom error message
     errorMessage = message;
-  } else if (mpMainWindow->getOMCProxy()->existClass(messageItem.getFileName())) {
+  } else if (mpMainWindow->getOMCProxy()->existClass(messageItem.getFileName()) || messageItem.getMessageItemType()== MessageItem::TLM) {
     // If the class is only loaded in AST via loadString then create link for the error message.
     errorMessage = linkFormat.arg(messageItem.getFileName())
         .arg(messageItem.getLocation())

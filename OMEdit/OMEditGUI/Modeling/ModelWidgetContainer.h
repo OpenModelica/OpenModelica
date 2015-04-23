@@ -46,12 +46,15 @@
 #include <QMdiArea>
 #include <map>
 #include <QtWebKit>
+#include <QtXmlPatterns>
+
 
 #include "Component.h"
 #include "StringHandler.h"
 #include "Helper.h"
 #include "BaseEditor.h"
 #include "ModelicaTextEditor.h"
+#include "TLMEditor.h"
 #include "TextEditor.h"
 
 class ModelWidget;
@@ -62,6 +65,7 @@ class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
 class BitmapAnnotation;
+
 
 class CoOrdinateSystem
 {
@@ -281,6 +285,7 @@ private slots:
 class LibraryTreeNode;
 class ModelWidgetContainer;
 class ModelicaTextHighlighter;
+class TLMHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
@@ -304,6 +309,8 @@ public:
   void getModelIconDiagramShapes(QString className, bool inheritedCycle = false);
   void getModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle = false);
   void getModelConnections(QString className, bool inheritedCycle = false);
+  void getTLMComponents();
+  void getTLMConnections();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
 private:
@@ -326,6 +333,7 @@ private:
   GraphicsScene *mpIconGraphicsScene;
   BaseEditor *mpEditor;
   ModelicaTextHighlighter *mpModelicaTextHighlighter;
+  TLMHighlighter *mpTLMHighlighter;
   QStatusBar *mpModelStatusBar;
 private slots:
   void showIconView(bool checked);
@@ -335,6 +343,7 @@ public slots:
   void makeFileWritAble();
   void showDocumentationView();
   bool modelicaEditorTextChanged();
+  bool TLMEditorTextChanged();
 protected:
   virtual void closeEvent(QCloseEvent *event);
 };

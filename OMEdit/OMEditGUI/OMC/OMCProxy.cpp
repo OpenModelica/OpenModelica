@@ -494,7 +494,7 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
  */
 void OMCProxy::showException(QString exception)
 {
-  MessageItem messageItem("", false, 0, 0, 0, 0, exception, Helper::scriptingKind, Helper::errorLevel);
+  MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, exception, Helper::scriptingKind, Helper::errorLevel);
   mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
   printMessagesStringInternal();
 }
@@ -571,7 +571,7 @@ bool OMCProxy::printMessagesStringInternal()
   /* Loop in reverse order since getMessagesStringInternal returns error messages in reverse order. */
   for (int i = errorsSize; i > 0 ; i--) {
     setCurrentError(i);
-    MessageItem messageItem(getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
+    MessageItem messageItem(MessageItem::Modelica, getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(), getErrorLineEnd(),
                             getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel());
     mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
   }
@@ -2167,8 +2167,8 @@ QString OMCProxy::uriToFilename(QString uri)
   if (results.size() > 1 && !results.at(1).isEmpty())
   {
     QString errorString = results.at(1);
-    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem("", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
-                                                                 Helper::errorLevel));
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString,
+                                                                 Helper::scriptingKind, Helper::errorLevel));
   }
   if (results.size() > 0)
     return results.first();

@@ -352,6 +352,34 @@ QString LineAnnotation::getShapeAnnotation()
   return QString("Line(").append(annotationString.join(",")).append(")");
 }
 
+QString LineAnnotation::getTLMShapeAnnotation()
+{
+  QStringList annotationString;
+  annotationString.append(GraphicItem::getShapeAnnotation());
+  // get points
+  QString pointsString;
+  if (mPoints.size() > 0)
+  {
+    pointsString.append("{");
+  }
+  for (int i = 0 ; i < mPoints.size() ; i++)
+  {
+    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
+    pointsString.append(QString::number(mPoints[i].y())).append("}");
+    if (i < mPoints.size() - 1)
+    {
+      pointsString.append(",");
+    }
+  }
+  if (mPoints.size() > 0)
+  {
+    pointsString.append("}");
+    annotationString.append(pointsString);
+  }
+  return annotationString.join(",");
+}
+
+
 void LineAnnotation::setStartComponent(Component *pStartComponent)
 {
   mpStartComponent = pStartComponent;
@@ -614,12 +642,41 @@ void LineAnnotation::handleComponentRotation()
 
 void LineAnnotation::updateConnectionAnnotation()
 {
-  // get the connection line annotation.
-  QString annotationString = QString("annotate=").append(getShapeAnnotation());
-  // update the connection
-  OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
-  pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
-                              mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
+    QDomDocument doc;
+    doc.setContent(mpGraphicsView->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+
+    // Get the "Root" element
+    QDomElement docElem = doc.documentElement();
+
+    QDomElement connections = docElem.firstChildElement();
+    while (!connections.isNull()) {
+      if(connections.tagName() == "Connections")
+        break;
+      connections = connections.nextSiblingElement();
+    }
+    QDomElement connection = connections.firstChildElement();
+    while (!connection.isNull()) {
+      if(connection.tagName() == "Connection" &&
+         StringHandler::getSubStringBeforeDots(connection.attribute("From")) == getStartComponentName() &&
+         StringHandler::getSubStringBeforeDots(connection.attribute("To")) == getEndComponentName()) {
+        QDomElement annotation = connection.firstChildElement("Annotation");
+        annotation.setAttribute("Points",getTLMShapeAnnotation());
+        break;
+      }
+      connection = connection.nextSiblingElement();
+    }
+    QString metaModelText = doc.toString();
+    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+  } else {
+    // get the connection line annotation.
+    QString annotationString = QString("annotate=").append(getShapeAnnotation());
+    // update the connection
+    OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
+    pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
+                                mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
+  }
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
 }

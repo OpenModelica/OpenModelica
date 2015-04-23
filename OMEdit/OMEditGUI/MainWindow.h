@@ -56,6 +56,7 @@
 #include "LibraryTreeWidget.h"
 #include "DocumentationWidget.h"
 #include "SimulationDialog.h"
+#include "TLMCoSimulationDialog.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
 #include "DebuggerMainWindow.h"
@@ -71,6 +72,7 @@ class LibraryTreeWidget;
 class DocumentationWidget;
 class VariablesWidget;
 class SimulationDialog;
+class TLMCoSimulationDialog;
 class PlotWindowContainer;
 class ModelWidgetContainer;
 class DebuggerMainWindow;
@@ -95,6 +97,7 @@ public:
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
   SimulationDialog* getSimulationDialog();
+  TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   PlotWindowContainer* getPlotWindowContainer();
   ModelWidgetContainer* getModelWidgetContainer();
   DebuggerMainWindow* getDebuggerMainWindow() {return mpDebuggerMainWindow;}
@@ -136,6 +139,7 @@ public:
   QAction* getImportFromOMNotebookAction();
   QAction* getImportNgspiceNetlistAction();
   QAction* getConnectModeAction();
+  QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
   void closeEvent(QCloseEvent *event);
@@ -182,6 +186,7 @@ private:
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
   SimulationDialog *mpSimulationDialog;
+  TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
   QList<Qt::WindowStates> mPlotWindowsStatesList;
   QList<QByteArray> mPlotWindowsGeometriesList;
@@ -198,12 +203,16 @@ private:
   QTabBar *mpPerspectiveTabbar;
   QTimer *mpAutoSaveTimer;
   // File Menu
+  // Modelica File Actions
   QAction *mpNewModelicaClassAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
+  // TLM File Actions
+  QAction *mpNewTLMFileAction;
+  QAction *mpOpenTLMFileAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
@@ -274,6 +283,8 @@ private:
   // Other Actions
   QAction *mpExportAsImageAction;
   QAction *mpExportToClipboardAction;
+  // TLM Simulation Action
+  QAction *mpTLMCoSimulationAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -286,6 +297,7 @@ private:
   QToolButton *mpModelSwitcherToolButton;
   QMenu *mpModelSwitcherMenu;
   QToolBar *mpPlotToolBar;
+  QToolBar *mpTLMSimulationToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void createNewModelicaClass();
@@ -294,6 +306,8 @@ public slots:
   void loadModelicaLibrary();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
+  void createNewTLMFile();
+  void openTLMFile();
   void loadSystemLibrary();
   void readOutputFile(qint64 bytes);
   void readErrorFile(qint64 bytes);
@@ -324,6 +338,7 @@ public slots:
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
   void exportToClipboard();
+  void TLMSimulate();
   void openConfigurationOptions();
   void openUsersGuide();
   void openSystemDocumentation();

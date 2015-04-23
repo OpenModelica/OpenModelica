@@ -295,6 +295,9 @@ public:
   static QString collapseAll;
   static QString version;
   static QString unlimited;
+  static QString simulationOutput;
+  static QString cancelSimulation;
+  static QString tlmCoSimulation;
 };
 
 class GUIMessages : public QObject
