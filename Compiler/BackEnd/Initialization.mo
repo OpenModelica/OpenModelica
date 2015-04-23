@@ -201,7 +201,7 @@ algorithm
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
 
     // transform and optimize DAE
-    pastOptModules := BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem","calculateStrongComponentJacobians", "solveSimpleEquations"}));
+    pastOptModules := BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "symEulerInit","tearingSystem","calculateStrongComponentJacobians", "solveSimpleEquations"}));
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
     daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
 

@@ -7717,6 +7717,8 @@ algorithm
                         (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
                         (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                         (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
+                        (BackendDAEOptimize.symEuler, "symEuler", false),
+                        (BackendDAEOptimize.symEulerInit, "symEulerInit", false),
                         (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", false),
                         (OnRelaxation.relaxSystem, "relaxSystem", false),
                         (BackendDAEOptimize.countOperations, "countOperations", false),

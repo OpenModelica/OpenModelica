@@ -4103,6 +4103,166 @@ algorithm
 end addedScaledVarsWork;
 
 
+// =============================================================================
+// section for symEuler
+//
+// replace der(x) with difference quotient
+// -->  implicit euler
+//
+// after removeSimpliEquation
+// before tearing
+// ToDo: not add to initial equation
+// author: Vitalij Ruge
+// =============================================================================
+
+public function symEuler
+ input BackendDAE.BackendDAE inDAE;
+ output BackendDAE.BackendDAE outDAE;
+algorithm
+ outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(inDAE, true) else inDAE;
+end symEuler;
+public function symEulerInit
+"
+fix the difference quotient for initial equations[0/0]
+ToDo: remove me
+"
+ input BackendDAE.BackendDAE inDAE;
+ output BackendDAE.BackendDAE outDAE;
+algorithm
+ outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(inDAE, false) else inDAE;
+
+end symEulerInit;
+
+protected function symEulerWork
+  input BackendDAE.BackendDAE inDAE;
+  input Boolean b " true => add, false => remove euler equation";
+  output BackendDAE.BackendDAE outDAE;
+protected 
+  list<BackendDAE.EqSystem> systlst, osystlst = {};
+  BackendDAE.EqSystem syst_;
+  BackendDAE.Shared shared;
+  BackendDAE.Var tmpv;
+  DAE.ComponentRef cref;
+algorithm
+  BackendDAE.DAE(systlst, shared) := inDAE;
+
+  // make dt
+  cref := ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {});
+  tmpv := BackendVariable.makeVar(cref);
+  tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
+  tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
+  shared := BackendVariable.addKnVarDAE(tmpv, shared);
+
+  for syst in systlst loop
+   (syst_, shared) := symEulerUpdateSyst(syst, b, shared);
+   osystlst := syst_ :: osystlst;
+  end for;
+
+  outDAE := BackendDAE.DAE(osystlst, shared);
+  //BackendDump.bltdump("BackendDAEOptimize.removeSymEulerEquation", outDAE);
+end symEulerWork;
+
+protected function symEulerUpdateSyst
+  input BackendDAE.EqSystem iSyst;
+  input Boolean b;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem oSyst;
+  output BackendDAE.Shared oShared = shared;
+protected
+  array<Option<BackendDAE.Equation>> equOptArr;
+  Option<BackendDAE.Equation> oeqn;
+  BackendDAE.Equation eqn;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  Integer n, numberOfElement, size, arrSize;
+
+  Option<BackendDAE.IncidenceMatrix> m, mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<DAE.ComponentRef> crlst;
+
+algorithm
+  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := iSyst;
+  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := eqns;
+  n := arrayLength(equOptArr);
+  crlst := {};
+  for i in 1:n loop
+    oeqn := arrayGet(equOptArr, i);
+    if isSome(oeqn) then
+       SOME(eqn) := oeqn;
+       (eqn, (_,crlst)) := BackendEquation.traverseExpsOfEquation(eqn, symEulerUpdateEqn, (b,crlst));
+       arrayUpdate(equOptArr, i, SOME(eqn));
+    end if;
+  end for;
+  // states -> vars
+  vars := symEulerState(vars, crlst, b);
+  if b then // der(x)
+    oShared := symEulerDerVars(crlst, oShared);
+  end if;
+  oSyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(),  BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+end symEulerUpdateSyst;
+
+protected function symEulerState
+  input BackendDAE.Variables vars;
+  input list<DAE.ComponentRef> crlst;
+  input Boolean b;
+  output BackendDAE.Variables ovars = vars;
+
+protected
+  Integer idx;
+  BackendDAE.VarKind kind;
+algorithm
+  kind := if b then BackendDAE.VARIABLE() else BackendDAE.STATE(0,NONE()); 
+  for cref in crlst loop
+    (_, idx) := BackendVariable.getVar2(cref, ovars);
+    ovars :=  BackendVariable.setVarKindForVar(idx, kind, ovars);
+  end for;
+end symEulerState;
+
+protected function symEulerDerVars
+  input list<DAE.ComponentRef> crlst;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared outShared = shared;
+protected
+  DAE.ComponentRef cref;
+  BackendDAE.Var v;
+algorithm
+  for cr in crlst loop
+    cref := ComponentReference.crefPrefixDer(cr);
+    v := BackendVariable.makeVar(cref);
+    outShared := BackendVariable.addKnVarDAE(v, outShared);
+  end for;
+end symEulerDerVars;
+
+protected function symEulerUpdateEqn
+  input DAE.Exp inExp;
+  input tuple<Boolean, list<DAE.ComponentRef>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<Boolean, list<DAE.ComponentRef>> outTpl;
+algorithm
+  (outExp, outTpl) := Expression.traverseExpBottomUp(inExp, symEulerUpdateDer, inTpl);
+end symEulerUpdateEqn;
+
+protected function symEulerUpdateDer
+  input DAE.Exp inExp;
+  input tuple<Boolean, list<DAE.ComponentRef>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<Boolean, list<DAE.ComponentRef>> outTpl;
+algorithm
+  (outExp, outTpl) := match (inTpl, inExp)
+            local DAE.Exp exp; DAE.Type tp; list<DAE.ComponentRef> cr_lst; DAE.ComponentRef cr;
+
+            case ((true,cr_lst), DAE.CALL(path=Absyn.IDENT(name="der"), expLst={exp as DAE.CREF(ty=tp, componentRef = cr)}))
+            then (Expression.makePureBuiltinCall("$_DF$DER", {exp}, tp), (true,List.unionElt(cr,cr_lst)));
+
+            case ((false,cr_lst), DAE.CALL(path=Absyn.IDENT(name="$_DF$DER"), expLst={exp as DAE.CREF(ty=tp, componentRef = cr)}))
+            then (Expression.makePureBuiltinCall("der", {exp}, tp),(false, List.unionElt(cr,cr_lst)));
+
+            else (inExp, inTpl);
+            end match;
+end symEulerUpdateDer;
+
 
 // =============================================================================
 // section for introduceDerAlias

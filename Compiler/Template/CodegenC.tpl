@@ -603,6 +603,8 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionDAE(allEquations, whenClauses, modelNamePrefixStr)%>
 
+    <%functionSymEuler(modelInfo, modelNamePrefixStr)%>
+
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.odeSchedule, modelNamePrefixStr)%>
 
     /* forward the main in the simulation runtime */
@@ -694,7 +696,8 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"lagrange")%>,
        <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
        <%symbolName(modelNamePrefixStr,"setInputData")%>,
-       <%symbolName(modelNamePrefixStr,"getTimeGrid")%>
+       <%symbolName(modelNamePrefixStr,"getTimeGrid")%>,
+       <%symbolName(modelNamePrefixStr,"symEulerUpdate")%>
     <%\n%>
     };
 
@@ -1293,6 +1296,29 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
     >>
   end match
 end functionInput;
+
+template functionSymEuler(ModelInfo modelInfo, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  match modelInfo
+  case MODELINFO(vars=SIMVARS(__)) then
+    <<
+    int <%symbolName(modelNamePrefix,"symEulerUpdate")%>(DATA *data, modelica_real dt)
+    {
+      TRACE_PUSH
+      #ifdef $P$TMP$OMC$DT
+        $P$TMP$OMC$DT = dt;
+      #else
+        return -1;
+      #endif
+
+      TRACE_POP
+      return 0;
+    }
+
+    >>
+  end match
+end functionSymEuler;
 
 template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
@@ -8590,10 +8616,17 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="$_initialGuess"), expLst={arg as CREF(__)}) then
     let namestr = cref(arg.componentRef)
     '( <%namestr%>)' //
+  case CALL(path=IDENT(name="$_old"), expLst={arg as CREF(__)}) then
+    let namestr = cref(arg.componentRef)
+    '( _<%namestr%>(1))' //
   // if arg >= 0 then 1 else -1
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     '(<%var1%> >= 0.0 ? 1.0:-1.0)'
+  // numerical der()
+  case CALL(path=IDENT(name="$_DF$DER"), expLst={arg as CREF(__)}) then
+    let namestr = cref(arg.componentRef)
+    '(initial() ? 0 : (($P$TMP$OMC$DT == 0.0) ? ($P$DER<%namestr%>) : ($P$DER<%namestr%> = ((<%namestr%> - _<%namestr%>(1))/$P$TMP$OMC$DT))))'
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

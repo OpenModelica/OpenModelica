@@ -78,6 +78,7 @@ typedef struct RK4_DATA
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
+static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo);
 
 static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
@@ -132,6 +133,9 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     TRACE_POP
     return retVal;
 #endif
+  case S_SYM_EULER:
+    retVal = sym_euler_im_step(data, solverInfo);
+    return retVal;
   }
 
   TRACE_POP
@@ -174,6 +178,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 
   switch (solverInfo->solverMethod)
   {
+  case S_SYM_EULER:
   case S_EULER: break;
   case S_RUNGEKUTTA:
   {
@@ -687,6 +692,27 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 
   return 0;
 }
+
+/***************************************    SYM_EULER_IMP     *********************************/
+static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
+  int retVal;
+  /*time*/
+  solverInfo->currentTime = data->localData[1]->timeValue + solverInfo->currentStepSize;
+  data->localData[0]->timeValue = solverInfo->currentTime;
+  /*update dt*/
+  retVal = data->callback->symEulerUpdate(data, solverInfo->currentStepSize);
+  if(retVal != 0){
+    errorStreamPrint(LOG_STDOUT, 0, "Solver %s disabled on this configuration, set compiler flag +symEuler!", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
+    EXIT(0);
+  }
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data);
+  /* eval alg equations, note ode is empty */
+  data->callback->functionDAE(data);
+  return retVal;
+}
+
 
 /***************************************    RK4      ***********************************/
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)

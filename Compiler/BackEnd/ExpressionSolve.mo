@@ -586,6 +586,7 @@ preprocessing for solve1,
    con := true;
    iter := 0;
 
+   x := unifyFunCalls(x, inExp3);
    while con and iter < 1000 loop
 
      (x, y, con) := preprocessingSolve2(x,y, inExp3);
@@ -1198,6 +1199,17 @@ protected function unifyFunCallsWork
        e = DAE.IFEXP(DAE.RELATION(e1,DAE.GREATEREQ(tp), Expression.makeConstZero(tp),-1,NONE()),Expression.expMul(e1,e2), Expression.expMul(e1,e3));
      then (e,true, iT);
 
+   // df_der(x) = (x-old(x))/dt
+   case(DAE.CALL(path = Absyn.IDENT(name = "$_DF$DER"),expLst = {e1}),X)
+     guard expHasCref(e1, X)
+     equation
+      tp = Expression.typeof(e1);
+      e2 = Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+      e3 = Expression.makePureBuiltinCall("$_old", {e1}, tp);
+      e3 = Expression.expSub(e1,e3);
+      e = Expression.expDiv(e3,e2);
+     then (e,true, iT);
+
    else (inExp, true, iT);
    end matchcontinue;
 
@@ -1597,6 +1609,18 @@ algorithm
     lhs = Expression.expMul(e_1,lhs);
 
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
+
+  // $_DF$DER(x) =y -> (x-old(x))/dt = y -> x = y*dt + old(x)
+  case(DAE.CALL(path = Absyn.IDENT(name = "$_DF$DER"),expLst = {e1}), _)
+  equation
+    true = expHasCref(e1, inExp3);
+    false = expHasCref(inExp2, inExp3);
+    tp = Expression.typeof(e1);
+    e2 = Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+    lhs = Expression.makePureBuiltinCall("$_old", {e1}, tp);
+    lhs = Expression.expAdd(Expression.expMul(inExp2,e2), lhs);
+  then(e1, lhs, true, ieqnForNewVars, inewVarsCrefs, idepth + 1);
+
 
   //QE
   // a*x^n + b*x^m = c

@@ -80,6 +80,7 @@ typedef struct SOLVER_INFO
     S_LOBATTO2,      /*  8 */
     S_LOBATTO4,      /*  9 */
     S_LOBATTO6,      /* 10 */
+    S_SYM_EULER,     /* 11 */
     S_QSS,
 
     S_MAX
@@ -97,6 +98,7 @@ typedef struct SOLVER_INFO
     "lobatto2",
     "lobatto4",
     "lobatto6",
+    "symEuler",
     "qss"
   };
   static const char *SOLVER_METHOD_DESC[S_MAX] = {
@@ -111,6 +113,7 @@ typedef struct SOLVER_INFO
     "lobatto2 [sundial/kinsol needed]",
     "lobatto4 [sundial/kinsol needed]",
     "lobatto6 [sundial/kinsol needed]",
+    "symbolic implicit euler, [compiler flag +symEuler needed]", 
     "qss"
   };
 

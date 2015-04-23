@@ -743,6 +743,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "solveLinearSystem",
     "addScaledVars",
     "removeSimpleEquations",
+    "symEuler",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",
     "reduceDynamicOptimization", // before tearing
@@ -1045,6 +1046,10 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(68, "dynamicTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime)"));
 
+constant ConfigFlag SYM_EULER = CONFIG_FLAG(69, "symEuler",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Rewritte the ode system for inplicit euler."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1117,7 +1122,8 @@ constant list<ConfigFlag> allConfigFlags = {
   MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM,
   CPP_FLAGS,
   REMOVE_SIMPLE_EQUATIONS,
-  DYNAMIC_TEARING
+  DYNAMIC_TEARING,
+  SYM_EULER
 };
 
 public function new

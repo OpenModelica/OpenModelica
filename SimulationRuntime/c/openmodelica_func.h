@@ -287,7 +287,11 @@ int (*setInputData)(DATA* data, const modelica_boolean file);
 int (*getTimeGrid)(DATA *data, modelica_integer * nsi, modelica_real**t);
 
 
+/*
+ * update parameter for symEuler
+ */
 
+int (*symEulerUpdate)(DATA * data, modelica_real dt);
 
 };
 

@@ -1131,14 +1131,17 @@ algorithm
 
    // smooth of constant expression
    case DAE.CALL(path=Absyn.IDENT("smooth"),expLst={_,e1})
-     equation
-       true = Expression.isConst(e1);
+   guard Expression.isConst(e1)
      then e1;
+
+   // df_der(const) --> 0
+   case DAE.CALL(path=Absyn.IDENT("$_DF$DER"),expLst={e1})
+   guard Expression.isConst(e1)
+     then Expression.makeConstZeroE(e1);
 
    // delay of constant expression
    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,_,_})
-     equation
-       true = Expression.isConst(e1);
+   guard Expression.isConst(e1)
      then e1;
 
     // delay of constant subexpression
