@@ -2245,7 +2245,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
         mpEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
         file.close();
       }
-    }   
+    }
     MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
     mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getTLMEditorPage(),
                                           mpEditor->getPlainTextEdit());
