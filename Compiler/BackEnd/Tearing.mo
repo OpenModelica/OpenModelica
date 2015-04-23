@@ -981,7 +981,7 @@ algorithm
       equation
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
         false = listEmpty(unsolvables);
-        tvar = listGet(unsolvables,1);
+        tvar = listHead(unsolvables);
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
         end if;
@@ -2223,7 +2223,7 @@ algorithm
        if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
          print("\nEND of TearingHeuristic\n" + BORDER + "\n\n");
        end if;
-    then listGet(potentials,1);
+    then listHead(potentials);
 
    else
      equation
@@ -2761,7 +2761,7 @@ algorithm
 
   // 7. Choose vars with most points as potentials and convert indexes
   potentials1 := maxListInt(points1);
-  potpoints1 := listGet(points1,listGet(potentials1,1));
+  potpoints1 := listGet(points1,listHead(potentials1));
   potentials1 := selectFromList(selectedcols1,potentials1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n2nd: "+ stringDelimitList(List.map(potentials1,intString),",")+"\n(Variables from (1st) with most points (" + intString(potpoints1) + " points) - potentials1)\n\n");
@@ -2795,7 +2795,7 @@ algorithm
 
   // 13. Choose vars with most points as potentials and convert indexes
   potentials2 := maxListInt(points2);
-  potpoints2 := listGet(points2,listGet(potentials2,1));
+  potpoints2 := listGet(points2,listHead(potentials2));
   potentials2 := selectFromList(selectedcols1,potentials2);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n2nd: "+ stringDelimitList(List.map(potentials2,intString),",")+"\n(Variables from (1st) with most points (" + intString(potpoints2) + " points) - potentials2)\n\n");
@@ -2892,7 +2892,7 @@ algorithm
 
   // 6. Choose vars with most points and save them in bestPotentialTVars
   bestPotentialTVars := maxListInt(points);
-  maxpoints := listGet(points,listGet(bestPotentialTVars,1));
+  maxpoints := listGet(points,listHead(bestPotentialTVars));
   bestPotentialTVars := selectFromList(potentialTVars,bestPotentialTVars);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n6th: "+ stringDelimitList(List.map(bestPotentialTVars,intString),",")+"\n(Variables from (4th) with most points [" + intString(maxpoints) + "])\n\n");
@@ -2905,7 +2905,7 @@ algorithm
 
   // Convert indexes from mtsel to indexes from mtIn
   potentials := selectFromList(bestPotentialTVars,potentials);
-  tVar := listGet(potentials,1);
+  tVar := listHead(potentials);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("7th: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (6th) with most occurrence in equations (" + intString(edges) +" times))\n\nChosen tearing variable: " + intString(tVar) + "\n\n");
   end if;
@@ -3444,7 +3444,7 @@ algorithm
     case((eqn_coll::rest,m,me,ass1,mapEqnIncRow))
       equation
         eqns = mapEqnIncRow[eqn_coll];
-        eqn = listGet(eqns,1);
+        eqn = listHead(eqns);
         vars = arrayGet(m,eqn);
         vars_enh = List.removeOnTrue(ass1, isAssignedSaveEnhanced,me[eqn]);
         b = solvableLst(vars_enh);
@@ -3495,7 +3495,7 @@ algorithm
   set := List.unique(row);
   (val,num) := countMultiples3(row,set,1,{},{});
   positions := maxListInt(num);
-  position := listGet(positions,1);
+  position := listHead(positions);
   number := listGet(num,position);
   numbers := selectFromList(val,positions);
   value := listGet(val,position);

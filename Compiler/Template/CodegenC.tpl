@@ -5665,7 +5665,7 @@ case KERNEL_FUNCTION(__) then
   let &varDecls = buffer ""
   let &varInits = buffer ""
   let &varFrees = buffer ""
-  let _ = (List.first(outVars) |> var hasindex i1 fromindex 1 =>
+  let _ = (listGet(outVars,1) |> var hasindex i1 fromindex 1 =>
       varInit(var, "", &varDecls, &varInits, &varFrees, &auxFunction) ; empty /* increase the counter! */
     )
 

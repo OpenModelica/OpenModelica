@@ -1578,7 +1578,7 @@ algorithm
       stateVars = getStates(varLst,{},1);
       //print("stateVars: " + stringDelimitList(List.map(stateVars,intString),",") + " varOffset: " + intString(varOffset) + "\n");
       //print("varCompMapping: " + stringDelimitList(arrayList(Array.map(varCompMapping,tuple3ToString)),",") + "\n");
-      true = List.isNotEmpty(stateVars);
+      false = listEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
       stateNodes = getArrayTuple31(stateVars,varCompMapping);
       //print("stateNodes: " + stringDelimitList(List.map(stateNodes,intString),",") + "\n");
@@ -2407,7 +2407,7 @@ algorithm
         //print("Vars of single equation system: " + stringDelimitList(List.map(vars, intString), ",") + "\n");
         backendVars = List.map1r(vars, BackendVariable.getVarAt, iOrderedVars);
         solvesDiscreteValue = BackendVariable.hasDiscreteVar(backendVars);
-        eqn = List.first(eqns);
+        eqn = listHead(eqns);
       then (solvesDiscreteValue,eqn);
     case(BackendDAE.SINGLEARRAY(vars=vars,eqn=eqn),_)
       equation
@@ -3359,7 +3359,7 @@ algorithm
   //print("oneChildren "+stringDelimitList(List.map(oneChildren,intLstString),"\n")+"\n");
   //(graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(oneChildren,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(oneChildren,graphIn,graphTIn,graphDataIn,contractedTasksIn);
-  changed := List.isNotEmpty(oneChildren);
+  changed := not listEmpty(oneChildren);
   //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
 end mergeSimpleNodes;
 
@@ -3382,7 +3382,7 @@ algorithm
   mergedNodes := mergeParentNodes0(graphIn, graphTIn, graphDataIn, contractedTasksIn, alreadyMerged, 1, {});
   //print("mergedNodes "+stringDelimitList(List.map(mergedNodes,intLstString),"\n")+"\n");
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(mergedNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn);
-  changed := List.isNotEmpty(mergedNodes);
+  changed := not listEmpty(mergedNodes);
   //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
 end mergeParentNodes;
 
@@ -3907,7 +3907,7 @@ algorithm
   deleteNodesParents := List.sortedUnique(List.sort(deleteNodesParents, intGt),intEq);
   deleteNodesParents := List.setDifferenceOnTrue(deleteNodesParents, contractNodes, intEq);
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteNodesParents: " + stringDelimitList(List.map(deleteNodesParents,intString),",") + "\n");
-  endNode := List.first(contractNodes);
+  endNode := listHead(contractNodes);
   endChildren := arrayGet(graphIn,endNode); //all child-nodes of the end node
   //print("HpcOmTaskGraph.contractNodesInGraph1 endChildren: " + stringDelimitList(List.map(endChildren,intString),",") + "\n");
   startNodeChildren := arrayGet(graphIn, startNode);
@@ -4040,7 +4040,7 @@ protected
 algorithm
   //mergedPaths := List.map1(mergedPaths,List.sort,intGt);
   startNodes := List.map(mergedPaths,List.last);
-  //startNodes := List.map(mergedPaths,List.first);
+  //startNodes := List.map(mergedPaths,listHead);
   (_,deleteNodes,_) := List.intersection1OnTrue(List.flatten(mergedPaths),startNodes,intEq);
   //deleteNodes := List.map(mergedPaths,List.rest);
   inCompsLst := arrayList(inCompsIn);
@@ -4074,7 +4074,7 @@ algorithm
         (startNodes,_,mergedPaths) = mergeInfo;
         //print("updateInComps1 startNodes:" + stringDelimitList(List.map(startNodes,intString),",") + "\n");
         //print("updateInComps1 deleteNodes:" + stringDelimitList(List.map(deleteNodes,intString),",") + "\n");
-        //print("updateInComps1 first mergedPath:" + stringDelimitList(List.map(List.first(mergedPaths),intString),",") + "\n");
+        //print("updateInComps1 first mergedPath:" + stringDelimitList(List.map(listHead(mergedPaths),intString),",") + "\n");
         inComps = listGet(inCompLstIn,nodeIdx);
         //print("updateInComps1 inComps:" + stringDelimitList(List.map(inComps,intString),",") + "\n");
         //true = listLength(inComps) == 1;
@@ -4214,10 +4214,10 @@ algorithm
         nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
         parents = getParentNodes(inPath,graphIn);
         parents = filterContractedNodes(parents,contrNodes);
-        true = listLength(nodeChildren) == 1 and List.isNotEmpty(nodeChildren) and listLength(parents) == 1;
+        true = listLength(nodeChildren) == 1 and not listEmpty(nodeChildren) and listLength(parents) == 1;
         //print("findOneChildParents case 6 for task " + intString(head) + "\n");
         child = listGet(nodeChildren,1);
-        pathLst = List.first(lstIn);
+        pathLst = listHead(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
         rest = List.deleteMember(allNodes,inPath);
@@ -4234,7 +4234,7 @@ algorithm
         parents = filterContractedNodes(parents,contrNodes);
         //true = listEmpty(nodeChildren) and listLength(parents) == 1;
         //print("findOneChildParents case 7 for task " + intString(head) + "\n");
-        pathLst = List.first(lstIn);
+        pathLst = listHead(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
         rest = List.deleteMember(allNodes,inPath);
@@ -5096,13 +5096,13 @@ algorithm
     case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
       equation //critical path of node is currently unknown -> calculate it
         childNodes = arrayGet(iGraph, iNode);
-        true = List.isNotEmpty(childNodes); //has children
+        false = listEmpty(childNodes); //has children
         criticalPaths = List.map4(childNodes, getCriticalPath1, iGraph, iGraphData, iHandleCommCosts, iNodeCriticalPaths);
         criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
         ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
         criticalPath = iNode :: criticalPathChild;
-        commCost = if iHandleCommCosts then getCommCostBetweenNodes(iNode, List.first(criticalPathChild), iGraphData) else COMMUNICATION(0,{},{},{},{},-1,0.0);
-        //print("Comm cost from node " + intString(iNode) + " to " + intString(List.first(criticalPathChild)) + " with costs " + intString(Util.tuple33(commCost)) + "\n");
+        commCost = if iHandleCommCosts then getCommCostBetweenNodes(iNode, listHead(criticalPathChild), iGraphData) else COMMUNICATION(0,{},{},{},{},-1,0.0);
+        //print("Comm cost from node " + intString(iNode) + " to " + intString(listHead(criticalPathChild)) + " with costs " + intString(Util.tuple33(commCost)) + "\n");
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
         calcTime = realAdd(cpCalcTime,calcTime);
@@ -5115,7 +5115,7 @@ algorithm
     case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
       equation //critical path of node is currently unknown -> calculate it
         childNodes = arrayGet(iGraph, iNode);
-        false = List.isNotEmpty(childNodes); //has no children
+        true = listEmpty(childNodes); //has no children
         criticalPath = iNode :: {};
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
@@ -5575,7 +5575,7 @@ algorithm
       equation
         commCosts = arrayGet(iCommCosts, iParentComp);
         filteredCommCosts = List.filter1OnTrue(commCosts, getCommCostBetweenNodes1, iChildComps);
-        true = List.isNotEmpty(filteredCommCosts);
+        false = listEmpty(filteredCommCosts);
         highestCommCost = getHighestCommCost(filteredCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
       then SOME(highestCommCost);
     else NONE();
@@ -5993,10 +5993,10 @@ algorithm
         if intNe(listLength(lst),1) then
           print("Check if there is a assert or something that is dependent of arrayEquations");
         end if;
-        if BackendVariable.isStateVar(List.first(varLst)) then // if its dependent on a state --> no edge in the task graph
+        if BackendVariable.isStateVar(listHead(varLst)) then // if its dependent on a state --> no edge in the task graph
           (esIdx,vIdx,b) = (-1,-1,false);
         else
-          (esIdx,vIdx,b) = (eqSysIdxIn,List.first(lst),true);
+          (esIdx,vIdx,b) = (eqSysIdxIn,listHead(lst),true);
         end if;
       then (esIdx,vIdx,b);
     case(BackendDAE.EQSYSTEM()::rest,_,_)

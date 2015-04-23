@@ -341,7 +341,7 @@ algorithm
 
     else
       equation
-        dim_str = ExpressionDump.dimensionString(List.first(inDimensions));
+        dim_str = ExpressionDump.dimensionString(listHead(inDimensions));
         print("Unknown dimension " + dim_str + " in NFSCodeExpand.expandArray\n");
       then
         fail();

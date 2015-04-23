@@ -2165,9 +2165,9 @@ algorithm
       equation
         // Step 3: Call constructor functions to try matching inputs
         args = List.map(types, Types.getFuncArg);
-        tys1 = List.mapMap(args, List.first, Types.funcArgType);
+        tys1 = List.mapMap(args, listHead, Types.funcArgType);
         args = List.map(args, List.rest);
-        tys2 = List.mapMap(args, List.first, Types.funcArgType);
+        tys2 = List.mapMap(args, listHead, Types.funcArgType);
         // We only look for constructors that are not of the initial type. Filter duplicates.
         tys1 = List.setDifference(List.union(tys1,tys1),{inType1});
         tys2 = List.setDifference(List.union(tys2,tys2),{inType2});

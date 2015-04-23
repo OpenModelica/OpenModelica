@@ -1587,8 +1587,8 @@ algorithm
         (mulAstates,_) = Expression.extendArrExp(mulAstates,false);
         mulAdstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrdstates));
         (mulAdstates,_) = Expression.extendArrExp(mulAdstates,false);
-        expset = if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listGet(expcrset,1);
-        expderset = if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listGet(expcrdset,1);
+        expset = if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listHead(expcrset);
+        expderset = if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listHead(expcrdset);
         source = DAE.SOURCE(SOURCEINFO("stateselection",false,0,0,0,0,0.0),{},NONE(),{},{},{},{});
         // set.x = set.A*set.statecandidates
         eqn  = if intGt(rang,1) then BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
@@ -4162,7 +4162,7 @@ algorithm
    else
      equation
        print("IndexReduction.setVarKind failt because of wrong input:\n");
-       BackendDump.printVar(listGet(inVarLst,1));
+       BackendDump.printVar(listHead(inVarLst));
      then
        fail();
   end match;

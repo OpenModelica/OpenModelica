@@ -1858,7 +1858,7 @@ algorithm
           //BackendDump.dumpBackendDAEEqnList({eqn},"AN EQUATION",true);
         //BackendDump.dumpEquationList({eqn},"");
         (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
-        compInfo = BackendDAE.COUNTER(List.first(inComps),numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
+        compInfo = BackendDAE.COUNTER(listHead(inComps),numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
         if Flags.isSet(Flags.COUNT_OPERATIONS) then BackendDump.dumpCompInfo(compInfo); end if;
       then countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
@@ -1867,7 +1867,7 @@ algorithm
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          //BackendDump.printEquation(eqn);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
-         compInfo = BackendDAE.COUNTER(List.first(inComps),numAdd,numMul,numDiv,numTrig,numRel,numLog+1,numOth,numFuncs);
+         compInfo = BackendDAE.COUNTER(listHead(inComps),numAdd,numMul,numDiv,numTrig,numRel,numLog+1,numOth,numFuncs);
         if Flags.isSet(Flags.COUNT_OPERATIONS) then BackendDump.dumpCompInfo(compInfo); end if;
       then countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
@@ -1926,7 +1926,7 @@ algorithm
 
     case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst), linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
-        comp = List.first(inComps);
+        comp = listHead(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         vars = BackendVariable.daeVars(isyst);
         // the torn equations
@@ -1948,7 +1948,7 @@ algorithm
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
     case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst), linear = false)::rest,_,BackendDAE.SHARED(),_)
       equation
-        comp = List.first(inComps);
+        comp = listHead(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         _ = BackendVariable.daeVars(isyst);
         // the torn equations
@@ -2871,7 +2871,7 @@ algorithm
         tbsRest = List.map(tbs,List.rest);
         rest_res = makeResidualIfExpLst(conds, tbsRest, fbs);
 
-        tbsFirst = List.map(tbs,List.first);
+        tbsFirst = List.map(tbs,listHead);
 
         ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
       then
@@ -2955,7 +2955,7 @@ algorithm
         tbsRest = List.map(inExpLst2, List.rest);
         rest_res = makeEquationsFromResiduals(inExp1, tbsRest, fbs, inSource, inEqAttr);
 
-        tbsFirst = List.map(inExpLst2, List.first);
+        tbsFirst = List.map(inExpLst2, listHead);
 
         ifexp = Expression.makeNestedIf(inExp1,tbsFirst,fb);
         eq = BackendDAE.EQUATION(DAE.RCONST(0.0), ifexp, inSource, inEqAttr);

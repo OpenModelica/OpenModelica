@@ -1313,7 +1313,7 @@ algorithm
         lstLstIn;
     case(_,_)
       equation
-        varLst = List.first(lstLstIn);
+        varLst = listHead(lstLstIn);
         varLst = varIn::varLst;
         lstLstOut = List.replaceAt(varLst, 1, lstLstIn);
       then
@@ -1336,7 +1336,7 @@ algorithm
         lstLstIn;
     case(_,_)
       equation
-        eqLst = List.first(lstLstIn);
+        eqLst = listHead(lstLstIn);
         eqLst = eqIn::eqLst;
         lstLstOut = List.replaceAt(eqLst, 1, lstLstIn);
       then
@@ -2587,8 +2587,8 @@ algorithm
 
       //get simEqSysIdcs and otherSimEqMapping
       simEqSysIdcs = arrayGet(sccSimEqMapping,compIdxIn);
-      resSimEqSysIdcs = List.map1r(List.intRange(numResEqs),intSub,List.first(simEqSysIdcs));
-      otherSimEqSysIdcs = List.map1r(List.intRange2(numResEqs+1,numResEqs+numEqs),intSub,List.first(simEqSysIdcs));
+      resSimEqSysIdcs = List.map1r(List.intRange(numResEqs),intSub,listHead(simEqSysIdcs));
+      otherSimEqSysIdcs = List.map1r(List.intRange2(numResEqs+1,numResEqs+numEqs),intSub,listHead(simEqSysIdcs));
       otherSimEqMapping = listArray(List.map(otherSimEqSysIdcs,List.create));
         //print("simEqSysIdcs "+stringDelimitList(List.map(simEqSysIdcs,intString),",")+"\n");
         //print("resSimEqSysIdcs "+stringDelimitList(List.map(resSimEqSysIdcs,intString),",")+"\n");
@@ -2860,7 +2860,7 @@ protected
   list<GraphML.Node> nodes;
   Integer nameAttIdx;
 algorithm
-  nameAttIdx := List.first(attIdcs);
+  nameAttIdx := listHead(attIdcs);
   nodeIdcs := List.intRange(arrayLength(graphIn));
   graphInfoOut := List.fold4(nodeIdcs,addNodeToDAG,graphIn,metaIn,graphIdx,{nameAttIdx},graphInfoIn);
   GraphML.GRAPHINFO(nodes=nodes) := graphInfoOut;

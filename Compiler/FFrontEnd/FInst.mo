@@ -105,7 +105,7 @@ algorithm
                  FCore.USERDEFINED(),
                  g);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
-        print("SCode->FGraph:  " + realString(List.first(lst)) + "\n");
+        print("SCode->FGraph:  " + realString(listHead(lst)) + "\n");
         //print("FGraph nodes:   " + intString(listLength(FNode.dfs(FGraph.top(g)))) + "\n");
         //print("FGraph refs:    " + intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) + "\n");
 
@@ -123,7 +123,7 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         _ = FGraph.clone(g);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
-        print("FGraph->clone:  " + realString(List.first(lst)) + "\n");
+        print("FGraph->clone:  " + realString(listHead(lst)) + "\n");
 
         // FGraphDump.dumpGraph(gclone, "F:\\dev\\" + Absyn.pathString(inPath) + ".graph.clone.graphml");
       then
@@ -161,12 +161,12 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         p = doSCodeDep(inProgram, inPath);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
-        print("SCode depend:   " + realString(List.first(lst)) + "\n");
+        print("SCode depend:   " + realString(listHead(lst)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         (_, g) = FBuiltin.initialGraph(FCore.emptyCache());
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
-        print("Initial graph:  " + realString(List.first(lst)) + "\n");
+        print("Initial graph:  " + realString(listHead(lst)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         g = FGraphBuild.mkProgramGraph(
@@ -174,13 +174,13 @@ algorithm
                  FCore.USERDEFINED(),
                  g);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
-        print("SCode->FGraph:  " + realString(List.first(lst)) + "\n");
+        print("SCode->FGraph:  " + realString(listHead(lst)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         // resolve all references on path
         (g,_) = FExpand.path(g, inPath);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
-        print("FExpand.path:   " + realString(List.first(lst)) + "\n");
+        print("FExpand.path:   " + realString(listHead(lst)) + "\n");
 
         print("FGraph nodes:   " + intString(FGraph.lastId(g)) + "\n");
         print("Total time:     " + realString(List.fold(lst, realAdd, 0.0)) + "\n");

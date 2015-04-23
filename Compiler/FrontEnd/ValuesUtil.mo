@@ -122,7 +122,7 @@ algorithm
         path = Absyn.pathPrefix(path);
       then DAE.T_ENUMERATION(NONE(),path,{},{},{},DAE.emptyTypeSource);
     case(Values.ARRAY(valLst,int_dims)) equation
-      eltTp=valueExpType(List.first(valLst));
+      eltTp=valueExpType(listHead(valLst));
       dims = List.map(int_dims, Expression.intDimension);
     then DAE.T_ARRAY(eltTp,dims,DAE.emptyTypeSource);
 

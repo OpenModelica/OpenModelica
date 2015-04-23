@@ -252,7 +252,7 @@ algorithm
   vars := Matching.getUnassigned(n, inAssignments2, {});
   vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
   var_str := BackendDump.dumpMarkedVars(isyst, vars);
-  source := BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
+  source := BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
   info := DAEUtil.getElementSourceFileInfo(source);
 
   Error.addSourceMessage(if BackendDAEUtil.isInitializationDAE(ishared) then Error.STRUCTURAL_SINGULAR_INITIAL_SYSTEM else Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);

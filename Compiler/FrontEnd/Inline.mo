@@ -847,7 +847,7 @@ algorithm
             (newExp1,(_,_,assrtLst)) = Expression.Expression.traverseExpBottomUp(newExp,inlineCall,(fns,true,assrtLstIn));
           else // assert detected
             true = listLength(assrtStmts) == 1;
-            assrt = listGet(assrtStmts,1);
+            assrt = listHead(assrtStmts);
             DAE.STMT_ASSERT() = assrt;
             newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
             argmap = List.threadTuple(crefs,args);

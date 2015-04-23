@@ -159,7 +159,7 @@ public function hasParents
   input Node inNode;
   output Boolean b;
 algorithm
-  b := List.isNotEmpty(parents(inNode));
+  b := not listEmpty(parents(inNode));
 end hasParents;
 
 public function refParents
@@ -1270,7 +1270,7 @@ public function contextual
   input Parents inParents;
   output Ref outContextual;
 algorithm
-  outContextual := List.first(inParents);
+  outContextual := listHead(inParents);
 end contextual;
 
 public function lookupRef
@@ -1292,7 +1292,7 @@ algorithm
 
     case (_, s)
       equation
-        // print("Searching for scope: " + toPathStr(fromRef(List.first(s))) + " in " + toPathStr(fromRef(inRef)) + "\n");
+        // print("Searching for scope: " + toPathStr(fromRef(listHead(s))) + " in " + toPathStr(fromRef(inRef)) + "\n");
         // reverse and remove top
         _::s = listReverse(s);
         r = lookupRef_dispatch(inRef, s);
@@ -1831,7 +1831,7 @@ algorithm
     case (_)
       equation
         FCore.IMPORT_TABLE(_, qi, uqi) = importTable(fromRef(refImport(toRef(inNode))));
-        b = boolOr(List.isNotEmpty(qi), List.isNotEmpty(uqi));
+        b = boolOr(not listEmpty(qi), not listEmpty(uqi));
       then
         b;
 

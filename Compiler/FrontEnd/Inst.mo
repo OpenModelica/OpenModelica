@@ -2525,7 +2525,7 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,_,ih,tys,csets,oDA) =
         instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets);
-        ty = List.first(tys);
+        ty = listHead(tys);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME(DAE.T_METALIST(ty,DAE.emptyTypeSource));
         oDA = SCode.mergeAttributes(DA,oDA);
@@ -2839,7 +2839,7 @@ algorithm
     /* Inherits baseclass -and- has components */
     case (cache,env,ih,store,{SCode.EXTENDS()},_,mods,inst_dims,_,_,_)
       equation
-        true = (List.isNotEmpty(inSCodeElementLst3));
+        false = (listEmpty(inSCodeElementLst3));
         ErrorExt.setCheckpoint("instBasictypeBaseclass2") "rolled back or deleted inside call below";
         instBasictypeBaseclass2(cache,env,ih,store,inSCodeElementLst2,inSCodeElementLst3,mods,inst_dims,className,info,stopInst);
       then

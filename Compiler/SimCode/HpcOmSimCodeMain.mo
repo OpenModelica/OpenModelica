@@ -302,7 +302,7 @@ algorithm
       fileName = ("taskGraph"+filenamePrefix+"ODE.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1,-1.0));
       SimCodeUtil.execStat("hpcom assign levels / get crit. path");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump ODE TaskGraph");
 
       if Flags.isSet(Flags.HPCOM_DUMP) then
@@ -321,7 +321,7 @@ algorithm
       SimCodeUtil.execStat("hpcom GRS");
 
       fileName = ("taskGraph"+filenamePrefix+"ODE_merged.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeSimplified, taskGraphDataOdeSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeSimplified, taskGraphDataOdeSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
 
       if Flags.isSet(Flags.HPCOM_DUMP) then
@@ -347,7 +347,7 @@ algorithm
       SimCodeUtil.execStat("hpcom create schedule");
 
       fileName = ("taskGraph"+filenamePrefix+"ODE_schedule.graphml");
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       //HpcOmScheduler.printSchedule(schedule);
 
       SimCodeUtil.execStat("hpcom dump schedule TaskGraph");
@@ -1265,7 +1265,7 @@ algorithm
     print("There are simCode-equations multiple times in the graph structure.\n");
   end if;
   targetSize := listLength(List.flatten(iOdeEqs));
-  if (intEq(targetSize,1) and SimCodeUtil.isDummyEq(List.first(List.first(iOdeEqs)))) then
+  if (intEq(targetSize,1) and SimCodeUtil.isDummyEq(listHead(listHead(iOdeEqs)))) then
     targetSize := 0;
   end if;
   oIsCorrect := intEq(targetSize,actualSize);
@@ -1379,7 +1379,7 @@ algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts) := graphData;
   numCycles := List.map(arrayList(exeCosts),Util.tuple22);
     print("start cost benchmark\n");
-  outputTimeBenchmark2(BackendDAEUtil.getStrongComponents(List.first(eqSystems)),numCycles,eqSystems,shared,1);
+  outputTimeBenchmark2(BackendDAEUtil.getStrongComponents(listHead(eqSystems)),numCycles,eqSystems,shared,1);
     print("finish cost benchmark\n");
 end outputTimeBenchmark;
 
@@ -1405,7 +1405,7 @@ algorithm
      then();
    case({},_,_::eqSysRest,_,_)
      equation
-        comps = BackendDAEUtil.getStrongComponents(List.first(eqSysRest));
+        comps = BackendDAEUtil.getStrongComponents(listHead(eqSysRest));
        outputTimeBenchmark2(comps,numCycles,eqSysRest,shared,compIdx);
      then ();
    case(comp::comps,exeCost::restCosts,eqSys::_,_,_)

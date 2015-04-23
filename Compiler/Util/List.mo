@@ -187,12 +187,6 @@ algorithm
   end match;
 end fromOption;
 
-public function isNotEmpty<T>
-  "Returns true if the given list is not empty, otherwise false."
-  input list<T> inList;
-  output Boolean outIsNotEmpty = not listEmpty(inList);
-end isNotEmpty;
-
 public function assertIsEmpty<T>
   "Fails if the given list is not empty."
   input list<T> inList;
@@ -514,14 +508,6 @@ algorithm
   outList := listAppend(listAppend(lst1,{inElement}),lst2);
 end set;
 
-public function first<T>
-  "Returns the first element of a list. Fails if the list is empty."
-  input list<T> inList;
-  output T outFirst;
-algorithm
-  outFirst := listGet(inList, 1);
-end first;
-
 public function firstOrEmpty<T>
   "Returns the first element of a list as a list, or an empty list if the given
    list is empty."
@@ -562,7 +548,7 @@ end last;
 
 public function lastListOrEmpty<T>
   "Returns the last element(list) of a list of lists. Returns empty list
-  if the outer list is empty is empty."
+  if the outer list is empty."
   input list<list<T>> inListList;
   output list<T> outLastList;
 algorithm

@@ -119,7 +119,7 @@ public function lastScopeRef
   input Graph inGraph;
   output Ref outRef;
 algorithm
-  outRef := List.first(currentScope(inGraph));
+  outRef := listHead(currentScope(inGraph));
 end lastScopeRef;
 
 public function stripLastScopeRef
@@ -728,7 +728,7 @@ algorithm
 
     case(_)
       equation
-        name = FNode.refName(List.first(currentScope(inGraph)));
+        name = FNode.refName(listHead(currentScope(inGraph)));
         true = stringEq(name, FCore.forScopeName);
       then true;
 
@@ -746,7 +746,7 @@ algorithm
 
     case (_)
       equation
-        name = FNode.refName(List.first(currentScope(inGraph)));
+        name = FNode.refName(listHead(currentScope(inGraph)));
         true = stringEq(name, FCore.forIterScopeName) or stringEq(name, FCore.parForIterScopeName);
       then true;
 

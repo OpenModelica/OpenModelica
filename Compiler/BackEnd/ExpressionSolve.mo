@@ -518,7 +518,7 @@ algorithm
       String s1,sn,se,estr,crstr;
     case (DAE.T_ENUMERATION(path=path,names=names),_,_,_)
       equation
-        p1 = Absyn.suffixPath(path,listGet(names,1));
+        p1 = Absyn.suffixPath(path,listHead(names));
         e1 = DAE.ENUM_LITERAL(p1,1);
         n = listLength(names);
         pn = Absyn.suffixPath(path,listGet(names,n));
@@ -1957,7 +1957,7 @@ algorithm
   return;
   end if;
 
-  tp := Expression.typeof(listGet(inExpLst,1));
+  tp := Expression.typeof(listHead(inExpLst));
 
   (expLstDiv, expLst) :=  List.splitOnTrue(inExpLst, Expression.isDivBinary);
   outExp := makeProductLstSort2(expLst, tp);

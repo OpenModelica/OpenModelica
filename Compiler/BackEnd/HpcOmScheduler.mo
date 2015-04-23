@@ -172,7 +172,7 @@ algorithm
         //get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        true = List.isNotEmpty(predecessors); //in this case the node has predecessors
+        false = listEmpty(predecessors); //in this case the node has predecessors
 
         //get last child finished time
         lastChild = getTaskWithHighestFinishTime(predecessors, NONE());
@@ -346,7 +346,7 @@ algorithm
         //Get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        true = List.isNotEmpty(predecessors); //in this case the node has predecessors
+        false = listEmpty(predecessors); //in this case the node has predecessors
         //!print("Handle1 task " + intString(index) + "\n");// + " with " + intString(listLength(predecessors)) + " child nodes and "
               //+ intString(listLength(successorIdc)) + " parent nodes.\n");
         //!print("\tZeile 367\t" + stringDelimitList(List.map(arrayList(iThreadReadyTimes),realString), "\t\t") + "\n");
@@ -1197,9 +1197,9 @@ algorithm
   oCommCost := matchcontinue(iTask, iParentTask, iCommCosts, iCurrentMax)
     case((HpcOmSimCode.CALCTASK(index=taskIdx,eqIdc=eqIdc),_),HpcOmSimCode.CALCTASK(eqIdc=parentEqIdc),_,_)
       equation
-        //print("Try to find edge cost from scc " + intString(List.first(eqIdc)) + " to scc " + intString(List.first(parentEqIdc)) + "\n");
-        childCommCosts = arrayGet(iCommCosts,List.first(eqIdc));
-        HpcOmTaskGraph.COMMUNICATION(requiredTime=reqCycles) = getMaxCommCostsByTaskList2(childCommCosts, List.first(parentEqIdc));
+        //print("Try to find edge cost from scc " + intString(listHead(eqIdc)) + " to scc " + intString(listHead(parentEqIdc)) + "\n");
+        childCommCosts = arrayGet(iCommCosts,listHead(eqIdc));
+        HpcOmTaskGraph.COMMUNICATION(requiredTime=reqCycles) = getMaxCommCostsByTaskList2(childCommCosts, listHead(parentEqIdc));
         true = realGt(reqCycles, iCurrentMax);
       then reqCycles;
     else iCurrentMax;
@@ -1698,7 +1698,7 @@ algorithm
         levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
         levelNodes = List.deleteMember(levelNodes,critPathNode);
           //print("levelNodes: \n"+stringDelimitList(List.map(levelNodes,intString)," ; ")+"\n");
-        necessaryPredecessors = arrayGet(iGraphT,List.first(restCritNodes));
+        necessaryPredecessors = arrayGet(iGraphT,listHead(restCritNodes));
           //print("necessaryPredecessors: "+stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+"\n");
         unassNodes = listAppend(levelNodes,unassNodesIn);  // to check for unassNodesIn
           //print("unassNodes: \n"+stringDelimitList(List.map(unassNodes,intString)," ; ")+"\n");
@@ -1733,7 +1733,7 @@ algorithm
         // get the nodes that are necessary to compute the next critical path node
         levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
         (levelNodes,_) = List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
-        _ = arrayGet(iGraphT,List.first(restCritNodes));
+        _ = arrayGet(iGraphT,listHead(restCritNodes));
           //print("necessaryPredecessors: \n"+stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+"\n");
 
         // use the unassigned nodes first to fill the sections
@@ -2577,7 +2577,7 @@ algorithm
       preds := arrayGet(taskGraphT,taskIdx);
       predThreads := List.map1(preds,Array.getIndexFirst,threadIds);
       (predThreads,preds) := List.filter1OnTrueSync(predThreads,intNe,threadId,preds);
-      if List.isNotEmpty(predThreads) then
+      if not listEmpty(predThreads) then
         //print("priority: "+stringDelimitList(List.map(preds,intString),", ")+"\n");
         List.map2_0(preds,Array.updateIndexFirst,1,priorityArr);
         rest := listAppend(preds,rest);
@@ -2952,7 +2952,7 @@ algorithm
         //get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        true = List.isNotEmpty(predecessors); //in this case the node has predecessors
+        false = listEmpty(predecessors); //in this case the node has predecessors
         //print("Handle task " + intString(index) + " with " + intString(listLength(predecessors)) + " child nodes and " + intString(listLength(successorIdc)) + " parent nodes.\n");
 
         //find thread for scheduling
@@ -3090,7 +3090,7 @@ algorithm
     iCompTaskMapping=iCompTaskMapping,
     iSimVarMapping=iSimVarMapping),
     ({},{}));
-  threads := List.filterOnTrue(threads,List.isNotEmpty);
+  threads := List.filterOnFalse(threads,listEmpty);
   threads := List.map(threads,listReverse);
   threads := listReverse(threads);
   threadTasks := listArray(threads);
@@ -3126,7 +3126,7 @@ algorithm
       then ((threads,outgoingDepTasks));
     case(HpcOmSimCode.CALCTASK(index=idx,threadIdx=thr)::rest,(iTaskGraph,iTaskGraphT),(taskAss,_),_,_,_,_,(threads,outgoingDepTasks))
       equation
-        task = List.first(threadsIn);
+        task = listHead(threadsIn);
         //print("node "+intString(idx)+"\n");
         preds = arrayGet(iTaskGraphT,idx);
         succs = arrayGet(iTaskGraph,idx);
@@ -3145,9 +3145,9 @@ algorithm
         //tasks = task::assLocks;
         tasks = listAppend(relLocks,{task});
         tasks = listAppend(tasks,assLocks);
-        thread = if List.isNotEmpty(threads) then List.first(threads) else {};
+        thread = if not listEmpty(threads) then listHead(threads) else {};
         thread = listAppend(tasks,thread);
-        threads = if List.isNotEmpty(threads) then List.replaceAt(thread,1,threads) else {thread};
+        threads = if not listEmpty(threads) then List.replaceAt(thread,1,threads) else {thread};
         //_ = printThreadSchedule(thread,thr);
         outgoingDepTasks = listAppend(relLocks,outgoingDepTasks);
         outgoingDepTasks = listAppend(assLocks,outgoingDepTasks);
@@ -3834,7 +3834,7 @@ algorithm
         simCode = SimCodeUtil.replaceODEandALLequations(allEqs,odes,simCodeIn);
 
         //update taskGraph
-        clTasks = List.first(allCluster);// the current cluster
+        clTasks = listHead(allCluster);// the current cluster
         //print("clTasks :"+intListString(clTasks)+"\n");
         origPredTasks = arrayGet(taskGraphTOrig,node);
         (clPredTasks,origPredTasks,_) = List.intersection1OnTrue(origPredTasks,clTasks,intEq);
@@ -3987,7 +3987,7 @@ algorithm
   taskDuplAssOut := arrayUpdate(taskDuplAssIn,taskIdx,node);
 
   //update taskGraph
-  clTasks := List.first(allCluster);// the current cluster
+  clTasks := listHead(allCluster);// the current cluster
   //print("clTasks :"+intListString(clTasks)+"\n");
   origPredTasks := arrayGet(taskGraphTOrig,node);
   (clPredTasks,origPredTasks,_) := List.intersection1OnTrue(origPredTasks,clTasks,intEq);
@@ -4423,7 +4423,7 @@ algorithm
       list<list<Integer>> clusters;
     case(_,_,_,_,_,_,_,_,_,{},_)
       equation
-        clusters = List.filterOnTrue(clustersIn,List.isNotEmpty);
+        clusters = List.filterOnFalse(clustersIn,listEmpty);
         clusters = List.map(clusters,listReverse);
       then clusters;
     case(_,_,_,_,_,_,_,_,_,front::rest,_)
@@ -4544,7 +4544,7 @@ algorithm
     case(_,_,_,_,_)
       equation
         parents = arrayGet(graphT,nodeIdx);
-        true = List.isNotEmpty(parents);
+        false = listEmpty(parents);
         parentECTs = List.map1(parents,Array.getIndexFirst,ect);
         commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,nodeIdx,iTaskGraphMeta);
         costs = List.threadMap(parentECTs,commCosts,realAdd);
@@ -5115,7 +5115,7 @@ algorithm
       equation
         length = listLength(lstIn);
         orderTmp = List.intRange(length);
-        r1 = List.first(lstIn);
+        r1 = listHead(lstIn);
         r2 = List.last(lstIn);
         r3 = listGet(lstIn,intDiv(length,2));
         (pivotValue,_) = getMedian3(r1,r2,r3);  // the pivot element.
@@ -5200,7 +5200,7 @@ algorithm
       equation
         pivotElement = listGet(lstIn,pivotIdx);
         marked = List.deleteMember(markedLstIn,pivotElement);
-        r1 = List.first(marked);
+        r1 = listHead(marked);
         r2 = List.last(marked);
         midIdx = intDiv(listLength(marked),2);
         midIdx = if intEq(midIdx,0) then 1 else midIdx;

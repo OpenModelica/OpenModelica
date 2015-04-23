@@ -57,7 +57,7 @@ Hybrj::~Hybrj()
     if(_x2) delete[] _x2;
     if(_x_nom) delete[] _x_nom;
     if(_x_scale) delete[] _x_scale;
-    if(_x_ex) delete[] _x_scale;
+    if(_x_ex) delete[] _x_ex;
     
 }
 
@@ -99,7 +99,7 @@ void Hybrj::initialize()
             if(_x2) delete[] _x2;
             if(_x_nom) delete[] _x_nom;
             if(_x_scale) delete[] _x_scale;
-            if(_x_ex) delete[] _x_scale;
+            if(_x_ex) delete[] _x_ex;
             if(_x_restart) delete[] _x_restart;
             _x            = new double[_dimSys];
             _f            = new double[_dimSys];    

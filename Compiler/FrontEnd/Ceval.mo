@@ -833,7 +833,7 @@ algorithm
       equation
         (cache,Values.ARRAY(vals,dims),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
         (cache,es_1,stOpt) = cevalList(cache,env, expl, impl, stOpt,msg,numIter);
-        v = List.first(es_1);
+        v = listHead(es_1);
         v = ValuesUtil.nthnthArrayelt(es_1,Values.ARRAY(vals,dims),v);
       then
         (cache,v,stOpt);
@@ -1494,7 +1494,7 @@ algorithm
 
     case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(2),_,st,_,_)
       equation
-        i = listLength(List.first(mat));
+        i = listLength(listHead(mat));
       then
         (cache,Values.INTEGER(i),st);
 
@@ -1503,7 +1503,7 @@ algorithm
         bl = (dim>2);
         true = bl;
         dim_1 = dim-2;
-        e = List.first(List.first(mat));
+        e = listHead(listHead(mat));
         (cache,Values.INTEGER(i),_) = cevalBuiltinSize(cache,env,e,DAE.ICONST(dim_1),impl,st,msg,numIter+1);
       then
         (cache,Values.INTEGER(i),st);
@@ -2847,16 +2847,16 @@ algorithm
       Integer dim;
     case (lst,dim)
       equation
-        l_lst = List.first(lst);
+        l_lst = listHead(lst);
         1 = listLength(l_lst);
-        first_lst = List.map(lst, List.first);
+        first_lst = List.map(lst, listHead);
         first_lst_1 = catDimension(first_lst, dim);
         first_lst_2 = List.map(first_lst_1, List.create);
       then
         first_lst_2;
     case (lst,dim)
       equation
-        first_lst = List.map(lst, List.first);
+        first_lst = List.map(lst, listHead);
         rest = List.map(lst, List.rest);
         first_lst_1 = catDimension(first_lst, dim);
         rest_1 = catDimension2(rest, dim);

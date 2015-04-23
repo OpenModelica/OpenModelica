@@ -497,7 +497,7 @@ algorithm
         if listEmpty(eqs) then
           File.write(file, "\n{\"eqIndex\":");
         else
-          serializeEquation(file,listGet(eqs,1),section,withOperations,parent=eq.index,first=true);
+          serializeEquation(file,listHead(eqs),section,withOperations,parent=eq.index,first=true);
           min(serializeEquation(file,e,section,withOperations,parent=eq.index) for e in listRest(eqs));
           File.write(file, ",\n{\"eqIndex\":");
         end if;
@@ -575,7 +575,7 @@ algorithm
     case SimCode.SES_NONLINEAR()
       equation
         eqs = SimCodeUtil.sortEqSystems(eq.eqs);
-        serializeEquation(file,listGet(eqs,1),section,withOperations,parent=eq.index,first=true);
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=eq.index,first=true);
         min(serializeEquation(file,e,section,withOperations,parent=eq.index) for e in List.rest(eqs));
         jeqs = match eq.jacobianMatrix
           case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
@@ -603,7 +603,7 @@ algorithm
     case SimCode.SES_IFEQUATION()
       equation
         eqs = listAppend(List.flatten(list(Util.tuple22(e) for e in eq.ifbranches)), eq.elsebranch);
-        serializeEquation(file,listGet(eqs,1),section,withOperations,first=true);
+        serializeEquation(file,listHead(eqs),section,withOperations,first=true);
         min(serializeEquation(file,e,section,withOperations) for e in List.rest(eqs));
         File.write(file, ",\n{\"eqIndex\":");
         File.write(file, intString(eq.index));

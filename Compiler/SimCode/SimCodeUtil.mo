@@ -1696,8 +1696,8 @@ algorithm
       algebraicEquations = makeEqualLengthLists(algebraicEquations, Config.noProc());
 
       // Filter out empty systems to improve code generation
-      odeEquations = List.filterOnTrue(odeEquations, List.isNotEmpty);
-      algebraicEquations = List.filterOnTrue(algebraicEquations, List.isNotEmpty);
+      odeEquations = List.filterOnFalse(odeEquations, listEmpty);
+      algebraicEquations = List.filterOnFalse(algebraicEquations, listEmpty);
 
       if Flags.isSet(Flags.EXEC_HASH) then
         print("*** SimCode -> generate cref2simVar hastable: " + realString(clock()) + "\n");
@@ -2476,7 +2476,7 @@ algorithm
         bzceqns = BackendDAEUtil.blockIsDynamic({index}, zceqnsmark);
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, false, iuniqueEqIndex, itempvars);
 
-        firstSES = List.first(equations1);  // check if the all equations occure with this index in the c file
+        firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
         isEqSys = isSimEqSys(firstSES);
         firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
         //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
@@ -2551,7 +2551,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars, ei, true);
+        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listHead(eqnlst), varlst, iuniqueEqIndex, itempvars, ei, true);
 
         tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
@@ -2575,7 +2575,7 @@ algorithm
         (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleWhenEqnCode(listGet(eqnlst, 1), varlst, shared, iuniqueEqIndex, itempvars);
+        (equations1, uniqueEqIndex, tempvars) = createSingleWhenEqnCode(listHead(eqnlst), varlst, shared, iuniqueEqIndex, itempvars);
 
         tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
@@ -2596,7 +2596,7 @@ algorithm
         (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleIfEqnCode(listGet(eqnlst, 1), varlst, shared, true, iuniqueEqIndex, itempvars);
+        (equations1, uniqueEqIndex, tempvars) = createSingleIfEqnCode(listHead(eqnlst), varlst, shared, true, iuniqueEqIndex, itempvars);
 
         tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
@@ -2624,7 +2624,7 @@ algorithm
         bzceqns = BackendDAEUtil.blockIsDynamic({index}, zceqnsmark);
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, false, iuniqueEqIndex, itempvars);
 
-        firstSES = List.first(equations1);  // check if the all equations occure with this index in the c file
+        firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
         isEqSys = isSimEqSys(firstSES);
         firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
         //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
@@ -2825,7 +2825,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars, ei, genDiscrete);
+        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listHead(eqnlst), varlst, iuniqueEqIndex, itempvars, ei, genDiscrete);
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // A single when equation
@@ -2834,7 +2834,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleWhenEqnCode(listGet(eqnlst, 1), varlst, shared, iuniqueEqIndex, itempvars);
+        (equations1, uniqueEqIndex, tempvars) = createSingleWhenEqnCode(listHead(eqnlst), varlst, shared, iuniqueEqIndex, itempvars);
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // A single if equation
@@ -2843,7 +2843,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleIfEqnCode(listGet(eqnlst, 1), varlst, shared, genDiscrete, iuniqueEqIndex, itempvars);
+        (equations1, uniqueEqIndex, tempvars) = createSingleIfEqnCode(listHead(eqnlst), varlst, shared, genDiscrete, iuniqueEqIndex, itempvars);
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // a system of equations
@@ -7399,7 +7399,7 @@ algorithm
   if listLength(paths)<>1 then
     print("SimCodeUtil.getVarRecordPath could not found a unique path for the record constructor\n");
   end if;
-  path := List.first(paths);
+  path := listHead(paths);
 end getVarRecordPath;
 
 protected function getRecordPathFromCref"gets the path if any crefID is a recordtype, otherwise NONE()
@@ -9394,7 +9394,7 @@ algorithm
                   if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
                     Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS, {cmd, System.pwd()}, info);
                   else
-                    found := List.first(list(x for x guard System.regularFileExists(x) in List.flatten(list(d+"/"+n for d in dirs, n in names))));
+                    found := listHead(list(x for x guard System.regularFileExists(x) in List.flatten(list(d+"/"+n for d in dirs, n in names))));
                     Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Compiled "+found+" by running build project " + resourcesStr + "/BuildProjects/" + dir}, info);
                     didFind := true;
                   end if;

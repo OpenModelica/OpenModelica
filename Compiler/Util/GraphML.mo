@@ -479,7 +479,7 @@ algorithm
       then NONE();
     case(GRAPHINFO(graphs=graphs))
       equation
-        firstGraph = List.first(graphs);
+        firstGraph = listHead(graphs);
       then SOME((1,firstGraph));
   end match;
 end getMainGraph;

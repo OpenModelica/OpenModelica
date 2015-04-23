@@ -230,7 +230,7 @@ algorithm
     case (_, _, _, _, SOME(_))
       equation
         print("FLookup.search failed for: " + inName + " in: " +
-           FNode.toPathStr(FNode.fromRef(List.first(inRefs))) + "\n");
+           FNode.toPathStr(FNode.fromRef(listHead(inRefs))) + "\n");
       then
         fail();
 
@@ -349,7 +349,7 @@ algorithm
     case (g, _, _, _, _)
       equation
         refs = FNode.extendsRefs(inRef);
-        true = List.isNotEmpty(refs);
+        false = listEmpty(refs);
         refs = List.map(List.map(refs, FNode.fromRef), FNode.target);
         // print("Searching for: " + inName + " in extends targets:\n\t" + stringDelimitList(List.map(List.map(refs, FNode.fromRef), FNode.toPathStr), "\n\t") + "\n");
         (g, r) = search(g, refs, inName, ignoreParentsAndImports, inMsg);

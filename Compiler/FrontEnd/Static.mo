@@ -5451,7 +5451,7 @@ algorithm
         namedArg = List.getMemberOnTrue("from", nargs, elabBuiltinTransition3);
       then elabBuiltinTransition4(namedArg);
     case ("from", false)
-      then listGet(args, 1);
+      then listHead(args);
     case ("to", true)
       equation
         namedArg = List.getMemberOnTrue("to", nargs, elabBuiltinTransition3);
@@ -11425,7 +11425,7 @@ algorithm
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
         expl2 = List.map3(expl1,applySubscript,exp2,id,ety);
-        exp3 = listGet(expl2, 1);
+        exp3 = listHead(expl2);
         //exp3 = removeDoubleEmptyArrays(exp3);
       then
         exp3;

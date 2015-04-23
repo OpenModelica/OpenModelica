@@ -818,7 +818,7 @@ algorithm
     case (NONE(), NONE(), _, _, _)
       equation
         i = listLength(inNames);
-        s1 = listGet(inNames, 1);
+        s1 = listHead(inNames);
         namee1 = Absyn.joinPaths(inPath, Absyn.IDENT(s1));
         sn = listGet(inNames, i);
         nameen = Absyn.joinPaths(inPath, Absyn.IDENT(sn));
@@ -826,7 +826,7 @@ algorithm
         DAEUtil.setMinMax(inVarAttr, SOME(DAE.ENUM_LITERAL(namee1, 1)), SOME(DAE.ENUM_LITERAL(nameen, i)));
     case (NONE(), SOME(e), _, _, _)
       equation
-        s1 = listGet(inNames, 1);
+        s1 = listHead(inNames);
         namee1 = Absyn.joinPaths(inPath, Absyn.IDENT(s1));
       then
         DAEUtil.setMinMax(inVarAttr, SOME(DAE.ENUM_LITERAL(namee1, 1)), SOME(e));

@@ -329,9 +329,9 @@ encapsulated package HpcOmMemory
           (graphInfo, (_,graphIdx)) = GraphML.addGraph("TasksGroupGraph", true, graphInfo);
           (graphInfo, (_,_),(_,graphIdx)) = GraphML.addGroupNode("TasksGroup", graphIdx, false, "TG", graphInfo);
           annotInfo = arrayCreate(arrayLength(iTaskGraph),"nothing");
-          graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, annotInfo, graphIdx, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true), graphInfo);
+          graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, annotInfo, graphIdx, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true), graphInfo);
           SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
-          (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(iEqSystems), BackendDAE.ABSOLUTE(), NONE());
+          (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(listHead(iEqSystems), BackendDAE.ABSOLUTE(), NONE());
           graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(iTaskGraph), nodeSimCodeVarMapping, eqSimCodeVarMapping, iEqSystems, hashTable, eqCompMapping, scVarSolvedTaskMapping, iSchedulerInfo, threadAttIdx, sccNodeMapping, taskSolvedVarsMapping, taskUnsolvedVarsMapping, scVarCLMapping, scVarInfos, graphInfo);
           fileName = ("taskGraph"+iFileNamePrefix+"ODE_schedule_CL.graphml");
           GraphML.dumpGraph(graphInfo, fileName);
@@ -351,7 +351,7 @@ encapsulated package HpcOmMemory
           graphInfo = GraphML.createGraphInfo();
           (graphInfo, (_,graphIdx)) = GraphML.addGraph("TasksGroupGraph", true, graphInfo);
           annotInfo = arrayCreate(arrayLength(iTaskGraph),"nothing");
-          graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, annotInfo, graphIdx, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true), graphInfo);
+          graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, annotInfo, graphIdx, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true), graphInfo);
           SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
           graphInfo = appendVariablesToGraph(taskSolvedVarsMapping, taskUnsolvedVarsMapping, arrayLength(scVarSolvedTaskMapping), graphIdx, threadAttIdx, hashTable, allVarsMapping, scVarInfos, graphInfo);
           fileName = ("taskGraph"+iFileNamePrefix+"ODE_schedule_vars.graphml");
@@ -896,7 +896,7 @@ encapsulated package HpcOmMemory
     //print("getVarInfoByScVarIdx: --> unsolving threads are " + stringDelimitList(List.map(unsolvingThreadIdc, intString), ",") + "\n");
     if(intEq(listLen, 1)) then
       if(intLt(owner, 0)) then
-        owner := List.first(unsolvingThreadIdc);
+        owner := listHead(unsolvingThreadIdc);
         threads := owner::threads;
       else
         isShared := true;
@@ -2352,10 +2352,10 @@ encapsulated package HpcOmMemory
         equation
           //print("HpcOmSimCode.createMemoryMapTraverse: found der-call\n");
           varInfo = BaseHashTable.get(componentRef, iHashTable);
-          varIdx = List.first(varInfo) + List.second(varInfo);
+          varIdx = listHead(varInfo) + List.second(varInfo);
           //Delete state variable first
           if(boolNot(listEmpty(iVarList))) then
-            varHead = List.first(iVarList);
+            varHead = listHead(iVarList);
             if(intEq(varHead, varIdx)) then
               iVarList = List.rest(iVarList);
               //print("createMemoryMapTraverse0: Removed variable " + intString(varIdx) + "\n");
@@ -2363,7 +2363,7 @@ encapsulated package HpcOmMemory
           end if;
           //Add der state variable
           varInfo = BaseHashTable.get(ComponentReference.crefPrefixDer(componentRef), iHashTable);
-          varIdx = List.first(varInfo) + List.second(varInfo);
+          varIdx = listHead(varInfo) + List.second(varInfo);
           //print("createMemoryMapTraverse0: Added variable " + intString(varIdx) + "\n");
           oVarList = varIdx :: iVarList;
         then (iExp,(iHashTable,oVarList));
@@ -2371,7 +2371,7 @@ encapsulated package HpcOmMemory
         equation
           //print("HpcOmSimCode.createMemoryMapTraverse: try to find componentRef '" + ComponentReference.crefStr(componentRef) + "\n");
           varInfo = BaseHashTable.get(componentRef, iHashTable);
-          varIdx = List.first(varInfo) + List.second(varInfo);
+          varIdx = listHead(varInfo) + List.second(varInfo);
           //print("createMemoryMapTraverse0 " + intString(varIdx) + "\n");
           //print("HpcOmSimCode.createMemoryMapTraverse: Found ref " + ComponentReference.printComponentRefStr(componentRef) + " with Index: " + intString(varIdx) + "\n");
           //ExpressionDump.dumpExp(iExp);
@@ -2431,7 +2431,7 @@ encapsulated package HpcOmMemory
           scVarValues = BaseHashTable.get(varName,iVarNameSCVarIdxMapping);
           varNameString = ComponentReference.printComponentRefStr(varName);
           //print("getSimCodeVarNodeMapping0: SCC-Idx: " + intString(compIdx) + " name: " + varNameString + "\n");
-          scVarIdx = List.first(scVarValues);
+          scVarIdx = listHead(scVarValues);
           scVarOffset = List.second(scVarValues);
           scVarIdx = scVarIdx + scVarOffset;
           nodeIdx = arrayGet(iCompNodeMapping, compIdx);
@@ -2592,7 +2592,7 @@ encapsulated package HpcOmMemory
           BackendDAE.VAR(varName=varName) = var;
           varName = getModifiedVarName(var);
           scVarValues = BaseHashTable.get(varName,iVarNameSCVarIdxMapping);
-          scVarIdx = List.first(scVarValues);
+          scVarIdx = listHead(scVarValues);
           scVarOffset = List.second(scVarValues);
           scVarIdx = scVarIdx + scVarOffset;
           ((clIdx,_)) = arrayGet(iSCVarCLMapping,scVarIdx);
@@ -3405,7 +3405,7 @@ encapsulated package HpcOmMemory
         equation
           true = intLe(1, listLength(iDimElemCount));
           //print("createArrayIndexCref_impl case3 | len(subscriptList)= " + intString(listLength(subscriptLst)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(1) + "\n");
-          idxValue = intMod(iIdx-1,List.first(iDimElemCount)) + 1;
+          idxValue = intMod(iIdx-1,listHead(iDimElemCount)) + 1;
           subscriptLst = DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
         then createArrayIndexCref_impl(iIdx, iDimElemCount, (DAE.CREF_IDENT(ident,identType,subscriptLst),2));
 

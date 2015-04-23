@@ -479,7 +479,7 @@ algorithm
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst), eqns, vars) equation
       eqnlst = BackendEquation.getEqns(elst, eqns);
       varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-      e = List.first(elst);
+      e = listHead(elst);
     then (eqnlst, varlst, e);
 
     case (BackendDAE.SINGLEARRAY(eqn=e, vars=vlst), eqns, vars) equation
@@ -514,7 +514,7 @@ algorithm
       varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst, Util.tuple22)), BackendVariable.getVarAt, vars);
       eqnlst = listAppend(eqnlst, eqnlst1);
       varlst = listAppend(varlst, varlst1);
-      e = List.first(elst);
+      e = listHead(elst);
     then (eqnlst, varlst, e);
 
     else equation

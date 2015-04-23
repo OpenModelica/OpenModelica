@@ -2352,7 +2352,7 @@ algorithm
         subslst = Expression.dimensionSizesSubscripts(ds);
         subslst = Expression.rangesToSubscripts(subslst);
         elst1 = List.map1r(subslst,Expression.applyExpSubscripts,rhs);
-        e = listGet(elst1,1);
+        e = listHead(elst1);
         tp = Expression.typeof(e);
         statementLst = List.threadFold2(elst,elst1,validLhsAssignSTMT,tp,source,inStatementLst);
       then

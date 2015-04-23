@@ -1668,7 +1668,7 @@ algorithm
       equation
         expLst = arrayElements(e);
         noArr = listLength(expLst)==1;
-        exp = List.first(expLst);
+        exp = listHead(expLst);
         noArr = noArr  and expEqual(exp,e);
         expLst = if noArr then {} else expLst;
       then
@@ -10707,7 +10707,7 @@ algorithm
     case (Absyn.MATRIX(aexpslst))
       equation
         expslst = List.mapList(aexpslst, fromAbsynExp);
-        i = listLength(List.first(expslst));
+        i = listLength(listHead(expslst));
         e = DAE.MATRIX(DAE.T_UNKNOWN_DEFAULT, i, expslst);
       then
         e;
@@ -11523,7 +11523,7 @@ algorithm
         lsts;
     case(DAE.INDEX()::rest,_,_)
       equation
-        sub = List.first(templSubScript);
+        sub = listHead(templSubScript);
         lsts = insertSubScripts(rest,value,sub::lstIn);
       then
         lsts;

@@ -3701,7 +3701,7 @@ algorithm
         _ = BackendEquation.equationSize(eqn);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         scalarindxs = iMapEqnIncRow[abse];
-        oldvars = getOldVars(m,listGet(scalarindxs,1));
+        oldvars = getOldVars(m,listHead(scalarindxs));
         (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
         // do the same for each scalar indxs
         m_1 = List.fold1r(scalarindxs,arrayUpdate,row,m);

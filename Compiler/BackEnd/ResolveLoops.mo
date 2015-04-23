@@ -213,7 +213,7 @@ algorithm
         (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
         //print("\nanalyse the partition "+stringDelimitList(List.map(partition,intString),",")+"\n");
         (loops,eqCrossLst,varCrossLst) = resolveLoops_findLoops({partition},mIn,mTIn,{},{},{});
-        loops = List.filterOnTrue(loops,List.isNotEmpty);
+        loops = List.filterOnFalse(loops,listEmpty);
         //print("the loops in this partition: \n"+stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+"\n");
 
         // check if its worth to resolve the loops
@@ -451,7 +451,7 @@ protected
   Integer startNode, endNode;
   list<list<Integer>> loops1, loops2;
 algorithm
-  startNode := List.first(path);
+  startNode := listHead(path);
   endNode := List.last(path);
   // the startNode is connected to a loop
   loops1 := List.filter1OnTrue(allLoops,firstInListIsEqual,startNode);
@@ -486,7 +486,7 @@ algorithm
         nextPaths1 = List.filter1OnTrue(allPathsIn, firstInListIsEqual, startNode);
         nextPaths2 = List.filter1OnTrue(allPathsIn, lastInListIsEqual, startNode);
         nextPaths1 = listAppend(nextPaths1,nextPaths2);
-        nextPath = List.first(nextPaths1);
+        nextPath = listHead(nextPaths1);
         rest = List.deleteMember(allPathsIn,nextPath);
         nextPath = List.deleteMember(nextPath,startNode);
         path = listAppend(nextPath,loopIn);
@@ -499,7 +499,7 @@ algorithm
         nextPaths1 = List.filter1OnTrue(rest, firstInListIsEqual, startNode);
         nextPaths2 = List.filter1OnTrue(rest, lastInListIsEqual, startNode);
         nextPaths1 = listAppend(nextPaths1,nextPaths2);
-        nextPath = List.first(nextPaths1);
+        nextPath = listHead(nextPaths1);
         rest = List.deleteMember(rest,nextPath);
         path = listAppend(nextPath,restPath);
         path = connectPathsToOneLoop(rest,path);
@@ -551,11 +551,11 @@ algorithm
 
       // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
       if not listEmpty(eqs) then
-        pos = List.first(eqs);
+        pos = listHead(eqs);
       elseif not listEmpty(replEqs) then
-        pos = List.first(replEqs);
+        pos = listHead(replEqs);
       elseif not listEmpty(crossEqs) then
-        pos = List.first(crossEqs);
+        pos = listHead(crossEqs);
       else
         pos = -1;
       end if;
@@ -605,8 +605,8 @@ algorithm
         //print("priorized eqs: "+stringDelimitList(List.map(eqs,intString),",")+"\n");
 
       // first try to replace a non cross node, otherwise an already replaced eq
-      pos = if not listEmpty(replEqs) then List.first(replEqs) else -1;
-      pos = if not listEmpty(eqs) then List.first(eqs) else pos;
+      pos = if not listEmpty(replEqs) then listHead(replEqs) else -1;
+      pos = if not listEmpty(eqs) then listHead(eqs) else pos;
 
       eqs = List.deleteMember(loop1,pos);
         //print("contract eqs: "+stringDelimitList(List.map(eqs,intString),",")+" to eq "+intString(pos)+"\n");
@@ -873,7 +873,7 @@ algorithm
     case(_,(eqIdx1::restLoop),_,_,_,_,_,_)
       equation
         // the equation to add
-        eqIdx2 = List.first(restLoop);
+        eqIdx2 = listHead(restLoop);
         eqDaeIdx2 = listGet(eqMapping,eqIdx2);
         eq2 = listGet(daeEqsIn,eqDaeIdx2);
 
@@ -883,7 +883,7 @@ algorithm
         (adjVars,adjVars1,_) = List.intersection1OnTrue(adjVars1,adjVars2,intEq);
 
         // just take  the first
-        varIdx = listGet(adjVars,1);
+        varIdx = listHead(adjVars);
         daeVarIdx = listGet(varMapping,varIdx);
         var = listGet(daeVarsIn,daeVarIdx);
         cref = BackendVariable.varCref(var);
@@ -923,7 +923,7 @@ algorithm
         eqs = List.flatten(varEqs);
         eqs = List.unique(eqs);
         (eqs,_,_) = List.intersection1OnTrue(eqs,loopIn,intEq);
-        next = List.first(eqs);
+        next = listHead(eqs);
         rest = List.deleteMember(loopIn,next);
         rest = sortLoop(rest,m,mT,next::sortLoopIn);
       then
@@ -945,7 +945,7 @@ algorithm
     case(_,_)
       equation
         // the path is already closed
-        startNode = List.first(pathIn);
+        startNode = listHead(pathIn);
         endNode = List.last(pathIn);
         true = intEq(startNode,endNode);
       then
@@ -985,7 +985,7 @@ algorithm
       list<list<Integer>> pathLst;
     case(path::pathLst,_,_)
       equation
-        startNode = List.first(path);
+        startNode = listHead(path);
         b1 = intEq(startNode,endNodeIn);
         endNode = List.last(path);
         b2 = intEq(endNode,startNodeIn);
@@ -1058,7 +1058,7 @@ algorithm
         adjVars = arrayGet(mIn,crossEq);
         adjEqs = List.map1(adjVars,Array.getIndexFirst,mTIn);
         adjEqs = List.map1(adjEqs,List.deleteMember,crossEq);// REMARK: this works only if there are no varCrossNodes
-        adjEqs = List.filterOnTrue(adjEqs,List.isNotEmpty);
+        adjEqs = List.filterOnFalse(adjEqs,listEmpty);
       nextEqs = List.flatten(adjEqs);
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
         paths = List.map1(endEqs,cons1,{crossEq}); //TODO: replace this stupid cons1
@@ -1070,13 +1070,13 @@ algorithm
         paths;
     case(_,_,_,_,pathStart::restUnfinPaths,_)
       equation
-        lastEq = List.first(pathStart);
+        lastEq = listHead(pathStart);
         prevEq = List.second(pathStart);
         adjVars = arrayGet(mIn,lastEq);
         adjEqs = List.map1(adjVars,Array.getIndexFirst,mTIn);
         adjEqs = List.map1(adjEqs,List.deleteMember,lastEq);// REMARK: this works only if there are no varCrossNodes
-        adjEqs = List.filterOnTrue(adjEqs,List.isNotEmpty);
-        nextEqs = List.map(adjEqs,List.first);
+        adjEqs = List.filterOnFalse(adjEqs,listEmpty);
+        nextEqs = List.map(adjEqs,listHead);
         (nextEqs,_) = List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
         paths = List.map1(endEqs,cons1,pathStart); //TODO: replace this stupid cons1
@@ -1326,7 +1326,7 @@ algorithm
   range := List.intRange(numRows);
   emptyRows := List.fold1(range, arrayGetIsEmptyLst, m, {});
   (_,fullRows,_) := List.intersection1OnTrue(range,emptyRows,intEq);
-  startNode := List.first(fullRows);
+  startNode := listHead(fullRows);
   // mark the nodes
   markNodes := arrayCreate(arrayLength(m),0);
   List.map2_0(emptyRows,Array.updateIndexFirst,-1,markNodes);
@@ -1592,7 +1592,7 @@ algorithm
     case(path::rest,_,_,{})
       equation
         // the first node
-        startNode = List.first(path);
+        startNode = listHead(path);
         endNode = List.last(path);
         sortedPaths = sortPathsAsChain1(rest,startNode,endNode,{path});
       then
@@ -1604,9 +1604,9 @@ algorithm
         paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, lastNode);
         paths1 = listAppend(paths1,paths2);
         false = listEmpty(paths1);
-        path = List.first(paths1);
+        path = listHead(paths1);
         endNode = if not listEmpty(paths1) then List.last(path) else -1;
-        endNode = if not listEmpty(paths2) then List.first(path) else -1;
+        endNode = if not listEmpty(paths2) then listHead(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = listAppend(sortedPathsIn,{path});
         sortedPaths = sortPathsAsChain1(rest,firstNode,endNode,sortedPaths);
@@ -1620,9 +1620,9 @@ algorithm
         paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, firstNode);
         paths1 = listAppend(paths1,paths2);
         false = listEmpty(paths1);
-        path = List.first(paths1);
+        path = listHead(paths1);
         startNode = if not listEmpty(paths1) then List.last(path) else -1;
-        startNode = if not listEmpty(paths2) then List.first(path) else -1;
+        startNode = if not listEmpty(paths2) then listHead(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = path::sortedPathsIn;
         sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
@@ -1634,7 +1634,7 @@ algorithm
               //this might have no effect because in those partitions is either one long path or none.
         path::rest = pathsIn;
         sortedPaths = path::sortedPathsIn;
-        startNode = List.first(path);
+        startNode = listHead(path);
         sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
         then
           sortedPaths;
@@ -1649,7 +1649,7 @@ protected function firstInListIsEqual "author:Waurich TUD 2014-01
 protected
   Integer first;
 algorithm
-  first := List.first(lstIn);
+  first := listHead(lstIn);
   isEq := intEq(first,value);
 end firstInListIsEqual;
 
@@ -1686,7 +1686,7 @@ algorithm
     case({path},_,_)
       equation
         // checks if the single path closes itself
-        startNode = List.first(path);
+        startNode = listHead(path);
         endNode = List.last(path);
         closedALoop = intEq(startNode,endNode);
         loops = if closedALoop then path::loopsIn else loopsIn;
@@ -1696,7 +1696,7 @@ algorithm
     case(path::rest,_,_)
       equation
         // the loop closes itself
-        startNode = List.first(path);
+        startNode = listHead(path);
         endNode = List.last(path);
         true = intEq(startNode,endNode);
         loops = path::loopsIn;
@@ -1706,7 +1706,7 @@ algorithm
     case(path::rest,_,_)
       equation
         // check if there is another path that closes the Loop. if not: put the path to the restPaths
-        startNode = List.first(path);
+        startNode = listHead(path);
         endNode = List.last(path);
         startPaths = List.filter1OnTrue(rest,firstInListIsEqual,startNode);
         startPaths = List.filter1OnTrue(startPaths,lastInListIsEqual,endNode);
@@ -1921,7 +1921,7 @@ algorithm
 
         //replace a former equation
         numOfAdjVars = List.map(List.map1(resolveEqs,Array.getIndexFirst,me),listLength);
-        maxNum = List.fold(numOfAdjVars,intMax,List.first(numOfAdjVars));
+        maxNum = List.fold(numOfAdjVars,intMax,listHead(numOfAdjVars));
         replEqIdx = listGet(resolveEqs,List.position(maxNum,numOfAdjVars));
             //BackendDump.dumpEquationList(unassEqsIn," not updated unassEqs");
         unassEqs = List.replaceAt(resolvedEq,replEqIdx,unassEqsIn);
@@ -1979,7 +1979,7 @@ protected
   Integer max;
   array<Integer> arr;
 algorithm
-  max := List.fold(lstIn,intMax,List.first(lstIn));
+  max := List.fold(lstIn,intMax,listHead(lstIn));
   arr := arrayCreate(max,-1);
   List.map1_0(lstIn,getDoublicates2,arr);
   (_,lstOut) := List.filter1OnTrueSync(arrayList(arr),intGe,1,List.intRange(arrayLength(arr)));
@@ -2035,7 +2035,7 @@ algorithm
         (vars1,_,_) = List.intersection1OnTrue(vars1,vars2,intEq);
         numEqs = List.map(List.map1(vars1,Array.getIndexFirst,meT),listLength);
         (_,vars1) = List.filter1OnTrueSync(numEqs,intEq,2,vars1);
-        sharedVar = List.first(vars1);
+        sharedVar = listHead(vars1);
         eq1 = listGet(eqsIn,startEq);
         eq2 = listGet(eqsIn,nextEq);
         var = listGet(varsIn,sharedVar);

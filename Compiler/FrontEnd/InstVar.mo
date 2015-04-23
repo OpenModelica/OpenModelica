@@ -268,7 +268,7 @@ algorithm
 
         // the outer must be in an instance that is part of a State Machine
         cref = PrefixUtil.prefixToCref(inPrefix);
-        topInstance = List.first(ih);
+        topInstance = listHead(ih);
         InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
         true = BaseHashSet.has(cref, sm);
 
@@ -416,7 +416,7 @@ algorithm
 
         // the inner outer must be in an instance that is part of a State Machine
         cref = PrefixUtil.prefixToCref(inPrefix);
-        topInstance = List.first(ih);
+        topInstance = listHead(ih);
         InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
         true = BaseHashSet.has(cref, sm);
 
@@ -1085,7 +1085,7 @@ algorithm
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
-        mod = if List.isNotEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
+        mod = if not listEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
                  then DAE.NOMOD()
                  else inMod;
         opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName);
@@ -1145,7 +1145,7 @@ algorithm
     case (_, _, _, _, _)
       equation
         cref = PrefixUtil.prefixToCref(inPrefix);
-        topInstance = List.first(ih);
+        topInstance = listHead(ih);
         InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
         true = BaseHashSet.has(cref, sm);
       then inAttributes;

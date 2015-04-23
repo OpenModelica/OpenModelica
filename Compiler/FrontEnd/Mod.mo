@@ -2373,7 +2373,7 @@ algorithm
         prefix =  SCodeDump.finalStr(finalPrefix) + SCodeDump.eachStr(eachPrefix);
         s1 = printSubs1Str(subs);
         s1_1 = stringDelimitList(s1, ", ");
-        s1_1 = if List.isNotEmpty(subs) then " {" + s1_1 + "} " else s1_1;
+        s1_1 = if not listEmpty(subs) then " {" + s1_1 + "} " else s1_1;
         s2 = printEqmodStr(eq);
         str = stringAppendList({prefix,s1_1,s2});
       then
@@ -3117,7 +3117,7 @@ algorithm
       equation
         //fprint(Flags.REDECL,"Removing redeclare mods: " + componentModified +" before" + Mod.printModStr(inmod) + "\n");
         redecls = removeRedeclareMods(redecls,componentModified);
-        outmod = if List.isNotEmpty(redecls) then DAE.REDECL(f,e,redecls) else DAE.NOMOD();
+        outmod = if not listEmpty(redecls) then DAE.REDECL(f,e,redecls) else DAE.NOMOD();
         //fprint(Flags.REDECL,"Removing redeclare mods: " + componentModified +" after" + Mod.printModStr(outmod) + "\n");
       then
         outmod;

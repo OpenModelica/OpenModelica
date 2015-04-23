@@ -2710,7 +2710,7 @@ algorithm
         mps = System.strtok(mp, gd);
         files = List.flatten(List.map(mps, System.moFiles));
         dirs = List.flatten(List.map(mps, System.subDirectories));
-        files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), List.first);
+        files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), listHead);
         (str, status) = System.popen("impact search '' | perl -pe 's/\\e\\[?.*?[\\@-~]//g' | grep '[^ :]*:' | cut -d: -f1 2>&1");
         if 0==status then
           files = listAppend(files, System.strtok(str,"\n"));

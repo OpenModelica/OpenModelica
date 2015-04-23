@@ -397,7 +397,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := systIn;
   BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps) := matching;
-  if List.isNotEmpty(compsAdd) then
+  if not listEmpty(compsAdd) then
     ass1add := arrayCreate(listLength(compsAdd),0);
     ass2add := arrayCreate(listLength(compsAdd),0);
     ass1 := arrayAppend(ass1,ass1add);

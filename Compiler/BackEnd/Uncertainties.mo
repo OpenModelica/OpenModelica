@@ -240,7 +240,7 @@ algorithm
 
         (setC,removed_equations_squared)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
 
-        if List.isNotEmpty(removed_equations_squared) then
+        if not listEmpty(removed_equations_squared) then
           print("Warning: the system is ill-posed. One or more equations have been removed from squared system of knowns.\n");
         end if;
               printSep(getMathematicaText("Equations removed from squared blocks (with more than one equation)"));
@@ -930,7 +930,7 @@ algorithm
     case(_,candidate::candidatesTail,_)
       equation
         true=count>0;
-        temp = listGet(candidate,1);
+        temp = listHead(candidate);
         //print("Eliminating "+intString(temp)+"\n");
         variables=List.setDifference(getVariables(m),{temp});
         newM = removeVarsNotInSet(m,variables,{});
@@ -1597,7 +1597,7 @@ protected function containsAny
   protected list<Integer> m3;
 algorithm
   m3:=List.intersectionOnTrue(m1,m2,intEq);
-  out:=List.isNotEmpty(m3);
+  out:= not listEmpty(m3);
 end containsAny;
 
 protected function containsAll
