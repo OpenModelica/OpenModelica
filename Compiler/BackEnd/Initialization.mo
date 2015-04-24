@@ -201,7 +201,7 @@ algorithm
     initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
 
     // transform and optimize DAE
-    pastOptModules := BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "symEulerInit","tearingSystem","calculateStrongComponentJacobians", "solveSimpleEquations"}));
+    pastOptModules := BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", "symEulerInit", "tearingSystem", "calculateStrongComponentJacobians", "solveSimpleEquations"}));
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
     daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
 
@@ -1912,7 +1912,7 @@ algorithm
       (exp, _) = ExpressionSimplify.simplify(exp);
       true = Expression.isZero(exp);
       //((_, listParameter))=parameterCheck((exp, {}));
-      //false=intGt(listLength(listParameter), 0);
+      //true = listEmpty(listParameter);
       eqn = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
     then ({inUnassignedEqn}, true, {});
@@ -1937,7 +1937,7 @@ algorithm
       false = Expression.isZero(exp);
 
       ((_, listParameter))=parameterCheck((exp, {}));
-      false=intGt(listLength(listParameter), 0);
+      true = listEmpty(listParameter);
 
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerError("The initialization problem is inconsistent due to the following equation: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
@@ -1954,7 +1954,7 @@ algorithm
       false = Expression.isZero(exp);
 
       ((_, listParameter))=parameterCheck((exp, {}));
-      true=intGt(listLength(listParameter), 0);
+      false = listEmpty(listParameter);
 
       list_inEqns=BackendEquation.equationList(inEqns);
       list_inEqns = List.set(list_inEqns, inUnassignedEqn, eqn);
@@ -1963,14 +1963,14 @@ algorithm
       system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
       (m, _) = BackendDAEUtil.incidenceMatrix(system, BackendDAE.NORMAL(), SOME(funcs));
       listVar=m[inUnassignedEqn];
-      false=intEq(0, listLength(listVar));
+      false = listEmpty(listVar);
 
       _ = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
     then ({}, false, {});
 
     case _ equation
-      //true = intEq(listLength(inM[inUnassignedEqn]), 0);
+      //true = listEmpty(inM[inUnassignedEqn]);
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intLe(counter, nEqns-nVars);
@@ -1981,7 +1981,7 @@ algorithm
       false = Expression.isZero(exp);
 
       ((_, listParameter))=parameterCheck((exp, {}));
-      true=intGt(listLength(listParameter), 0);
+      false = listEmpty(listParameter);
 
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, inUnassignedEqn);
       Error.addCompilerWarning("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
