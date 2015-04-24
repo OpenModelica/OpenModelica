@@ -108,10 +108,6 @@ public:
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array getDataReferences call");
   }
-  virtual const char** getCStrData()
-  {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array getCStrData call");
-  }
 
   virtual T& operator()(size_t i)
   {
@@ -161,6 +157,35 @@ public:
 protected:
   bool _static;
   bool _isReference;
+};
+
+/**
+ * Wrapper to convert a string array to c_str array
+ */
+class CStrArray
+{
+ public:
+  /**
+   *  Constructor storing pointers
+   */  
+  CStrArray(const BaseArray<string> &stringArray)
+    :_c_str_array(stringArray.getNumElems())
+  {
+    const string *data = stringArray.getData();
+    for(size_t i = 0; i < _c_str_array.size(); i++)
+      _c_str_array[i] = data[i].c_str();
+  }
+
+  /**
+   * Convert to c_str array
+   */
+  operator const char**()
+  {
+    return &_c_str_array[0];
+  }
+
+ private:
+  vector<const char *> _c_str_array;
 };
 
 /**
@@ -794,209 +819,6 @@ class StatArrayDim1 : public StatArray<T, size>
 };
 
 /**
-* Specialization for string 1-dim arrays, implements BaseArray interface methods
-*/
-template<std::size_t size>class StatArrayDim1<string,size> : public BaseArray<string>
-{
-
-public:
-  StatArrayDim1(const string data[])
-    :BaseArray<string>(true,false)
-  {
-    for(int i=0;i<size;i++)
-    {
-      _array_data[i]=data[i];
-    }
-
-    for(int i=0;i<size;i++)
-    {
-      _c_array_data[i]=_array_data[i].c_str();
-    }
-
-  }
-
-  StatArrayDim1(const StatArrayDim1<string,size>& otherarray)
-    :BaseArray<string>(true,false)
-  {
-    _array_data = otherarray._array_data;
-    for(int i=0;i<size;i++)
-    {
-      _c_array_data[i]=_array_data[i].c_str();
-    }
-  }
-  StatArrayDim1(const DynArrayDim1<string>& otherarray)
-    :BaseArray<string>(true,false)
-  {
-
-  }
-
-  StatArrayDim1()
-    :BaseArray<string>(true,false)
-  {
-  }
-
-  ~StatArrayDim1() {}
-
-
-
-  virtual void resize(const std::vector<size_t>& dims)
-  {
-    if (dims != getDims())
-      std::runtime_error("Cannot resize static array!");
-  }
-
-    StatArrayDim1<string,size>& operator=(BaseArray<string>& b)
-    {
-        if (this != &b)
-        {
-
-            try
-            {
-                if(b.isStatic())
-                {
-                    StatArrayDim1<string,size>&  a = dynamic_cast<StatArrayDim1<string,size>&  >(b);
-                    _array_data = a._array_data;
-                    for(int i=0;i<size;i++)
-                    {
-                        _c_array_data[i]=_array_data[i].c_str();
-                    }
-                }
-                else
-                {
-                    for(size_t i=0;i<size;i++)
-                    {
-                        _array_data[i]=b(i);
-                        _c_array_data[i]=_array_data[i].c_str();
-                    }
-                }
-            }
-            catch(std::bad_exception & be)
-            {
-                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
-
-            }
-
-        }
-        return *this;
-    }
-    StatArrayDim1<string,size>& operator=(const StatArrayDim1<string,size>& b)
-    {
-        if (this != &b)
-        {
-            _array_data= b._array_data;
-            for(int i=0;i<size;i++)
-            {
-                _c_array_data[i]=_array_data[i].c_str();
-            }
-        }
-        return *this;
-    }
-
-  virtual void assign(const string data[])
-  {
-    for(int i=0;i<size;i++)
-    {
-      _array_data[i]=data[i];
-      _c_array_data[i]=_array_data[i].c_str();
-    }
-
-  }
-
-
-    virtual void assign(const BaseArray<string>& b)
-    {
-        for(int i=0;i<size;i++)
-        {
-            _array_data[i]=b(i);
-            _c_array_data[i]=_array_data[i].c_str();
-        }
-
-  }
-  virtual string& operator()(const vector<size_t>& idx)
-  {
-    return _array_data[idx[0]-1];
-  };
-
-
-  inline virtual string& operator()(size_t index)
-  {
-    return _array_data[index - 1];
-  }
-  inline virtual const string& operator()(size_t index) const
-  {
-    return _array_data[index - 1];
-  }
-
-  virtual std::vector<size_t> getDims() const
-  {
-    std::vector<size_t> v;
-    v.push_back(size);
-    return v;
-  }
-
-
-  virtual int getDim(size_t dim) const
-  {
-    return (int)size;
-  }
-
- /**
-  * access to data
-  */
-  virtual string* getData()
-  {
-    return _array_data.c_array();
-  }
-
- /**
-  * access to data (read-only)
-  */
-  virtual const string* getData() const
-  {
-    return _array_data.data();
-  }
-  virtual const char** getCStrData()
-  {
-    return _c_array_data.c_array();
-  }
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
-  virtual void getDataCopy(string data[], size_t n) const
-  {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDataCopy for one dim string array not supported");
-  }
-
-  virtual size_t getNumElems() const
-  {
-    return size;
-  }
-  virtual size_t getNumDims() const
-  {
-    return 1;
-  }
-
-  virtual void setDims(const std::vector<size_t>& v) {  }
-  void setDims(size_t size1)  { }
-
-  typedef typename boost::array<string,size>::const_iterator                              const_iterator;
-  typedef typename  boost::array<string,size>::iterator                                   iterator;
-  iterator begin()
-  {
-    return   _array_data.begin();
-  }
-  iterator end()
-  {
-    return   _array_data.end();
-  }
-
-private:
-  boost::array<string,size> _array_data;
-  boost::array<const char*, size> _c_array_data;
-};
-
-/**
  * Two dimensional static array, specializes StatArray
  * @param T type of the array
  * @param size1  size of dimension one
@@ -1129,210 +951,6 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
   }
 
   void setDims(size_t i, size_t j) {}
-};
-
-/**
-* Specialization for string 2-dim arrays, implements BaseArray interface methods
-*/
-template<std::size_t size1,std::size_t size2>
-class StatArrayDim2<string,size1,size2> : public BaseArray<string>
-{
-
-public:
-  StatArrayDim2(const string data[])
-    :BaseArray<string>(true,false)
-  {
-
-    std::copy(data,data+size1*size2,_array_data.begin());
-    for(int i=0;i<size1;i++)
-    {
-      for(int j=0;j<size2;j++)
-      {
-        _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
-      }
-    }
-  }
-
-  StatArrayDim2()
-    :BaseArray<string>(true,false)
-  {
-
-  }
-
-  StatArrayDim2(const StatArrayDim2<string,size1,size2>& otherarray)
-    :BaseArray<string>(true,false)
-  {
-    _array_data = otherarray._array_data;
-
-        for(int i=0;i<size1;i++)
-        {
-            for(int j=0;j<size2;j++)
-            {
-                _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
-            }
-        }
-    }
-    StatArrayDim2<string,size1,size2>& operator=(const StatArrayDim2<string,size1,size2>& b)
-    {
-        if (this != &b)
-        {
-            _array_data = b._array_data;
-            for(int i=0;i<size1;i++)
-            {
-                for(int j=0;j<size2;j++)
-                {
-                    _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
-                }
-            }
-        }
-        return *this;
-    }
-
-    StatArrayDim2<string,size1,size2>& operator=(BaseArray<string>& b)
-    {
-        if (this != &b)
-        {
-            try
-            {
-                StatArrayDim2<string,size1,size2>& a = dynamic_cast<StatArrayDim2<string,size1,size2>& >(b);
-                _array_data = a._array_data;
-                for(int i=0;i<size1;i++)
-                {
-                    for(int j=0;j<size2;j++)
-                    {
-                        _c_array_data[i + size1*j] = _array_data[i + size1*j].c_str();
-                    }
-                }
-            }
-            catch(std::bad_exception & be)
-            {
-                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
-            }
-        }
-        return *this;
-    }
-
-  ~StatArrayDim2(){}
-
-    void append(size_t i,const StatArrayDim1<string,size2>& b)
-    {
-
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"append not supported for 2-dim string array");
-  }
-
-  virtual void resize(const std::vector<size_t>& dims)
-  {
-    if (dims != getDims())
-      std::runtime_error("Cannot resize static array!");
-  }
-
-    virtual void assign(const BaseArray<string>& b)
-    {
-        std::vector<size_t> v;
-        v = b.getDims();
-        const string* data_otherarray = b.getData();
-        std::copy(data_otherarray,data_otherarray+size1*size2,_array_data.begin());
-        for(int i=0;i<size1;i++)
-        {
-            for(int j=0;j<size2;j++)
-            {
-                const char* c_str_data = _array_data[i + size1*j].c_str();
-                _c_array_data[i + size1*j] = c_str_data;
-            }
-        }
-    }
-
-  virtual void assign(const string data[])//)const T (&data) [size1*size2]
-  {
-    std::copy(data,data+size1*size2,_array_data.begin());
-    for(int i=0;i<size1;i++)
-    {
-      for(int j=0;j<size2;j++)
-      {
-        const char* c_str_data = _array_data[i + size1*j].c_str();
-        _c_array_data[i + size1*j] = c_str_data;
-      }
-    }
-  }
-  virtual string& operator()(const vector<size_t>& idx)
-  {
-    return _array_data[idx[0]-1 + size1*(idx[1]-1)];
-  };
-
-  inline virtual string& operator()(size_t i, size_t j)
-  {
-    return _array_data[i-1 + size1*(j-1)];
-  }
-  inline virtual const string& operator()(size_t i, size_t j) const
-  {
-    return _array_data[i-1 + size1*(j-1)];
-  }
-
-
-  virtual std::vector<size_t> getDims() const
-  {
-    std::vector<size_t> v;
-    v.push_back(size1);
-    v.push_back(size2);
-    return v;
-  }
-
-  virtual int getDim(size_t dim) const
-  {
-    switch (dim) {
-    case 1:
-      return (int)size1;
-    case 2:
-      return (int)size2;
-    default:
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
-    }
-  }
-
-  virtual size_t getNumElems() const
-  {
-    return size1 * size2;
-  }
-
-  virtual size_t getNumDims() const
-  {
-    return 2;
-  }
- /**
-  * Access to data
-  */
-  virtual string* getData()
-  {
-    return _array_data. c_array();
-  }
- /**
-  * Access to data (read-only)
-  */
-  virtual const string* getData() const
-  {
-    return _array_data.data();
-  }
- /**
-  * Copies the array data of size n in the data array
-  * data has to be allocated before getDataCopy is called
-  */
-  virtual void getDataCopy(string data[], size_t n) const
-  {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "getDataCopy for one dim string array not supported");
-  }
-  virtual const char** getCStrData()
-  {
-
-    return _c_array_data.c_array();
-  }
-
-  virtual void setDims(const std::vector<size_t>& v) {  }
-  void setDims(size_t i,size_t j)  {  }
-private:
-
-  boost::array<string, size2 * size1> _array_data;
-  boost::array<const char*,size2 * size1> _c_array_data;
-
 };
 
 /**

@@ -4501,7 +4501,7 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
     let dimsStr = checkDimension(dims)
     let elType = expTypeShort(ty)
     let extType = extType2(ty, true, false)
-    let extCStr = if stringEq(elType, "string") then '.getCStrData()'
+    let extCStr = if stringEq(elType, "string") then 'CStrArray'
     if boolOr(intGt(listLength(dims), 1), stringEq(elType, "bool")) then
       let tmp = match dimsStr
         case "" then
@@ -4510,9 +4510,11 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
           tempDecl('StatArrayDim<%dimStr%><<%extType%>, <%dimsStr%>>', &varDecls /*BUFD*/)
       let &inputAssign += 'convertArrayLayout(<%name%>, <%tmp%>);'
       let &outputAssign += if intGt(oi, 0) then 'convertArrayLayout(<%tmp%>, <%name%>);'
-      '<%tmp%>.getData()<%extCStr%>'
+      let arg = if extCStr then 'CStrArray(<%tmp%>)' else '<%tmp%>.getData()'
+      '<%arg%>'
     else
-      '<%name%>.getData()<%extCStr%>'
+      let arg = if extCStr then 'CStrArray(<%name%>)' else '<%name%>.getData()'
+      '<%arg%>'
 end extCArrayArg;
 
 
