@@ -167,7 +167,7 @@ class CStrArray
  public:
   /**
    *  Constructor storing pointers
-   */  
+   */
   CStrArray(const BaseArray<string> &stringArray)
     :_c_str_array(stringArray.getNumElems())
   {
