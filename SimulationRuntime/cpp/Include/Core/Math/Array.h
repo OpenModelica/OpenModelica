@@ -1309,7 +1309,7 @@ private:
 * @param size3  size of dimension two
 */
 template<typename T, std::size_t size1, std::size_t size2, std::size_t size3>
-class StatArrayDim3 : public BaseArray<T>
+class StatArrayDim3 : public StatArray<T, size1*size2*size3>
 {
  public:
   /**
