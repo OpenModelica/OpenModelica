@@ -176,7 +176,7 @@ public:
    * Constuctor for reference array
    * it uses data from simvars memory
    */
-  RefArray(T* data)
+  RefArray(const T* data)
     :BaseArray<T>(true, true)
   {
     std::transform(data, data + nelems,
@@ -187,7 +187,7 @@ public:
    * Constuctor for reference array
    * intialize array with reference data from simvars memory
    */
-  RefArray(T** ref_data)
+  RefArray(const T** ref_data)
     :BaseArray<T>(true, true)
   {
     T **refs = _ref_array.c_array();
@@ -306,13 +306,13 @@ public:
    * Constuctor for one dimensional reference array
    * it uses data from simvars memory
    */
-  RefArrayDim1(T* data) : RefArray<T,size>(data) { }
+  RefArrayDim1(const T* data) : RefArray<T, size>(data) {}
 
   /**
    * Constuctor for one dimensional reference array
    * intialize array with reference data from simvars memory
    */
-  RefArrayDim1(T** ref_data) : RefArray<T,size>(ref_data) { }
+  RefArrayDim1(const T** ref_data) : RefArray<T, size>(ref_data) {}
 
   /**
    * Index operator to access array element
@@ -373,13 +373,13 @@ public:
   * Constuctor for two dimensional reference array
   * it uses data from simvars memory
   */
-  RefArrayDim2(T* data) : RefArray<T,size1*size2>(data) { }
+  RefArrayDim2(const T* data) : RefArray<T, size1*size2>(data) {}
 
  /**
   * Constuctor for two dimensional reference array
   * intialize array with reference data from simvars memory
   */
-  RefArrayDim2(T** ref_data) : RefArray<T,size1*size2>(ref_data) { }
+  RefArrayDim2(const T** ref_data) : RefArray<T, size1*size2>(ref_data) {}
 
   /**
    * Index operator to access array element
@@ -452,13 +452,13 @@ public:
   * Constuctor for three dimensional reference array
   * it uses data from simvars memory
   */
-  RefArrayDim3(T* data) : RefArray<T,size1*size2*size3>(data) { }
+  RefArrayDim3(const T* data) : RefArray<T, size1*size2*size3>(data) {}
 
  /**
   * Constuctor for three dimensional reference array
   * intialize array with reference data from simvars memory
   */
-  RefArrayDim3(T** ref_data) : RefArray<T,size1*size2*size3>(ref_data) { }
+  RefArrayDim3(const T** ref_data) : RefArray<T, size1*size2*size3>(ref_data) {}
 
   /**
    * Return sizes of dimensions
@@ -534,7 +534,7 @@ class StatArray : public BaseArray<T>
    * if reference array it uses data from simvars memory
    * else it copies data  in array memory
    */
-  StatArray(T* data)
+  StatArray(const T* data)
     :BaseArray<T>(true, false)
   {
     memcpy(_array_data.begin(), data, nelems*sizeof(T));
@@ -660,7 +660,7 @@ class StatArrayDim1 : public StatArray<T, size>
    * if reference array it uses data from simvars memory
    * else it copies data  in array memory
    */
-  StatArrayDim1(T* data)
+  StatArrayDim1(const T* data)
     :StatArray<T, size>(data) {}
 
   /**
@@ -986,7 +986,7 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
    * if reference array it uses data from simvars memory
    * else it copies data  in array memory
    */
-  StatArrayDim2(T* data)
+  StatArrayDim2(const T* data)
     :StatArray<T, size1*size2>(data) {}
 
   /**
@@ -1317,7 +1317,7 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3>
    * if reference array it uses data from simvars memory
    * else it copies data  in array memory
    */
-  StatArrayDim3(T* data)
+  StatArrayDim3(const T* data)
     :StatArray<T, size1*size2*size3>(data) {}
 
   /**
