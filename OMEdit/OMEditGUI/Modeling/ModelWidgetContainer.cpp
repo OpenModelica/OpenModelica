@@ -3372,6 +3372,11 @@ void ModelWidgetContainer::saveTextModelWidget(ModelWidget *pModelWidget)
   mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
 }
 
+void ModelWidgetContainer::saveTLMModelWidget(ModelWidget *pModelWidget)
+{
+  mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pModelWidget->getLibraryTreeNode());
+}
+
 void ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pItem)
 {
   LibraryTreeNode *pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(pItem->data(Qt::UserRole).toString());
@@ -3468,6 +3473,8 @@ void ModelWidgetContainer::saveModelWidget()
     saveModelicaModelWidget(pModelWidget);
   } else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {
     saveTextModelWidget(pModelWidget);
+  } else if (pLibraryTreeNode && pLibraryTreeNode->getLibraryType() == LibraryTreeNode::TLM) {
+    saveTLMModelWidget(pModelWidget);
   }
 }
 

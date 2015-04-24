@@ -356,9 +356,11 @@ LibraryTreeNode::LibraryTreeNode(LibraryType type, QString text, QString parentN
 
 void LibraryTreeNode::setClassInformation(OMCInterface::getClassInformation_res classInformation)
 {
-  mClassInformation = classInformation;
-  setFileName(classInformation.fileName);
-  setReadOnly(classInformation.fileReadOnly);
+  if (mLibraryType == LibraryTreeNode::Modelica) {
+    mClassInformation = classInformation;
+    setFileName(classInformation.fileName);
+    setReadOnly(classInformation.fileReadOnly);
+  }
 }
 
 /*!
@@ -1223,16 +1225,13 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
 bool LibraryTreeWidget::saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
 {
   QString fileName;
-  if (pLibraryTreeNode->getFileName().isEmpty())
-  {
+  if (pLibraryTreeNode->getFileName().isEmpty()) {
     QString name = pLibraryTreeNode->getName();
     fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
                                               Helper::xmlFileTypes, NULL, "xml", &name);
     if (fileName.isEmpty())   // if user press ESC
       return false;
-  }
-  else
-  {
+  } else {
     fileName = pLibraryTreeNode->getFileName();
   }
 
@@ -1246,8 +1245,7 @@ bool LibraryTreeWidget::saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode
     /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);
     pLibraryTreeNode->setFileName(fileName);
-    if (pLibraryTreeNode->getModelWidget())
-    {
+    if (pLibraryTreeNode->getModelWidget()) {
       pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
       pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
     }
@@ -1780,20 +1778,18 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
 {
   /* if the file doesn't exist then remove it from the recent files list. */
   QFileInfo fileInfo(fileName);
-  if (checkFileExists)
-  {
-    if (!fileInfo.exists())
-    {
+  if (checkFileExists) {
+    if (!fileInfo.exists()) {
       QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
       QSettings *pSettings = OpenModelica::getApplicationSettings();
       QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
       // remove the RecentFile instance from the list.
-      foreach (QVariant file, files)
-      {
+      foreach (QVariant file, files) {
         RecentFile recentFile = qvariant_cast<RecentFile>(file);
-        if (recentFile.fileName.compare(fileName) == 0)
+        if (recentFile.fileName.compare(fileName) == 0) {
           files.removeOne(file);
+        }
       }
       pSettings->setValue("recentFilesList/files", files);
       mpMainWindow->updateRecentFileActions();
@@ -1880,8 +1876,7 @@ void LibraryTreeWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
 {
   if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   // check if the file is already loaded.
-  for (int i = 0; i < topLevelItemCount(); ++i)
-  {
+  for (int i = 0; i < topLevelItemCount(); ++i) {
     LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(topLevelItem(i));
     if (pLibraryTreeNode && pLibraryTreeNode->getFileName().compare(fileInfo.absoluteFilePath()) == 0) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);

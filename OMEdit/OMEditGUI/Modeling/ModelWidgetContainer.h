@@ -371,6 +371,7 @@ private:
   void loadPreviousViewType(ModelWidget *pModelWidget);
   void saveModelicaModelWidget(ModelWidget *pModelWidget);
   void saveTextModelWidget(ModelWidget *pModelWidget);
+  void saveTLMModelWidget(ModelWidget *pModelWidget);
 public slots:
   void openRecentModelWidget(QListWidgetItem *pItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);

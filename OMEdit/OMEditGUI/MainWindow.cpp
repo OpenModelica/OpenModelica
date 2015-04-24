@@ -1235,21 +1235,20 @@ void MainWindow::createNewTLMFile()
 void MainWindow::openTLMFile()
 {
   QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
-                                              NULL, Helper::xmlFileTypes, NULL);
-  if (fileNames.isEmpty())
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
+                                              Helper::xmlFileTypes, NULL);
+  if (fileNames.isEmpty()) {
     return;
+  }
   int progressValue = 0;
   mpProgressBar->setRange(0, fileNames.size());
   showProgressBar();
-  foreach (QString file, fileNames)
-  {
+  foreach (QString file, fileNames) {
     file = file.replace("\\", "/");
     mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
     mpProgressBar->setValue(++progressValue);
     // if file doesn't exists
-    if (!QFile::exists(file))
-    {
+    if (!QFile::exists(file)) {
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
@@ -1257,9 +1256,7 @@ void MainWindow::openTLMFile()
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
-    }
-    else
-    {
+    } else {
       mpLibraryTreeWidget->openFile(file, Helper::utf8, false);
     }
   }
@@ -1809,8 +1806,28 @@ void MainWindow::TLMSimulate()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
     LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
-    if (pLibraryTreeNode && pLibraryTreeNode->isSaved()) {
-      mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+    if (pLibraryTreeNode) {
+      if (pLibraryTreeNode->isSaved()) {
+        mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+      } else {
+        QMessageBox *pMessageBox = new QMessageBox(this);
+        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+        pMessageBox->setIcon(QMessageBox::Question);
+        pMessageBox->setText(tr("Meta model <b>%1</b> has unsaved changes. Do you want to save?").arg(pLibraryTreeNode->getNameStructure()));
+        pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        pMessageBox->setDefaultButton(QMessageBox::Yes);
+        int answer = pMessageBox->exec();
+        switch (answer) {
+          case QMessageBox::Yes:
+            if (mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode)) {
+              mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+            }
+            break;
+          case QMessageBox::No:
+          default:
+            break;
+        }
+      }
     }
   }
 }
