@@ -176,7 +176,7 @@ public:
    * Constuctor for reference array
    * it uses data from simvars memory
    */
-  RefArray(const T* data)
+  RefArray(T* data)
     :BaseArray<T>(true, true)
   {
     std::transform(data, data + nelems,
@@ -306,7 +306,7 @@ public:
    * Constuctor for one dimensional reference array
    * it uses data from simvars memory
    */
-  RefArrayDim1(const T* data) : RefArray<T, size>(data) {}
+  RefArrayDim1(T* data) : RefArray<T, size>(data) {}
 
   /**
    * Constuctor for one dimensional reference array
@@ -378,7 +378,7 @@ public:
   * Constuctor for two dimensional reference array
   * it uses data from simvars memory
   */
-  RefArrayDim2(const T* data) : RefArray<T, size1*size2>(data) {}
+  RefArrayDim2(T* data) : RefArray<T, size1*size2>(data) {}
 
  /**
   * Constuctor for two dimensional reference array
@@ -462,7 +462,7 @@ public:
   * Constuctor for three dimensional reference array
   * it uses data from simvars memory
   */
-  RefArrayDim3(const T* data) : RefArray<T, size1*size2*size3>(data) {}
+  RefArrayDim3(T* data) : RefArray<T, size1*size2*size3>(data) {}
 
  /**
   * Constuctor for three dimensional reference array
