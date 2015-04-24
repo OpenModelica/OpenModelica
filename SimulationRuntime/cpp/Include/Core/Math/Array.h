@@ -315,6 +315,11 @@ public:
   RefArrayDim1(const T** ref_data) : RefArray<T, size>(ref_data) {}
 
   /**
+   * Default constuctor for one dimensional reference array
+   */
+  RefArrayDim1() : RefArray<T, size>() {}
+
+  /**
    * Index operator to access array element
    * @param idx  vector of indices
    */
@@ -380,6 +385,11 @@ public:
   * intialize array with reference data from simvars memory
   */
   RefArrayDim2(const T** ref_data) : RefArray<T, size1*size2>(ref_data) {}
+
+ /**
+  * Default constuctor for two dimensional reference array
+  */
+  RefArrayDim2() : RefArray<T, size1*size2>() {}
 
   /**
    * Index operator to access array element
@@ -459,6 +469,11 @@ public:
   * intialize array with reference data from simvars memory
   */
   RefArrayDim3(const T** ref_data) : RefArray<T, size1*size2*size3>(ref_data) {}
+
+ /**
+  * Default constuctor for three dimensional reference array
+  */
+  RefArrayDim3() : RefArray<T, size1*size2*size3>() {}
 
   /**
    * Return sizes of dimensions
@@ -541,13 +556,23 @@ class StatArray : public BaseArray<T>
   }
 
   /**
-   * Constuctor for static array
+   * Constuctor for static array that
    * copies data from otherarray in array memory
    */
   StatArray(const StatArray<T, nelems>& otherarray)
     :BaseArray<T>(true, false)
   {
     _array_data = otherarray._array_data;
+  }
+
+  /**
+   * Constuctor for static array that
+   * lets otherarray copy data into array memory
+   */
+  StatArray(const BaseArray<T>& otherarray)
+    :BaseArray<T>(true, false)
+  {
+    otherarray.getDataCopy(_array_data.begin(), nelems);
   }
 
   /**
@@ -673,11 +698,11 @@ class StatArrayDim1 : public StatArray<T, size>
   }
 
   /**
-   * Constuctor for one dimensional array
-   * copies data  from dynamic array in array memory
+   * Constuctor for one dimensional array that
+   * lets otherarray copy data into array memory
    */
-  StatArrayDim1(const DynArrayDim1<T>& otherarray)
-    :StatArray<T, size>(otherarray.getData())
+  StatArrayDim1(const BaseArray<T>& otherarray)
+    :StatArray<T, size>(otherarray)
   {
   }
 
@@ -1005,6 +1030,15 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
   {
   }
 
+  /**
+   * Constuctor for one dimensional array that
+   * lets otherarray copy data into array memory
+   */
+  StatArrayDim2(const BaseArray<T>& otherarray)
+    :StatArray<T, size1*size2>(otherarray)
+  {
+  }
+
   ~StatArrayDim2(){}
 
   /**
@@ -1319,6 +1353,15 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3>
    */
   StatArrayDim3(const T* data)
     :StatArray<T, size1*size2*size3>(data) {}
+
+  /**
+   * Constuctor for one dimensional array that
+   * lets otherarray copy data into array memory
+   */
+  StatArrayDim3(const BaseArray<T>& otherarray)
+    :StatArray<T, size1*size2>(otherarray)
+  {
+  }
 
   /**
    * Default constuctor for two dimensional array
