@@ -57,6 +57,7 @@
 #endif
 
 #include "meta/meta_modelica.h"
+#include <locale.h>
 
 using namespace std;
 using namespace IAEX;
