@@ -127,8 +127,8 @@ void Cvode::initialize()
 
   if (_dimSys <= 0)
   {
-    _idid = -1;
-    throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
+    // Skip initialization of actual CVode solver
+    return;
   }
   else
   {
@@ -381,7 +381,19 @@ void Cvode::solve(const SOLVERCALL action)
         _locStps = 0;
 
         // Solverstart
-        CVodeCore();
+        if (_dimSys > 0)
+        {
+          CVodeCore();
+        }
+        else
+        {
+          _tCurrent = _tEnd;
+          _time_system->setTime(_tEnd);
+          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+          _continuous_system->stepCompleted(_tEnd);
+          if (writeOutput)
+            writeToFile(0, _tCurrent, _h);
+        }
 
       }
 

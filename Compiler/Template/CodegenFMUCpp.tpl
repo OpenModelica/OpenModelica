@@ -484,17 +484,16 @@ template accessRealFunction(SimCode simCode, String direction, String modelIdent
 match modelInfo
 case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numParams=numParams)) then
   let qualifier = if stringEq(direction, "set") then "const"
-  let statesOffset = intMul(2, stringInt(numFMUStateVars(vars.stateVars)))
   <<
   void <%modelIdentifier%>FMU::<%direction%>Real(const unsigned int vr[], int nvr, <%qualifier%> double value[]) {
     for (int i = 0; i < nvr; i++)
       switch (vr[i]) {
         <%vars.stateVars |> var => accessVecVar(direction, var, 0, "__z"); separator="\n"%>
         <%vars.derivativeVars |> var => accessVecVar(direction, var, numStateVars, "__zDot"); separator="\n"%>
-        <%vars.algVars |> var => accessVar(simCode, direction, var, stringInt(statesOffset)); separator="\n"%>
-        <%vars.discreteAlgVars |> var => accessVar(simCode, direction, var, intAdd(stringInt(statesOffset), numAlgVars)); separator="\n"%>
-        <%vars.paramVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal)); separator="\n"%>
-        <%vars.aliasVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(intAdd(stringInt(statesOffset), numAlgVars), numDiscreteReal), numParams)); separator="\n"%>
+        <%vars.algVars |> var => accessVar(simCode, direction, var, intMul(2, numStateVars)); separator="\n"%>
+        <%vars.discreteAlgVars |> var => accessVar(simCode, direction, var, intAdd(intMul(2, numStateVars), numAlgVars)); separator="\n"%>
+        <%vars.paramVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(intMul(2, numStateVars), numAlgVars), numDiscreteReal)); separator="\n"%>
+        <%vars.aliasVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(intAdd(intMul(2, numStateVars), numAlgVars), numDiscreteReal), numParams)); separator="\n"%>
         default:
           std::ostringstream message;
           message << "<%direction%>Real with wrong value reference " << vr[i];
@@ -504,12 +503,6 @@ case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numA
 
   >>
 end accessRealFunction;
-
-template numFMUStateVars(list<SimVar> stateVars)
- "Return number of states without dummy state"
-::=
- if intGt(listLength(stateVars), 1) then listLength(stateVars) else (stateVars |> var => match var case SIMVAR(__) then if stringEq(crefStr(name), "$dummy") then 0 else 1)
-end numFMUStateVars;
 
 template accessVarsFunction(SimCode simCode, String direction, String modelIdentifier, String typeName, String typeImpl, list<SimVar> algVars, list<SimVar> paramVars, list<SimVar> aliasVars)
  "Generates get<%typeName%> or set<%typeName%> function."

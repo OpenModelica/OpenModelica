@@ -1576,10 +1576,6 @@ algorithm
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
-      // check if the Sytems has states
-      // TODO: fix cpp runtime to avoid adding a dummy state
-      dlow =  if ifcpp then BackendDAEUtil.addDummyStateIfNeeded(dlow) else dlow;
-
       // initialization stuff
       (initialEquations, removedInitialEquations, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialEquations(initDAE, removedInitialEquationLst, uniqueEqIndex, {});
 
