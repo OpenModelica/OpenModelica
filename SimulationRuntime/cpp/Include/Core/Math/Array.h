@@ -577,7 +577,7 @@ class StatArray : public BaseArray<T>
   StatArray(const T* data)
     :BaseArray<T>(true, false)
   {
-    memcpy(_array_data.begin(), data, nelems*sizeof(T));
+    std::copy(data, data + nelems, _array_data.begin());
   }
 
   /**
@@ -643,7 +643,7 @@ class StatArray : public BaseArray<T>
    */
   virtual void assign(const T* data)
   {
-    memcpy(_array_data.begin(), data, nelems*sizeof(T));
+    std::copy(data, data + nelems, _array_data.begin());
   }
 
   /**
@@ -678,7 +678,8 @@ class StatArray : public BaseArray<T>
    */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    memcpy(data, _array_data.begin(), n*sizeof(T));
+    const T *array_data = _array_data.data();
+    std::copy(array_data, array_data + n, data);
   }
 
   /**
@@ -1173,7 +1174,8 @@ class DynArray : public BaseArray<T>
    */
   virtual void getDataCopy(T data[], size_t n) const
   {
-    memcpy(data, _multi_array.data(), n*sizeof(T));
+    const T *array_data = _multi_array.data();
+    std::copy(array_data, array_data + n, data);
   }
 
   /**
