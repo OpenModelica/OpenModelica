@@ -125,10 +125,13 @@ void Cvode::initialize()
   _dimSys = _continuous_system->getDimContinuousStates();
   _dimZeroFunc = _event_system->getDimZeroFunc();
 
+  if (_dimSys == 0)
+    _dimSys = 1; // introduce dummy state
+
   if (_dimSys <= 0)
   {
-    // Skip initialization of actual CVode solver
-    return;
+    _idid = -1;
+    throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
   }
   else
   {
@@ -191,6 +194,7 @@ void Cvode::initialize()
     memcpy(_z, _zInit, _dimSys * sizeof(double));
 
     // Get nominal values
+    _absTol[0] = 1.0; // in case of dummy state
     _continuous_system->getNominalStates(_absTol);
     for (int i = 0; i < _dimSys; i++)
       _absTol[i] *= dynamic_cast<ISolverSettings*>(_cvodesettings)->getATol();
@@ -272,7 +276,7 @@ void Cvode::initialize()
   // Check if Colored Jacobians are worth to use
    #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
     _maxColors = _system->getAMaxColors();
-    if(_maxColors < _dimSys)
+    if(_maxColors < _dimSys && _continuous_system->getDimContinuousStates() > 0)
     {
     _idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
     initializeColoredJac();
@@ -381,19 +385,7 @@ void Cvode::solve(const SOLVERCALL action)
         _locStps = 0;
 
         // Solverstart
-        if (_dimSys > 0)
-        {
-          CVodeCore();
-        }
-        else
-        {
-          _tCurrent = _tEnd;
-          _time_system->setTime(_tEnd);
-          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-          _continuous_system->stepCompleted(_tEnd);
-          if (writeOutput)
-            writeToFile(0, _tCurrent, _h);
-        }
+        CVodeCore();
 
       }
 
@@ -719,6 +711,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   int returnValue = 0;
   try
   {
+    f[0] = 0.0; // in case of dummy state
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
     _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
