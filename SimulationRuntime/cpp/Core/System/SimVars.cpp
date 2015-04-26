@@ -87,8 +87,8 @@ bool& SimVars::initBoolVar(size_t i)
 */
 double* SimVars::getStateVector()
 {
-  if (_z_i + _dim_z - 1 < _dim_real)
-    return &_real_vars.get()->get()[_z_i];
+  if (_z_i + _dim_z <= _dim_real)
+    return _dim_real > 0? &_real_vars.get()->get()[_z_i]: NULL;
   else
     throw std::runtime_error("Wrong state vars start index");
 }
@@ -99,10 +99,10 @@ double* SimVars::getStateVector()
 */
 double* SimVars::getDerStateVector()
 {
-  if (_z_i + _dim_z - 1 < _dim_real)
-    return &_real_vars.get()->get()[_z_i + _dim_z];
+  if (_z_i + 2*_dim_z <= _dim_real)
+    return _dim_real > 0? &_real_vars.get()->get()[_z_i + _dim_z]: NULL;
   else
-    throw std::runtime_error("Wrong state vars start index");
+    throw std::runtime_error("Wrong der state vars start index");
 }
 /**
 *  \brief  returns real vars vector of size dim_real
