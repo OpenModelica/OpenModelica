@@ -35,6 +35,15 @@
  *
  */
 
+#ifdef WIN32
+#include <winsock2.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#endif
+
 #include "TLMCoSimulationDialog.h"
 #include "TLMCoSimulationOutputWidget.h"
 #include "VariablesWidget.h"
@@ -60,7 +69,7 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   // manager monitor port
   mpMonitorPortLabel = new Label(tr("Monitor Port:"));
   mpMonitorPortLabel->setToolTip(tr("Set the port for monitoring connections"));
-  mpMonitorPortTextBox = new QLineEdit("5010");
+  mpMonitorPortTextBox = new QLineEdit("12111");
   // interface request mode
   mpInterfaceRequestModeCheckBox = new QCheckBox(tr("Interface Request Mode"));
   mpInterfaceRequestModeCheckBox->setToolTip(tr("Run manager in interface request mode, get information about interface locations"));
@@ -177,6 +186,10 @@ bool TLMCoSimulationDialog::validate()
   return true;
 }
 
+/*!
+ * \brief TLMCoSimulationDialog::createTLMCoSimulationOptions
+ * \return
+ */
 TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
 {
   TLMCoSimulationOptions tlmCoSimulationOptions;
@@ -200,8 +213,26 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     managerArgs.append("-m");
     managerArgs.append(mpMonitorPortTextBox->text());
     // set monitor server:port for monitor process
-    QString monitorPort = "130.236.182.49:";
-    monitorPort.append(mpMonitorPortTextBox->text());
+#define MAXHOSTNAME 1024
+    char myname[MAXHOSTNAME+1];
+    struct hostent *hp;
+#ifdef WIN32
+    WSADATA ws;
+    int d;
+    d = WSAStartup(0x0101,&ws);
+#endif
+    gethostname(myname, MAXHOSTNAME);
+    hp = gethostbyname((const char*) myname);
+    if (hp == NULL) {
+      MessageItem messageItem(MessageItem::TLM, "", false, 0, 0, 0, 0,
+                              tr("Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1")
+                              .arg(QString(myname)), Helper::scriptingKind, Helper::errorLevel);
+      mpMainWindow->getMessagesWidget()->addGUIMessage(messageItem);
+      tlmCoSimulationOptions.setIsValid(false);
+      return tlmCoSimulationOptions;
+    }
+    char* localIP = inet_ntoa (*(struct in_addr *)*hp->h_addr_list);
+    QString monitorPort = QString(localIP) + ":" + mpMonitorPortTextBox->text();
     monitorArgs.append(monitorPort);
   }
   if (!mpServerPortTextBox->text().isEmpty()) {
@@ -227,15 +258,21 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   return tlmCoSimulationOptions;
 }
 
+/*!
+ * \brief TLMCoSimulationDialog::simulate
+ * Starts the TLM co-simulation
+ */
 void TLMCoSimulationDialog::simulate()
 {
   if (validate()) {
     TLMCoSimulationOptions tlmCoSimulationOptions = createTLMCoSimulationOptions();
-    TLMCoSimulationOutputWidget *pTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(tlmCoSimulationOptions, mpMainWindow);
-    int xPos = QApplication::desktop()->availableGeometry().width() - pTLMCoSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::desktop()->availableGeometry().height() - pTLMCoSimulationOutputWidget->frameSize().height() - 20;
-    pTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, pTLMCoSimulationOutputWidget->width(), pTLMCoSimulationOutputWidget->height());
-    pTLMCoSimulationOutputWidget->show();
-    accept();
+    if (tlmCoSimulationOptions.isValid()) {
+      TLMCoSimulationOutputWidget *pTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(tlmCoSimulationOptions, mpMainWindow);
+      int xPos = QApplication::desktop()->availableGeometry().width() - pTLMCoSimulationOutputWidget->frameSize().width() - 20;
+      int yPos = QApplication::desktop()->availableGeometry().height() - pTLMCoSimulationOutputWidget->frameSize().height() - 20;
+      pTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, pTLMCoSimulationOutputWidget->width(), pTLMCoSimulationOutputWidget->height());
+      pTLMCoSimulationOutputWidget->show();
+      accept();
+    }
   }
 }

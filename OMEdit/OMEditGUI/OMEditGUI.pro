@@ -198,7 +198,8 @@ win32 {
   LIBS += -L../../build/lib/omc -lOMPlot -lomqwt \
     -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L../../Parser -lantlr3 \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
+    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
+    -lws2_32
   INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
     ../../3rdParty/qwt/build/include \
     ../../OMPlot/OMPlotGUI \

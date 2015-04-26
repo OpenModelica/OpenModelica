@@ -63,6 +63,7 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(TLMCoSimulationOptions 
   // open manager log button
   mpOpenManagerLogFileButton = new QPushButton(tr("Open Manager Log File"));
   connect(mpOpenManagerLogFileButton, SIGNAL(clicked()), SLOT(openManagerLogFile()));
+  mpOpenManagerLogFileButton->setEnabled(tlmCoSimulationOptions.getManagerArgs().contains("-d"));
   // manager buttons layout
   QHBoxLayout *pManagerButtonsHorizontalLayout = new QHBoxLayout;
   pManagerButtonsHorizontalLayout->addWidget(mpStopManagerButton);
@@ -79,6 +80,7 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(TLMCoSimulationOptions 
   // open monitor log button
   mpOpenMonitorLogFileButton = new QPushButton(tr("Open Monitor Log File"));
   connect(mpOpenMonitorLogFileButton, SIGNAL(clicked()), SLOT(openMonitorLogFile()));
+  mpOpenMonitorLogFileButton->setEnabled(tlmCoSimulationOptions.getMonitorArgs().contains("-d"));
   // monitor buttons layout
   QHBoxLayout *pMonitorButtonsHorizontalLayout = new QHBoxLayout;
   pMonitorButtonsHorizontalLayout->addWidget(mpStopMonitorButton);

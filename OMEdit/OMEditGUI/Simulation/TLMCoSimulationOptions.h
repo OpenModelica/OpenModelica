@@ -44,6 +44,7 @@ class TLMCoSimulationOptions
 {
 public:
   TLMCoSimulationOptions() {
+    setIsValid(true);
     setClassName("");
     setFileName("");
     setServerPort("11111");
@@ -55,6 +56,8 @@ public:
     setMonitorDebugMode(false);
   }
 
+  void setIsValid(bool isValid) {mValid = isValid;}
+  bool isValid() {return mValid;}
   void setClassName(QString className) {mClassName = className;}
   QString getClassName() {return mClassName;}
   void setFileName(QString fileName) {mFileName = fileName;}
@@ -78,6 +81,7 @@ public:
   void setMonitorArgs(QStringList monitorArgs) {mMonitorArgs = monitorArgs;}
   QStringList getMonitorArgs() {return mMonitorArgs;}
 private:
+  bool mValid;
   QString mClassName;
   QString mFileName;
   QString mServerPort;
