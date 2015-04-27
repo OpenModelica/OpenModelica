@@ -153,13 +153,13 @@ void Kinsol::initialize()
             idid = KINSetUserData(_kinMem, _data);
             if (check_flag(&idid, (char *)"KINSetUserData", 1))
                 throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
-            
+
             #ifdef USE_SUNDIALS_LAPACK
               KINLapackDense(_kinMem, _dimSys);
             #else
               KINDense(_kinMem, _dimSys);
             #endif //USE_SUNDIALS_LAPACK
-            
+
             idid = KINSetErrFile(_kinMem, NULL);
             idid = KINSetNumMaxIters(_kinMem, 1000);
             //idid = KINSetEtaForm(_kinMem, KIN_ETACHOICE2);
@@ -232,7 +232,7 @@ void Kinsol::solve()
         for(int i=0;i<_dimSys;i++) // Reset Scaling
           _fScale[i] = 1.0;
 
-       
+
         solveNLS();
         if(_iterationStatus == DONE)
           return;
