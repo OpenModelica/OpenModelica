@@ -3603,7 +3603,7 @@ algorithm
   then s1+s2+s3;
   case(_)
     then "NO_LOOP";
-  end match;    
+  end match;
 end printLoopInfoStr;
 
 protected function printIterCrefStr"outputs a string representation of a IterCref"

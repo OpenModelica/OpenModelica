@@ -2543,7 +2543,7 @@ protected
   Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   BackendDAE.EquationKind kind;
   Integer subPartitionIndex;
-  
+
   BackendDAE.LoopInfo loopInfo;
 algorithm
   try

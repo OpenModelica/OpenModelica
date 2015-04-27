@@ -65,7 +65,7 @@ protected uniontype Eq
   record FOR_EQ
     BackendDAE.Equation eq;
     Integer startIdx;
-    Integer endIdx;  
+    Integer endIdx;
     Integer step;
   end FOR_EQ;
 end Eq;
@@ -86,8 +86,8 @@ protected
   list<BackendDAE.LoopInfo> loopInfos;
   list<tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>>> arrayCrefs; //headCref, range, tailcrefs
   list<BackendDAE.Var> varLst, arrayVars;
-  
-  list<BackendDAE.Equation> classEqs,mixEqs,nonArrEqs;  
+
+  list<BackendDAE.Equation> classEqs,mixEqs,nonArrEqs;
   list<Eq> mixLoop, classLoop;
 algorithm
   BackendDump.dumpEquationList(eqsIn,"eqsIn");
@@ -95,28 +95,28 @@ algorithm
   varLst := BackendVariable.varList(varsIn);
   (varLst, arrayVars) := List.fold(varLst, getArrayVars,({},{}));
   BackendDump.dumpVarList(varLst,"varLst");
-  
+
   // get the arrayCrefs
   (arrayCrefs,_) := List.fold(arrayVars,getArrayVarCrefs,({},{}));
   BackendDump.dumpVarList(arrayVars,"arrayVars");
   print("arrayCrefs: "+stringDelimitList(List.map(List.map(arrayCrefs,Util.tuple31),ComponentReference.printComponentRefStr),"\n|")+"\n\n");
   print("ranges: "+stringDelimitList(List.map(List.map(arrayCrefs,Util.tuple32),intString),"\n|")+"\n\n");
   print("tails: "+stringDelimitList(List.map(List.map(arrayCrefs,Util.tuple33),ComponentReference.printComponentRefListStr),"\n|")+"\n\n");
-  
+
   // dispatch the equations in classequations, mixedequations, non-array equations
   ((classEqs,mixEqs,nonArrEqs)) := List.fold1(eqsIn, dispatchLoopEquations,List.map(arrayCrefs,Util.tuple31),({},{},{}));
-  
+
   BackendDump.dumpEquationList(classEqs,"classEqs");
   BackendDump.dumpEquationList(mixEqs,"mixEqs");
   BackendDump.dumpEquationList(nonArrEqs,"nonArrEqs");
-  
+
   //add loopinfos
   classEqs := addLoopInfosForClassEqs(classEqs, List.map(arrayCrefs,Util.tuple31), {});
   mixEqs := addLoopInfosForMixEqs(mixEqs, List.map(arrayCrefs,Util.tuple31), {});
   BackendDump.dumpEquationList(classEqs,"classEqs2");
   BackendDump.dumpEquationList(mixEqs,"mixEqs2");
   BackendDump.dumpEquationList(nonArrEqs,"nonArrEqs2");
-  
+
   //reduce accumulated loop equations, build loop equations
   mixEqs := List.fold1(mixEqs,buildIteratedEquation,arrayCrefs,{});
 
@@ -125,7 +125,7 @@ algorithm
     BackendDump.dumpEquationList(mixEqs,"mixEqs3");
   eqsOut := listAppend(listAppend(nonArrEqs,listAppend(classEqs,mixEqs)));
   BackendDump.dumpEquationList(eqsOut,"eqsOut");
-  
+
   //shorten the array variables
   arrVars := List.fold2(arrayCrefs,shortenArrayVars,BackendVariable.listVar1(arrayVars),2,{});
   varLst := listAppend(varLst,arrVars);
@@ -187,7 +187,7 @@ algorithm
   then BackendDAE.EQUATION(lhs,rhs,source,attr);
   else
     equation
-    then eqIn;   
+    then eqIn;
   end matchcontinue;
 end reduceLoopEquations;
 
@@ -206,7 +206,7 @@ algorithm
       BackendDAE.Equation eq;
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.IterCref> iterCrefs;
-      
+
   case(BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(crefs=iterCrefs as BackendDAE.ITER_CREF()::_, startIt=DAE.ICONST(startIt),endIt=DAE.ICONST(endIt)))),_,_)
     algorithm
       // handle no accumulated equations here
@@ -223,7 +223,7 @@ algorithm
     algorithm
       // accumulated equations, remove higher subscripts, no duplication
       eq := reduceLoopEquations(eqIn,arrayCrefs);
-    then eq::foldIn;   
+    then eq::foldIn;
   else
     then eqIn::foldIn;
   end matchcontinue;
@@ -247,7 +247,7 @@ algorithm
       (rhs,(_,iterCrefs)) = Expression.traverseExpTopDown(rhs,setIteratedSubscriptInCref,(idx,iterCrefs));
   then BackendDAE.EQUATION(lhs,rhs,source,attr);
   else
-    then eqIn;   
+    then eqIn;
   end matchcontinue;
 end buildIteratedEquation1;
 
@@ -334,22 +334,22 @@ algorithm
         //print("crerfsub: "+intString(getIndexSubScript(listHead(ComponentReference.crefSubs(cref))))+" <> "+intString(maxSub)+"\n");
         //print("reduce cref: "+ComponentReference.crefStr(cref)+" is higher sub: "+boolString(b)+"\n");
   then (expIn,b);
-    
+
   case(DAE.BINARY(exp1=exp1, operator=op, exp2=exp2),_)
     equation
       (exp1,b1) = reduceLoopExpressions(exp1,maxSub);
       (exp2,b2) = reduceLoopExpressions(exp2,maxSub);
         //print("exp: "+ExpressionDump.printExpStr(expIn)+" b1: "+boolString(b1)+" b2: "+boolString(b2)+"\n");
-      if b1 and not b2 then 
+      if b1 and not b2 then
         exp = exp1;
       elseif b2 and not b1 then
         exp = exp2;
       else
         exp = DAE.BINARY(exp1,op,exp2);
-      end if;     
+      end if;
         //print("expOut: "+ExpressionDump.printExpStr(exp)+"\n");
   then (exp,boolOr(b1,b2));
-  
+
   case(DAE.UNARY(operator=op, exp=exp),_)
     equation
       (exp,b) = reduceLoopExpressions(exp,maxSub);
@@ -394,7 +394,7 @@ algorithm
       rest = addLoopInfosForClassEqs(rest, arrayCrefs, eq::foldIn);
     then
       rest;
-  else 
+  else
     then foldIn;
   end matchcontinue;
 end addLoopInfosForClassEqs;
@@ -430,7 +430,7 @@ algorithm
         (iterCrefs,startIt) = getIterCrefsFromEqs(similarEqs,arrayCrefs);
           //print("iters "+stringDelimitList(List.map(iterCrefs,BackendDump.printIterCrefStr),"\n")+"\n");
         loopInfo = BackendDAE.LOOP(DAE.ICONST(startIt),DAE.ICONST(intAdd(startIt,range)),iterCrefs);
-      else 
+      else
         // there is an iterated operation e.g. x[1]+x[2]+x[3]+...
         (iterCrefs,startIt,endIt) = getAccumulatedIterCrefsFromEqs(similarEqs,arrayCrefs);
         if listEmpty(iterCrefs) then loopInfo = BackendDAE.NO_LOOP();
@@ -441,7 +441,7 @@ algorithm
       rest = addLoopInfosForMixEqs(rest, arrayCrefs, eq::foldIn);
     then
       rest;
-  else 
+  else
     then foldIn;
   end matchcontinue;
 end addLoopInfosForMixEqs;
@@ -545,7 +545,7 @@ protected function crefPartlyEqualToCrefs
   output Boolean b;
 algorithm
   b := List.exist1(crefLst,crefPartlyEqual,cref0);
-end crefPartlyEqualToCrefs; 
+end crefPartlyEqualToCrefs;
 
 protected function crefPartlyEqual
   input DAE.ComponentRef cref0;
@@ -566,7 +566,7 @@ algorithm
       then cref0.ident ==cref1.ident;
   else
     then false;
-  end matchcontinue; 
+  end matchcontinue;
 end crefPartlyEqual;
 
 protected function getArrayVarCrefs"gets the array-cref and its dimension from a var."
@@ -638,13 +638,13 @@ algorithm
     false = ComponentReference.crefEqual(cref0,cref1);
     (tplLst,varLst) = addToArrayCrefLst(rest,varIn,tplRef,(cref0,idx0,tailCrefs0)::tplLstFoldIn,varLstIn);
   then (tplLst,varLst);
-    
+
   case({},_,(cref1,idx1,tailCrefs1),_,_)
     equation
       // this cref is new, append
     tplLst = (cref1,idx1,tailCrefs1)::tplLstFoldIn;
   then (tplLst,varIn::varLstIn);
-    
+
   end matchcontinue;
 end addToArrayCrefLst;
 
@@ -762,18 +762,18 @@ algorithm
     i0 = intMax(i0,i1);
     rest = BackendDAE.ITER_CREF(cref0, DAE.ICONST(i0))::rest;
   then listAppend(foldLst,rest);
-    
+
   case(BackendDAE.ITER_CREF(cref=cref0, iterator=DAE.ICONST(i0))::rest, BackendDAE.ITER_CREF(cref=cref1, iterator=DAE.ICONST(i1)),_)
     equation
       // not equal, go to next cref
       rest = addMaxItCrefs1(rest,itCref1, listHead(itCrefLstIn)::foldLst);
     then rest;
-      
+
   case({}, BackendDAE.ITER_CREF(cref=cref0, iterator=DAE.ICONST(i1)),_)
     equation
       // this itCref does not exist , append
     then itCref1::foldLst;
-      
+
   end matchcontinue;
 end addMaxItCrefs1;
 
@@ -804,7 +804,7 @@ algorithm
     algorithm
       annos := List.fold1(comments,hasAnnotation,annotationIdent,{});  //
       print("anno: "+stringDelimitList(List.map(annos,Dump.printExpStr),"|n")+"\n");
-      annotations := List.unique(listAppend(annos,annotations)); 
+      annotations := List.unique(listAppend(annos,annotations));
    then (eqIn::eqs,annotations);
    else
      then tplIn;

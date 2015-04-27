@@ -2435,7 +2435,7 @@ algorithm
         // strip the cref here
       then
         (makeCrefIdent(id,ty,{}),idx,SOME(cr));
-        
+
     case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst=subs, ident=id))
       equation
         // continue
@@ -2808,19 +2808,19 @@ algorithm
       DAE.ComponentRef prefix, last;
     case(_,0)
       then (inCref);
-      
+
     case(DAE.CREF_QUAL(id, ty, subs, last),1)
       then DAE.CREF_IDENT(id, ty, subs);
-        
+
     case(DAE.CREF_IDENT(id, ty, subs),_)
       then inCref;
 
     case (DAE.CREF_QUAL(id, ty, subs, last),)
       equation
-        prefix = firstNCrefs(last,nIn-1);     
+        prefix = firstNCrefs(last,nIn-1);
       then
         DAE.CREF_QUAL(id, ty, subs, prefix);
-    
+
       else
         then (inCref);
 
