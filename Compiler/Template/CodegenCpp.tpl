@@ -4165,14 +4165,13 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
   let &varDecls = buffer "" /*BUFD*/
   let &inputAssign = buffer "" /*BUFD*/
   let &outputAssign = buffer "" /*BUFD*/
-  let &outputAllocate = buffer ""
   // make sure the variable is named "out", doh!
    let retVar = if outVars then '_<%fname%>'
   let &outVarInits = buffer ""
   let callPart =  match outVars   case {var} then
-                    extFunCall(fn, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, &outputAllocate)
+                    extFunCall(fn, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
                   else
-                    extFunCall(fn, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, true, &outputAllocate)
+                    extFunCall(fn, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, true)
   let _ = ( outVars |> var hasindex i1 fromindex 1 =>
             varInit(var, retVar, i1, &varDecls, &outVarInits, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ///TOODOO
             ; empty /* increase the counter! */
@@ -4223,9 +4222,8 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
     <%inputAssign%>
-    /* functionBodyExternalFunction: outputAlloc */
+    /* functionBodyExternalFunction: outVarInits */
     <%outVarInits%>
-    <%outputAllocate%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
     <%outputAssign%>
@@ -4352,7 +4350,7 @@ end outDecl;
 
 
 template extFunCall(Function fun, Text &preExp, Text &varDecls, Text &inputAssign, Text &outputAssign, SimCode simCode, Text& extraFuncs,
-                    Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean useTuple, Text &outputAllocate)
+                    Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean useTuple)
  "Generates the call to an external function."
 ::=
 match fun
@@ -4363,13 +4361,13 @@ case EXTERNAL_FUNCTION(__) then
                            stateDerVectorName, useFlatArrayNotation);
            separator="\n")
   match language
-  case "C" then extFunCallC(fun, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, useTuple, &outputAllocate)
-  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, useTuple, &outputAllocate)
+  case "C" then extFunCallC(fun, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, useTuple)
+  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, useTuple)
 end extFunCall;
 
 
 template extFunCallC(Function fun, Text &preExp, Text &varDecls, Text &inputAssign, Text &outputAssign, SimCode simCode, Text& extraFuncs,
-                     Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean useTuple, Text &outputAllocate)
+                     Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean useTuple)
  "Generates the call to an external C function."
 ::=
 match fun
@@ -4386,7 +4384,7 @@ case EXTERNAL_FUNCTION(__) then
   >>
     else ''
   let args = (extArgs |> arg =>
-      extArg(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, &outputAllocate)
+      extArg(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator=", ")
   let returnAssign = match extReturn case SIMEXTARG(cref=c) then
       '<%extVarName2(c)%> = '
@@ -4457,7 +4455,7 @@ end expTypeModelica;
 
 
 template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssign, Text &outputAssign, SimCode simCode, Text& extraFuncs,
-                Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text &outputAllocate)
+                Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Helper to extFunCall."
 ::=
   match extArg
@@ -4465,7 +4463,7 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
     //let name = if oi then 'out.targTest5<%oi%>' else contextCref2(c,contextFunction)
   let name = contextCref2(c,contextFunction)
     let shortTypeStr = expTypeShort(t)
-  let arrayArg = extCArrayArg(extArg, &preExp, &varDecls, &inputAssign /*BUFD*/, &outputAssign /*BUFD*/, &outputAllocate)
+  let arrayArg = extCArrayArg(extArg, &preExp, &varDecls, &inputAssign /*BUFD*/, &outputAssign /*BUFD*/)
   <<
   <%arrayArg%>
   >>
@@ -4489,7 +4487,7 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
 end extArg;
 
 
-template extCArrayArg(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, Text &inputAssign /*BUFD*/, Text &outputAssign /*BUFD*/, Text &outputAllocate)
+template extCArrayArg(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, Text &inputAssign /*BUFD*/, Text &outputAssign /*BUFD*/)
  "Function to convert arrays to external C"
 ::=
 match extArg
@@ -4584,7 +4582,7 @@ template extFunCallF77(Function fun, Text &preExp,
   Text &varDecls, Text &inputAssign, Text &outputAssign, SimCode simCode,
   Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
   Text stateDerVectorName /*=__zDot*/,
-  Boolean useFlatArrayNotation, Boolean useTuple, Text &outputAllocate)
+  Boolean useFlatArrayNotation, Boolean useTuple)
  "Generates the call to an external F77 function."
 ::=
   match fun
@@ -4593,7 +4591,7 @@ template extFunCallF77(Function fun, Text &preExp,
     let args = (extArgs |> arg =>
       extArgF77(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode,
                 &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
-                stateDerVectorName, useFlatArrayNotation, &outputAllocate);
+                stateDerVectorName, useFlatArrayNotation);
       separator=", ")
     let returnVar = match extReturn
       case SIMEXTARG(cref=c) then '<%contextCref2(c, contextFunction)%>'
@@ -4608,7 +4606,7 @@ end extFunCallF77;
 template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
   Text &inputAssign, Text &outputAssign, SimCode simCode, Text& extraFuncs,
   Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName,
-  Boolean useFlatArrayNotation, Text &outputAllocate)
+  Boolean useFlatArrayNotation)
  "Helper to extFunCall. Creates one F77 call argument."
 ::=
   match extArg
