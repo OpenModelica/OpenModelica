@@ -65,7 +65,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-$(datadir)/omc/omc_communication.idl: Compiler/runtime/omc_communication.idl
+$(datadir)/omc/omc_communication.idl: mkbuilddirs Compiler/runtime/omc_communication.idl
 	cp -a "$<" "$@"
 idl: $(datadir)/omc/omc_communication.idl
 

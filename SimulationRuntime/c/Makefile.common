@@ -82,6 +82,8 @@ RUNTIMEUTIL_HEADERS = \
 ./util/omc_error.h \
 ./util/omc_msvc.h \
 ./util/omc_spinlock.h \
+./util/read_matlab4.c \
+./util/read_matlab4.h \
 ./util/read_write.h \
 ./util/real_array.h \
 ./util/ringbuffer.h \
