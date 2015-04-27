@@ -79,7 +79,7 @@ void OptionsDialog::readSettings()
   readModelicaTextSettings();
   emit modelicaTextSettingsChanged();
   readTLMSettings();
-   emit TLMSettingsChanged();
+  emit TLMSettingsChanged();
   readGraphicalViewsSettings();
   readSimulationSettings();
   readMessagesSettings();
@@ -2154,7 +2154,6 @@ TLMEditorPage::TLMEditorPage(OptionsDialog *pOptionsDialog)
                      "\t</Connections>\n"
                      "</Model>\n");
   mpPreviewPlainTextBox->setPlainText(previewText);
-
   // highlight preview textbox
   TLMHighlighter *pTLMHighlighter = new TLMHighlighter(this, mpPreviewPlainTextBox);
   connect(this, SIGNAL(updatePreview()), pTLMHighlighter, SLOT(settingsChanged()));

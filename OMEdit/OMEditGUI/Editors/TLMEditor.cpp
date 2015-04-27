@@ -201,6 +201,10 @@ void TLMHighlighter::highlightMultiLine(const QString &text)
 //! Reimplementation of QSyntaxHighlighter::highlightBlock
 void TLMHighlighter::highlightBlock(const QString &text)
 {
+  /* Only highlight the text if user has enabled the syntax highlighting */
+  if (!mpTLMEditorPage->getSyntaxHighlightingCheckbox()->isChecked()) {
+    return;
+  }
   setCurrentBlockState(0);
   setFormat(0, text.length(), mpTLMEditorPage->getTextRuleColor());
   foreach (const HighlightingRule &rule, mHighlightingRules)
