@@ -4552,7 +4552,7 @@ end extFunCallVardecl;
 template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls, SimCode simCode,
   Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
   Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Declare a local variable in &varDecls and initialize it in &preExp"
+ "Declare and initialize a local variable in &preExp"
 ::=
   match var
   case var as VARIABLE(__) then
@@ -4563,20 +4563,19 @@ template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls, SimCode sim
                &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
                stateDerVectorName, useFlatArrayNotation)
       else ""
-    let _ = (instDims |> exp =>
-      daeExp(exp, contextFunction, &preExp, &varDecls, simCode,
-             &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
-             stateDerVectorName, useFlatArrayNotation);
-      separator=", ")
     if instDims then
       let nDims = listLength(instDims)
-      let elType = varType(var)
-      let &varDecls += 'DynArrayDim<%nDims%><<%elType%>> <%varName%>;<%\n%>'
-      let &preExp += if defaultValue then '<%varName%>.assign(<%defaultValue%>);<%\n%>'
+      let dims = (instDims |> exp =>
+        daeExp(exp, contextFunction, &preExp, &varDecls, simCode,
+               &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
+               stateDerVectorName, useFlatArrayNotation);
+        separator=", ")
+      let initializer = if defaultValue then ' = <%defaultValue%>' else '(<%dims%>)'
+      let &preExp += 'DynArrayDim<%nDims%><<%varType(var)%>> <%varName%><%initializer%>;<%\n%>'
       ''
     else
-      let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
-      let &preExp += if defaultValue then '<%varName%> = <%defaultValue%>;<%\n%>'
+      let initializer = if defaultValue then ' = <%defaultValue%>'
+      let &preExp += '<%varType(var)%> <%varName%><%initializer%>;<%\n%>'
       ''
 end extFunCallBiVar;
 
@@ -10702,9 +10701,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
 end daeExpReduction;
 
 
-
-
-
 template daeExpSize(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for a size expression."
@@ -10714,6 +10710,17 @@ template daeExpSize(Exp exp, Context context, Text &preExp, Text &varDecls, SimC
     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let dimPart = daeExp(dim, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '<%expPart%>.getDim(<%dimPart%>)'
+  case SIZE(exp=CREF(__)) then
+    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let tmp = tempDecl("vector<size_t>", &varDecls)
+    let &preExp +=
+      <<
+      <%tmp%> = <%expPart%>.getDims();
+      DynArrayDim1<int> <%tmp%>_size(<%tmp%>.size());
+      for (size_t <%tmp%>_i = 1; <%tmp%>_i <= <%tmp%>.size(); <%tmp%>_i++)
+        <%tmp%>_size(<%tmp%>_i) = (int)<%tmp%>[<%tmp%>_i-1];<%\n%>
+      >>
+    '<%tmp%>_size'
   else "size(X) not implemented"
 end daeExpSize;
 
@@ -11430,26 +11437,26 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var3 = daeExp(e3, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     'semiLinear(<%var1%>,<%var2%>,<%var3%>)'
 
-  case CALL(path=IDENT(name="max"), expLst={array}) then
+  case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     //let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let arr_tp_str = expTypeFromExpShort(array)
-    let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
+    let arr_tp_str = expTypeShort(ty)
+    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).second;<%\n%>'
     '<%tvar%>'
-  case CALL(path=IDENT(name="sum"), expLst={array}) then
+  case CALL(path=IDENT(name="sum"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     //let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let arr_tp_str = expTypeFromExpShort(array)
-    let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
+    let arr_tp_str = expTypeShort(ty)
+    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = sum_array<<%arr_tp_str%>>(<%expVar%>);<%\n%>'
     '<%tvar%>'
 
-  case CALL(path=IDENT(name="min"), expLst={array}) then
+  case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     //let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let arr_tp_str = expTypeFromExpShort(array)
-    let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
+    let arr_tp_str = expTypeShort(ty)
+    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).first;<%\n%>'
     '<%tvar%>'
 
