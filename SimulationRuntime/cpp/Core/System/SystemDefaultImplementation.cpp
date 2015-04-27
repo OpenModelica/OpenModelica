@@ -1,6 +1,6 @@
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-#include "FactoryExport.h"
+#include <Core/System/FactoryExport.h>
 #include <Core/System/EventHandling.h>
 #include <Core/System/SystemDefaultImplementation.h>
 #include <Core/System/AlgLoopSolverFactory.h>

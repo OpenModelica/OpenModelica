@@ -1,5 +1,5 @@
 #include <Core/Modelica.h>
-#include "FactoryExport.h"
+#include <Core/System/FactoryExport.h>
 #include <Core/System/PreVariables.h>
 #include <Core/System/DiscreteEvents.h>
 #include <Core/Math/Functions.h>
