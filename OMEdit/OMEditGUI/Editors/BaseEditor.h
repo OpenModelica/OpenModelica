@@ -146,7 +146,6 @@ public slots:
   void showTabsAndSpaces(bool On);
   void toggleBreakpoint();
   virtual void toggleCommentSelection() = 0;
-  void indentOrUnindent(bool doIndent);
 };
 
 class LineNumberArea : public QWidget

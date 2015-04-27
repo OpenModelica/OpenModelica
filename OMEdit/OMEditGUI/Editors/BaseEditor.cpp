@@ -781,17 +781,6 @@ void BaseEditor::toggleBreakpoint()
 }
 
 /*!
- * \brief BaseEditor::indentOrUnindent
- * Indents or unindents the code.
- * \param doIndent
- * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
- */
-void BaseEditor::indentOrUnindent(bool doIndent)
-{
-  mpPlainTextEdit->indentOrUnindent(doIndent);
-}
-
-/*!
  * \class FindReplaceWidget
  * Creates a widget within editor for find and replace.
  */

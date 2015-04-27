@@ -2143,22 +2143,15 @@ TLMEditorPage::TLMEditorPage(OptionsDialog *pOptionsDialog)
   mpPreviewPlainTextBox = new QPlainTextEdit;
   mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
   QString previewText;
-  previewText.append("<!-- The root node is the meta-model -->\n"
-                     "<Model Name=\"Pendulum\">\n"
+  previewText.append("<!-- This is a comment. -->\n"
+                     "<Model Name=\"model\">\n"
                      "\t<SubModels>\n"
-                     "\t\t<SubModel Name=\"shaft1\"\n"
-                     "\t\t\tStartCommand=\"StartTLMOpenModelica\"\n"
-                     "\t\t\tExactStep=\"0\"\n"
-                     "\t\t\tModelFile=\"shaft1.mo\">\n"
+                     "\t\t<SubModel Name=\"submodel\">\n"
                      "\t\t</SubModel>\n"
                      "\t</SubModels>\n"
                      "\t<Connections>\n"
-                     "\t\t<Connection From=\"shaft1.tlm\" To=\"shaft2.tlm\"\n"
-                     "\t\tDelay=\"1e-4\" Zf=\"1e4\" Zfr=\"1e2\" alpha=\"0.2\"/>\n"
+                     "\t\t<Connection From=\"from\" To=\"to\">\n"
                      "\t</Connections>\n"
-                     "\t<SimulationParams ManagerPort=\"11113\"\n"
-                     "\t\tStartTime=\"0\"\n"
-                     "\t\tStopTime=\"1\"/>\n"
                      "</Model>\n");
   mpPreviewPlainTextBox->setPlainText(previewText);
 
