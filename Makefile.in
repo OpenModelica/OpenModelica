@@ -233,7 +233,7 @@ Makefile: Makefile.in config.status
 
 config.status: configure
 	./config.status -recheck
-configure: configure.in
+configure: configure.ac
 	autoconf
 
 emcc: msl-external-libs-emcc emcc-simulationruntime
