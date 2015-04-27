@@ -656,7 +656,7 @@ int callSolver(DATA* simData, string init_initMethod, string init_file,
       }
     }
   }
-  /* if no states are present, than we can
+  /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
   if (simData->modelData.nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_EULER) {
