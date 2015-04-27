@@ -440,6 +440,8 @@ constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(135, "addScaledVars", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state"));
 constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(136, "addScaledVarsInput", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input"));
+constant DebugFlag VECTORIZE = DEBUG_FLAG(137, "vectorize", false,
+  Util.gettext("Activates vectorization in the backend."));
 
 
 
@@ -584,7 +586,8 @@ constant list<DebugFlag> allDebugFlags = {
   REDUCE_DYN_OPT,
   VISUAL_XML,
   ADD_SCALED_VARS,
-  ADD_SCALED_VARS_INPUT
+  ADD_SCALED_VARS_INPUT,
+  VECTORIZE
 };
 
 public

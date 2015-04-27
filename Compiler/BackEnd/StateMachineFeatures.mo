@@ -341,7 +341,7 @@ protected
   list<tuple<DAE.ComponentRef,list<Composition>>> refiningFiltered;
 algorithm
   AUTOMATA_EQS(vars, knowns, eqs) := synEqsAcc;
-  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0, BackendDAE.NO_LOOP());
 
   R(initialState, refining) := comp;
   flatA := List.find(flatAs, function findInitialState(crefCmp=initialState));
@@ -482,7 +482,7 @@ algorithm
   outStateInnerOuters := {};
   outLocalEqns := {};
   sharedCrefToStateExps := HashTableExpToIndexExp.emptyHashTable();
-  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0);
+  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0, BackendDAE.NO_LOOP());
 
   preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
   activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
@@ -627,7 +627,7 @@ algorithm
   DAE.CREF(componentRef=componentRef, ty=ty) := varCRefToCheck;
   tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource);
   callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0);
+  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0, BackendDAE.NO_LOOP());
 
   activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
   activeResetRefExp := DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT);
@@ -843,7 +843,7 @@ algorithm
   eqExp := DAE.RELATION(DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
   // SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
   andExp := DAE.LBINARY(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
-  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0, BackendDAE.NO_LOOP());
   eqn := BackendDAE.EQUATION(DAE.CREF(activePlotIndicatorRef, DAE.T_BOOL_DEFAULT), andExp, DAE.emptyElementSource, bindingKind);
 end synthesizeAutomatonEqsCreateActiveIndication;
 
@@ -1162,7 +1162,7 @@ algorithm
 
   // ***** Create new governing equations *****
   eqs := {};
-  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0, BackendDAE.NO_LOOP());
 
   //input Boolean c[size(t,1)] "Transition conditions sorted in priority";
   // Delayed transitions are realized by "c[i] = previous(cImmediate[i])"
@@ -2543,11 +2543,13 @@ protected
   Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   BackendDAE.EquationKind kind;
   Integer subPartitionIndex;
+  
+  BackendDAE.LoopInfo loopInfo;
 algorithm
   try
     BackendDAE.EQUATION(exp,scalar,source,attr) := inEq;
     DAE.CREF(componentRef=left) := exp;
-    BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex) := attr;
+    BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex, loopInfo) := attr;
     // walk through scalar, replace previous(x) by pre(x)
     scalar := Expression.traverseExpBottomUp(scalar, subsPreForPrevious, NONE());
     // sample(0, samplingTime)
@@ -2555,7 +2557,7 @@ algorithm
     whenEquation := BackendDAE.WHEN_EQ(expCond, left, scalar, NONE());
     size := 1; // Fixme what is "size" for? does it reference the "sample index" of a corresponding (time)event BackendDAE.Shared.eventInfo.timeEvents
     outEq := BackendDAE.WHEN_EQUATION(size, whenEquation, source,
-      BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION(), subPartitionIndex));
+      BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION(), subPartitionIndex, loopInfo));
   else
     print("wrapInWhenHack: I FAILED MISERABLY FOR: " + anyString(inEq) + "\n");
     fail();

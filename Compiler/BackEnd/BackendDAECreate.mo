@@ -74,6 +74,7 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import VarTransform;
+protected import Vectorization;
 
 protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
@@ -122,6 +123,9 @@ algorithm
   extVars := BackendVariable.listVar(extvarlst);
   whenclauses_1 := listReverse(whenclauses);
   aliasVars := BackendVariable.emptyVars();
+  if Flags.isSet(Flags.VECTORIZE) then
+    (vars,eqns) := Vectorization.buildForLoops(vars,eqns);
+  end if;
   // handle alias equations
   (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1);
   vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
@@ -515,7 +519,7 @@ algorithm
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
         (e2, src) := Inline.inlineExp(e2, (SOME(inFunctions), {DAE.NORM_INLINE()}), src);
         e1 := Expression.crefExp(cr);
-        attr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+        attr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0, BackendDAE.NO_LOOP());
         outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
       then
         ();
@@ -1532,7 +1536,7 @@ algorithm
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))::inEqns;
 
     // array types to array equations
     case (_, _, _, _, _, _)
@@ -1550,7 +1554,7 @@ algorithm
         true = Types.isTuple(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))::inEqns;
 
     // other types
     case (_, _, _, _, _, _)
@@ -1562,7 +1566,7 @@ algorithm
         false = b1 or b2 or b3;
         //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
-        BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::inEqns;
+        BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))::inEqns;
     else
       equation
         // show only on failtrace!
@@ -1608,12 +1612,12 @@ algorithm
         ds = List.map1(ds, intMul, i);
         //For COMPLEX_EQUATION
         //i = List.fold(ds, intMul, 1);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::iAcc;
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))::iAcc;
 
     case (_, _, _, _, _, _)
       equation
         ds = Expression.dimensionsSizes(dims);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::iAcc;
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))::iAcc;
   end matchcontinue;
 end lowerArrayEqn;
 
@@ -1631,7 +1635,7 @@ algorithm
       list<DAE.Exp> e1lst, e2lst;
     case ({}, {}, _, _, _) then iAcc;
     case (e1::e1lst, e2::e2lst, _, _, _)
-      then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))::iAcc);
+      then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))::iAcc);
   end match;
 end generateEquations;
 

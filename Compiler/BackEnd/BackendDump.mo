@@ -3573,5 +3573,56 @@ algorithm
   end matchcontinue;
 end printCompInfo;
 
+protected function printEqAtts
+  input BackendDAE.EquationAttributes atts;
+  output String s;
+protected
+  BackendDAE.LoopInfo li;
+algorithm
+  BackendDAE.EQUATION_ATTRIBUTES(loopInfo=li) := atts;
+  s := printLoopInfoStr(li);
+end printEqAtts;
+
+protected function printLoopInfoStr"outputs a string representation of a loopInfo"
+  input BackendDAE.LoopInfo loopInfoIn;
+  output String s;
+algorithm
+  s := match(loopInfoIn)
+    local
+      String s1,s2,s3;
+      String loopId;
+      Integer pos;
+      DAE.Exp startIt;
+      DAE.Exp endIt;
+      list<BackendDAE.IterCref> crefs;
+  case(BackendDAE.LOOP(startIt=startIt, endIt=endIt, crefs=crefs))
+    equation
+      s1 = "LOOP:";
+      s2 = "[ "+ExpressionDump.printExpStr(startIt)+"->"+ExpressionDump.printExpStr(endIt)+" ] ";
+      s3 = stringDelimitList(List.map(crefs,printIterCrefStr),"| ");
+  then s1+s2+s3;
+  case(_)
+    then "NO_LOOP";
+  end match;    
+end printLoopInfoStr;
+
+protected function printIterCrefStr"outputs a string representation of a IterCref"
+  input BackendDAE.IterCref itCref;
+  output String s;
+algorithm
+  s := match(itCref)
+    local
+      DAE.ComponentRef cref;
+      DAE.Exp it;
+      DAE.Operator op;
+    case(BackendDAE.ITER_CREF(cref=cref, iterator=it))
+      equation
+        then "{"+ComponentReference.printComponentRefStr(cref)+" :iter["+ExpressionDump.printExpStr(it)+"]}";
+    case(BackendDAE.ACCUM_ITER_CREF(cref=cref, op=op))
+      equation
+        then "ACCUM{"+ComponentReference.printComponentRefStr(cref)+" :op["+DAEDump.dumpOperatorString(op)+"]}";
+  end match;
+end printIterCrefStr;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDump;

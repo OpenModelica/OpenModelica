@@ -2008,7 +2008,7 @@ public function generateEQUATION "author: Frenkel TUD 2010-05"
   input BackendDAE.EquationKind inEqKind;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0));
+  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()));
 end generateEQUATION;
 
 public function setSubPartition "author: lochel"
@@ -2053,9 +2053,10 @@ public function setSubClockPartitionIndex
 protected
   Boolean differentiated;
   BackendDAE.EquationKind kind;
+  BackendDAE.LoopInfo loopInfo;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind) := inAttr;
-  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionIndex);
+  BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind, loopInfo=loopInfo) := inAttr;
+  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionIndex, loopInfo);
 end setSubClockPartitionIndex;
 
 public function setEquationAttributes
@@ -2120,7 +2121,7 @@ algorithm
     DAE.Exp rhs;
 
     case (_, SOME(rhs), _, _)
-    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0))};
+    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))};
 
     else {};
   end match;
@@ -2914,9 +2915,10 @@ protected function markDifferentiated2
 protected
   BackendDAE.EquationKind kind;
   Integer subPartitionIndex;
+  BackendDAE.LoopInfo loopInfo;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex) := inAttr;
-  outAttr := BackendDAE.EQUATION_ATTRIBUTES(true, kind, subPartitionIndex);
+  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex, loopInfo=loopInfo) := inAttr;
+  outAttr := BackendDAE.EQUATION_ATTRIBUTES(true, kind, subPartitionIndex, loopInfo);
 end markDifferentiated2;
 
 public function isDifferentiated

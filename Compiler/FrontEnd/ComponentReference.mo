@@ -2411,6 +2411,40 @@ algorithm
   end match;
 end stripCrefIdentSliceSubs;
 
+public function stripArrayCref"strips the cref at the array-cref. remove subscripts, outputs appended crefs"
+  input DAE.ComponentRef crefIn;
+  output DAE.ComponentRef crefHead;
+  output Integer idxOut;
+  output Option<DAE.ComponentRef> crefTail;
+algorithm
+  (crefHead, idxOut, crefTail) := match(crefIn)
+    local
+      Integer idx;
+      DAE.Ident id;
+      DAE.ComponentRef cr, outCref;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst={DAE.INDEX(DAE.ICONST(idx))}, identType = ty))
+      equation
+        // the complete cref is an array
+      then
+        (makeCrefIdent(id,ty,{}),idx,NONE());
+
+    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst={DAE.INDEX(DAE.ICONST(idx))}, ident=id))
+      equation
+        // strip the cref here
+      then
+        (makeCrefIdent(id,ty,{}),idx,SOME(cr));
+        
+    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst=subs, ident=id))
+      equation
+        // continue
+        outCref = stripCrefIdentSliceSubs(cr);
+      then
+        (makeCrefQual(id,ty,{},outCref),-1,NONE());
+  end match;
+end stripArrayCref;
+
 protected function removeSliceSubs "
 helper function for stripCrefIdentSliceSubs"
   input list<DAE.Subscript> subs;
@@ -2758,6 +2792,40 @@ algorithm
 
   end match;
 end splitCrefLast;
+
+public function firstNCrefs
+  "Gets the first a cref at the n-th cref, e.g. (a.b.c.d,2) => a.b."
+  input DAE.ComponentRef inCref;
+  input Integer nIn;
+  output DAE.ComponentRef outFirstCrefs;
+
+algorithm
+  (outFirstCrefs) := matchcontinue(inCref,nIn)
+    local
+      DAE.Ident id;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef prefix, last;
+    case(_,0)
+      then (inCref);
+      
+    case(DAE.CREF_QUAL(id, ty, subs, last),1)
+      then DAE.CREF_IDENT(id, ty, subs);
+        
+    case(DAE.CREF_IDENT(id, ty, subs),_)
+      then inCref;
+
+    case (DAE.CREF_QUAL(id, ty, subs, last),)
+      equation
+        prefix = firstNCrefs(last,nIn-1);     
+      then
+        DAE.CREF_QUAL(id, ty, subs, prefix);
+    
+      else
+        then (inCref);
+
+  end matchcontinue;
+end firstNCrefs;
 
 public function splitCrefFirst
   input DAE.ComponentRef inCref;

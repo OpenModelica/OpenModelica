@@ -169,6 +169,7 @@ if true then /* Suppress output */
     "../BackEnd/Uncertainties.mo",
     "../BackEnd/UnitCheck.mo",
     "../BackEnd/Unit.mo",
+	"../BackEnd/Vectorization.mo",
     "../BackEnd/XMLDump.mo",
 
   // "SimCode";
