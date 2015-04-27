@@ -39,6 +39,139 @@
 #include "ModelWidgetContainer.h"
 #include "Helper.h"
 
+/*!
+ * \class TabSettings
+ * \brief Defines the tabs and indentation settings for the editor.
+ */
+TabSettings::TabSettings()
+  : mTabPolicy(SpacesOnlyTabPolicy), mTabSize(4), mIndentSize(2)
+{
+
+}
+
+/*!
+ * \brief tabSettings::lineIndentPosition
+ * Returns the lines indent position.
+ * \param text
+ * \return
+ */
+int TabSettings::lineIndentPosition(const QString &text) const
+{
+  int i = 0;
+  while (i < text.size()) {
+    if (!text.at(i).isSpace()) {
+      break;
+    }
+    ++i;
+  }
+  int column = columnAt(text, i);
+  return i - (column % mIndentSize);
+}
+
+/*!
+ * \brief tabSettings::columnAt
+ * \param text
+ * \param position
+ * \return
+ */
+int TabSettings::columnAt(const QString &text, int position) const
+{
+  int column = 0;
+  for (int i = 0; i < position; ++i) {
+    if (text.at(i) == QLatin1Char('\t')) {
+      column = column - (column % mTabSize) + mTabSize;
+    } else {
+      ++column;
+    }
+  }
+  return column;
+}
+
+/*!
+ * \brief tabSettings::indentedColumn
+ * \param column
+ * \param doIndent
+ * \return
+ */
+int TabSettings::indentedColumn(int column, bool doIndent) const
+{
+  int aligned = (column / mIndentSize) * mIndentSize;
+  if (doIndent) {
+    return aligned + mIndentSize;
+  }
+  if (aligned < column) {
+    return aligned;
+  }
+  return qMax(0, aligned - mIndentSize);
+}
+
+/*!
+ * \brief tabSettings::indentationString
+ * \param startColumn
+ * \param targetColumn
+ * \param block
+ * \return
+ */
+QString TabSettings::indentationString(int startColumn, int targetColumn) const
+{
+  targetColumn = qMax(startColumn, targetColumn);
+  if (mTabPolicy == SpacesOnlyTabPolicy) {
+    return QString(targetColumn - startColumn, QLatin1Char(' '));
+  }
+
+  QString s;
+  int alignedStart = startColumn - (startColumn % mTabSize) + mTabSize;
+  if (alignedStart > startColumn && alignedStart <= targetColumn) {
+    s += QLatin1Char('\t');
+    startColumn = alignedStart;
+  }
+  if (int columns = targetColumn - startColumn) {
+    int tabs = columns / mTabSize;
+    s += QString(tabs, QLatin1Char('\t'));
+    s += QString(columns - tabs * mTabSize, QLatin1Char(' '));
+  }
+  return s;
+}
+
+/*!
+ * \brief tabSettings::firstNonSpace
+ * \param text
+ * \return
+ */
+int TabSettings::firstNonSpace(const QString &text)
+{
+  int i = 0;
+  while (i < text.size()) {
+    if (!text.at(i).isSpace()) {
+      return i;
+    }
+    ++i;
+  }
+  return i;
+}
+
+/*!
+ * \brief tabSettings::spacesLeftFromPosition
+ * \param text
+ * \param position
+ * \return
+ */
+int TabSettings::spacesLeftFromPosition(const QString &text, int position)
+{
+  int i = position;
+  while (i > 0) {
+    if (!text.at(i-1).isSpace()) {
+      break;
+    }
+    --i;
+  }
+  return position - i;
+}
+
+/*!
+ * \class BaseEditor::PlainTextEdit
+ * Internal QPlainTextEdit for Editor.
+ */
 BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
@@ -61,8 +194,11 @@ BaseEditor::PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
 }
 
-//! Calculate appropriate width for LineNumberArea.
-//! @return int width of LineNumberArea.
+/*!
+ * \brief BaseEditor::PlainTextEdit::lineNumberAreaWidth
+ * Calculate appropriate width for LineNumberArea.
+ * \return int width of LineNumberArea.
+ */
 int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
 {
   int digits = 2;
@@ -79,9 +215,11 @@ int BaseEditor::PlainTextEdit::lineNumberAreaWidth()
 }
 
 /*!
-  Activated whenever LineNumberArea Widget paint event is raised.
-  Writes the line numbers for the visible blocks and draws the breakpoint markers.
-  */
+ * \brief BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent
+ * Activated whenever LineNumberArea Widget paint event is raised.
+ * Writes the line numbers for the visible blocks and draws the breakpoint markers.
+ * \param event
+ */
 void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
 {
   QPainter painter(mpLineNumberArea);
@@ -98,7 +236,7 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
     /* paint line numbers */
     if (block.isVisible() && bottom >= event->rect().top()) {
       QString number;
-      if (mpBaseEditor->getModelWidget()) {
+      if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
         number = QString::number(blockNumber + mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart);
       } else {
         number = QString::number(blockNumber + 1);
@@ -132,8 +270,10 @@ void BaseEditor::PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
   }
 }
 
-/**
+/*!
+ * \brief BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent
  * Activated whenever LineNumberArea Widget mouse press event is raised.
+ * \param event
  */
 void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
 {
@@ -173,12 +313,13 @@ void BaseEditor::PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
 }
 
 /*!
-  Takes the cursor to the specific line.
-  \param lineNumber - the line number to go.
-  */
+ * \brief BaseEditor::PlainTextEdit::goToLineNumber
+ * Takes the cursor to the specific line.
+ * \param lineNumber - the line number to go.
+ */
 void BaseEditor::PlainTextEdit::goToLineNumber(int lineNumber)
 {
-  if (mpBaseEditor->getModelWidget()) {
+  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
     int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
     int lineNumberDifferenceFromStart = lineNumberStart - 1;
     lineNumber -= lineNumberDifferenceFromStart;
@@ -270,6 +411,12 @@ void BaseEditor::PlainTextEdit::setLineWrapping()
   }
 }
 
+/*!
+ * \brief BaseEditor::PlainTextEdit::toggleBreakpoint
+ * Toggles the breakpoint.
+ * \param fileName
+ * \param lineNumber
+ */
 void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
   BreakpointsTreeModel *pBreakpointsTreeModel = mpBaseEditor->getMainWindow()->getDebuggerMainWindow()->getBreakpointsWidget()->getBreakpointsTreeModel();
@@ -292,11 +439,15 @@ void BaseEditor::PlainTextEdit::toggleBreakpoint(const QString fileName, int lin
  * \brief BaseEditor::indentOrUnindent
  * Indents or unindents the code.
  * \param doIndent
- * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
  */
 void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
 {
-  const ModelicaTabSettings modelicaTabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
+  TabSettings tabSettings;
+  if (dynamic_cast<TLMEditor*>(mpBaseEditor)) {
+    tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTLMTabSettings();
+  } else {  //! @todo we should check all editors here.
+    tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
+  }
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   // Indent or unindent the selected lines
@@ -314,13 +465,13 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
     } else {
       for (QTextBlock block = startBlock; block != endBlock; block = block.next()) {
         QString text = block.text();
-        int indentPosition = modelicaTabSettings.lineIndentPosition(text);
+        int indentPosition = tabSettings.lineIndentPosition(text);
         if (!doIndent && !indentPosition) {
-          indentPosition = modelicaTabSettings.firstNonSpace(text);
+          indentPosition = tabSettings.firstNonSpace(text);
         }
-        int targetColumn = modelicaTabSettings.indentedColumn(modelicaTabSettings.columnAt(text, indentPosition), doIndent);
+        int targetColumn = tabSettings.indentedColumn(tabSettings.columnAt(text, indentPosition), doIndent);
         cursor.setPosition(block.position() + indentPosition);
-        cursor.insertText(modelicaTabSettings.indentationString(0, targetColumn));
+        cursor.insertText(tabSettings.indentationString(0, targetColumn));
         cursor.setPosition(block.position());
         cursor.setPosition(block.position() + indentPosition, QTextCursor::KeepAnchor);
         cursor.removeSelectedText();
@@ -333,19 +484,23 @@ void BaseEditor::PlainTextEdit::indentOrUnindent(bool doIndent)
   QTextBlock block = cursor.block();
   QString text = block.text();
   int indentPosition = cursor.positionInBlock();
-  int spaces = modelicaTabSettings.spacesLeftFromPosition(text, indentPosition);
-  int startColumn = modelicaTabSettings.columnAt(text, indentPosition - spaces);
-  int targetColumn = modelicaTabSettings.indentedColumn(modelicaTabSettings.columnAt(text, indentPosition), doIndent);
+  int spaces = tabSettings.spacesLeftFromPosition(text, indentPosition);
+  int startColumn = tabSettings.columnAt(text, indentPosition - spaces);
+  int targetColumn = tabSettings.indentedColumn(tabSettings.columnAt(text, indentPosition), doIndent);
   cursor.setPosition(block.position() + indentPosition);
   cursor.setPosition(block.position() + indentPosition - spaces, QTextCursor::KeepAnchor);
   cursor.removeSelectedText();
-  cursor.insertText(modelicaTabSettings.indentationString(startColumn, targetColumn));
+  cursor.insertText(tabSettings.indentationString(startColumn, targetColumn));
   cursor.endEditBlock();
   setTextCursor(cursor);
 }
 
-//! Reimplementation of resize event.
-//! Resets the size of LineNumberArea.
+/*!
+ * \brief BaseEditor::PlainTextEdit::resizeEvent
+ * Reimplementation of resize event.
+ * Resets the size of LineNumberArea.
+ * \param pEvent
+ */
 void BaseEditor::PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
 {
   QPlainTextEdit::resizeEvent(pEvent);
@@ -393,17 +548,26 @@ void BaseEditor::PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
    */
   /*! @todo We should add formatter classes to handle this based on editor language i.e Modelica or C/C++. */
   if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return) {
-    const ModelicaTabSettings modelicaTabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
+    TabSettings tabSettings;
+    if (dynamic_cast<TLMEditor*>(mpBaseEditor)) {
+      tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getTLMTabSettings();
+    } else {  //! @todo we should check all editors here.
+      tabSettings = mpBaseEditor->getMainWindow()->getOptionsDialog()->getModelicaTabSettings();
+    }
     QTextCursor cursor = textCursor();
     const QTextBlock previousBlock = cursor.block().previous();
     QString indentText = previousBlock.text();
     cursor.beginEditBlock();
-    cursor.insertText(indentText.left(modelicaTabSettings.firstNonSpace(indentText)));
+    cursor.insertText(indentText.left(tabSettings.firstNonSpace(indentText)));
     cursor.endEditBlock();
     setTextCursor(cursor);
   }
 }
 
+/*!
+ * \class BaseEditor
+ * Base class for all editors.
+ */
 BaseEditor::BaseEditor(MainWindow *pMainWindow)
   : QWidget(pMainWindow), mpModelWidget(0), mpMainWindow(pMainWindow), mCanHaveBreakpoints(false)
 {
@@ -429,9 +593,10 @@ void BaseEditor::setCanHaveBreakpoints(bool canHaveBreakpoints)
 }
 
 /*!
-  Takes the cursor to the specific line.
-  \param lineNumber - the line number to go.
-  */
+ * \brief BaseEditor::goToLineNumber
+ * Takes the cursor to the specific line.
+ * \param lineNumber - the line number to go.
+ */
 void BaseEditor::goToLineNumber(int lineNumber)
 {
   mpPlainTextEdit->goToLineNumber(lineNumber);
@@ -566,6 +731,10 @@ void BaseEditor::showFindReplaceWidget()
   mpFindReplaceWidget->show();
 }
 
+/*!
+ * \brief BaseEditor::clearFindReplaceTexts
+ * Clears the FindReplaceWidget remembered text.
+ */
 void BaseEditor::clearFindReplaceTexts()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -598,7 +767,8 @@ void BaseEditor::showTabsAndSpaces(bool On)
   mpPlainTextEdit->document()->setDefaultTextOption(textOption);
 }
 
-/**
+/*!
+ * \brief BaseEditor::toggleBreakpoint
  * Slot activated when set breakpoint is seleteted from line number area context menu.
  */
 void BaseEditor::toggleBreakpoint()
@@ -621,6 +791,10 @@ void BaseEditor::indentOrUnindent(bool doIndent)
   mpPlainTextEdit->indentOrUnindent(doIndent);
 }
 
+/*!
+ * \class FindReplaceWidget
+ * Creates a widget within editor for find and replace.
+ */
 FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
   : QWidget(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
@@ -683,6 +857,11 @@ FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
   setTabOrder(mpReplaceWithTextBox, mpFindPreviousButton);
 }
 
+/*!
+ * \brief FindReplaceWidget::show
+ * Shows the FindReplaceWidget.
+ * Reads the settings to get the previously searched text.
+ */
 void FindReplaceWidget::show()
 {
   QTextCursor currentTextCursor = mpBaseEditor->getPlainTextEdit()->textCursor();
@@ -699,8 +878,9 @@ void FindReplaceWidget::show()
 }
 
 /*!
-  Reads the list of find texts from the settings file.
-  */
+ * \brief FindReplaceWidget::readFindTextFromSettings
+ * Reads the list of find texts from the settings file.
+ */
 void FindReplaceWidget::readFindTextFromSettings()
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -714,9 +894,10 @@ void FindReplaceWidget::readFindTextFromSettings()
 }
 
 /*!
-  Saves the find text to the settings file.
-  \param textToFind - the text to find
-  */
+ * \brief FindReplaceWidget::saveFindTextToSettings
+ * Saves the find text to the settings file.
+ * \param textToFind - the text to find
+ */
 void FindReplaceWidget::saveFindTextToSettings(QString textToFind)
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
@@ -812,8 +993,9 @@ bool FindReplaceWidget::close()
 }
 
 /*!
-  Replaces the found occurrences and goes to the next occurrence
-  */
+ * \brief FindReplaceWidget::replace
+ * Replaces the found occurrences and goes to the next occurrence
+ */
 void FindReplaceWidget::replace()
 {
   int compareString(0);
@@ -832,8 +1014,9 @@ void FindReplaceWidget::replace()
 }
 
 /*!
-  Replaces all the found occurrences
-  */
+ * \brief FindReplaceWidget::replaceAll
+ * Replaces all the found occurrences
+ */
 void FindReplaceWidget::replaceAll()
 {
   // move cursor to start of text
@@ -860,6 +1043,10 @@ void FindReplaceWidget::replaceAll()
   mpBaseEditor->getPlainTextEdit()->textCursor().endEditBlock();
 }
 
+/*!
+ * \brief FindReplaceWidget::keyPressEvent
+ * \param pEvent
+ */
 void FindReplaceWidget::keyPressEvent(QKeyEvent *pEvent)
 {
   if (pEvent->key() == Qt::Key_Escape) {
@@ -870,8 +1057,10 @@ void FindReplaceWidget::keyPressEvent(QKeyEvent *pEvent)
 }
 
 /*!
-  Checks whether the passed text is a valid regular expression
-  */
+ * \brief FindReplaceWidget::validateRegularExpression
+ * Checks whether the passed text is a valid regular expression
+ * \param text
+ */
 void FindReplaceWidget::validateRegularExpression(const QString &text)
 {
   if (!mpRegularExpressionCheckBox->isChecked() || text.size() == 0) {
@@ -884,8 +1073,10 @@ void FindReplaceWidget::validateRegularExpression(const QString &text)
 }
 
 /*!
-  The regular expression checkbox was selected
-  */
+ * \brief FindReplaceWidget::regularExpressionSelected
+ * The regular expression checkbox was selected
+ * \param selected
+ */
 void FindReplaceWidget::regularExpressionSelected(bool selected)
 {
   if (selected) {
@@ -896,17 +1087,18 @@ void FindReplaceWidget::regularExpressionSelected(bool selected)
 }
 
 /*!
-  When the text edit contents changed
-  */
+ * \brief FindReplaceWidget::textToFindChanged
+ * When the text edit contents changed
+ */
 void FindReplaceWidget::textToFindChanged()
 {
   mpFindNextButton->setEnabled(mpFindComboBox->currentText().size() > 0);
 }
 
-//! @class GotoLineWidget
-//! @brief An interface to goto a specific line in BaseEditor.
-
-//! Constructor
+/*!
+ * \class GotoLineDialog
+ * An interface to goto a specific line in editor.
+ */
 GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
   : QDialog(pBaseEditor, Qt::WindowTitleHint)
 {
@@ -926,10 +1118,14 @@ GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
   setLayout(mainLayout);
 }
 
-//! Reimplementation of QDialog::exec
+/*!
+ * \brief GotoLineDialog::exec
+ * Reimplementation of QDialog::exec
+ * \return
+ */
 int GotoLineDialog::exec()
 {
-  if (mpBaseEditor->getModelWidget()) {
+  if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
     int lineNumberStart = mpBaseEditor->getModelWidget()->getLibraryTreeNode()->getClassInformation().lineNumberStart;
     mpLineNumberLabel->setText(tr("Enter line number (%1 to %2):").arg(QString::number(lineNumberStart))
                                .arg(QString::number(mpBaseEditor->getPlainTextEdit()->blockCount() + lineNumberStart - 1)));
@@ -942,7 +1138,10 @@ int GotoLineDialog::exec()
   return QDialog::exec();
 }
 
-//! Slot activated when mpOkButton clicked signal raised.
+/*!
+ * \brief GotoLineDialog::goToLineNumber
+ * Slot activated when mpOkButton clicked signal raised.
+ */
 void GotoLineDialog::goToLineNumber()
 {
   mpBaseEditor->goToLineNumber(mpLineNumberTextBox->text().toInt());

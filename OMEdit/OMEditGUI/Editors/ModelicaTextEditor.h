@@ -71,34 +71,6 @@ private:
   QString m_multiLineEnd;
 };
 
-class ModelicaTabSettings
-{
-public:
-  enum TabPolicy {
-    SpacesOnlyTabPolicy = 0,
-    TabsOnlyTabPolicy = 1
-  };
-  ModelicaTabSettings();
-  void setTabPolicy(int tabPolicy) {mTabPolicy = (TabPolicy)tabPolicy;}
-  TabPolicy getTabPolicy() const {return mTabPolicy;}
-  void setTabSize(int tabSize) {mTabSize = tabSize;}
-  int getTabSize() const {return mTabSize;}
-  void setIndentSize(int indentSize) {mIndentSize = indentSize;}
-  int getIndentSize() {return mIndentSize;}
-
-  int lineIndentPosition(const QString &text) const;
-  int columnAt(const QString &text, int position) const;
-  int indentedColumn(int column, bool doIndent = true) const;
-  QString indentationString(int startColumn, int targetColumn) const;
-
-  static int firstNonSpace(const QString &text);
-  static int spacesLeftFromPosition(const QString &text, int position);
-private:
-  TabPolicy mTabPolicy;
-  int mTabSize;
-  int mIndentSize;
-};
-
 class ModelicaTextEditor : public BaseEditor
 {
   Q_OBJECT

@@ -979,22 +979,22 @@ void OptionsDialog::show()
   setVisible(true);
 }
 
-ModelicaTabSettings OptionsDialog::getModelicaTabSettings()
+TabSettings OptionsDialog::getModelicaTabSettings()
 {
-  ModelicaTabSettings modelicaTabSettings;
-  modelicaTabSettings.setTabPolicy(mpModelicaTextEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  modelicaTabSettings.setTabSize(mpModelicaTextEditorPage->getTabSizeSpinBox()->value());
-  modelicaTabSettings.setIndentSize(mpModelicaTextEditorPage->getIndentSpinBox()->value());
-  return modelicaTabSettings;
+  TabSettings tabSettings;
+  tabSettings.setTabPolicy(mpModelicaTextEditorPage->getTabPolicyComboBox()->itemData(mpModelicaTextEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  tabSettings.setTabSize(mpModelicaTextEditorPage->getTabSizeSpinBox()->value());
+  tabSettings.setIndentSize(mpModelicaTextEditorPage->getIndentSpinBox()->value());
+  return tabSettings;
 }
 
-TLMTabSettings OptionsDialog::getTLMTabSettings()
+TabSettings OptionsDialog::getTLMTabSettings()
 {
-  TLMTabSettings tlmTabSettings;
-  tlmTabSettings.setTabPolicy(mpTLMEditorPage->getTabPolicyComboBox()->itemData(mpTLMEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
-  tlmTabSettings.setTabSize(mpTLMEditorPage->getTabSizeSpinBox()->value());
-  tlmTabSettings.setIndentSize(mpTLMEditorPage->getIndentSpinBox()->value());
-  return tlmTabSettings;
+  TabSettings tabSettings;
+  tabSettings.setTabPolicy(mpTLMEditorPage->getTabPolicyComboBox()->itemData(mpTLMEditorPage->getTabPolicyComboBox()->currentIndex()).toInt());
+  tabSettings.setTabSize(mpTLMEditorPage->getTabSizeSpinBox()->value());
+  tabSettings.setIndentSize(mpTLMEditorPage->getIndentSpinBox()->value());
+  return tabSettings;
 }
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)

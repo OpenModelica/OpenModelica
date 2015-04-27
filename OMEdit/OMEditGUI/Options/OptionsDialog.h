@@ -59,8 +59,7 @@ class PlottingPage;
 class FigaroPage;
 class DebuggerPage;
 class FMIPage;
-class ModelicaTabSettings;
-class TLMTabSettings;
+class TabSettings;
 
 class OptionsDialog : public QDialog
 {
@@ -115,8 +114,8 @@ public:
   FMIPage* getFMIPage() {return mpFMIPage;}
   void saveDialogGeometry();
   void show();
-  ModelicaTabSettings getModelicaTabSettings();
-  TLMTabSettings getTLMTabSettings();
+  TabSettings getModelicaTabSettings();
+  TabSettings getTLMTabSettings();
 signals:
   void modelicaTextSettingsChanged();
   void TLMSettingsChanged();
