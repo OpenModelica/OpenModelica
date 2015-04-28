@@ -4600,7 +4600,7 @@ algorithm
       warning = "Iteration variables of torn " + str + " equation system:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
-    
+
     case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst), SOME(BackendDAE.TEARINGSET(tearingvars=vlst2)), linear=linear)::rest, _) equation
       vlst = List.unique(listAppend(vlst,vlst2));
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
