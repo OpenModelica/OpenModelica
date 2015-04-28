@@ -39,9 +39,11 @@
 #define TLMCOSIMULATIONDIALOG_H
 
 #include "MainWindow.h"
+#include "TLMCoSimulationOutputWidget.h"
 #include "TLMCoSimulationOptions.h"
 
 class MainWindow;
+class TLMCoSimulationOutputWidget;
 
 class TLMCoSimulationDialog : public QDialog
 {
@@ -51,9 +53,12 @@ public:
   ~TLMCoSimulationDialog();
   void show(LibraryTreeNode *pLibraryTreeNode);
   void simulationProcessFinished(TLMCoSimulationOptions tlmCoSimulationOptions, QDateTime resultFileLastModifiedDateTime);
+  bool isTLMCoSimulationRunning() {return mIsTLMCoSimulationRunning;}
+  void setIsTLMCoSimulationRunning(bool isTLMCoSimulationRunning) {mIsTLMCoSimulationRunning = isTLMCoSimulationRunning;}
 private:
   MainWindow *mpMainWindow;
   LibraryTreeNode *mpLibraryTreeNode;
+  bool mIsTLMCoSimulationRunning;
   Label *mpHeadingLabel;
   QFrame *mpHorizontalLine;
   QGroupBox *mpTLMManagerGroupBox;
@@ -72,6 +77,7 @@ private:
   QPushButton *mpSimulateButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  TLMCoSimulationOutputWidget *mpTLMCoSimulationOutputWidget;
 
   bool validate();
   TLMCoSimulationOptions createTLMCoSimulationOptions();

@@ -46,13 +46,13 @@
 #endif
 
 #include "TLMCoSimulationDialog.h"
-#include "TLMCoSimulationOutputWidget.h"
 #include "VariablesWidget.h"
 
 TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
   mpMainWindow = pMainWindow;
+  setIsTLMCoSimulationRunning(false);
   // simulation widget heading
   mpHeadingLabel = new Label;
   mpHeadingLabel->setElideMode(Qt::ElideMiddle);
@@ -132,11 +132,16 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   pMainLayout->addWidget(mpTLMMonitorGroupBox, 3, 0);
   pMainLayout->addWidget(mpButtonBox, 4, 0, Qt::AlignRight);
   setLayout(pMainLayout);
+  // create TLMCoSimulationOutputWidget
+  mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(mpMainWindow);
+  int xPos = QApplication::desktop()->availableGeometry().width() - mpTLMCoSimulationOutputWidget->frameSize().width() - 20;
+  int yPos = QApplication::desktop()->availableGeometry().height() - mpTLMCoSimulationOutputWidget->frameSize().height() - 20;
+  mpTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, mpTLMCoSimulationOutputWidget->width(), mpTLMCoSimulationOutputWidget->height());
 }
 
 TLMCoSimulationDialog::~TLMCoSimulationDialog()
 {
-
+  delete mpTLMCoSimulationOutputWidget;
 }
 
 /*!
@@ -153,6 +158,7 @@ void TLMCoSimulationDialog::show(LibraryTreeNode *pLibraryTreeNode)
 
 void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlmCoSimulationOptions, QDateTime resultFileLastModifiedDateTime)
 {
+  mpTLMCoSimulationOutputWidget->clear();
   // read the result file
   QFileInfo fileInfo(tlmCoSimulationOptions.getFileName());
   QFileInfo resultFileInfo(fileInfo.absoluteDir().absolutePath() + "/" + fileInfo.completeBaseName() + ".csv");
@@ -265,14 +271,19 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
  */
 void TLMCoSimulationDialog::simulate()
 {
+  if (isTLMCoSimulationRunning()) {
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::TLMCOSIMULATION_ALREADY_RUNNING), Helper::ok);
+    return;
+  }
   if (validate()) {
     TLMCoSimulationOptions tlmCoSimulationOptions = createTLMCoSimulationOptions();
     if (tlmCoSimulationOptions.isValid()) {
-      TLMCoSimulationOutputWidget *pTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(tlmCoSimulationOptions, mpMainWindow);
-      int xPos = QApplication::desktop()->availableGeometry().width() - pTLMCoSimulationOutputWidget->frameSize().width() - 20;
-      int yPos = QApplication::desktop()->availableGeometry().height() - pTLMCoSimulationOutputWidget->frameSize().height() - 20;
-      pTLMCoSimulationOutputWidget->setGeometry(xPos, yPos, pTLMCoSimulationOutputWidget->width(), pTLMCoSimulationOutputWidget->height());
-      pTLMCoSimulationOutputWidget->show();
+      setIsTLMCoSimulationRunning(true);
+      mpTLMCoSimulationOutputWidget->show(tlmCoSimulationOptions);
+      mpTLMCoSimulationOutputWidget->raise();
+      mpTLMCoSimulationOutputWidget->activateWindow();
+      mpTLMCoSimulationOutputWidget->setWindowState(mpTLMCoSimulationOutputWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
       accept();
     }
   }

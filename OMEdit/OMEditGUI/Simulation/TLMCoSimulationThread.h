@@ -48,8 +48,10 @@ class TLMCoSimulationThread : public QThread
 public:
   TLMCoSimulationThread(TLMCoSimulationOutputWidget *pTLMCoSimulationOutputWidget);
   QProcess* getManagerProcess() {return mpManagerProcess;}
+  void setIsManagerProcessRunning(bool isManagerProcessRunning) {mIsManagerProcessRunning = isManagerProcessRunning;}
   bool isManagerProcessRunning() {return mIsManagerProcessRunning;}
   QProcess* getMonitorProcess() {return mpMonitorProcess;}
+  void setIsMonitorProcessRunning(bool isMonitorProcessRunning) {mIsMonitorProcessRunning = isMonitorProcessRunning;}
   bool isMonitorProcessRunning() {return mIsMonitorProcessRunning;}
 protected:
   virtual void run();

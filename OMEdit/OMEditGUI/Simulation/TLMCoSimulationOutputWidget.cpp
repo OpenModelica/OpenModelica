@@ -45,10 +45,9 @@
 /*!
   \param pParent - pointer to MainWindow.
   */
-TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(TLMCoSimulationOptions tlmCoSimulationOptions, MainWindow *pMainWindow)
-  : mTLMCoSimulationOptions(tlmCoSimulationOptions), mpMainWindow(pMainWindow)
+TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(MainWindow *pMainWindow)
+  : mpMainWindow(pMainWindow)
 {
-  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mTLMCoSimulationOptions.getClassName()).arg(Helper::tlmCoSimulation));
   // progress label
   mpProgressLabel = new Label;
   mpProgressLabel->setTextFormat(Qt::RichText);
@@ -63,7 +62,6 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(TLMCoSimulationOptions 
   // open manager log button
   mpOpenManagerLogFileButton = new QPushButton(tr("Open Manager Log File"));
   connect(mpOpenManagerLogFileButton, SIGNAL(clicked()), SLOT(openManagerLogFile()));
-  mpOpenManagerLogFileButton->setEnabled(tlmCoSimulationOptions.getManagerArgs().contains("-d"));
   // manager buttons layout
   QHBoxLayout *pManagerButtonsHorizontalLayout = new QHBoxLayout;
   pManagerButtonsHorizontalLayout->addWidget(mpStopManagerButton);
@@ -80,7 +78,6 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(TLMCoSimulationOptions 
   // open monitor log button
   mpOpenMonitorLogFileButton = new QPushButton(tr("Open Monitor Log File"));
   connect(mpOpenMonitorLogFileButton, SIGNAL(clicked()), SLOT(openMonitorLogFile()));
-  mpOpenMonitorLogFileButton->setEnabled(tlmCoSimulationOptions.getMonitorArgs().contains("-d"));
   // monitor buttons layout
   QHBoxLayout *pMonitorButtonsHorizontalLayout = new QHBoxLayout;
   pMonitorButtonsHorizontalLayout->addWidget(mpStopMonitorButton);
@@ -113,7 +110,39 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(TLMCoSimulationOptions 
   connect(mpTLMCoSimulationProcessThread, SIGNAL(sendMonitorFinished(int,QProcess::ExitStatus)),
           SLOT(monitorProcessFinished(int,QProcess::ExitStatus)));
   connect(mpTLMCoSimulationProcessThread, SIGNAL(sendManagerProgress(int)), mpProgressBar, SLOT(setValue(int)));
+}
+
+TLMCoSimulationOutputWidget::~TLMCoSimulationOutputWidget()
+{
+  clear();
+}
+
+void TLMCoSimulationOutputWidget::show(TLMCoSimulationOptions tlmCoSimulationOptions)
+{
+  mTLMCoSimulationOptions = tlmCoSimulationOptions;
+  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mTLMCoSimulationOptions.getClassName()).arg(Helper::tlmCoSimulation));
+  mpProgressLabel->clear();
+  mpOpenManagerLogFileButton->setEnabled(tlmCoSimulationOptions.getManagerArgs().contains("-d"));
+  mpManagerOutputTextBox->clear();
+  mpOpenMonitorLogFileButton->setEnabled(tlmCoSimulationOptions.getMonitorArgs().contains("-d"));
+  mpMonitorOutputTextBox->clear();
+  setVisible(true);
   mpTLMCoSimulationProcessThread->start();
+}
+
+void TLMCoSimulationOutputWidget::clear()
+{
+  stopMonitor();
+  stopManager();
+  mpTLMCoSimulationProcessThread->exit();
+  mpTLMCoSimulationProcessThread->wait();
+  mpMainWindow->getTLMCoSimulationDialog()->setIsTLMCoSimulationRunning(false);
+}
+
+void TLMCoSimulationOutputWidget::closeEvent(QCloseEvent *event)
+{
+  clear();
+  event->accept();
 }
 
 /*!
@@ -125,7 +154,6 @@ void TLMCoSimulationOutputWidget::stopManager()
   if (mpTLMCoSimulationProcessThread->isManagerProcessRunning()) {
     mpTLMCoSimulationProcessThread->getManagerProcess()->kill();
     mpProgressLabel->setText(tr("Co-Simulation using <b>%1</b> meta model is cancelled.").arg(mTLMCoSimulationOptions.getClassName()));
-    mpProgressBar->setValue(mpProgressBar->maximum());
     mpStopManagerButton->setEnabled(false);
   }
 }
@@ -180,6 +208,8 @@ void TLMCoSimulationOutputWidget::managerProcessStarted()
   QFileInfo resultFileInfo(fileInfo.absoluteDir().absolutePath() + "/" + fileInfo.completeBaseName() + ".csv");
   if (resultFileInfo.exists()) {
     mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
+  } else {
+    mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   }
 }
 

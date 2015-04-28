@@ -41,9 +41,9 @@ TLMCoSimulationThread::TLMCoSimulationThread(TLMCoSimulationOutputWidget *pTLMCo
   : QThread(pTLMCoSimulationOutputWidget), mpTLMCoSimulationOutputWidget(pTLMCoSimulationOutputWidget)
 {
   mpManagerProcess = 0;
-  mIsManagerProcessRunning = false;
+  setIsManagerProcessRunning(false);
   mpMonitorProcess = 0;
-  mIsMonitorProcessRunning = false;
+  setIsMonitorProcessRunning(false);
   mpProgressFileTimer = 0;
 }
 
@@ -133,7 +133,7 @@ void TLMCoSimulationThread::runMonitor()
   */
 void TLMCoSimulationThread::managerProcessStarted()
 {
-  mIsManagerProcessRunning = true;
+  setIsManagerProcessRunning(true);
   emit sendManagerStarted();
   runMonitor();
 }
@@ -162,7 +162,7 @@ void TLMCoSimulationThread::readManagerStandardError()
   */
 void TLMCoSimulationThread::managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mIsManagerProcessRunning = false;
+  setIsManagerProcessRunning(false);
   QString exitCodeStr = tr("TLMManager process failed. Exited with code %1.").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     emit sendManagerOutput(tr("TLMManager process finished successfully."), StringHandler::OMEditInfo);
@@ -180,7 +180,7 @@ void TLMCoSimulationThread::managerProcessFinished(int exitCode, QProcess::ExitS
   */
 void TLMCoSimulationThread::monitorProcessStarted()
 {
-  mIsMonitorProcessRunning = true;
+  setIsMonitorProcessRunning(true);
   emit sendMonitorStarted();
   QFileInfo fileInfo(mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getFileName());
   // give 5 secs to tlmmonitor to create .run file
@@ -220,7 +220,7 @@ void TLMCoSimulationThread::readMonitorStandardError()
   */
 void TLMCoSimulationThread::monitorProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mIsMonitorProcessRunning = false;
+  setIsMonitorProcessRunning(false);
   // stop the timer that reads the progres file i.e <model>.run
   if (mpProgressFileTimer) {
     mpProgressFileTimer->stop();

@@ -528,14 +528,6 @@ QString GUIMessages::getMessage(int type)
       return tr("Redefining class(es) <b>%1</b> which already exist(s).");
     case MULTIPLE_TOP_LEVEL_CLASSES:
       return tr("Only single nonstructured entity is allowed to be stored in the file. <b>%1</b> contains following classes <b>%2</b>.");
-    case CLOSE_INTERACTIVE_SIMULATION_TAB:
-      return tr("Are you sure you want to close <b>%1</b> interactive simulation?");
-    case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
-      return tr("You cannot recover this window once it is closed.");
-    case INTERACTIVE_SIMULATION_RUNNIG:
-      return tr("You already have one interactive simulation running. Only one interactive simulation session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.");
-    case SELECT_VARIABLE_FOR_OMI:
-      return tr("Please select a variable to plot before starting.");
     case DIAGRAM_VIEW_DROP_MSG:
       return tr("You cannot insert <b>%1</b>, it is a <b>%2</b>. Only <b>model</b>, <b>class</b>, <b>connector</b>, <b>record</b> or <b>block</b> is allowed on the diagram layer.");
     case ICON_VIEW_DROP_MSG:
@@ -588,6 +580,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The class <b>%1</b> is not saved. Breakpoints are only allowed on saved classes.");
     case BREAKPOINT_INSERT_NOT_MODELICA_CLASS:
       return tr("The class <b>%1</b> is not a modelica class. Breakpoints are only allowed on modelica classes.");
+    case TLMCOSIMULATION_ALREADY_RUNNING:
+      return tr("TLM co-simulation session is already running. Only one session is allowed.");
     default:
       return "";
   }

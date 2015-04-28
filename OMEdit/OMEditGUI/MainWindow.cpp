@@ -624,6 +624,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpModelWidgetContainer;
   delete mpDebuggerMainWindow;
   delete mpSimulationDialog;
+  delete mpTLMCoSimulationDialog;
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);

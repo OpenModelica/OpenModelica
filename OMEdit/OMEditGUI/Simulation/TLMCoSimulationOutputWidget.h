@@ -48,8 +48,12 @@ class TLMCoSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  TLMCoSimulationOutputWidget(TLMCoSimulationOptions tlmCoSimulationOptions, MainWindow *pMainWindow);
+  TLMCoSimulationOutputWidget(MainWindow *pMainWindow);
+  ~TLMCoSimulationOutputWidget();
   TLMCoSimulationOptions getTLMCoSimulationOptions() {return mTLMCoSimulationOptions;}
+  void show(TLMCoSimulationOptions tlmCoSimulationOptions);
+  void clear();
+  void closeEvent(QCloseEvent *event);
 private:
   TLMCoSimulationOptions mTLMCoSimulationOptions;
   MainWindow *mpMainWindow;
