@@ -706,11 +706,15 @@ class TLMPage : public QWidget
   Q_OBJECT
 public:
   TLMPage(OptionsDialog *pOptionsDialog);
+  QLineEdit* getTLMPluginPathTextBox() {return mpTLMPluginPathTextBox;}
   QLineEdit* getTLMManagerProcessTextBox() {return mpTLMManagerProcessTextBox;}
   QLineEdit* getTLMMonitorProcessTextBox() {return mpTLMMonitorProcessTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
+  Label *mpTLMPluginPathLabel;
+  QLineEdit *mpTLMPluginPathTextBox;
+  QPushButton *mpBrowseTLMPluginPathButton;
   Label *mpTLMManagerProcessLabel;
   QLineEdit *mpTLMManagerProcessTextBox;
   QPushButton *mpBrowseTLMManagerProcessButton;
@@ -718,6 +722,7 @@ private:
   QLineEdit *mpTLMMonitorProcessTextBox;
   QPushButton *mpBrowseTLMMonitorProcessButton;
 private slots:
+  void browseTLMPluginPath();
   void browseTLMManagerProcess();
   void browseTLMMonitorProcess();
 };

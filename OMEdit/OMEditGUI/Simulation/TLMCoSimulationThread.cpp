@@ -56,7 +56,8 @@ void TLMCoSimulationThread::run()
 void TLMCoSimulationThread::runManager()
 {
   mpManagerProcess = new QProcess;
-  QFileInfo fileInfo(mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getFileName());
+  TLMCoSimulationOptions tlmCoSimulationOptions = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions();
+  QFileInfo fileInfo(tlmCoSimulationOptions.getFileName());
   mpManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
@@ -65,26 +66,19 @@ void TLMCoSimulationThread::runManager()
   connect(mpManagerProcess, SIGNAL(readyReadStandardError()), SLOT(readManagerStandardError()));
   connect(mpManagerProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(managerProcessFinished(int,QProcess::ExitStatus)));
   QStringList args;
-  args << mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getManagerArgs() << fileInfo.absoluteFilePath();
+  args << tlmCoSimulationOptions.getManagerArgs() << fileInfo.absoluteFilePath();
   // start the executable
-  QString fileName = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getManagerProcess();
+  QString fileName = tlmCoSimulationOptions.getManagerProcess();
   // run the simulation executable to create the result file
+  QProcessEnvironment environment;
 #ifdef WIN32
-  QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
-  const char *OMDEV = getenv("OMDEV");
-  if (QString(OMDEV).isEmpty()) {
-    QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
-    QString MinGWBin = OMHOME + "\\MinGW\\bin";
-    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
-  } else {
-    QString qOMDEV = QString(OMDEV).replace("/", "\\");
-    QString MinGWBin = qOMDEV + "\\tools\\mingw\\bin";
-    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
-  }
-  environment.insert("PATH", "C:/SKF/TLMPlugin/bin;" + environment.value("PATH"));
-  environment.insert("TLMPluginPath", "C:/SKF/TLMPlugin/");
-  mpManagerProcess->setProcessEnvironment(environment);
+  environment = StringHandler::simulationProcessEnvironment();
+#else
+  environment = QProcessEnvironment::systemEnvironment();
 #endif
+  environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
+  environment.insert("TLMPluginPath", tlmCoSimulationOptions.getTLMPluginPath());
+  mpManagerProcess->setProcessEnvironment(environment);
   mpManagerProcess->start(fileName, args);
   emit sendManagerOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
 }

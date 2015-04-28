@@ -64,6 +64,10 @@ public:
   QString getClassName() {return mClassName;}
   void setFileName(QString fileName) {mFileName = fileName;}
   QString getFileName() {return mFileName;}
+  QString getTLMPluginPath() {return mTLMPluginPath;}
+  void setTLMPluginPath(const QString &tlmPluginPath) {mTLMPluginPath = tlmPluginPath;}
+  QString getManagerProcess() {return mManagerProcess;}
+  void setManagerProcess(const QString &managerProcess) {mManagerProcess = managerProcess;}
   void setServerPort(QString serverPort) {mServerPort = serverPort;}
   QString getServerPort() {return mServerPort;}
   void setMonitorPort(QString monitorPort) {mMonitorPort = monitorPort;}
@@ -72,6 +76,8 @@ public:
   bool getInterfaceRequestMode() {return mInterfaceRequestMode;}
   void setManagerDebugMode(bool managerDebugMode) {mManagerDebugMode = managerDebugMode;}
   bool getManagerDebugMode() {return mManagerDebugMode;}
+  QString getMonitorProcess() {return mMonitorProcess;}
+  void setMonitorProcess(const QString &monitorProcess) {mMonitorProcess = monitorProcess;}
   void setNumberOfSteps(int numberOfSteps) {mNumberOfSteps = numberOfSteps;}
   int getNumberOfSteps() {return mNumberOfSteps;}
   void setTimeStepSize(double timeStepSize) {mTimeStepSize = timeStepSize;}
@@ -82,15 +88,12 @@ public:
   QStringList getManagerArgs() {return mManagerArgs;}
   void setMonitorArgs(QStringList monitorArgs) {mMonitorArgs = monitorArgs;}
   QStringList getMonitorArgs() {return mMonitorArgs;}
-  QString getManagerProcess() {return mManagerProcess;}
-  void setManagerProcess(const QString &managerProcess) {mManagerProcess = managerProcess;}
-  QString getMonitorProcess() {return mMonitorProcess;}
-  void setMonitorProcess(const QString &monitorProcess) {mMonitorProcess = monitorProcess;}
 
 private:
   bool mValid;
   QString mClassName;
   QString mFileName;
+  QString mTLMPluginPath;
   QString mManagerProcess;
   QString mServerPort;
   QString mMonitorPort;

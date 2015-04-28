@@ -61,6 +61,9 @@ private:
   bool mIsTLMCoSimulationRunning;
   Label *mpHeadingLabel;
   QFrame *mpHorizontalLine;
+  Label *mpTLMPluginPathLabel;
+  QLineEdit *mpTLMPluginPathTextBox;
+  QPushButton *mpBrowseTLMPluginPathButton;
   QGroupBox *mpTLMManagerGroupBox;
   Label *mpManagerProcessLabel;
   QLineEdit *mpManagerProcessTextBox;
@@ -88,6 +91,7 @@ private:
   bool validate();
   TLMCoSimulationOptions createTLMCoSimulationOptions();
 private slots:
+  void browseTLMPluginPath();
   void browseManagerProcess();
   void browseMonitorProcess();
   void simulate();

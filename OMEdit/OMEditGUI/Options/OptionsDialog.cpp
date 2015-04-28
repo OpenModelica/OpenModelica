@@ -515,6 +515,10 @@ void OptionsDialog::readFMISettings()
  */
 void OptionsDialog::readTLMSettings()
 {
+  // read TLM Path
+  if (mpSettings->contains("TLM/PluginPath")) {
+    mpTLMPage->getTLMPluginPathTextBox()->setText(mpSettings->value("TLM/PluginPath").toString());
+  }
   // read the TLM Manager Process
   if (mpSettings->contains("TLM/ManagerProcess")) {
     mpTLMPage->getTLMManagerProcessTextBox()->setText(mpSettings->value("TLM/ManagerProcess").toString());
@@ -836,6 +840,8 @@ void OptionsDialog::saveFMISettings()
  */
 void OptionsDialog::saveTLMSettings()
 {
+  // read TLM Path
+  mpSettings->setValue("TLM/PluginPath", mpTLMPage->getTLMPluginPathTextBox()->text());
   // save the TLM Manager Process
   mpSettings->setValue("TLM/ManagerProcess", mpTLMPage->getTLMManagerProcessTextBox()->text());
   // save the TLM Monitor Process
@@ -3389,6 +3395,12 @@ TLMPage::TLMPage(OptionsDialog *pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
   mpGeneralGroupBox = new QGroupBox(Helper::general);
+  // TLM Plugin Path
+  mpTLMPluginPathLabel = new Label(tr("TLM Plugin Path:"));
+  mpTLMPluginPathTextBox = new QLineEdit;
+  mpBrowseTLMPluginPathButton = new QPushButton(Helper::browse);
+  mpBrowseTLMPluginPathButton->setAutoDefault(false);
+  connect(mpBrowseTLMPluginPathButton, SIGNAL(clicked()), SLOT(browseTLMPluginPath()));
   // TLM Manager Process
   mpTLMManagerProcessLabel = new Label(tr("TLM Manager Process:"));
   mpTLMManagerProcessTextBox = new QLineEdit;
@@ -3404,18 +3416,46 @@ TLMPage::TLMPage(OptionsDialog *pOptionsDialog)
   // set the layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessLabel, 0, 0);
-  pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessTextBox, 0, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMManagerProcessButton, 0, 2);
-  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessLabel, 1, 0);
-  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessTextBox, 1, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMMonitorProcessButton, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpTLMPluginPathLabel, 0, 0);
+  pGeneralGroupBoxLayout->addWidget(mpTLMPluginPathTextBox, 0, 1);
+  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMPluginPathButton, 0, 2);
+  pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessLabel, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessTextBox, 1, 1);
+  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMManagerProcessButton, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessLabel, 2, 0);
+  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessTextBox, 2, 1);
+  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMMonitorProcessButton, 2, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpGeneralGroupBox);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief TLMPage::browseTLMPath
+ * Browse TLM path.
+ */
+void TLMPage::browseTLMPluginPath()
+{
+  QString path = StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL);
+  path = path.replace('\\', '/');
+  mpTLMPluginPathTextBox->setText(path);
+  if (mpTLMManagerProcessTextBox->text().isEmpty()) {
+#ifdef WIN32
+    mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager.exe");
+#else
+    mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager");
+#endif
+  }
+  if (mpTLMMonitorProcessTextBox->text().isEmpty()) {
+#ifdef WIN32
+    mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor.exe");
+#else
+    mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor");
+#endif
+  }
 }
 
 /*!

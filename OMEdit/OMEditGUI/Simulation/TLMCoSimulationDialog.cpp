@@ -62,17 +62,23 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   mpHorizontalLine = new QFrame();
   mpHorizontalLine->setFrameShape(QFrame::HLine);
   mpHorizontalLine->setFrameShadow(QFrame::Sunken);
+  // TLM Plugin Path
+  mpTLMPluginPathLabel = new Label(tr("TLM Plugin Path:"));
+  mpTLMPluginPathTextBox = new QLineEdit;
+  mpBrowseTLMPluginPathButton = new QPushButton(Helper::browse);
+  mpBrowseTLMPluginPathButton->setAutoDefault(false);
+  connect(mpBrowseTLMPluginPathButton, SIGNAL(clicked()), SLOT(browseTLMPluginPath()));
   // tlm manager groupbox
   mpTLMManagerGroupBox = new QGroupBox(tr("TLM Manager"));
   // TLM Manager Process
   mpManagerProcessLabel = new Label(tr("Manager Process:"));
-  mpManagerProcessTextBox = new QLineEdit(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMManagerProcessTextBox()->text());
+  mpManagerProcessTextBox = new QLineEdit;
   mpBrowseManagerProcessButton = new QPushButton(Helper::browse);
   mpBrowseManagerProcessButton->setAutoDefault(false);
   connect(mpBrowseManagerProcessButton, SIGNAL(clicked()), SLOT(browseManagerProcess()));
   // TLM Monitor Process
   mpMonitorProcessLabel = new Label(tr("Monitor Process:"));
-  mpMonitorProcessTextBox = new QLineEdit(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMMonitorProcessTextBox()->text());
+  mpMonitorProcessTextBox = new QLineEdit;
   mpBrowseMonitorProcessButton = new QPushButton(Helper::browse);
   mpBrowseMonitorProcessButton->setAutoDefault(false);
   connect(mpBrowseMonitorProcessButton, SIGNAL(clicked()), SLOT(browseMonitorProcess()));
@@ -145,11 +151,14 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  pMainLayout->addWidget(mpHeadingLabel, 0, 0);
-  pMainLayout->addWidget(mpHorizontalLine, 1, 0);
-  pMainLayout->addWidget(mpTLMManagerGroupBox, 2, 0);
-  pMainLayout->addWidget(mpTLMMonitorGroupBox, 3, 0);
-  pMainLayout->addWidget(mpButtonBox, 4, 0, Qt::AlignRight);
+  pMainLayout->addWidget(mpHeadingLabel, 0, 0, 1, 3);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 3);
+  pMainLayout->addWidget(mpTLMPluginPathLabel, 2, 0);
+  pMainLayout->addWidget(mpTLMPluginPathTextBox, 2, 1);
+  pMainLayout->addWidget(mpBrowseTLMPluginPathButton, 2, 2);
+  pMainLayout->addWidget(mpTLMManagerGroupBox, 3, 0, 1, 3);
+  pMainLayout->addWidget(mpTLMMonitorGroupBox, 4, 0, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
   mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(mpMainWindow);
@@ -172,6 +181,18 @@ void TLMCoSimulationDialog::show(LibraryTreeNode *pLibraryTreeNode)
   mpLibraryTreeNode = pLibraryTreeNode;
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulation).arg(mpLibraryTreeNode->getNameStructure()));
   mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulation).arg(mpLibraryTreeNode->getNameStructure()));
+  // if user has nothing in TLM plugin path then read from OptionsDialog
+  if (mpTLMPluginPathTextBox->text().isEmpty()) {
+    mpTLMPluginPathTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMPluginPathTextBox()->text());
+  }
+  // if user has nothing in manager process box then read from OptionsDialog
+  if (mpManagerProcessTextBox->text().isEmpty()) {
+    mpManagerProcessTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMManagerProcessTextBox()->text());
+  }
+  // if user has nothing in monitor process box then read from OptionsDialog
+  if (mpMonitorProcessTextBox->text().isEmpty()) {
+    mpMonitorProcessTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMMonitorProcessTextBox()->text());
+  }
   setVisible(true);
 }
 
@@ -233,6 +254,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   TLMCoSimulationOptions tlmCoSimulationOptions;
   tlmCoSimulationOptions.setClassName(mpLibraryTreeNode->getNameStructure());
   tlmCoSimulationOptions.setFileName(mpLibraryTreeNode->getFileName());
+  tlmCoSimulationOptions.setTLMPluginPath(mpTLMPluginPathTextBox->text());
   tlmCoSimulationOptions.setManagerProcess(mpManagerProcessTextBox->text());
   tlmCoSimulationOptions.setServerPort(mpServerPortTextBox->text());
   tlmCoSimulationOptions.setMonitorPort(mpMonitorPortTextBox->text());
@@ -296,6 +318,29 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   tlmCoSimulationOptions.setManagerArgs(managerArgs);
   tlmCoSimulationOptions.setMonitorArgs(monitorArgs);
   return tlmCoSimulationOptions;
+}
+
+/*!
+ * \brief TLMCoSimulationDialog::browseTLMPath
+ * Browse TLM path.
+ */
+void TLMCoSimulationDialog::browseTLMPluginPath()
+{
+  mpTLMPluginPathTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
+  if (mpManagerProcessTextBox->text().isEmpty()) {
+#ifdef WIN32
+    mpManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager.exe");
+#else
+    mpManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager");
+#endif
+  }
+  if (mpMonitorProcessTextBox->text().isEmpty()) {
+#ifdef WIN32
+    mpMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor.exe");
+#else
+    mpMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor");
+#endif
+  }
 }
 
 /*!
