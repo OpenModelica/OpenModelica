@@ -18,7 +18,6 @@ AC_SUBST(LIBLPSOLVE55)
 AC_SUBST(LPSOLVEINC)
 AC_SUBST(MODELICA3D)
 AC_SUBST(OPENCL)
-AC_SUBST(IDLPYTHONCMD)
 AC_SUBST(USE_GRAPH)
 AC_SUBST(USE_METIS)
 AC_SUBST(USE_PATOH)
@@ -46,7 +45,6 @@ AC_SUBST(RUNTIMECFLAGS)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
-AC_SUBST(PYTHON_INTERFACE)
 AC_SUBST(WITH_SUNDIALS)
 AC_SUBST(WITH_IPOPT)
 AC_SUBST(WITH_UMFPACK)
@@ -582,14 +580,6 @@ AS_IF([test "x$with_UMFPACK" = xyes],
 
 m4_include([corba.m4])
 
-AC_MSG_CHECKING([if the user wants to use the Python interface])
-AC_ARG_ENABLE(python-interface, [  --disable-python-interface    Python interface to omc. Enabled by default if CORBA is enabled.],[test "xno" = x"$enableval" && PYTHON_INTERFACE=""])
-if test -z "$PYTHON_INTERFACE" ; then
-AC_MSG_RESULT([no])
-else
-AC_MSG_RESULT([yes])
-fi
-
 AC_MSG_CHECKING([if the user wants Modelica3D])
 MODELICA3D="yes"
 AC_ARG_ENABLE(modelica3d, [  --disable-modelica3d          Modelica3D library (dependencies checked by cmake later on; enabled by default)],[test "xno" = x"$enableval" && MODELICA3D=""],[])
@@ -853,8 +843,6 @@ Compiler/Script/Makefile \
 Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
-PythonInterface/Makefile \
-PythonInterface/OMPython/OMConfig.py \
 Parser/Makefile \
 3rdParty/qwt/Makefile.unix \
 OMNotebook/OMNotebookGUI/OMNotebook.config \

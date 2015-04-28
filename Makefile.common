@@ -24,7 +24,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc qtclients omshell omnotebook omedit omvisualize omoptim omoptimbasis
+.PHONY : interactive omc release mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc qtclients omshell omnotebook omedit omvisualize omoptim omoptimbasis
 
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -58,9 +58,6 @@ bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphst
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin install_scripts
 	$(MAKE) -f $(defaultMakefileTarget) -C Parser install
-
-install-python:
-	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
 
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
@@ -350,7 +347,6 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMi
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	# remove Ipopt-3.11.6/Makefile if there is no Ipopt-3.11.6/Ipopt/Makefile to run configure again!
@@ -376,7 +372,7 @@ install-dirs:
 	test ! -d ${builddir_share}/omedit/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omedit/nls/
 	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
 
-install: install-dirs install-python
+install: install-dirs
 	echo Installing OpenModelica...
 	# Application directory (OSX)
 	if [ "$(APP)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
