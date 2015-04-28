@@ -47,10 +47,12 @@ public:
     setIsValid(true);
     setClassName("");
     setFileName("");
+    setManagerProcess("");
     setServerPort("11111");
     setMonitorPort("");
     setInterfaceRequestMode(false);
     setManagerDebugMode(false);
+    setMonitorProcess("");
     setNumberOfSteps(1000);
     setTimeStepSize(0);
     setMonitorDebugMode(false);
@@ -80,14 +82,21 @@ public:
   QStringList getManagerArgs() {return mManagerArgs;}
   void setMonitorArgs(QStringList monitorArgs) {mMonitorArgs = monitorArgs;}
   QStringList getMonitorArgs() {return mMonitorArgs;}
+  QString getManagerProcess() {return mManagerProcess;}
+  void setManagerProcess(const QString &managerProcess) {mManagerProcess = managerProcess;}
+  QString getMonitorProcess() {return mMonitorProcess;}
+  void setMonitorProcess(const QString &monitorProcess) {mMonitorProcess = monitorProcess;}
+
 private:
   bool mValid;
   QString mClassName;
   QString mFileName;
+  QString mManagerProcess;
   QString mServerPort;
   QString mMonitorPort;
   bool mInterfaceRequestMode;
   bool mManagerDebugMode;
+  QString mMonitorProcess;
   int mNumberOfSteps;
   double mTimeStepSize;
   bool mMonitorDebugMode;

@@ -62,6 +62,9 @@ private:
   Label *mpHeadingLabel;
   QFrame *mpHorizontalLine;
   QGroupBox *mpTLMManagerGroupBox;
+  Label *mpManagerProcessLabel;
+  QLineEdit *mpManagerProcessTextBox;
+  QPushButton *mpBrowseManagerProcessButton;
   Label *mpServerPortLabel;
   QLineEdit *mpServerPortTextBox;
   Label *mpMonitorPortLabel;
@@ -69,6 +72,9 @@ private:
   QCheckBox *mpInterfaceRequestModeCheckBox;
   QCheckBox *mpManagerDebugModeCheckBox;
   QGroupBox *mpTLMMonitorGroupBox;
+  Label *mpMonitorProcessLabel;
+  QLineEdit *mpMonitorProcessTextBox;
+  QPushButton *mpBrowseMonitorProcessButton;
   Label *mpNumberOfStepsLabel;
   QLineEdit *mpNumberOfStepsTextBox;
   Label *mpTimeStepSizeLabel;
@@ -82,6 +88,8 @@ private:
   bool validate();
   TLMCoSimulationOptions createTLMCoSimulationOptions();
 private slots:
+  void browseManagerProcess();
+  void browseMonitorProcess();
   void simulate();
 };
 

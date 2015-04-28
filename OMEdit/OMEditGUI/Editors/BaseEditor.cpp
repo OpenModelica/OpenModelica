@@ -399,15 +399,23 @@ void BaseEditor::PlainTextEdit::updateCursorPosition()
 
 /*!
  * \brief BaseEditor::setLineWrapping
- * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
+ * Sets the Editor Line Wrapping mode.
  */
 void BaseEditor::PlainTextEdit::setLineWrapping()
 {
   OptionsDialog *pOptionsDialog = mpBaseEditor->getMainWindow()->getOptionsDialog();
-  if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
-    setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  } else {
-    setLineWrapMode(QPlainTextEdit::NoWrap);
+  if (dynamic_cast<TLMEditor*>(mpBaseEditor)) {
+    if (pOptionsDialog->getTLMEditorPage()->getLineWrappingCheckbox()->isChecked()) {
+      setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    } else {
+      setLineWrapMode(QPlainTextEdit::NoWrap);
+    }
+  } else {  //! @todo we should check all editors here.
+    if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked()) {
+      setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    } else {
+      setLineWrapMode(QPlainTextEdit::NoWrap);
+    }
   }
 }
 
@@ -715,7 +723,6 @@ void BaseEditor::updateCursorPosition()
 
 /*!
  * \brief BaseEditor::setLineWrapping
- * \todo For now keep this function in BaseEditor. We should make it a pure virtual and should ask derived classes to implement it.
  */
 void BaseEditor::setLineWrapping()
 {

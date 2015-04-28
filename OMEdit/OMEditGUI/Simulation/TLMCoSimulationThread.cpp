@@ -67,11 +67,9 @@ void TLMCoSimulationThread::runManager()
   QStringList args;
   args << mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getManagerArgs() << fileInfo.absoluteFilePath();
   // start the executable
-  QString fileName;
+  QString fileName = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getManagerProcess();
   // run the simulation executable to create the result file
 #ifdef WIN32
-  /*! @todo Fix the hard coded paths. */
-  fileName = "C:/SKF/TLMPlugin/bin/tlmmanager.exe";
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   const char *OMDEV = getenv("OMDEV");
   if (QString(OMDEV).isEmpty()) {
@@ -103,11 +101,9 @@ void TLMCoSimulationThread::runMonitor()
   QStringList args;
   args << mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getMonitorArgs() << fileInfo.absoluteFilePath();
   // start the executable
-  QString fileName;
+  QString fileName = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions().getMonitorProcess();
   // run the simulation executable to create the result file
 #ifdef WIN32
-  /*! @todo Fix the hard coded paths. */
-  fileName = "C:/SKF/TLMPlugin/bin/tlmmonitor.exe";
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   const char *OMDEV = getenv("OMDEV");
   if (QString(OMDEV).isEmpty()) {

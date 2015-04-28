@@ -51,6 +51,7 @@
 TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
+  resize(450, 350);
   mpMainWindow = pMainWindow;
   setIsTLMCoSimulationRunning(false);
   // simulation widget heading
@@ -63,6 +64,18 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   mpHorizontalLine->setFrameShadow(QFrame::Sunken);
   // tlm manager groupbox
   mpTLMManagerGroupBox = new QGroupBox(tr("TLM Manager"));
+  // TLM Manager Process
+  mpManagerProcessLabel = new Label(tr("Manager Process:"));
+  mpManagerProcessTextBox = new QLineEdit(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMManagerProcessTextBox()->text());
+  mpBrowseManagerProcessButton = new QPushButton(Helper::browse);
+  mpBrowseManagerProcessButton->setAutoDefault(false);
+  connect(mpBrowseManagerProcessButton, SIGNAL(clicked()), SLOT(browseManagerProcess()));
+  // TLM Monitor Process
+  mpMonitorProcessLabel = new Label(tr("Monitor Process:"));
+  mpMonitorProcessTextBox = new QLineEdit(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMMonitorProcessTextBox()->text());
+  mpBrowseMonitorProcessButton = new QPushButton(Helper::browse);
+  mpBrowseMonitorProcessButton->setAutoDefault(false);
+  connect(mpBrowseMonitorProcessButton, SIGNAL(clicked()), SLOT(browseMonitorProcess()));
   // manager server port
   mpServerPortLabel = new Label(tr("Server Port:"));
   mpServerPortLabel->setToolTip(tr("Set the server network port for communication with the simulation tools"));
@@ -78,12 +91,15 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   mpManagerDebugModeCheckBox = new QCheckBox(tr("Debug Mode"));
   // tlm manager layout
   QGridLayout *pTLMManagerGridLayout = new QGridLayout;
-  pTLMManagerGridLayout->addWidget(mpServerPortLabel, 0, 0);
-  pTLMManagerGridLayout->addWidget(mpServerPortTextBox, 0, 1);
-  pTLMManagerGridLayout->addWidget(mpMonitorPortLabel, 1, 0);
-  pTLMManagerGridLayout->addWidget(mpMonitorPortTextBox, 1, 1);
-  pTLMManagerGridLayout->addWidget(mpInterfaceRequestModeCheckBox, 2, 0, 1, 2);
-  pTLMManagerGridLayout->addWidget(mpManagerDebugModeCheckBox, 3, 0, 1, 2);
+  pTLMManagerGridLayout->addWidget(mpManagerProcessLabel, 0, 0);
+  pTLMManagerGridLayout->addWidget(mpManagerProcessTextBox, 0, 1);
+  pTLMManagerGridLayout->addWidget(mpBrowseManagerProcessButton, 0, 2);
+  pTLMManagerGridLayout->addWidget(mpServerPortLabel, 1, 0);
+  pTLMManagerGridLayout->addWidget(mpServerPortTextBox, 1, 1, 1, 2);
+  pTLMManagerGridLayout->addWidget(mpMonitorPortLabel, 2, 0);
+  pTLMManagerGridLayout->addWidget(mpMonitorPortTextBox, 2, 1, 1, 2);
+  pTLMManagerGridLayout->addWidget(mpInterfaceRequestModeCheckBox, 3, 0, 1, 3);
+  pTLMManagerGridLayout->addWidget(mpManagerDebugModeCheckBox, 4, 0, 1, 3);
   mpTLMManagerGroupBox->setLayout(pTLMManagerGridLayout);
   // tlm monitor groupBox
   mpTLMMonitorGroupBox = new QGroupBox(tr("TLM Monitor"));
@@ -97,11 +113,14 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   mpMonitorDebugModeCheckBox = new QCheckBox(tr("Debug Mode"));
   // tlm monitor layout
   QGridLayout *pTLMMonitorGridLayout = new QGridLayout;
-  pTLMMonitorGridLayout->addWidget(mpNumberOfStepsLabel, 0, 0);
-  pTLMMonitorGridLayout->addWidget(mpNumberOfStepsTextBox, 0, 1);
-  pTLMMonitorGridLayout->addWidget(mpTimeStepSizeLabel, 1, 0);
-  pTLMMonitorGridLayout->addWidget(mpTimeStepSizeTextBox, 1, 1);
-  pTLMMonitorGridLayout->addWidget(mpMonitorDebugModeCheckBox, 2, 0, 1, 2);
+  pTLMMonitorGridLayout->addWidget(mpMonitorProcessLabel, 0, 0);
+  pTLMMonitorGridLayout->addWidget(mpMonitorProcessTextBox, 0, 1);
+  pTLMMonitorGridLayout->addWidget(mpBrowseMonitorProcessButton, 0, 2);
+  pTLMMonitorGridLayout->addWidget(mpNumberOfStepsLabel, 1, 0);
+  pTLMMonitorGridLayout->addWidget(mpNumberOfStepsTextBox, 1, 1, 1, 2);
+  pTLMMonitorGridLayout->addWidget(mpTimeStepSizeLabel, 2, 0);
+  pTLMMonitorGridLayout->addWidget(mpTimeStepSizeTextBox, 2, 1, 1, 2);
+  pTLMMonitorGridLayout->addWidget(mpMonitorDebugModeCheckBox, 3, 0, 1, 3);
   mpTLMMonitorGroupBox->setLayout(pTLMMonitorGridLayout);
   // Create the buttons
   mpSimulateButton = new QPushButton(Helper::simulate);
@@ -184,6 +203,18 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
   */
 bool TLMCoSimulationDialog::validate()
 {
+  if (mpManagerProcessTextBox->text().isEmpty()) {
+    QMessageBox::critical(mpMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          tr("Enter manager process."), Helper::ok);
+    mpManagerProcessTextBox->setFocus();
+    return false;
+  }
+  if (mpMonitorProcessTextBox->text().isEmpty()) {
+    QMessageBox::critical(mpMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          tr("Enter monitor process."), Helper::ok);
+    mpMonitorProcessTextBox->setFocus();
+    return false;
+  }
   if (mpMonitorPortTextBox->text().isEmpty()) {
     QMessageBox::critical(mpMainWindow, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
                           tr("Enter a monitor port."), Helper::ok);
@@ -202,10 +233,12 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   TLMCoSimulationOptions tlmCoSimulationOptions;
   tlmCoSimulationOptions.setClassName(mpLibraryTreeNode->getNameStructure());
   tlmCoSimulationOptions.setFileName(mpLibraryTreeNode->getFileName());
+  tlmCoSimulationOptions.setManagerProcess(mpManagerProcessTextBox->text());
   tlmCoSimulationOptions.setServerPort(mpServerPortTextBox->text());
   tlmCoSimulationOptions.setMonitorPort(mpMonitorPortTextBox->text());
   tlmCoSimulationOptions.setInterfaceRequestMode(mpInterfaceRequestModeCheckBox->isChecked());
   tlmCoSimulationOptions.setManagerDebugMode(mpManagerDebugModeCheckBox->isChecked());
+  tlmCoSimulationOptions.setMonitorProcess(mpMonitorProcessTextBox->text());
   tlmCoSimulationOptions.setNumberOfSteps(mpNumberOfStepsTextBox->text().toInt());
   tlmCoSimulationOptions.setTimeStepSize(mpTimeStepSizeTextBox->text().toDouble());
   tlmCoSimulationOptions.setMonitorDebugMode(mpMonitorDebugModeCheckBox->isChecked());
@@ -263,6 +296,26 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   tlmCoSimulationOptions.setManagerArgs(managerArgs);
   tlmCoSimulationOptions.setMonitorArgs(monitorArgs);
   return tlmCoSimulationOptions;
+}
+
+/*!
+ * \brief TLMCoSimulationDialog::browseManagerProcess
+ * Browse TLM Manager Process.
+ */
+void TLMCoSimulationDialog::browseManagerProcess()
+{
+  mpManagerProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                                      NULL, Helper::exeFileTypes, NULL));
+}
+
+/*!
+ * \brief TLMCoSimulationDialog::browseMonitorProcess
+ * Browse TLM Monitor Process.
+ */
+void TLMCoSimulationDialog::browseMonitorProcess()
+{
+  mpMonitorProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                                     NULL, Helper::exeFileTypes, NULL));
 }
 
 /*!

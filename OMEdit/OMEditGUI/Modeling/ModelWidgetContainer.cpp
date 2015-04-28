@@ -2250,7 +2250,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpTLMHighlighter = new TLMHighlighter(pMainWindow->getOptionsDialog()->getTLMEditorPage(),
                                           mpEditor->getPlainTextEdit());
     mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
-    connect(pMainWindow->getOptionsDialog(), SIGNAL(TLMSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
+    connect(pMainWindow->getOptionsDialog(), SIGNAL(TLMEditorSettingsChanged()), mpTLMHighlighter, SLOT(settingsChanged()));
     // only get the TLM components and connectors if the TLM is not a new class.
     if (!newClass) {
       getTLMComponents();
