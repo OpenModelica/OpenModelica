@@ -848,7 +848,7 @@ protected function markIndex
   input array<Integer> inArray;
   output array<Integer> outArray = inArray;
 algorithm
-  arrayUpdate(outArray, inIndex, 1);
+  outArray[inIndex] := 1;
 end markIndex;
 
 protected function selectSecondaryParameters
@@ -1419,9 +1419,9 @@ protected function squareIncidenceMatrix1 "author: lochel"
   input Integer inPos;
   input list<Integer> inDependency;
   input BackendDAE.IncidenceMatrix inM;
-  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outM = inM;
 algorithm
-  outM := arrayUpdate(inM, inPos, inDependency);
+  outM[inPos] := inDependency;
 end squareIncidenceMatrix1;
 
 protected function fixOverDeterminedSystem "author: lochel"
@@ -1455,9 +1455,9 @@ protected function squareIncidenceMatrix2 "author: lochel"
   input Integer inPos;
   input list<Integer> inRange;
   input BackendDAE.IncidenceMatrix inM;
-  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outM = inM;
 algorithm
-  outM := arrayUpdate(inM, inPos, listAppend(arrayGet(inM, inPos), inRange));
+  outM[inPos] := listAppend(inM[inPos], inRange);
 end squareIncidenceMatrix2;
 
 protected function addStartValueEquations "author: lochel"
