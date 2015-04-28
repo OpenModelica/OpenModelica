@@ -378,8 +378,6 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 include_directories ("Include")
 include_directories ("Solver")
 
-get_directory_property(info COMPILE_DEFINITIONS)
-message(STATUS "info: ${info}")
 add_subdirectory (Core/Modelica)
 add_subdirectory (Core/Math)
 add_subdirectory (SimCoreFactory/OMCFactory)

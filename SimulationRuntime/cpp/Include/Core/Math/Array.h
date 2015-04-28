@@ -264,7 +264,7 @@ public:
    */
   virtual const T* getData() const
   {
-    std::runtime_error("Access const data of reference array is not supported");
+    throw std::runtime_error("Access const data of reference array is not supported");
   }
 
   /**
@@ -272,7 +272,7 @@ public:
    */
   virtual T* getData()
   {
-    std::runtime_error("Access data of reference array is not supported");
+    throw std::runtime_error("Access data of reference array is not supported");
   }
 
   /**
