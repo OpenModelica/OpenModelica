@@ -778,7 +778,6 @@ protected
   list<Integer> flatComps;
   Integer nParam;
   array<Integer> secondary;
-  Integer i, j;
   BackendDAE.Var p;
   DAE.Exp bindExp;
 algorithm
@@ -823,10 +822,9 @@ algorithm
     //BackendDump.dumpMatchingVars(secondary);
 
     // get primary and secondary parameters
-    for i in 1:nParam loop // for i in flatComps loop
-      j := listGet(flatComps, i) "workaround since 'for i in flatComps loop' does not work properly" ;
-      p := BackendVariable.getVarAt(allParameters, j);
-      if 1 == secondary[j] then
+    for i in flatComps loop
+      p := BackendVariable.getVarAt(allParameters, i);
+      if 1 == secondary[i] then
         outVars := BackendVariable.addVar(p, outVars);
       else
         outAllPrimaryParameters := p::outAllPrimaryParameters;
