@@ -31,7 +31,7 @@ IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
 	target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
-
+    add_precompiled_header(${SystemName} Include/Core/Modelica.h )
 	install (TARGETS ${SystemName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 

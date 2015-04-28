@@ -1,8 +1,8 @@
 #pragma once
-
+#include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/SimulationSettings/Factory.h>
 
@@ -13,7 +13,7 @@ extern "C" ISettingsFactory* createSettingsFactory(PATH library_path, PATH model
 
 #elif defined(SIMSTER_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <Core/SimulationSettings/Factory.h>
 
 /*Simster factory */
@@ -25,7 +25,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simulation_settings
 
 #elif defined(OMC_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimulationSettings/Factory.h>

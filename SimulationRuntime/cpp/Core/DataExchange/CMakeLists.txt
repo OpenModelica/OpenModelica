@@ -10,6 +10,8 @@ ENDIF(NOT BOOST_STATIC_LINKING)
 
 IF(RUNTIME_STATIC_LINKING)
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
+ELSE(RUNTIME_STATIC_LINKING)
+add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h )
 ENDIF(RUNTIME_STATIC_LINKING)
 
 add_library(${DataExchangeName}_static STATIC SimData.cpp  )

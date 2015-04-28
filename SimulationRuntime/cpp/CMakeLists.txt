@@ -27,7 +27,7 @@
 
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8.6)
 PROJECT(CppSolverInterface)
-
+set(CMAKE_VERBOSE_MAKEFILE ON)
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
 
 MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
@@ -378,22 +378,23 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 include_directories ("Include")
 include_directories ("Solver")
 
-
-#add_subdirectory (ModelicaCompiler)
+get_directory_property(info COMPILE_DEFINITIONS)
+message(STATUS "info: ${info}")
+add_subdirectory (Core/Modelica)
 add_subdirectory (Core/Math)
+add_subdirectory (SimCoreFactory/OMCFactory)
+#add_subdirectory (ModelicaCompiler)
 
 add_subdirectory (Core/Utils/Modelica)
 add_subdirectory (Core/Utils/extension)
 add_subdirectory (Core/DataExchange)
-add_subdirectory (SimCoreFactory/OMCFactory)
+
 
 #add system default implemention project
 add_subdirectory (Core/System)
 #add solver default implemention project
 add_subdirectory (Core/Solver)
 add_subdirectory (Core/SimulationSettings)
-#add_subdirectory (Core/SimController)
-add_subdirectory (Core/Modelica)
 add_subdirectory (Core/ModelicaExternalC)
 add_subdirectory (Core/SimController)
 
@@ -404,11 +405,11 @@ add_subdirectory (Solver/Newton)
 add_subdirectory (Solver/Hybrj)
 add_subdirectory (Solver/UmfPack)
 add_subdirectory (Solver/Peer)
-#add_subdirectory (Solver/RTRK)
+##add_subdirectory (Solver/RTRK)
 
 
 if(REDUCE_DAE)
-  add_subdirectory(ReduceDAE/Implementation)
+  #add_subdirectory(ReduceDAE/Implementation)
 endif()
 
 
@@ -419,8 +420,8 @@ add_subdirectory (Solver/CVode)
 add_subdirectory(Solver/IDA)
 add_subdirectory (Solver/Kinsol)
 #add  Idas solver project
-#add_subdirectory (Solver/Idas/Implementation)
-#add_subdirectory (Solver/Ida/Implementation)
+##add_subdirectory (Solver/Idas/Implementation)
+##add_subdirectory (Solver/Ida/Implementation)
 GET_TARGET_PROPERTY(libCVode ${CVodeName} LOCATION)
 GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
 

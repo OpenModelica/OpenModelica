@@ -1893,7 +1893,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let home      = makefileParams.omhome
   <<
   #include <Core/Modelica.h>
-  #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
 

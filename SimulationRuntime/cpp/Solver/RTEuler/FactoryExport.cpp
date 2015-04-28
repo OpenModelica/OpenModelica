@@ -1,7 +1,8 @@
 
 #pragma once
-#if defined(__vxworks)
 #include <Core/Modelica.h>
+#if defined(__vxworks)
+
 #include <Solver/RTEuler/RTEuler.h>
 #include <Solver/RTEuler/RTEulerSettings.h>
 

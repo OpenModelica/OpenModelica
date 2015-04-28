@@ -1,6 +1,4 @@
 #pragma once
-#include <Core/Modelica.h>
-#include <SimCoreFactory/Policies/FactoryConfig.h>
 
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimController/ISimData.h>

@@ -12,7 +12,8 @@ IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${UmfPackName} SHARED UmfPack.cpp UmfPackSettings.cpp FactoryExport)
 	target_link_libraries( ${UmfPackName} ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
-	install (TARGETS ${UmfPackName} DESTINATION lib/omc/${LIBINSTALLEXT})
+	
+    install (TARGETS ${UmfPackName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 IF(RUNTIME_STATIC_LINKING)

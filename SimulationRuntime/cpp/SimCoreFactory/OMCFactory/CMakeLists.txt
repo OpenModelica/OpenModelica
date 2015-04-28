@@ -12,6 +12,7 @@ IF(RUNTIME_STATIC_LINKING)
 	if (UNIX)
 		set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 	endif(UNIX)
+    
 ELSE(RUNTIME_STATIC_LINKING)
 	# add the system default implementation library
 	add_library(${OMCFactoryName} STATIC OMCFactory.cpp)
@@ -20,6 +21,7 @@ ELSE(RUNTIME_STATIC_LINKING)
 	if (UNIX)
 		set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
 	endif(UNIX)
+    add_precompiled_header(${OMCFactoryName} Include/Core/Modelica.h )
 ENDIF(RUNTIME_STATIC_LINKING)
 
 IF(RUNTIME_STATIC_LINKING)

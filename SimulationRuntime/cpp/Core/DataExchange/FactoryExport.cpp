@@ -1,8 +1,8 @@
 #pragma once
-
+#include <Core/Modelica.h>
 #if defined(__TRICORE__) || defined(__vxworks)
 
-  #include <Core/Modelica.h>
+  
   #include <Core/DataExchange/SimData.h>
 
   extern "C" ISimData* createSimData()
@@ -12,7 +12,7 @@
 
 #elif defined(OMC_BUILD)
 
-  #include <Core/Modelica.h>
+  
   #include <Core/DataExchange/SimData.h>
 
   /* OMC factory*/

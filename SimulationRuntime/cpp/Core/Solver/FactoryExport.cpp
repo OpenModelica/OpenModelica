@@ -1,10 +1,11 @@
+#include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 
 #elif defined(OMC_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/Solver/FactoryExport.h>
@@ -24,7 +25,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 
 #elif defined(SIMSTER_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <Core/Solver/FactoryExport.h>
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <Core/Solver/SolverSettings.h>

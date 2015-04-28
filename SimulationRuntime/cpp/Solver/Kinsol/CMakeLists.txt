@@ -10,7 +10,8 @@ IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${KinsolName} SHARED Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp)
 	install (TARGETS ${KinsolName} DESTINATION lib/omc/${LIBINSTALLEXT})
-	target_link_libraries(${KinsolName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES})
+	add_precompiled_header(${KinsolName} Include/Core/Modelica.h )
+    target_link_libraries(${KinsolName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 #install (FILES "../Interfaces/NewtonSettings.xml"

@@ -9,7 +9,8 @@ IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp FactoryExport.cpp)
 	target_link_libraries( ${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES})
-	install (TARGETS ${SimulationSettings} DESTINATION lib/omc/${LIBINSTALLEXT})
+	add_precompiled_header(${SimulationSettings} Include/Core/Modelica.h )
+    install (TARGETS ${SimulationSettings} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 install (FILES "config/GlobalSettings.xml"

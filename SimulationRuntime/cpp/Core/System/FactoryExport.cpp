@@ -1,8 +1,8 @@
 #pragma once
-
+#include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
@@ -12,7 +12,7 @@ extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* gl
 
 #elif defined(SIMSTER_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/System/AlgLoopSolverFactory.h>
@@ -25,7 +25,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::exten
 
 #elif defined(OMC_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/System/FactoryExport.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>

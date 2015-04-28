@@ -1,4 +1,8 @@
+#include <Core/Modelica.h>
 #include <Core/Math/SparseMatrix.h>
+#ifdef USE_UMFPACK
+#include "umfpack.h"
+#endif
 
 #ifdef USE_UMFPACK
 void sparse_matrix::build(sparse_inserter& ins) {

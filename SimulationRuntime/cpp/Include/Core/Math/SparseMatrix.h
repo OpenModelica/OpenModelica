@@ -1,11 +1,6 @@
 #pragma once
 
 
-#include <Core/Modelica.h>
-#ifdef USE_UMFPACK
-#include "umfpack.h"
-#endif
-
 using std::map;
 using std::pair;
 using std::make_pair;

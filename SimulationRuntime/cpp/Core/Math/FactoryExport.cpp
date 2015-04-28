@@ -1,8 +1,9 @@
+#include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
 #elif defined(SIMSTER_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_math(boost::extensions::factory_map & fm)
@@ -11,7 +12,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_math(boost::extensi
 
 #elif defined(OMC_BUILD)
 
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 
 /*OMC factory*/

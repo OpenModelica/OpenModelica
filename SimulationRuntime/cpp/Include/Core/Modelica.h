@@ -201,12 +201,12 @@ typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_a
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
 #include <Core/Math/Utility.h>
-#include <Core/Math/SparseMatrix.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
 #include <Core/DataExchange/Policies/BufferReaderWriter.h>
 #include <Core/HistoryImpl.h>
 #include <Core/SimulationSettings/ISettingsFactory.h>
+
 #if defined(__vxworks) || defined(__TRICORE__)
 #include <Core/DataExchange/SimDouble.h>
 #endif

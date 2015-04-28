@@ -11,7 +11,8 @@ IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${NewtonName} SHARED Newton.cpp NewtonSettings.cpp FactoryExport )
 	target_link_libraries( ${NewtonName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
-	install (TARGETS ${NewtonName} DESTINATION lib/omc/${LIBINSTALLEXT})
+	add_precompiled_header(${NewtonName} Include/Core/Modelica.h )
+    install (TARGETS ${NewtonName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 #install (FILES "../Interfaces/NewtonSettings.xml"

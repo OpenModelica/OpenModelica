@@ -10,7 +10,8 @@ IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SolverName} SHARED SolverDefaultImplementation.cpp SolverSettings.cpp SystemStateSelection.cpp FactoryExport.cpp SimulationMonitor.cpp )
 	target_link_libraries (${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
-	install (TARGETS ${SolverName} DESTINATION lib/omc/${LIBINSTALLEXT})
+	add_precompiled_header(${SolverName} Include/Core/Modelica.h )
+    install (TARGETS ${SolverName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 install (FILES

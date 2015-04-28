@@ -7,6 +7,7 @@ IF(RUNTIME_STATIC_LINKING)
 	add_library(${ModelicaUtilitiesName} STATIC ModelicaUtilities.cpp ModelicaSimulationError.cpp)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${ModelicaUtilitiesName} SHARED ModelicaUtilities.cpp ModelicaSimulationError.cpp)
+    add_precompiled_header(${ModelicaUtilitiesName} Include/Core/Modelica.h )
 ENDIF(RUNTIME_STATIC_LINKING)
 
 if (UNIX)

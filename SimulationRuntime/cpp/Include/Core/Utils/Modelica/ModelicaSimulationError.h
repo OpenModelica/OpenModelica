@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/Utils/Modelica/FactoryExport.h>
+
 
 //Enum for error types that can occur
 enum SIMULATION_ERROR {

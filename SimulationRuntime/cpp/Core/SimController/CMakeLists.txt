@@ -9,7 +9,8 @@ IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SimControllerName} SHARED Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
 	target_link_libraries( ${SimControllerName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
-	install (TARGETS ${SimControllerName} DESTINATION lib/omc/${LIBINSTALLEXT})
+	add_precompiled_header(${SimControllerName} Include/Core/Modelica.h )
+    install (TARGETS ${SimControllerName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 

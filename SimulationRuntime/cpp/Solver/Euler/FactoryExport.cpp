@@ -2,7 +2,7 @@
 #pragma once
 #include <Core/Modelica.h>
 #if defined(__vxworks)
-#include <Core/Modelica.h>
+
 
 #include <Solver/Euler/Euler.h>
 #include <Solver/Euler/EulerSettings.h>
@@ -18,7 +18,7 @@ extern "C" ISolverSettings* createEulerSettings(IGlobalSettings* globalSettings)
 }
 
 #elif defined(SIMSTER_BUILD)
-#include <Modelica.h>
+
 #include <Policies/FactoryConfig.h>
 #include <Solver/Euler/Euler.h>
 #include <Solver/Euler/EulerSettings.h>
@@ -31,7 +31,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
 }
 
 #elif defined(OMC_BUILD)
-#include <Core/Modelica.h>
+
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Solver/Euler/Euler.h>

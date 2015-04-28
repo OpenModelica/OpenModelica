@@ -3,13 +3,14 @@ cmake_minimum_required (VERSION 2.8.6)
 project(${ModelicaName})
 
 IF(RUNTIME_STATIC_LINKING)
-	add_library(${ModelicaName} STATIC Modelica.cpp ModelicaSystem.cpp  )
+	add_library(${ModelicaName} STATIC Modelica.cpp )
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 ELSE(RUNTIME_STATIC_LINKING)
-	add_library(${ModelicaName} SHARED Modelica.cpp ModelicaSystem.cpp   )
+	add_library(${ModelicaName} SHARED Modelica.cpp )
+    target_link_libraries (${ModelicaName} ${Boost_LIBRARIES})
 ENDIF(RUNTIME_STATIC_LINKING)
 
-target_link_libraries (${ModelicaName} ${ModelicaExternalCName}  ${SystemName} ${BaseName}  )
+target_link_libraries (${ModelicaName})
 
 
 GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
@@ -216,7 +217,7 @@ MESSAGE(STATUS "--UMFPACK_INCLUDE = ${UMFPACK_INCLUDE_}")
 MESSAGE(STATUS "--UMFPACK_LIBRARIES = ${UMFPACK_LIBRARIES_}")
 MESSAGE(STATUS " ")
 
-add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+create_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
 
  configure_file (
   "ModelicaConfig.inc.in"

@@ -1,6 +1,6 @@
 # Macro for setting up precompiled headers. Usage:
 #
-# add_precompiled_header(target header.h [FORCEINCLUDE])
+# create_precompiled_header(target header.h [FORCEINCLUDE])
 #
 # MSVC: A source file with the same name as the header must exist and
 # be included in the target (E.g. header.cpp).
@@ -35,7 +35,7 @@
 #
 # niklwors: adapted for OpenModelica cpp runtime build 5/2014
 
-MACRO(ADD_PRECOMPILED_HEADER _targetName _input )
+MACRO(CREATE_PRECOMPILED_HEADER _targetName _input )
 MESSAGE(STATUS "Compiler for precompiled header: ${CMAKE_CXX_COMPILER_ID}")
 
 GET_FILENAME_COMPONENT(_inputWe ${_input} NAME_WE)
@@ -62,7 +62,6 @@ IF(MSVC)
 	STRING(REGEX REPLACE "/O[1-9]*[b,d,g,i,s,t,x]*[1-9]*" "" _compiler_FLAGS ${_compiler_FLAGS} )
 	SET(_compiler_FLAGS "/Od ${_compiler_FLAGS}")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_compiler_FLAGS}")
-
 	#only generate precompiled header in relase mode in debug mode precompiled header can not generated because of different pdb files
 	IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 		SET(PrecompiledBinary "${CMAKE_BINARY_DIR}/Core/Modelica.pch")
@@ -83,6 +82,7 @@ IF(MSVC)
 					ENDIF(FORCEINCLUDE)
 				ENDIF(_sourceWe STREQUAL ${_inputWe})
 				SET_SOURCE_FILES_PROPERTIES(${_source} PROPERTIES COMPILE_FLAGS "${PCH_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS}")
+                MESSAGE(STATUS "set source file properties for: ${_source} ${PCH_COMPILE_FLAGS} " )
 			ENDIF(_source MATCHES \\.\(cc|cxx|cpp\)$)
 		ENDFOREACH()
 		IF(NOT _sourceFound)
@@ -208,4 +208,50 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
 ENDMACRO()
+
+
+MACRO(ADD_PRECOMPILED_HEADER _targetName _input )
+
+
+GET_FILENAME_COMPONENT(_inputWe ${_input} NAME_WE)
+SET(pch_source ${_inputWe}.cpp)
+
+FOREACH(arg ${ARGN})
+	IF(arg STREQUAL FORCEINCLUDE)
+		SET(FORCEINCLUDE ON)
+	ELSE(arg STREQUAL FORCEINCLUDE)
+		SET(FORCEINCLUDE OFF)
+	ENDIF(arg STREQUAL FORCEINCLUDE)
+ENDFOREACH(arg)
+
+IF(MSVC)
+	GET_FILENAME_COMPONENT(_name ${_input} NAME)
+	GET_TARGET_PROPERTY(sources ${_targetName} SOURCES)
+	SET(_sourceFound FALSE)
+	MESSAGE(STATUS "add precompiled header to ${_targetName} for ${sources} " )
+
+	#only use precompiled header in relase mode in debug mode precompiled header can not generated because of different pdb files
+	IF(CMAKE_BUILD_TYPE MATCHES "Release")
+		MESSAGE(STATUS "use precompiled header for build tpye ${CMAKE_BUILD_TYPE}" )
+        SET(PrecompiledBinary "${CMAKE_BINARY_DIR}/Core/Modelica.pch")
+		FOREACH(_source ${sources})
+			MESSAGE(STATUS "set source file properties for: ${_source}" )
+            SET(PCH_COMPILE_FLAGS "")
+			IF(_source MATCHES \\.\(cc|cxx|cpp\)$)
+				GET_FILENAME_COMPONENT(_sourceWe ${_source} NAME_WE)
+				    SET(PCH_COMPILE_FLAGS "${PCH_COMPILE_FLAGS}  /Fp\"${PrecompiledBinary}\"  /YuCore/${_name}")
+					IF(FORCEINCLUDE)
+						SET(PCH_COMPILE_FLAGS "${PCH_COMPILE_FLAGS} /FI${_name}")
+					ENDIF(FORCEINCLUDE)
+				SET_SOURCE_FILES_PROPERTIES(${_source} PROPERTIES COMPILE_FLAGS "${PCH_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS}")
+                MESSAGE(STATUS "using cflags: ${_source} ${PCH_COMPILE_FLAGS} " )
+			ENDIF(_source MATCHES \\.\(cc|cxx|cpp\)$)
+		ENDFOREACH()
+					
+    ENDIF(CMAKE_BUILD_TYPE MATCHES "Release")
+	
+ENDIF(MSVC)
+
+ENDMACRO()
+
 
