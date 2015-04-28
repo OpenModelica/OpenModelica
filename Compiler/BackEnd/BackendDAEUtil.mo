@@ -6170,7 +6170,7 @@ algorithm
         arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
       then
         traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
-    case (BackendDAE.TORNSYSTEM(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))::rest, _, _)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_))))::rest, _, _)
       equation
         arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
       then

@@ -4559,7 +4559,7 @@ algorithm
     local
       BackendDAE.StrongComponents rest;
       list<BackendDAE.Var> varlst;
-      list<Integer> vlst;
+      list<Integer> vlst,vlst2;
       Boolean linear;
       String str;
       String warning;
@@ -4592,7 +4592,17 @@ algorithm
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst), linear=linear)::rest, _) equation
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst), NONE(), linear=linear)::rest, _) equation
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
+      false = listEmpty(varlst);
+
+      str = if linear then "linear" else "nonlinear";
+      warning = "Iteration variables of torn " + str + " equation system:\n" + warnAboutVars(varlst);
+      warningList = listAllIterationVariables2(rest, inVars);
+    then warning::warningList;
+    
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst), SOME(BackendDAE.TEARINGSET(tearingvars=vlst2)), linear=linear)::rest, _) equation
+      vlst = List.unique(listAppend(vlst,vlst2));
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
 

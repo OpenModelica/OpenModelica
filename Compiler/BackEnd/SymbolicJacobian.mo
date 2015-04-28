@@ -2305,9 +2305,9 @@ algorithm
     local
       BackendDAE.StrongComponent comp;
       BackendDAE.Shared shared;
-      list<Integer> iterationvarsInts;
-      list<Integer> residualequations;
-      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+      list<Integer> iterationvarsInts,iterationvarsInts2;
+      list<Integer> residualequations,residualequations2;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTpl,otherEqnVarTpl2;
       Boolean b;
 
       list<list<Integer>> otherVarsIntsLst;
@@ -2318,12 +2318,12 @@ algorithm
       list<BackendDAE.Equation> reqns, otherEqnsLst;
       BackendDAE.EquationArray eqns, oeqns;
 
-      BackendDAE.Jacobian jacobian;
+      BackendDAE.Jacobian jacobian,jacobian2;
 
       String name;
       Boolean mixedSystem;
 
-      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), linear=b, mixedSystem=mixedSystem), _, _, _)
+      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), NONE(), linear=b, mixedSystem=mixedSystem), _, _, _)
         equation
           true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
           // get iteration vars
@@ -2361,8 +2361,87 @@ algorithm
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
-      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl), NONE(), b, jacobian, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), NONE(), b, mixedSystem), shared);
 
+      case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl), SOME(BackendDAE.TEARINGSET(tearingvars=iterationvarsInts2, residualequations=residualequations2, otherEqnVarTpl=otherEqnVarTpl2)), linear=b, mixedSystem=mixedSystem), _, _, _)
+        equation
+          true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
+          
+          // Get Jacobian for strict tearing set
+          // get iteration vars
+          iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
+          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
+          diffVars = BackendVariable.listVar1(iterationvars);
+
+          // get residual eqns
+          reqns = BackendEquation.getEqns(residualequations, inEqns);
+          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+          eqns = BackendEquation.listEquation(reqns);
+          // create  residual equations
+          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+          reqns = listReverse(reqns);
+          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
+          resVars = BackendVariable.listVar1(resVarsLst);
+          eqns = BackendEquation.listEquation(reqns);
+
+          // get other eqns
+          otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
+          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
+          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
+          oeqns = BackendEquation.listEquation(otherEqnsLst);
+
+          // get other vars
+          otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
+          otherVarsInts = List.unionList(otherVarsIntsLst);
+          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
+          ovars = BackendVariable.listVar1(ovarsLst);
+
+          //generate jacobian name
+          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          // generate generic jacobian backend dae
+          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+
+          
+          // Get Jacobian for casual tearing set
+          // get iteration vars
+          iterationvars = List.map1r(iterationvarsInts2, BackendVariable.getVarAt, inVars);
+          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
+          diffVars = BackendVariable.listVar1(iterationvars);
+
+          // get residual eqns
+          reqns = BackendEquation.getEqns(residualequations2, inEqns);
+          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+          eqns = BackendEquation.listEquation(reqns);
+          // create  residual equations
+          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+          reqns = listReverse(reqns);
+          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
+          resVars = BackendVariable.listVar1(resVarsLst);
+          eqns = BackendEquation.listEquation(reqns);
+
+          // get other eqns
+          otherEqnsInts = List.map(otherEqnVarTpl2, Util.tuple21);
+          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
+          otherEqnsLst = BackendEquation.replaceDerOpInEquationList(otherEqnsLst);
+          oeqns = BackendEquation.listEquation(otherEqnsLst);
+
+          // get other vars
+          otherVarsIntsLst = List.map(otherEqnVarTpl2, Util.tuple22);
+          otherVarsInts = List.unionList(otherVarsIntsLst);
+          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+          ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
+          ovars = BackendVariable.listVar1(ovarsLst);
+
+          //generate jacobian name
+          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          // generate generic jacobian backend dae
+          (jacobian2, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+
+      then (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationvarsInts, residualequations, otherEqnVarTpl, jacobian), SOME(BackendDAE.TEARINGSET(iterationvarsInts2, residualequations2, otherEqnVarTpl2, jacobian2)), b, mixedSystem), shared);
+      
       // do not touch linear and constand systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR()), _, _, _) then (comp, inShared);

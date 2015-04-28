@@ -101,7 +101,6 @@ algorithm
 
     // get method function and traveres systems
     case(_) equation
-      //fcall2(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpBackendDAE, inDAE, "DAE");
       methodString = Config.getTearingMethod();
       BackendDAE.DAE(shared=shared) = inDAE;
       BackendDAE.SHARED(backendDAEType=DAEtype) = shared;
@@ -1610,10 +1609,10 @@ algorithm
         eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
         linear = getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, eqnvartpllst), NONE(), linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem),true);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, eqnvartpllst, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}), NONE(), false, BackendDAE.EMPTY_JACOBIAN(),mixedSystem),false);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}, BackendDAE.EMPTY_JACOBIAN()), NONE(), false,mixedSystem),false);
   end matchcontinue;
 end omcTearing4;
 
@@ -1713,7 +1712,7 @@ protected
   Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,simulation;
+  Boolean linear,simulation,b;
 algorithm
   BackendDAE.SHARED(backendDAEType=DAEtype) := ishared;
   simulation := stringEq(BackendDump.printBackendDAEType2String(DAEtype), "simulation");
@@ -1799,7 +1798,7 @@ algorithm
 
   // check if tearing makes sense
   tornsize := listLength(OutTVars);
-  true := intLt(tornsize, size);
+  b := intLt(tornsize, size);
 
   // Unassigned equations are residual equations
   ((_,residual)) := Array.fold(ass2,getUnassigned,(1,{}));
@@ -1824,7 +1823,7 @@ algorithm
   otherEqnVarTpl := assignOtherEqnVarTpl(order,eindex,vindx,ass2,mapEqnIncRow,{});
 
   // Create BackendDAE.TearingSet for strict set
-  strictTearingSet := BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl);
+  strictTearingSet := BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl,BackendDAE.EMPTY_JACOBIAN());
 
 
   // Determine casual tearing set if dynamic tearing is enabled
@@ -1911,7 +1910,7 @@ algorithm
       otherEqnVarTpl := assignOtherEqnVarTpl(order,eindex,vindx,ass2,mapEqnIncRow,{});
 
       // Create BackendDAE.TearingSet for casual set
-      casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl));
+      casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,otherEqnVarTpl,BackendDAE.EMPTY_JACOBIAN()));
     else
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong Component: "+intString(size)+"\n");
@@ -1920,11 +1919,12 @@ algorithm
         print("*\n* The casual tearing set is not smaller\n* than the strict tearing set and there-\n* fore it is discarded.\n*" + BORDER + "\n");
       end if;
 
+      true := b;
       casualTearingSet := NONE();
     end if;
 
   else
-
+    true := b;
     casualTearingSet := NONE();
   end if;
 
@@ -1932,7 +1932,7 @@ algorithm
   // ***************************************************************************
 
   linear := getLinearfromJacType(jacType);
-  ocomp := BackendDAE.TORNSYSTEM(strictTearingSet,casualTearingSet,linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(strictTearingSet,casualTearingSet,linear,mixedSystem);
   outRunMatching := true;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing\n" + BORDER + "\n\n");

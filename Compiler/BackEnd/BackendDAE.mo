@@ -465,7 +465,6 @@ uniontype StrongComponent
     TearingSet strictTearingSet;
     Option<TearingSet> casualTearingSet;
     Boolean linear;
-    Jacobian jac;
     Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";
   end TORNSYSTEM;
 end StrongComponent;
@@ -476,6 +475,7 @@ uniontype TearingSet
     list<Integer> tearingvars;
     list<Integer> residualequations;
     list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+    Jacobian jac;
   end TEARINGSET;
 end TearingSet;
 

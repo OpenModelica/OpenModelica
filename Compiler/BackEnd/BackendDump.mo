@@ -919,7 +919,7 @@ algorithm
   matchcontinue (inComps,eqns,vars)
     local
       Integer e,v;
-      list<Integer> elst,vlst,vlst1,elst1;
+      list<Integer> elst,vlst,vlst1,elst1,vlst2,elst2;
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents rest;
       BackendDAE.Var var;
@@ -927,7 +927,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       list<BackendDAE.Equation> eqnlst;
       BackendDAE.JacobianType jacType;
-      list<tuple<Integer,list<Integer>>> eqnsvartpllst;
+      list<tuple<Integer,list<Integer>>> eqnsvartpllst,eqnsvartpllst2;
       Boolean b;
       String s;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
@@ -1011,7 +1011,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst),linear=b)::rest,_,_)
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst),NONE(),linear=b)::rest,_,_)
       equation
         s = if b then "linear" else "nonlinear";
         print("torn " + s + " Equationsystem:\n");
@@ -1026,6 +1026,41 @@ algorithm
         printEquationList(eqnlst);
         print("\n");
         eqnlst = BackendEquation.getEqns(elst,eqns);
+        printEquationList(eqnlst);
+        print("\n");
+        dumpEqnsSolved2(rest,eqns,vars);
+      then
+        ();
+    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst),SOME(BackendDAE.TEARINGSET(tearingvars=vlst2,residualequations=elst2,otherEqnVarTpl=eqnsvartpllst2)),linear=b)::rest,_,_)
+      equation
+        s = if b then "linear" else "nonlinear";
+        print("Strict torn " + s + " Equationsystem:\n");
+        vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
+        elst1 = List.map(eqnsvartpllst,Util.tuple21);
+        varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        printVarList(varlst);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        printVarList(varlst);
+        print("\n");
+        eqnlst = BackendEquation.getEqns(elst1,eqns);
+        printEquationList(eqnlst);
+        print("\n");
+        eqnlst = BackendEquation.getEqns(elst,eqns);
+        printEquationList(eqnlst);
+        print("\n");
+        dumpEqnsSolved2(rest,eqns,vars);
+        print("Casual torn " + s + " Equationsystem:\n");
+        vlst1 = List.flatten(List.map(eqnsvartpllst2,Util.tuple22));
+        elst1 = List.map(eqnsvartpllst2,Util.tuple21);
+        varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        printVarList(varlst);
+        varlst = List.map1r(vlst2, BackendVariable.getVarAt, vars);
+        printVarList(varlst);
+        print("\n");
+        eqnlst = BackendEquation.getEqns(elst1,eqns);
+        printEquationList(eqnlst);
+        print("\n");
+        eqnlst = BackendEquation.getEqns(elst2,eqns);
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1159,18 +1194,18 @@ public function printComponent
   output String oString;
 
 protected
-  String tmpStr;
+  String tmpStr,tmpStr2;
 
 algorithm
   oString := match (inComp)
     local
       Integer i,v;
-      list<Integer> ilst,vlst;
+      list<Integer> ilst,vlst,ilst2,vlst2;
       list<String> ls;
       String s,s2,s3,s4;
       BackendDAE.JacobianType jacType;
       BackendDAE.StrongComponent comp;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst,eqnvartpllst2;
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
       equation
@@ -1215,7 +1250,7 @@ algorithm
         s = stringDelimitList(ls, ", ");
         tmpStr = "WhenEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
-    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),linear=b)
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),NONE(),linear=b)
       equation
         ls = List.map(eqnvartpllst, tupleString);
         s = stringDelimitList(ls, ", ");
@@ -1224,8 +1259,27 @@ algorithm
         ls = List.map(vlst, intString);
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
-        tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
+        tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
       then tmpStr;
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst),SOME(BackendDAE.TEARINGSET(residualequations=ilst2,tearingvars=vlst2,otherEqnVarTpl=eqnvartpllst2)),linear=b)
+      equation
+        ls = List.map(eqnvartpllst, tupleString);
+        s = stringDelimitList(ls, ", ");
+        ls = List.map(ilst, intString);
+        s2 = stringDelimitList(ls, ", ");
+        ls = List.map(vlst, intString);
+        s3 = stringDelimitList(ls, ", ");
+        s4 = if b then "linear" else "nonlinear";
+        tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + " (strict tearing set)\n";
+        ls = List.map(eqnvartpllst2, tupleString);
+        s = stringDelimitList(ls, ", ");
+        ls = List.map(ilst2, intString);
+        s2 = stringDelimitList(ls, ", ");
+        ls = List.map(vlst2, intString);
+        s3 = stringDelimitList(ls, ", ");
+        s4 = if b then "linear" else "nonlinear";
+        tmpStr2 = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst2)) + " " + s4 + " (casual tearing set)\n";
+      then tmpStr + tmpStr2;
   end match;
 end printComponent;
 
