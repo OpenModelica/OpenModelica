@@ -310,7 +310,7 @@ public:
    */
   virtual void resize(const std::vector<size_t>& dims)
   {
-    std::runtime_error("Resize reference array is not supported");
+    throw std::runtime_error("Resize reference array is not supported");
   }
 
 protected:
@@ -633,7 +633,7 @@ class StatArray : public BaseArray<T>
   virtual void resize(const std::vector<size_t>& dims)
   {
     if (dims != this->getDims())
-      std::runtime_error("Cannot resize static array!");
+      throw std::runtime_error("Cannot resize static array!");
   }
 
   /**
