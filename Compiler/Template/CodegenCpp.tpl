@@ -14586,39 +14586,10 @@ template algStmtAssignArr(DAE.Statement stmt, Context context,
  "Generates an array assigment algorithm statement."
 ::=
 match stmt
-case STMT_ASSIGN_ARR(exp=RANGE(__), lhs=CREF(componentRef=cr), type_=t) then
-  let &preExp = buffer "" /*BUFD*/
-  let expPart = daeExpRange(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  let cref = contextArrayCref(cr, context)
-  <<
-  <%preExp%>
-  <%cref%>.assign(<%expPart%>);
-  >>
-case STMT_ASSIGN_ARR(exp=e as CALL(__), lhs=CREF(componentRef=cr), type_=t) then
-  let &preExp = buffer "" /*BUFD*/
-  let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-
-  let cref = contextArrayCref(cr, context)
-    /*previous multi_array
-  <<
-     <%preExp%>
-       assign_array(<%cref%>,<%expPart%>);
-    >>
-  */
-  <<
-     <%preExp%>
-     <%cref%>.assign(<%expPart%>);
-    >>
 case STMT_ASSIGN_ARR(exp=e, lhs=lhsexp as CREF(componentRef=cr), type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let dest = algStmtAssignArrCref(lhsexp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    /*previous multi_array
-    <<
-    <%preExp%>
-    assign_array(<%contextArrayCref(cr, context)%>,<%expPart%>);
-    >>
-  */
   <<
   <%preExp%>
   <%dest%>.assign(<%expPart%>);
