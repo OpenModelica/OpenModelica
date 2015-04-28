@@ -772,8 +772,8 @@ protected
   BackendDAE.EquationArray allParameterEqns;
   BackendDAE.EqSystem paramSystem;
   BackendDAE.IncidenceMatrix m, mT;
-  array<Integer> ass1 "vecVarsToEq";
-  array<Integer> ass2 "vecEqsToVar";
+  array<Integer> ass1 "eqn := ass1[var]";
+  array<Integer> ass2 "var := ass2[eqn]";
   list<list<Integer>> comps;
   list<Integer> flatComps;
   Integer nParam;
@@ -1233,7 +1233,6 @@ algorithm
       list<BackendDAE.Equation> removedEqns, removedEqns2;
       list<Integer> unassigned;
       BackendDAE.EqSystem syst;
-      array<Integer> vec1, vec2;
 
     // (regular) determined system
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
@@ -1301,7 +1300,7 @@ protected
   Integer nVars, nEqns, nInitEqs, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, initEqsIndices, redundantEqns;
   list<BackendDAE.Var> initVarList;
-  array<Integer> vec1, vec2;
+  array<Integer> ass1, ass2;
   BackendDAE.IncidenceMatrix m "incidence matrix of modified system";
   BackendDAE.IncidenceMatrix m_ "incidence matrix of original system (TODO: fix this one)";
   BackendDAE.EqSystem syst;
@@ -1343,15 +1342,15 @@ algorithm
   m := fixOverDeterminedSystem(m, initEqsIndices, nVars, nAddVars);
 
   // match the system (nVars+nAddVars == nEqns+nAddEqs)
-  vec1 := arrayCreate(nVars+nAddVars, -1);
-  vec2 := arrayCreate(nEqns+nAddEqs, -1);
+  ass1 := arrayCreate(nVars+nAddVars, -1);
+  ass2 := arrayCreate(nEqns+nAddEqs, -1);
   Matching.matchingExternalsetIncidenceMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
   BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
-  BackendDAEEXT.getAssignment(vec2, vec1);
-  perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, vec1, {}));
-  // (vec1, vec2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
-  //BackendDump.dumpMatchingVars(vec1);
-  //BackendDump.dumpMatchingEqns(vec2);
+  BackendDAEEXT.getAssignment(ass2, ass1);
+  perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
+  // (ass1, ass2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
+  //BackendDump.dumpMatchingVars(ass1);
+  //BackendDump.dumpMatchingEqns(ass2);
 
   // check whether or not a complete matching was found
   if not perfectMatching then
@@ -1362,12 +1361,12 @@ algorithm
 
   // map artificial variables to redundant equations
   range := if nAddVars > 0 then List.intRange2(nVars+1, nVars+nAddVars) else {};
-  redundantEqns := mapIndices(range, vec1);
+  redundantEqns := mapIndices(range, ass1);
 //print("{" + stringDelimitList(List.map(redundantEqns, intString),",") + "}\n");
 
   // symbolic consistency check
   (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared,false);
-  (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m_, me, vec1, vec2, mapIncRowEqn);
+  (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m_, me, ass1, ass2, mapIncRowEqn);
 
   // remove redundant equations
   outRemovedEqns := BackendEquation.getEqns(redundantEqns, inEqns);
@@ -1377,7 +1376,7 @@ algorithm
 
   // map artificial equations to unfixed states
   range := if nAddEqs > 0 then List.intRange2(nEqns+1, nEqns+nAddEqs) else {};
-  range := mapIndices(range, vec2);
+  range := mapIndices(range, ass2);
 //print("{" + stringDelimitList(List.map(range, intString),",") + "}\n");
 
   // introduce additional initial equations

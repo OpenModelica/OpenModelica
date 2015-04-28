@@ -70,13 +70,13 @@ protected import System;
 public function PerfectMatching "
   This function fails if there is no perfect matching for the given system."
   input BackendDAE.IncidenceMatrix m;
-  output array<Integer> assign_v_e;
-  output array<Integer> assign_e_v;
+  output array<Integer> ass1 "eqn := ass1[var]";
+  output array<Integer> ass2 "var := ass2[eqn]";
 protected
   Boolean perfectMatching;
   Integer N = arrayLength(m);
 algorithm
-  (assign_v_e, assign_e_v, true) := RegularMatching(m, N, N);
+  (ass1, ass2, true) := RegularMatching(m, N, N);
 end PerfectMatching;
 
 public function RegularMatching "
@@ -85,27 +85,27 @@ public function RegularMatching "
   input BackendDAE.IncidenceMatrix m;
   input Integer nVars;
   input Integer nEqns;
-  output array<Integer> assign_v_e;
-  output array<Integer> assign_e_v;
+  output array<Integer> ass1 "eqn := ass1[var]";
+  output array<Integer> ass2 "var := ass2[eqn]";
   output Boolean outPerfectMatching=true;
 protected
   Integer i, j;
   array<Boolean> eMark, vMark;
 algorithm
-  assign_e_v := arrayCreate(nEqns, -1);
-  assign_v_e := arrayCreate(nVars, -1);
+  ass2 := arrayCreate(nEqns, -1);
+  ass1 := arrayCreate(nVars, -1);
   vMark := arrayCreate(nVars, false);
   eMark := arrayCreate(nEqns, false);
 
   i := 1;
   while i<=nEqns and outPerfectMatching loop
-    j := assign_e_v[i];
-    if (j>0 and assign_v_e[j] == i) then
+    j := ass2[i];
+    if (j>0 and ass1[j] == i) then
       outPerfectMatching :=true;
     else
       Array.setRange(1, nVars, vMark, false);
       Array.setRange(1, nEqns, eMark, false);
-      outPerfectMatching := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v);
+      outPerfectMatching := BBPathFound(i, m, eMark, vMark, ass1, ass2);
     end if;
     i := i+1;
   end while;
@@ -125,36 +125,36 @@ protected
   Integer i;
   Boolean success = true;
   BackendDAE.IncidenceMatrix m;
-  Integer nVars,nEqns,j;
-  array<Integer> assign_v_e, assign_e_v;
-  array<Boolean> eMark,vMark;
+  Integer nVars, nEqns, j;
+  array<Integer> ass1, ass2;
+  array<Boolean> eMark, vMark;
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
   list<Integer> mEqns;
 algorithm
-  //BackendDAE.EQSYSTEM(m=SOME(m),matching=BackendDAE.MATCHING(ass1=assign_v_e,ass2=assign_e_v)) := outSys;
+  //BackendDAE.EQSYSTEM(m=SOME(m), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)) := outSys;
   BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
   nEqns := BackendDAEUtil.systemSize(outSys);
   nVars := BackendVariable.daenumVariables(outSys);
   // Be carefull, since matching may have been generated with not distinguishing between
   // state and their derivative, which leads to wrong traversing of bibartite graph!!!!
-  //(assign_v_e,assign_e_v) := getAssignment(clearMatching,nVars,nEqns,inSys);
+  //(ass1, ass2) := getAssignment(clearMatching, nVars, nEqns, inSys);
   //if clearMatching then
-  assign_e_v := arrayCreate(nEqns,-1);
-  assign_v_e := arrayCreate(nVars,-1);
-  //BBCheapMatching(nEqns, m, assign_v_e, assign_e_v);
+  ass2 := arrayCreate(nEqns, -1);
+  ass1 := arrayCreate(nVars, -1);
+  //BBCheapMatching(nEqns, m, ass1, ass2);
   //end if;
-  vMark := arrayCreate(nVars,false);
-  eMark := arrayCreate(nEqns,false);
+  vMark := arrayCreate(nVars, false);
+  eMark := arrayCreate(nEqns, false);
   i := 1;
   while i<=nEqns and success loop
-    j := assign_e_v[i];
-    if ((j>0) and assign_v_e[j] == i) then
+    j := ass2[i];
+    if ((j>0) and ass1[j] == i) then
       success :=true;
     else
-      Array.setRange(1,nVars,vMark,false);
-      Array.setRange(1,nEqns,eMark,false);
-      success := BBPathFound(i, m, eMark, vMark, assign_v_e, assign_e_v);
+      Array.setRange(1, nVars, vMark, false);
+      Array.setRange(1, nEqns, eMark, false);
+      success := BBPathFound(i, m, eMark, vMark, ass1, ass2);
       if not success then
         mEqns := {};
         for j in 1:nEqns loop
@@ -162,14 +162,14 @@ algorithm
             mEqns:=j::mEqns;
           end if;
         end for;
-        (_,i,outSys,outShared,assign_v_e,assign_e_v,outArg) := sssHandler({mEqns},i,outSys,outShared,assign_v_e,assign_e_v,outArg);
+        (_, i, outSys, outShared, ass1, ass2, outArg) := sssHandler({mEqns}, i, outSys, outShared, ass1, ass2, outArg);
         BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
         //nEqns := BackendDAEUtil.systemSize(outSys);
         //nVars := BackendVariable.daenumVariables(outSys);
-        //assign_v_e := assignmentsArrayExpand(assign_v_e, nVars,arrayLength(assign_v_e),-1);
-        //assign_e_v := assignmentsArrayExpand(assign_e_v, nEqns,arrayLength(assign_e_v),-1);
-        //vMark := assignmentsArrayBooleanExpand(vMark, nVars,arrayLength(vMark),false);
-        //eMark := assignmentsArrayBooleanExpand(eMark, nEqns,arrayLength(eMark),false);
+        //ass1 := assignmentsArrayExpand(ass1, nVars, arrayLength(ass1), -1);
+        //ass2 := assignmentsArrayExpand(ass2, nEqns, arrayLength(ass2), -1);
+        //vMark := assignmentsArrayBooleanExpand(vMark, nVars, arrayLength(vMark), false);
+        //eMark := assignmentsArrayBooleanExpand(eMark, nEqns, arrayLength(eMark), false);
         success := true;
         i := i-1;
       end if;
@@ -177,7 +177,7 @@ algorithm
     i := i+1;
   end while;
   if success then
-    outSys := BackendDAEUtil.setEqSystemMatching(outSys,BackendDAE.MATCHING(assign_v_e,assign_e_v,{}));
+    outSys := BackendDAEUtil.setEqSystemMatching(outSys, BackendDAE.MATCHING(ass1, ass2, {}));
   else
     print("\nSingular System!!!\n");
   end if;
@@ -188,18 +188,18 @@ protected function BBPathFound
   input BackendDAE.IncidenceMatrix m;
   input array<Boolean> eMark;
   input array<Boolean> vMark;
-  input array<Integer> assign_v_e;
-  input array<Integer> assign_e_v;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Boolean success=false;
 algorithm
   arrayUpdate(eMark, i, true);
 
   for j in m[i] loop
     // negative entries in adjacence matrix belong to states!!!
-    if (j>0 and assign_v_e[j] <= 0) then
+    if (j>0 and ass1[j] <= 0) then
       success := true;
-      arrayUpdate(assign_v_e, j, i);
-      arrayUpdate(assign_e_v, i, j);
+      arrayUpdate(ass1, j, i);
+      arrayUpdate(ass2, i, j);
       return;
     end if;
   end for;
@@ -208,10 +208,10 @@ algorithm
     // negative entries in adjacence matrix belong to states!!!
     if (j>0 and not vMark[j]) then
       arrayUpdate(vMark, j, true);
-      success := BBPathFound(assign_v_e[j], m, eMark, vMark, assign_v_e, assign_e_v);
+      success := BBPathFound(ass1[j], m, eMark, vMark, ass1, ass2);
       if success then
-        arrayUpdate(assign_v_e, j, i);
-        arrayUpdate(assign_e_v, i, j);
+        arrayUpdate(ass1, j, i);
+        arrayUpdate(ass2, i, j);
         return;
       end if;
     end if;
@@ -221,10 +221,10 @@ end BBPathFound;
 protected function BBCheapMatching
   input Integer nEqns;
   input BackendDAE.IncidenceMatrix m;
-  input array<Integer> assign_v_e;
-  input array<Integer> assign_e_v;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 protected
-  Integer i,j;
+  Integer i, j;
   Boolean success=false;
   list<Integer> vars;
 algorithm
@@ -233,10 +233,10 @@ algorithm
     while not success and (listLength(vars) > 0) loop
       j::vars := vars;
       // negative entries in adjacence matrix belong to states!!!
-      if (j>0 and assign_v_e[j] <= 0) then
+      if (j>0 and ass1[j] <= 0) then
         success := true;
-        arrayUpdate(assign_v_e,j,i);
-        arrayUpdate(assign_e_v,i,j);
+        arrayUpdate(ass1, j, i);
+        arrayUpdate(ass2, i, j);
       end if;
     end while;
   end for;
@@ -344,8 +344,8 @@ protected function DFSLH2
   input Integer i;
   input array<Integer> emark;
   input array<Integer> vmark;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions match_opts;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -445,8 +445,8 @@ protected function pathFound "author: PA
   input Integer imark;
   input array<Integer> emark;
   input array<Integer> vmark;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2;
 algorithm
@@ -473,8 +473,8 @@ protected function assignOneInEqn "author: PA
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   input Integer i;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2;
 protected
@@ -496,8 +496,8 @@ protected function assignFirstUnassigned
             Assignments)  /* ass2 */"
   input Integer i;
   input list<Integer> inIntegerLst2;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2;
 algorithm
@@ -538,8 +538,8 @@ protected function forallUnmarkedVarsInEqn
   input Integer imark;
   input array<Integer> emark;
   input array<Integer> vmark;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2;
 protected
@@ -580,8 +580,8 @@ protected function forallUnmarkedVarsInEqnBody
   input array<Integer> emark;
   input array<Integer> vmark;
   input list<Integer> inIntegerLst4;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2;
 algorithm
@@ -755,8 +755,8 @@ protected function BFSBphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> parentcolum;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextQueue;
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums "This list stores all visited collums, if no augmenting path is found
@@ -801,8 +801,8 @@ protected function BFSBphase1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> parentcolum;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextQueue;
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums;
@@ -835,8 +835,8 @@ protected function BFSBtraverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> parentcolum;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output list<Integer> outEqnqueue;
   output Boolean pathFound;
 algorithm
@@ -881,8 +881,8 @@ protected function BFSBreasign
   input Integer c;
   input array<Integer> parentcolum;
   input Integer l;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
   _ := matchcontinue (i,c,parentcolum,l,ass1,ass2)
     local
@@ -1084,8 +1084,8 @@ protected function DFSBphase
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums "This list stores all visited collums, if no augmenting path is found
                                          it could be used to prune the nodes, if a path is found the list is empty";
@@ -1121,8 +1121,8 @@ protected function DFSBtraverseRows
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums;
 algorithm
@@ -1172,8 +1172,8 @@ protected function DFSBtraverseRows1
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums;
 algorithm
@@ -1191,8 +1191,8 @@ protected function DFSBreasign
  author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer r;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
   _ := match (stack,r,ass1,ass2)
     local
@@ -1407,8 +1407,8 @@ protected function MC21Aphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums "This list stores all visited collums, if no augmenting path is found
                                          it could be used to prune the nodes, if a path is found the list is empty";
@@ -1448,8 +1448,8 @@ protected function MC21Achecklookahead
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums;
 algorithm
@@ -1478,8 +1478,8 @@ protected function MC21AtraverseRowsUnmatched
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums;
 algorithm
@@ -1518,8 +1518,8 @@ protected function MC21AtraverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums;
 algorithm
@@ -1562,8 +1562,8 @@ protected function MC21AtraverseRows1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inVisitedColums;
   output list<Integer> outVisitedColums;
 algorithm
@@ -1647,8 +1647,8 @@ protected function PF1
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -1695,8 +1695,8 @@ protected function PF2
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -1814,8 +1814,8 @@ protected function PFphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Boolean matched;
 algorithm
   matched :=
@@ -1854,8 +1854,8 @@ protected function PFchecklookahead
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Boolean matched;
 algorithm
   matched:=
@@ -1883,8 +1883,8 @@ protected function PFtraverseRowsUnmatched
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Boolean matched;
 algorithm
   matched:=
@@ -1922,8 +1922,8 @@ protected function PFtraverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Boolean matched;
 algorithm
   matched:=
@@ -1966,8 +1966,8 @@ protected function PFtraverseRows1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean inMatched;
   output Boolean matched;
 algorithm
@@ -2050,8 +2050,8 @@ protected function PFPlus1
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -2158,8 +2158,8 @@ protected function PFPlusphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean reverseRows;
   output Boolean matched;
 algorithm
@@ -2206,8 +2206,8 @@ protected function PFPluschecklookahead
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean reverseRows;
   output Boolean matched;
 algorithm
@@ -2236,8 +2236,8 @@ protected function PFPlustraverseRowsUnmatched
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean reverseRows;
   output Boolean matched;
 algorithm
@@ -2276,8 +2276,8 @@ protected function PFPlustraverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean reverseRows;
   output Boolean matched;
 algorithm
@@ -2321,8 +2321,8 @@ protected function PFPlustraverseRows1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean inMatched;
   input Boolean reverseRows;
   output Boolean matched;
@@ -2408,8 +2408,8 @@ protected function HK1
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -2457,8 +2457,8 @@ protected function HK2
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -2566,7 +2566,7 @@ end HKphase;
 
 protected function HKgetUnmatched
   input list<Integer> U;
-  input array<Integer> ass1;
+  input array<Integer> ass1 "eqn := ass1[var]";
   input list<Integer> inUnmatched;
   output list<Integer> outUnmatched;
 algorithm
@@ -2639,8 +2639,8 @@ protected function HKBFSBphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<tuple<Integer,Integer>> inRows;
   input list<Integer> queue1;
   output list<tuple<Integer,Integer>> outRows;
@@ -2701,8 +2701,8 @@ protected function HKBFSBphase1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<tuple<Integer,Integer>> inRows;
   input list<Integer> queue1;
   output list<tuple<Integer,Integer>> outRows;
@@ -2738,8 +2738,8 @@ protected function HKBFStraverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<tuple<Integer,Integer>> inRows;
   input Boolean inunmarowFound;
   output list<Integer> outEqnqueue;
@@ -2840,8 +2840,8 @@ protected function HKDFSphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean inMatched;
   output Boolean matched;
 algorithm
@@ -2877,8 +2877,8 @@ protected function HKDFStraverseCollums
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean inMatched;
   output Boolean matched;
 algorithm
@@ -2949,8 +2949,8 @@ protected function HKDFStraverseCollums1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Boolean matched;
 algorithm
   matched:=
@@ -2967,8 +2967,8 @@ protected function HKDFSreasign
  author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer c;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
   _ := match (stack,c,ass1,ass2)
     local
@@ -3060,8 +3060,8 @@ protected function HKDW1
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -3202,8 +3202,8 @@ protected function HKDWDFSphase
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> collummarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean inMatched;
   output Boolean matched;
 algorithm
@@ -3237,8 +3237,8 @@ protected function HKDWDFStraverseCollums
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> collummarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input Boolean inMatched;
   output Boolean matched;
 algorithm
@@ -3295,8 +3295,8 @@ protected function HKDWDFStraverseCollums1
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> collummarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Boolean matched;
 algorithm
   matched:=
@@ -3385,8 +3385,8 @@ protected function ABMP1
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -3437,8 +3437,8 @@ protected function ABMP2
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -3623,8 +3623,8 @@ protected function ABMPBFSphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
   input list<Integer> unMatched;
   output list<Integer> outunMatched;
@@ -3672,8 +3672,8 @@ protected function ABMPBFSphase1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
   input list<Integer> unMatched;
   output list<Integer> outunMatched;
@@ -3704,8 +3704,8 @@ protected function ABMPBFStraverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> queue;
   input list<Integer> unMatched;
   output list<Integer> outEqnqueue;
@@ -3886,8 +3886,8 @@ protected function ABMPDFSphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> level;
   input array<Integer> colptrs;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Integer outI;
   output Boolean matched;
 algorithm
@@ -3930,8 +3930,8 @@ protected function ABMPDFStraverseCollums
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> level;
   input array<Integer> colptrs;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Integer outI;
   output Boolean matched;
 algorithm
@@ -3996,8 +3996,8 @@ protected function ABMPDFStraverseCollums1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> level;
   input array<Integer> colptrs;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Integer outI;
   output Boolean matched;
 algorithm
@@ -4089,8 +4089,8 @@ protected function PR_FIFO_FAIR1
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -4156,8 +4156,8 @@ protected function PR_FIFO_FAIR2
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -4214,8 +4214,8 @@ protected function PR_Global_Relabel
   input Integer ne;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 protected
   list<Integer> queue;
   Integer max;
@@ -4256,7 +4256,7 @@ protected function PR_Global_Relabel_init_r_label
   input Integer nv;
   input Integer max;
   input array<Integer> r_label;
-  input array<Integer> ass2;
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inQueue;
   output list<Integer> outQueue;
 algorithm
@@ -4293,8 +4293,8 @@ protected function PR_Global_Relabel1
   input Integer ne;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
 algorithm
   _ := matchcontinue(queue,l_label,r_label,max,nv,ne,m,mT,ass1,ass2,nextqueue)
@@ -4329,8 +4329,8 @@ protected function PR_Global_Relabel_traverseCollums
   input Integer ne;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
   output list<Integer> outQueue;
 algorithm
@@ -4375,8 +4375,8 @@ protected function PR_FIFO_FAIRphase
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
 algorithm
   _ := matchcontinue(relabels,U,max,min_vertex,nv,ne,m,mT,l_label,r_label,ass1,ass2,nextqueue)
@@ -4418,8 +4418,8 @@ protected function PR_FIFO_FAIRphase1
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Integer outRelabels;
   output Integer outMinLabels;
   output Integer outMinVertex;
@@ -4455,8 +4455,8 @@ protected function PR_FIFO_FAIRphase2
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Integer outRelabels;
   output Integer outMinLabels;
   output Integer outMinVertex;
@@ -4497,8 +4497,8 @@ protected function PR_FIFO_FAIRphase_traverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output Integer outRelabels;
   output Integer outMinLabels;
   output Integer outMinVertex;
@@ -4552,8 +4552,8 @@ protected function PR_FIFO_FAIRrelabel
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inQueue;
   output list<Integer> outQueue;
 algorithm
@@ -4674,8 +4674,8 @@ protected function cheapmatching1
  author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input Integer c;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
   _:=
   matchcontinue (rows,c,ass1,ass2)
@@ -4734,8 +4734,8 @@ protected function ks_rand_cheapmatching1
   input array<Integer> randarr;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
   _ := matchcontinue (i,ne,onecolums,onerows,col_degrees,row_degrees,randarr,m,mT,ass1,ass2)
     local
@@ -4769,8 +4769,8 @@ protected function ks_rand_cheapmatching2
   input array<Integer> randarr;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output list<Integer> onecolums;
   output list<Integer> onerows;
 algorithm
@@ -4799,8 +4799,8 @@ protected function ks_rand_cheapmatching3
   input list<Integer> rows;
   input array<Integer> row_degrees;
   input Integer c;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> onerows;
   input Integer inR;
   output list<Integer> outonerows;
@@ -4842,7 +4842,7 @@ protected function ks_rand_cheapmatching4
   input list<Integer> cols;
   input Integer count;
   input array<Integer> col_degrees;
-  input array<Integer> ass1;
+  input array<Integer> ass1 "eqn := ass1[var]";
   input list<Integer> inStack;
   output list<Integer> outStack;
 algorithm
@@ -4927,8 +4927,8 @@ protected function ks_rand_match
   input array<Integer> degrees2;
   input BackendDAE.IncidenceMatrix m1;
   input BackendDAE.IncidenceMatrix m2;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
   _ := matchcontinue (stack1,stack2,degrees1,degrees2,m1,m2,ass1,ass2)
     local
@@ -4989,8 +4989,8 @@ protected function ks_rand_match1
   input array<Integer> degrees1;
   input array<Integer> degrees2;
   input BackendDAE.IncidenceMatrix incidence;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   output list<Integer> outStack;
 algorithm
   outStack := matchcontinue(i,entries,stack,degrees1,degrees2,incidence,ass1,ass2)
@@ -5543,8 +5543,8 @@ protected function matchingExternal
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -5891,8 +5891,8 @@ protected function getEqnsforIndexReductionphase
   input BackendDAE.IncidenceMatrixT mT;
   input Integer mark;
   input array<Integer> colummarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input array<list<Integer>> mapEqnIncRow "eqn indx -> skalar Eqn indexes";
   input array<Integer> mapIncRowEqn "scalar eqn index -> eqn indx";
   input array<list<Integer>> inSubsets;
@@ -5927,8 +5927,8 @@ protected function getEqnsforIndexReductiontraverseRows
   input BackendDAE.IncidenceMatrixT mT;
   input Integer mark;
   input array<Integer> colummarks;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input array<list<Integer>> mapEqnIncRow "eqn indx -> skalar Eqn indexes";
   input array<Integer> mapIncRowEqn "scalar eqn index -> eqn indx";
   input array<list<Integer>> inSubsets;
@@ -5997,8 +5997,8 @@ protected function reduceIndexifNecessary
   input BackendDAE.Shared ishared;
   input Integer nv;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -6104,8 +6104,8 @@ protected function checkAssignment
   returns all unmatched equations"
   input Integer indx;
   input Integer ne;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inUnassigned;
   output list<Integer> outUnassigned;
 algorithm
