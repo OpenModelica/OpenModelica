@@ -1978,7 +1978,7 @@ algorithm
     local
       Absyn.Exp result,pattern;
       list<Absyn.Exp> patterns;
-      list<DAE.Pattern> elabPatterns;
+      list<DAE.Pattern> elabPatterns, elabPatterns2;
       Option<Absyn.Exp> patternGuard;
       Option<DAE.Exp> elabResult,dPatternGuard;
       list<DAE.Element> caseDecls;
@@ -2003,7 +2003,8 @@ algorithm
         // open a pattern type scope
         env = FGraph.openNewScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.patternTypeScope), NONE());
         // and add the ID as pattern types to it
-        (_,env) = traversePatternList(List.threadMap(elabPatterns,inputAliases,addPatternAliases),addEnvKnownAsBindings,env);
+        (elabPatterns2, cache) = addPatternAliasesList(elabPatterns, inputAliases, cache, inEnv);
+        (_, env) = traversePatternList(elabPatterns2, addEnvKnownAsBindings, env);
         eqAlgs = Static.fromEquationsToAlgAssignments(cp);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll);
@@ -2649,18 +2650,41 @@ The as-binding is then removed, using only the exp-part as the actual input to t
 </html>"));
 end getInputAsBinding;
 
+protected function addPatternAliasesList
+  input list<DAE.Pattern> inPatterns;
+  input list<list<String>> inAliases;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  output list<DAE.Pattern> outPatterns = {};
+  output FCore.Cache outCache = inCache;
+protected
+  list<String> aliases;
+  list<list<String>> rest_aliases = inAliases;
+algorithm
+  for pat in inPatterns loop
+    aliases :: rest_aliases := rest_aliases;
+    (pat, outCache) := addPatternAliases(pat, aliases, outCache, inEnv);
+    outPatterns := pat :: outPatterns;
+  end for;
+
+  outPatterns := listReverse(outPatterns);
+end addPatternAliasesList;
+
 protected function addPatternAliases
   input DAE.Pattern inPattern;
   input list<String> inAliases;
-  output DAE.Pattern pat;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  output DAE.Pattern pat = inPattern;
+  output FCore.Cache outCache = inCache;
+protected
+  DAE.Attributes attr;
 algorithm
-  pat := match (inPattern,inAliases)
-    local
-      String alias;
-      list<String> aliases;
-    case (_,alias::aliases) then addPatternAliases(DAE.PAT_AS(alias,NONE(),DAE.dummyAttrInput,inPattern), aliases);
-    else inPattern;
-  end match;
+  for alias in inAliases loop
+    (outCache, DAE.TYPES_VAR(attributes = attr), _, _, _, _) :=
+      Lookup.lookupIdent(outCache, inEnv, alias);
+    pat := DAE.PAT_AS(alias, NONE(), attr, pat);
+  end for;
 end addPatternAliases;
 
 protected function addAliasesToEnv
