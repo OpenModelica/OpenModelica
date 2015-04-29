@@ -157,7 +157,7 @@ package builtin
     input Integer index;
     output Integer ch;
   end stringGet;
-  
+
   function listHead
     replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;

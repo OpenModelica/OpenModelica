@@ -22,7 +22,7 @@ template translateModel(SimCode simCode)
       let &extraFuncsDecl = buffer "" /*BUFD*/
       let stateDerVectorName = "__zDot"
       let useMemoryOptimization = Flags.isSet(Flags.HPCOM_MEMORY_OPT)
-      
+
       let numRealVars = numRealvars(modelInfo, hpcomData.hpcOmMemory)
       let numIntVars = numIntvars(modelInfo, hpcomData.hpcOmMemory)
       let numBoolVars = numBoolvars(modelInfo, hpcomData.hpcOmMemory)

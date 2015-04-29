@@ -1556,7 +1556,7 @@ algorithm
       Option<SimCode.FmiModelStructure> modelStruct;
       list<SimCodeVar.SimVar> mixedArrayVars;
       HashTableCrIListArray.HashTable varToArrayIndexMapping; //maps each variable to an array position
-      
+
     case (dlow, class_, _, fileDir, _,_, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
       uniqueEqIndex = 1;
@@ -1720,7 +1720,7 @@ algorithm
       //print("HASHTABLE MAPPING\n\n");
       //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
       //print("\n\n");
-      
+
       simCode = SimCode.SIMCODE(modelInfo,
                                 {}, // Set by the traversal below...
                                 recordDecls,
@@ -12530,16 +12530,16 @@ algorithm
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolParamVars, function createVarToArrayIndexMapping1(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(inputVars, function createVarToArrayIndexMapping1(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(outputVars, function createVarToArrayIndexMapping1(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(constVars, function createVarToArrayIndexMapping1(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)); 
+        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(constVars, function createVarToArrayIndexMapping1(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeConstraintsVars, function createVarToArrayIndexMapping1(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeFinalConstraintsVars, function createVarToArrayIndexMapping1(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        
+
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(aliasVars, function createVarToArrayIndexMapping1(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(intAliasVars, function createVarToArrayIndexMapping1(iVarType=2), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolAliasVars, function createVarToArrayIndexMapping1(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
       then varArrayIndexMappingHashTable;
     else
-      then HashTableCrIListArray.emptyHashTable();     
+      then HashTableCrIListArray.emptyHashTable();
   end match;
 end createVarToArrayIndexMapping;
 
@@ -12554,7 +12554,7 @@ protected
   DAE.ComponentRef arrayCref, varName, name, arrayName;
   Integer varIdx, arrayIndex;
   array<Integer> varIndices;
-  list<Integer> arrayDimensions; 
+  list<Integer> arrayDimensions;
   list<String> numArrayElement;
   list<DAE.ComponentRef> expandedCrefs;
   list<String> numArrayElement;
@@ -12569,9 +12569,9 @@ algorithm
         (tmpCurrentVarIndices,varIdx) = getArrayIdxByVar(iVar, iVarType, tmpVarToIndexMapping, tmpCurrentVarIndices);
         //print("Adding variable " + ComponentReference.printComponentRefStr(name) + " to map with index " + intString(varIdx) + "\n");
         tmpVarToIndexMapping = BaseHashTable.add((name, {varIdx}), tmpVarToIndexMapping);
-        arraySubscripts = ComponentReference.crefLastSubs(name);  
+        arraySubscripts = ComponentReference.crefLastSubs(name);
         arrayName = ComponentReference.crefStripLastSubs(name); // removeSubscripts(name);
-        
+
         if(ComponentReference.crefEqual(arrayName, name)) then
           //print("Array not found\n");
           varIndices = arrayCreate(1, varIdx);
@@ -12619,12 +12619,12 @@ algorithm
       then (tmpCurrentVarIndices, varIdx);
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.NEGATEDALIAS(varName)),_,_)
       equation
-        if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then          
+        if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
           varIdx = intMul(varIdx,-1);
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Negated alias to unknown variable given."});
-        end if;        
+        end if;
       then (iCurrentVarIndices, varIdx);
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.ALIAS(varName)),_,_)
       equation
@@ -12632,7 +12632,7 @@ algorithm
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Alias to unknown variable given."});
-        end if;        
+        end if;
       then (iCurrentVarIndices, varIdx);
   end match;
 end getArrayIdxByVar;
@@ -12674,7 +12674,7 @@ protected
 algorithm
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
-    ((_,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);  
+    ((_,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
     arraySize := arrayLength(varIndices);
     for arrayIdx in 0:(arraySize-1) loop
       idx := arrayGet(varIndices, arraySize-arrayIdx);

@@ -15,11 +15,11 @@ template translateModel(SimCode simCode)
         let target  = simulationCodeTarget()
         let &extraFuncs = buffer "" /*BUFD*/
         let &extraFuncsDecl = buffer "" /*BUFD*/
-        
+
         let numRealVars = numRealvars(modelInfo)
         let numIntVars = numIntvars(modelInfo)
         let numBoolVars = numBoolvars(modelInfo)
-        
+
         let()= textFile(simulationMainFile(target, simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "", numRealVars, numIntVars, numBoolVars, getPreVarsCount(modelInfo)), 'OMCpp<%fileNamePrefix%>Main.cpp')
         let()= textFile(simulationCppFile(simCode, contextOther, stringInt(numRealVars), stringInt(numIntVars), stringInt(numBoolVars), &extraFuncs, &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
         let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", MemberVariable(modelInfo, false), MemberVariablePreVariables(modelInfo,false), false), 'OMCpp<%fileNamePrefix%>.h')
@@ -6878,7 +6878,7 @@ match simVar
             var_init
           else
             let size =  Util.mulStringDelimit2Int(array_num_elem,",")
-            let var_init = 
+            let var_init =
             <<
             >>
             let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
