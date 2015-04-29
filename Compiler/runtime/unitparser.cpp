@@ -38,16 +38,12 @@
 #ifndef NO_LPLIB
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-
 #ifndef WIN32
 #define WIN32
 #endif
-
-#else
+#endif /* MINGW & MSVC */
 
 #include CONFIG_LPSOLVEINC
-
-#endif
 
 #endif
 

@@ -127,7 +127,7 @@ ipopt: build/lib/omc/libipopt.la
 
 build/lib/omc/libumfpack.a: 3rdParty/SuiteSparse/UMFPACK/Makefile
 	mkdir -p 3rdParty/SuiteSparse/build
-	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_INSTALL_PREFIX:PATH="../../../build"
+	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="../../../build"
 	$(MAKE) -C 3rdParty/SuiteSparse/build install
 	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/lib/omc
 	#mkdir --parent build/include/omc/c/suitesparse
@@ -224,7 +224,7 @@ qjson:
 CMinpack:
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build
-	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DSHARED_LIBS=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DSHARED_LIBS=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* || $(MAKE) -C 3rdParty/CMinpack/build
 	test -d 3rdParty/CMinpack/install || $(MAKE) -C 3rdParty/CMinpack/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACKLIB) 3rdParty/CMinpack/install/lib/$(LIBCMINPACKLIB)
