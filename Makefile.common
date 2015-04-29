@@ -107,7 +107,7 @@ build/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthread_redir
 	(cd 3rdParty/gc && autoreconf -vif && automake --add-missing && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt-3.11.6/Makefile: $(LAPACK_TARGET)
-	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L${abs_top_builddir}/build/lib/omc $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" --without-metis --without-HSLold --without-HSL)
+	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L${abs_top_builddir}/build/lib/omc $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
 
 build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6

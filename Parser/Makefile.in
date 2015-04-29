@@ -10,6 +10,7 @@ endif
 ifeq (arm,@target_cpu@)
 ANTLRDEBUG=--disable-antlrdebug --disable-abiflags
 endif
+host=--host=@host@
 
 include Makefile.common
 

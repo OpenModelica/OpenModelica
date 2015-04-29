@@ -86,8 +86,15 @@ AC_SUBST(BOOST_INCLUDE)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
+AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
+
+build_short=$build_cpu-$build_os
+host_short=$host_cpu-$host_os
+
+echo "build_short: $build_short"
+echo "host_short: $host_short"
 
 if echo $host | grep -i darwin; then
   DARWIN=1
@@ -119,7 +126,6 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_MAKE_SET
-AC_PROG_LEX
 AC_PROG_FC
 
 CFLAGS_BEFORE="$CFLAGS"
@@ -614,6 +620,10 @@ if test -n "$QMAKE"; then
       sed "s/-arch//g" > $MAKEFILE.fixed && \
       mv $MAKEFILE.fixed $MAKEFILE' >> qmake.sh
     QMAKE="sh `pwd`/qmake.sh"
+  # Needed? Maybe
+  elif test "$host" != "$build"; then
+    QMAKE_LIBDIR_QT=`$QMAKE -query QT_INSTALL_LIBS | sed "s/$build_short/$host_short/"`
+    QMAKE="$QMAKE -spec linux-g++ QMAKE_CXX=\"$CXX\" QMAKE_CC=\"$CC\" QMAKE_LINK=\"$CXX\" QMAKE_LIBDIR_QT=\"$QMAKE_LIBDIR_QT\""
   fi
   AC_MSG_RESULT([$QMAKE])
 fi
