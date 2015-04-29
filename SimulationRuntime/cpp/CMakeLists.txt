@@ -373,7 +373,7 @@ include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
 
 message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
-
+#set (CMAKE_CXX_FLAGS "-Winvalid-pch")
 #build of simulation.core
 include_directories ("Include")
 include_directories ("Solver")
@@ -534,7 +534,7 @@ MACRO(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
 FOREACH(HEADER ${${HEADER_LIST}})
     STRING(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
     STRING(REPLACE Include "" DIR ${DIR})
-  #message(STATUS "coopy to "include/omc/cpp/${DIR})
+  #message(STATUS "copy to "include/omc/cpp/${DIR})
   INSTALL(FILES ${HEADER} DESTINATION include/omc/cpp/${DIR})
 ENDFOREACH(HEADER)
 

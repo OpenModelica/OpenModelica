@@ -218,23 +218,37 @@ MESSAGE(STATUS "--UMFPACK_LIBRARIES = ${UMFPACK_LIBRARIES_}")
 MESSAGE(STATUS " ")
 
 create_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
-
+IF(MSVC)
  configure_file (
-  "ModelicaConfig.inc.in"
-  "${PROJECT_BINARY_DIR}/ModelicaConfig.inc"
+  "ModelicaConfig_msvc.inc.in"
+  "${PROJECT_BINARY_DIR}/ModelicaConfig_msvc.inc"
   )
+  install (FILES
+				${PROJECT_BINARY_DIR}/ModelicaConfig_msvc.inc
+				DESTINATION include/omc/cpp)
+ENDIF(MSVC)
+
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+configure_file (
+  "ModelicaConfig_gcc.inc.in"
+  "${PROJECT_BINARY_DIR}/ModelicaConfig_gcc.inc"
+  )
+install (FILES
+				${PROJECT_BINARY_DIR}/ModelicaConfig_gcc.inc
+				DESTINATION include/omc/cpp)  
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
 configure_file (
  "ModelicaLibraryConfig.inc.in"
  "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc"
  )
- 
 install (FILES
-				${PROJECT_BINARY_DIR}/ModelicaConfig.inc
 				${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc
 				DESTINATION include/omc/cpp)
 
 
+              
+                
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/HistoryImpl.h  ${CMAKE_SOURCE_DIR}/Include/Core/Modelica.h ${CMAKE_SOURCE_DIR}/Include/Core/ModelicaDefine.h DESTINATION include/omc/cpp/Core)
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/TextfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/MatfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
