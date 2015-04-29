@@ -306,7 +306,9 @@ bool OMCProxy::initializeOMC()
   sendCommand("getInstallationDirectoryPath()");
   Helper::OpenModelicaHome = StringHandler::removeFirstLastQuotes(getResult());
 #ifdef WIN32
+  MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toStdString().c_str()));
+  MMC_CATCH_TOP()
 #endif
   /* set the tmp directory as the working directory */
   changeDirectory(tmpPath);
