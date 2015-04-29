@@ -212,7 +212,7 @@ constant DebugFlag PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS = DEBUG_FLAG(22, "pat
   Util.notrans(""));
 constant DebugFlag PATTERNM_ALL_INFO = DEBUG_FLAG(23, "patternmAllInfo", false,
   Util.gettext("Adds notifications of all pattern-matching optimizations that are performed."));
-constant DebugFlag PATTERNM_DCE = DEBUG_FLAG(24, "patternmDeadCodeEliminiation", true,
+constant DebugFlag PATTERNM_DCE = DEBUG_FLAG(24, "patternmDeadCodeElimination", true,
   Util.gettext("Performs dead code elimination in match-expressions."));
 constant DebugFlag PATTERNM_MOVE_LAST_EXP = DEBUG_FLAG(25, "patternmMoveLastExp", true,
   Util.gettext("Optimization that moves the last assignment(s) into the result of a match-expression. For example: equation c = fn(b); then c; => then fn(b);"));
