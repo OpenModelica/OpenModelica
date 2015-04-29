@@ -1416,88 +1416,76 @@ public function equationString "Helper function to e.g. dump."
 algorithm
   outString := matchcontinue (inEquation)
     local
-      String s1,s2,s3,s4,s5,res;
+      String s1,s2,s3,s4,res;
       DAE.Exp e1,e2,e,cond;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
-      BackendDAE.EquationAttributes attr;
       DAE.Algorithm alg;
       DAE.ElementSource source;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse,eqns;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2, source=source, attr=attr))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        s3 = printEqAtts(attr);
-        res = stringAppendList({s1," = ",s2,"  ",s5,s3});
+        res = stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2, source=source))
+    case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2,"  ", s5});
+        res = stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2, source=source))
+    case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2,"  ", s5});
+        res = stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2, source=source))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," := ",s2,"  ", s5});
+        res = stringAppendList({s1," := ",s2});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn)), source=source))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn))))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
         s3 = whenEquationString(weqn);
         s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\n",s3,"end when","  ", s5});
+        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\n",s3,"end when"});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2), source=source))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2)))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
         s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\nend when","  ", s5});
+        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\nend when"});
       then
         res;
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e, source=source))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ExpressionDump.printExpStr(e);
-        res = stringAppendList({s1,"= 0","  ", s5});
+        res = stringAppendList({s1,"= 0"});
       then
         res;
     case (BackendDAE.ALGORITHM(alg = alg,source = source))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         res = DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        res = stringAppendList({res,"  "});
       then
         res;
-    case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse, source=source))
+    case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse))
       equation
-        s5 = DAEDump.getSourceInformationStr(source);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = stringDelimitList(List.map(eqns,equationString),"\n  ");
-        s3 = stringAppendList({"if ",s1," then\n  ",s2,"  ", s5});
+        s3 = stringAppendList({"if ",s1," then\n  ",s2});
         res = ifequationString(expl,eqnstrue,eqnsfalse,s3);
       then
         res;
