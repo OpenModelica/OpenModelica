@@ -12570,7 +12570,7 @@ algorithm
         //print("Adding variable " + ComponentReference.printComponentRefStr(name) + " to map with index " + intString(varIdx) + "\n");
         tmpVarToIndexMapping = BaseHashTable.add((name, {varIdx}), tmpVarToIndexMapping);
         arraySubscripts = ComponentReference.crefLastSubs(name);
-        if(listEmpty(numArrayElement)) then
+        if(boolOr(listEmpty(numArrayElement), checkIfSubscriptsContainsUnhandlableIndices(arraySubscripts))) then
           arrayName = name;
         else
           arrayName = ComponentReference.crefStripLastSubs(name);
@@ -12602,6 +12602,20 @@ algorithm
       then iCurrentVarIndicesHashTable;
   end match;
 end createVarToArrayIndexMapping1;
+
+protected function checkIfSubscriptsContainsUnhandlableIndices "author: marcusw
+  Returns false if at least one subscript can not be handled as constant index."
+  input list<DAE.Subscript> iSubscripts;
+  output Boolean oContainsUnhandledSubscripts;
+protected
+  Boolean containsUnhandledSubscripts = false;
+  DAE.Subscript subscript;
+algorithm
+  for subscript in iSubscripts loop
+    containsUnhandledSubscripts := boolOr(containsUnhandledSubscripts, intLt(DAEUtil.getSubscriptIndex(subscript), 0));
+  end for;
+  oContainsUnhandledSubscripts := containsUnhandledSubscripts;
+end checkIfSubscriptsContainsUnhandlableIndices;
 
 protected function getArrayIdxByVar "author: marcusw
   Get the storage-index of the given variable. If the variable is an alias, the storage position of the alias variable is returned.

@@ -6998,19 +6998,18 @@ algorithm
 end getAssertConditionCrefs;
 
 public function getSubscriptIndex "author: marcusw
-  Get the index of the given subscript as Integer. If the subscript is not a constant integer, the function returns 0."
+  Get the index of the given subscript as Integer. If the subscript is not a constant integer, the function returns -1."
   input DAE.Subscript iSubscript;
   output Integer oIndex;
 protected
   Integer index;
+  DAE.Exp exp;
 algorithm
   oIndex := match(iSubscript)
     case(DAE.INDEX(DAE.ICONST(integer=index)))
       then index;
     else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"GetSubscriptIndex: Only constant index subsripts are supported at the moment!."});
-      then 0;
+      then -1;
   end match;
 end getSubscriptIndex;
 
