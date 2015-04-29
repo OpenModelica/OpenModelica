@@ -1122,11 +1122,8 @@ class DynArray : public BaseArray<T>
 
   virtual void assign(const BaseArray<T>& b)
   {
-    std::vector<size_t> v = b.getDims();
-    _multi_array.resize(v);
-    const T* data_otherarray = b.getData();
-    _multi_array.assign(data_otherarray,
-                        data_otherarray + _multi_array.num_elements());
+    _multi_array.resize(b.getDims());
+    b.getDataCopy(_multi_array.data(), _multi_array.num_elements());
   }
 
   virtual void assign(const T* data)
