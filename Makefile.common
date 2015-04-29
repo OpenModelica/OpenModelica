@@ -62,9 +62,10 @@ bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphst
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-$(datadir)/omc/omc_communication.idl: Compiler/runtime/omc_communication.idl mkbuilddirs
+$(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.idl
+	mkdir -p $(builddir_share)/omc
 	cp -a "$<" "$@"
-idl: $(datadir)/omc/omc_communication.idl
+idl: $(builddir_share)/omc/omc_communication.idl
 
 interactive: .testvariables mkbuilddirs boehm-gc fmil idl libraries/msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
@@ -390,6 +391,7 @@ install: install-dirs
 	# man pages
 	cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
+	cp -p ${builddir_share}/omc/* ${INSTALL_SHAREDIR}/omc/
 	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
 	test ! -d ${builddir_share}/omshell/ || cp -p ${builddir_share}/omshell/*.xml ${INSTALL_SHAREDIR}/omshell/
 	test ! -d ${builddir_share}/omshell/nls/ || cp -p ${builddir_share}/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/
