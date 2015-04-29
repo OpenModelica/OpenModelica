@@ -21,6 +21,7 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
  public:
     TextFileWriter(unsigned long size, string output_path, string file_name)
             : Writer<dim_1, dim_2, dim_3, dim_4>(),
+              _output_stream(),
               _curser_position(0),
               _output_path(output_path),
               _file_name(file_name)

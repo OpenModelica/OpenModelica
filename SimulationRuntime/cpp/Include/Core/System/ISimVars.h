@@ -24,9 +24,12 @@ public:
     virtual double* initRealArrayVar(size_t size,size_t start_index)= 0;
     virtual int*    initIntArrayVar(size_t size,size_t start_index)= 0;
     virtual bool*   initBoolArrayVar(size_t size,size_t start_index)= 0;
-    virtual void initRealAliasArray(int indices[] ,size_t n,double*ref_data[] ) = 0;
-    virtual void initIntAliasArray(int indices[] ,size_t n,int*ref_data[] ) = 0;
-    virtual void initBoolAliasArray(int indices[] ,size_t n,bool*ref_data[] ) = 0;
+    virtual void initRealAliasArray(int indices[], size_t n, const double* ref_data[]) = 0;
+    virtual void initIntAliasArray(int indices[], size_t n, const int* ref_data[]) = 0;
+    virtual void initBoolAliasArray(int indices[], size_t n, const bool* ref_data[]) = 0;
+    virtual void initRealAliasArray(std::vector<int> indices, const double* ref_data[]) = 0;
+    virtual void initIntAliasArray(std::vector<int> indices, const int* ref_data[]) = 0;
+    virtual void initBoolAliasArray(std::vector<int> indices, const bool* ref_data[]) = 0;
     /*Methods for initialize scalar model variables in simvars memory*/
     virtual double& initRealVar(size_t i) = 0;
     virtual int& initIntVar(size_t i)= 0;

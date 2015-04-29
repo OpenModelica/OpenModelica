@@ -10,7 +10,7 @@ template <class T> class DynArrayDim3;
 /**
 * Operator class to assign simvar memory to a reference array
 */
-template<class T>
+template<typename T>
 struct CArray2RefArray
 {
   T* operator()(T& val)
@@ -25,7 +25,7 @@ struct CArray2RefArray
 * double data[4];
 * A.getDataCopy(data,4)
 */
-template<class T>
+template<typename T>
 struct RefArray2CArray
 {
   const T& operator()(const T* val) const
@@ -36,7 +36,7 @@ struct RefArray2CArray
 /**
 * Operator class to copy an c -array  to a reference array
 */
-template<class T>
+template<typename T>
 struct CopyCArray2RefArray
 {
  /**
@@ -55,7 +55,7 @@ struct CopyCArray2RefArray
 /**
 * Operator class to assign a reference array  to a reference array
 */
-template<class T>
+template<typename T>
 struct RefArray2RefArray
 {
     T* operator()(T* val,T* val2)
@@ -67,7 +67,7 @@ struct RefArray2RefArray
 /**
 * Operator class to copy the values of a reference array to a reference array
 */
-template<class T>
+template<typename T>
 struct CopyRefArray2RefArray
 {
   T* operator()(T* val, const T* val2)
@@ -80,7 +80,7 @@ struct CopyRefArray2RefArray
 /**
 * Base class for all dynamic and static arrays
 */
-template<class T>class BaseArray
+template<typename T>class BaseArray
 {
 public:
   BaseArray(bool is_static,bool isReference)
@@ -216,8 +216,8 @@ public:
     :BaseArray<T>(true, true)
   {
     T **refs = _ref_array.c_array();
-    std::transform(refs, refs + nelems, ref_data,
-                   refs, RefArray2RefArray<T>());
+    for(int i = 0; i < nelems; i++)
+      _ref_array[i] = (T*)ref_data[i];
   }
 
   /**

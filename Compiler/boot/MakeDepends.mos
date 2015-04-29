@@ -229,6 +229,7 @@ utilFiles := {
   "HashTable5",
   "HashTableCG",
   "HashTableCrILst",
+  "HashTableCrIListArray",
   "HashTableExpToExp",
   "HashTableCrIntToExp",
   "HashTableCrToExpSourceTpl",

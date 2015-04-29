@@ -157,6 +157,12 @@ package builtin
     input Integer index;
     output Integer ch;
   end stringGet;
+  
+  function listHead
+    replaceable type TypeVar subtypeof Any;
+    input list<TypeVar> lst;
+    output TypeVar head;
+  end listHead;
 
   uniontype SourceInfo "The Info attribute provides location information for elements and classes."
     record SOURCEINFO
@@ -301,6 +307,7 @@ package SimCode
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
       HpcOmSimCode.HpcOmData hpcomData;
+      HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
     end SIMCODE;
 
@@ -929,6 +936,13 @@ package SimCodeUtil
   function codegenPeekTryThrowIndex
     output Integer i;
   end codegenPeekTryThrowIndex;
+
+  function getVarIndexListByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input Integer iIndexForUndefinedReferences;
+    output list<Integer> oVarIndexList;
+  end getVarIndexListByMapping;
 
 end SimCodeUtil;
 
@@ -2614,11 +2628,11 @@ package Util
     output Integer i;
   end intProduct;
 
-   function sumStringDelimit2Int
+   function mulStringDelimit2Int
     input String lst;
     input String delim;
     output Integer i;
-  end sumStringDelimit2Int;
+  end mulStringDelimit2Int;
 
   function testsuiteFriendly
     input String in;
@@ -2694,12 +2708,6 @@ package List
     output list<Type_a> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end lastN;
-
-  function first
-    input list<Type_a> inList;
-    output Type_a outFirst;
-    replaceable type Type_a subtypeof Any;
-  end first;
 
   function threadTuple
     replaceable type Type_b subtypeof Any;

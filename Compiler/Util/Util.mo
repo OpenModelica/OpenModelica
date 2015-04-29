@@ -483,7 +483,7 @@ algorithm
   str := stringDelimitList(lst1, delim);
 end stringDelimitListNonEmptyElts;
 
-public  function sumStringDelimit2Int
+public  function mulStringDelimit2Int
 " splits the input string at the delimiter string in list of strings and converts to integer list which is then summarized
   "
     input String inString;
@@ -495,8 +495,12 @@ protected
    algorithm
        lst:=stringSplitAtChar(inString,delim);
        lst2:=List.map(lst, stringInt);
-       i:=List.fold(lst2,intAdd,0);
-end sumStringDelimit2Int;
+       if(intGt(listLength(lst2), 0)) then
+         i := List.fold(lst2,intMul,1);
+       else
+         i := 0;
+       end if;
+end mulStringDelimit2Int;
 
 public function stringReplaceChar "Takes a string and two chars and replaces the first char with the second char:
   Example: string_replace_char(\"hej.b.c\",\".\",\"_\") => \"hej_b_c\"

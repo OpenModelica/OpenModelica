@@ -20,6 +20,11 @@ public:
   {
   }
 
+  virtual ~HistoryImpl()
+  {
+
+  }
+
   /*
   void setOutputs(map<unsigned int,string> var_outputs)
   {

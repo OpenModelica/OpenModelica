@@ -88,7 +88,7 @@ bool& SimVars::initBoolVar(size_t i)
 double* SimVars::getStateVector()
 {
   if (_z_i + _dim_z <= _dim_real)
-    return _dim_real > 0? &_real_vars.get()->get()[_z_i]: NULL;
+    return _dim_real > 0 ? &_real_vars.get()->get()[_z_i] : NULL;
   else
     throw std::runtime_error("Wrong state vars start index");
 }
@@ -100,7 +100,7 @@ double* SimVars::getStateVector()
 double* SimVars::getDerStateVector()
 {
   if (_z_i + 2*_dim_z <= _dim_real)
-    return _dim_real > 0? &_real_vars.get()->get()[_z_i + _dim_z]: NULL;
+    return _dim_real > 0 ? &_real_vars.get()->get()[_z_i + _dim_z] : NULL;
   else
     throw std::runtime_error("Wrong der state vars start index");
 }
@@ -216,29 +216,51 @@ bool* SimVars::initBoolArrayVar(size_t size, size_t start_index)
  *  \param [out] ref_data pointer array to original array elements in simvars memory
   *  \details Details
  */
-void SimVars::initRealAliasArray(int indices[] ,size_t n,double*ref_data[] )
+void SimVars::initRealAliasArray(int indices[], size_t n, const double* ref_data[])
 {
-   std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getRealVar,this,boost::lambda::_1));
+  for(int i = 0; i < n; i++)
+  {
+    int index = indices[i];
+    double* refToVar =  SimVars::getRealVar(index);
+    ref_data[i] = refToVar;
+  }
 }
+
+void SimVars::initRealAliasArray(std::vector<int> indices, const double* ref_data[])
+{
+  initRealAliasArray(&indices[0], indices.size(), ref_data);
+}
+
 /**\brief initializes int model alias array variable in simvars memory
  *  \param [in] indices indices of original variables in simvars memory
  *  \param [in] n size of alias array
  *  \param [out] ref_data pointer array to original array elements in simvars memory
   *  \details Details
  */
-void SimVars::initIntAliasArray(int indices[] ,size_t n,int*ref_data[] )
+void SimVars::initIntAliasArray(int indices[], size_t n, const int* ref_data[])
 {
-   std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getIntVar,this,boost::lambda::_1));
+  std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getIntVar,this,boost::lambda::_1));
 }
+
+void SimVars::initIntAliasArray(std::vector<int> indices, const int* ref_data[])
+{
+  initIntAliasArray(&indices[0], indices.size(), ref_data);
+}
+
 /**\brief initializes bool model alias array variable in simvars memory
  *  \param [in] indices indices of original variables in simvars memory
  *  \param [in] n size of alias array
  *  \param [out] ref_data pointer array to original array elements in simvars memory
   *  \details Details
  */
-void SimVars::initBoolAliasArray(int indices[] ,size_t n,bool*ref_data[] )
+void SimVars::initBoolAliasArray(int indices[], size_t n, const bool*ref_data[] )
 {
- std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getBoolVar,this,boost::lambda::_1));
+  std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getBoolVar,this,boost::lambda::_1));
+}
+
+void SimVars::initBoolAliasArray(std::vector<int> indices, const bool* ref_data[])
+{
+  initBoolAliasArray(&indices[0], indices.size(), ref_data);
 }
 
 /**

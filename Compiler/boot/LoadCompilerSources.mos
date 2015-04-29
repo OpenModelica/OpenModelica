@@ -263,6 +263,7 @@ if true then /* Suppress output */
     "../Util/HashTable5.mo",
     "../Util/HashTableCG.mo",
     "../Util/HashTableCrILst.mo",
+    "../Util/HashTableCrIListArray.mo",
     "../Util/HashTableCrToExp.mo",
     "../Util/HashTableCrToCrEqLst.mo",
     "../Util/HashTableExpToExp.mo",

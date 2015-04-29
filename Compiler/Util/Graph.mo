@@ -612,7 +612,7 @@ algorithm
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
     else
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."}, sourceInfo());
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodes failed."}, sourceInfo());
       then NONE();
   end matchcontinue;
 end allReachableNodesWork;
