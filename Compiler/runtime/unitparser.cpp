@@ -35,18 +35,19 @@
 #include <stack>
 #include "omc_msvc.h" /* For round() */
 
+#ifndef NO_LPLIB
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
-#ifndef NO_LPLIB
 #ifndef WIN32
 #define WIN32
-#endif
-#include CONFIG_LPSOLVEINC
 #endif
 
 #else
 
 #include CONFIG_LPSOLVEINC
+
+#endif
 
 #endif
 

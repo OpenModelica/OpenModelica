@@ -52,12 +52,14 @@ mkbuilddirs:
 
 release: omc-diff omc
 
-bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphstream metis
+bootstrap-dependencies: graphstream
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler OpenModelicaBootstrappingHeader.h
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin install_scripts
 	$(MAKE) -f $(defaultMakefileTarget) -C Parser install
+
+sim-dependencies: omc-diff docs fmi fmil opencl_rt lis metis fmi fmil
 
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
@@ -67,7 +69,12 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil idl libraries/msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
+interactive-common: .testvariables mkbuilddirs boehm-gc idl libraries/msl-external-libs
+
+interactive-short: .testvariables interactive-common
+	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies
+
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
 
 docs: mkbuilddirs
@@ -230,6 +237,7 @@ CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
 	rm -f 3rdParty/CMinpack/build/Makefile
+	test ! -d 3rdParty/CMinpack/build || rm -r 3rdParty/CMinpack/build
 
 metis:
 	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)

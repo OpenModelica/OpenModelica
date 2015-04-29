@@ -136,7 +136,12 @@ qtclients: qwt @OMNOTEBOOK@ omshell omedit omplot omoptim omoptimbasis
 endif
 
 omc-bootstrapped:
-	$(MAKE) bootstrap-dependencies
+	$(MAKE) bootstrap-dependencies interactive sim-dependencies
+	$(MAKE) -C Compiler/boot
+	$(MAKE) omlibrary
+
+omc-no-sim:
+	$(MAKE) bootstrap-dependencies interactive-short
 	$(MAKE) -C Compiler/boot
 	$(MAKE) omlibrary
 

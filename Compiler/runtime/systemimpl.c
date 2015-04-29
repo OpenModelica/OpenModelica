@@ -1719,6 +1719,12 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
   return 1;
 }
 
+#ifdef NO_LAPACK
+int SystemImpl__dgesv(void *lA, void *lB, void **res)
+{
+  MMC_THROW();
+}
+#else
 /* adrpo 2011-06-23
  * extern definition to dgesv_ from -llapack
  * as we do not link with -lsim and the one
@@ -1766,6 +1772,15 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   *res = tmp;
   return info;
 }
+#endif
+
+#ifdef NO_LPLIB
+int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
+{
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Not compiled with lpsolve support"),NULL,0);
+  MMC_THROW();
+}
+#else
 
 #include CONFIG_LPSOLVEINC
 
@@ -1812,6 +1827,7 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   delete_lp(lp);
   return info;
 }
+#endif
 
 #define MODELICAPATH_LEVELS 6
 typedef struct {

@@ -15,6 +15,7 @@ AC_SUBST(EXTRA_CFLAGS_GENERATED_CODE)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
+AC_SUBST(NO_LPLIB)
 AC_SUBST(LPSOLVEINC)
 AC_SUBST(MODELICA3D)
 AC_SUBST(OPENCL)
@@ -45,6 +46,7 @@ AC_SUBST(RUNTIMECFLAGS)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
+AC_SUBST(NO_LAPACK)
 AC_SUBST(WITH_SUNDIALS)
 AC_SUBST(WITH_IPOPT)
 AC_SUBST(WITH_UMFPACK)
@@ -59,6 +61,8 @@ AC_SUBST(LIBSIMULATION)
 AC_SUBST(LIBRUNTIME)
 AC_SUBST(LIBFMIRUNTIME)
 AC_SUBST(LIBFMILIB)
+AC_SUBST(WITH_FMIL)
+AC_SUBST(NO_FMIL)
 AC_SUBST(FMILIB_SHARED)
 AC_SUBST(LIBCMINPACKLIB)
 AC_SUBST(CMINPACKLIB_SHARED)
@@ -223,6 +227,9 @@ done
 AC_MSG_CHECKING([for omc])
 
 if test "$OMC" = "no" ; then
+  if test "$host" != "$build"; then
+    AC_MSG_ERROR([cross-compilation attempt detected, but no omc executable was given])
+  fi
   AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
   OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
 elif "$OMC" +version > /dev/null 2>&1; then
@@ -410,17 +417,23 @@ else
 fi
 AC_MSG_RESULT([$RUNTIMECFLAGS])
 
+LIBS=""
+AC_SEARCH_LIBS(dlopen,dl)
+LIBDL="$LIBS"
+LIBS=""
+
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
 dnl check for lpsolve55
 
-AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR        (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
+AC_ARG_WITH(lpsolve,  [  --with-lpsolve        (default searching for lpsolve; disable if only using omc to cross-compile)],[if test "$withval" = "no"; then NO_LPLIB="#define NO_LPLIB"; fi],[])
 
-LIBS=""
-AC_SEARCH_LIBS(dlopen,dl)
-LIBDL="$LIBS"
-LIBS=""
+if test -z "$NO_LPLIB"; then
+
+echo "NO_LPLIB: '$NO_LPLIB'"
+
+AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR        (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
 
 if test "$WANT_STATIC_LPSOLVE" = "no"; then
   LIBS=""
@@ -450,6 +463,7 @@ AC_CHECK_HEADER([lp_lib.h],[LPSOLVEINC=lp_lib.h],[
   AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[AC_MSG_ERROR([failed to find lpsolve55 headers])])
 ])
 
+fi # NO_LPLIB
 
 if test "$host" != "i586-pc-mingw32msvc"; then
   AC_CHECK_FUNC(socket,[LIBSOCKET=""],
@@ -485,6 +499,13 @@ fi
 
 # Cannot use AX_LAPACK since it assumes a Fortran compiler is used
 AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use openblas for automatically detected OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture. Note that you need to include BLAS in this.)],[LD_LAPACK="$withval"],[LD_LAPACK="-llapack -lblas"])
+
+if test "$LD_LAPACK" = "no"; then
+  FINAL_MESSAGES="$FINAL_MESSAGES\nLAPACK IS NOT AVAILABLE! ONLY USED FOR CROSS-COMPILING/BOOTSTRAPPING"
+  LD_LAPACK=""
+  NO_LAPACK="#define NO_LAPACK"
+else
+
 AC_MSG_CHECKING([LAPACK/BLAS flags])
 if echo "$LD_LAPACK" | grep -oq "^openblas"; then
   LD_LAPACK=`echo $LD_LAPACK | sed s/"^openblas-//"`
@@ -500,6 +521,7 @@ else
   LIBS="$LD_LAPACK"
   AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[],[AC_MSG_ERROR([dgesv (LAPACK) linking failed using $LD_LAPACK])])
   AC_LINK_IFELSE([AC_LANG_CALL([], [dswap_])],[AC_MSG_RESULT([$LD_LAPACK])],[AC_MSG_ERROR([dswap (BLAS) linking failed using $LD_LAPACK])])
+fi
 fi
 
 AC_CHECK_HEADERS(kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
@@ -777,13 +799,32 @@ else
   BOOTSTRAP_STATIC=""
 fi
 
+AC_ARG_WITH(FMIL, [  --with-FMIL                 Link omc to FMIL (only disable when cross-compiling)],
+[
+  if test "$withval" = "no"; then
+    WITH_FMIL=no
+    NO_FMIL="#define NO_FMIL"
+  else
+    WITH_FMIL=yes
+  fi
+], [
+    WITH_FMIL=yes
+])
+
 AC_ARG_WITH(METIS, [  --with-METIS=DIR                 Compile with Metis graph partitioner in DIR],
 [
-  USE_METIS=1
-  USE_GRAPH=1
-  AC_MSG_RESULT([Enabling METIS... METISHOME="$withval"]);
-  GRAPHLIB="-L$withval -lmetis";
-  USE_PATOH=0
+  if test "$withval" = "no"; then
+    USE_METIS=0
+    USE_GRAPH=0
+    USE_PATOH=0
+    AC_MSG_RESULT([Disabling METIS...]);
+  else
+    USE_METIS=1
+    USE_GRAPH=1
+    AC_MSG_RESULT([Enabling METIS... METISHOME="$withval"]);
+    GRAPHLIB="-L$withval -lmetis";
+    USE_PATOH=0
+  fi
 ], [
     USE_GRAPH=1
     GRAPHLIB="-L$PREFIX/lib/omc -lmetis";

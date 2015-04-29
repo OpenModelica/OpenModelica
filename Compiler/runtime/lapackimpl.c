@@ -79,6 +79,8 @@ extern "C" {
 #define strncasecmp strnicmp
 #endif
 
+#ifndef NO_LAPACK
+
 extern int dgeev_(const char *jobvl, const char *jobvr, integer *n,
   doublereal *a, integer *lda, doublereal *wr, doublereal *wi, doublereal *vl,
   integer *ldvl, doublereal *vr, integer *ldvr, doublereal *work,
@@ -131,7 +133,7 @@ extern int dgeqpf_(integer *m, integer *n, doublereal *a, integer *lda,
 extern int dorgqr_(integer *m, integer *n, integer *k, doublereal *a,
   integer *lda, doublereal *tau, doublereal *work, integer *lwork, integer *info);
 
-double* alloc_real_matrix(int N, int M, void *data)
+static double* alloc_real_matrix(int N, int M, void *data)
 {
   double *matrix;
   void *tmp = data;
@@ -154,7 +156,7 @@ double* alloc_real_matrix(int N, int M, void *data)
   return matrix;
 }
 
-double* alloc_real_vector(int N, void *data)
+static double* alloc_real_vector(int N, void *data)
 {
   double *vector;
   void *tmp = data;
@@ -173,7 +175,7 @@ double* alloc_real_vector(int N, void *data)
   return vector;
 }
 
-integer* alloc_int_vector(int N, void *data)
+static integer* alloc_int_vector(int N, void *data)
 {
   integer *vector;
   void *tmp = data;
@@ -192,22 +194,22 @@ integer* alloc_int_vector(int N, void *data)
   return vector;
 }
 
-double* alloc_zeroed_real_vector(int N)
+static double* alloc_zeroed_real_vector(int N)
 {
   return (double*)calloc(N, sizeof(double));
 }
 
-double* alloc_zeroed_real_matrix(int N, int M)
+static double* alloc_zeroed_real_matrix(int N, int M)
 {
   return (double*)calloc(N * M, sizeof(double));
 }
 
-integer* alloc_zeroed_int_vector(int N)
+static integer* alloc_zeroed_int_vector(int N)
 {
   return (integer*)calloc(N, sizeof(integer));
 }
 
-void* mk_rml_real_matrix(int N, int M, double *data)
+static void* mk_rml_real_matrix(int N, int M, double *data)
 {
   void *res, *tmp;
   int i, j;
@@ -224,7 +226,7 @@ void* mk_rml_real_matrix(int N, int M, double *data)
   return res;
 }
 
-void* mk_rml_real_vector(int N, double *data)
+static void* mk_rml_real_vector(int N, double *data)
 {
   void *res;
   int i;
@@ -237,7 +239,7 @@ void* mk_rml_real_vector(int N, double *data)
   return res;
 }
 
-void* mk_rml_int_vector(int N, integer *data)
+static void* mk_rml_int_vector(int N, integer *data)
 {
   void *res;
   int i;
@@ -250,7 +252,7 @@ void* mk_rml_int_vector(int N, integer *data)
   return res;
 }
 
-void debug_real_matrix(const char *name, int N, int M, double *data)
+static void debug_real_matrix(const char *name, int N, int M, double *data)
 {
   int i, j;
   double d;
@@ -273,7 +275,7 @@ void debug_real_matrix(const char *name, int N, int M, double *data)
   printf(" ];\n");
 }
 
-void debug_real_array(const char *name, int N, double *data)
+static void debug_real_array(const char *name, int N, double *data)
 {
   int i;
 
@@ -286,7 +288,7 @@ void debug_real_array(const char *name, int N, double *data)
   printf("}\n");
 }
 
-void debug_int_array(const char *name, int N, int *data)
+static void debug_int_array(const char *name, int N, int *data)
 {
   int i;
 
@@ -299,10 +301,13 @@ void debug_int_array(const char *name, int N, int *data)
   printf("}\n");
 }
 
+#endif
+
 void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, int LDA,
     int LDVL, int LDVR, void *inWORK, int LWORK, void **outA, void **WR,
     void **WI, void **VL, void **VR, void **outWORK, int *INFO)
 {
+#ifndef NO_LAPACK
   integer n, lda, ldvl, ldvr, lwork, info = 0;
   double *a, *wr, *wi, *vl, *vr, *work;
 
@@ -336,6 +341,9 @@ void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, i
   free(wi);
   free(vl);
   free(vr);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int LDA,
@@ -343,6 +351,7 @@ void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int
     void **ALPHAR, void **ALPHAI, void **BETA, void **VL, void **VR,
     void **outWORK, int *INFO)
 {
+#ifndef NO_LAPACK
   integer n, lda, ldb, ldvl, ldvr, lwork, info = 0;
   double *a, *b, *work, *alphar, *alphai, *beta, *vl, *vr;
 
@@ -381,12 +390,16 @@ void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int
   free(vl);
   free(vr);
   free(work);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
     int LDA, void *inB, int LDB, void *inWORK, int LWORK, void **outA,
     void **outB, void **outWORK, int *INFO)
 {
+#ifndef NO_LAPACK
   integer m, n, nrhs, lda, ldb, lwork, info = 0;
   double *a, *b, *work;
 
@@ -411,12 +424,16 @@ void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
   free(a);
   free(b);
   free(work);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
     void *inB, int LDB, void *inJPVT, double rcond, void *WORK,
     void **outA, void **outB, void **outJPVT, int *RANK, int *INFO)
 {
+#ifndef NO_LAPACK
   integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
   double *a, *b, *work;
   integer *jpvt;
@@ -445,11 +462,15 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
   free(b);
   free(work);
   free(jpvt);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgesv(int N, int NRHS, void *inA, int LDA, void *inB,
     int LDB, void **outA, void **IPIV, void **outB, int *INFO)
 {
+#ifndef NO_LAPACK
   integer n, nrhs, lda, ldb, info = 0;
   integer *ipiv;
   double *a, *b;
@@ -473,6 +494,9 @@ void LapackImpl__dgesv(int N, int NRHS, void *inA, int LDA, void *inB,
   free(a);
   free(b);
   free(ipiv);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA,
@@ -480,6 +504,7 @@ void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA,
     void **outA, void **outB, void **outC, void **outD, void **outX,
     void **outWORK, int *outINFO)
 {
+#ifndef NO_LAPACK
   integer m, n, p, lda, ldb, lwork, info = 0;
   double *a, *b, *c, *d, *x, *work;
 
@@ -513,12 +538,16 @@ void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA,
   free(d);
   free(x);
   free(work);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgtsv(int N, int NRHS, void *inDL, void *inD, void *inDU,
     void *inB, int LDB, void **outDL, void **outD, void **outDU, void **outB,
     int *INFO)
 {
+#ifndef NO_LAPACK
   integer n, nrhs, ldb, info = 0;
   double *dl, *d, *du, *b;
 
@@ -543,12 +572,16 @@ void LapackImpl__dgtsv(int N, int NRHS, void *inDL, void *inD, void *inDU,
   free(d);
   free(du);
   free(b);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB,
     int LDAB, void *inB, int LDB, void **outAB, void **IPIV, void **outB,
     int *INFO)
 {
+#ifndef NO_LAPACK
   integer n, kl, ku, nrhs, ldab, ldb, info = 0;
   double *ab, *b;
   integer *ipiv;
@@ -574,12 +607,16 @@ void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB,
   free(ab);
   free(b);
   free(ipiv);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void *inA,
     int LDA, int LDU, int LDVT, void *inWORK, int LWORK, void **outA,
     void **S, void **U, void **VT, void **outWORK, int *INFO)
 {
+#ifndef NO_LAPACK
   integer m, n, lda, ldu, ldvt, lwork, lds, ucol = 0, info = 0;
   double *a, *s, *u = NULL, *vt, *work;
 
@@ -615,11 +652,15 @@ void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void 
   if(ucol) free(u);
   free(vt);
   free(work);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgetrf(int M, int N, void *inA, int LDA, void **outA,
     void **IPIV, int *INFO)
 {
+#ifndef NO_LAPACK
   integer m, n, lda, ldipiv, info = 0;
   double *a;
   integer *ipiv;
@@ -640,11 +681,15 @@ void LapackImpl__dgetrf(int M, int N, void *inA, int LDA, void **outA,
 
   free(a);
   free(ipiv);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgetrs(const char *trans, int N, int NRHS, void *inA, int LDA,
     void *IPIV, void *inB, int LDB, void **outB, int *INFO)
 {
+#ifndef NO_LAPACK
   integer n, nrhs, lda, ldb, info = 0;
   double *a, *b;
   integer *ipiv;
@@ -666,11 +711,15 @@ void LapackImpl__dgetrs(const char *trans, int N, int NRHS, void *inA, int LDA,
   free(a);
   free(b);
   free(ipiv);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
     int LWORK, void **outA, void **outWORK, int *INFO)
 {
+#ifndef NO_LAPACK
   integer n, lda, lwork, info = 0;
   double *a, *work;
   integer *ipiv;
@@ -692,11 +741,15 @@ void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
   free(a);
   free(work);
   free(ipiv);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
     void *WORK, void **outA, void **outJPVT, void **TAU, int *INFO)
 {
+#ifndef NO_LAPACK
   integer m, n, lda, lwork, ldtau, info = 0;
   double *a, *tau, *work;
   integer *jpvt;
@@ -723,12 +776,16 @@ void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
   free(jpvt);
   free(tau);
   free(work);
+#else
+  MMC_THROW();
+#endif
 }
 
 void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
     void *TAU, void *inWORK, int LWORK, void **outA, void **outWORK,
     int *INFO)
 {
+#ifndef NO_LAPACK
   integer m, n, k, lda, lwork, info = 0;
   double *a, *tau, *work;
 
@@ -751,6 +808,9 @@ void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
   free(a);
   free(tau);
   free(work);
+#else
+  MMC_THROW();
+#endif
 }
 
 #ifdef __cplusplus

@@ -194,10 +194,8 @@ $(FMIOBJSPATH):%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 
 util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
 
-install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) $(ALL_OBJS)
-	# copy libraries
-	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) $(builddir_lib)
-	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
+bootstrap-dependencies: $(LIBRUNTIME)
+	cp -p $(LIBRUNTIME) $(builddir_lib)
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)/c/
 	cp -p $(RUNTIMELINEAR_HEADERS) $(builddir_inc)/c/linearization/
@@ -209,6 +207,11 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) $(ALL_OBJS)
 	cp -p $(RUNTIMEMETA_HEADERS) $(builddir_inc)/c/meta/
 	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/meta/gc/
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
+
+install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS)
+	# copy libraries
+	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(builddir_lib)
+	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	# copy fmi stuff
 	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/fmi1/*.h \
 	   ../fmi/export/fmi1/fmu1_model_interface.c $(builddir_inc)/c/fmi1

@@ -32,6 +32,27 @@
 extern "C" {
 #endif
 
+#include "omc_config.h"
+
+#ifdef NO_FMIL
+void FMIImpl__initializeFMI1Import(void* fmi, void** fmiInfo, int version, void** typeDefinitionsList, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList, int input_connectors, int output_connectors)
+{
+  MMC_THROW();
+}
+void FMIImpl__initializeFMI2Import(void* fmi, void** fmiInfo, int version, void** typeDefinitionsList, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList, int input_connectors, int output_connectors)
+{
+  MMC_THROW();
+}
+int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, int input_connectors, int output_connectors, void** fmiContext, void** fmiInstance, void** fmiInfo, void** typeDefinitionsList, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList)
+{
+  MMC_THROW();
+}
+void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3, const char* fmiVersion)
+{
+  MMC_THROW();
+}
+#else
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -861,6 +882,8 @@ void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3, const char* f
   }
   fmi_import_free_context((fmi_import_context_t*)fmiContext);
 }
+
+#endif
 
 #ifdef __cplusplus
 }
