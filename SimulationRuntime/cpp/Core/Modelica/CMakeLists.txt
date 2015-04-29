@@ -238,6 +238,16 @@ install (FILES
 				DESTINATION include/omc/cpp)  
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
+IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+configure_file (
+  "ModelicaConfig_gcc.inc.in"
+  "${PROJECT_BINARY_DIR}/ModelicaConfig_gcc.inc"
+  )
+install (FILES
+				${PROJECT_BINARY_DIR}/ModelicaConfig_gcc.inc
+				DESTINATION include/omc/cpp)  
+ENDIF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+
 configure_file (
  "ModelicaLibraryConfig.inc.in"
  "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc"
