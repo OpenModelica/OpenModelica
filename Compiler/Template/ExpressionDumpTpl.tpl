@@ -215,7 +215,7 @@ end dumpCref;
 template dumpSubscripts(list<DAE.Subscript> subscripts)
 ::=
 if subscripts then
-  let sub_str = (subscripts |> sub => dumpSubscript(sub) ;separator=", ")
+  let sub_str = (subscripts |> sub => dumpSubscript(sub) ;separator=",")
   '[<%sub_str%>]'
 end dumpSubscripts;
 
