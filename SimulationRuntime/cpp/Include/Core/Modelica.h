@@ -67,11 +67,6 @@ using namespace std;
 #include "Utils/extension/type_map.hpp"
 #include "Utils/extension/convenience.hpp"
 #endif
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/any.hpp>
 #include <boost/preprocessor/arithmetic/inc.hpp>
 #include <boost/preprocessor/if.hpp>
@@ -84,6 +79,9 @@ using namespace std;
 #include <boost/weak_ptr.hpp>
 #include <functional>
 #include <boost/range/irange.hpp>
+#if defined (__APPLE__) || defined (__APPLE_CC__)
+//see: https://svn.boost.org/trac/boost/ticket/11207
+#else
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
@@ -91,6 +89,7 @@ using namespace std;
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
+#endif
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/special_functions/trunc.hpp>
@@ -112,12 +111,6 @@ using namespace std;
 #include <boost/algorithm/minmax_element.hpp>
 #include <boost/multi_array.hpp>
 #include <functional>
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/unordered_map.hpp>
 #if defined (__vxworks)
 #else
@@ -139,9 +132,15 @@ using namespace boost::extensions;
 namespace fs = boost::filesystem;
 #endif
 using boost::unordered_map;
+
+#if defined (__APPLE__) || defined (__APPLE_CC__)
+//see: https://svn.boost.org/trac/boost/ticket/11207
+#else
 namespace uBlas = boost::numeric::ublas;
-using namespace boost::assign;
 using namespace boost::numeric;
+#endif
+
+using namespace boost::assign;
 using boost::multi_array;
 using namespace boost::algorithm;
 using boost::const_multi_array_ref;
