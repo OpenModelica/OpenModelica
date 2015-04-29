@@ -79,16 +79,17 @@ using namespace std;
 #include <boost/weak_ptr.hpp>
 #include <functional>
 #include <boost/range/irange.hpp>
-#if defined (__APPLE__) || defined (__APPLE_CC__)
-//see: https://svn.boost.org/trac/boost/ticket/11207
-#else
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
+
+#if defined (__APPLE__) || defined (__APPLE_CC__)
+//see: https://svn.boost.org/trac/boost/ticket/11207
+#else
+#include <boost/numeric/ublas/storage.hpp>
 #endif
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -133,12 +134,10 @@ namespace fs = boost::filesystem;
 #endif
 using boost::unordered_map;
 
-#if defined (__APPLE__) || defined (__APPLE_CC__)
-//see: https://svn.boost.org/trac/boost/ticket/11207
-#else
+
 namespace uBlas = boost::numeric::ublas;
 using namespace boost::numeric;
-#endif
+
 
 using namespace boost::assign;
 using boost::multi_array;
