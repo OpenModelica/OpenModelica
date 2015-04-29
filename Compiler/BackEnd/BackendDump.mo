@@ -2331,7 +2331,7 @@ algorithm
   outStr := DAEDump.dumpDirectionStr(dir) + ComponentReference.printComponentRefStr(cr) + ":"
             + kindString(kind) + "(" + connectorTypeString(ct) + attributesString(dae_var_attr)
             + ") " + optExpressionString(bindExp,"") + DAEDump.dumpCommentAnnotationStr(comment)
-            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type)+ "[" + stringDelimitList(List.map(arrayDim, ExpressionDump.dimensionString), ", ") + "]";
+            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type);
 end varString;
 
 public function dumpKind
@@ -3668,7 +3668,7 @@ algorithm
       s3 = stringDelimitList(List.map(crefs,printIterCrefStr),"| ");
   then s1+s2+s3;
   case(_)
-    then "NO_LOOP";
+    then "";
   end match;
 end printLoopInfoStr;
 
