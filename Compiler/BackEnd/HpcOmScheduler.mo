@@ -4158,7 +4158,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Exp exp,lhs;
       SimCode.SimEqSystem simEqSys;
-      list<DAE.Exp> expLst;
+      list<DAE.Exp> expLst, crefExps;
       list<DAE.ComponentRef> crefs;
       list<DAE.ElementSource> sources;
       list<DAE.Statement> stmts;
@@ -4236,8 +4236,9 @@ algorithm
     then (simEqSys,changed);
     case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,left=cref,right=exp,elseWhen=NONE(),source=source),_)
       equation
-        (crefs,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
-        (cref,changed) = BackendVarTransform.replaceCref(cref,replIn);
+        (crefExps,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
+        crefs = List.map(crefExps,Expression.expCref);
+        (DAE.CREF(componentRef=cref),changed) = BackendVarTransform.replaceCref(cref,replIn);
         changed = List.fold(bLst,boolOr,changed);
         (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         changed = boolOr(changed,changed1);
@@ -4245,8 +4246,9 @@ algorithm
     then (simEqSys,changed);
     case(SimCode.SES_WHEN(index=idx,conditions=crefs,initialCall=ic,left=cref,right=exp,elseWhen=SOME(simEqSys),source=source),_)
       equation
-        (crefs,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
-        (cref,changed) = BackendVarTransform.replaceCref(cref,replIn);
+        (crefExps,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
+        crefs = List.map(crefExps,Expression.expCref);
+        (DAE.CREF(componentRef=cref),changed) = BackendVarTransform.replaceCref(cref,replIn);
         changed = List.fold(bLst,boolOr,changed);
         (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         changed = boolOr(changed,changed1);

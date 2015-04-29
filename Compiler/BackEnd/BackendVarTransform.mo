@@ -1214,17 +1214,21 @@ public function replaceCref"replaces a cref.
 author: Waurich TUD 2014-06"
   input DAE.ComponentRef crefIn;
   input VariableReplacements replIn;
-  output DAE.ComponentRef crefOut;
+  output DAE.Exp expOut;
   output Boolean changedOut;
 algorithm
-  (crefOut,changedOut) := matchcontinue(crefIn,replIn)
+  (expOut,changedOut) := matchcontinue(crefIn,replIn)
+    local
+      DAE.Exp exp;
     case(_,_)
       equation
         true = hasReplacement(replIn,crefIn);
-        DAE.CREF(componentRef=crefOut) = getReplacement(replIn,crefIn);
-      then (crefOut,true);
+        expOut = getReplacement(replIn,crefIn);
+      then (expOut,true);
     else
-      then (crefIn,false);
+    equation
+      expOut = DAE.CREF(crefIn,ComponentReference.crefType(crefIn));
+      then (expOut,false);
  end matchcontinue;
 end replaceCref;
 
@@ -1703,6 +1707,7 @@ algorithm
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
+        eqAttr = replaceEquationAttributes(eqAttr,repl);
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source,eqAttr)::inAcc,true);
@@ -2622,6 +2627,71 @@ algorithm
     then varIn;
   end match;
 end replaceBindingExp;
+
+protected function replaceEquationAttributes
+  input BackendDAE.EquationAttributes eqAttrIn;
+  input VariableReplacements repl;
+  output BackendDAE.EquationAttributes eqAttrOut;
+algorithm
+  eqAttrOut := matchcontinue(eqAttrIn,repl)
+    local
+	    Boolean differentiated;
+	    BackendDAE.EquationKind kind;
+	    Integer subPartitionIndex;
+	    BackendDAE.LoopInfo loopInfo;
+	    DAE.Exp startIt, endIt;
+	    list<BackendDAE.IterCref> crefs;
+  case(BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind,subPartitionIndex=subPartitionIndex, loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=crefs)),_)
+    equation
+      crefs = List.map1(crefs,replaceIterationCrefs,repl);
+    then BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex, BackendDAE.LOOP(startIt,endIt,crefs));
+  else
+    then eqAttrIn;
+  end matchcontinue;
+end replaceEquationAttributes;
+
+protected function replaceIterationCrefs
+  input BackendDAE.IterCref iterCrefIn;
+  input VariableReplacements repl;
+  output BackendDAE.IterCref iterCrefOut;
+algorithm
+  iterCrefOut := matchcontinue(iterCrefIn,repl)
+    local
+      DAE.ComponentRef cref;
+      DAE.Exp iterator, crefExp;
+      DAE.Operator op;
+  case(BackendDAE.ITER_CREF(cref = cref, iterator=iterator),_)
+    equation
+      (crefExp,_) = replaceCref(cref,repl);
+      {cref} = Expression.extractCrefsFromExp(crefExp);
+    then BackendDAE.ITER_CREF(cref, iterator);
+  case(BackendDAE.ACCUM_ITER_CREF(cref = cref, op=op),_)
+    equation
+      (crefExp,_) = replaceCref(cref,repl);
+      if Expression.isNegativeUnary(crefExp) then
+        op = negateOperator(op);
+      end if;
+      {cref} = Expression.extractCrefsFromExp(crefExp);
+    then BackendDAE.ACCUM_ITER_CREF(cref, op);
+  else
+    then iterCrefIn;
+  end matchcontinue;
+end replaceIterationCrefs;
+
+protected function negateOperator
+  "makes an add out of a sub and a sub out of an add."
+  input DAE.Operator inOp;
+  output DAE.Operator outOp;
+algorithm
+  outOp:= match(inOp)
+    local
+      DAE.Type ty;
+    case(DAE.UMINUS(ty=ty)) then DAE.ADD(ty);
+    case(DAE.SUB(ty=ty)) then DAE.ADD(ty);
+    case(DAE.ADD(ty=ty)) then DAE.SUB(ty);
+    else inOp;
+  end match;
+end negateOperator;
 
 /*********************************************************/
 /* dump replacements  */

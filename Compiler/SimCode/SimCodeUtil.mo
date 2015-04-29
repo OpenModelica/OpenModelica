@@ -56,6 +56,7 @@ import Types;
 import Values;
 import SimCode;
 import SimCodeVar;
+import Vectorization;
 
 // protected imports
 protected
@@ -1630,6 +1631,10 @@ algorithm
       (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow, {}, uniqueEqIndex, tempvars);
 
       // create model info
+      if Flags.isSet(Flags.VECTORIZE) then
+        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.rollOutArrays);
+      end if;
+      
       modelInfo = createModelInfo(class_, dlow, functions, {}, numStateSets, fileDir);
       modelInfo = addTempVars(tempvars, modelInfo);
 
@@ -3021,7 +3026,7 @@ algorithm
       String algStr, message, eqStr;
       DAE.ElementSource source;
       list<DAE.Statement> asserts;
-      SimCode.SimEqSystem elseWhenEquation;
+      SimCode.SimEqSystem elseWhenEquation, simEqSys;
       DAE.Algorithm alg;
       list<SimCodeVar.SimVar> tempvars;
       Boolean initialCall;
@@ -3077,7 +3082,8 @@ algorithm
     // single equation
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = BackendEquation.equationNth1(eqns, eqNum);
+        eqn = BackendEquation.equationNth1(eqns, eqNum);
+        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = eqn;
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -3085,13 +3091,20 @@ algorithm
         (exp_, asserts, solveEqns, solveCr) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex));
         solveEqns = listReverse(solveEqns);
         solveCr = listReverse(solveCr);
-
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-        (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
-        (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
-        eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
-        tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
+        if Vectorization.isLoopEquation(eqn) then
+            //print("CREATE LOOP for "+BackendDump.equationString(eqn)+"\n");
+          (simEqSys,uniqueEqIndex) = makeSolvedSES_FOR_LOOP(eqn,cr,exp_,iuniqueEqIndex);
+          eqSystlst = {simEqSys};
+            //print("CREATED LOOP SES: "+dumpSimEqSystemLst(eqSystlst)+"\n");
+          tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
+        else
+          (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
+          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
+          eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
+          tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
+        end if;
       then
         (eqSystlst, uniqueEqIndex,tempvars);
 
@@ -3884,6 +3897,54 @@ algorithm
   outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSolved_SES_SIMPLE_ASSIGN;
+
+
+protected function makeSolvedSES_FOR_LOOP
+  input BackendDAE.Equation inEqn;
+  input DAE.ComponentRef lhsCrefIn;
+  input DAE.Exp rhs;
+  input Integer iuniqueEqIndex;
+  output SimCode.SimEqSystem outSimEqn;
+  output Integer ouniqueEqIndex;
+algorithm
+  (outSimEqn,ouniqueEqIndex) := matchcontinue(inEqn,lhsCrefIn,rhs,iuniqueEqIndex)
+    local
+      DAE.ComponentRef cref,lhsCref;
+      DAE.Exp iterator,startIt,endIt, rhsExp, body,sigma;
+      DAE.ElementSource source;
+      list<BackendDAE.IterCref> iterCrefs;
+      BackendDAE.IterCref itCref;
+      SimCode.SimEqSystem ses;
+  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=iterCrefs as BackendDAE.ACCUM_ITER_CREF(cref=cref)::{}))),_,_,_)
+    equation
+      // has an accumulated expression (i.e. SIGMA)
+      iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
+      (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(cref),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
+      body = DAE.CREF(cref,ComponentReference.crefType(cref));
+        //print("body:"+ExpressionDump.printExpStr(body)+"\n");
+      sigma = DAE.SUM(ComponentReference.crefType(cref),iterator,startIt,endIt,body);
+        //print("sigma:"+ExpressionDump.printExpStr(sigma)+"\n");
+      rhsExp = Vectorization.reduceLoopExpressions(rhs,1); //max subscript of one
+        //print("rhsExp red:"+ExpressionDump.printExpStr(rhsExp)+"\n");
+      (rhsExp,_) = Vectorization.insertSUMexp(rhsExp,(cref,sigma)); // replace the only left array var with the sigma exp
+        //print("rhsExp 2:"+ExpressionDump.printExpStr(rhsExp)+"\n");
+      ses = SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,lhsCrefIn,rhsExp,source);
+    then (ses,iuniqueEqIndex+1);
+      
+  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
+    equation
+      // is a for equation
+      iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
+      (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
+      (rhsExp,(_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
+    then (SimCode.SES_FOR_LOOP(iuniqueEqIndex,iterator,startIt,endIt,cref,rhsExp,source),iuniqueEqIndex+1);
+      
+  else
+    equation
+      print("makeSolvedSES_FOR_LOOP failed\n");
+  then fail();
+  end matchcontinue;
+end makeSolvedSES_FOR_LOOP;
 
 protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
@@ -7768,13 +7829,13 @@ author:Waurich TUD 2013-11"
   input SimCode.SimEqSystem eqSysIn;
   output String outString;
 algorithm
-  outString := match(eqSysIn)
+  outString := matchcontinue(eqSysIn)
     local
       Boolean partMixed,lin,initCall;
       Integer idx,idxLS,idxNLS,idxMS;
       String s;
       list<String> sLst;
-      DAE.Exp exp,right,lhs;
+      DAE.Exp exp,right,lhs,iterator,startIt,endIt;
       DAE.ElementSource source;
       DAE.ComponentRef cref,left;
       SimCode.SimEqSystem cont;
@@ -7791,30 +7852,30 @@ algorithm
     case(SimCode.SES_RESIDUAL(index=idx,exp=exp))
       equation
         s = intString(idx) +": "+ ExpressionDump.printExpStr(exp)+" (RESIDUAL)";
-    then (s);
+    then s;
 
     case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp))
       equation
         s = intString(idx) +": "+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
-      then (s);
+      then s;
 
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,lhs=lhs,exp=exp))
       equation
         s = intString(idx) +": "+ ExpressionDump.printExpStr(lhs) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]";
-    then (s);
+    then s;
 
       case(SimCode.SES_IFEQUATION(index=idx))
       equation
         s = intString(idx) +": "+ " (IF)";
         print(s);
-    then (s);
+    then s;
 
     case(SimCode.SES_ALGORITHM(index=idx,statements=stmts))
       equation
         sLst = List.map(stmts,DAEDump.ppStatementStr);
         sLst = List.map1(sLst, stringAppend, "\t");
         s = intString(idx) +": "+ List.fold(sLst,stringAppend,"");
-    then (s);
+    then s;
 
     case(SimCode.SES_LINEAR(index=idx,indexLinearSystem=idxLS, residual=residual, jacobianMatrix=jac, simJac=simJac))
       equation
@@ -7823,21 +7884,21 @@ algorithm
         eqs = List.map(simJac,Util.tuple33);
         s = s+"\tsimJac:\n"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n");
         s = s+dumpJacobianMatrix(jac)+"\n";
-    then (s);
+    then s;
 
     case(SimCode.SES_NONLINEAR(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs))
       equation
         s = intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s +"\t\tcrefs: "+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr)," , ")+"\n";
         s = s + "\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\n\t");
-    then (s);
+    then s;
 
     case(SimCode.SES_MIXED(index=idx,indexMixedSystem=idxMS, cont=cont, discEqs=eqs))
       equation
         s = intString(idx) +": "+ " (MIXED) index:"+intString(idxMS)+"\n";
         s = s+"\t"+dumpSimEqSystem(cont)+"\n";
         s = s+"\tdiscEqs:\n\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\t\n");
-    then (s);
+    then s;
 
     case(SimCode.SES_WHEN(index=idx, conditions=crefs, left=left, right=right, elseWhen=elseWhen))
       equation
@@ -7847,8 +7908,19 @@ algorithm
         if Util.isSome(elseWhen) then
           s = s + " ELSEWHEN: " + dumpSimEqSystem(Util.getOption(elseWhen));
         end if;
-    then (s);
-  end match;
+      then s;
+
+    case(SimCode.SES_FOR_LOOP(index=idx,iter=iterator, startIt=startIt, endIt=endIt, cref=cref, exp=exp, source=source))
+      equation
+        s = intString(idx) +" FOR-LOOP: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n";
+        s = s+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
+        s = s+"end for;";
+    then s;
+    
+    else
+      equation
+      then "SOMETHING DIFFERENT\n";
+  end matchcontinue;
 end dumpSimEqSystem;
 
 protected function dumpJacobianMatrix
@@ -10751,6 +10823,7 @@ algorithm
     case SimCode.SES_SIMPLE_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_ARRAY_CALL_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_WHEN(source=DAE.SOURCE(info=info)) then info;
+    case SimCode.SES_FOR_LOOP(source=DAE.SOURCE(info=info)) then info;
   end match;
 end eqInfo;
 
@@ -10768,6 +10841,7 @@ algorithm
     case SimCode.SES_NONLINEAR(index=index) then index;
     case SimCode.SES_MIXED(index=index) then index;
     case SimCode.SES_WHEN(index=index) then index;
+    case SimCode.SES_FOR_LOOP(index=index) then index;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.eqIndex failed"});
@@ -12296,6 +12370,10 @@ algorithm
     case (SimCode.SES_WHEN(index, conditions, initialCall, left, right, elseWhen, source), _, a)
       /* TODO: Me */
     then (SimCode.SES_WHEN(index, conditions, initialCall, left, right, elseWhen, source), a);
+      
+    case (SimCode.SES_FOR_LOOP(), _, a)
+      /* TODO: Me */
+    then (eq, a);
   end match;
 end traverseExpsEqSystem;
 

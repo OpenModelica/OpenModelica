@@ -426,6 +426,17 @@ uniontype SimEqSystem
     Option<SimEqSystem> elseWhen;
     DAE.ElementSource source;
   end SES_WHEN;
+  
+  record SES_FOR_LOOP
+    Integer index;
+    DAE.Exp iter;
+    DAE.Exp startIt;
+    DAE.Exp endIt;
+    DAE.ComponentRef cref;
+    DAE.Exp exp;
+    DAE.ElementSource source;
+  end SES_FOR_LOOP;
+  
 end SimEqSystem;
 
 uniontype StateSet

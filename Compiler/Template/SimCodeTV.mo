@@ -488,9 +488,20 @@ package SimCode
       Boolean initialCall;                  // true, if top-level branch with initial()
       DAE.ComponentRef left;
       DAE.Exp right;
-      Option<SimEqSystem> elseWhen;
-      DAE.ElementSource source;
-    end SES_WHEN;
+    Option<SimEqSystem> elseWhen;
+    DAE.ElementSource source;
+  end SES_WHEN;
+
+  record SES_FOR_LOOP
+    Integer index;
+    DAE.EXP iterator;
+    DAE.Exp startIt;
+    DAE.Exp endIt;
+    DAE.ComponentRef cref;
+    DAE.Exp exp;
+    DAE.ElementSource source;
+  end SES_FOR_LOOP;
+
   end SimEqSystem;
 
   uniontype StateSet
@@ -1366,6 +1377,13 @@ package DAE
     record PATTERN
       Pattern pattern;
     end PATTERN;
+	  record SUM
+	    Type ty;
+	    DAE.Exp iterator;
+	    DAE.Exp startIt;
+	    DAE.Exp endIt;
+	    DAE.Exp body;    
+	  end SUM;
   end Exp;
 
   uniontype CallAttributes

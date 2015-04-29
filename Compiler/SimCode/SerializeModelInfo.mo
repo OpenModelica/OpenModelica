@@ -662,6 +662,27 @@ algorithm
           else ();
         end match;
       then true;
+    case SimCode.SES_FOR_LOOP()
+      equation
+        File.write(file, "\n{\"eqIndex\":");
+        File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
+        File.writeEscape(file,crefStr(eq.cref),escape=File.Escape.JSON);
+        File.write(file, "\"],\"uses\":[");
+        serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+        File.write(file, "],\"equation\":[\"");
+        File.writeEscape(file,expStr(eq.exp),escape=File.Escape.JSON);
+        File.write(file, "\"],\"source\":");
+        serializeSource(file,eq.source,withOperations);
+        File.write(file, "}");
+      then true;     
+    
     else
       equation
         Error.addInternalError("serializeEquation failed: " + anyString(eq), sourceInfo());
