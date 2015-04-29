@@ -1634,7 +1634,7 @@ algorithm
       if Flags.isSet(Flags.VECTORIZE) then
         dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.rollOutArrays);
       end if;
-      
+
       modelInfo = createModelInfo(class_, dlow, functions, {}, numStateSets, fileDir);
       modelInfo = addTempVars(tempvars, modelInfo);
 
@@ -3930,7 +3930,7 @@ algorithm
         //print("rhsExp 2:"+ExpressionDump.printExpStr(rhsExp)+"\n");
       ses = SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,lhsCrefIn,rhsExp,source);
     then (ses,iuniqueEqIndex+1);
-      
+
   case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
     equation
       // is a for equation
@@ -3938,7 +3938,7 @@ algorithm
       (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
       (rhsExp,(_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
     then (SimCode.SES_FOR_LOOP(iuniqueEqIndex,iterator,startIt,endIt,cref,rhsExp,source),iuniqueEqIndex+1);
-      
+
   else
     equation
       print("makeSolvedSES_FOR_LOOP failed\n");
@@ -7916,7 +7916,7 @@ algorithm
         s = s+ ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
         s = s+"end for;";
     then s;
-    
+
     else
       equation
       then "SOMETHING DIFFERENT\n";
@@ -12370,7 +12370,7 @@ algorithm
     case (SimCode.SES_WHEN(index, conditions, initialCall, left, right, elseWhen, source), _, a)
       /* TODO: Me */
     then (SimCode.SES_WHEN(index, conditions, initialCall, left, right, elseWhen, source), a);
-      
+
     case (SimCode.SES_FOR_LOOP(), _, a)
       /* TODO: Me */
     then (eq, a);

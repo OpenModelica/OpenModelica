@@ -145,7 +145,7 @@ match exp
     let startStr = dumpExp(startIt,stringDelimiter)
     let endStr = dumpExp(endIt,stringDelimiter)
     'SIGMA[<%iterStr%>:<%startStr%>to<%endStr%>](<%bodyStr%>)'
-  
+
   else errorMsg("ExpressionDumpTpl.dumpExp: Unknown expression.")
 end dumpExp;
 

@@ -4939,7 +4939,7 @@ algorithm
     case DAE.PATTERN() equation
       (e, ext_arg) = inFunc(inExp, inExtArg);
     then (e, ext_arg);
-    
+
     // SUM expressions
     case DAE.SUM(ty=tp, iterator=e1, startIt=e2, endIt=e3, body=e4) equation
       (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
@@ -4949,7 +4949,7 @@ algorithm
       e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) and referenceEq(e4, e4_1)then inExp else DAE.SUM(tp,e1_1, e2_1, e3_1,e4_1);
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
-      
+
     // Why don't we call inFunc() for these expressions?
     case DAE.CODE() then (inExp, inExtArg);
 
@@ -5373,7 +5373,7 @@ algorithm
         (e3_1,ext_arg_3) = traverseExpTopDown(e3, rel, ext_arg_2);
         (e4_1,ext_arg_4) = traverseExpTopDown(e4, rel, ext_arg_3);
       then (DAE.SUM(tp,e1_1,e2_1,e3_1,e4_1),ext_arg_3);
-        
+
     else
       equation
         str = ExpressionDump.printExpStr(inExp);

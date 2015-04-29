@@ -1369,7 +1369,7 @@ package DAE
     record PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
       Pattern pattern;
     end PATTERN;
-  
+
   record SUM //i.e. accumulated sum over a range of array vars
     Type ty;
     Exp iterator;
@@ -1377,7 +1377,7 @@ package DAE
     Exp endIt;
     Exp body;
   end SUM;
-  
+
   end Exp;
 end DAE;
 

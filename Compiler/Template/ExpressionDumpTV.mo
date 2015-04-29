@@ -416,13 +416,13 @@ package DAE
     record PATTERN
       Pattern pattern;
     end PATTERN;
-  
+
     record SUM
-	    Type ty;
-	    Exp iterator;
-	    Exp startIt;
-	    Exp endIt;
-	    Exp body;    
+      Type ty;
+      Exp iterator;
+      Exp startIt;
+      Exp endIt;
+      Exp body;
     end SUM;
   end Exp;
 

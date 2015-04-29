@@ -681,8 +681,8 @@ algorithm
         File.write(file, "\"],\"source\":");
         serializeSource(file,eq.source,withOperations);
         File.write(file, "}");
-      then true;     
-    
+      then true;
+
     else
       equation
         Error.addInternalError("serializeEquation failed: " + anyString(eq), sourceInfo());
