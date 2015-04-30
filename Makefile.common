@@ -29,8 +29,8 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
 	mkdir -p $(builddir_bin)
-	mkdir -p $(top_builddir)/build/lib/omc
-	mkdir -p $(builddir_lib_omc)emcc
+	mkdir -p $(top_builddir)/build/lib/omc/emcc
+	mkdir -p $(builddir_lib_omc)
 	mkdir -p $(builddir_inc)/c/
 	mkdir -p $(builddir_inc)/c/linearization/
 	mkdir -p $(builddir_inc)/c/optimization/
