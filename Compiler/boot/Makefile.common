@@ -53,8 +53,8 @@ bootstrap-from-tarball:
 bootstrap-from-compiled: make-separate
 
 make-bootstrap-tarball:
-	#rm -rf $(GEN_DIR)
-	#$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+	rm -rf $(GEN_DIR)
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
 	rm -rf $(GEN_DIR)/*.mo $(GEN_DIR)/tmp $(GEN_DIR)/*.deps $(GEN_DIR)/*.mos $(GEN_DIR)/*.stamp
 	sed -i -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "/^$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
 	tar cJf bootstrap-sources.tar.xz $(GEN_DIR) Makefile.sources
