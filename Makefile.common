@@ -5,6 +5,7 @@ unexport PREFIX
 top_builddir = .
 builddir_app=$(top_builddir)/build/Applications/
 builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
 builddir_lib_omc=$(top_builddir)/build/$(LIB_OMC)
 builddir_inc=$(top_builddir)/build/include/omc
 builddir_doc=$(top_builddir)/build/share/doc
@@ -387,18 +388,18 @@ install: install-dirs
 	# Application directory (OSX)
 	if [ "$(APP)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
 	# Binaries
-	cp -a ${builddir_bin}/* ${INSTALL_BINDIR}
+	cp -a ./${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries
-	cp -a ${builddir_lib}/* ${INSTALL_LIBDIR}
+	cp -a ./${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
-	cp -a ${builddir_inc}/* ${INSTALL_INCLUDEDIR}
+	cp -a ./${builddir_inc}/* ${INSTALL_INCLUDEDIR}
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
-	cp -p ${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
-	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
+	cp -p ./${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
+	cp -p ./${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	# man pages
-	cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
+	cp -p ./${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
 	cp -p ${builddir_share}/omc/*.* ${INSTALL_SHAREDIR}/omc/
 	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
@@ -408,9 +409,9 @@ install: install-dirs
 	# Scripts
 	cp -rp ${builddir_share}/omc/scripts/*.* ${builddir_share}/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
-	cp -p ${builddir_java}/* ${INSTALL_JAVADIR}
+	cp -p ./${builddir_java}/* ${INSTALL_JAVADIR}
 	# Translations
-	cp -rp ${builddir_locale}/* ${INSTALL_LOCALEDIR}/
+	cp -rp ./${builddir_locale}/* ${INSTALL_LOCALEDIR}/
 
 
 3rdParty/msgpack-0.5.8/Makefile:
