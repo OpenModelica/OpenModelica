@@ -2668,7 +2668,6 @@ algorithm
     // a system of equations
     case (_, _, _, _, _, _, _, _, _, _, _, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings)
       equation
-        print("a system  comp!\n");
         // block is dynamic, belong in dynamic section
         (eqnslst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         bdynamic = BackendDAEUtil.blockIsDynamic(eqnslst, stateeqnsmark);
@@ -3167,7 +3166,6 @@ algorithm
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquation(eqn, containsHomotopyCall, false);
-        print("CREATED NONLINEAR SES: "+dumpSimEqSystemLst({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE(), false, homotopySupport, false)})+"\n");
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE(), false, homotopySupport, false)}, uniqueEqIndex+1, tempvars);
 
