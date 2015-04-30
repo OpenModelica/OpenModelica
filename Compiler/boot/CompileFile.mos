@@ -1,4 +1,4 @@
-setCommandLineOptions("+g=MetaModelica"); // Do not set +d=rml yet, checkInterfaceOfPackages takes a Modelica matrix as input
+setCommandLineOptions("+g=MetaModelica --debug=-buildExternalLibs");getErrorString(); // Do not set +d=rml yet, checkInterfaceOfPackages takes a Modelica matrix as input
 if not loadFiles(files) /* TODO: Change to loadFiles */ then
   print("Failed to load files:\n" + getErrorString());
   exit(1);

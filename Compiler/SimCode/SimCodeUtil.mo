@@ -9441,7 +9441,7 @@ algorithm
         (libs, libNames) := generateExtFunctionIncludesLibstr(target,mod);
         includes := generateExtFunctionIncludesIncludestr(mod);
         (libs, dirs, resources) := generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
-        for name in libNames loop
+        for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) then libNames else {} loop
           if target=="msvc" or System.os()=="Windows_NT" then
             fullLibNames := {name + System.getDllExt(), "lib" + name + ".a", "lib" + name + ".lib"};
           else

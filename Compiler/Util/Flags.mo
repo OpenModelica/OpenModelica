@@ -442,8 +442,8 @@ constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(136, "addScaledVarsInput",
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input"));
 constant DebugFlag VECTORIZE = DEBUG_FLAG(137, "vectorize", false,
   Util.gettext("Activates vectorization in the backend."));
-
-
+constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(138, "buildExternalLibs", true,
+  Util.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -587,7 +587,8 @@ constant list<DebugFlag> allDebugFlags = {
   VISUAL_XML,
   ADD_SCALED_VARS,
   ADD_SCALED_VARS_INPUT,
-  VECTORIZE
+  VECTORIZE,
+  CHECK_EXT_LIBS
 };
 
 public
