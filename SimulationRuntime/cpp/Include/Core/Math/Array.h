@@ -215,7 +215,7 @@ public:
   RefArray(const T** ref_data)
     :BaseArray<T>(true, true)
   {
-    std::transform(ref_data, ref_data + nelems, _ref_array.c_array(), 
+    std::transform(ref_data, ref_data + nelems, _ref_array.c_array(),
                    RefArray2RefArray<T>());
   }
 
