@@ -2,9 +2,9 @@ QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
-PLOTLIBS = -L../../build/lib/omc -lOMPlot -lomqwt @RPATH_QMAKE@
+PLOTLIBS = -L../../build/lib/@host_short@/omc -lOMPlot -lomqwt @RPATH_QMAKE@
 PLOTINC = ../../3rdParty/qwt/src ../../OMPlot/OMPlotGUI
-OMCLIBS = -L../../build/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc
+OMCLIBS = -L../../build/lib/@host_short@/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc
 OMCINC = ../../build/include/omc/c
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
