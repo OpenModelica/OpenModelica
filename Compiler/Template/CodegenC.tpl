@@ -8548,7 +8548,7 @@ case SUM(__) then
   {
     <%summationVar%> += <%bodyStr%>($P<%iterVar%>);
   }
-  
+
   >>
   summationVar
 end daeExpSum;
