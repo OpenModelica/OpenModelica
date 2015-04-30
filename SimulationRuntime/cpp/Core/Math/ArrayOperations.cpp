@@ -307,13 +307,11 @@ void usub_array(BaseArray<T>& a, BaseArray<T>& b)
 }
 
 template <typename T>
-T sum_array (BaseArray<T> & leftArray)
+T sum_array (const BaseArray<T>& x)
 {
-   T val;
-   T* data = leftArray.getData();
-   unsigned int dim = leftArray.getNumElems();
-   val = std::accumulate( data, data + dim ,0.0 );
-   return val;
+  const T* data = x.getData();
+  T val = std::accumulate(data, data + x.getNumElems(), T());
+  return val;
 }
 
 /**
@@ -500,9 +498,9 @@ template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<double>& a, BaseA
 template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<int>& a, BaseArray<int>& b);
 template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<bool>& a, BaseArray<bool>& b);
 
-template double BOOST_EXTENSION_EXPORT_DECL sum_array(BaseArray<double>& leftArray);
-template int BOOST_EXTENSION_EXPORT_DECL sum_array(BaseArray<int>& leftArray);
-template bool BOOST_EXTENSION_EXPORT_DECL sum_array(BaseArray<bool>& leftArray);
+template double BOOST_EXTENSION_EXPORT_DECL sum_array(const BaseArray<double>& x);
+template int BOOST_EXTENSION_EXPORT_DECL sum_array(const BaseArray<int>& x);
+template bool BOOST_EXTENSION_EXPORT_DECL sum_array(const BaseArray<bool>& x);
 
 template void BOOST_EXTENSION_EXPORT_DECL cross_array(BaseArray<double>& a, BaseArray<double>& b, BaseArray<double>& res);
 template void BOOST_EXTENSION_EXPORT_DECL cross_array(BaseArray<int>& a, BaseArray<int>& b, BaseArray<int>& res);

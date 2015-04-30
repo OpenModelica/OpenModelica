@@ -264,7 +264,10 @@ public:
    */
   virtual const T* getData() const
   {
-    throw std::runtime_error("Access const data of reference array is not supported");
+    const T* const* refs  = _ref_array.begin();
+    T* data  = _tmp_data.c_array();
+    std::transform(refs, refs + nelems, data, RefArray2CArray<T>());
+    return data;
   }
 
   /**
@@ -316,6 +319,7 @@ public:
 protected:
   //reference array data
   boost::array<T*, nelems> _ref_array;
+  mutable boost::array<T, nelems> _tmp_data; // storage for const T* getData()
 };
 
 /**

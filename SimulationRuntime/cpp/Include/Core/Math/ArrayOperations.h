@@ -74,7 +74,7 @@ template < typename T >
 void usub_array(BaseArray<T> & a , BaseArray<T> & b);
 
 template < typename T >
-T sum_array ( BaseArray<T> & leftArray );
+T sum_array(const BaseArray<T>& x);
 
 
 /**
