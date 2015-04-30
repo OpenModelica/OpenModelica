@@ -2637,14 +2637,14 @@ algorithm
     local
       Boolean differentiated;
       BackendDAE.EquationKind kind;
-      Integer subPartitionIndex;
+      Integer subPartitionIndex, id;
       BackendDAE.LoopInfo loopInfo;
       DAE.Exp startIt, endIt;
       list<BackendDAE.IterCref> crefs;
-  case(BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind,subPartitionIndex=subPartitionIndex, loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=crefs)),_)
+  case(BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind,subPartitionIndex=subPartitionIndex, loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=crefs)),_)
     equation
       crefs = List.map1(crefs,replaceIterationCrefs,repl);
-    then BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex, BackendDAE.LOOP(startIt,endIt,crefs));
+    then BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex, BackendDAE.LOOP(id,startIt,endIt,crefs));
   else
     then eqAttrIn;
   end matchcontinue;

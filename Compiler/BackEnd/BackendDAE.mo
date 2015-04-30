@@ -267,7 +267,7 @@ public uniontype LoopInfo "is this equation part of a for-loop"
   end NO_LOOP;
 
   record LOOP
-    //String loopId;a
+    Integer loopId;
     //Integer pos; // position in the loop, 1=start, endIt=last, needed to get the matching afterwards
     .DAE.Exp startIt;
     .DAE.Exp endIt;
