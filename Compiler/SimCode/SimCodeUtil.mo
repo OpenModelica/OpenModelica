@@ -1562,6 +1562,11 @@ algorithm
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
 
+      if Flags.isSet(Flags.VECTORIZE) then
+        // prepare the equations
+        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE0);
+      end if;
+
       backendMapping = setUpBackendMapping(inBackendDAE);
       if Flags.isSet(Flags.VISUAL_XML) then
         VisualXML.visualizationInfoXML(inBackendDAE, filenamePrefix);
@@ -1633,8 +1638,10 @@ algorithm
       (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow, {}, uniqueEqIndex, tempvars);
 
       // create model info
+
       if Flags.isSet(Flags.VECTORIZE) then
-        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.rollOutArrays);
+        // prepare the variables
+        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE1);
       end if;
 
       modelInfo = createModelInfo(class_, dlow, functions, {}, numStateSets, fileDir);
@@ -2485,14 +2492,19 @@ algorithm
         bzceqns = BackendDAEUtil.blockIsDynamic({index}, zceqnsmark);
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, false, iuniqueEqIndex, itempvars);
 
-        firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
-        isEqSys = isSimEqSys(firstSES);
-        firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
-        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-
-        tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-        tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
-        tmpBackendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex - 1),{index}, iBackendMapping);
+        if listEmpty(equations1) then
+        // the component has been skipped
+          tmpEqSccMapping = ieqSccMapping;
+          tmpEqBackendSimCodeMapping = ieqBackendSimCodeMapping;
+          tmpBackendMapping = iBackendMapping;
+        else
+          firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
+          isEqSys = isSimEqSys(firstSES);
+          firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
+          tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+          tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
+          tmpBackendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex - 1),{index}, iBackendMapping);
+        end if;
 
         odeEquations = if bdynamic and (not bwhen) then equations1::odeEquations else odeEquations;
         algebraicEquations = if (not bdynamic) and (not bwhen) then equations1::algebraicEquations else algebraicEquations;
@@ -2633,14 +2645,18 @@ algorithm
         bzceqns = BackendDAEUtil.blockIsDynamic({index}, zceqnsmark);
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, false, iuniqueEqIndex, itempvars);
 
-        firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
-        isEqSys = isSimEqSys(firstSES);
-        firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
-        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-
-        tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-        tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
-        tmpBackendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex - 1),{index}, iBackendMapping);
+        if listEmpty(equations1) then
+          tmpEqSccMapping = ieqSccMapping;
+          tmpEqBackendSimCodeMapping = ieqBackendSimCodeMapping;
+          tmpBackendMapping = iBackendMapping;
+        else
+          firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
+          isEqSys = isSimEqSys(firstSES);
+          firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
+          tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+          tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
+          tmpBackendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex - 1),{index}, iBackendMapping);
+        end if;
 
         odeEquations = if bdynamic and (not bwhen) then equations1::odeEquations else odeEquations;
         algebraicEquations = if (not bdynamic) and (not bwhen) then equations1::algebraicEquations else algebraicEquations;
@@ -2652,6 +2668,7 @@ algorithm
     // a system of equations
     case (_, _, _, _, _, _, _, _, _, _, _, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings)
       equation
+        print("a system  comp!\n");
         // block is dynamic, belong in dynamic section
         (eqnslst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         bdynamic = BackendDAEUtil.blockIsDynamic(eqnslst, stateeqnsmark);
@@ -3103,10 +3120,13 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         if Vectorization.isLoopEquation(eqn) then
             //print("CREATE LOOP for "+BackendDump.equationString(eqn)+"\n");
-          (simEqSys,uniqueEqIndex) = makeSolvedSES_FOR_LOOP(eqn,cr,exp_,iuniqueEqIndex);
-          eqSystlst = {simEqSys};
-            //print("CREATED LOOP SES: "+dumpSimEqSystemLst(eqSystlst)+"\n");
-          tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
+          (eqSystlst,uniqueEqIndex) = makeSolvedSES_FOR_LOOP(eqn,cr,exp_,iuniqueEqIndex);
+          if listEmpty(eqSystlst) then
+            tempvars = itempvars;
+          else
+              //print("CREATED LOOP SES: "+dumpSimEqSystemLst(eqSystlst)+"\n");
+            tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
+          end if;
         else
           (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
           (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
@@ -3147,6 +3167,7 @@ algorithm
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquation(eqn, containsHomotopyCall, false);
+        print("CREATED NONLINEAR SES: "+dumpSimEqSystemLst({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE(), false, homotopySupport, false)})+"\n");
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE(), false, homotopySupport, false)}, uniqueEqIndex+1, tempvars);
 
@@ -3906,24 +3927,30 @@ algorithm
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSolved_SES_SIMPLE_ASSIGN;
 
-
 protected function makeSolvedSES_FOR_LOOP
   input BackendDAE.Equation inEqn;
   input DAE.ComponentRef lhsCrefIn;
   input DAE.Exp rhs;
   input Integer iuniqueEqIndex;
-  output SimCode.SimEqSystem outSimEqn;
+  output list<SimCode.SimEqSystem> outSimEq;
   output Integer ouniqueEqIndex;
 algorithm
-  (outSimEqn,ouniqueEqIndex) := matchcontinue(inEqn,lhsCrefIn,rhs,iuniqueEqIndex)
+  (outSimEq,ouniqueEqIndex) := matchcontinue(inEqn,lhsCrefIn,rhs,iuniqueEqIndex)
     local
+      Integer id;
       DAE.ComponentRef cref,lhsCref;
       DAE.Exp iterator,startIt,endIt, rhsExp, body,sigma;
       DAE.ElementSource source;
       list<BackendDAE.IterCref> iterCrefs;
       BackendDAE.IterCref itCref;
       SimCode.SimEqSystem ses;
-  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=iterCrefs as BackendDAE.ACCUM_ITER_CREF(cref=cref)::{}))),_,_,_)
+  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
+    equation
+      // dont generate another for-loop
+      true = intEq(id,-1);
+    then ({},iuniqueEqIndex);
+
+  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs as BackendDAE.ACCUM_ITER_CREF(cref=cref)::{}))),_,_,_)
     equation
       // has an accumulated expression (i.e. SIGMA)
       iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
@@ -3937,15 +3964,15 @@ algorithm
       (rhsExp,_) = Vectorization.insertSUMexp(rhsExp,(cref,sigma)); // replace the only left array var with the sigma exp
         //print("rhsExp 2:"+ExpressionDump.printExpStr(rhsExp)+"\n");
       ses = SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,lhsCrefIn,rhsExp,source);
-    then (ses,iuniqueEqIndex+1);
+    then ({ses},iuniqueEqIndex+1);
 
-  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
+  case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
     equation
       // is a for equation
       iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
       (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
       (rhsExp,(_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
-    then (SimCode.SES_FOR_LOOP(iuniqueEqIndex,iterator,startIt,endIt,cref,rhsExp,source),iuniqueEqIndex+1);
+    then ({SimCode.SES_FOR_LOOP(iuniqueEqIndex,iterator,startIt,endIt,cref,rhsExp,source)},iuniqueEqIndex+1);
 
   else
     equation

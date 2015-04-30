@@ -1133,7 +1133,37 @@ algorithm
    end matchcontinue;
 end insertSUMexp;
 
-public function rollOutArrays
+public function prepareVectorizedDAE0
+  input BackendDAE.EqSystem sysIn;
+  input BackendDAE.Shared sharedIn;
+  output BackendDAE.EqSystem sysOut;
+  output BackendDAE.Shared sharedOut;
+protected
+  array<Integer> ass1, ass2;
+  BackendDAE.Variables vars, aliasVars;
+  list<BackendDAE.Var> varLst, addAlias;
+  list<BackendDAE.Equation> eqLst;
+  BackendDAE.EquationArray eqs;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StrongComponents compsIn, comps;
+  BackendDAE.StateSets stateSets "the statesets of the system";
+  BackendDAE.BaseClockPartitionKind partitionKind;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := sysIn;
+  BackendDAE.MATCHING(comps=compsIn, ass1=ass1, ass2=ass2) := matching;
+
+  //remove partly unrolled for-equations and corresponding components
+  (eqLst,_) :=  List.fold(BackendEquation.equationList(eqs),markUnrolledForEqs,({},{}));
+  eqs := BackendEquation.listEquation(listReverse(eqLst));
+  
+  //matching := BackendDAE.MATCHING(ass1, ass2, listReverse(comps));
+  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
+  sharedOut := sharedIn;
+end prepareVectorizedDAE0;
+
+public function prepareVectorizedDAE1
   input BackendDAE.EqSystem sysIn;
   input BackendDAE.Shared sharedIn;
   output BackendDAE.EqSystem sysOut;
@@ -1141,7 +1171,8 @@ public function rollOutArrays
 protected
   BackendDAE.Variables vars, aliasVars;
   list<BackendDAE.Var> varLst, addAlias;
-  BackendDAE.EquationArray eqs "ordered Equations";
+  list<BackendDAE.Equation> eqLst;
+  BackendDAE.EquationArray eqs;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
   BackendDAE.Matching matching;
@@ -1150,19 +1181,70 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := sysIn;
   BackendDAE.SHARED(aliasVars=aliasVars) := sharedIn;
+  
+  //unroll variables
   varLst := BackendVariable.varList(vars);
     //BackendDump.dumpVarList(varLst,"varLst1");
-      (varLst,addAlias) := List.fold1(varLst,rollOutArrays1,BackendVariable.varList(aliasVars),({},{}));
+  (varLst,addAlias) := List.fold1(varLst,rollOutArrays,BackendVariable.varList(aliasVars),({},{}));
     //BackendDump.dumpVarList(varLst,"the unrolled vars");
     //BackendDump.dumpVarList(addAlias,"teh additional alias");
   aliasVars := BackendVariable.mergeVariables(aliasVars,BackendVariable.listVar1(addAlias));
     //BackendDump.dumpVariables(aliasVars,"final alias");
   vars := BackendVariable.listVar(varLst);
+  
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
   sharedOut := BackendDAEUtil.replaceAliasVarsInShared(sharedIn,aliasVars);
-end rollOutArrays;
+end prepareVectorizedDAE1;
 
-protected function rollOutArrays1
+
+protected function markUnrolledForEqs"checks the loop ids for every for-equation. the loop ids have to be unique."
+  input BackendDAE.Equation eqIn;
+  input tuple<list<BackendDAE.Equation>,list<Integer>> tplIn; //foldEqs, loopIds
+  output tuple<list<BackendDAE.Equation>,list<Integer>> tplOut;
+algorithm
+  tplOut := matchcontinue(eqIn,tplIn)
+    local
+      Integer id;
+      list<Integer> ids0, ids;
+      list<BackendDAE.Equation> eqLst0, eqLst;
+    case(BackendDAE.EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id))),(eqLst0,ids0))
+      equation
+        if List.exist1(ids0,intEq,id) then
+          ids = ids0;
+          eqLst = setLoopId(eqIn,-1)::eqLst0;
+        else
+          ids = id::ids0;
+          eqLst = eqIn::eqLst0;
+        end if;
+    then (eqLst,ids);
+    case(_,(eqLst0,ids0))
+      then (eqIn::eqLst0,ids0);
+  end matchcontinue;      
+end markUnrolledForEqs;
+
+protected function setLoopId 
+  input BackendDAE.Equation eqIn;
+  input Integer id;
+  output BackendDAE.Equation eqOut;
+protected
+  DAE.Exp exp,scalar,startIt,endIt;
+  list<BackendDAE.IterCref> iterCrefs;
+  DAE.ElementSource source;
+  BackendDAE.EquationAttributes attr;
+  Boolean differentiated;
+  BackendDAE.EquationKind kind;
+  Integer subPartitionIndex;
+  BackendDAE.LoopInfo loopInfo;
+algorithm
+  try
+    BackendDAE.EQUATION(exp=exp,scalar=scalar,source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated,kind=kind,subPartitionIndex=subPartitionIndex,loopInfo=BackendDAE.LOOP(startIt=startIt,endIt=endIt,crefs=iterCrefs))) := eqIn;
+    eqOut := BackendDAE.EQUATION(exp,scalar,source,BackendDAE.EQUATION_ATTRIBUTES(differentiated,kind,subPartitionIndex,BackendDAE.LOOP(id,startIt,endIt,iterCrefs)));
+  else
+    eqOut := eqIn;
+  end try;
+end setLoopId;
+
+protected function rollOutArrays"expands the array vars. dispatch the unrolled vars to the algebraic and to the alias vars."
   input BackendDAE.Var inVar;
   input list<BackendDAE.Var> aliasVars;
   input tuple<list<BackendDAE.Var>,list<BackendDAE.Var>> foldIn;
@@ -1214,7 +1296,7 @@ algorithm
   case(_,(varLst0,aliasLst0))
     then (inVar::varLst0,aliasLst0);
   end matchcontinue;
-end rollOutArrays1;
+end rollOutArrays;
 
 protected function additionalAlias"adds additional alias vars"
   input BackendDAE.Var var;
