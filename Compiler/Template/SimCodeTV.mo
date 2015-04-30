@@ -501,11 +501,11 @@ package SimCode
 
   record SES_FOR_LOOP
     Integer index;
-    DAE.EXP iterator;
+    DAE.Exp iter;
     DAE.Exp startIt;
     DAE.Exp endIt;
-    DAE.ComponentRef cref;
-    DAE.Exp exp;
+    DAE.ComponentRef cref;//lhs
+    DAE.Exp exp;//rhs
     DAE.ElementSource source;
   end SES_FOR_LOOP;
 
@@ -2854,6 +2854,11 @@ package ComponentReference
 end ComponentReference;
 
 package Expression
+
+  function crefExp
+    input DAE.ComponentRef cr;
+    output DAE.Exp cref;
+  end crefExp;
 
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "

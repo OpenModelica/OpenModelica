@@ -334,6 +334,7 @@ template equationIndex(SimEqSystem eq)
   case SES_NONLINEAR(__)
   case SES_MIXED(__)
   case SES_WHEN(__)
+  case SES_FOR_LOOP(__)
     then index
 end equationIndex;
 

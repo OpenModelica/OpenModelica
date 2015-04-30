@@ -3700,6 +3700,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
     then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
   case e as SES_MIXED(__)
     then equationMixed(e, context, &varD, &eqs, modelNamePrefix)
+   case e as SES_FOR_LOOP(__)
+    then equationForLoop(e, context, &varD, &tempeqns)
   else
     "NOT IMPLEMENTED EQUATION equation_"
   let &varD += addRootsTempArray()
@@ -3800,6 +3802,32 @@ case SES_SIMPLE_ASSIGN(__) then
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
+
+template equationForLoop(SimEqSystem eq, Context context,
+                              Text &varDecls, Text &auxFunction)
+ "Generates an equation that is a for-loop."
+::=
+match eq
+case SES_FOR_LOOP(__) then
+  let &preExp = buffer ""
+  let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+  let crefPart = daeExp(crefExp(cref), context, &preExp, &varDecls, &auxFunction)
+  //let bodyStr = daeExpIteratedCref(body)
+  let start = printExpStr(startIt)
+  let stop = printExpStr(endIt)
+  let iterVar = daeExp(iter, context, &preExp, &varDecls, &auxFunction)
+  <<
+  <%modelicaLine(eqInfo(eq))%>
+  modelica_integer  $P<%printExpStr(iter)%> = 0; // the iterator
+
+  // the for-equation
+  for($P<%printExpStr(iter)%> = <%start%>; $P<%printExpStr(iter)%> < <%stop%>; $P<%printExpStr(iter)%>++)
+  {
+    <%crefPart%> += <%expPart%>;
+  }
+  <%endModelicaLine()%>
+  >>
+end equationForLoop;
 
 
 template equationArrayCallAssign(SimEqSystem eq, Context context,
@@ -7733,6 +7761,7 @@ end elseExpr;
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, &auxFunction)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, &auxFunction)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e)
+  case e as SUM(__)             then daeExpSum(e, context, &preExp, &varDecls, &auxFunction)
   case e as CLKCONST(__)        then '#error "<%ExpressionDump.printExpStr(e)%>"'
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
 end daeExp;
@@ -8498,6 +8527,49 @@ case IFEXP(__) then
       >>
       resVar)
 end daeExpIf;
+
+template daeExpSum(Exp exp, Context context, Text &preExp,
+                  Text &varDecls, Text &auxFunction)
+ "Generates code for an if expression."
+::=
+match exp
+case SUM(__) then
+  let start = printExpStr(startIt)
+  let &anotherPre = buffer ""
+  let stop = printExpStr(endIt)
+  let bodyStr = daeExpIteratedCref(body)
+  let summationVar = <<sum>>
+  let iterVar = printExpStr(iterator)
+  let &preExp +=<<
+
+  modelica_integer  $P<%iterVar%> = 0; // the iterator
+  modelica_real <%summationVar%> = 0.0; //the sum
+  for($P<%iterVar%> = <%start%>; $P<%iterVar%> < <%stop%>; $P<%iterVar%>++)
+  {
+    <%summationVar%> += <%bodyStr%>($P<%iterVar%>);
+  }
+  
+  >>
+  summationVar
+end daeExpSum;
+
+template daeExpIteratedCref(Exp exp)
+::=
+match exp
+case (CREF(__)) then
+  let subs = (crefSubs(componentRef) |> sub => subscriptToCStr(sub) ; separator=",")
+  <<<%iteratedCrefStr(componentRef)%>_index>>
+end daeExpIteratedCref;
+
+template iteratedCrefStr(ComponentRef cref)
+::=
+match cref
+case (CREF_IDENT(__)) then
+    <<$P<%ident%>>>
+case (CREF_QUAL(__)) then
+    <<$P<%ident%><%iteratedCrefStr(componentRef)%>>>
+end iteratedCrefStr;
+
 
 template resultVarAssignment(DAE.Type ty, Text lhs, Text rhs) "Tuple need to be considered"
 ::=

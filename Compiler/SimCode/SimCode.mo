@@ -436,8 +436,8 @@ uniontype SimEqSystem
     DAE.Exp iter;
     DAE.Exp startIt;
     DAE.Exp endIt;
-    DAE.ComponentRef cref;
-    DAE.Exp exp;
+    DAE.ComponentRef cref;//lhs
+    DAE.Exp exp;//rhs
     DAE.ElementSource source;
   end SES_FOR_LOOP;
 
