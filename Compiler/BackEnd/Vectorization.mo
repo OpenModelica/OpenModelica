@@ -1154,9 +1154,9 @@ algorithm
     //BackendDump.dumpVarList(varLst,"varLst1");
       (varLst,addAlias) := List.fold1(varLst,rollOutArrays1,BackendVariable.varList(aliasVars),({},{}));
     //BackendDump.dumpVarList(varLst,"the unrolled vars");
-    //BackendDump.dumpVarList(addAlias,"teh additional alias");   
+    //BackendDump.dumpVarList(addAlias,"teh additional alias");
   aliasVars := BackendVariable.mergeVariables(aliasVars,BackendVariable.listVar1(addAlias));
-    //BackendDump.dumpVariables(aliasVars,"final alias");   
+    //BackendDump.dumpVariables(aliasVars,"final alias");
   vars := BackendVariable.listVar(varLst);
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
   sharedOut := BackendDAEUtil.replaceAliasVarsInShared(sharedIn,aliasVars);
@@ -1208,7 +1208,7 @@ algorithm
         varLst := {inVar};
       end if;
        //BackendDump.dumpVarList(addAliasLst,"addAliasLst");
-       //BackendDump.dumpVarList(varLst,"varLst");   
+       //BackendDump.dumpVarList(varLst,"varLst");
     end if;
    then (listAppend(varLst,varLst0),listAppend(addAliasLst,aliasLst0));
   case(_,(varLst0,aliasLst0))
@@ -1282,7 +1282,7 @@ algorithm
       {cref1} = Expression.extractCrefsFromExp(bindExp);
     then ComponentReference.crefEqual(cref0,cref1);
   else
-  then false;  
+  then false;
   end matchcontinue;
 end isAliasVarOf;
 
