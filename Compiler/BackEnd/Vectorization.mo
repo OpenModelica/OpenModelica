@@ -1157,7 +1157,7 @@ algorithm
   //remove partly unrolled for-equations and corresponding components
   (eqLst,_) :=  List.fold(BackendEquation.equationList(eqs),markUnrolledForEqs,({},{}));
   eqs := BackendEquation.listEquation(listReverse(eqLst));
-  
+
   //matching := BackendDAE.MATCHING(ass1, ass2, listReverse(comps));
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
   sharedOut := sharedIn;
@@ -1181,7 +1181,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := sysIn;
   BackendDAE.SHARED(aliasVars=aliasVars) := sharedIn;
-  
+
   //unroll variables
   varLst := BackendVariable.varList(vars);
     //BackendDump.dumpVarList(varLst,"varLst1");
@@ -1191,7 +1191,7 @@ algorithm
   aliasVars := BackendVariable.mergeVariables(aliasVars,BackendVariable.listVar1(addAlias));
     //BackendDump.dumpVariables(aliasVars,"final alias");
   vars := BackendVariable.listVar(varLst);
-  
+
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
   sharedOut := BackendDAEUtil.replaceAliasVarsInShared(sharedIn,aliasVars);
 end prepareVectorizedDAE1;
@@ -1219,10 +1219,10 @@ algorithm
     then (eqLst,ids);
     case(_,(eqLst0,ids0))
       then (eqIn::eqLst0,ids0);
-  end matchcontinue;      
+  end matchcontinue;
 end markUnrolledForEqs;
 
-protected function setLoopId 
+protected function setLoopId
   input BackendDAE.Equation eqIn;
   input Integer id;
   output BackendDAE.Equation eqOut;
