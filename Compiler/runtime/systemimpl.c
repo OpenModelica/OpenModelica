@@ -2893,6 +2893,11 @@ const char* SystemImpl__createTemporaryDirectory(const char *templatePrefix)
   MMC_THROW();
 }
 
+const char* System_getTriple()
+{
+  return DEFAULT_TRIPLE;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -252,6 +252,12 @@ public function getDllExt
   external "C" outString=System_getDllExt() annotation(Library = "omcruntime");
 end getDllExt;
 
+public function getTriple "For example x86_64-linux-gnu; used to determine the location of lib-files"
+  output String outString;
+
+  external "C" outString=System_getTriple() annotation(Library = "omcruntime");
+end getTriple;
+
 public function loadLibrary
   input String inLib;
   input Boolean inPrintDebug;

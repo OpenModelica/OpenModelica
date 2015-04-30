@@ -8,7 +8,8 @@ CFLAGS=@CFLAGS@
 TOP_DIR=@abs_top_builddir@
 OMHOME=@abs_top_builddir@/build
 
-LDFLAGS=-L.  -L$(GEN_DIR) -L"$(OMHOME)/lib/omc" -lomparse -lomcruntime -lOpenModelicaRuntimeC -lModelicaExternalC -lantlr3 $(CORBALIBS) $(FMILIB) $(GSLIB) @RT_LDFLAGS@ @LIBSOCKET@ @LIBLPSOLVE55@ @OMC_LIBS@ @GRAPHLIB@ -lexpat
+LIB_OMC=lib/@host_short@/omc
+LDFLAGS=-L.  -L$(GEN_DIR) -L"$(OMHOME)/$(LIB_OMC)" -lomparse -lomcruntime -lOpenModelicaRuntimeC -lModelicaExternalC -lantlr3 $(CORBALIBS) $(FMILIB) $(GSLIB) @RT_LDFLAGS@ @LIBSOCKET@ @LIBLPSOLVE55@ @OMC_LIBS@ @GRAPHLIB@ -lexpat
 ifeq (@WITH_FMIL@,yes)
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
 endif

@@ -1137,6 +1137,11 @@ package System
     input String outFile;
     output Boolean success;
   end covertTextFileToCLiteral;
+
+  function getTriple "For example x86_64-linux-gnu; used to determine the location of lib-files"
+    output String outString;
+  end getTriple;
+
 end System;
 
 

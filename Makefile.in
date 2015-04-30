@@ -55,6 +55,7 @@ WITH_FMIL=@WITH_FMIL@
 ifeq ($(WITH_FMIL),yes)
 BOOTSTRAP_FMIL_DEP=fmil
 endif
+LIB_OMC=lib/@host_short@/omc
 
 include Makefile.common
 
@@ -65,9 +66,9 @@ settings:
 omc: omc-bootstrapped
 
 boehm-gc-lib: @LIBGC@
-build/lib/omc/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
-	mkdir -p build/lib/omc/
-	cp -pPR $< $<.* build/lib/omc/
+build/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
+	mkdir -p build/$(LIB_OMC)
+	cp -pPR $< $<.* build/$(LIB_OMC)/
 3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
@@ -99,13 +100,13 @@ qwt-build: mkbuilddirs
 	$(MAKE) -C 3rdParty/qwt -f Makefile.unix
 	test -f $(builddir_inc)/qwt/qwt_global.h || ($(MAKE) -C 3rdParty/qwt install && cp -a 3rdParty/qwt/build/include/*.h $(builddir_inc)/qwt)
 
-build/lib/omc/libomqwt.so: mkbuilddirs qwt-build
-	cp -a 3rdParty/qwt/lib/libomqwt.so* build/lib/omc/
-build/lib/omc/libomqwt.dylib: mkbuilddirs qwt-build
-	cp -a 3rdParty/qwt/lib/libomqwt*dylib build/lib/omc/
-	install_name_tool -id @rpath/libomqwt.6.2.0.dylib build/lib/omc/libomqwt.6.2.0.dylib
+build/$(LIB_OMC)/libomqwt.so: mkbuilddirs qwt-build
+	cp -a 3rdParty/qwt/lib/libomqwt.so* build/$(LIB_OMC)/
+build/$(LIB_OMC)/libomqwt.dylib: mkbuilddirs qwt-build
+	cp -a 3rdParty/qwt/lib/libomqwt*dylib build/$(LIB_OMC)/
+	install_name_tool -id @rpath/libomqwt.6.2.0.dylib build/$(LIB_OMC)/libomqwt.6.2.0.dylib
 
-qwt: build/lib/omc/libomqwt@SHREXT@
+qwt: build/$(LIB_OMC)/libomqwt@SHREXT@
 omplot: mkbuilddirs qwt
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
 omedit: omc qwt omplot qjson
@@ -151,11 +152,11 @@ omc-no-sim:
 
 fake_modelica3d:
 	# create fake files for debian package
-	mkdir -p $(DESTDIR)/usr/lib/omc $(DESTDIR)/usr/lib/omlibrary-modelica3d
+	mkdir -p $(DESTDIR)/usr/$(LIB_OMC) $(DESTDIR)/usr/lib/omlibrary-modelica3d
 	echo "void fake(void){}" | $(CC) -c -x c - -fPIC -o fake.o
 	$(CC) -shared fake.o -o $(DESTDIR)/usr/lib/libhuhu.so
-	ar r $(DESTDIR)/usr/lib/omc/libmodbus.a fake.o
-	ar r $(DESTDIR)/usr/lib/omc/libmodcount.a fake.o
+	ar r $(DESTDIR)/usr/$(LIB_OMC)/libmodbus.a fake.o
+	ar r $(DESTDIR)/usr/$(LIB_OMC)/libmodcount.a fake.o
 	touch $(DESTDIR)/usr/lib/omlibrary-modelica3d/.empty-dir
 	rm fake.o
 
@@ -170,7 +171,7 @@ else
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libproc3d.dylib build/lib/libproc3d.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libm3d-osg-gtk.dylib build/lib/libm3d-osg-gtk.dylib
 	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/modelica3d/build/lib/proc3d/libproc3d.dylib" "@rpath/libproc3d.dylib" build/lib/libm3d-osg-gtk.dylib
-	cp -p 3rdParty/modelica3d/build/lib/modcount/libmodcount.a 3rdParty/modelica3d/build/lib/modbus/libmodbus.a build/lib/omc/
+	cp -p 3rdParty/modelica3d/build/lib/modcount/libmodcount.a 3rdParty/modelica3d/build/lib/modbus/libmodbus.a build/$(LIB_OMC)/
 	mkdir -p build/lib/omlibrary-modelica3d/blender2.59 build/lib/omlibrary-modelica3d/osg-gtk/
 	cp -p 3rdParty/modelica3d/examples/multibody/src/modelica/*.mo build/lib/omlibrary-modelica3d/
 	cp -p 3rdParty/modelica3d/backends/blender2.59/dbus-server.py build/lib/omlibrary-modelica3d/blender2.59/
@@ -181,7 +182,7 @@ lis: lis-configure mkbuilddirs
 	@echo Building Lis from sources
 	$(MAKE) -C 3rdParty/lis-1.4.12
 	# Copy the library; not headers (as they are not used by the runtime system)
-	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* build/lib/omc/
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* build/$(LIB_OMC)/
 	@# FreeBSD lis does not create the symlinks...
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 build/lib/omc/liblis.so.0
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so || ln -s liblis.so.0.0 build/lib/omc/liblis.so

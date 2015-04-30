@@ -29,7 +29,7 @@ OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
 all: install
 .PHONY: all install
 install: libomcruntime.a
-	cp libomcruntime.a $(builddir_lib)/omc/
+	cp libomcruntime.a $(builddir_lib)/$(TRIPLE)/omc/
 libomcruntime.a : $(OMC_OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ)

@@ -83,6 +83,7 @@
 #else
   #define DEFAULT_LINKER "g++ -shared -Xlinker --export-all-symbols"
 #endif
+#define DEFAULT_TRIPLE ""
 
 #define CONFIG_PATH_DELIMITER "/"
 #define CONFIG_GROUP_DELIMITER ";"

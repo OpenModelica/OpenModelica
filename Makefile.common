@@ -5,7 +5,7 @@ unexport PREFIX
 top_builddir = .
 builddir_app=$(top_builddir)/build/Applications/
 builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib
+builddir_lib_omc=$(top_builddir)/build/$(LIB_OMC)
 builddir_inc=$(top_builddir)/build/include/omc
 builddir_doc=$(top_builddir)/build/share/doc
 builddir_share=$(top_builddir)/build/share/
@@ -29,7 +29,8 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
 	mkdir -p $(builddir_bin)
-	mkdir -p $(builddir_lib)/omc/emcc
+	mkdir -p $(top_builddir)/build/lib/omc
+	mkdir -p $(builddir_lib_omc)emcc
 	mkdir -p $(builddir_inc)/c/
 	mkdir -p $(builddir_inc)/c/linearization/
 	mkdir -p $(builddir_inc)/c/optimization/
@@ -98,7 +99,7 @@ libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
 boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/c/gc.h build/include/omc/c/gc_config_macros.h build/include/omc/c/gc_version.h build/include/omc/c/gc_pthread_redirects.h
-build/lib/omc/libomcgc.a: 3rdParty/gc/.libs/libomcgc.a mkbuilddirs
+build/$(LIB_OMC)/libomcgc.a: 3rdParty/gc/.libs/libomcgc.a mkbuilddirs
 	cp -p $< $@
 3rdParty/gc/.libs/libomcgc.a: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
@@ -114,38 +115,38 @@ build/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthread_redir
 	(cd 3rdParty/gc && autoreconf -vif && automake --add-missing && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt-3.11.6/Makefile: $(LAPACK_TARGET)
-	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L${abs_top_builddir}/build/lib/omc $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
+	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L${abs_top_builddir}/build/$(LIB_OMC) $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
 
-build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
+build/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6 install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.1.9.6.dylib 3rdParty/Ipopt-3.11.6/lib/libipopt.1.9.6.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.4.11.dylib 3rdParty/Ipopt-3.11.6/lib/libcoinmumps.1.4.11.dylib
-	cp -a 3rdParty/Ipopt-3.11.6/lib*/*.* build/lib/omc
+	cp -a 3rdParty/Ipopt-3.11.6/lib*/*.* build/$(LIB_OMC)
 
-ipopt: build/lib/omc/libipopt.la
+ipopt: build/$(LIB_OMC)/libipopt.la
 
-build/lib/omc/libumfpack.a: 3rdParty/SuiteSparse/UMFPACK/Makefile
+build/$(LIB_OMC)/libumfpack.a: 3rdParty/SuiteSparse/UMFPACK/Makefile
 	mkdir -p 3rdParty/SuiteSparse/build
-	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="../../../build"
+	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="../../../build" -DLIB_OMC="$(LIB_OMC)"
 	$(MAKE) -C 3rdParty/SuiteSparse/build install
-	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/lib/omc
+	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/$(LIB_OMC)
 	#mkdir --parent build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/AMD/Include/*.h build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/UFconfig/*.h build/include/omc/c/suitesparse
-umfpack: build/lib/omc/libumfpack.a
+umfpack: build/$(LIB_OMC)/libumfpack.a
 
 umfpack-clean:
 	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && make clean ; fi
 	rm -rf build/include/omc/c/suitesparse
-	rm -f build/lib/omc/libumfpack.a
-	rm -f build/lib/omc/libamd.a
+	rm -f build/$(LIB_OMC)/libumfpack.a
+	rm -f build/$(LIB_OMC)/libamd.a
 
-build/lib/omc/libopenblas_openmodelica.a:
+build/$(LIB_OMC)/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" FC="$(FC)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
-	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 PREFIX=${abs_top_builddir}/build OPENBLAS_LIBRARY_DIR=${abs_top_builddir}/build/lib/omc OPENBLAS_INCLUDE_DIR=${abs_top_builddir}/3rdParty/build/install-includes/ NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica install
-openblas: build/lib/omc/libopenblas_openmodelica.a
+	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 PREFIX=${abs_top_builddir}/build OPENBLAS_LIBRARY_DIR=${abs_top_builddir}/build/$(LIB_OMC) OPENBLAS_INCLUDE_DIR=${abs_top_builddir}/3rdParty/build/install-includes/ NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica install
+openblas: build/$(LIB_OMC)/libopenblas_openmodelica.a
 
 opencl_rt:
 ifeq ("$(OPENCL)","Yes")
@@ -175,15 +176,15 @@ CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 runtimeCPPinstall: libraries/msl-external-libs CMinpack copycppheader
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/lib/omc/cpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/lib/omc/cpp/libOMCppDataExchange.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppEuler.dylib build/lib/omc/cpp/libOMCppEuler.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppNewton.dylib build/lib/omc/cpp/libOMCppNewton.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSimulationSettings.dylib build/lib/omc/cpp/libOMCppSimulationSettings.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppSolver.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSystem.dylib build/lib/omc/cpp/libOMCppSystem.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/$(LIB_OMC)/cpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppEuler.dylib build/$(LIB_OMC)/cpp/libOMCppEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppNewton.dylib build/$(LIB_OMC)/cpp/libOMCppNewton.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSimulationSettings.dylib build/$(LIB_OMC)/cpp/libOMCppSimulationSettings.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSolver.dylib build/$(LIB_OMC)/cpp/libOMCppSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSystem.dylib build/$(LIB_OMC)/cpp/libOMCppSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/$(LIB_OMC)/cpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/$(LIB_OMC)/cpp/libOMCppEuler.dylib
 
 omc-diff: mkbuilddirs
 	$(MAKE) -C testsuite/ -f Makefile omc-diff
@@ -207,8 +208,8 @@ fmil:
 	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/build/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/build/libfmilib_shared$(SHREXT)
-	cp -pPR 3rdParty/FMIL/build/$(LIBFMILIB) $(builddir_lib)/omc/
-	test ! -f build/lib/omc/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) build/lib/omc/libfmilib$(SHREXT)
+	cp -pPR 3rdParty/FMIL/build/$(LIBFMILIB) $(builddir_lib_omc)
+	test ! -f build/$(LIB_OMC)/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) build/$(LIB_OMC)/libfmilib$(SHREXT)
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	#cp -rp 3rdParty/FMIL/install/include/* $(builddir_inc)
 
@@ -218,7 +219,7 @@ qjson:
 	(cd 3rdParty/qjson-0.8.1/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT) || $(MAKE) -C 3rdParty/qjson-0.8.1/build
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT)
-	cp -a 3rdParty/qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(builddir_lib)/omc/
+	cp -a 3rdParty/qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(builddir_lib_omc)
 	cp -a 3rdParty/qjson-0.8.1/src/*.h 3rdParty/qjson-0.8.1/build/include/qjson
 
 CMinpack:
@@ -228,10 +229,10 @@ CMinpack:
 	test -f 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* || $(MAKE) -C 3rdParty/CMinpack/build
 	test -d 3rdParty/CMinpack/install || $(MAKE) -C 3rdParty/CMinpack/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACKLIB) 3rdParty/CMinpack/install/lib/$(LIBCMINPACKLIB)
-	# copy dll/so to lib/omc/ folders
-	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* $(builddir_lib)/omc)
+	# copy dll/so to $(LIB_OMC)/ folders
+	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* $(builddir_lib_omc))
 	# Darwin has to be special always
-	(test ! `uname` = Darwin || cp -af 3rdParty/CMinpack/install/lib*/*.dylib $(builddir_lib)/omc)
+	(test ! `uname` = Darwin || cp -af 3rdParty/CMinpack/install/lib*/*.dylib $(builddir_lib_omc))
 
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
@@ -241,7 +242,7 @@ CMinpack-clean:
 
 metis:
 	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)
-	cp 3rdParty/metis-5.1.0/libmetis/libmetis.a $(builddir_lib)/omc/
+	cp 3rdParty/metis-5.1.0/libmetis/libmetis.a $(builddir_lib_omc)
 
 metis-clean:
 	test ! -f 3rdParty/metis-5.1.0/Makefile || make -C 3rdParty/metis-5.1.0 clean
@@ -415,28 +416,28 @@ install: install-dirs
 3rdParty/msgpack-0.5.8/Makefile:
 	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(MSGPACK_CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
 
-build/lib/omc/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
+build/$(LIB_OMC)/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
-	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.so* build/lib/omc/
+	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.so* build/$(LIB_OMC)/
 
-build/lib/omc/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
+build/$(LIB_OMC)/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	install_name_tool -id @rpath/libmsgpackc.2.dylib 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.2.dylib
-	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc*dylib build/lib/omc/
+	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc*dylib build/$(LIB_OMC)/
 	cp -a 3rdParty/msgpack-0.5.8/src/msgpack.h 3rdParty/msgpack-0.5.8/src/msgpack/ $(builddir_inc)/c
 
-build/lib/omc/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
+build/$(LIB_OMC)/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
-	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.a build/lib/omc/
+	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.a build/$(LIB_OMC)/
 	cp -a 3rdParty/msgpack-0.5.8/src/msgpack.h 3rdParty/msgpack-0.5.8/src/msgpack/ $(builddir_inc)/c
 
 ifeq ($(SHREXT),.so)
-msgpack: build/lib/omc/libmsgpackc.so.2.0.0
+msgpack: build/$(LIB_OMC)/libmsgpackc.so.2.0.0
 else
 ifeq ($(SHREXT),.dylib)
-msgpack: build/lib/omc/libmsgpackc.2.dylib
+msgpack: build/$(LIB_OMC)/libmsgpackc.2.dylib
 else
-msgpack: build/lib/omc/libmsgpackc.a
+msgpack: build/$(LIB_OMC)/libmsgpackc.a
 endif
 endif
 msgpack-clean:

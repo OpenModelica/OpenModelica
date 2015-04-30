@@ -12,6 +12,7 @@
 #define DEFAULT_CXX "@CXX@"
 #define DEFAULT_OMPCC "@OMPCC@"
 #define DEFAULT_MAKE "@MAKE@"
+#define DEFAULT_TRIPLE "@host_short@"
 
 #if defined(__sparc__)
   #define DEFAULT_LINKER "@RUNTIMECC@ -G"

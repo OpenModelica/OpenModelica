@@ -11,7 +11,7 @@ ifeq (arm,@target_cpu@)
 ANTLRDEBUG=--disable-antlrdebug --disable-abiflags
 endif
 host=--host=@host@
-
+LIB_OMC=lib/@host_short@/omc
 include Makefile.common
 
 Makefile: Makefile.in

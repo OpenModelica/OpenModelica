@@ -125,22 +125,22 @@ $(GEN_DIR)_main_omc.c: $(GEN_DIR)_main.c
 $(GEN_DIR)_main_omc.o: $(GEN_DIR)_main_omc.c
 	$(CC) -c $(GEN_DIR)_main_omc.c -o  $(GEN_DIR)_main_omc.o $(CFLAGS) $(CPPFLAGS)
 
-$(OMHOME)/lib/omc/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/lib/omc/libomcruntime.a $(OMHOME)/lib/omc/libomparse.a $(GEN_DIR)_main_omc.o
+$(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/$(LIB_OMC)/libomcruntime.a $(OMHOME)/$(LIB_OMC)/libomparse.a $(GEN_DIR)_main_omc.o
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $^ $(LDFLAGS)
 	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
 
 ifeq ($(STATIC),)
 #shared
-$(GEN_DIR)omc$(EXE_EXT): $(OMHOME)/lib/omc/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main_omc.o $(GEN_DIR)_main.o
+$(GEN_DIR)omc$(EXE_EXT): $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main_omc.o $(GEN_DIR)_main.o
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS) -lOpenModelicaCompiler
 install: $(GEN_DIR)omc$(EXE_EXT) install-interface
 	cp -a $< $(OMHOME)/bin/
-	cp -a $(OMHOME)/lib/omc/libOpenModelicaCompiler$(SHREXT) $(OMHOME)/bin/
+	cp -a $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(OMHOME)/bin/
 
 else
 #static
-$(GEN_DIR)omc$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main.o $(GEN_DIR)_main_omc.o $(OMHOME)/lib/omc/libomcruntime.a $(OMHOME)/lib/omc/libomparse.a
+$(GEN_DIR)omc$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main.o $(GEN_DIR)_main_omc.o $(OMHOME)/$(LIB_OMC)/libomcruntime.a $(OMHOME)/$(LIB_OMC)/libomparse.a
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(GEN_DIR)_main_omc.o $(ALL_OBJECTS) $(LDFLAGS)
 install: $(GEN_DIR)omc$(EXE_EXT) install-interface

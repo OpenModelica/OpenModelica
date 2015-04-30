@@ -9560,7 +9560,7 @@ algorithm
         isLinux := stringEq("linux",System.os());
         target := Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should have the highest priority
-        libs2 := str::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path))::(Settings.getInstallationDirectoryPath() + "/lib/omc")::(Settings.getInstallationDirectoryPath() + "/lib/")::{};
+        libs2 := str::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path))::(Settings.getInstallationDirectoryPath() + "/lib/" + System.getTriple() + "/omc")::(Settings.getInstallationDirectoryPath() + "/lib/")::{};
         libs := List.fold2(libs2, generateExtFunctionLibraryDirectoryFlags2, isLinux, target, libs);
       then (libs, listReverse(libs2), SOME(resourcesStr));
     else (inLibs, {}, NONE());
