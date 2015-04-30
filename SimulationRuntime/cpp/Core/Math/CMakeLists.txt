@@ -7,7 +7,7 @@ add_library(${MathName}_static STATIC ArrayOperations.cpp Functions.cpp  Factory
 IF(UNIX)
 	set_target_properties(${MathName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF(UNIX)
-install (TARGETS ${MathName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
+install (TARGETS ${MathName}_static DESTINATION ${LIBINSTALLEXT})
 
 IF(RUNTIME_STATIC_LINKING)
 ELSE(RUNTIME_STATIC_LINKING)
@@ -16,7 +16,7 @@ ELSE(RUNTIME_STATIC_LINKING)
 	IF(UNIX)
 		set_target_properties(${MathName} PROPERTIES COMPILE_FLAGS -fPIC)
 	ENDIF(UNIX)
-	install (TARGETS ${MathName} DESTINATION lib/omc/${LIBINSTALLEXT})
+	install (TARGETS ${MathName} DESTINATION ${LIBINSTALLEXT})
     add_precompiled_header(${MathName} Include/Core/Modelica.h )
 ENDIF(RUNTIME_STATIC_LINKING)
 

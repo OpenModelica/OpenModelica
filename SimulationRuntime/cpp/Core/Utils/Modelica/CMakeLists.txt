@@ -14,6 +14,6 @@ if (UNIX)
 set_target_properties(${ModelicaUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 target_link_libraries (${ModelicaUtilitiesName} ${Boost_LIBRARIES})
-install (TARGETS ${ModelicaUtilitiesName} DESTINATION lib/omc/${LIBINSTALLEXT})
+install (TARGETS ${ModelicaUtilitiesName} DESTINATION ${LIBINSTALLEXT})
 
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaUtilities.h ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/FactoryExport.h ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaSimulationError.h  DESTINATION include/omc/cpp/Core/Utils/Modelica)

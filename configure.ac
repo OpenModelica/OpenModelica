@@ -913,6 +913,7 @@ OMOptimBasis/build/Makefile.unix \
 OMOptimBasis/build/OMOptimBasis.config \
 OMVisualize/OMVisualizeGUI/OMVisualizeGUI.config \
 SimulationRuntime/c/Makefile \
+SimulationRuntime/cpp/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \

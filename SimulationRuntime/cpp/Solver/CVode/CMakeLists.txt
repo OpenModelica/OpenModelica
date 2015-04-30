@@ -6,12 +6,12 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvect
 # add the solver default implementation library
 IF(RUNTIME_STATIC_LINKING)
 	add_library(${CVodeName}_static STATIC CVode.cpp CVodeSettings.cpp FactoryExport.cpp)
-	install (TARGETS ${CVodeName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
+	install (TARGETS ${CVodeName}_static DESTINATION ${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${CVodeName} SHARED CVode.cpp CVodeSettings.cpp FactoryExport.cpp  )
 	target_link_libraries (${CVodeName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 	add_precompiled_header(${CVodeName} Include/Core/Modelica.h )
-    install (TARGETS ${CVodeName} DESTINATION lib/omc/${LIBINSTALLEXT})
+    install (TARGETS ${CVodeName} DESTINATION ${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 #target_link_libraries( Euler ${Boost_serialization_LIBRARY})
 

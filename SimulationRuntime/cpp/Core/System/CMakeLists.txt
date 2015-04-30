@@ -18,7 +18,7 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvect
 if (UNIX)
 	set_target_properties(${SystemName}_FMU PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
-install (TARGETS ${SystemName}_FMU DESTINATION lib/omc/${LIBINSTALLEXT})
+install (TARGETS ${SystemName}_FMU DESTINATION ${LIBINSTALLEXT})
 
 IF(RUNTIME_STATIC_LINKING)
 	add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
@@ -27,16 +27,16 @@ IF(RUNTIME_STATIC_LINKING)
 	if (UNIX)
 		set_target_properties(${SystemName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 	endif(UNIX)
-	install (TARGETS ${SystemName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
+	install (TARGETS ${SystemName}_static DESTINATION ${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
 	target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
     add_precompiled_header(${SystemName} Include/Core/Modelica.h )
-	install (TARGETS ${SystemName} DESTINATION lib/omc/${LIBINSTALLEXT})
+	install (TARGETS ${SystemName} DESTINATION ${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 #IF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
-#install (TARGETS ${BasiLibName} DESTINATION lib/omc/${LIBINSTALLEXT})
+#install (TARGETS ${BasiLibName} DESTINATION ${LIBINSTALLEXT})
 #ENDIF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 install (FILES
 	${CMAKE_SOURCE_DIR}/Include/Core/System/SystemDefaultImplementation.h

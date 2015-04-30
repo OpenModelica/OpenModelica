@@ -10,7 +10,7 @@ ELSE(RUNTIME_STATIC_LINKING)
    
 ENDIF(RUNTIME_STATIC_LINKING)
 target_link_libraries (${RTEulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
-install (TARGETS ${RTEulerName} DESTINATION lib/omc/${LIBINSTALLEXT})
+install (TARGETS ${RTEulerName} DESTINATION ${LIBINSTALLEXT})
 
 
 

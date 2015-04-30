@@ -13,7 +13,7 @@ target_link_libraries( ${HybrjName} ${Boost_LIBRARIES})
 target_link_libraries( ${HybrjName} ${LAPACK_LIBRARIES} ${CMINPACK_LIBRARY})
 message(STATUS ${CMINPACK_LIBRARY})
 
-install (TARGETS ${HybrjName} DESTINATION lib/omc/${LIBINSTALLEXT})
+install (TARGETS ${HybrjName} DESTINATION ${LIBINSTALLEXT})
 #install (FILES "../Interfaces/NewtonSettings.xml" 
 #  DESTINATION bin/config)
 

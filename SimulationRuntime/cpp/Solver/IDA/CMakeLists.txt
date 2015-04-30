@@ -6,12 +6,12 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/ida ${SUNDIALS_INCLUDE_DIR}/nvector 
 # add the solver default implementation library
 IF(RUNTIME_STATIC_LINKING)
 	add_library(${IDAName}_static STATIC IDA.cpp IDASettings.cpp FactoryExport.cpp)
-	install (TARGETS ${IDAName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
+	install (TARGETS ${IDAName}_static DESTINATION ${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${IDAName} SHARED IDA.cpp IDASettings.cpp FactoryExport.cpp)
 	target_link_libraries (${IDAName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 	add_precompiled_header(${IDAName} Include/Core/Modelica.h )
-    install (TARGETS ${IDAName} DESTINATION lib/omc/${LIBINSTALLEXT})
+    install (TARGETS ${IDAName} DESTINATION ${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
 IF(RUNTIME_STATIC_LINKING)

@@ -9,6 +9,6 @@ if (UNIX)
 set_target_properties(${ModelicaExternalName} PROPERTIES COMPILE_FLAGS -fPIC)
 set_target_properties(${ModelicaTablesName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
-install (TARGETS ${ModelicaExternalName} DESTINATION  lib/omc/${LIBINSTALLEXT})
-install (TARGETS ${ModelicaTablesName} DESTINATION  lib/omc/${LIBINSTALLEXT})
+install (TARGETS ${ModelicaExternalName} DESTINATION  ${LIBINSTALLEXT})
+install (TARGETS ${ModelicaTablesName} DESTINATION  ${LIBINSTALLEXT})
 #lib/omc/cpp

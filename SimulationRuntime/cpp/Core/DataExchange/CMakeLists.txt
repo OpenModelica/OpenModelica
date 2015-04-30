@@ -24,8 +24,8 @@ if (UNIX)
 	set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
-install (TARGETS ${DataExchangeName} DESTINATION lib/omc/${LIBINSTALLEXT})
-install (TARGETS ${DataExchangeName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
+install (TARGETS ${DataExchangeName} DESTINATION ${LIBINSTALLEXT})
+install (TARGETS ${DataExchangeName}_static DESTINATION ${LIBINSTALLEXT})
 
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IHistory.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/ISimVar.h
