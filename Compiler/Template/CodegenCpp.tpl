@@ -7911,7 +7911,8 @@ match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 //the index 0 is reserved for undefined references
 <<
-<%intAdd(1, intAdd(intMul(2,varInfo.numStateVars),intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numDiscreteReal))))%>
+<%intAdd(1, intAdd(varInfo.numOptimizeFinalConstraints, intAdd(varInfo.numOptimizeConstraints, intAdd(varInfo.numOutVars, intAdd(varInfo.numInVars ,intAdd(intMul(2,varInfo.numStateVars),intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numDiscreteReal))))))))
+%>
 >>
 end numRealvars;
 
@@ -9165,6 +9166,11 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     then
     <<
      throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,"Mixed systems are not supported yet");
+    >>
+  case e as SES_FOR_LOOP(__)
+    then
+    <<
+    This is a foor loop, it works!
     >>
   else
     "NOT IMPLEMENTED EQUATION"

@@ -58,9 +58,9 @@ struct CopyCArray2RefArray
 template<typename T>
 struct RefArray2RefArray
 {
-    T* operator()(T* val,T* val2)
+    T* operator()(const T* val)
     {
-        return val;
+        return (T*)val;
     }
 };
 
@@ -215,9 +215,8 @@ public:
   RefArray(const T** ref_data)
     :BaseArray<T>(true, true)
   {
-    T **refs = _ref_array.c_array();
-    for(int i = 0; i < nelems; i++)
-      _ref_array[i] = (T*)ref_data[i];
+    std::transform(ref_data, ref_data + nelems, _ref_array.c_array(), 
+                   RefArray2RefArray<T>());
   }
 
   /**
