@@ -6750,7 +6750,7 @@ case MODELINFO(vars=SIMVARS(__)) then
    ;separator="\n"%>
    /*external variables*/
    <%vars.extObjVars |> var =>
-    MemberVariableDefine2(var, "extObjVars", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, "extObjVars", useFlatArrayNotation, false)
    ;separator="\n"%>
    /*alias real vars*/
    <%vars.aliasVars |> var =>
