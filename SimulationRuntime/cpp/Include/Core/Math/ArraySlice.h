@@ -32,7 +32,6 @@
  */
 
 #include "Array.h"
-#include <stdarg.h>
 
 // Modelica slice
 // Defined by start:stop or start:step:stop, start = 0 or stop = 0 meaning end,
@@ -131,11 +130,11 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual const T& operator()(const vector<size_t> &idx) const {
-    return access(idx);
+    return accessElem(idx.size(), &idx[0]);
   }
 
   virtual T& operator()(const vector<size_t> &idx) {
-    return access(idx);
+    return accessElem(idx.size(), &idx[0]);
   }
 
   virtual void assign(const T* data) {
@@ -194,31 +193,36 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual T& operator()(size_t i) {
-    return accessElement(1, i);
+    return accessElem(1, &i);
   }
 
   virtual const T& operator()(size_t i) const {
-    return accessElement(1, i);
+    return accessElem(1, &i);
   }
 
   virtual T& operator()(size_t i, size_t j) {
-    return accessElement(2, i, j);
+    size_t idx[] = {i, j};
+    return accessElem(2, idx);
   }
 
   virtual const T& operator()(size_t i, size_t j) const {
-    return accessElement(2, i, j);
+    size_t idx[] = {i, j};
+    return accessElem(2, idx);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k) {
-    return accessElement(3, i, j, k);
+    size_t idx[] = {i, j, k};
+    return accessElem(3, idx);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l) {
-    return accessElement(4, i, j, k, l);
+    size_t idx[] = {i, j, k, l};
+    return accessElem(4, idx);
   }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) {
-    return accessElement(5, i, j, k, l, m);
+    size_t idx[] = {i, j, k, l, m};
+    return accessElem(5, idx);
   }
 
  protected:
@@ -230,8 +234,10 @@ class ArraySlice: public BaseArray<T> {
   mutable boost::multi_array<T, 1> _tmp_data; // storage for const T* getData()
 
   // access an element
-  virtual T& access(const vector<size_t> &idx) const {
-    vector<size_t>::const_iterator it = idx.begin();
+  T& accessElem(size_t ndims, const size_t idx[]) const {
+    if (ndims != _dims.size())
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                    "Wrong dimensions accessing ArraySlice");
     size_t dim, size;
     const BaseArray<int> *iset;
     vector< vector<size_t> >::const_iterator dit;
@@ -241,14 +247,14 @@ class ArraySlice: public BaseArray<T> {
       switch (size) {
       case 0:
         // all indices
-        _baseIdx[dim - 1] = *it++;
+        _baseIdx[dim - 1] = *idx++;
         break;
       case 1:
         // reduction
         break;
       default:
         // regular index mapping
-        _baseIdx[dim - 1] = iset? (*iset)(*it++): (*dit)[*it++ - 1];
+        _baseIdx[dim - 1] = iset? (*iset)(*idx++): (*dit)[*idx++ - 1];
       }
     }
     return _baseArray(_baseIdx);
@@ -292,36 +298,5 @@ class ArraySlice: public BaseArray<T> {
         data[processed++] = _baseArray(_baseIdx);
     }
     return processed;
-  }
-
-  T& accessElement(size_t ndims, ...) const {
-    if (ndims != _dims.size())
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
-                                    "Wrong dimensions accessing ArraySlice");
-    size_t dim, size, i;
-    const BaseArray<int> *iset;
-    va_list args;
-    va_start(args, ndims);
-    vector< vector<size_t> >::const_iterator dit;
-    for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      iset = _isets[dim - 1];
-      size = iset? iset->getNumElems(): dit->size();
-      switch (size) {
-      case 0:
-        // all indices
-        i = va_arg(args, size_t);
-        _baseIdx[dim - 1] = i;
-        break;
-      case 1:
-        // reduction
-        break;
-      default:
-        // regular index mapping
-        i = va_arg(args, size_t);
-        _baseIdx[dim - 1] = iset? (*iset)(i): (*dit)[i - 1];
-      }
-    }
-    va_end(args);
-    return _baseArray(_baseIdx);
   }
 };
