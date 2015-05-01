@@ -33,9 +33,11 @@
 
 #include "Array.h"
 
-// Modelica slice
-// Defined by start:stop or start:step:stop, start = 0 or stop = 0 meaning end,
-// or by an index vector if step = 0.
+/**
+ * Modelica slice.
+ * Defined by start:stop or start:step:stop, start = 0 or stop = 0 meaning end,
+ * or by an index vector if step = 0.
+ */
 class Slice {
  public:
   // all indices
@@ -85,11 +87,13 @@ class Slice {
   const BaseArray<int> *iset;
 };
 
-// Multi-dimensional array slice holding a reference to a BaseArray.
+/**
+ * Multi-dimensional array slice holding a const reference to a BaseArray.
+ */
 template<class T>
-class ArraySlice: public BaseArray<T> {
+class ArraySliceConst: public BaseArray<T> {
  public:
-  ArraySlice(BaseArray<T> &baseArray, const vector<Slice> &slice)
+  ArraySliceConst(const BaseArray<T> &baseArray, const vector<Slice> &slice)
     : BaseArray<T>(baseArray.isStatic(), false)
     , _baseArray(baseArray)
     , _isets(slice.size())
@@ -130,19 +134,22 @@ class ArraySlice: public BaseArray<T> {
   }
 
   virtual const T& operator()(const vector<size_t> &idx) const {
-    return accessElem(idx.size(), &idx[0]);
+    return _baseArray(baseIdx(idx.size(), &idx[0]));
   }
 
   virtual T& operator()(const vector<size_t> &idx) {
-    return accessElem(idx.size(), &idx[0]);
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Can't write to ArraySliceConst");
   }
 
   virtual void assign(const T* data) {
-    setDataDim(_idxs.size(), data);
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Can't assign data to ArraySliceConst");
   }
 
   virtual void assign(const BaseArray<T>& otherArray) {
-    setDataDim(_idxs.size(), otherArray.getData());
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Can't assign array to ArraySliceConst");
   }
 
   virtual std::vector<size_t> getDims() const {
@@ -192,49 +199,27 @@ class ArraySlice: public BaseArray<T> {
                                   "Can't resize ArraySlice");
   }
 
-  virtual T& operator()(size_t i) {
-    return accessElem(1, &i);
-  }
-
   virtual const T& operator()(size_t i) const {
-    return accessElem(1, &i);
-  }
-
-  virtual T& operator()(size_t i, size_t j) {
-    size_t idx[] = {i, j};
-    return accessElem(2, idx);
+    return _baseArray(baseIdx(1, &i));
   }
 
   virtual const T& operator()(size_t i, size_t j) const {
     size_t idx[] = {i, j};
-    return accessElem(2, idx);
-  }
-
-  virtual T& operator()(size_t i, size_t j, size_t k) {
-    size_t idx[] = {i, j, k};
-    return accessElem(3, idx);
-  }
-
-  virtual T& operator()(size_t i, size_t j, size_t k, size_t l) {
-    size_t idx[] = {i, j, k, l};
-    return accessElem(4, idx);
-  }
-
-  virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) {
-    size_t idx[] = {i, j, k, l, m};
-    return accessElem(5, idx);
+    return _baseArray(baseIdx(2, idx));
   }
 
  protected:
-  BaseArray<T> &_baseArray;        // underlying array
+  const BaseArray<T> &_baseArray;  // underlying array
   vector<const BaseArray<int>*> _isets; // given index sets per dimension
   vector< vector<size_t> > _idxs;  // created index sets per dimension
   vector<size_t> _dims;            // dimensions of array slice
   mutable vector<size_t> _baseIdx; // idx into underlying array
   mutable boost::multi_array<T, 1> _tmp_data; // storage for const T* getData()
 
-  // access an element
-  T& accessElem(size_t ndims, const size_t idx[]) const {
+  /**
+   * returns idx vector to access an element
+   */
+  const vector<size_t> &baseIdx(size_t ndims, const size_t idx[]) const {
     if (ndims != _dims.size())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Wrong dimensions accessing ArraySlice");
@@ -257,30 +242,12 @@ class ArraySlice: public BaseArray<T> {
         _baseIdx[dim - 1] = iset? (*iset)(*idx++): (*dit)[*idx++ - 1];
       }
     }
-    return _baseArray(_baseIdx);
+    return _baseIdx;
   }
 
-  // recursive method for muli-dimensional assignment of raw data
-  size_t setDataDim(size_t dim, const T* data) {
-    size_t processed = 0;
-    const BaseArray<int> *iset = _isets[dim - 1];
-    size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
-    if (size == 0)
-      size = _baseArray.getDim(dim);
-    for (size_t i = 1; i <= size; i++) {
-      if (iset)
-        _baseIdx[dim - 1] = iset->getNumElems() > 0? (*iset)(i): i;
-      else
-        _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
-      if (dim > 1)
-        processed += setDataDim(dim - 1, data + processed);
-      else
-        _baseArray(_baseIdx) = data[processed++];
-    }
-    return processed;
-  }
-
-  // recursive method for reading raw data
+  /**
+   * recursive method for reading raw data
+   */
   size_t getDataDim(size_t dim, T* data) const {
     size_t processed = 0;
     const BaseArray<int> *iset = _isets[dim - 1];
@@ -296,6 +263,83 @@ class ArraySlice: public BaseArray<T> {
         processed += getDataDim(dim - 1, data + processed);
       else
         data[processed++] = _baseArray(_baseIdx);
+    }
+    return processed;
+  }
+};
+
+/**
+ * Multi-dimensional array slice extending ArraySliceConst with write access
+ */
+template<class T>
+class ArraySlice: public ArraySliceConst<T> {
+ public:
+  ArraySlice(BaseArray<T> &baseArray, const vector<Slice> &slice)
+    : ArraySliceConst<T>(baseArray, slice)
+    , _baseArray(baseArray)
+    , _idxs(ArraySliceConst<T>::_idxs)
+    , _baseIdx(ArraySliceConst<T>::_baseIdx) {
+  }
+
+  virtual T& operator()(const vector<size_t> &idx) {
+    return _baseArray(ArraySliceConst<T>::baseIdx(idx.size(), &idx[0]));
+  }
+
+  virtual void assign(const T* data) {
+    setDataDim(_idxs.size(), data);
+  }
+
+  virtual void assign(const BaseArray<T>& otherArray) {
+    setDataDim(_idxs.size(), otherArray.getData());
+  }
+
+  virtual T& operator()(size_t i) {
+    return _baseArray(ArraySliceConst<T>::baseIdx(1, &i));
+  }
+
+  virtual T& operator()(size_t i, size_t j) {
+    size_t idx[] = {i, j};
+    return _baseArray(ArraySliceConst<T>::baseIdx(2, idx));
+  }
+
+  virtual T& operator()(size_t i, size_t j, size_t k) {
+    size_t idx[] = {i, j, k};
+    return _baseArray(ArraySliceConst<T>::baseIdx(3, idx));
+  }
+
+  virtual T& operator()(size_t i, size_t j, size_t k, size_t l) {
+    size_t idx[] = {i, j, k, l};
+    return _baseArray(ArraySliceConst<T>::baseIdx(4, idx));
+  }
+
+  virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) {
+    size_t idx[] = {i, j, k, l, m};
+    return _baseArray(ArraySliceConst<T>::baseIdx(5, idx));
+  }
+
+ protected:
+  BaseArray<T> &_baseArray;        // underlying array
+  vector< vector<size_t> > &_idxs; // reference to index set of ArraySliceConst
+  vector<size_t> &_baseIdx;        // reference to idx into underlying array
+
+  /**
+   * recursive method for muli-dimensional assignment of raw data
+   */
+  size_t setDataDim(size_t dim, const T* data) {
+    size_t processed = 0;
+    const BaseArray<int> *iset = ArraySliceConst<T>::_isets[dim - 1];
+    size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
+    if (size == 0)
+      size = _baseArray.getDim(dim);
+    for (size_t i = 1; i <= size; i++) {
+      if (iset)
+        _baseIdx[dim - 1] = iset->getNumElems() > 0? (*iset)(i): i;
+      else
+        _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
+      if (dim > 1)
+        processed += setDataDim(dim - 1, data + processed);
+      else
+        _baseArray(_baseIdx) = data[processed++];
     }
     return processed;
   }

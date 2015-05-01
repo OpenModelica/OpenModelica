@@ -180,7 +180,7 @@ void transpose_array(const BaseArray<T>& x, BaseArray<T>& a)
   vector<Slice> sa(ndims);
   for (int i = 1; i <= x.getDim(1); i++) {
     sa[1] = sx[0] = Slice(i);
-    ArraySlice<T>(a, sa).assign(ArraySlice<T>((BaseArray<T>&)x, sx));
+    ArraySlice<T>(a, sa).assign(ArraySliceConst<T>(x, sx));
   }
 }
 
