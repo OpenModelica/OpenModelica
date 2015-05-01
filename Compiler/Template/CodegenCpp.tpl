@@ -5144,9 +5144,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       initializeDiscreteAlgVars();
       initializeIntAlgVars();
       initializeBoolAlgVars();
-      initializeAliasVars();
-      initializeIntAliasVars();
-      initializeBoolAliasVars();
+      //initializeAliasVars();
+      //initializeIntAliasVars();
+      //initializeBoolAliasVars();
       initializeStringAliasVars();
       initializeStateVars();
       initializeDerVars();
