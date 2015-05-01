@@ -168,9 +168,9 @@ else
 	cd 3rdParty/modelica3d/build && $(CMAKE_RPATH) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 $(BOOST_INCLUDE) ..
 	$(MAKE) -C 3rdParty/modelica3d/build
 	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk$(SHREXT) 3rdParty/modelica3d/build/lib/proc3d/libproc3d$(SHREXT) build/lib/@host_short@
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libproc3d.dylib build/lib/libproc3d.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libm3d-osg-gtk.dylib build/lib/libm3d-osg-gtk.dylib
-	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/modelica3d/build/lib/proc3d/libproc3d.dylib" "@rpath/libproc3d.dylib" build/lib/libm3d-osg-gtk.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libproc3d.dylib build/lib/@host_short@/libproc3d.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libm3d-osg-gtk.dylib build/lib/@host_short@/libm3d-osg-gtk.dylib
+	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/modelica3d/build/lib/proc3d/libproc3d.dylib" "@rpath/libproc3d.dylib" build/lib/@host_short@/libm3d-osg-gtk.dylib
 	cp -p 3rdParty/modelica3d/build/lib/modcount/libmodcount.a 3rdParty/modelica3d/build/lib/modbus/libmodbus.a build/$(LIB_OMC)/
 	mkdir -p build/lib/omlibrary-modelica3d/blender2.59 build/lib/omlibrary-modelica3d/osg-gtk/
 	cp -p 3rdParty/modelica3d/examples/multibody/src/modelica/*.mo build/lib/omlibrary-modelica3d/
