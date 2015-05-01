@@ -23,10 +23,13 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationMainFile(target, simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "", numRealVars, numIntVars, numBoolVars, getPreVarsCount(modelInfo)), 'OMCpp<%fileNamePrefix%>Main.cpp')
         let()= textFile(simulationCppFile(simCode, contextOther, stringInt(numRealVars), stringInt(numIntVars), stringInt(numBoolVars), &extraFuncs, &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
         let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", MemberVariable(modelInfo, false), MemberVariablePreVariables(modelInfo,false), false), 'OMCpp<%fileNamePrefix%>.h')
-        let()= textFile(simulationFunctionsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
-        let()= textFile(simulationFunctionsFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, externalFunctionIncludes, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
         let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
         let()= textFile(simulationMakefile(target,simCode , &extraFuncs , &extraFuncsDecl, "","","","","",false), '<%fileNamePrefix%>.makefile')
+
+        let &extraFuncsFun = buffer "" /*BUFD*/
+        let &extraFuncsDeclFun = buffer "" /*BUFD*/
+        let()= textFile(simulationFunctionsFile(simCode, &extraFuncsFun, &extraFuncsDeclFun, 'Functions', modelInfo.functions, literals, externalFunctionIncludes, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
+        let()= textFile(simulationFunctionsHeaderFile(simCode, &extraFuncsFun, &extraFuncsDeclFun, 'Functions', modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Functions.h')
 
         let &extraFuncsInit = buffer "" /*BUFD*/
         let &extraFuncsDeclInit = buffer "" /*BUFD*/
@@ -2337,6 +2340,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   }
 
   <%functionBodies(functions, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+  /*extraFuncs*/
+  <%extraFuncs%>
   >>
 end simulationFunctionsFile;
 
@@ -2417,6 +2422,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     bool& _initial;
     double* __z;
     double* __zDot;
+    /*extraFuncs*/
+    <%extraFuncsDecl%>
   };
   >>
 end simulationFunctionsHeaderFile;
@@ -7607,11 +7614,10 @@ template crefStr(ComponentRef cr)
   match cr
   case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStr(subscriptLst)%>'
   case CREF_IDENT(ident = "time") then "_simTime"
-   //filter key words for variable names
-   case CREF_IDENT(ident = "unsigned") then
-   'unsigned_'
-   case CREF_IDENT(ident = "string") then
-   'string_'
+  //filter key words for variable names
+  case CREF_IDENT(ident = "unsigned") then 'unsigned_'
+  case CREF_IDENT(ident = "string") then 'string_'
+  case CREF_IDENT(ident = "int") then 'int_'
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
   // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
@@ -10933,19 +10939,16 @@ case ARRAY(array=_::_, ty = arraytype) then
                                <<
                                void <%extraFuncsNamespace%>::createArray_<%arrayVar%>(<%ArrayType%>& <%arrayVar%>)
                                {
-                                  <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
-                                  <%funcCalls%>
-
-
-                               }
+                                 <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
+                                 <%funcCalls%>
+                               }<%\n%>
                                >>
                                <<
                                <%ArrayType%> <%arrayVar%>;
                                createArray_<%arrayVar%>(<%arrayVar%>);<%\n%>
                                >>
 
-
-   let &preExp += '<%arrayassign%>'
+  let &preExp += '<%arrayassign%>'
   arrayVar
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
@@ -10994,8 +10997,8 @@ template daeExpSubArray2(list<Exp> array, Integer idx, Integer multiplicator, St
  "Generates code for an array expression."
 ::=
 let func = 'void createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>);'
-let &extraFuncsDecl+= '<%func%><%\n%>'
-let funcCall = 'createArray_<%arrayVar%>_<%idx%>(<%arrayVar%>);<%\n%>'
+let &extraFuncsDecl += '<%func%><%\n%>'
+let funcCall = 'createArray_<%arrayVar%>_<%idx%>(<%arrayVar%>);'
 let &funcVarDecls = buffer ""
 let &preExpSubArrays = buffer ""
 let funcs = (array |> e hasindex i0 fromindex intAdd(intMul(idx, multiplicator),1) =>
@@ -11003,14 +11006,14 @@ let funcs = (array |> e hasindex i0 fromindex intAdd(intMul(idx, multiplicator),
        <<
        <%arrayVar%>.append(<%i0%>, <%subArraycall%>);
        >> ;separator="\n")
-       let & extraFuncs +=
+       let &extraFuncs +=
        <<
        void <%extraFuncsNamespace%>::createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>)
        {
          <%funcVarDecls%>
          <%preExpSubArrays%>
          <%funcs%>
-       }
+       }<%\n%>
        >>
 funcCall
 end daeExpSubArray2;
@@ -12305,12 +12308,10 @@ template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFun
     else
     "_simTime"
     end match
-   //filter key words for variable names
-   case CREF_IDENT(ident = "unsigned") then
-   'unsigned_'
-   case CREF_IDENT(ident = "string") then
-   'string_'
-
+  //filter key words for variable names
+  case CREF_IDENT(ident = "unsigned") then 'unsigned_'
+  case CREF_IDENT(ident = "string") then 'string_'
+  case CREF_IDENT(ident = "int") then 'int_'
   else '<%representationCref(cr, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, varDecls, stateDerVectorName, useFlatArrayNotation) %>'
 end cref1;
 
