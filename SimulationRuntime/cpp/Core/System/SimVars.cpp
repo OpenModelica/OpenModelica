@@ -216,7 +216,7 @@ bool* SimVars::initBoolArrayVar(size_t size, size_t start_index)
  *  \param [out] ref_data pointer array to original array elements in simvars memory
   *  \details Details
  */
-void SimVars::initRealAliasArray(int indices[], size_t n, const double* ref_data[])
+void SimVars::initRealAliasArray(int indices[], size_t n, double* ref_data[])
 {
   for(int i = 0; i < n; i++)
   {
@@ -226,7 +226,7 @@ void SimVars::initRealAliasArray(int indices[], size_t n, const double* ref_data
   }
 }
 
-void SimVars::initRealAliasArray(std::vector<int> indices, const double* ref_data[])
+void SimVars::initRealAliasArray(std::vector<int> indices, double* ref_data[])
 {
   initRealAliasArray(&indices[0], indices.size(), ref_data);
 }
@@ -237,12 +237,12 @@ void SimVars::initRealAliasArray(std::vector<int> indices, const double* ref_dat
  *  \param [out] ref_data pointer array to original array elements in simvars memory
   *  \details Details
  */
-void SimVars::initIntAliasArray(int indices[], size_t n, const int* ref_data[])
+void SimVars::initIntAliasArray(int indices[], size_t n, int* ref_data[])
 {
   std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getIntVar,this,boost::lambda::_1));
 }
 
-void SimVars::initIntAliasArray(std::vector<int> indices, const int* ref_data[])
+void SimVars::initIntAliasArray(std::vector<int> indices, int* ref_data[])
 {
   initIntAliasArray(&indices[0], indices.size(), ref_data);
 }
@@ -253,12 +253,12 @@ void SimVars::initIntAliasArray(std::vector<int> indices, const int* ref_data[])
  *  \param [out] ref_data pointer array to original array elements in simvars memory
   *  \details Details
  */
-void SimVars::initBoolAliasArray(int indices[], size_t n, const bool*ref_data[] )
+void SimVars::initBoolAliasArray(int indices[], size_t n, bool* ref_data[])
 {
   std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getBoolVar,this,boost::lambda::_1));
 }
 
-void SimVars::initBoolAliasArray(std::vector<int> indices, const bool* ref_data[])
+void SimVars::initBoolAliasArray(std::vector<int> indices, bool* ref_data[])
 {
   initBoolAliasArray(&indices[0], indices.size(), ref_data);
 }

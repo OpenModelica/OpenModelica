@@ -130,28 +130,12 @@ class ArraySlice: public BaseArray<T> {
     }
   }
 
+  virtual const T& operator()(const vector<size_t> &idx) const {
+    return access(idx);
+  }
+
   virtual T& operator()(const vector<size_t> &idx) {
-    vector<size_t>::const_iterator it = idx.begin();
-    size_t dim, size;
-    const BaseArray<int> *iset;
-    vector< vector<size_t> >::const_iterator dit;
-    for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
-      iset = _isets[dim - 1];
-      size = iset? iset->getNumElems(): dit->size();
-      switch (size) {
-      case 0:
-        // all indices
-        _baseIdx[dim - 1] = *it++;
-        break;
-      case 1:
-        // reduction
-        break;
-      default:
-        // regular index mapping
-        _baseIdx[dim - 1] = iset? (*iset)(*it++): (*dit)[*it++ - 1];
-      }
-    }
-    return _baseArray(_baseIdx);
+    return access(idx);
   }
 
   virtual void assign(const T* data) {
@@ -244,6 +228,31 @@ class ArraySlice: public BaseArray<T> {
   vector<size_t> _dims;            // dimensions of array slice
   mutable vector<size_t> _baseIdx; // idx into underlying array
   mutable boost::multi_array<T, 1> _tmp_data; // storage for const T* getData()
+
+  // access an element
+  virtual T& access(const vector<size_t> &idx) const {
+    vector<size_t>::const_iterator it = idx.begin();
+    size_t dim, size;
+    const BaseArray<int> *iset;
+    vector< vector<size_t> >::const_iterator dit;
+    for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
+      iset = _isets[dim - 1];
+      size = iset? iset->getNumElems(): dit->size();
+      switch (size) {
+      case 0:
+        // all indices
+        _baseIdx[dim - 1] = *it++;
+        break;
+      case 1:
+        // reduction
+        break;
+      default:
+        // regular index mapping
+        _baseIdx[dim - 1] = iset? (*iset)(*it++): (*dit)[*it++ - 1];
+      }
+    }
+    return _baseArray(_baseIdx);
+  }
 
   // recursive method for muli-dimensional assignment of raw data
   size_t setDataDim(size_t dim, const T* data) {

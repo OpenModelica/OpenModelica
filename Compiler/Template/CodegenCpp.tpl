@@ -6882,7 +6882,7 @@ match simVar
             <<
             >>
             let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
-            let &additionalBodyStatements += 'const <%typeString%>* <%arrayName%>_ref_data[<%size%>];<%\n%>_sim_vars->init<%type%>AliasArray(boost::assign::list_of<%arrayIndices%>,<%arrayName%>_ref_data);<%\n%><%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);<%\n%>'
+            let &additionalBodyStatements += '<%typeString%>* <%arrayName%>_ref_data[<%size%>];<%\n%>_sim_vars->init<%type%>AliasArray(boost::assign::list_of<%arrayIndices%>,<%arrayName%>_ref_data);<%\n%><%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);<%\n%>'
             var_init
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
@@ -11530,7 +11530,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let arrays_exp = (arrays |> array =>
     '<%tvar%>_list.push_back(&<%daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);' ;separator="\n")
     let &preExp +=
-    'vector<BaseArray<<%ty_str%>>* > <%tvar%>_list;
+    'vector<const BaseArray<<%ty_str%>>*> <%tvar%>_list;
      <%tvar%>_list.push_back(&<%a0str%>);
      <%arrays_exp%>
      cat_array<<%ty_str%>>(<%dim_exp%>, <%tvar%>_list, <%tvar%>);

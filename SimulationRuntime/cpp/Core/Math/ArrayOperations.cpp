@@ -3,24 +3,28 @@
 #include <Core/Math/ArraySlice.h>
 #include <sstream>
 #include <stdio.h>
+
 using namespace std;
+
 //void boost::assertion_failed(char const * expr, char const * function,
 //                             char const * file, long line)
 //{
 //  fprintf(stdout, "Range check failed for Array please check indices \n" );
 //}
-size_t getNextIndex(vector<size_t> idx,size_t k)
+
+size_t getNextIndex(const vector<size_t> idx, size_t k)
 {
   if((idx.size()-1)<k)
     return idx.back();
   else
     return idx[k];
 }
+
 /**
 Concatenates n real arrays along the k:th dimension.
 */
-template < typename T >
-void cat_array(int k, vector<BaseArray<T>* >& x, BaseArray<T>& a)
+template <typename T>
+void cat_array(int k, const vector<const BaseArray<T>*>& x, BaseArray<T>& a)
 {
     unsigned int new_k_dim_size = 0;
     unsigned int n = x.size();
@@ -67,24 +71,23 @@ void cat_array(int k, vector<BaseArray<T>* >& x, BaseArray<T>& a)
     a.setDims( ex );
 
   /* concatenation along k-th dimension */
-    T* a_data = a.getData();
-    int j = 0;
-    for(int i = 0; i < n_super; i++)
+  T* a_data = a.getData();
+  int j = 0;
+  for (int i = 0; i < n_super; i++)
   {
-        for(int c = 0; c < n; c++)
+    for (int c = 0; c < n; c++)
     {
-            int n_sub_k = n_sub * x[c]->getDims()[k-1];
-            T* x_data = x[c]->getData();
-      for(int r = 0; r < n_sub_k; r++)
+      int n_sub_k = n_sub * x[c]->getDims()[k-1];
+      const T* x_data = x[c]->getData();
+      for (int r = 0; r < n_sub_k; r++)
       {
-                a_data[j] =       x_data[r + (i * n_sub_k)];
-                j++;
-            }
-        }
+        a_data[j] = x_data[r + (i * n_sub_k)];
+        j++;
+      }
     }
-
-
+  }
 }
+
 /*
 creates an array (d) for passed multi array  shape (sp) and initialized it with elements from passed source array (s)
 s source array
@@ -149,22 +152,21 @@ void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d
 
 
  //template < typename T , size_t NumDims, size_t NumDims2 >
-template < typename T >
-void promote_array(unsigned int n,BaseArray<T>& s,BaseArray<T>& d)
+template <typename T>
+void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d)
 {
-   vector<size_t> ex = s.getDims();
-   for(int i=0;i<n;i++)
+  vector<size_t> ex = s.getDims();
+  for (int i=0; i<n; i++)
     ex.push_back(1);
-   d.setDims(ex);
-   T* data = s.getData();
-   d.assign( data );
+  d.setDims(ex);
+  d.assign(s.getData());
 }
 
 /**
  * permutes the first two dimensions of x into a
  */
-template < typename T >
-void transpose_array(BaseArray< T >& x, BaseArray< T >& a)
+template <typename T>
+void transpose_array(const BaseArray<T>& x, BaseArray<T>& a)
 
 {
   size_t ndims = x.getNumDims();
@@ -178,18 +180,18 @@ void transpose_array(BaseArray< T >& x, BaseArray< T >& a)
   vector<Slice> sa(ndims);
   for (int i = 1; i <= x.getDim(1); i++) {
     sa[1] = sx[0] = Slice(i);
-    ArraySlice<T>(a, sa).assign(ArraySlice<T>(x, sx));
+    ArraySlice<T>(a, sa).assign(ArraySlice<T>((BaseArray<T>&)x, sx));
   }
 }
 
-template < typename T>
-void multiply_array(BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray)
+template <typename T>
+void multiply_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray)
 {
   outputArray.setDims(inputArray.getDims());
-  T* data = inputArray.getData();
-  unsigned int nelems = inputArray.getNumElems();
+  const T* data = inputArray.getData();
   T* aim = outputArray.getData();
-  std::transform (data, data + nelems, aim, std::bind2nd( std::multiplies< T >(), b ));
+  std::transform (data, data + inputArray.getNumElems(),
+                  aim, std::bind2nd(std::multiplies<T>(), b));
 };
 
 template <typename T>
@@ -236,26 +238,25 @@ void multiply_array(const BaseArray<T> &leftArray, const BaseArray<T> &rightArra
                                   "Unsupported dimensions in multiply_array");
 }
 
-template < typename T>
-void divide_array(BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray)
+template <typename T>
+void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray)
 {
-  unsigned int nelems = inputArray.getNumElems();
-  if ( outputArray.getNumElems() != nelems)
+  size_t nelems = inputArray.getNumElems();
+  if (outputArray.getNumElems() != nelems)
   {
     outputArray.setDims(inputArray.getDims());
   }
-  T* data = inputArray.getData();
+  const T* data = inputArray.getData();
   T* aim = outputArray.getData();
-  std::transform (data, data + nelems, aim, std::bind2nd( std::divides< T >(), b ));
-};
+  std::transform(data, data + nelems, aim, std::bind2nd(std::divides<T>(), b));
+}
 
-template < typename T >
+template <typename T>
 void fill_array(BaseArray<T>& inputArray, T b)
 {
   T* data = inputArray.getData();
-  unsigned int nelems = inputArray.getNumElems();
-  std::fill(data, data + nelems, b);
-};
+  std::fill(data, data + inputArray.getNumElems(), b);
+}
 
 template <typename T>
 void pow_array_scalar(const BaseArray<double> &inputArray, T exponent,
@@ -271,38 +272,36 @@ void pow_array_scalar(const BaseArray<double> &inputArray, T exponent,
     *dest++ = pow(*data++, exponent);
 }
 
-template < typename T >
-void subtract_array(BaseArray<T>& leftArray, BaseArray<T>& rightArray, BaseArray<T>& resultArray)
+template <typename T>
+void subtract_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArray, BaseArray<T>& resultArray)
 {
   resultArray.setDims(leftArray.getDims());
-  T* data1 = leftArray.getData();
-  unsigned int nelems = leftArray.getNumElems();
-  T* data2 = rightArray.getData();
+  const T* data1 = leftArray.getData();
+  const T* data2 = rightArray.getData();
   T* aim = resultArray.getData();
 
-  std::transform (data1, data1 + nelems, data2, aim, std::minus<T>());
-};
-
-template < typename T >
-void add_array(BaseArray<T>& leftArray, BaseArray<T>& rightArray, BaseArray<T>& resultArray)
-{
-  resultArray.setDims(leftArray.getDims());
-  T* data1 = leftArray.getData();
-  unsigned int nelems = leftArray.getNumElems();
-  T* data2 = rightArray.getData();
-  T* aim = resultArray.getData();
-
-  std::transform (data1, data1 + nelems, data2, aim, std::plus<T>());
-};
+  std::transform (data1, data1 + leftArray.getNumElems(), data2, aim, std::minus<T>());
+}
 
 template <typename T>
-void usub_array(BaseArray<T>& a, BaseArray<T>& b)
+void add_array(const BaseArray<T>& leftArray, const BaseArray<T>& rightArray, BaseArray<T>& resultArray)
+{
+  resultArray.setDims(leftArray.getDims());
+  const T* data1 = leftArray.getData();
+  const T* data2 = rightArray.getData();
+  T* aim = resultArray.getData();
+
+  std::transform(data1, data1 + leftArray.getNumElems(), data2, aim, std::plus<T>());
+}
+
+template <typename T>
+void usub_array(const BaseArray<T>& a, BaseArray<T>& b)
 {
   b.setDims(a.getDims());
-  int numEle =  a.getNumElems();
-  for ( unsigned int i = 1;  i <= numEle; i++)
+  size_t numEle =  a.getNumElems();
+  for (size_t i = 1; i <= numEle; i++)
   {
-    b(i) = -(a(i));
+    b(i) = -a(i);
   }
 }
 
@@ -318,43 +317,40 @@ T sum_array (const BaseArray<T>& x)
 scalar product of two arrays (a,b type as template parameter)
 */
 template <typename T>
-T dot_array(BaseArray<T> & a, BaseArray<T> & b)
+T dot_array(const BaseArray<T>& a, const BaseArray<T>& b)
 {
-  if(a.getNumDims()!=1  || b.getNumDims()!=1)
+  if(a.getNumDims() != 1  || b.getNumDims() != 1)
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"error in dot array function. Wrong dimension");
 
-  T* data1 = a.getData();
-  unsigned int nelems = a.getNumElems();
-  T* data2 = b.getData();
-  T r = std::inner_product(data1, data1 + nelems, data2, 0.0);
+  const T* data1 = a.getData();
+  const T* data2 = b.getData();
+  T r = std::inner_product(data1, data1 + a.getNumElems(), data2, 0.0);
   return r;
-};
+}
 
 /**
 cross product of two arrays (a,b type as template parameter)
 */
 template <typename T>
-void cross_array(BaseArray<T>& a, BaseArray<T>& b, BaseArray<T>& res)
+void cross_array(const BaseArray<T>& a, const BaseArray<T>& b, BaseArray<T>& res)
 {
   res(1) = (a(2) * b(3)) - (a(3) * b(2));
   res(2) = (a(3) * b(1)) - (a(1) * b(3));
   res(3) = (a(1) * b(2)) - (a(2) * b(1));
-
 };
 
 /**
 finds min/max elements of an array */
-template < typename T >
-std::pair <T,T>
-min_max (BaseArray<T>& x)
+template <typename T>
+std::pair<T,T> min_max(const BaseArray<T>& x)
 {
-  T* data = x.getData();
-  std::pair <T*,T*> ret =
-  boost::minmax_element(data, data + x.getNumElems());
-  return std::make_pair(*(ret.first),*(ret.second));
+  const T* data = x.getData();
+  std::pair<const T*, const T*>
+    ret = boost::minmax_element(data, data + x.getNumElems());
+  return std::make_pair(*(ret.first), *(ret.second));
 }
 
-void convertBoolToInt(BaseArray<bool>& a, BaseArray<int>& b)
+void convertBoolToInt(const BaseArray<bool>& a, BaseArray<int>& b)
 {
   b.setDims(a.getDims());
   int numEle = a.getNumElems();
@@ -369,7 +365,7 @@ void convertBoolToInt(BaseArray<bool>& a, BaseArray<int>& b)
   }
 }
 
-void convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b)
+void convertIntToBool(const BaseArray<int>& a, BaseArray<bool>& b)
 {
   b.setDims(a.getDims());
   int numEle = a.getNumElems();
@@ -417,7 +413,7 @@ void assignRowMajorData(const T *data, BaseArray<T> &array) {
  */
 template <typename S, typename T>
 static void convertArrayDim(size_t dim,
-                            BaseArray<S> &s, vector<size_t> &sidx,
+                            const BaseArray<S> &s, vector<size_t> &sidx,
                             BaseArray<T> &d, vector<size_t> &didx) {
   size_t ndims = s.getNumDims();
   size_t size = s.getDim(dim);
@@ -435,7 +431,7 @@ static void convertArrayDim(size_t dim,
  * including optional type conversion if supported in assignment from S to T
  */
 template <typename S, typename T>
-void convertArrayLayout(BaseArray<S> &s, BaseArray<T> &d) {
+void convertArrayLayout(const BaseArray<S> &s, BaseArray<T> &d) {
   size_t ndims = s.getNumDims();
   if (ndims != d.getNumDims())
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
@@ -451,89 +447,134 @@ void convertArrayLayout(BaseArray<S> &s, BaseArray<T> &d) {
 /*
 Explicit template instantiation for double, int, bool
 */
-template  void BOOST_EXTENSION_EXPORT_DECL cat_array<double>(int k, vector<BaseArray<double>* >& x, BaseArray<double>& a);
-template  void BOOST_EXTENSION_EXPORT_DECL cat_array<int>(int k, vector<BaseArray<int>* >& x, BaseArray<int>& a);
-template  void BOOST_EXTENSION_EXPORT_DECL cat_array<bool>(int k, vector<BaseArray<bool>* >& x, BaseArray<bool>& a);
+template  void BOOST_EXTENSION_EXPORT_DECL
+cat_array<double>(int k, const vector<const BaseArray<double>*>& x, BaseArray<double>& a);
+template  void BOOST_EXTENSION_EXPORT_DECL
+cat_array<int>(int k, const vector<const BaseArray<int>*>& x, BaseArray<int>& a);
+template  void BOOST_EXTENSION_EXPORT_DECL
+cat_array<bool>(int k, const vector<const BaseArray<bool>*>& x, BaseArray<bool>& a);
 
-template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<double>& x, BaseArray< double >& a);
-template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<int>& x, BaseArray< int >& a);
-template void BOOST_EXTENSION_EXPORT_DECL transpose_array(BaseArray<bool>& x, BaseArray< bool >& a);
+template void BOOST_EXTENSION_EXPORT_DECL
+transpose_array(const BaseArray<double>& x, BaseArray<double>& a);
+template void BOOST_EXTENSION_EXPORT_DECL
+transpose_array(const BaseArray<int>& x, BaseArray<int>& a);
+template void BOOST_EXTENSION_EXPORT_DECL
+transpose_array(const BaseArray<bool>& x, BaseArray<bool>& a);
 
-template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n, BaseArray<double>& s, BaseArray<double>& d);
-template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n, BaseArray<int>& s, BaseArray<int>& d);
-template void BOOST_EXTENSION_EXPORT_DECL promote_array(unsigned int n, BaseArray<bool>& s, BaseArray<bool>& d);
+template void BOOST_EXTENSION_EXPORT_DECL
+promote_array(size_t n, const BaseArray<double>& s, BaseArray<double>& d);
+template void BOOST_EXTENSION_EXPORT_DECL
+promote_array(size_t n, const BaseArray<int>& s, BaseArray<int>& d);
+template void BOOST_EXTENSION_EXPORT_DECL
+promote_array(size_t n, const BaseArray<bool>& s, BaseArray<bool>& d);
 
 template void BOOST_EXTENSION_EXPORT_DECL create_array_from_shape(const spec_type& sp, BaseArray<double>& s, BaseArray<double>& d);
 template void BOOST_EXTENSION_EXPORT_DECL create_array_from_shape(const spec_type& sp, BaseArray<int>& s, BaseArray<int>& d);
 template void BOOST_EXTENSION_EXPORT_DECL create_array_from_shape(const spec_type& sp, BaseArray<bool>& s, BaseArray<bool>& d);
 
-template void BOOST_EXTENSION_EXPORT_DECL multiply_array(BaseArray<double>& inputArray, const double &b, BaseArray<double> & outputArray);
-template void BOOST_EXTENSION_EXPORT_DECL multiply_array(BaseArray<int>& inputArray, const int &b, BaseArray<int> & outputArray);
-template void BOOST_EXTENSION_EXPORT_DECL multiply_array(BaseArray<bool>& inputArray, const bool &b, BaseArray<bool> & outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+multiply_array(const BaseArray<double>& inputArray, const double &b, BaseArray<double>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+multiply_array(const BaseArray<int>& inputArray, const int &b, BaseArray<int>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+multiply_array(const BaseArray<bool>& inputArray, const bool &b, BaseArray<bool>& outputArray);
 
-template void BOOST_EXTENSION_EXPORT_DECL multiply_array(const BaseArray<double> &leftArray, const BaseArray<double> &rightArray, BaseArray<double> &resultArray);
-template void BOOST_EXTENSION_EXPORT_DECL multiply_array(const BaseArray<int> &leftArray, const BaseArray<int> &rightArray, BaseArray<int> &resultArray);
-template void BOOST_EXTENSION_EXPORT_DECL multiply_array(const BaseArray<bool> &leftArray, const BaseArray<bool> &rightArray, BaseArray<bool> &resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+multiply_array(const BaseArray<double> &leftArray, const BaseArray<double> &rightArray, BaseArray<double> &resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+multiply_array(const BaseArray<int> &leftArray, const BaseArray<int> &rightArray, BaseArray<int> &resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+multiply_array(const BaseArray<bool> &leftArray, const BaseArray<bool> &rightArray, BaseArray<bool> &resultArray);
 
-template void BOOST_EXTENSION_EXPORT_DECL divide_array(BaseArray<double>& inputArray, const double &b, BaseArray<double>& outputArray);
-template void BOOST_EXTENSION_EXPORT_DECL divide_array(BaseArray<int>& inputArray, const int &b, BaseArray<int>& outputArray);
-template void BOOST_EXTENSION_EXPORT_DECL divide_array(BaseArray<bool>& inputArray, const bool &b, BaseArray<bool>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array(const BaseArray<double>& inputArray, const double &b, BaseArray<double>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array(const BaseArray<int>& inputArray, const int &b, BaseArray<int>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array(const BaseArray<bool>& inputArray, const bool &b, BaseArray<bool>& outputArray);
 
-template void BOOST_EXTENSION_EXPORT_DECL fill_array(BaseArray<double>& inputArray, double b);
-template void BOOST_EXTENSION_EXPORT_DECL fill_array(BaseArray<int>& inputArray, int b);
-template void BOOST_EXTENSION_EXPORT_DECL fill_array(BaseArray<bool>& inputArray, bool b);
+template void BOOST_EXTENSION_EXPORT_DECL
+fill_array(BaseArray<double>& inputArray, double b);
+template void BOOST_EXTENSION_EXPORT_DECL
+fill_array(BaseArray<int>& inputArray, int b);
+template void BOOST_EXTENSION_EXPORT_DECL
+fill_array(BaseArray<bool>& inputArray, bool b);
 
-template void BOOST_EXTENSION_EXPORT_DECL pow_array_scalar(const BaseArray<double> &inputArray, double exponent, BaseArray<double> &outputArray);
-template void BOOST_EXTENSION_EXPORT_DECL pow_array_scalar(const BaseArray<double> &inputArray, int exponent, BaseArray<double> &outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+pow_array_scalar(const BaseArray<double>& inputArray, double exponent, BaseArray<double>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+pow_array_scalar(const BaseArray<double>& inputArray, int exponent, BaseArray<double>& outputArray);
 
-template void BOOST_EXTENSION_EXPORT_DECL subtract_array(BaseArray<double>& leftArray, BaseArray<double>& rightArray, BaseArray<double>& resultArray);
-template void BOOST_EXTENSION_EXPORT_DECL subtract_array(BaseArray<int>& leftArray, BaseArray<int>& rightArray, BaseArray<int>& resultArray);
-template void BOOST_EXTENSION_EXPORT_DECL subtract_array(BaseArray<bool>& leftArray, BaseArray<bool>& rightArray, BaseArray<bool>& resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+subtract_array(const BaseArray<double>& leftArray, const BaseArray<double>& rightArray, BaseArray<double>& resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+subtract_array(const BaseArray<int>& leftArray, const BaseArray<int>& rightArray, BaseArray<int>& resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+subtract_array(const BaseArray<bool>& leftArray, const BaseArray<bool>& rightArray, BaseArray<bool>& resultArray);
 
-template void BOOST_EXTENSION_EXPORT_DECL add_array(BaseArray<double>& leftArray , BaseArray<double>& rightArray, BaseArray<double>& resultArray);
-template void BOOST_EXTENSION_EXPORT_DECL add_array(BaseArray<int>& leftArray , BaseArray<int>& rightArray, BaseArray<int>& resultArray);
-template void BOOST_EXTENSION_EXPORT_DECL add_array(BaseArray<bool>& leftArray , BaseArray<bool>& rightArray, BaseArray<bool>& resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+add_array(const BaseArray<double>& leftArray, const BaseArray<double>& rightArray, BaseArray<double>& resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+add_array(const BaseArray<int>& leftArray, const BaseArray<int>& rightArray, BaseArray<int>& resultArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+add_array(const BaseArray<bool>& leftArray, const BaseArray<bool>& rightArray, BaseArray<bool>& resultArray);
 
-template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<double>& a, BaseArray<double>& b);
-template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<int>& a, BaseArray<int>& b);
-template void BOOST_EXTENSION_EXPORT_DECL usub_array(BaseArray<bool>& a, BaseArray<bool>& b);
+template void BOOST_EXTENSION_EXPORT_DECL
+usub_array(const BaseArray<double>& a, BaseArray<double>& b);
+template void BOOST_EXTENSION_EXPORT_DECL
+usub_array(const BaseArray<int>& a, BaseArray<int>& b);
+template void BOOST_EXTENSION_EXPORT_DECL
+usub_array(const BaseArray<bool>& a, BaseArray<bool>& b);
 
-template double BOOST_EXTENSION_EXPORT_DECL sum_array(const BaseArray<double>& x);
-template int BOOST_EXTENSION_EXPORT_DECL sum_array(const BaseArray<int>& x);
-template bool BOOST_EXTENSION_EXPORT_DECL sum_array(const BaseArray<bool>& x);
+template double BOOST_EXTENSION_EXPORT_DECL
+sum_array(const BaseArray<double>& x);
+template int BOOST_EXTENSION_EXPORT_DECL
+sum_array(const BaseArray<int>& x);
+template bool BOOST_EXTENSION_EXPORT_DECL
+sum_array(const BaseArray<bool>& x);
 
-template void BOOST_EXTENSION_EXPORT_DECL cross_array(BaseArray<double>& a, BaseArray<double>& b, BaseArray<double>& res);
-template void BOOST_EXTENSION_EXPORT_DECL cross_array(BaseArray<int>& a, BaseArray<int>& b, BaseArray<int>& res);
-template void BOOST_EXTENSION_EXPORT_DECL cross_array(BaseArray<bool>& a, BaseArray<bool>& b, BaseArray<bool>& res);
+template void BOOST_EXTENSION_EXPORT_DECL
+cross_array(const BaseArray<double>& a, const BaseArray<double>& b, BaseArray<double>& res);
+template void BOOST_EXTENSION_EXPORT_DECL
+cross_array(const BaseArray<int>& a, const BaseArray<int>& b, BaseArray<int>& res);
+template void BOOST_EXTENSION_EXPORT_DECL
+cross_array(const BaseArray<bool>& a, const BaseArray<bool>& b, BaseArray<bool>& res);
 
-template double BOOST_EXTENSION_EXPORT_DECL dot_array(BaseArray<double>&a, BaseArray<double>& b);
-template int BOOST_EXTENSION_EXPORT_DECL dot_array(BaseArray<int>&a, BaseArray<int>& b);
-template bool BOOST_EXTENSION_EXPORT_DECL dot_array(BaseArray<bool>&a, BaseArray<bool>& b);
+template double BOOST_EXTENSION_EXPORT_DECL
+dot_array(const BaseArray<double>&a, const BaseArray<double>& b);
+template int BOOST_EXTENSION_EXPORT_DECL
+dot_array(const BaseArray<int>&a, const BaseArray<int>& b);
+template bool BOOST_EXTENSION_EXPORT_DECL
+dot_array(const BaseArray<bool>&a, const BaseArray<bool>& b);
 
-template std::pair <double,double> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<double>& x);
-template std::pair <int,int> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<int>& x);
-template std::pair <bool,bool> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<bool>& x);
+template std::pair<double,double> BOOST_EXTENSION_EXPORT_DECL
+min_max(const BaseArray<double>& x);
+template std::pair<int,int> BOOST_EXTENSION_EXPORT_DECL
+min_max(const BaseArray<int>& x);
+template std::pair<bool,bool> BOOST_EXTENSION_EXPORT_DECL
+min_max(const BaseArray<bool>& x);
 
-void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
-void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
+void BOOST_EXTENSION_EXPORT_DECL
+convertBoolToInt(const BaseArray<bool>& a, BaseArray<int>& b);
+void BOOST_EXTENSION_EXPORT_DECL
+convertIntToBool(BaseArray<int>& a, BaseArray<bool>& b);
 
-template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<double> &s, BaseArray<double> &d);
-template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<int> &s, BaseArray<int> &d);
-template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<bool> &s, BaseArray<int> &d);
-template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<int> &s, BaseArray<bool> &d);
-template void BOOST_EXTENSION_EXPORT_DECL convertArrayLayout(BaseArray<string> &s, BaseArray<string> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+convertArrayLayout(const BaseArray<double> &s, BaseArray<double> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+convertArrayLayout(const BaseArray<int> &s, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+convertArrayLayout(const BaseArray<bool> &s, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+convertArrayLayout(const BaseArray<int> &s, BaseArray<bool> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+convertArrayLayout(const BaseArray<string> &s, BaseArray<string> &d);
 
-template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const double *data, BaseArray<double> &d);
-template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const int *data, BaseArray<int> &d);
-template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const bool *data, BaseArray<bool> &d);
-template void BOOST_EXTENSION_EXPORT_DECL assignRowMajorData(const string *data, BaseArray<string> &d);
-
-/*
- template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim1<double, 3>;
- template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim1<double, 4> ;
- template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim2<double, 3,3> ;
- template   class  BOOST_EXTENSION_EXPORT_DECL  ublas::vector<double>;
- template   class  BOOST_EXTENSION_EXPORT_DECL  vector<string>;
- template   class  BOOST_EXTENSION_EXPORT_DECL  map<unsigned int,string>;
- template   class  BOOST_EXTENSION_EXPORT_DECL   uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;
- */
+template void BOOST_EXTENSION_EXPORT_DECL
+assignRowMajorData(const double *data, BaseArray<double> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+assignRowMajorData(const int *data, BaseArray<int> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+assignRowMajorData(const bool *data, BaseArray<bool> &d);
+template void BOOST_EXTENSION_EXPORT_DECL
+assignRowMajorData(const string *data, BaseArray<string> &d);

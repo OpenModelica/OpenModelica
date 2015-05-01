@@ -71,12 +71,12 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual double* initRealArrayVar(size_t size, size_t start_index);
     virtual int* initIntArrayVar(size_t size, size_t start_index);
     virtual bool* initBoolArrayVar(size_t size, size_t start_index);
-    virtual void initRealAliasArray(int indices[] ,size_t n, const double *ref_data[]);
-    virtual void initIntAliasArray(int indices[] ,size_t n, const int* ref_data[]);
-    virtual void initBoolAliasArray(int indices[] ,size_t n, const bool* ref_data[]);
-    virtual void initRealAliasArray(std::vector<int> indices, const double *ref_data[]);
-    virtual void initIntAliasArray(std::vector<int> indices, const int* ref_data[]);
-    virtual void initBoolAliasArray(std::vector<int> indices, const bool* ref_data[]);
+    virtual void initRealAliasArray(int indices[], size_t n, double* ref_data[]);
+    virtual void initIntAliasArray(int indices[], size_t n, int* ref_data[]);
+    virtual void initBoolAliasArray(int indices[], size_t n, bool* ref_data[]);
+    virtual void initRealAliasArray(std::vector<int> indices, double* ref_data[]);
+    virtual void initIntAliasArray(std::vector<int> indices, int* ref_data[]);
+    virtual void initBoolAliasArray(std::vector<int> indices, bool* ref_data[]);
     virtual void savePreVariables();
     virtual void initPreVariables();
     virtual double& getPreVar(double& var);

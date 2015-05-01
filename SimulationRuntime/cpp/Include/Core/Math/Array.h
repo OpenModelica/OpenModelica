@@ -51,19 +51,6 @@ struct CopyCArray2RefArray
   }
 };
 
-
-/**
-* Operator class to assign a reference array  to a reference array
-*/
-template<typename T>
-struct RefArray2RefArray
-{
-    T* operator()(const T* val)
-    {
-        return (T*)val;
-    }
-};
-
 /**
 * Operator class to copy the values of a reference array to a reference array
 */
@@ -80,17 +67,18 @@ struct CopyRefArray2RefArray
 /**
 * Base class for all dynamic and static arrays
 */
-template<typename T>class BaseArray
+template<typename T> class BaseArray
 {
 public:
-  BaseArray(bool is_static,bool isReference)
-    :_static(is_static)
+  BaseArray(bool isStatic, bool isReference)
+    :_isStatic(isStatic)
     ,_isReference(isReference)
   {}
 
  /**
   * Interface methods for all arrays
   */
+  virtual const T& operator()(const vector<size_t>& idx) const = 0;
   virtual T& operator()(const vector<size_t>& idx) = 0;
   virtual void assign(const T* data) = 0;
   virtual void assign(const BaseArray<T>& b) = 0;
@@ -146,7 +134,7 @@ public:
 
   bool isStatic() const
   {
-    return _static;
+    return _isStatic;
   }
 
   bool isReference() const
@@ -155,7 +143,7 @@ public:
   }
 
 protected:
-  bool _static;
+  bool _isStatic;
   bool _isReference;
 };
 
@@ -212,11 +200,10 @@ public:
    * Constuctor for reference array
    * intialize array with reference data from simvars memory
    */
-  RefArray(const T** ref_data)
+  RefArray(T* const* ref_data)
     :BaseArray<T>(true, true)
   {
-    std::transform(ref_data, ref_data + nelems, _ref_array.c_array(),
-                   RefArray2RefArray<T>());
+    std::copy(ref_data, ref_data + nelems, _ref_array.c_array());
   }
 
   /**
@@ -242,11 +229,11 @@ public:
                    refs, CopyCArray2RefArray<T>());
   }
 
- /**
-  * Assigns array data to array
-  * @param b any array of type BaseArray
-  * a.assign(b)
-  */
+  /**
+   * Assigns array data to array
+   * @param b any array of type BaseArray
+   * a.assign(b)
+   */
   virtual void assign(const BaseArray<T>& b)
   {
     T **refs = _ref_array.c_array();
@@ -340,7 +327,7 @@ public:
    * Constuctor for one dimensional reference array
    * intialize array with reference data from simvars memory
    */
-  RefArrayDim1(const T** ref_data) : RefArray<T, size>(ref_data) {}
+  RefArrayDim1(T* const* ref_data) : RefArray<T, size>(ref_data) {}
 
   /**
    * Default constuctor for one dimensional reference array
@@ -348,7 +335,16 @@ public:
   RefArrayDim1() : RefArray<T, size>() {}
 
   /**
-   * Index operator to access array element
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return *(RefArray<T, size>::_ref_array[idx[0]-1]);
+  }
+
+  /**
+   * Index operator to write array element
    * @param idx  vector of indices
    */
   virtual T& operator()(const vector<size_t>& idx)
@@ -412,7 +408,7 @@ public:
   * Constuctor for two dimensional reference array
   * intialize array with reference data from simvars memory
   */
-  RefArrayDim2(const T** ref_data) : RefArray<T, size1*size2>(ref_data) {}
+  RefArrayDim2(T* const* ref_data) : RefArray<T, size1*size2>(ref_data) {}
 
  /**
   * Default constuctor for two dimensional reference array
@@ -420,7 +416,17 @@ public:
   RefArrayDim2() : RefArray<T, size1*size2>() {}
 
   /**
-   * Index operator to access array element
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return *(RefArray<T, size1*size2>::
+             _ref_array[idx[0]-1 + size1*(idx[1]-1)]);
+  }
+
+  /**
+   * Index operator to write array element
    * @param idx  vector of indices
    */
   virtual T& operator()(const vector<size_t>& idx)
@@ -496,7 +502,7 @@ public:
   * Constuctor for three dimensional reference array
   * intialize array with reference data from simvars memory
   */
-  RefArrayDim3(const T** ref_data) : RefArray<T, size1*size2*size3>(ref_data) {}
+  RefArrayDim3(T* const* ref_data) : RefArray<T, size1*size2*size3>(ref_data) {}
 
  /**
   * Default constuctor for three dimensional reference array
@@ -533,7 +539,17 @@ public:
   }
 
   /**
-   * Index operator to access array element
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return *(RefArray<T, size1*size2*size3>::
+             _ref_array[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))]);
+  }
+
+  /**
+   * Index operator to write array element
    * @param idx  vector of indices
    */
   virtual T& operator()(const vector<size_t>& idx)
@@ -745,14 +761,24 @@ class StatArrayDim1 : public StatArray<T, size>
   ~StatArrayDim1() {}
 
   /**
-   * Index operator to access array element
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return StatArray<T, size>::_array_data[idx[0]-1];
+  }
+
+  /**
+   * Index operator to write array element
    * @param idx  vector of indices
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
     return StatArray<T, size>::_array_data[idx[0]-1];
   }
-   /**
+
+  /**
    * Assignment operator to assign array of type base array to  two dim static array
    * a=b
    * @param b any array of type BaseArray
@@ -884,13 +910,23 @@ class StatArrayDim2 : public StatArray<T, size1*size2>
   }
 
   /**
-   * Index operator to access array element
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return StatArray<T, size1*size2>::_array_data[idx[0]-1 + size1*(idx[1]-1)];
+  }
+
+  /**
+   * Index operator to write array element
    * @param idx  vector of indices
    */
   virtual T& operator()(const vector<size_t>& idx)
   {
     return StatArray<T, size1*size2>::_array_data[idx[0]-1 + size1*(idx[1]-1)];
   }
+
   /**
    * Assignment operator to assign array of type base array to  one dim static array
    * a=b
@@ -1042,7 +1078,17 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3>
   }
 
   /**
-   * Index operator to access array element
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return StatArray<T, size1*size2*size3>::
+      _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
+  }
+
+  /**
+   * Index operator to write array element
    * @param idx  vector of indices
    */
   virtual T& operator()(const vector<size_t>& idx)
@@ -1050,7 +1096,8 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3>
     return StatArray<T, size1*size2*size3>::
       _array_data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1))];
   }
-/**
+
+  /**
    * Assignment operator to assign array of type base array to  three dim static array
    * a=b
    * @param b any array of type BaseArray
@@ -1238,9 +1285,15 @@ class DynArrayDim1 : public DynArray<T, 1>
   {
   }
 
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    //return _multi_array[idx[0]-1];
+    return _multi_array.data()[idx[0]-1];
+  }
+
   virtual T& operator()(const vector<size_t>& idx)
   {
-    //return _multi_array[idx[0]];
+    //return _multi_array[idx[0]-1];
     return _multi_array.data()[idx[0]-1];
   }
 
@@ -1338,6 +1391,12 @@ class DynArrayDim2 : public DynArray<T, 2>
     return *this;
   }
 
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1];
+    return _multi_array.data()[idx[0]-1 + _multi_array.shape()[0]*(idx[1]-1)];
+  }
+
   virtual T& operator()(const vector<size_t>& idx)
   {
     //return _multi_array[idx[0]-1][idx[1]-1];
@@ -1407,6 +1466,13 @@ public:
   void setDims(size_t size1, size_t size2, size_t size3)
   {
     _multi_array.resize(boost::extents[size1][size2][size3]);
+  }
+
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1];
+    const size_t *shape = _multi_array.shape();
+    return _multi_array.data()[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1))];
   }
 
   virtual T& operator()(const vector<size_t>& idx)
