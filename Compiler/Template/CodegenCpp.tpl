@@ -12328,6 +12328,8 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
           match context
             case JACOBIAN_CONTEXT() then
               '_<%crefToCStr(inCref,false)%>'
+            case ALGLOOP_CONTEXT(__) then
+              '_system->_<%crefToCStr(inCref,false)%>'
             else
               '<%localcref(inCref, useFlatArrayNotation)%>'
           end match
