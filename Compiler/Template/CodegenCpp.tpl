@@ -9912,14 +9912,14 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
+  case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
-    then
-      let num = index
-      match simCode
-          case SIMCODE(modelInfo = MODELINFO(__)) then
-         <<#include "OMCpp<%fileNamePrefix%>Algloop<%num%>.h">>
-   end match
+  then
+    let num = index
+    match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+      '#include "OMCpp<%fileNamePrefix%>Algloop<%num%>.h"<%\n%>'
+    end match
   case e as SES_MIXED(cont = eq_sys)
   then
    <<
@@ -10020,7 +10020,7 @@ template algloopMainfile2(SimEqSystem eq, SimCode simCode ,Text& extraFuncs,Text
     let num = index
     <<
     #include "OMCpp<%filename%>Algloop<%index%>.h"
-    #include "OMCpp<%filename%>Algloop<%index%>.cpp"
+    #include "OMCpp<%filename%>Algloop<%index%>.cpp"<%\n%>
     >>
   else
     <<
