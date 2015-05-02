@@ -15,10 +15,7 @@ win32 {
 }
 QMAKE_LFLAGS += -enable-auto-import
 
-SOURCES += ../../SimulationRuntime/c/util/read_matlab4.c \
-    ../../SimulationRuntime/c/util/libcsv.c \
-    ../../SimulationRuntime/c/util/read_csv.cpp \
-    Plot.cpp \
+SOURCES += Plot.cpp \
     PlotZoomer.cpp \
     Legend.cpp \
     PlotPanner.cpp \
@@ -30,10 +27,7 @@ SOURCES += ../../SimulationRuntime/c/util/read_matlab4.c \
     PlotWindowContainer.cpp \
     PlotMainWindow.cpp
 
-HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
-    ../../SimulationRuntime/c/util/libcsv.h \
-    ../../SimulationRuntime/c/util/read_csv.h \
-    Plot.h \
+HEADERS  += Plot.h \
     PlotZoomer.h \
     Legend.h \
     PlotPanner.h \

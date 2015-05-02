@@ -1,0 +1,3 @@
+http://svn.code.sf.net/p/qwt/code/trunk/qwt@1898 qwt
+Make qwt/qwtbuild.pri not be silent
+rm -r qwt/doc qwt/examples qwt/playground qwt/designer qwt/textengines

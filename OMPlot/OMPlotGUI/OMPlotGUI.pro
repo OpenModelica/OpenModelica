@@ -12,10 +12,7 @@ CONFIG += console
 
 SOURCES += main.cpp
 
-HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
-    ../../SimulationRuntime/c/util/libcsv.h \
-    ../../SimulationRuntime/c/util/read_csv.h \
-    Plot.h \
+HEADERS += Plot.h \
     PlotZoomer.h \
     Legend.h \
     PlotPanner.h \
