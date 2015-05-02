@@ -509,13 +509,12 @@ case SIMCODE(modelInfo=MODELINFO()) then
 
   #else
 
-  using boost::extensions::factory;
-   BOOST_EXTENSION_TYPE_MAP_FUNCTION
-   {
-    types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData>,boost::shared_ptr<ISimVars> > > >()
-    ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
-
-    }
+  BOOST_EXTENSION_TYPE_MAP_FUNCTION
+  {
+    typedef boost::extensions::factory<IMixedSystem,IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>, boost::shared_ptr<ISimVars> > system_factory;
+    types.get<std::map<std::string, system_factory> >()["<%lastIdentOfPath(modelInfo.name)%>"]
+      .system_factory::set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
+  }
   #endif
   >>
 end simulationFactoryFile;
@@ -12614,7 +12613,8 @@ end daeExpIf;
 
 template encloseInParantheses(String expStr)
  "Encloses expression in paranthesis if not yet given"
-::= if intEq(stringGet(expStr, 1), 40) then '<%expStr%>' else '(<%expStr%>)'
+::= 
+if intEq(stringGet(expStr, 1), stringGet("(", 1)) then '<%expStr%>' else '(<%expStr%>)'
 end encloseInParantheses;
 
 
