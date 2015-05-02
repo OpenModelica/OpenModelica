@@ -1779,7 +1779,7 @@ algorithm
   (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
   eqns := List.map1r(statevarindx_lst,arrayGet,ass1);
   eqns := List.select(eqns, Util.intPositive);
-  outIntegerArray := markStateEquationsWork(eqns,{},m,ass1,arr);
+  outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markStateEquations;
 
 public function markZeroCrossingEquations "function: markStateEquations
@@ -1812,7 +1812,7 @@ algorithm
   varindx_lst := BackendVariable.getVarIndexFromVars(varlst, v);
   eqns := List.map1r(varindx_lst,arrayGet,ass1);
   eqns := List.select(eqns, Util.intPositive);
-  outIntegerArray := markStateEquationsWork(eqns,{},m,ass1,arr);
+  outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
 end markZeroCrossingEquations;
 
 protected function varsCollector
@@ -1839,59 +1839,31 @@ protected function markStateEquationsWork
   outputs: ((marks: int array  BackendDAE.IncidenceMatrix
         int vector  int vector))"
   input list<Integer> inEqns;
-  input list<Integer> nextQueue;
   input BackendDAE.IncidenceMatrix m;
   input array<Integer> ass1;
   input array<Integer> iMark;
-  output array<Integer> oMark;
+  output array<Integer> oMark = iMark;
+protected
+  list<Integer> queue = inEqns;
+  list<Integer> queue_tmp,vlst;
+  Integer eqn;
 algorithm
-  oMark:= matchcontinue (inEqns,nextQueue,m,ass1,iMark)
-    local
-      Integer eqn;
-      list<Integer> eqns,queue,vlst;
-    case ({},{},_,_,_) then iMark;
-    case ({},_,_,_,_)
-      then
-        markStateEquationsWork(nextQueue,{},m,ass1,iMark);
-    case (eqn::eqns,_,_,_,_)
-      equation
-        // "Mark an unmarked node/equation"
-        true = intEq(iMark[eqn],0);
-        arrayUpdate(iMark, eqn, 1);
-        vlst = List.select(m[eqn], Util.intPositive) "vars of equation";
-        vlst = List.removeOnTrue(arrayLength(ass1), intLt, vlst) "take care we access not behind ass1 length";
-        queue = List.map1r(vlst,arrayGet,ass1) "equations of vars";
-        queue = List.select(queue, Util.intPositive);
-        queue = List.fold1(queue,consNotMarked,iMark,nextQueue);
-      then
-        markStateEquationsWork(eqns,queue,m,ass1,iMark);
-    case (eqn::eqns,_,_,_,_)
-      equation
-        // Node allready marked.
-        false = intEq(iMark[eqn],0);
-      then
-        markStateEquationsWork(eqns,nextQueue,m,ass1,iMark);
-    case (eqn::_,_,_,_,_)
-      equation
-        print("- BackendDAEUtil.markStateEquationsWork failed for eqn: " + intString(eqn));
-        print(" array length = " + intString(arrayLength(iMark)) + "\n");
-        print("mark_value: " + intString(iMark[eqn]) + "\n");
-      then
-        fail();
-  end matchcontinue;
+
+ while not listEmpty(queue) loop
+   eqn :: queue := queue;
+   if oMark[eqn] == 0 then // "Mark an unmarked node/equation"
+    arrayUpdate(oMark, eqn, 1);
+    vlst := List.select(m[eqn], Util.intPositive) "vars of equation";
+    vlst := List.removeOnTrue(arrayLength(ass1), intLt, vlst) "take care we access not behind ass1 length";
+    queue_tmp := List.map1r(vlst,arrayGet,ass1) "equations of vars";
+    queue_tmp := List.select(queue_tmp, Util.intPositive);
+    queue := List.appendNoCopy(queue_tmp, queue);
+    queue := list(e for e guard arrayGet(oMark,e) == 0 in queue);
+   end if;
+ end while;
+   
 end markStateEquationsWork;
 
-
-protected function consNotMarked
-"author Frenkel TUD 2012-12
-  if mark[e]=0 then e::iQueue else iQueue"
-  input Integer e;
-  input array<Integer> mark;
-  input list<Integer> iQueue;
-  output list<Integer> oQueue;
-algorithm
-  oQueue := List.consOnTrue(intEq(mark[e],0),e,iQueue);
-end consNotMarked;
 
 public function removeNegative
 "author: PA
@@ -2199,7 +2171,7 @@ algorithm
   funcs := getFunctions(shared);
   (_, m, _) := getIncidenceMatrix(iSyst, BackendDAE.SPARSE(), SOME(funcs));
 
-  indx_arr := markStateEquationsWork(indx_lst_e, {},  m, ass1, indx_arr);
+  indx_arr := markStateEquationsWork(indx_lst_e,  m, ass1, indx_arr);
 
   indx_lst_e := Array.foldIndex(indx_arr, translateArrayList, {});
 
