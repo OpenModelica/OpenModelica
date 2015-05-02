@@ -296,7 +296,7 @@ csv_increase_buffer(struct csv_parser *p)
   }
 
   /* Update entry buffer pointer and entry_size if successful */
-  p->entry_buf = vp;
+  p->entry_buf = (unsigned char*) vp;
   p->entry_size += to_add;
   return 0;
 }
@@ -304,7 +304,7 @@ csv_increase_buffer(struct csv_parser *p)
 size_t
 csv_parse(struct csv_parser *p, const void *s, size_t len, void (*cb1)(void *, size_t, void *), void (*cb2)(int c, void *), void *data)
 {
-  unsigned const char *us = s;  /* Access input data as array of unsigned char */
+  unsigned const char *us = (unsigned const char *) s;  /* Access input data as array of unsigned char */
   unsigned char c;              /* The character we are currently processing */
   size_t pos = 0;               /* The number of characters we have processed in this call */
 
@@ -451,8 +451,8 @@ csv_parse(struct csv_parser *p, const void *s, size_t len, void (*cb1)(void *, s
 size_t
 csv_write (void *dest, size_t dest_size, const void *src, size_t src_size)
 {
-  unsigned char *cdest = dest;
-  const unsigned char *csrc = src;
+  unsigned char *cdest = (unsigned char *) dest;
+  const unsigned char *csrc = (const unsigned char *) src;
   size_t chars = 0;
 
   if (src == NULL)
@@ -488,7 +488,7 @@ csv_write (void *dest, size_t dest_size, const void *src, size_t src_size)
 int
 csv_fwrite (FILE *fp, const void *src, size_t src_size)
 {
-  const unsigned char *csrc = src;
+  const unsigned char *csrc = (const unsigned char *) src;
 
   if (fp == NULL || src == NULL)
     return 0;
@@ -517,8 +517,8 @@ csv_fwrite (FILE *fp, const void *src, size_t src_size)
 size_t
 csv_write2 (void *dest, size_t dest_size, const void *src, size_t src_size, unsigned char quote)
 {
-  unsigned char *cdest = dest;
-  const unsigned char *csrc = src;
+  unsigned char *cdest = (unsigned char *) dest;
+  const unsigned char *csrc = (unsigned char *) src;
   size_t chars = 0;
 
   if (src == NULL)
@@ -554,7 +554,7 @@ csv_write2 (void *dest, size_t dest_size, const void *src, size_t src_size, unsi
 int
 csv_fwrite2 (FILE *fp, const void *src, size_t src_size, unsigned char quote)
 {
-  const unsigned char *csrc = src;
+  const unsigned char *csrc = (const unsigned char *) src;
 
   if (fp == NULL || src == NULL)
     return 0;
