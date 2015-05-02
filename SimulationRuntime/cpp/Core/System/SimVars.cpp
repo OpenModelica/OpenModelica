@@ -304,19 +304,19 @@ void SimVars::initPreVariables()
 
 }
 
-double& SimVars::getPreVar(double& var)
+double& SimVars::getPreVar(const double& var)
 {
   unsigned int i = _pre_real_vars_idx[&var];
   return _pre_vars[i];
 }
 
-double& SimVars::getPreVar(int& var)
+double& SimVars::getPreVar(const int& var)
 {
   unsigned int i = _pre_int_vars_idx[&var];
   return _pre_vars[i];
 }
 
-double& SimVars::getPreVar(bool& var)
+double& SimVars::getPreVar(const bool& var)
 {
   unsigned int i = _pre_bool_vars_idx[&var];
   return _pre_vars[i];

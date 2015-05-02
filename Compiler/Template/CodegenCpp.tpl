@@ -12214,9 +12214,6 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context, Text &pre
 end daeExpCrefRhsIndexSpec;
 
 
-
-
-
 template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Text &preExp /*BUFP*/,
                                Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Helper to daeExpCrefRhs."
@@ -12232,15 +12229,29 @@ template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Tex
               let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
               tmpArr
         else
-            match context
-              case FUNCTION_CONTEXT(__) then ''
-            else
+          match context
+          case FUNCTION_CONTEXT(__) then ''
+          else
             match ty
-            case t as T_ARRAY(ty=aty,dims=dims)        then
-            let tmpArr ='<%arrayCrefCStr(cr,context)%>'
-            tmpArr
+            case t as T_ARRAY(ty=aty, dims=dims) then
+              match cr
+              case CREF_QUAL(ident = "$PRE") then
+                let arr = arrayCrefCStr(componentRef, context)
+                let ndims = listLength(dims)
+                let dimstr = checkDimension(dims)
+                let T = expTypeShort(aty)
+                let &preExp +=
+                  <<
+                  StatArrayDim<%ndims%><<%T%>, <%dimstr%>> <%arr%>_pre;
+                  std::transform(<%arr%>.getDataRefs(),
+                                 <%arr%>.getDataRefs() + <%arr%>.getNumElems(),
+                                 <%arr%>_pre.getData(),
+                                 PreRefArray2CArray<<%T%>>(_discrete_events));
+                  >>
+                '<%arr%>_pre'
+              else
+                arrayCrefCStr(cr,context)
             else ''
-
 end daeExpCrefRhsArrayBox;
 
 

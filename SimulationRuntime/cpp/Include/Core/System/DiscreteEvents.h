@@ -22,9 +22,9 @@ public:
 
 
   //Implementation of the Modelica pre  operator
-  double pre(double& var);
-  double pre(int& var);
-  double pre(bool& var);
+  double pre(const double& var);
+  int pre(const int& var);
+  bool pre(const bool& var);
   //Implementation of the Modelica edge  operator
   bool edge(double& var);
   bool edge(int& var);
@@ -42,4 +42,22 @@ public:
 
 private:
    boost::shared_ptr<ISimVars> _sim_vars;
+};
+
+/**
+ * Operator class to get pre values of an array
+ */
+template<typename T>
+class PreRefArray2CArray
+{
+  DiscreteEvents *_discrete_events;
+
+ public:
+  PreRefArray2CArray(boost::shared_ptr<DiscreteEvents>& discrete_events) {
+    _discrete_events = discrete_events.get();
+  }
+
+  const T operator()(const T* val) const {
+    return _discrete_events->pre(*val);
+  }
 };

@@ -63,32 +63,30 @@ void DiscreteEvents::save(bool& var)
 /**
 Implementation of the Modelica pre  operator
 */
-double DiscreteEvents::pre(double& var)
+double DiscreteEvents::pre(const double& var)
 {
   double& pre_var = _sim_vars->getPreVar(var);
   return pre_var;
-
 }
 
 /**
 Implementation of the Modelica pre  operator
 */
-double DiscreteEvents::pre(int& var)
+int DiscreteEvents::pre(const int& var)
 {
   double& pre_var = _sim_vars->getPreVar(var);
-  return pre_var;
-
+  return (int)pre_var;
 }
 
 /**
 Implementation of the Modelica pre  operator
 */
-double DiscreteEvents::pre(bool& var)
+bool DiscreteEvents::pre(const bool& var)
 {
   double& pre_var = _sim_vars->getPreVar(var);
-  return pre_var;
-
+  return (bool)pre_var;
 }
+
 /**
 Implementation of the Modelica edge  operator
 Returns true for a variable when it  changes from false to true

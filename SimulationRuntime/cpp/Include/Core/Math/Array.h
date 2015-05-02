@@ -70,9 +70,9 @@ struct CopyRefArray2RefArray
 template<typename T> class BaseArray
 {
 public:
-  BaseArray(bool isStatic, bool isReference)
+  BaseArray(bool isStatic, bool isRefArray)
     :_isStatic(isStatic)
-    ,_isReference(isReference)
+    ,_isRefArray(isRefArray)
   {}
 
  /**
@@ -92,9 +92,9 @@ public:
   virtual const T* getData() const = 0;
   virtual T* getData() = 0;
   virtual void getDataCopy(T data[], size_t n) const = 0;
-  virtual const T* const* getDataReferences() const
+  virtual const T* const* getDataRefs() const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array getDataReferences call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array getDataRefs call");
   }
 
   virtual T& operator()(size_t i)
@@ -137,14 +137,14 @@ public:
     return _isStatic;
   }
 
-  bool isReference() const
+  bool isRefArray() const
   {
-    return _isReference;
+    return _isRefArray;
   }
 
 protected:
   bool _isStatic;
-  bool _isReference;
+  bool _isRefArray;
 };
 
 /**
@@ -237,8 +237,8 @@ public:
   virtual void assign(const BaseArray<T>& b)
   {
     T **refs = _ref_array.c_array();
-    if(b.isReference())
-      std::transform(refs, refs + nelems, b.getDataReferences(),
+    if(b.isRefArray())
+      std::transform(refs, refs + nelems, b.getDataRefs(),
                      refs, CopyRefArray2RefArray<T>());
     else
       std::transform(refs, refs + nelems, b.getData(),
@@ -277,7 +277,7 @@ public:
   /**
    * Access to data references (read-only)
    */
-  virtual const T* const* getDataReferences() const
+  virtual const T* const* getDataRefs() const
   {
     return _ref_array.data();
   }

@@ -79,9 +79,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual void initBoolAliasArray(std::vector<int> indices, bool* ref_data[]);
     virtual void savePreVariables();
     virtual void initPreVariables();
-    virtual double& getPreVar(double& var);
-    virtual double& getPreVar(int& var);
-    virtual double& getPreVar(bool& var);
+    virtual double& getPreVar(const double& var);
+    virtual double& getPreVar(const int& var);
+    virtual double& getPreVar(const bool& var);
     virtual void setPreVar(double& var);
     virtual void setPreVar(int& var);
     virtual void setPreVar(bool& var);

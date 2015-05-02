@@ -36,14 +36,12 @@ public:
     virtual bool& initBoolVar(size_t i)= 0;
 
      /*Methods for pre- variables*/
-
-
      virtual void savePreVariables() = 0;
      virtual void initPreVariables()= 0;
      /*access methods for pre-variable*/
-     virtual double& getPreVar(double& var)=0;
-     virtual double& getPreVar(int& var)=0;
-     virtual double& getPreVar(bool& var)=0;
+     virtual double& getPreVar(const double& var)=0;
+     virtual double& getPreVar(const int& var)=0;
+     virtual double& getPreVar(const bool& var)=0;
      virtual void setPreVar(double& var)=0;
      virtual void setPreVar(int& var)=0;
      virtual void setPreVar(bool& var)=0;
