@@ -1,0 +1,55 @@
+builddir_inc=build/include/omc
+buildbin=build/bin
+buildlib=build/lib/@host_short@/omc
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+bindir = @includedir@
+libdir = @libdir@/@host_short@/omc
+
+omplot: mkbuilddirs qwt
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
+
+.PHONY: install
+
+$(buildlib)/libomqwt.so: mkbuilddirs qwt-build
+	cp -a qwt/lib/libomqwt.so* $(buildlib)/
+$(buildlib)/libomqwt.dylib: mkbuilddirs qwt-build
+	cp -a qwt/lib/libomqwt*dylib $(buildlib)/
+	install_name_tool -id @rpath/libomqwt.6.2.0.dylib $(buildlib)/libomqwt.6.2.0.dylib
+
+install:
+ifeq (@APP@,)
+	mkdir -p ${DESTDIR}/@bindir@
+	cp -a build/bin/OMPlot@EXE@ ${DESTDIR}/@bindir@
+else
+	mkdir -p ${DESTDIR}/Applications/
+	cp -a build/bin/OMPlot@APP@ ${DESTDIR}/Applications/
+endif
+	mkdir -p ${DESTDIR}/$(libdir) ${DESTDIR}/$(includedir)/omc/qwt
+	cp -a $(buildlib)/* ${DESTDIR}/$(libdir)
+	cp -a $(builddir_inc)/qwt ${DESTDIR}/$(includedir)/omc
+
+qwt: $(buildlib)/libomqwt@SHREXT@
+
+qwt-build: mkbuilddirs
+	$(MAKE) -C qwt -f Makefile.unix
+	test -f $(builddir_inc)/qwt/qwt_global.h || ($(MAKE) -C qwt install && cp -a qwt/build/include/*.h $(builddir_inc)/qwt)
+
+mkbuilddirs:
+	mkdir -p $(builddir_inc)/qwt
+	mkdir -p $(buildlib)
+	mkdir -p $(buildbin)
+
+clean:
+	$(MAKE) -C qwt -f Makefile.unix clean
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
+Makefile: Makefile.in config.status
+	./config.status
+
+config.status: configure
+	./config.status --recheck
+
+configure: configure.ac common/m4/*.m4
+	autoconf
