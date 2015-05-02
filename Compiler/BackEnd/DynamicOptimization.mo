@@ -687,7 +687,6 @@ public function reduceDynamicOptimization
 protected
   list<BackendDAE.Var> varlst, opt_varlst, conVarsList, fconVarsList, objMayer = {}, objLagrange = {};
   list<BackendDAE.EqSystem> systlst, newsyst = {};
-  BackendDAE.EqSystem tmpsyst;
   BackendDAE.Variables v;
   BackendDAE.Shared shared;
 algorithm
@@ -717,15 +716,7 @@ algorithm
       opt_varlst := List.appendNoCopy(opt_varlst, objLagrange);
 
       if not listEmpty(opt_varlst) then
-        try
-          tmpsyst := BackendDAEUtil.reduceEqSystem(syst, shared, opt_varlst);
-          //BackendDump.dumpEqSystem(syst,"IN_TMP:reduceDynamicOptimization");
-          //BackendDump.dumpEqSystem(tmpsyst,"OUT_TMP:reduceDynamicOptimization");
-          newsyst := tmpsyst :: newsyst;
-        else
-          //BackendDump.dumpEqSystem(syst,"TMP:reduceDynamicOptimization fail!");
-          newsyst := syst :: newsyst;
-        end try;
+        newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst) :: newsyst;
       end if;
     end for;
 
