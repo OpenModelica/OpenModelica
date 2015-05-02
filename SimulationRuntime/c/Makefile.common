@@ -84,6 +84,10 @@ RUNTIMEUTIL_HEADERS = \
 ./util/omc_spinlock.h \
 ./util/read_matlab4.c \
 ./util/read_matlab4.h \
+./util/read_csv.c \
+./util/read_csv.h \
+./util/libcsv.c \
+./util/libcsv.h \
 ./util/read_write.h \
 ./util/real_array.h \
 ./util/ringbuffer.h \
