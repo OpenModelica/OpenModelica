@@ -12583,7 +12583,6 @@ template daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text &preExp,
   let eThen = daeExp(then_, context, &preExpThen, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let &preExpElse = buffer ""
   let eElse = daeExp(else_, context, &preExpElse /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      let condVar = tempDecl("bool", &varDecls /*BUFD*/)
       //let resVarType = expTypeFromExpArrayIf(else_,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
       let resVar  = expTypeFromExpArrayIf(else_,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       /*previous multi_array instead of .assign:
@@ -12591,8 +12590,7 @@ template daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text &preExp,
     */
     let &preExp +=
       <<
-      <%condVar%> = <%condExp%>;
-      if (<%condVar%>) {
+      if <%condExp%> {
         <%preExpThen%>
         <% match typeof(then_)
             case T_ARRAY(dims=dims) then
@@ -12602,7 +12600,7 @@ template daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text &preExp,
                 %>
       } else {
         <%preExpElse%>
-         <%match typeof(else_)
+        <%match typeof(else_)
             case T_ARRAY(dims=dims) then
               '<%resVar%>.assign(<%eElse%>);'
                 else
@@ -12958,14 +12956,11 @@ template elseExpr(DAE.Else it, Context context, Text &preExp, Text &varDecls,Sim
     let condExp = daeExp(exp, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     else {
-    <%preExp%>
-    if (<%condExp%>) {
-
-      <%statementLst |> it => algStatement(it, context, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      ;separator="\n"%>
-
-    }
-    <%elseExpr(else_, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+      <%preExp%>
+      if <%condExp%> {
+        <%statementLst |> it => algStatement(it, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator="\n"%>
+      }
+      <%elseExpr(else_, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     }
     >>
   case ELSE(__) then
@@ -14493,10 +14488,10 @@ case STMT_IF(__) then
   let condExp = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
   <%preExp%>
-  if (<%condExp%>) {
-    <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n"%>
+  if <%condExp%> {
+    <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator="\n"%>
   }
-   <%elseExpr(else_, context,&preExp , &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+  <%elseExpr(else_, context,&preExp , &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
   >>
 end algStmtIf;
 
