@@ -5568,7 +5568,7 @@ case SES_NONLINEAR(__) then
   <<
 
    <%crefs |> name hasindex i0 =>
-    let namestr = cref1(name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)
+    let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     __xd[<%i0%>] = <%namestr%>;
      >>
@@ -5609,7 +5609,7 @@ case SES_NONLINEAR(__) then
   <<
 
    <%crefs |> name hasindex i0 =>
-     let namestr = cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)
+     let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      <<
        vars[<%i0%>] = <%namestr%>;
      >>
@@ -5726,9 +5726,17 @@ case SES_NONLINEAR(__) then
 
    <%crefs |> name hasindex i0 =>
     let namestr = cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)
-    <<
-    <%namestr%>  = vars[<%i0%>];
-    >>
+    match name
+    case CREF_QUAL(ident = "$PRE") then
+      let varname = '_system-><%cref(componentRef, useFlatArrayNotation)%>'
+      <<
+      <%varname%> = vars[<%i0%>];
+      _discrete_events->save(<%varname%>);
+      >>
+    else
+      <<
+      <%namestr%> = vars[<%i0%>];
+      >>
    ;separator="\n"%>
   >>
   case SES_LINEAR(__) then
