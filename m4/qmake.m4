@@ -1,5 +1,7 @@
 dnl Check for Qt
 
+AC_SUBST(QMAKE)
+
 AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
 AC_CHECK_PROGS(LRELEASE,lrelease-qt4 lrelease,"")
 
