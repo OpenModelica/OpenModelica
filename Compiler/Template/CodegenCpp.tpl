@@ -12590,7 +12590,7 @@ template daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text &preExp,
     */
     let &preExp +=
       <<
-      if <%condExp%> {
+      if <%encloseInParantheses(condExp)%> {
         <%preExpThen%>
         <% match typeof(then_)
             case T_ARRAY(dims=dims) then
@@ -12612,6 +12612,10 @@ template daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text &preExp,
 end daeExpIf;
 
 
+template encloseInParantheses(String expStr)
+ "Encloses expression in paranthesis if not yet given"
+::= if intEq(stringGet(expStr, 1), 40) then '<%expStr%>' else '(<%expStr%>)'
+end encloseInParantheses;
 
 
 template expTypeFromExpArrayIf(Exp exp, Context context, Text &preExp, Text &varDecls,SimCode simCode,
@@ -12957,7 +12961,7 @@ template elseExpr(DAE.Else it, Context context, Text &preExp, Text &varDecls,Sim
     <<
     else {
       <%preExp%>
-      if <%condExp%> {
+      if <%encloseInParantheses(condExp)%> {
         <%statementLst |> it => algStatement(it, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator="\n"%>
       }
       <%elseExpr(else_, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -14488,7 +14492,7 @@ case STMT_IF(__) then
   let condExp = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
   <%preExp%>
-  if <%condExp%> {
+  if <%encloseInParantheses(condExp)%> {
     <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation); separator="\n"%>
   }
   <%elseExpr(else_, context,&preExp , &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
