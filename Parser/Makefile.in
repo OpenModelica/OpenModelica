@@ -11,9 +11,11 @@ ifeq (arm,@target_cpu@)
 ANTLRDEBUG=--disable-antlrdebug --disable-abiflags
 endif
 host=--host=@host@
+host_short=@host_short@
 LIB_OMC=lib/@host_short@/omc
 ANTLR_LIB=libomantlr3@SHREXT@
 include Makefile.common
+LDFLAGS=@RPATH@
 
 Makefile: Makefile.in
 	(cd ..; ./config.status)

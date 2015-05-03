@@ -17,7 +17,7 @@ builddir_locale=$(top_builddir)/build/share/locale/
 INSTALL_APPDIR     = ${DESTDIR}/Applications/MacPorts/
 INSTALL_BINDIR     = ${DESTDIR}${bindir}
 INSTALL_LIBDIR     = ${DESTDIR}${libdir}/
-INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}/omc
+INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}
 INSTALL_DATADIR    = ${DESTDIR}${datadir}
 INSTALL_DOCDIR     = ${DESTDIR}${docdir}
 INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
@@ -374,7 +374,8 @@ install-dirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
 	mkdir -p ${INSTALL_BINDIR}
 	mkdir -p ${INSTALL_LIBDIR}
-	mkdir -p ${INSTALL_INCLUDEDIR}
+	mkdir -p ${INSTALL_INCLUDEDIR}/omc
+	mkdir -p ${INSTALL_INCLUDEDIR}/$(host_short)/antlr3
 	mkdir -p ${INSTALL_DOCDIR}/omc/testmodels
 	mkdir -p ${INSTALL_MANDIR}/man1/
 	mkdir -p ${INSTALL_LOCALEDIR}
@@ -392,7 +393,8 @@ install: install-dirs
 	# Libraries
 	cp -a ./${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
-	cp -a ./${builddir_inc}/* ${INSTALL_INCLUDEDIR}
+	cp -a ./${builddir_inc}/* ${INSTALL_INCLUDEDIR}/omc
+	cp -a ./${builddir_inc}/$(host_short)/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/antlr3
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
