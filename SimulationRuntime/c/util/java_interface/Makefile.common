@@ -9,7 +9,7 @@ JAR=jar
 endif
 
 OPENMODELICAHOME=$(shell pwd)/../../../../build
-antlr = antlr-3.1.3.jar
+antlr = $(OPENMODELICAHOME)/../3rdParty/antlr/3.2/tool/antlr-3.2.jar
 licenses = antlr_license.txt
 junit = junit-4.6.jar
 
