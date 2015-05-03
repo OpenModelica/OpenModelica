@@ -14605,6 +14605,8 @@ template algStmtForRange_impl(Exp range, Ident iterator, String type, String sho
 ::=
 match range
 case RANGE(__) then
+  let type = expTypeArray(ty)
+  let iterVar = tempDecl('int', &varDecls)
   let iterName = contextIteratorName(iterator, context)
   let startVar = tempDecl(type, &varDecls)
   let stepVar = tempDecl(type, &varDecls)
@@ -14614,7 +14616,7 @@ case RANGE(__) then
   let stepValue = match step case SOME(eo) then
       daeExp(eo, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else
-      "(1)"
+      '1'
   let stopValue = daeExp(stop, context, &preExp, &varDecls,simCode, &extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
   <%preExp%>
@@ -14627,13 +14629,12 @@ case RANGE(__) then
   else if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
   {
     <%type%> <%iterName%>;
-                               //half-open range
-
-  BOOST_FOREACH(<%iterName%>,boost::irange( <%startValue%>,(int)<%stopValue%>+1,(int)<%stepVar%>))
-    {
-
+    int <%iterVar%>_end = <%if stringEq(type, "int") then
+      '(<%stopVar%> - <%startVar%>) / <%stepVar%>;'
+      else '(int)((<%stopVar%> - <%startVar%>) / <%stepVar%> + 1e-10);'%>
+    for (<%iterVar%> = 0; <%iterVar%> <= <%iterVar%>_end; <%iterVar%>++) {
+      <%iterName%> = <%startVar%> + <%iterVar%> * <%stepVar%>;
       <%body%>
-
     }
   }
   >> /* else we're looping over a zero-length range */
