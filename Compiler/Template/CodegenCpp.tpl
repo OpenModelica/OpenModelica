@@ -12632,7 +12632,7 @@ end daeExpIf;
 
 template encloseInParantheses(String expStr)
  "Encloses expression in paranthesis if not yet given"
-::= 
+::=
 if intEq(stringGet(expStr, 1), stringGet("(", 1)) then '<%expStr%>' else '(<%expStr%>)'
 end encloseInParantheses;
 

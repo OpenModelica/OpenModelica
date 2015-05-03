@@ -1861,7 +1861,7 @@ algorithm
     queue := list(e for e guard arrayGet(oMark,e) == 0 in queue);
    end if;
  end while;
-   
+
 end markStateEquationsWork;
 
 
