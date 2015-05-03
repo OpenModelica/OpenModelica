@@ -6,25 +6,27 @@ ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
 
 COMPILERHOME=../Compiler/
 BUILDINC = -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util
-RMLINC	= -I$(RMLHOME)/include/plain
-
 
 .PHONY: all
 .SUFFIXES: .h .c .o
 all: install
 
-install: libantlr3.a libomparse.a
-	cp libantlr3.a libomparse.a ../build/$(LIB_OMC)/
+install: $(ANTLR_LIB) libomparse.a
+	cp $(ANTLR_LIB) libomparse.a ../build/$(LIB_OMC)/
 
 $(ANTLR)/antlr3config.h: $(ANTLR)/antlr3config.h.in $(ANTLR)/configure
 	(cd $(ANTLR) && ./configure $(ANTLR64) $(ANTLRDEBUG) $(host) CC="$(CC)" LDFLAGS="" CFLAGS="" CPPFLAGS="")
-libantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
+libomantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	# build the library
 	$(CC) ${CFLAGS} ${CPPFLAGS} -c $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
 	rm -f $@
 	ar -ru libantlr3.a antlr3*.o
 	ranlib libantlr3.a
 	rm -f antlr3*.o
+libomantlr3$(SHREXT): $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
+	# build the library
+	$(CC) -shared -o $@ ${CFLAGS} ${CPPFLAGS} $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
+	test ! `uname` = Darwin || install_name_tool -id "@rpath/$@" $@
 
 HFILES = \
   ModelicaParser.h \

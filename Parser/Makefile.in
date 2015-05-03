@@ -2,8 +2,8 @@ CC=@CC@
 CXX=@CXX@
 CFLAGS=@CFLAGS@ -Wall @EXTRA_CFLAGS_GENERATED_CODE@
 CPPFLAGS=@CPPFLAGS@ -I$(COMPILERHOME) $(RMLINC) -I. -I$(ANTLR) -I$(ANTLR)/include -I../3rdParty/gc/include $(BUILDINC)
-RMLHOME=@rmlhome@
 OMC=../build/bin/omc
+SHREXT=@SHREXT@
 ifeq (x86_64,@target_cpu@)
 ANTLR64=--enable-64bit
 endif
@@ -12,6 +12,7 @@ ANTLRDEBUG=--disable-antlrdebug --disable-abiflags
 endif
 host=--host=@host@
 LIB_OMC=lib/@host_short@/omc
+ANTLR_LIB=libomantlr3@SHREXT@
 include Makefile.common
 
 Makefile: Makefile.in
