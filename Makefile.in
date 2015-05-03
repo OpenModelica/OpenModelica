@@ -18,6 +18,7 @@ CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
 AR = @AR@
 host = @host@
+host_short = @host_short@
 FC = @FC@
 
 defaultMakefileTarget = Makefile
