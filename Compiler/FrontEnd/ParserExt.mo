@@ -51,7 +51,7 @@ public function parse "Parse a mo-file"
   input Boolean runningTestsuite;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
@@ -62,7 +62,7 @@ public function parseexp "Parse a mos-file"
   input Boolean runningTestsuite;
   output GlobalScript.Statements outStatements;
 
-  external "C" outStatements=ParserExt_parseexp(filename, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outStatements=ParserExt_parseexp(filename, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
@@ -72,7 +72,7 @@ public function parsestring "Parse a string as if it were a stored definition"
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output Absyn.Program outProgram;
-  external "C" outProgram=ParserExt_parsestring(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parsestring(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
@@ -82,7 +82,7 @@ public function parsestringexp "Parse a string as if it was a sequence of statem
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output GlobalScript.Statements outStatements;
-  external "C" outStatements=ParserExt_parsestringexp(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outStatements=ParserExt_parsestringexp(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parsestringexp;
 
 public function stringPath
@@ -92,7 +92,7 @@ public function stringPath
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output Absyn.Path path;
-  external "C" path=ParserExt_stringPath(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" path=ParserExt_stringPath(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end stringPath;
 
 public function stringCref
@@ -102,7 +102,7 @@ public function stringCref
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
   output Absyn.ComponentRef cref;
-  external "C" cref=ParserExt_stringCref(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" cref=ParserExt_stringCref(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end stringCref;
 
 annotation(__OpenModelica_Interface="frontend");
