@@ -1,0 +1,18 @@
+[submodule "OMEdit"]
+	path = OMEdit
+	url = ../OMEdit.git
+[submodule "doc"]
+	path = doc
+	url = ../OpenModelica-doc.git
+[submodule "OMOptim"]
+	path = OMOptim
+	url = ../OMOptim.git
+[submodule "OMPlot"]
+	path = OMPlot
+	url = ../OMPlot.git
+[submodule "OMNotebook"]
+	path = OMNotebook
+	url = ../OMNotebook.git
+[submodule "common"]
+	path = common
+	url = ../OpenModelica-common.git
