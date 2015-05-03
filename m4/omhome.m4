@@ -1,3 +1,4 @@
+AC_SUBST(OPENMODELICAHOME)
 AC_ARG_WITH(openmodelicahome,  [  --with-openmodelicahome=[$OPENMODELICAHOME|$prefix]    (Find OPENMODELICAHOME - the directory where all OpenModelica dependencies are installed.)],[OMHOME="$withval"],[OMHOME=no])
 
 test "$prefix" = NONE && prefix=$ac_default_prefix
@@ -58,7 +59,9 @@ define(FIND_LIBOPENMODELICACOMPILER, [
   # Note: This does not do a full link. autoconf messes with some env
   # and the rpath of the resulting executable is wrong with the
   # exact same command running outside of autoconf
-  LIBS="$LIBS -L$OPENMODELICAHOME/lib/$host_short/omc -lOpenModelicaCompiler"
+  LDFLAGS_SAVE="$LDFLAGS"
+  LDFLAGS="$LDFLAGS -L$OPENMODELICAHOME/lib/$host_short/omc -lOpenModelicaCompiler"
   AC_TRY_LINK([], [], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed])])
+  LDFLAGS="$LDFLAGS_SAVE"
   AC_LANG_POP([C])
 ])
