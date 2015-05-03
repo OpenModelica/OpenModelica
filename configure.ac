@@ -275,9 +275,9 @@ AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
 AC_MSG_CHECKING([for antlr.Tool support])
 omc_antlr_jar=build/share/omc/java/antlr-3.1.3.jar
 mkdir -p build/share/omc/java
-cp SimulationRuntime/c/util/java_interface/antlr-3.1.3.jar $omc_antlr_jar
+cp "3rdParty/antlr/3.2/tool/antlr-3.2.jar" "3rdParty/antlr/3.2/tool/antlr-2.7.7.jar" build/share/omc/java/
 echo "" > $$grammar.g
-if java -cp $omc_antlr_jar antlr.Tool $$grammar.g ; then
+if java -cp build/share/omc/java/antlr-3.2.jar antlr.Tool $$grammar.g ; then
   rm -f $$grammar.g
   AC_MSG_RESULT([yes])
 else
