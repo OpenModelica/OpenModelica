@@ -13,7 +13,7 @@ Install the dependencies.
 ```bash
 $ autoconf
 # OPENMODELICAHOME is usually /usr, /opt, /opt/openmodelica, or /path/to/svn/OpenModelica/build
-$ ./configure --prefix=/path/to/OPENMODELICAHOME CXX=g++
+$ ./configure --prefix=/path/to/OPENMODELICAHOME
 $ make
 $ make install
 ```
