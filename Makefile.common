@@ -375,7 +375,7 @@ install-dirs:
 	mkdir -p ${INSTALL_BINDIR}
 	mkdir -p ${INSTALL_LIBDIR}
 	mkdir -p ${INSTALL_INCLUDEDIR}/omc
-	mkdir -p ${INSTALL_INCLUDEDIR}/$(host_short)/antlr3
+	mkdir -p ${INSTALL_INCLUDEDIR}/$(host_short)/omc/antlr3
 	mkdir -p ${INSTALL_DOCDIR}/omc/testmodels
 	mkdir -p ${INSTALL_MANDIR}/man1/
 	mkdir -p ${INSTALL_LOCALEDIR}
@@ -394,7 +394,7 @@ install: install-dirs
 	cp -a ./${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
 	cp -a ./${builddir_inc}/* ${INSTALL_INCLUDEDIR}/omc
-	cp -a ./${builddir_inc}/$(host_short)/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/antlr3
+	cp -a ./${builddir_inc}/$(host_short)/omc/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/omc/antlr3
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
