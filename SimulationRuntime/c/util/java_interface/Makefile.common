@@ -10,6 +10,7 @@ endif
 
 OPENMODELICAHOME=$(shell pwd)/../../../../build
 antlr = $(OPENMODELICAHOME)/../3rdParty/antlr/3.2/tool/antlr-3.2.jar
+antlr_depends = $(OPENMODELICAHOME)/../3rdParty/antlr/3.2/tool/antlr-2.7.7.jar
 licenses = antlr_license.txt
 junit = junit-4.6.jar
 
@@ -116,7 +117,7 @@ clean:
 	$(antlr_compile) $<
 
 install-nomodelica:
-	cp $(antlr) ../../../../build/share/omc/java
+	cp $(antlr) $(antlr_depends) ../../../../build/share/omc/java
 # Don't need these; we put them in the COPYING file instead
 #	cp $(licenses) ../../../../build/share/doc/omc
 install: install-nomodelica
