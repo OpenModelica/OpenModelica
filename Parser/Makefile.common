@@ -13,7 +13,7 @@ all: install
 
 install: $(ANTLR_LIB) libomparse.a
 	mkdir -p ../build/include/$(host_short)/omc/antlr3
-	cp $(ANTLR)/include/*.h ../build/include/$(host_short)/omc/antlr3
+	cp $(ANTLR)/antlr3config.h $(ANTLR)/include/*.h ../build/include/$(host_short)/omc/antlr3
 	cp $(ANTLR_LIB) libomparse.a ../build/$(LIB_OMC)/
 
 $(ANTLR)/antlr3config.h: $(ANTLR)/antlr3config.h.in $(ANTLR)/configure
