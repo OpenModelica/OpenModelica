@@ -1,0 +1,2 @@
+# OpenModelica
+The OpenModelica project
