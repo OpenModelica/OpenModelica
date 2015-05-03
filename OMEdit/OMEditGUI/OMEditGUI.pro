@@ -55,11 +55,47 @@ evil_hack_to_fool_lupdate {
   SOURCES += ../../OMPlot/OMPlotGUI/*.cpp
 }
 
+# Windows libraries and includes
+win32 {
+  QMAKE_LFLAGS += -enable-auto-import
+
+  DEFINES += IMPORT_INTO=1
+
+  CONFIG(release, debug|release) {
+    # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
+    # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
+    # -s will remove all symbol table and relocation information from the executable.
+    QMAKE_CXXFLAGS += -g
+    QMAKE_LFLAGS_RELEASE =
+    # required for backtrace
+    LIBS += -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
+  }
+  LIBS += -L../../build/lib/omc -lOMPlot -lomqwt \
+    -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
+    -L../../Parser -lantlr3 \
+    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
+    -lws2_32
+  INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
+    ../../3rdParty/qwt/build/include \
+    ../../OMPlot/OMPlotGUI \
+    ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include ../../build/include/omc/c
+} else { # Unix libraries and includes
+  include(OMEdit.config)
+  # On unix we use backtrace of execinfo.h which requires -rdynamic
+  # The symbol names may be unavailable without the use of special linker
+  # options.  For systems using the GNU linker, it is necessary to use
+  # the -rdynamic linker option.  Note that names of "static" functions
+  # are not exposed, and won't be available in the backtrace.
+  CONFIG(release, debug|release){
+    QMAKE_LFLAGS_RELEASE += -rdynamic
+  }
+}
+
 SOURCES += main.cpp \
   Util/backtrace.c \
   Util/Helper.cpp \
   MainWindow.cpp \
-  ../../build/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
+  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Util/StringHandler.cpp \
   Modeling/MessagesWidget.cpp \
@@ -120,7 +156,6 @@ SOURCES += main.cpp \
 HEADERS  += Util/backtrace.h \
   Util/Helper.h \
   MainWindow.h \
-  ../../build/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
   Util/StringHandler.h \
   Modeling/MessagesWidget.h \
@@ -178,43 +213,8 @@ HEADERS  += Util/backtrace.h \
   Debugger/Attach/ProcessListModel.h \
   CrashReport/CrashReportDialog.h \
   OMC/Parser/OMCOutputParser.h \
-  OMC/Parser/OMCOutputLexer.h
-
-# Windows libraries and includes
-win32 {
-  QMAKE_LFLAGS += -enable-auto-import
-
-  DEFINES += IMPORT_INTO=1
-
-  CONFIG(release, debug|release) {
-    # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
-    # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
-    # -s will remove all symbol table and relocation information from the executable.
-    QMAKE_CXXFLAGS += -g
-    QMAKE_LFLAGS_RELEASE =
-    # required for backtrace
-    LIBS += -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
-  }
-  LIBS += -L../../build/lib/omc -lOMPlot -lomqwt \
-    -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-    -L../../Parser -lantlr3 \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
-    -lws2_32
-  INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
-    ../../3rdParty/qwt/build/include \
-    ../../OMPlot/OMPlotGUI \
-    ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include ../../build/include/omc/c
-} else { # Unix libraries and includes
-  include(OMEdit.config)
-  # On unix we use backtrace of execinfo.h which requires -rdynamic
-  # The symbol names may be unavailable without the use of special linker
-  # options.  For systems using the GNU linker, it is necessary to use
-  # the -rdynamic linker option.  Note that names of "static" functions
-  # are not exposed, and won't be available in the backtrace.
-  CONFIG(release, debug|release){
-    QMAKE_LFLAGS_RELEASE += -rdynamic
-  }
-}
+  OMC/Parser/OMCOutputLexer.h \
+  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
 
 LIBS += -lqjson
 INCLUDEPATH += ../../3rdParty/qjson-0.8.1/build/include

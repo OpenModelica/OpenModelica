@@ -28,7 +28,7 @@ Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
 
 always:
 
-$(NAME): parsergen Makefile OMEdit.config
+$(NAME): parsergen Makefile OMEdit.config omc_config.h
 	$(MAKE) -f Makefile
 
 clean:
@@ -46,4 +46,6 @@ Makefile: OMEditGUI.pro OMEdit.config
 Makefile.unix: Makefile.unix.in
 	(cd ../../; ./config.status)
 OMEdit.config: OMEdit.config.in
+	(cd ../../; ./config.status)
+omc_config.h: omc_config.h.in
 	(cd ../../; ./config.status)

@@ -1,0 +1,13 @@
+builddir=../../../../build
+parserdir=../../../../Parser
+ANTLR=../../../../3rdParty/antlr/3.2/libantlr3c-3.2
+
+CC=gcc
+CXX=g++
+#CFLAGS=-c -g -O0
+CFLAGS=-c -O3
+CPPFLAGS=-I. -I$(ANTLR)/include
+LDFLAGS=-L$(parserdir) -lantlr3
+EXE=GDBMIParser.exe
+
+include Makefile.common
