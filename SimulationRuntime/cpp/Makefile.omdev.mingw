@@ -1,0 +1,83 @@
+# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
+# Makefile for compilation of OMC using OMDev-mingw
+# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
+
+top_builddir = ../../..
+builddir_build=$(top_builddir)/build
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib/omc
+builddir_inc=$(top_builddir)/build/include/omc
+
+#use this call to use precompiled headers
+BUILDTPYE = Release
+#use this call if you want to debug the cpp runtime
+#BUILDTPYE = Debug
+
+CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
+
+runtimeCpp: clean
+ifeq ("$(RUNTIME_STATIC_LINKING)","true")
+	cd ./Build; echo "change to Build";	\
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DRUNTIME_STATIC_LINKING=ON -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)" MAKE_CXX_COMPILER=g++ ../; \
+	make;
+else
+	cd ./Build; echo "change to Build";	\
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)" MAKE_CXX_COMPILER=g++ ../; \
+	make;
+endif
+
+runtimeCPPmsvc: clean
+
+	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
+	echo 'Build the cppRuntime with MSVC'
+	rm -rf build_msvc
+	mkdir -p build_msvc
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > build_msvc/build.bat
+	#echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "Visual Studio 10"' >> build_msvc/build.bat
+ifeq ($(BUILDTPYE),Debug)
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=./tmp ../ -G  "NMake Makefiles"' >> build_msvc/build.bat
+else
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./tmp ../ -G  "NMake Makefiles"' >> build_msvc/build.bat
+endif
+	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
+	echo set MAKEFLAGS="" >> build_msvc/build.bat
+	echo echo Running NMake >> build_msvc/build.bat
+	echo nmake /f Makefile install >> build_msvc/build.bat
+	cd ./build_msvc; echo "change to build_msvc";\
+	cmd /c build.bat
+
+	# move msvc libs into subfolder
+	mkdir -p build_msvc/tmp/lib/omc/cpp/msvc
+	mv build_msvc/tmp/lib/omc/cpp/*.dll build_msvc/tmp/lib/omc/cpp/msvc
+	mv build_msvc/tmp/lib/omc/cpp/*.lib build_msvc/tmp/lib/omc/cpp/msvc
+
+
+	# copy pdb files
+ifneq ($(BUILDTPYE),Release)
+	cp -u build_msvc/Solver/Newton/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	cp -u build_msvc/Solver/Euler/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	cp -u build_msvc/Core/SimController/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	cp -u build_msvc/Core/Modelica/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	#cp -u build_msvc/Core/ModelicaExternalC/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	cp -u build_msvc/Core/SimulationSettings/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	cp -u build_msvc/Core/Solver/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	cp -u build_msvc/Core/System/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	#cp -u build_msvc/SimCoreFactory/OMCFactory/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	cp -u build_msvc/Core/DataExchange/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+	#cp -u build_msvc/Core/Math/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
+endif
+
+
+	# move folder to build dir
+	cp -R build_msvc/tmp/* build_msvc/$(builddir_build)
+
+
+install: runtimeCpp
+	(cd Build; make install)
+	(cd Build; cp -p $(OMDEV)/lib/3rdParty/boost-1_55/lib/*.dll $(builddir_bin)/.)
+
+
+clean:
+	rm -R -f Build
+	mkdir Build

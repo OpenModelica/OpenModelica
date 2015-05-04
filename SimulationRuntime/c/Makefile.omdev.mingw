@@ -1,0 +1,34 @@
+# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
+# Makefile for compilation of OMC using OMDev-mingw
+# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
+
+# The path to the OMDev-mingw package MUST BE SET!
+#OMDEV=$OMDEV
+# Test if the needed variables are there...
+
+top_builddir = ../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib/omc
+builddir_inc=$(top_builddir)/build/include/omc
+
+AR = ar -ru
+CC = gcc
+FC = g77
+#include the sundials, ipopt from OMDev and the top_builddir for revision.h
+CONFIG_CFLAGS = -O2 -falign-functions -msse2 -mfpmath=sse \
+-I$(OMDEV)/lib/3rdParty/Ipopt/include/ \
+-I$(OMDEV)/lib/3rdParty/Sundials/include \
+-I$(OMDEV)/include/lis -I$(top_builddir) \
+-Wall -Wno-unused-variable
+
+# Not needed since we already set fpmath
+FPMATHFORTRAN =
+
+LIBMAKEFILE = Makefile.omdev.mingw
+CONFIG_H=$(top_builddir)/Compiler/runtime/config.h
+LIBSIMULATION=libSimulationRuntimeC.a
+LIBRUNTIME=libOpenModelicaRuntimeC.a
+LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
+OBJ_EXT = .o
+
+include Makefile.common

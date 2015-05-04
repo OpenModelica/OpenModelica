@@ -1,0 +1,29 @@
+CC=gcc
+CXX=g++
+CFLAGS=-g -falign-functions
+TOP_DIR=../../
+OMHOME=../../build
+LDFLAGS=-L./ -lomparse -lomcruntime -L"$(OMHOME)/lib/omc" \
+-lOpenModelicaRuntimeC \
+-lModelicaExternalC -lm \
+-lomantlr3 -lmico2313 -lregex -lwsock32 -llpsolve55 -luuid -lole32 $(GSLIB) -lws2_32 \
+-lRpcrt4 -llapack-mingw -ltmglib-mingw -lblas-mingw -lf2c -fopenmp -lomcgc \
+-lpthread $(FMILIB) -lshlwapi -liconv -lintl -lmetis \
+-Wl,--stack,16777216,--large-address-aware,--enable-stdcall-fixup -lstdc++ -static-libgcc
+
+FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
+GSLIB = -L$(TOP_DIR)/3rdParty/graphstream/gs-netstream/c++/ -lnetstream
+CPPFLAGS=-I"$(OMHOME)/include/omc/c" -Iinclude/ -I../../3rdParty/msgpack-0.5.8/src/ -DADD_METARECORD_DEFINITIONS=
+CORBALIBS=
+ULIMIT_CMD=true
+SHREXT=.dll
+OMC=$(OMHOME)/bin/omc.exe
+RPATH=
+#STATIC=static
+BOOTSTRAP_OMC=../../build/bin/omc.exe
+defaultMakefileTarget=Makefile.omdev.mingw
+LIB_OMC=lib/omc
+
+default: all
+
+include Makefile.common

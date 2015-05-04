@@ -1,0 +1,40 @@
+# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
+# Makefile for Compiler/runtime compilation of OMC using OMDev-mingw
+# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
+#
+# $Id: Makefile.omdev.mingw.in 1817 2006-02-01 12:21:26Z adrpo $
+#
+
+# The path to the OMDev-mingw package MUST BE SET!
+#OMDEV=$OMDEV
+# Test if the needed variables are there...
+.testvariables:
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo Take the OMDev package from: http://www.ida.liu.se/~adrpo/omc/omdev/
+	@echo For questions or problems email Adrian Pop, adrpo@ida.liu.se
+	ABORT
+endif
+
+USE_CORBA = -DUSE_CORBA
+USE_METIS = -DUSE_METIS
+CORBAHOME = $(OMDEV)
+FMIINCLUDE = ../../3rdParty/FMIL/install/include
+GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
+GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
+CJSONINCLUDE = ../../3rdParty/cJSON/
+
+OMPCC = gcc -fopenmp
+
+# We always compile with corba on OMDev-mingw
+CORBAINCL = -I$(CORBAHOME)/include/mico-msys-mingw/
+OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
+
+SHELL	= /bin/sh
+CC	= gcc
+CXX = g++
+IDL	= $(OMDEV)/bin/mico/idl
+override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -DBUILD_MICO_DLL -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I../ $(CORBAINCL) -I$(FMIINCLUDE) -I../../3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE)
+CXXFLAGS = $(CFLAGS)
+
+include Makefile.common

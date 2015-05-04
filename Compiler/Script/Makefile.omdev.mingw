@@ -1,0 +1,3 @@
+OMC=OPENMODELICAHOME=`pwd`/../../build/ ../../build/bin/omc +d=failtrace
+
+include Makefile.common

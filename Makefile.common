@@ -149,8 +149,8 @@ opencl_rt_clean:
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean
 
 breakprocess:
-	(cd testsuite/openmodelica/bootstrapping && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
-	(cd testsuite/openmodelica/bootstrapping && cp BreakProcess.exe ../../../$(builddir_bin)/)
+	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
+	(cd tools/debugging/ && cp BreakProcess.exe ../../$(builddir_bin)/)
 
 all-runtimeCPPinstall:
 	$(MAKE) mkbuilddirs

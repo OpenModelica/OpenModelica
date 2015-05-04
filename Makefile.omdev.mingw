@@ -44,6 +44,8 @@ IDLPYTHON = $(OMDEV)/lib/omniORB-4.1.6-msvc-10/bin/x86_win32/omniidl -bpython -W
 IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
 IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
+LIBMODELICAEXTERNALC=build/lib/omc/libModelicaExternalC.a
+LIBMODELICASTANDARDTABLES=build/lib/omc/libModelicaStandardTables.a
 
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
@@ -173,7 +175,7 @@ copycppheader:
 	(cp -pufr $(BOOST_PATH)/boost/unordered         build/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/utility           build/include/omc/cpp/boost)
 
-omc: mkbuilddirs interactive docs fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream
+omc: mkbuilddirs interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped)
 
 boehm-gc-lib: build/lib/omc/libomcgc.a
@@ -315,9 +317,8 @@ simulationruntimecmsvc: Umfpack_msvc CMinpack_msvc fmil_msvc
 	rm -rf 3rdParty/gc/build_msvc/
 
 omc-bootstrapped:
-	$(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" bootstrap-dependencies
+	$(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" bootstrap-dependencies sim-dependencies
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CFLAGS="$(CFLAGS)"
-	$(MAKE) -f $(defaultMakefileTarget) omlibrary CFLAGS="$(CFLAGS)"
 
 modelica3d:
 	cd 3rdParty/modelica3d && mkdir -p build
