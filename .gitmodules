@@ -1,0 +1,3 @@
+[submodule "3rdParty"]
+	path = 3rdParty
+	url = ../OMCompiler-3rdParty
