@@ -162,7 +162,7 @@ omc-and-runtimeCPPinstall: mkbuilddirs
 	$(MAKE) omc runtimeCPPinstall
 
 runtimeCPP: CMinpack
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 

@@ -42,7 +42,7 @@ OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
 
 
 #Set Variables
-SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/C-Sources")
+SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
 SET(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/Data/Tables")
 
 SET(LIBINSTALLEXT "lib/omc/cpp" CACHE STRING "library directory")
@@ -187,12 +187,12 @@ ENDIF(WIN32)
 IF(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install_msvc")
 ELSE(MSVC)
-    SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install")
+    SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/build")
 ENDIF(MSVC)
 
 FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
           HINTS ${CMinpack_Path}
-          PATH_SUFFIXES include include/cminpack include/cminpack-1)
+          PATH_SUFFIXES include include/cminpack include/cminpack-1 ..)
 
 FIND_LIBRARY(CMINPACK_LIBRARY
              NAMES cminpack
