@@ -1,0 +1,41 @@
+// name: nonlinearDelayTest
+// status: correct
+// teardown_command: rm -f nonlinear_system.nonlinearDelayTest* _nonlinear_system.nonlinearDelayTest* output.log
+
+loadFile("nonlinearDelayTest.mo"); getErrorString();
+setDebugFlags("initialization"); getErrorString();
+simulate(nonlinear_system.nonlinearDelayTest); getErrorString();
+
+// the initialization problem has 2 solutions in the real domain:
+// solution #1:
+//   x2 = (1/2)*sqrt(-2+2*sqrt(5)); //  0.7861513775
+//   x1 = -sqrt(-2+2*sqrt(5));      // -1.572302755
+//   y = 0;
+// solution #2:
+//   x2 = -(1/2)*sqrt(-2+2*sqrt(5)); // -0.7861513775
+//   x1 = sqrt(-2+2*sqrt(5));        //  1.572302755
+//   y = 0;
+
+val(x1, {0.0,0.25,0.5,0.75,1.0});
+val(x2, {0.0,0.25,0.5,0.75,1.0});
+val(y, {0.0,0.25,0.5,0.75,1.0});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.nonlinearDelayTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.nonlinearDelayTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          y:VARIABLE() .nonlinear_system.nonlinearDelayTest, .Real type: Real
+// Warning: Iteration variables with default zero start attribute in torn nonlinear equation system:
+//          x2:VARIABLE() .nonlinear_system.nonlinearDelayTest, .Real type: Real
+// "
+// {-1.572302755514846,-1.618421380238099,-1.738059371463846,-1.818945608412304,-1.907039392827518}
+// {0.7861513777574231,0.7500029985869122,0.6996133736697601,0.6092948563143592,0.4995556640036673}
+// {0.0,-0.201552919327918,-0.4383459284777348,-0.717828949630361,-1.04466743649189}
+// endResult

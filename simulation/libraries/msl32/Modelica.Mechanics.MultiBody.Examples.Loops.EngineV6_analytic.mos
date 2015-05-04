@@ -1,0 +1,81 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+setCommandLineOptions({"+d=backenddaeinfo,stateselection"}); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic);
+compareVars :=
+{
+   "load.phi",
+   "load.w",
+   "filter.x[1]",
+   "filter.x[2]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// {true}
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic
+// {"load.phi","load.w","filter.x[1]","filter.x[2]"}
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic', options = '', outputFormat = 'mat', variableFilter = 'time|load.phi|load.w|filter.x.1.|filter.x.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic_res.mat
+// Files Equal!
+// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 9016
+//  * Number of variables: 9016
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (1047):
+//  * Single equations (assignments): 1046
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {1 355}
+//  * Non-linear torn systems: 0
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1794
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 369 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (3510):
+//  * Single equations (assignments): 3503
+//  * Array equations: 6
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {1 355}
+//  * Non-linear torn systems: 0
+//
+// "true
+// "
+// ""
+// endResult

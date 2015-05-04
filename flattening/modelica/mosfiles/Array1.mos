@@ -1,0 +1,13 @@
+// name:     Array1
+// keywords: arrays
+// status:   correct
+// 
+//  Using end in array subscripts.
+//
+a:=7:12;
+a[end-1];
+
+// Result:
+// {7,8,9,10,11,12}
+// 11
+// endResult

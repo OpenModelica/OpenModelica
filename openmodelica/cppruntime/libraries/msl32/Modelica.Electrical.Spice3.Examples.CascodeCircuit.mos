@@ -1,0 +1,42 @@
+// name:     Modelica.Electrical.Spice3.Examples.CascodeCircuit
+// teardown_command: rm -f Modelica.Electrical.Spice3.Examples.CascodeCircuit_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.CascodeCircuit);
+referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.CascodeCircuit.mat";
+
+compareVars :=
+{
+   "J1.vGD",
+   "J1.vGS",
+   "J2.vGD",
+   "J2.vGS"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Spice3.Examples.CascodeCircuit
+// {"J1.vGD","J1.vGS","J2.vGD","J2.vGS"}
+// Compilation succeeded
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "true
+// "
+// ""
+// endResult

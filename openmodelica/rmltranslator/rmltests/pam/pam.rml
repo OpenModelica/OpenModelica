@@ -1,0 +1,238 @@
+module Pam:
+
+
+ type Ident       =  string
+ datatype BinOp   =  ADD | SUB | MUL | DIV
+ datatype RelOp   =  EQ | GT | LT | LE | GE | NE
+ datatype Exp     =  INT      of  int
+                 |  IDENT    of  Ident
+                 |  BINARY   of  Exp * BinOp * Exp
+                 |  RELATION of  Exp * RelOp * Exp
+
+ datatype Stmt    =  ASSIGN of Ident * Exp       (* Id := Exp *)
+                 |  IF    of Exp * Stmt * Stmt  (* if Exp then Stmt..*)
+                 |  WHILE of Exp * Stmt         (* while Exp do Stmt*)
+                 |  TODO  of Exp * Stmt         (* to Exp do Stmt...*)
+                 |  READ  of Ident list         (* read id1,id2,...*)
+                 |  WRITE of Ident list         (* write id1,id2,..*)
+                 |  SEQ   of Stmt * Stmt        (* Stmt1; Stmt2 *)
+                 |  SKIP                        (* ; empty stmt *)
+
+(* Types needed for modeling static and dynamic semantics *)
+
+(* Variable binding and environment type *)
+type VarBnd      =  Ident * Value
+type Env         =  VarBnd list
+
+(* Value type needed for evaluation *)
+datatype Value   =  INTval of int
+                 |  BOOLval of bool
+
+type State = Env
+
+end
+
+with "Input.rml"
+
+(***************** Auxiliary utility relations ******************)
+
+relation repeat_eval:  (State, int, Stmt) => State =
+(* repeatedly evaluate stmt n times *)
+
+  rule   int_le(n,0) => true
+         -----------------------------------         (* n <= 0 *)
+         repeat_eval(state,n,stmt) => state
+
+  rule   int_gt(n,0) => true &                       (* n > 0  *)
+         int_sub(n,1) => n2 &
+         eval_stmt(state,stmt) => state2 &
+         repeat_eval(state2,n2,stmt) => state3
+         --------------------------------------      (* eval n times *)
+         repeat_eval(state,n,stmt)  =>  state3
+end (* repeat_eval *)
+
+relation error:  (string,string) => ()  =
+(* Print error messages str1 and str2, and fail *)
+  rule   print "Error - "  &  print str1  &
+         print " "  &  print str2  &  print "\n"
+         -------------
+         error(str1,str2) =>  fail
+end (* error *)
+
+relation input_item: () => int =
+
+  rule  print "input: " & 
+        Input.read => i &
+        print "\n"
+         -------------------------
+         input_item => i
+         
+end (* input_item *)
+
+relation output_item: int => () =
+
+  rule  int_string i => s &
+        print(s)
+        ---------------
+        output_item i
+
+end
+
+relation lookup: (Env,Ident) => Value  =
+
+  rule  id=id2
+        -------------------------------------   (* id first in list *)
+        lookup((id2,value) :: _, id) => value
+
+  rule  not id=id2  &  lookup(rest, id) => value
+        -------------------------------------   (* id in rest of list *)
+        lookup((id2,_) :: rest, id)  => value
+end
+
+
+relation update: (Env,Ident,Value) => Env  =
+
+  axiom  update(env,id,value) => ((id,value)::env)
+
+end
+
+
+(*************** Arithmetic and relational operators **************)
+
+relation apply_binop:  (BinOp,int,int) => int  =
+(* Apply a binary arithmetic operator to constant integer arguments *)
+
+  rule   int_add(x,y) => z
+         -----------------                           (* x+y *)
+         apply_binop(ADD,x,y) => z
+
+  rule   int_sub(x,y) => z
+         -----------------                           (* x-y *)
+         apply_binop(SUB,x,y) => z
+
+  rule   int_mul(x,y) => z
+         -----------------                           (* x*y *)
+         apply_binop(MUL,x,y) => z
+
+  rule   int_div(x,y) => z
+         -----------------                           (* x/y *)
+         apply_binop(DIV,x,y) => z
+end (* apply_binop *)
+
+
+relation apply_relop:  (RelOp,int,int) => bool  =
+(* Apply a relation operator, returning a boolean value *)
+
+  rule   int_lt(x,y) => z
+         ----------------                            (* x<y *)
+         apply_relop(LT,x,y) => z
+
+  rule   int_le(x,y) => z
+         ----------------                            (* x<=y *)
+         apply_relop(LE,x,y) => z
+
+  rule   int_eq(x,y) => z
+         ----------------                            (* x=y *)
+         apply_relop(EQ,x,y) => z
+
+  rule   int_ne(x,y) => z
+         ----------------                            (* x<>y *)
+         apply_relop(NE,x,y) => z
+
+  rule   int_ge(x,y) => z
+         ----------------                            (* x>=y *)
+         apply_relop(GE,x,y) => z
+
+  rule   int_gt(x,y) => z
+         ----------------                            (* x>y *)
+         apply_relop(GT,x,y) => z
+
+end (* apply_relop *)
+
+
+
+(*************** Expression evaluation **************)
+
+relation eval:  (Env, Exp) => Value   =
+(* Evaluation of expressions in the current environment *)
+
+  axiom  eval(_,INT(v)) => INTval(v)             (* integer constant *)
+
+  rule   lookup(env,id) => val1
+         -------------------                        (* identifier id *)
+         eval(env,IDENT(id)) => val1
+
+(* If id not declared, give an error message and fail through error *)
+  rule   not lookup(env,id) => val1 &
+         error("Undefined identifier",id)
+         -------------------                (* undefined variable id *)
+         eval(env,IDENT(id)) => INTval(0)
+
+  rule   eval(env,e1) => INTval(v1)  &
+         eval(env,e2) => INTval(v2)  &
+         apply_binop(binop,v1,v2) => v3
+         -----------------------------------    (* expr1 binop expr2 *)
+         eval(env, BINARY(e1,binop,e2)) => INTval(v3)
+
+  rule   eval(env,e1) => INTval(v1)  &
+         eval(env,e2) => INTval(v2)  &
+         apply_relop(relop,v1,v2) => b
+         ----------------------------------     (* expr1 relop expr2 *)
+         eval(env, RELATION(e1,relop,e2)) => BOOLval(b)
+
+end (* eval *)
+
+
+(*************** Statement evaluation **************)
+
+relation eval_stmt:  (State, Stmt) => State  =
+(* Statement evaluation: map the current state into a new state *)
+
+  rule   eval(env,e1) => val1 &
+         update(env,id,val1) => env2
+         -------------------------                  (* Assignment *)
+         eval_stmt(env,ASSIGN(id,e1)) => env2
+
+  rule   eval(env,comp) => BOOLval(true)  &
+         eval_stmt(state1,s1) => state2
+         -------------------------                  (* IF true ... *)
+         eval_stmt(state1 as env, IF(comp,s1,s2))  =>  state2
+
+  rule   eval(env,comp) => BOOLval(false) &
+         eval_stmt(state1,s2) => state2
+         ------------------------------             (* IF false ... *)
+         eval_stmt(state1 as env, IF(comp,s1,s2))  =>  state2
+
+  
+  rule   eval(env,e1) => INTval(n1)  &
+         repeat_eval(state,n1,s1) => state2
+         --------------------------------------     (* TO e1 DO s1 .. *)
+         eval_stmt(state as env,TODO(e1,s1)) => state2
+
+  axiom  eval_stmt(state,READ([])) => state            (* READ [] *)
+
+
+  rule   input_item => v2 &
+         update(env,id,INTval(v2)) => env2 &
+         eval_stmt(env2,READ(rest)) => state2
+         ---------------------------------------------  (* READ id1,..  *)
+         eval_stmt(env, READ(id::rest))  =>  state2
+
+  axiom  eval_stmt(state,WRITE([])) => state           (* WRITE [] *)
+
+
+  rule   lookup(env,id) => INTval(v2) &
+         output_item(v2) &
+         eval_stmt(env,WRITE(rest)) => state2
+         ---------------------------------------------  (*WRITE id1,. *)
+         eval_stmt(env, WRITE(id::rest))  =>  state2
+
+
+  rule   eval_stmt(state,stmt1)  => state2 &
+         eval_stmt(state2,stmt2) => state3
+         --------------------------------           (* stmt1 ; stmt2 *)
+         eval_stmt(state,SEQ(stmt1,stmt2)) => state3
+
+  axiom  eval_stmt(state,SKIP) => state         (* ; empty statement *)
+
+end (* eval_stmt *)

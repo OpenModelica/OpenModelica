@@ -1,0 +1,39 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling,stopTime=3.0, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling.mat","Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling_diff.csv",0.01,0.001,
+  {"wheelSet.x",
+  "wheelSet.y",
+  "wheelSet.phi",
+  "wheelSet.theta1",
+  "wheelSet.theta2",
+  "wheelSet.der_theta1",
+  "wheelSet.der_theta2",
+  "der(wheelSet.x)",
+  "der(wheelSet.y)",
+  "der(wheelSet.phi)",
+  "der(wheelSet.theta1)",
+  "der(wheelSet.theta2)",
+  "der(wheelSet.der_theta1)",
+  "der(wheelSet.der_theta2)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

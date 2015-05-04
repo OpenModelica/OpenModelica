@@ -1,0 +1,11 @@
+// status: correct
+
+convertUnits("MW/s","kg");getErrorString();
+convertUnits("degC","K");getErrorString();
+
+// Result:
+// (false,0.000001,0.0)
+// ""
+// (true,1.0,-273.15)
+// ""
+// endResult

@@ -1,0 +1,24 @@
+// name: daedumpgraphv.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=daedumpgraphv
+// 
+
+// TODO: change this model to test the dump +d=daedumpgraphv
+loadString("
+model testDaedumpgraphv
+end testDaedumpgraphv;
+"); getErrorString();
+
+setDebugFlags("daedumpgraphv"); getErrorString();
+buildModel(testDaedumpgraphv); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"testDaedumpgraphv","testDaedumpgraphv_init.xml"}
+// ""
+// endResult

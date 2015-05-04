@@ -1,0 +1,35 @@
+// name:     Record Constructor with Parameters
+// keywords: algorithm
+// status:   correct
+
+loadFile("RecordTest.mo");
+// CEval
+a:=RecordTest.WithParameters(1,2);
+a:=RecordTest.WithParameters();
+// Compiled
+a:=RecordTest.TestWithParameters(1,2);
+a:=RecordTest.TestWithoutParameters();
+
+// Result:
+// true
+// record RecordTest.WithParameters
+//     x = 1,
+//     y = 2,
+//     z = 1
+// end RecordTest.WithParameters;
+// record RecordTest.WithParameters
+//     x = 5,
+//     y = 3,
+//     z = 1
+// end RecordTest.WithParameters;
+// record RecordTest.WithParameters
+//     x = 2,
+//     y = 1,
+//     z = 1
+// end RecordTest.WithParameters;
+// record RecordTest.WithParameters
+//     x = 5,
+//     y = 3,
+//     z = 1
+// end RecordTest.WithParameters;
+// endResult

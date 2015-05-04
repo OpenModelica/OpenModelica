@@ -1,0 +1,45 @@
+// name: ListExpressions
+// keywords: list expression #2607
+// status: correct
+// 
+// Tests dumping of various expression with list, to make sure that parentheses
+// are correctly used.
+//
+
+loadString("
+  model M
+  equation
+    0 = (a - b) - (c - d);
+    0 = (a + b) + (c + d);
+    0 = a - b - c - d;
+    0 = a + b + c + d;
+    0 = (a - b) + (c - d);
+    0 = a / (b / c);
+    0 = a / b / c;
+    0 = a * (b * c);
+    0 = a * b * c;
+    0 = a * ((a * b)/(c*d));
+  end M;
+");
+getErrorString();
+
+list(M); getErrorString();
+
+// Result:
+// true
+// ""
+// "model M
+// equation
+//   0 = a - b - (c - d);
+//   0 = a + b + c + d;
+//   0 = a - b - c - d;
+//   0 = a + b + c + d;
+//   0 = a - b + c - d;
+//   0 = a / (b / c);
+//   0 = a / b / c;
+//   0 = a * (b * c);
+//   0 = a * b * c;
+//   0 = a * (a * b / (c * d));
+// end M;"
+// ""
+// endResult

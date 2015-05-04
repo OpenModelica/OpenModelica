@@ -1,0 +1,73 @@
+// name:     ModelicaTest.MultiBody.Joints.UniversalSpherical
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Joints.UniversalSpherical);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Joints.UniversalSpherical_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Joints.UniversalSpherical.mat",
+  "ModelicaTest.MultiBody.Joints.UniversalSpherical_diff.csv",0.01,0.0001,
+  {"universalSpherical.rRod_0.set[1]",
+"universalSpherical.rRod_0.set[2]",
+"bodyBox.v_0[3].bodyBox.v_0[2].bodyBox.v_0[1].bodyBox.body.w_a[1].bodyBox.body.w_a[3].bodyBox.body.w_a[2].set[1]",
+"bodyBox.v_0[3].bodyBox.v_0[2].bodyBox.v_0[1].bodyBox.body.w_a[1].bodyBox.body.w_a[3].bodyBox.body.w_a[2].set[2]",
+"bodyBox.v_0[3].bodyBox.v_0[2].bodyBox.v_0[1].bodyBox.body.w_a[1].bodyBox.body.w_a[3].bodyBox.body.w_a[2].set[3]",
+"bodyBox.v_0[3].bodyBox.v_0[2].bodyBox.v_0[1].bodyBox.body.w_a[1].bodyBox.body.w_a[3].bodyBox.body.w_a[2].set[4]",
+"bodyBox.v_0[3].bodyBox.v_0[2].bodyBox.v_0[1].bodyBox.body.w_a[1].bodyBox.body.w_a[3].bodyBox.body.w_a[2].set[5]",
+"bodyBox.body.Q.set[3]",
+"bodyBox.body.Q.set[2]",
+"bodyBox.body.Q.set[1]",
+"bodyBox1.body.Q.set[3]",
+"bodyBox1.body.Q.set[2]",
+"bodyBox1.body.Q.set[1]",
+"bodyBox2.body.Q[2].bodyBox2.body.Q[4].bodyBox2.body.Q[1].bodyBox2.body.Q[3].bodyBox2.body.frame_a.r_0[1].bodyBox2.body.frame_a.r_0[3].bodyBox2.body.frame_a.r_0[2].set[1]",
+"bodyBox2.body.Q[2].bodyBox2.body.Q[4].bodyBox2.body.Q[1].bodyBox2.body.Q[3].bodyBox2.body.frame_a.r_0[1].bodyBox2.body.frame_a.r_0[3].bodyBox2.body.frame_a.r_0[2].set[2]",
+"bodyBox2.body.Q[2].bodyBox2.body.Q[4].bodyBox2.body.Q[1].bodyBox2.body.Q[3].bodyBox2.body.frame_a.r_0[1].bodyBox2.body.frame_a.r_0[3].bodyBox2.body.frame_a.r_0[2].set[3]",
+"bodyBox2.body.Q[2].bodyBox2.body.Q[4].bodyBox2.body.Q[1].bodyBox2.body.Q[3].bodyBox2.body.frame_a.r_0[1].bodyBox2.body.frame_a.r_0[3].bodyBox2.body.frame_a.r_0[2].set[4]",
+"bodyBox2.body.Q[2].bodyBox2.body.Q[4].bodyBox2.body.Q[1].bodyBox2.body.Q[3].bodyBox2.body.frame_a.r_0[1].bodyBox2.body.frame_a.r_0[3].bodyBox2.body.frame_a.r_0[2].set[5]",
+"$_DER.bodyBox2.body.Q[3].$_DER.bodyBox2.body.Q[1].$_DER.bodyBox2.body.Q[4].$_DER.bodyBox2.body.Q[2].bodyBox2.v_0[2].bodyBox2.v_0[3].bodyBox2.v_0[1].set[1]",
+"$_DER.bodyBox2.body.Q[3].$_DER.bodyBox2.body.Q[1].$_DER.bodyBox2.body.Q[4].$_DER.bodyBox2.body.Q[2].bodyBox2.v_0[2].bodyBox2.v_0[3].bodyBox2.v_0[1].set[2]",
+"$_DER.bodyBox2.body.Q[3].$_DER.bodyBox2.body.Q[1].$_DER.bodyBox2.body.Q[4].$_DER.bodyBox2.body.Q[2].bodyBox2.v_0[2].bodyBox2.v_0[3].bodyBox2.v_0[1].set[3]",
+"$_DER.bodyBox2.body.Q[3].$_DER.bodyBox2.body.Q[1].$_DER.bodyBox2.body.Q[4].$_DER.bodyBox2.body.Q[2].bodyBox2.v_0[2].bodyBox2.v_0[3].bodyBox2.v_0[1].set[4]",
+"$_DER.bodyBox2.body.Q[3].$_DER.bodyBox2.body.Q[1].$_DER.bodyBox2.body.Q[4].$_DER.bodyBox2.body.Q[2].bodyBox2.v_0[2].bodyBox2.v_0[3].bodyBox2.v_0[1].set[5]",
+"bodyBox1.body.w_a[1]",
+"bodyBox1.body.w_a[2]",
+"bodyBox1.body.w_a[3]",
+"universal.revolute_a.R_rel.w[1]",
+"universal.revolute_a.phi",
+"universal.revolute_b.R_rel.w[2]",
+"universal.revolute_b.phi"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "",,
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Joints.UniversalSpherical\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "Simulation failed for model: ModelicaTest.MultiBody.Joints.UniversalSpherical,
+// [C:/OpenModelica1.9.0/lib/omlibrary/ModelicaTest 3.2.1/MultiBody.mo:5919:28-5919:38:writable] Warning: Non-array modification \'true\' for array component, possibly due to missing \'each\'.,
+// Warning: Alias variables bodyBox.r_0[1] = universalSpherical.rRod_0[1] have start values 0.0 != 1.0. Use value from bodyBox.r_0[1].,
+// Warning: Alias variables bodyBox.r_0[1] = universalSpherical.rRod_a[1] have start values 0.0 != 1.0. Use value from bodyBox.r_0[1].,
+// Error: Error building simulator. Buildlog: gcc   -falign-functions -msse2 -mfpmath=sse   -I\\"C:/OpenModelica1.9.0//include/omc\\" -I. -L\\"C:/OpenModelica1.9.0/lib/omlibrary/ModelicaTest 3.2.1\\"   -c -o ModelicaTest.MultiBody.Joints.UniversalSpherical.o ModelicaTest.MultiBody.Joints.UniversalSpherical.c\r,
+// \r,
+// cc1.exe: out of memory allocating 65536 bytes\r,
+// mingw32-make: *** [ModelicaTest.MultiBody.Joints.UniversalSpherical.o] Error 1\r,
+// ,
+// ",,
+// end SimulationResult;,
+// "Error Open File!",
+// '
+// endResult

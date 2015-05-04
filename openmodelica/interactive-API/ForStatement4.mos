@@ -1,0 +1,19 @@
+// name:     For-statement 4
+// keywords: for
+// status:   correct
+// 
+//  Test the interactive for-statement
+//
+a := {2,3,4,5};
+b := 0;
+for i in 1:size(a,1) loop
+  b := b + a[i];
+end for;
+b
+
+// Result:
+// {2,3,4,5}
+// 0
+// 
+// 14
+// endResult

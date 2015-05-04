@@ -1,0 +1,17 @@
+// name: ISO-8859-1
+// status: correct
+
+runScript("ISO-8859-1.mox");
+getErrorString();
+
+// Result:
+// "\"???\"
+// "
+// "[flattening/modelica/mosfiles/ISO-8859-1.mox:2:1-2:4:writable] Warning: The file was not encoded in UTF-8:
+//   "???".
+//   Defaulting to 7-bit ASCII with unknown characters replaced by '?'.
+//   To change encoding when loading a file: loadFile(encoding="ISO-XXXX-YY").
+//   To change it in a package: add a file package.encoding at the top-level.
+//   Note: The Modelica Language Specification only allows files encoded in UTF-8.
+// "
+// endResult

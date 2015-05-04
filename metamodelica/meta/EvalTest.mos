@@ -1,0 +1,7 @@
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+
+runScript("LoadCompilerSources.mos");
+getErrorString();
+
+Ceval.ceval(Env.emptyCache(),Env.newEnvironment(),DAE.ICONST(42),false,NONE(),NONE(),Ceval.MSG());
+getErrorString();

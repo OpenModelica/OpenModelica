@@ -1,0 +1,29 @@
+module Absyn:
+
+datatype BinOp = ADD | SUB | MUL | DIV
+datatype UnOp  = NEG
+datatype RelOp = LT | LE | GT | GE | NE | EQ
+
+type Ident = string
+
+datatype Expr   = INTCONST of int
+                | REALCONST of real
+                | BINARY of Expr * BinOp * Expr
+                | UNARY of UnOp * Expr
+                | RELATION of Expr * RelOp * Expr
+                | VARIABLE of Ident
+
+datatype Stmt   = ASSIGN of Ident * Expr
+                | WRITE of Expr
+                | NOOP
+                | IF of Expr * Stmt list * Stmt list
+                | WHILE of Expr * Stmt list
+
+type StmtList = Stmt list
+
+datatype Decl   = NAMEDECL of Ident * Ident
+type DeclList = Decl list
+
+datatype Prog    = PROG of DeclList * StmtList
+
+end

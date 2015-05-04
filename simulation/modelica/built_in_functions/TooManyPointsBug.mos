@@ -1,0 +1,18 @@
+// name:     Fixes for Too Many Points Bug
+// keywords: events
+// status: correct
+// teardown_command: rm -rf TooManyPointsBug_* TooManyPointsBug TooManyPointsBug.exe TooManyPointsBug.cpp TooManyPointsBug.makefile TooManyPointsBug.libs TooManyPointsBug.log output.log
+//
+// Event handling
+//
+// Test for fixes for "Too many points" bug: http://openmodelica.ida.liu.se:8080/cb/issue/111
+// 
+loadFile("TooManyPointsBug.mo");
+simulate(TooManyPointsBug, stopTime=50);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TooManyPointsBug_res.mat"
+// end SimulationResult;
+// ""
+// endResult

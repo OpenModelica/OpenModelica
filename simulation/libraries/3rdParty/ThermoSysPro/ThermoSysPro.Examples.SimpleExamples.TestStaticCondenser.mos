@@ -1,0 +1,254 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.* ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser_* ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.exe ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.cpp ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.makefile ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.libs ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.log ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.c ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser, stopTime=1000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser_res.mat",
+"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser_diff.csv",
+0.01, 0.0001,
+{"condenseur.Qee","condenseur.Qep","condenseur.Qev","condenseur.Qex","condenseur.Qse","condenseur.Qvt",
+ "condenseur.Hse","condenseur.Hvt","condenseur.Hee","condenseur.Hep","condenseur.Hev","condenseur.Hex",
+ "condenseur.Pcond"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser
+// stdout            | warning | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// Warning: Variable sourceP.P0 out of [min, max] interval: sourceP.P0 >= 100.0 and sourceP.P0 <= 1000000000.0 has value: -900000
+// Error: IF97 medium function hlowerofp1 called with too low pressure
+// p = -900000 Pa <= 611.657 Pa (triple point pressure)
+// stdout            | info    | model terminate | Simulation terminated by an assert at initialization
+// "
+// end SimulationResult;
+// "[lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/BaseIF97.mo:5761:7-5778:16:writable] Warning: found was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:1125:9-1125:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:947:9-947:28:writable] Warning: v was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:871:9-871:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:801:9-801:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Hex(start = 500000.0)
+//          Candidate condenseur.Cex.h_vol(start = 100000.0)
+//          Candidate singularPressureLoss5.C1.h_vol(start = 100000.0)
+//          Select value from condenseur.Hex(start = 500000.0)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Qex(start = 10.0)
+//          Candidate condenseur.Cex.Q(start = 500.0)
+//          Candidate singularPressureLoss5.C1.Q(start = 500.0)
+//          Candidate singularPressureLoss5.Q(start = 100.0)
+//          Candidate singularPressureLoss5.C2.Q(start = 500.0)
+//          Candidate Puit_condenseur1.C.Q(start = 500.0)
+//          Select value from condenseur.Qex(start = 10.0)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Hse(start = 500000.0)
+//          Candidate condenseur.Cse.h(start = 100000.0)
+//          Candidate singularPressureLoss4.C1.h(start = 100000.0)
+//          Candidate singularPressureLoss4.h(start = 100000.0)
+//          Candidate singularPressureLoss4.C2.h(start = 100000.0)
+//          Candidate Puit_condenseur.C.h(start = 100000.0)
+//          Select value from condenseur.Hse(start = 500000.0)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Hmv(start = 2500000.0)
+//          Candidate condenseur.Cev.h_vol(start = 100000.0)
+//          Candidate singularPressureLoss.C2.h_vol(start = 100000.0)
+//          Candidate condenseur.Cep.h_vol(start = 100000.0)
+//          Candidate singularPressureLoss1.C2.h_vol(start = 100000.0)
+//          Candidate condenseur.Cvt.h_vol(start = 100000.0)
+//          Candidate singularPressureLoss3.C2.h_vol(start = 100000.0)
+//          Select value from condenseur.Hmv(start = 2500000.0)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Hvt(start = 2500000.0)
+//          Candidate condenseur.Cvt.h(start = 100000.0)
+//          Candidate singularPressureLoss3.C2.h(start = 100000.0)
+//          Candidate singularPressureLoss3.C1.h(start = 100000.0)
+//          Candidate sourceP.C.h(start = 100000.0)
+//          Candidate singularPressureLoss3.h(start = 100000.0)
+//          Select value from condenseur.Hvt(start = 2500000.0)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Pcond(start = 2154.77)
+//          Candidate condenseur.Cvt.P(start = 100000.0)
+//          Candidate singularPressureLoss3.C2.P(start = 100000.0)
+//          Candidate condenseur.Cev.P(start = 100000.0)
+//          Candidate singularPressureLoss.C2.P(start = 100000.0)
+//          Candidate condenseur.Cep.P(start = 100000.0)
+//          Candidate singularPressureLoss1.C2.P(start = 100000.0)
+//          Select value from condenseur.Pcond(start = 2154.77)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Hee(start = 250000.0)
+//          Candidate condenseur.Cee.h(start = 100000.0)
+//          Candidate singularPressureLoss2.C2.h(start = 100000.0)
+//          Candidate singularPressureLoss2.C1.h(start = 100000.0)
+//          Candidate Source_condenseur.C.h(start = 100000.0)
+//          Candidate singularPressureLoss2.h(start = 100000.0)
+//          Select value from condenseur.Hee(start = 250000.0)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Hep(start = 1000000.0)
+//          Candidate condenseur.Cep.h(start = 100000.0)
+//          Candidate singularPressureLoss1.C2.h(start = 100000.0)
+//          Candidate singularPressureLoss1.C1.h(start = 100000.0)
+//          Candidate sourceP2.C.h(start = 100000.0)
+//          Candidate singularPressureLoss1.h(start = 100000.0)
+//          Select value from condenseur.Hep(start = 1000000.0)
+// Warning: Aliasset with several free start values
+//          Candidate condenseur.Hev(start = 2500000.0)
+//          Candidate condenseur.Cev.h(start = 100000.0)
+//          Candidate singularPressureLoss.C2.h(start = 100000.0)
+//          Candidate singularPressureLoss.C1.h(start = 100000.0)
+//          Candidate sourceP1.C.h(start = 100000.0)
+//          Candidate singularPressureLoss.h(start = 100000.0)
+//          Select value from condenseur.Hev(start = 2500000.0)
+// Warning: Trying to fix over-determined initial system Variables 150 Equations 153... [not implemented yet!]
+// Warning: System is over-determined in Equations 50: condenseur.KT1 = -849.428 + -0.05 * (-273.16 + condenseur.Tref) ^ 2.0 + 3.3 * condenseur.Tref;
+// 32: singularPressureLoss2.Pm = Source_condenseur.C.P / 2.0 + condenseur.Pee / 2.0;
+// 20: 0.0 = if condenseur.Qev > 0.0 then condenseur.Hev - sourceP1.h0 else condenseur.Hev - condenseur.Hmv;
+// 19: sourceP1.P0 - condenseur.Pcond = singularPressureLoss.deltaP;
+// 17: condenseur.Pcond = ThermoSysPro.Properties.WaterSteam.BaseIF97.Basic.psat(condenseur.Tsat);
+// 21: singularPressureLoss.deltaP = singularPressureLoss.K * ThermoSysPro.Functions.ThermoSquare(condenseur.Qev, singularPressureLoss.eps) / singularPressureLoss.rho;
+// 22: singularPressureLoss.Pm = sourceP1.P0 / 2.0 + condenseur.Pcond / 2.0;
+// 18: algorithm
+//   (ThermoSysPro.Properties.WaterSteam.Common.PropThermoSat(condenseur.lsat1.P, condenseur.lsat1.T, condenseur.lsat1.rho, condenseur.Hsate, condenseur.lsat1.cp, condenseur.lsat1.pt, condenseur.lsat1.cv), condenseur.vsat1) := ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(condenseur.Pcond);
+// ;
+// 10: condenseur.Hex = if noEvent(condenseur.rho_ex > 0.0) then condenseur.Hsate + (condenseur.Pex - condenseur.Pcond) / condenseur.rho_ex else condenseur.Hsate;
+// 9: condenseur.Hml = condenseur.Hsate / 2.0 + condenseur.Hex / 2.0;
+// 12: condenseur.XKCO = condenseur.KCO * condenseur.COP * condenseur.KT2 * ThermoSysPro.Functions.ThermoRoot(Source_condenseur.Q0 / condenseur.QC0, 0.000000000000001) / (condenseur.COPR * condenseur.KT1);
+// 5: condenseur.Pex = condenseur.Pcond + 9.80665 * condenseur.rho_ex * condenseur.z;
+// 3: condenseur.Pse = if noEvent(condenseur.rho_ee > 0.0) then condenseur.Pee - condenseur.CPCE * ThermoSysPro.Functions.ThermoSquare(Source_condenseur.Q0, condenseur.eps) / condenseur.rho_ee else condenseur.Pee;
+// 1: Puit_condenseur.pro = ThermoSysPro.Properties.WaterSteam.IF97.Water_Ph(Puit_condenseur.P0, Puit_condenseur.h, Puit_condenseur.mode);
+// 46: singularPressureLoss5.deltaP = singularPressureLoss5.K * ThermoSysPro.Functions.ThermoSquare(condenseur.Qex, singularPressureLoss5.eps) / singularPressureLoss5.rho;
+// 30: 0.0 = if Source_condenseur.Q0 > 0.0 then condenseur.Hee - Source_condenseur.h0 else condenseur.Hee - condenseur.Cee.h_vol;
+// 29: Source_condenseur.C.P - condenseur.Pee = singularPressureLoss2.deltaP;
+// 40: 0.0 = if Source_condenseur.Q0 > 0.0 then condenseur.Hse - condenseur.Cse.h_vol else condenseur.Hse - Puit_condenseur.h;
+// 31: singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(Source_condenseur.Q0, singularPressureLoss2.eps) / singularPressureLoss2.rho;
+// 8: condenseur.Hmv = (condenseur.Hvt * condenseur.Qvt + condenseur.Hev * condenseur.Qev + condenseur.Hep * condenseur.Qep) / condenseur.Qex;
+// 7: condenseur.W = condenseur.Qvt * (condenseur.Hvt - condenseur.Hsate) + condenseur.Qep * (condenseur.Hep - condenseur.Hsate) + condenseur.Qev * (condenseur.Hev - condenseur.Hsate);
+// 37: singularPressureLoss3.Pm = sourceP.P0 / 2.0 + condenseur.Pcond / 2.0;
+// 35: 0.0 = if condenseur.Qvt > 0.0 then condenseur.Hvt - sourceP.h0 else condenseur.Hvt - condenseur.Hmv;
+// 36: singularPressureLoss3.deltaP = singularPressureLoss3.K * ThermoSysPro.Functions.ThermoSquare(condenseur.Qvt, singularPressureLoss3.eps) / singularPressureLoss3.rho;
+// 41: singularPressureLoss4.deltaP = singularPressureLoss4.K * ThermoSysPro.Functions.ThermoSquare(Source_condenseur.Q0, singularPressureLoss4.eps) / singularPressureLoss4.rho;
+// 39: condenseur.Pse - Puit_condenseur.P0 = singularPressureLoss4.deltaP;
+// 33: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(singularPressureLoss2.T, singularPressureLoss2.rho, singularPressureLoss2.pro.u, singularPressureLoss2.pro.s, singularPressureLoss2.pro.cp, singularPressureLoss2.pro.ddhp, singularPressureLoss2.pro.ddph, singularPressureLoss2.pro.duph, singularPressureLoss2.pro.duhp, singularPressureLoss2.pro.x) = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, condenseur.Hee, singularPressureLoss2.mode, singularPressureLoss2.fluid);
+// 34: sourceP.P0 - condenseur.Pcond = singularPressureLoss3.deltaP;
+// 45: 0.0 = if condenseur.Qex > 0.0 then singularPressureLoss5.h - condenseur.Hex else singularPressureLoss5.h - Puit_condenseur1.h0;
+// 47: singularPressureLoss5.Pm = condenseur.Pex / 2.0 + Puit_condenseur1.C.P / 2.0;
+// 44: condenseur.Pex - Puit_condenseur1.C.P = singularPressureLoss5.deltaP;
+// 38: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(singularPressureLoss3.T, singularPressureLoss3.rho, singularPressureLoss3.pro.u, singularPressureLoss3.pro.s, singularPressureLoss3.pro.cp, singularPressureLoss3.pro.ddhp, singularPressureLoss3.pro.ddph, singularPressureLoss3.pro.duph, singularPressureLoss3.pro.duhp, singularPressureLoss3.pro.x) = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss3.Pm, condenseur.Hvt, singularPressureLoss3.mode, singularPressureLoss3.fluid);
+// 11: condenseur.KT2 = -849.428 + -0.05 * (-273.16 + condenseur.Tee) ^ 2.0 + 3.3 * condenseur.Tee;
+// 13: 0.0 = condenseur.Tsat + (-condenseur.Tse) - (condenseur.Tsat - condenseur.Tee) * exp(condenseur.XKCO * condenseur.SCO * (condenseur.Tee - condenseur.Tse) / condenseur.W);
+// 43: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(singularPressureLoss4.T, singularPressureLoss4.rho, singularPressureLoss4.pro.u, singularPressureLoss4.pro.s, singularPressureLoss4.pro.cp, singularPressureLoss4.pro.ddhp, singularPressureLoss4.pro.ddph, singularPressureLoss4.pro.duph, singularPressureLoss4.pro.duhp, singularPressureLoss4.pro.x) = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss4.Pm, condenseur.Hse, singularPressureLoss4.mode, singularPressureLoss4.fluid);
+// 15: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(condenseur.proex.T, condenseur.rho_ex, condenseur.proex.u, condenseur.proex.s, condenseur.proex.cp, condenseur.proex.ddhp, condenseur.proex.ddph, condenseur.proex.duph, condenseur.proex.duhp, condenseur.proex.x) = ThermoSysPro.Properties.WaterSteam.IF97.Water_Ph(condenseur.Pex, condenseur.Hex, condenseur.mode_ex);
+// 16: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(condenseur.Tse, condenseur.prose.d, condenseur.prose.u, condenseur.prose.s, condenseur.prose.cp, condenseur.prose.ddhp, condenseur.prose.ddph, condenseur.prose.duph, condenseur.prose.duhp, condenseur.prose.x) = ThermoSysPro.Properties.WaterSteam.IF97.Water_Ph(condenseur.Pse, condenseur.Hse, condenseur.mode_se);
+// 48: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(singularPressureLoss5.T, singularPressureLoss5.rho, singularPressureLoss5.pro.u, singularPressureLoss5.pro.s, singularPressureLoss5.pro.cp, singularPressureLoss5.pro.ddhp, singularPressureLoss5.pro.ddph, singularPressureLoss5.pro.duph, singularPressureLoss5.pro.duhp, singularPressureLoss5.pro.x) = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss5.Pm, singularPressureLoss5.h, singularPressureLoss5.mode, singularPressureLoss5.fluid);
+// 6: condenseur.Qex = condenseur.Qvt + condenseur.Qep + condenseur.Qev;
+// 2: 0.0 = if Source_condenseur.Q0 > 0.0 then condenseur.Hee - condenseur.Cee.h_vol else condenseur.Hse - condenseur.Cse.h_vol;
+// 27: singularPressureLoss1.Pm = sourceP2.P0 / 2.0 + condenseur.Pcond / 2.0;
+// 23: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(singularPressureLoss.T, singularPressureLoss.rho, singularPressureLoss.pro.u, singularPressureLoss.pro.s, singularPressureLoss.pro.cp, singularPressureLoss.pro.ddhp, singularPressureLoss.pro.ddph, singularPressureLoss.pro.duph, singularPressureLoss.pro.duhp, singularPressureLoss.pro.x) = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss.Pm, condenseur.Hev, singularPressureLoss.mode, singularPressureLoss.fluid);
+// 24: sourceP2.P0 - condenseur.Pcond = singularPressureLoss1.deltaP;
+// 25: 0.0 = if condenseur.Qep > 0.0 then condenseur.Hep - sourceP2.h0 else condenseur.Hep - condenseur.Hmv;
+// 42: singularPressureLoss4.Pm = condenseur.Pse / 2.0 + Puit_condenseur.P0 / 2.0;
+// 26: singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(condenseur.Qep, singularPressureLoss1.eps) / singularPressureLoss1.rho;
+// 14: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(condenseur.Tee, condenseur.rho_ee, condenseur.proee.u, condenseur.proee.s, condenseur.proee.cp, condenseur.proee.ddhp, condenseur.proee.ddph, condenseur.proee.duph, condenseur.proee.duhp, condenseur.proee.x) = ThermoSysPro.Properties.WaterSteam.IF97.Water_Ph(condenseur.Pee, condenseur.Hee, condenseur.mode_ee);
+// 28: ThermoSysPro.Properties.WaterSteam.Common.ThermoProperties_ph(singularPressureLoss1.T, singularPressureLoss1.rho, singularPressureLoss1.pro.u, singularPressureLoss1.pro.s, singularPressureLoss1.pro.cp, singularPressureLoss1.pro.ddhp, singularPressureLoss1.pro.ddph, singularPressureLoss1.pro.duph, singularPressureLoss1.pro.duhp, singularPressureLoss1.pro.x) = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, condenseur.Hep, singularPressureLoss1.mode, singularPressureLoss1.fluid);
+// 
+// Warning: No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.
+// "
+// {"Error opening file: ThermoSysPro.Examples.SimpleExamples.TestStaticCondenser_res.mat"}
+// endResult

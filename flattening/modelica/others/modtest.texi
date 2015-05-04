@@ -1,0 +1,915 @@
+\input texinfo   @c -*-texinfo-*-
+@c $Id: modtest.texi 13190 2012-10-05 03:56:45Z alash325 $
+@c %**start of header
+@setfilename modtest.info
+@settitle Modelica Testsuite
+@c %**end of header
+
+@c translation to HTML:
+@c   texi2html -split_node -number -menu modtest.texi
+
+@setchapternewpage odd
+@paragraphindent 0
+@iftex
+@afourpaper
+@parindent 0pt
+@parskip = @medskipamount
+@end iftex
+
+@include VERSION.texi
+@set UPDATED 16 July 1998
+@set UPDATED-MONTH July 1998
+
+@ifinfo
+This is version @value{VERSION},
+last updated @value{UPDATED},
+of @cite{the Modelica testsuite},
+version @value{VERSION}.
+
+Copyright @copyright{} 1998 Modelica Design Group
+@end ifinfo
+
+@titlepage
+@sp 10
+@comment The title is printed in a large font.
+@title Modelica Testsuite
+@subtitle Version @value{VERSION}
+@subtitle @value{UPDATED-MONTH}
+@author{Modelica Design Group}
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1998 Modelica Design Group
+@end titlepage
+
+@node    Top, Conventions, (dir), (dir)
+@comment node-name, next,          previous, up
+
+This is version @value{VERSION} of @cite{the Modelica testsuite}.
+
+This document is made to provide a collection of issues that need to be
+resolved in the Modelica design process.  It also contains the full set
+of Modelica test cases currently defined.
+
+A Modelica test case is an example Modelica model that illustrates one
+ore more semantical aspects of the Modelica language.  It serves several
+purposes, both to provide a testbed for new implementations and to make
+unresolved design issues clearer.  For testing a new implementation of
+the language, the set of test cases needs to be very large, as the
+number of semantic rules is large, and there are many ways in which they
+interact.  Only some of these test cases are interesting for the design
+process, but it seems useful to keep it as one set of test cases, and
+this discussions in this document only references a selected subset of
+the test cases.
+
+@menu
+* Conventions::                 
+* Open Issues::                 
+* Test Cases::                  Collection of files with test cases.
+
+* Change-Log::                  
+
+ --- The Detailed Node Listing ---
+
+Conventions
+
+* General Conventions::         
+* Classification::              
+* Flat Modelica::               
+
+Open Issues
+
+* Types::                       
+* Overloading and automatic type conversions::  
+* Array syntax::                
+* Parameters::                  
+* Expression Properties::       
+* Declarations::                
+* Connections::                 
+* Built-in types as connectors::  
+* Integer expressions::         
+* Redeclaration of parameter as variable::  
+* Equations::                   
+* Modifications::               
+@end menu
+
+@c ********************************************************************
+
+@comment node-name,     next,          previous, up
+@node     Conventions, Open Issues, Top, Top
+@chapter Conventions
+
+This chapter lists the conventions used in the text.
+
+@menu
+* General Conventions::         
+* Classification::              
+* Flat Modelica::               
+@end menu
+
+@node General Conventions, Classification, Conventions, Conventions
+@section General Conventions
+
+A test case is given in two formulations, first the Modelica code, and
+second a ``flat'' representation that specifies the semantics of the
+example.  Furthermore, each test case is classifies according to a
+couple of criteria.
+
+Each test case is formulated in one Modelica file, consisting of
+
+@enumerate
+@item
+A header containing some explanatory text to describe what it tests.
+@item
+A classification entry. (@xref{Classification}.)
+@item
+The Modelica code.
+@item
+A flat representation. (@xref{Flat Modelica}.)
+@end enumerate
+
+Everything except the Modelica code is given as comment in the file. No
+flat representation is given for incorrect examples.
+
+@node Classification, Flat Modelica, General Conventions, Conventions
+@section Classification
+
+Each test case contains a classification entry of the form
+
+@samp{keywords:}  @var{keyword}  [@samp{,} @var{keyword}]* @*
+@samp{status:}    @var{correctness}
+
+The @var{keyword} clauses are used to tag each test with a number of
+keywords to indicate what aspect of the semantic specification it tests.
+
+The following list contains all the keywords used.
+@var{aspect}(s):
+@table @samp
+@item algorithm
+@item array
+@item connect
+@item constant
+@item declaration
+@item equation
+@item extends
+@item function
+@item modification
+@item partial
+@item protected
+@item redeclare
+@item scoping
+@item shadow
+@item type
+@item unknown
+@end table
+
+The @var{correctness} of a test case is given as one of:
+@table @samp
+@item correct
+The example is correct.
+@item incorrect
+The example is incorrect according to the formal Modelica semantics or
+syntax.
+@item erroneous
+The example is formally correct, but it contains a modeling error that 
+should be outlined.
+
+<david: What does this really mean and why is it needed here?>
+@end table
+
+@node Flat Modelica,  , Classification, Conventions
+@section Flat Modelica
+
+The aim of the flat representation is to clearly specify the semantics
+of a test case. This is done using a low-level format. The format has the 
+same basic syntax as Modelica.
+
+The following restrictions apply:
+
+@itemize @bullet
+
+@item 
+Flat models contain only components of predefined types. Predefined
+attributes, e.g. @code{start}, @code{unit}, @code{min}, @code{max},
+@dots{} are declared as separate variables.
+
+@item 
+A flat model has one declaration section, optionally followed by an
+equation section, which is followed by zero or more algorithm
+sections.
+
+@item
+The order of equations is undefined.
+
+@item
+The order of statements in each algorithm section is kept intact, but
+the order in which the algorithm sections appear is undefined.
+
+@item
+No modifications are used, i.e. equation modifications made in the
+Modelica source code are stated in the equation section of the flat
+representation.  Redeclarations are taken care of while flattening the
+model.
+
+@item
+No connect statements are used, i.e. the corresponding connection
+equations are stated.
+
+@item
+For loops are not used in equations.  They are unrolled in the flat
+representation.
+
+@end itemize
+
+The following extensions are made:
+
+@itemize @bullet
+
+@item
+All array components are declared separately.  If the Modelica model
+contains the declaration
+
+@example
+Real x[2,3];
+@end example
+
+the flat model will contain the following declarations:
+
+@example
+Real x[1,1];
+Real x[1,2];
+Real x[1,3];
+Real x[2,1];
+Real x[2,2];
+Real x[2,3];
+@end example
+
+This means that the brackets in declaration do not denote array size, as
+they do in normal Modelica.
+
+<david: This is a consequence of how the semantic specification looks at
+the components.  Using the simple @samp{x[2,3]} could be done instead,
+as it is shorter and introduces no ambuguities.>
+
+@item
+Identifiers may contain dots @samp{.} (resulting from subcomponents in the
+originating Modelica code) and tilde signs @samp{~} (see below).
+Identifiers may also contain subscripts, as in @samp{x[1]}.  This is a
+consequence of the fact that all array components are declared separately.
+
+@item
+In order to be able to declare a local variable @var{var} of a function 
+@var{funcname}, an identifier of the form 
+@example
+@var{funcname}@samp{~}@var{n}@samp{.}@var{var}
+@end example
+with @var{n} a number is introduced. In this way calls to internal
+functions (that are defined in Modelica) can be expanded, e.g. to
+express the semantics of assigning input and output variables.
+The number @var{n} should be incremented for each call to the same
+function from the same class.
+
+<Peter: The expansion is not possible for recursive functions.>
+
+<david: This is still experimental. It might be removed.>
+
+Calls to predefined and external functions remain in the flat
+representation as they are in the Modelica code.
+
+@item
+Automatic type conversions defined in the Modelica semantics, e.g. from 
+an @code{Integer} @code{i} to @code{Real}, are stated using the target
+type name as conversion operator, i.e. @code{Real(i)}.
+
+@item
+A new postfix subscripting operator is introduced.  In the flat model,
+it is necessary to be able to subscript expression, so the syntax
+@samp{expression[x]} is allowed.  This is currently not allowed in
+Modelica.
+
+@item
+Almost no overloading of operators occus in the flat Modelica.  If a
+model contains an array multiplied by a scalar, the flat model does not
+use the multiplication sign, but an operator that is specialized for
+that particular operation.
+
+The normal integer and real arithmetic operators are still overloaded,
+but they should not, really.
+
+@item
+Due to the extensions a flat model representation is not valid
+Modelica.  Therefore, the class definition in the flat code is declared
+as @code{fclass} to differentiate it from Modelica's @code{class}.
+
+@end itemize
+
+The flat modelica grammar is probably not even context-free.
+
+@c ********************************************************************
+
+@comment node-name,     next,          previous, up
+@node    Open Issues, Test Cases, Conventions, Top
+@chapter Open Issues
+
+The issues brought up here are not yet clarified in the current
+Modelica language specification (Version 1c of the Modelica report).
+
+@menu
+* Types::                       
+* Overloading and automatic type conversions::  
+* Array syntax::                
+* Parameters::                  
+* Expression Properties::       
+* Declarations::                
+* Connections::                 
+* Built-in types as connectors::  
+* Integer expressions::         
+* Redeclaration of parameter as variable::  
+* Equations::                   
+* Modifications::               
+@end menu
+
+@c --------------------------------------------------------- 
+@node Types, Overloading and automatic type conversions, Open Issues, Open Issues
+@section Types
+
+Modelica needs a well-defined type system, with a clear notion of what a
+type actually is.
+
+@subsection Functions
+
+Functions have a type, which looks something like @code{Real => Real}
+for a function from reals to reals.  This goes for the builtin functions
+too.
+
+This causes a few problems.  For instance, the function @code{size} is
+not well-defined.  What is the type of its first argument?  There is no
+type called ``Array''.
+
+Another problem concerns array dimension sizes. Consider the following example:
+
+@example
+function f
+  input Real x[:];
+  output Real y[size(x,1)];
+algorithm
+  @dots{}
+end f;
+
+model M
+  Real a[17], b[17], c[3], d[3];
+equation
+  b = f(a);
+  c = f(a);
+  d = f(c);
+end M;
+@end example
+
+First of all, is it possible to define y in the way described above?  If
+not, how would it otherwise be defined?
+
+This defines a function that takes an input of type @code{Real[:]} and
+has an output of type @code{Real[:]}.  The size of @code{y} cannot be
+known by looking at the definition of @code{f}.
+
+This has the consequence that the expression @code{f(a)} has type
+@code{Real[:]}, which is not equivalent to either the type of @code{b}
+or @code{c}.
+
+What would be desirable is a way to determine that the type of the
+expression @code{f(a)} actually has type @code{Real[17]}.
+
+When comparing the function definition to normal class definitions, one
+thing worth noting is that in other classes, the type of components
+declared like @code{y} is determined at instantiation time.  So what if
+we say that the function @code{f} is implicitly instantiated for each
+occation it appears in the model source?
+
+This would mean that @code{f} would be instantiated three times when
+then model @code{M} is instantiated.  Think of it in this way:
+
+@example
+Model M
+  Real a[17], b[17], c[3], d[3];
+
+  f f~1 = f(x = a);
+  f f~2 = f(x = a);
+  f f~3 = f(x = c);
+equation
+  b = f~1.y;
+  c = f~2.y;
+  d = f~3.y;
+end M;
+@end example
+
+Here I instantiate the function @code{f} and call the three instances
+@code{f~1}, @code{f~2} and @code{f~3}, respectively.
+
+In the instance @code{f~1}, it would be possible to determine the size
+of @code{x} (possibly using some extra magic), and the size of @code{y}
+could be derived.  Then the type of the expressions would be fully
+known, and the translator would be able to tell that the first and third
+equations are valid, but the second is invalid.
+
+It would be nice if this could be describe in terms of normal
+instantiation, but there are a couple of issues that need to be cleared
+first.
+
+@itemize @bullet
+
+@item
+Recursive functions can not be described in this way.  But since we
+decided in Manchester that recursive functions are disallowed, this
+doesn't really matter.
+
+@item
+What is needed to determine the type of a component?  Currently, as I
+see it, the declaration of a component needs to be specified in the
+declaration.  The question is whether the declaration equation may
+affect the type of the component.
+
+I'd like to, as far as possible, treat declaration equations like any
+normal equations, meaning that @code{x} and @code{y} are treated equally
+in the example below:
+
+@example
+@dots{}
+  Real x[:] = [1,2,3];
+  Real y[:];
+equation
+  y = [1,2,3];
+@dots{}
+@end example
+
+But if it is necessary to be able to determine that the size of @code{x}
+is 3, then there is a difference between the two types of equations.
+Saying that the translator should determine also that the size of
+@code{y} is 3 does not seem reasonable.
+
+This issue does proabably relate to other things than functions also.
+
+@end itemize
+
+@c --------------------------------------------------------- 
+@node Overloading and automatic type conversions, Array syntax, Types, Open Issues
+@section Overloading and automatic type conversions
+
+Many of the operators in Modelica are overloaded on the types of its
+arguments.  The plus operator is e.g. both an integer addition operator
+and a real addition operator.  These two operations are similar, but not
+the same.  It also doubles as a string concatenation operator, which is
+a completely different operation, with other properties (it is not
+associative, for instance).  The overloading of the asterisk operator is
+even more extensive with both scalar and matrix multiplication.
+
+@subsection Defining the operators
+
+All operators need to be defined in terms of what they operate on.  A
+short table of types and operations should be sufficient.
+
+@c --------------------------------------------------------- 
+@node Array syntax, Parameters, Overloading and automatic type conversions, Open Issues
+@section Array syntax
+
+@subsection Array indexing operator
+
+Should the indexing operator @code{[]} be a real postfix operator on
+arbitrary array expressions?  Currently, the indexing is part of the
+@code{component_reference} grammar rule, which means that you can only
+index variables.
+
+
+The following is currently not allowed:
+
+@example
+x = cross(A,B)[2]
+@end example
+
+@c --------------------------------------------------------- 
+@node Parameters, Expression Properties, Array syntax, Open Issues
+@section Parameters
+
+Saying that parameter setting should be left until after compile-time
+might not be so easy.
+
+@subsection Compile-time? What compile-time?
+
+The term ``compile-time'' is used several times in the discussion about
+Modelica, but it is never clearly defined what is meant by this.
+
+@c --------------------------------------------------------- 
+@node Expression Properties, Declarations, Parameters, Open Issues
+@section Expression Properties
+
+In several places in the discussions about what may or may not appear in
+expressions there are restrictions applied in a somewhat ad-hoc manner.
+This should be cleared up and formalized.
+
+Each expression has a number of properties that can be derivd by
+analyzing its subexpressions.
+
+@itemize @bullet
+
+@item
+A type. For each kind of expression (addition, logical-and etc.) it is
+well-defined what the type of the expression is.  The only exception are
+overloaded operators, but that problem is another issue
+(@xref{Overloading and automatic type conversions}.)
+
+@item
+A ``variability'' property, which describes whether the expression is a
+constant expression or not.  This can be stratified into the levels
+constant / parameter / discrete / variable, just as components can be
+declared constant etc.
+
+@item
+A ``differentiability'' property.  I'm not so sure about what this is,
+but it seems to be needed.  For instance, the report states that the
+@code{div()} function is not differentiable.
+
+How is this property determined for function calls in the general case?
+
+@end itemize
+
+When these properties are defined, they can be used to define what may
+appear where.  Some examples:
+
+@itemize @bullet
+
+@item
+An array index must have type @code{Integer}.
+
+@item
+An array index in a @code{connect} statement must be a constant
+expression of type @code{Integer}.
+
+@item
+Expressions in equations must be differentiable.
+
+@end itemize
+
+I might be necessary to provide explicit information about the prperties
+of functions.
+
+@c --------------------------------------------------------- 
+@node Declarations, Connections, Expression Properties, Open Issues
+@section Declarations
+
+@subsection Array modifications
+
+The type system makes the test case @ref{ArrayModification7} illegal.
+This seems natural too me, but I just want to make sure that nobody
+complains about this.
+
+@subsection Array element modifications
+
+@c --------------------------------------------------------- 
+@node Connections, Built-in types as connectors, Declarations, Open Issues
+@section Connections
+
+@subsection Parameters and constants in connectors
+Should connection equations be generated for parameters and
+constants? This issue has been discussed at the 10th design meeting. But 
+no decision was made there.
+@* (@xref{ConnectTypes}.)
+
+This has been discussed at both the 12th and 13th design meetings, but
+no agreement has been reached.
+
+@c --------------------------------------------------------- 
+@node Built-in types as connectors, Integer expressions, Connections, Open Issues
+@section Built-in types as connectors
+
+Are variables of predefined types, e.g. @code{Real}, valid
+connectors? This is not specified in the Modelica 1c report.
+It is assumed to be true here.
+@* (@xref{Units1}, and @ref{Units2}.)
+
+In the Modelica 1c report, section 4.6 ``Matrices'', subsection ``Block
+Diagrams'', vectors of type @code{Real} are used as inputs and
+outputs. But no example is given in the discussion about connection of
+inputs and outputs there.
+
+This has been discussed at the 13th design meeting in Reno.
+
+@c --------------------------------------------------------- 
+@node Integer expressions, Redeclaration of parameter as variable, Built-in types as connectors, Open Issues
+@section Integer expressions
+
+Version 1c of the Modelica report, appendix B.9, introduces built-in
+functions for doing things like integer division. Most of the functions
+have return type @code{Real}. But should not the following be allowed?
+
+@example
+model Foo
+  Real a[10];
+  Real b[20];
+  Integer i;
+equation
+  for i in 2:20 loop
+    a[div(i,2)] = b[i];
+  end for;
+end Foo;
+@end example
+
+There are two problems with the current specification:
+
+@enumerate
+@item 
+Possibly not only the built-in function @code{size}, but also
+@code{div}, @code{ceil}, @code{floor}, and @code{ndims} should have
+return type @code{Integer}. If used in @code{Real} expressions, then
+the result should be converted from @code{Integer} to @code{Real}
+(as for any integer used in a real expression). 
+
+(@xref{Integer2Real}.)
+
+But this solution has another problem, which is more an implementation
+problem. The @code{Integer} type is often implemented as a limited type
+of typically 32 bits, which would mean that if you call
+ceiling(large_real_numer) you would overflow the integer type.
+
+One solution taken by some other languages (like C) is to introduce a
+double set of functions that conceptually do the same thing. On set that
+returns integers, and one that returns reals.  A ``smaller'' solution
+would be to only introduce an integer version of the @code{floor}
+function, and write @code{int_floor(div(n,m))}, but then the gain would
+be very small.
+
+@item 
+The use of the mentioned built-in functions should not only be allowed
+in @code{Boolean} equations and expressions, but also in @code{Integer}
+equations and expressions (e.g. index expressions). (See the example
+above and @ref{Expression Properties})
+@end enumerate
+
+This was discussed at the 12th design meeting.  I'm not certain of what
+was actually decided there.
+
+It was also discussed at the 13th design meeting.  The conclusion was
+that functions with integer return type were needed.
+
+@c --------------------------------------------------------- 
+@node Redeclaration of parameter as variable, Equations, Integer expressions, Open Issues
+@section Redeclaration of parameter as variable
+
+Version 1c of the Modelica report, appendix B2, section ``Redeclaration'',
+says that variability constraints may only become stronger in
+redeclarations. (@xref{DisturbedResistance2}.)
+
+It should be noted that, using inheritance, one can formulate examples
+that break the rule. Should this be valid? (@xref{DisturbedResistance3},
+@ref{DisturbedResistance4}.)
+
+This could probably be solved by modifying the subtype relation (but the
+Manchester meeting decided otherwise, for some reason).
+
+@subsection Resolutions from the Manchester meeting
+
+@itemize @bullet
+@item
+Type prefix is not part of type equivalence. 
+@item
+Multiple inheritance should be forced to be equivalent. 
+@item
+Problem with correctness of equations, for example 
+@example
+C*der(v) = i 
+der(C*v) = i 
+@end example
+@item
+Open issue! Should add constraints to extends, similar to
+redeclare. Should require that type-prefix is identical for extends.
+@end itemize
+
+@c --------------------------------------------------------- 
+@node For loops, Modifications, Redeclaration of parameter as variable, Open Issues
+@section For loops
+
+What are the restrictions on loop variables?  Can a loop variable also
+be used in equations?
+
+@c --------------------------------------------------------- 
+@node Equations, Modifications, Redeclaration of parameter as variable, Open Issues
+@section Equations
+
+@subsection Discretes and equations
+
+The test case Discrete2 (@ref{Discrete2}) depends on the expression
+properties. If it is said that equations can only contain differentiable
+expressions, then this is clearly illegal.
+
+@xref{Expression Properties}
+
+@c --------------------------------------------------------- 
+@node Modifications,  , Equations, Open Issues
+@section Modifications
+
+@subsection Modification of class definitions
+
+The Reno meeting agreed that it would no longer be allowed to modify
+class definitions in a modification list.  Does everebody agree on this?
+
+All the following sections depend on this decision.
+
+@subsection Double modifications
+
+The Manchester meeting decided that the same component may not be
+modified twice in the same modification clause, i.e. the following
+example is invalid since @code{x} is modified twice.
+
+@example
+Foobar a(x = 5, y = 3, x = 7);
+@end example
+
+The following two examples are also disallowed.
+
+@example
+Foobar(x[2:8] = [1,2,3,4,5,6,7], x[3] = 17);
+Foobar(a.x = 17, a(x = 15, y = 16);
+@end example
+
+But it is still possible to write something that could be possible to
+interpret as a double modification. The following example is taken from
+@ref{Modification6}.
+
+@example
+model M
+  model Foo
+    parameter Real q = 1.0;
+  end Foo;
+  Foo f(q=2.0);
+end M;
+ 
+model Modification6
+  M m1(Foo(q=3.0), f(q=4.0));
+  M m2(f(q=4.0), Foo(q=3.0));
+end Modification6;
+@end example
+
+Although @code{f.q} are modified twice on both the declaration of
+@code{m1} and @code{m2}, this is not disallowed, and should not be
+disallowed.  But the semantics have to be defined.  There are three
+alternatives.
+
+@enumerate
+@item
+Instance modifications take precedence over class modifications.
+@item
+Class modificaitons take precedence over class modifications.
+@item
+The textual order of the modifications determines the precedence.
+@end enumerate
+
+If we follow the guiding principle that more specific modifications take
+precedence over more general, then the first alternative should be
+chosen.  This fits well with how outer (more specific) modifications
+take precedence over inner (more general) modifications.
+
+This might seem a little more natural if we look at the following
+example.
+
+@example
+model ResistorCircuit
+  parameter Integer N
+  Reistor r[N];
+  @dots{}
+end SeralResistors;
+
+model Foo
+  ResistorCircuit rr(N = 17, Resistor(R = 1.0), r[5] = 1.0);
+end Foo;
+@end example
+
+@xref{Modification6}, @ref{Modification8}, @ref{Modification9}
+
+@subsection Class modifications should be propagated down
+
+In @ref{Modification10}, we see how a class modification is valid while
+instantiating a hierachy of submodels.  This is what class modifications
+are for, I guess.  I actually think class modification mostly are a pain
+in the butt.
+
+@subsection Class modifications on non-local classes
+
+First of all, should it be possible to modify classes defined outside
+the class being instantiated? @xref{Modification2} for an example.  I
+suppose it should be possible.
+
+But there are some interesting consequences.  In @ref{Modification11},
+we see how this leads to a situation where it is impossible to determine
+if a modification is a class modification or a component modification.
+
+@c ********************************************************************
+
+@node Test Cases, Change-Log, Open Issues, Top
+@appendix Test Cases
+
+@c
+@c generated by Makefile
+@c
+
+@include cases.texi
+
+@c
+@c end Makefile
+@c
+
+@c ======================================================================
+@node Change-Log,  , Test Cases, Top
+@appendix Change-Log
+
+@appendixsec Version 1.0-dk2 to 1.0-dk3
+
+@itemize @bullet
+
+@item
+Stopped placing each test case on its own page.  This drastically
+decreased the number of pages in the PostScript version.
+
+@end itemize
+
+@appendixsec Version 1.0-dk1 to 1.0-dk2
+
+@itemize @bullet
+
+@item
+Added @ref{Modifications}.
+
+@end itemize
+
+@appendixsec Version 1.0 to 1.0-dk1
+
+A lot of things were added and changed by David.
+
+@appendixsec Version 0.9.1 to 1.0
+
+The following changes result from the discussion at the 12th Modelica
+design meeting in Manchester. It is referred to the minutes of the
+12th Modelica design meeting.
+
+@enumerate
+@item
+New test cases, @ref{Overwriting3}, and @ref{Modification9}, according to
+N.1 and N.2, respectively, given in the minutes.
+@item
+@xref{ScopeDeclaration1}, @ref{ScopeDeclaration2}, @ref{Lookup5}: new
+header.
+@item
+@xref{Faculty1}: changed correctness to @samp{incorrect}.
+@item
+New test case, @ref{ReplaceFunction}, according to N.3 of section 2.2 ``Is
+Modelica a strict define­before­use language?'' of the minutes. 
+@item
+@xref{DeclareConstant1}, @ref{DeclareConstant3}: new header.
+@item
+@xref{ModifyConstant2}: changed correctness to @samp{correct}.
+@item
+New test cases, @ref{ModifyConstant5}, @ref{ModifyConstant6}, to check
+modification of final constants.
+@item
+@xref{ConnectTypes}: introduced connection equations for parameters and
+constants in the flat representation.
+@item
+@xref{ConnectHierarchical2}: changed correctness to @samp{correct}.
+@item
+@xref{ConnectFlowEffort}: simplified; 
+added new test case, @ref{RedeclareFlowEffort}. 
+@item
+@xref{ConstructParameters}: added keywords @samp{input} and
+@samp{output} to declarations in the flat model representation.
+
+@c @item 
+@c @xref{Overwriting1}: use term @samp{replace} instead of @samp{overwrite}.
+@item
+@xref{Real2Integer1}: changed correctness to @samp{erroneous} and corrected
+flat model representation.
+@c @item
+@c @xref{XPowers3}: The integer 'n' must be declared as constant.
+@end enumerate
+
+With these modifications most unclear issues of version 0.9.1 are
+resolved. (@xref{Open Issues}, for remaining questions.)
+
+@appendixsec Version 0.9 to 0.9.1
+
+@enumerate
+@item 
+@xref{ConditionalArrayExpression1}: corrected classification (&array).
+
+@ignore
+@item
+@xref{Connections}, @ref{ConnectTypes}: extended discussion in
+subsection ``Parameters and constants in connectors''
+(generation of assertions?).
+@item
+@xref{Connections}: new subsection ``Connections and Modifications''.
+@item
+@xref{Connections}: new subsection ``Directed connections''.
+@end ignore
+
+@end enumerate
+
+@contents
+@bye

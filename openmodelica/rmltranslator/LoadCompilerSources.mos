@@ -1,0 +1,34 @@
+setCommandLineOptions("+g=MetaModelica");
+
+LoadCompilerSourcesRes:=boolAnd(x for x in OpenModelica.Scripting.loadFile({
+  "Types.mo",
+  "Absyn.mo",
+  "../../../Compiler/Util/Error.mo",
+  "../../../Compiler/Util/ErrorExt.mo",
+  "../../../Compiler/FrontEnd/Dump.mo",
+  "../../../Compiler/Util/Print.mo",
+  "../../../Compiler/Util/Flags.mo",
+  "../../../Compiler/Global/Global.mo",
+  "../../../Compiler/Util/Config.mo",
+  "../../../Compiler/Util/Debug.mo",
+  "../../../Compiler/Util/List.mo",
+  "../../../Compiler/Util/Settings.mo",
+  "../../../Compiler/Util/Corba.mo",
+  "../../../Compiler/Util/Flags.mo",
+  "../../../Compiler/Util/Util.mo",
+  "../../../Compiler/Util/System.mo",
+  "TokenModelica.mo",
+  "LexTableModelica.mo",
+  "LexerCodeModelica.mo",
+  "LexerModelica.mo",
+  "ParseCodeModelica.mo",
+  "ParserModelica.mo",
+  "ParseTableModelica.mo",
+  "Main.mo"
+}));
+
+if not LoadCompilerSourcesRes then
+  print("Failed to load compiler sources:\n");
+  print(getErrorString());
+  exit(1);
+end if;

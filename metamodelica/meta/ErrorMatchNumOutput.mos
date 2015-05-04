@@ -1,0 +1,18 @@
+// name: ErrorMatchNumOutput
+// cflags: +g=MetaModelica
+// status: correct
+//
+// Tests the error message for imbalanced number of actual/expected output in
+// match expressions.
+
+loadFile("ErrorMatchNumOutput.mo");
+ErrorMatchNumOutput.func(1,2,3);
+getErrorString();
+// Result:
+// true
+// 
+// "[metamodelica/meta/ErrorMatchNumOutput.mo:11:3-14:12:writable] Error: Match expression has mismatched result types:
+//   (Integer, Integer)
+//   (Integer, Integer, Integer)
+// "
+// endResult

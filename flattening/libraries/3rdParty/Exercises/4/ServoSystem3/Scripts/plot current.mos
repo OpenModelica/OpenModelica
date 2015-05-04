@@ -1,0 +1,17 @@
+// Plot commands
+removePlots();
+createPlot(id = 2,
+ position = {12, 6, 728, 466},
+ y = {"servo1.motor.currentSensor.i", "servo2.motor.currentSensor.i"},
+ range = {0, 2.0, 8.0, (-1.0)},
+ autoscale = true,
+ autoerase = true,
+ autoreplot = true,
+ description = false,
+ grid = true,
+ color = true,
+ online = false,
+ filename = "Aufgabe3_2.mat",
+ leftTitleType = 1,
+ bottomTitleType = 1);
+

@@ -1,0 +1,25 @@
+// name:     ModelicaTest.MultiBody.InitializationConversion.Joints
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.InitializationConversion.Joints);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.InitializationConversion.Joints_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.InitializationConversion.Joints.mat",
+  "ModelicaTest.MultiBody.InitializationConversion.Joints_diff.csv",0.01,0.0001,
+  {"$states$"});
+
+
+// Result:
+// $simulation_output$
+// endResult

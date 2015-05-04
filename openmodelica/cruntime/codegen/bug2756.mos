@@ -1,0 +1,31 @@
+// name: bug2756.mos
+// keywords: delay
+// status: correct
+// 
+// test for #2756
+// 
+
+loadString("
+model bug2756
+  model struct
+    Real R;
+  end struct;
+
+  struct x[2];
+  Real s;
+equation
+
+algorithm
+  x[1].R := 1;
+  x[2].R := 1;
+  s := 0;
+  for i in 1:2 loop
+    s := s + x[i].R;
+  end for;
+end bug2756;
+"); getErrorString();
+
+simulate(bug2756); getErrorString();
+
+// Result:
+// endResult

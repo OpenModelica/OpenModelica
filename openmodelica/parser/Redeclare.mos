@@ -1,0 +1,16 @@
+// name: Redeclare
+// status: correct
+
+loadFile("Redeclare.mo");
+getErrorString();
+list();
+// Result:
+// true
+// ""
+// "class Redeclare
+//   redeclare function extends fn
+//   end fn;
+// 
+//   redeclare Integer i;
+// end Redeclare;"
+// endResult

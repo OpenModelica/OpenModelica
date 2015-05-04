@@ -1,0 +1,159 @@
+// name:     Modelica.Media.Examples.R134a.R134a1
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+setDebugFlags("scodeInstShortcut");
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Media.Examples.R134a.R134a1);
+compareVars :=
+{
+   "volume.medium.h",
+   "volume.medium.p",
+   "fixedMassFlowRate.port.p",
+   "ambient.port.m_flow"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// true
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Media.Examples.R134a.R134a1
+// {"volume.medium.h","volume.medium.p","fixedMassFlowRate.port.p","ambient.port.m_flow"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Media.Examples.R134a.R134a1.mat\"
+// "
+// ""
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.
+// Please use setState_dTX or setState_phX instead.!
+// Translation failed
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.phase was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.h was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.d was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [Modelica 3.2.1/Media/R134a.mo:415:15-423:21:writable] Warning: state.p was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// "true
+// "
+// ""
+// endResult

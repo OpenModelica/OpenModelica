@@ -1,0 +1,32 @@
+// name:     Polymorphic2
+// keywords: Polymorphism
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Polymorphic functions
+//
+loadFile("Polymorphic2.mo");
+getErrorString();
+list();
+// This is fine; lists are already boxed
+i:=Polymorphic.ident({1});
+i:=Polymorphic.ident(1);
+i:=Polymorphic.ident(1.5);
+i:=Polymorphic.ident("abc123");
+
+// Result:
+// true
+// ""
+// "package Polymorphic
+//   function ident<A>
+//     input A x;
+//     output A y;
+//   algorithm
+//     y := x;
+//   end ident;
+// end Polymorphic;"
+// {1}
+// 1
+// 1.5
+// "abc123"
+// endResult

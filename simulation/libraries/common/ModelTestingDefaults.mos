@@ -1,0 +1,17 @@
+echo(false);
+loadFile("../common/ModelTesting.mo");
+GC_expand_hp(500*1024*1024); // ~300 MB to load MSL, 200MB more for the smallest models to simulate
+loadModel(Modelica,{"3.2.1"}) and setCommandLineOptions("+d=nogen"); // Use and so I don't need to baseline the tests again...
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.C;
+stopTime := 0.0; // 0.0 means to read the stopTime from the experiment annotation, or use the OpenModelica default
+relTol := 0.01; // Tolerance for the simulation comparison
+absTol := 0.0001; // Tolerance for the simulation comparison
+compareVars := fill("",0); // Default compares all variables. Not recommended, but is the only reasonable default'
+referenceFile := ""; // Default reference file is ReferenceFile/modelName.mat
+modelTesting := "../common/ModelTesting.mos";
+outputFormat :="mat";
+simflags := ""; // Options sent to the simulation runtime
+timeout := 480; // 8 minutes should be enough for any model
+timeoutSim := 360; // 6 minutes should be enough for any model
+echo(true);

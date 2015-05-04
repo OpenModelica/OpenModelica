@@ -1,0 +1,539 @@
+//name:         Friction2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+// Note: I have not checked if it works correctly, just that it runs --sjoelund
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Translational.Examples.Friction,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=5);
+
+"Stop1.s:";
+val(Stop1.s,0.0);
+val(Stop1.s,0.25);
+val(Stop1.s,0.5);
+val(Stop1.s,0.75);
+val(Stop1.s,1.0);
+
+"Stop1.flange_a.s:";
+val(Stop1.flange_a.s,0.0);
+val(Stop1.flange_a.s,0.25);
+val(Stop1.flange_a.s,0.5);
+val(Stop1.flange_a.s,0.75);
+val(Stop1.flange_a.s,1.0);
+
+"Stop1.flange_a.f:";
+val(Stop1.flange_a.f,0.0);
+val(Stop1.flange_a.f,0.25);
+val(Stop1.flange_a.f,0.5);
+val(Stop1.flange_a.f,0.75);
+val(Stop1.flange_a.f,1.0);
+
+"Stop1.flange_b.s:";
+val(Stop1.flange_b.s,0.0);
+val(Stop1.flange_b.s,0.25);
+val(Stop1.flange_b.s,0.5);
+val(Stop1.flange_b.s,0.75);
+val(Stop1.flange_b.s,1.0);
+
+"Stop1.v_relfric:";
+val(Stop1.v_relfric,0.0);
+val(Stop1.v_relfric,0.25);
+val(Stop1.v_relfric,0.5);
+val(Stop1.v_relfric,0.75);
+val(Stop1.v_relfric,1.0);
+
+"Stop1.a_relfric:";
+val(Stop1.a_relfric,0.0);
+val(Stop1.a_relfric,0.25);
+val(Stop1.a_relfric,0.5);
+val(Stop1.a_relfric,0.75);
+val(Stop1.a_relfric,1.0);
+
+"Stop1.f:";
+val(Stop1.f,0.0);
+val(Stop1.f,0.25);
+val(Stop1.f,0.5);
+val(Stop1.f,0.75);
+val(Stop1.f,1.0);
+
+"Stop1.free:";
+val(Stop1.free,0.0);
+val(Stop1.free,0.25);
+val(Stop1.free,0.5);
+val(Stop1.free,0.75);
+val(Stop1.free,1.0);
+
+"Stop1.sa:";
+val(Stop1.sa,0.0);
+val(Stop1.sa,0.25);
+val(Stop1.sa,0.5);
+val(Stop1.sa,0.75);
+val(Stop1.sa,1.0);
+
+"Stop1.startForward:";
+val(Stop1.startForward,0.0);
+val(Stop1.startForward,0.25);
+val(Stop1.startForward,0.5);
+val(Stop1.startForward,0.75);
+val(Stop1.startForward,1.0);
+
+"Stop1.startBackward:";
+val(Stop1.startBackward,0.0);
+val(Stop1.startBackward,0.25);
+val(Stop1.startBackward,0.5);
+val(Stop1.startBackward,0.75);
+val(Stop1.startBackward,1.0);
+
+"Stop1.locked:";
+val(Stop1.locked,0.0);
+val(Stop1.locked,0.25);
+val(Stop1.locked,0.5);
+val(Stop1.locked,0.75);
+val(Stop1.locked,1.0);
+
+"Stop1.mode:";
+val(Stop1.mode,0.0);
+val(Stop1.mode,0.25);
+val(Stop1.mode,0.5);
+val(Stop1.mode,0.75);
+val(Stop1.mode,1.0);
+
+"Stop1.v:";
+val(Stop1.v,0.0);
+val(Stop1.v,0.25);
+val(Stop1.v,0.5);
+val(Stop1.v,0.75);
+val(Stop1.v,1.0);
+
+"Stop1.a:";
+val(Stop1.a,0.0);
+val(Stop1.a,0.25);
+val(Stop1.a,0.5);
+val(Stop1.a,0.75);
+val(Stop1.a,1.0);
+
+"Force1.flange_b.s:";
+val(Force1.flange_b.s,0.0);
+val(Force1.flange_b.s,0.25);
+val(Force1.flange_b.s,0.5);
+val(Force1.flange_b.s,0.75);
+val(Force1.flange_b.s,1.0);
+
+"Force1.flange_b.f:";
+val(Force1.flange_b.f,0.0);
+val(Force1.flange_b.f,0.25);
+val(Force1.flange_b.f,0.5);
+val(Force1.flange_b.f,0.75);
+val(Force1.flange_b.f,1.0);
+
+"Force1.f:";
+val(Force1.f,0.0);
+val(Force1.f,0.25);
+val(Force1.f,0.5);
+val(Force1.f,0.75);
+val(Force1.f,1.0);
+
+"Sine1.y:";
+val(Sine1.y,0.0);
+val(Sine1.y,0.25);
+val(Sine1.y,0.5);
+val(Sine1.y,0.75);
+val(Sine1.y,1.0);
+
+"Stop2.s:";
+val(Stop2.s,0.0);
+val(Stop2.s,0.25);
+val(Stop2.s,0.5);
+val(Stop2.s,0.75);
+val(Stop2.s,1.0);
+
+"Stop2.flange_a.s:";
+val(Stop2.flange_a.s,0.0);
+val(Stop2.flange_a.s,0.25);
+val(Stop2.flange_a.s,0.5);
+val(Stop2.flange_a.s,0.75);
+val(Stop2.flange_a.s,1.0);
+
+"Stop2.flange_a.f:";
+val(Stop2.flange_a.f,0.0);
+val(Stop2.flange_a.f,0.25);
+val(Stop2.flange_a.f,0.5);
+val(Stop2.flange_a.f,0.75);
+val(Stop2.flange_a.f,1.0);
+
+"Stop2.flange_b.s:";
+val(Stop2.flange_b.s,0.0);
+val(Stop2.flange_b.s,0.25);
+val(Stop2.flange_b.s,0.5);
+val(Stop2.flange_b.s,0.75);
+val(Stop2.flange_b.s,1.0);
+
+"Stop2.v_relfric:";
+val(Stop2.v_relfric,0.0);
+val(Stop2.v_relfric,0.25);
+val(Stop2.v_relfric,0.5);
+val(Stop2.v_relfric,0.75);
+val(Stop2.v_relfric,1.0);
+
+"Stop2.a_relfric:";
+val(Stop2.a_relfric,0.0);
+val(Stop2.a_relfric,0.25);
+val(Stop2.a_relfric,0.5);
+val(Stop2.a_relfric,0.75);
+val(Stop2.a_relfric,1.0);
+
+"Stop2.f:";
+val(Stop2.f,0.0);
+val(Stop2.f,0.25);
+val(Stop2.f,0.5);
+val(Stop2.f,0.75);
+val(Stop2.f,1.0);
+
+"Stop2.free:";
+val(Stop2.free,0.0);
+val(Stop2.free,0.25);
+val(Stop2.free,0.5);
+val(Stop2.free,0.75);
+val(Stop2.free,1.0);
+
+"Stop2.sa:";
+val(Stop2.sa,0.0);
+val(Stop2.sa,0.25);
+val(Stop2.sa,0.5);
+val(Stop2.sa,0.75);
+val(Stop2.sa,1.0);
+
+"Stop2.startForward:";
+val(Stop2.startForward,0.0);
+val(Stop2.startForward,0.25);
+val(Stop2.startForward,0.5);
+val(Stop2.startForward,0.75);
+val(Stop2.startForward,1.0);
+
+"Stop2.startBackward:";
+val(Stop2.startBackward,0.0);
+val(Stop2.startBackward,0.25);
+val(Stop2.startBackward,0.5);
+val(Stop2.startBackward,0.75);
+val(Stop2.startBackward,1.0);
+
+"Stop2.locked:";
+val(Stop2.locked,0.0);
+val(Stop2.locked,0.25);
+val(Stop2.locked,0.5);
+val(Stop2.locked,0.75);
+val(Stop2.locked,1.0);
+
+"Stop2.mode:";
+val(Stop2.mode,0.0);
+val(Stop2.mode,0.25);
+val(Stop2.mode,0.5);
+val(Stop2.mode,0.75);
+val(Stop2.mode,1.0);
+
+"Stop2.v:";
+val(Stop2.v,0.0);
+val(Stop2.v,0.25);
+val(Stop2.v,0.5);
+val(Stop2.v,0.75);
+val(Stop2.v,1.0);
+
+"Stop2.a:";
+val(Stop2.a,0.0);
+val(Stop2.a,0.25);
+val(Stop2.a,0.5);
+val(Stop2.a,0.75);
+val(Stop2.a,1.0);
+
+"Spring1.flange_a.f:";
+val(Spring1.flange_a.f,0.0);
+val(Spring1.flange_a.f,0.25);
+val(Spring1.flange_a.f,0.5);
+val(Spring1.flange_a.f,0.75);
+val(Spring1.flange_a.f,1.0);
+
+"Spring1.flange_b.s:";
+val(Spring1.flange_b.s,0.0);
+val(Spring1.flange_b.s,0.25);
+val(Spring1.flange_b.s,0.5);
+val(Spring1.flange_b.s,0.75);
+val(Spring1.flange_b.s,1.0);
+
+"Spring1.flange_b.f:";
+val(Spring1.flange_b.f,0.0);
+val(Spring1.flange_b.f,0.25);
+val(Spring1.flange_b.f,0.5);
+val(Spring1.flange_b.f,0.75);
+val(Spring1.flange_b.f,1.0);
+
+"Spring1.s_rel:";
+val(Spring1.s_rel,0.0);
+val(Spring1.s_rel,0.25);
+val(Spring1.s_rel,0.5);
+val(Spring1.s_rel,0.75);
+val(Spring1.s_rel,1.0);
+
+"Spring1.f:";
+val(Spring1.f,0.0);
+val(Spring1.f,0.25);
+val(Spring1.f,0.5);
+val(Spring1.f,0.75);
+val(Spring1.f,1.0);
+
+"Fixed1.flange_b.f:";
+val(Fixed1.flange_b.f,0.0);
+val(Fixed1.flange_b.f,0.25);
+val(Fixed1.flange_b.f,0.5);
+val(Fixed1.flange_b.f,0.75);
+val(Fixed1.flange_b.f,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Friction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Friction', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Stop1.s:"
+// 0.25
+// 0.252577864542611
+// 0.258718274334932
+// 0.673895896462117
+// 1.9742082930721
+// "Stop1.flange_a.s:"
+// -0.25
+// -0.247422135457389
+// -0.241281725665068
+// 0.173895896462117
+// 1.4742082930721
+// "Stop1.flange_a.f:"
+// 0.0
+// 9.56708580912712
+// 17.6776695296635
+// 23.0969883127821
+// 24.9999999999997
+// "Stop1.flange_b.s:"
+// 0.75
+// 0.752577864542611
+// 0.758718274334932
+// 1.17389589646212
+// 2.4742082930721
+// "Stop1.v_relfric:"
+// 0.25
+// -4.83417820106351e-06
+// 0.226612781898591
+// 3.39540190960979
+// 6.93558881909333
+// "Stop1.a_relfric:"
+// -15.25
+// 0.0
+// 6.09530919974626
+// 14.6903457545124
+// 13.0644017223666
+// "Stop1.f:"
+// 15.25
+// 9.56708580912712
+// 11.5823603299172
+// 8.4066425582697
+// 11.9355982776331
+// "Stop1.free:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop1.sa:"
+// -0.235000000000001
+// 9.56708580912712
+// 21.0953091997463
+// 29.6903457545124
+// 28.0644017223666
+// "Stop1.startForward:"
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop1.startBackward:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop1.locked:"
+// 0.0
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop1.mode:"
+// 1.0
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// "Stop1.v:"
+// 0.25
+// -4.83417820106351e-06
+// 0.226612781898591
+// 3.39540190960979
+// 6.93558881909333
+// "Stop1.a:"
+// -15.25
+// 0.0
+// 6.09530919974626
+// 14.6903457545124
+// 13.0644017223666
+// "Force1.flange_b.s:"
+// -0.25
+// -0.247422135457389
+// -0.241281725665068
+// 0.173895896462117
+// 1.4742082930721
+// "Force1.flange_b.f:"
+// -0.0
+// -9.56708580912712
+// -17.6776695296635
+// -23.0969883127821
+// -24.9999999999997
+// "Force1.f:"
+// 0.0
+// 9.56708580912712
+// 17.6776695296635
+// 23.0969883127821
+// 24.9999999999997
+// "Sine1.y:"
+// 0.0
+// 9.56708580912712
+// 17.6776695296635
+// 23.0969883127821
+// 24.9999999999997
+// "Stop2.s:"
+// 0.0
+// 0.0262978744299773
+// -0.0979110810769747
+// -0.257263720976303
+// -0.341039902580069
+// "Stop2.flange_a.s:"
+// -0.5
+// -0.473702125570023
+// -0.597911081076975
+// -0.757263720976302
+// -0.841039902580069
+// "Stop2.flange_a.f:"
+// -125.0
+// -138.148937214989
+// -76.0444594615126
+// 3.63186048815125
+// 45.5199512900345
+// "Stop2.flange_b.s:"
+// 0.5
+// 0.526297874429977
+// 0.402088918923025
+// 0.242736279023698
+// 0.158960097419931
+// "Stop2.v_relfric:"
+// -5.0
+// 0.0357620747943803
+// 3.5777742464686
+// 3.97087237230343
+// 2.27079895459627
+// "Stop2.a_relfric:"
+// -112.0
+// -145.839568264211
+// -82.6261363146191
+// -3.34078981180632
+// 40.1958705102443
+// "Stop2.f:"
+// -13.0
+// 7.69063104922241
+// 6.58167685310646
+// 6.97265029995758
+// 5.3240807797902
+// "Stop2.free:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop2.sa:"
+// -120.008
+// -137.839568264211
+// -74.6261363146191
+// 4.65921018819368
+// 48.1958705102443
+// "Stop2.startForward:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop2.startBackward:"
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop2.locked:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Stop2.mode:"
+// -1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// "Stop2.v:"
+// -5.0
+// 0.0357620747943803
+// 3.5777742464686
+// 3.97087237230343
+// 2.27079895459627
+// "Stop2.a:"
+// -112.0
+// -145.839568264211
+// -82.6261363146191
+// -3.34078981180632
+// 40.1958705102443
+// "Spring1.flange_a.f:"
+// -125.0
+// -138.148937214989
+// -76.0444594615126
+// 3.63186048815125
+// 45.5199512900345
+// "Spring1.flange_b.s:"
+// -0.5
+// -0.473702125570023
+// -0.597911081076975
+// -0.757263720976302
+// -0.841039902580069
+// "Spring1.flange_b.f:"
+// 125.0
+// 138.148937214989
+// 76.0444594615126
+// -3.63186048815125
+// -45.5199512900345
+// "Spring1.s_rel:"
+// 1.25
+// 1.27629787442998
+// 1.15208891892303
+// 0.992736279023698
+// 0.908960097419931
+// "Spring1.f:"
+// 125.0
+// 138.148937214989
+// 76.0444594615126
+// -3.63186048815125
+// -45.5199512900345
+// "Fixed1.flange_b.f:"
+// 125.0
+// 138.148937214989
+// 76.0444594615126
+// -3.63186048815125
+// -45.5199512900345
+// endResult

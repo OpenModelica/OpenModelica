@@ -1,0 +1,3 @@
+loadModel(Modelica,{"3.2"});getErrorString();
+checkModel(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler);getErrorString();
+

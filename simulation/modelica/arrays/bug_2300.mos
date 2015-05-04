@@ -1,0 +1,49 @@
+// name: bug_2300
+// keywords: empty array
+// status: correct
+// teardown_command: -rf bug_2300_* _bug_2300_* output.log
+// 
+//  Simulate model with array equations
+//
+
+loadString("
+model bug_2300_a \"emptyArray1\"
+  parameter Integer N = 0;
+  Real r1[N];
+  Real r2[N];
+equation 
+  r1 = fill(1.0, N);
+equation
+  r2 = r1;
+end bug_2300_a;
+
+model bug_2300_b \"emptyArray2\"
+  parameter Integer N = 0;
+  Real r1[N];
+  Real r2[N];
+equation 
+  r1 = fill(1.0, N);
+algorithm 
+  r2 :=r1;
+end bug_2300_b;
+"); getErrorString();
+
+simulate(bug_2300_a); getErrorString();
+simulate(bug_2300_b); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bug_2300_a_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'bug_2300_a', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "bug_2300_b_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'bug_2300_b', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

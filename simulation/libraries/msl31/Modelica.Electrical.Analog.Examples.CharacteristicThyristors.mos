@@ -1,0 +1,45 @@
+// name:     Modelica.Electrical.Analog.Examples.CharacteristicThyristors
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+setTearingMethod("omcTearing");
+
+simulate(Modelica.Electrical.Analog.Examples.CharacteristicThyristors);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CharacteristicThyristors_res.mat",
+  "ReferenceFiles/Modelica.Electrical.Analog.Examples.CharacteristicThyristors.mat","Modelica.Electrical.Analog.Examples.CharacteristicThyristors_diff.csv",0.01,0.00001,
+  {"IdealThyristor1.v",
+  "IdealThyristor1.LossPower",
+  "SineVoltage1.p.v",
+  "SineVoltage1.p.i",
+  "Ground1.p.i",
+  "R3.p.v",
+  "R3.n.i",
+  "R3.LossPower",
+  "IdealGTOThyristor1.v",
+  "IdealGTOThyristor1.LossPower",
+  "R1.p.v",
+  "R1.n.i",
+  "R1.LossPower",
+  "SineVoltage1.n.v",
+  "Ground1.p.v",
+  "R3.n.v",
+  "R1.n.v",
+  "R1.R_actual",
+  "R3.R_actual"});
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.CharacteristicThyristors_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CharacteristicThyristors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

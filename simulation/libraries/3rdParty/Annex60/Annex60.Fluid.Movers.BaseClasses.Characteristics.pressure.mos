@@ -1,0 +1,11 @@
+// status: correct
+
+loadFile("Annex60.Fluid.Movers.BaseClasses.Characteristics.pressure.mo");getErrorString();
+generateCode(Annex60.Fluid.Movers.BaseClasses.Characteristics.pressure);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// endResult

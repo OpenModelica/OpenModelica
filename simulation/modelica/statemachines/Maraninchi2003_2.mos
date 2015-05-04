@@ -1,0 +1,24 @@
+// name:     Maraninchi2003_2
+// keywords: state machines
+// status: correct
+//
+
+loadFile("Maraninchi2003_2.mo");
+simulate(Maraninchi2003_2, startTime=0, stopTime=20, numberOfIntervals=0); getErrorString();
+val(x,20.0);
+val(y,20.0);
+val(z,20.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Maraninchi2003_2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Maraninchi2003_2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 21
+// 1
+// 101
+// endResult

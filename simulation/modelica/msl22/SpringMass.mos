@@ -1,0 +1,28 @@
+// name:     SpringMass
+// keywords: Simulate, readSimulationData
+// status:   correct
+// teardown_command: rm -f TestModels.BlockModels* output.log
+// 
+//  Simulate systems of blocks 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// SpringMass
+simulate(TestModels.BlockModels.SystemTests.SpringMass, tolerance=1e-5, numberOfIntervals=100);
+{val(gain3.y,0.0),val(gain3.y,0.2),val(gain3.y,0.4),
+val(gain3.y,0.6),val(gain3.y,0.8),val(gain3.y,1.0)};
+{val(integrator2.y,0.0),val(integrator2.y,0.2),val(integrator2.y,0.4),
+val(integrator2.y,0.6),val(integrator2.y,0.8),val(integrator2.y,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SystemTests.SpringMass_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.SpringMass', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,0.8414793479184145,0.3048527978963293,-0.8572429443349026,-1.022451546736079,0.05772648382234567}
+// {0.0,0.007347530062203956,0.04336646990924874,0.08931798017783553,0.1045795098083788,0.08343569733154958}
+// endResult

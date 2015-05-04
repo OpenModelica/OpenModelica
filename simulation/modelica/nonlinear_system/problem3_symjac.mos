@@ -1,0 +1,32 @@
+// name: problem3 [symjac]
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem3* _nonlinear_system.problem3* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=noTearing"); getErrorString();
+OpenModelica.Scripting.setCommandLineOptions("+d=NLSanalyticJacobian"); getErrorString();
+simulate(nonlinear_system.problem3, stopTime=0); getErrorString();
+
+val(x[1],{0.0});
+val(x[2],{0.0});
+val(x[3],{0.0});
+val(x[4],{0.0});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {-0.000000000000000003473378195646031}
+// {0.0000000000000000003473378195646031}
+// {-0.0000000000000000010271021876359164}
+// {-0.0000000000000000010271021876359164}
+// endResult

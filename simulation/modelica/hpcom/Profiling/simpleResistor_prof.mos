@@ -1,0 +1,6 @@
+// name:      SimpleResistor
+// keywords:  hpcom
+// Simulation to create the _prof.xml-File.
+
+loadFile("../SimpleResistor.mo"); getErrorString();
+simulate(SimpleResistor, measureTime=true, simflags="-clock=CYC");getErrorString();

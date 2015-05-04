@@ -1,0 +1,50 @@
+// name:     Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls);
+compareVars :=
+{
+   "volume.medium.Xi[1]",
+   "volume.medium.T",
+   "volume.mC[1]",
+   "ductOut.mCs_scaled[1,1]",
+   "ductOut.mCs_scaled[2,1]",
+   "ductOut.mediums[1].Xi[1]",
+   "ductOut.mediums[1].T",
+   "ductOut.mediums[2].Xi[1]",
+   "ductOut.mediums[2].T",
+   "PID.I.y",
+   "ductIn.mCs_scaled[1,1]",
+   "ductIn.mCs_scaled[2,1]",
+   "ductIn.mediums[1].p",
+   "ductIn.mediums[1].Xi[1]",
+   "ductIn.mediums[1].T",
+   "ductIn.mediums[2].p",
+   "ductIn.mediums[2].Xi[1]",
+   "ductIn.mediums[2].T"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls
+// {"volume.medium.Xi[1]","volume.medium.T","volume.mC[1]","ductOut.mCs_scaled[1,1]","ductOut.mCs_scaled[2,1]","ductOut.mediums[1].Xi[1]","ductOut.mediums[1].T","ductOut.mediums[2].Xi[1]","ductOut.mediums[2].T","PID.I.y","ductIn.mCs_scaled[1,1]","ductIn.mCs_scaled[2,1]","ductIn.mediums[1].p","ductIn.mediums[1].Xi[1]","ductIn.mediums[1].T","ductIn.mediums[2].p","ductIn.mediums[2].Xi[1]","ductIn.mediums[2].T"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls.mat\"
+// "
+// ""
+// Alarm clock// endResult

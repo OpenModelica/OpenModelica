@@ -1,0 +1,25 @@
+// name:     LookupPackageFail
+// keywords: scoping, lookup, bug1165
+// status:   correct
+// 
+// Checks that lookup fails to find P.B from A, since it is only allowed to look
+// in the inner P package and not the outer.
+// 
+
+loadFile("LookupPackageFail.mo");
+instantiateModel(P.A);
+getErrorString();
+checkModel(P.A);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "[flattening/modelica/mosfiles/LookupPackageFail.mo:11:5-11:10:writable] Error: Class P.B not found in scope P.A.
+// Error: Error occurred while flattening model P.A
+// "
+// ""
+// "[flattening/modelica/mosfiles/LookupPackageFail.mo:11:5-11:10:writable] Error: Class P.B not found in scope P.A.
+// Error: Error occurred while flattening model P.A
+// "
+// endResult

@@ -1,0 +1,80 @@
+// name:      ElectricalCircuit5
+// keywords:  resolveLoops
+// status:    correct
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+loadFile("ElectricalCircuit5.mo"); getErrorString();
+setDebugFlags("backenddaeinfo,resolveLoops,stateselection"); getErrorString();
+simulate(ElectricalCircuit5); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit5_res.mat",
+  "ReferenceFiles/ElectricalCircuit5.mat",
+  "ElectricalCircuit5_diff.csv",0.01,0.0001,
+  {"C1.v",
+   "R1.v",
+   "R2.v",
+   "R.v",
+   "C1.i",
+   "R1.i",
+   "R2.i",
+   "R.i"});
+   
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ElectricalCircuit5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ElectricalCircuit5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
+// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 41
+//  * Number of variables: 41
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 1 (C1.v)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (7):
+//  * Single equations (assignments): 6
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {1 2}
+//  * Non-linear torn systems: 0
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 3
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (18):
+//  * Single equations (assignments): 17
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {1 2}
+//  * Non-linear torn systems: 0
+// "
+// {"Files Equal!"}
+// endResult

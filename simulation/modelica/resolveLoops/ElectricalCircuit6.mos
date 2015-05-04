@@ -1,0 +1,76 @@
+// name:      ElectricalCircuit6
+// keywords:  resolveLoops
+// status:    correct
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+loadFile("ElectricalCircuit6.mo"); getErrorString();
+setDebugFlags("backenddaeinfo,resolveLoops,stateselection"); getErrorString();
+simulate(ElectricalCircuit6); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.mat",
+  "ReferenceFiles/ElectricalCircuit6.mat",
+  "ElectricalCircuit6_diff.csv",0.01,0.0001,
+  {"c4.v",
+  "c1.v"});
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ElectricalCircuit6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ElectricalCircuit6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
+// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 171
+//  * Number of variables: 171
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 6 (c1.v,c2.v,c3.v,c4.v,c5.v,c6.v)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (39):
+//  * Single equations (assignments): 32
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 7
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 7 {1 10,1 2,1 2,1 2,1 2,1 2,1 2}
+//  * Non-linear torn systems: 0
+// [Modelica 3.2.1/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter sineVoltage.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter sineVoltage.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 2
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (79):
+//  * Single equations (assignments): 72
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 7
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 7 {1 10,1 2,1 2,1 2,1 2,1 2,1 2}
+//  * Non-linear torn systems: 0
+// "
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,49 @@
+// name:     Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.lib BouncingBall.so Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.makefile Modelica_from_nxy_*
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica);
+translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum);
+getErrorString();
+importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu", loglevel=0);
+getErrorString();
+loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo");
+getErrorString();
+simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU,stopTime=3.0);
+
+val(revolute1_phi, 0);
+val(revolute1_phi, 1);
+val(revolute1_phi, 2);
+val(revolute1_phi, 3);
+
+val(revolute2_phi, 0);
+val(revolute2_phi, 1);
+val(revolute2_phi, 2);
+val(revolute2_phi, 3);
+
+// Result:
+// true
+// "SimCode: The model Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum has been translated to FMU"
+// ""
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// -2.9151134877484743
+// -0.036932304869208676
+// -2.315833281802642
+// 0.0
+// -0.5164246962637027
+// -0.9041244419923411
+// -1.7364994721877753
+// endResult

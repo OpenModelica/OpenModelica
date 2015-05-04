@@ -1,0 +1,46 @@
+// name:     ModelicaTest.MultiBody.Forces.SpringDamperSeries
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Forces.SpringDamperSeries);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Forces.SpringDamperSeries_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Forces.SpringDamperSeries.mat",
+  "ModelicaTest.MultiBody.Forces.SpringDamperSeries_diff.csv",0.01,0.0001,
+  {"sps1.s_damper",
+"pointMass.r_0[1]",
+"pointMass.r_0[2]",
+"pointMass.r_0[3]",
+"pointMass.v_0[1]",
+"pointMass.v_0[2]",
+"pointMass.v_0[3]"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "",,
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Forces.SpringDamperSeries\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "Simulation execution failed for model: ModelicaTest.MultiBody.Forces.SpringDamperSeries,
+// stdout        | warning | division by zero in partial equation: universal1.revolute_b.constantTorque.tau_constant / prismatic1.s because prismatic1.s == 0: File: C:/OpenModelica1.9.0/lib/omlibrary/Modelica 3.2.1/Mechanics/MultiBody/Joints.mo Line: 92\r,
+// stdout        | warning | at Time=0.000000\r,
+// stdout        | warning | [line] 4370 | [file] ModelicaTest.MultiBody.Forces.SpringDamperSeries.c\r,
+//               | assert  | division by zero\r,
+// ",,
+// end SimulationResult;,
+// "Error Open File!",
+// '
+// endResult

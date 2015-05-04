@@ -1,0 +1,125 @@
+// name: SimCodeTest
+// cflags: +g=MetaModelica
+// status: correct
+// setup_command: rm -f SimCodeC_abc.c SimCodeC_abc.h SimCodeC_abc.makefile
+
+runScript("LoadCompilerSources.mos"); getErrorString();
+loadFile("SimCodeTest.mo");getErrorString();
+setCommandLineOptions("+d=rml");
+
+SimCodeTest.test(); getErrorString();
+
+readFile("SimCodeC_abc.h");
+readFile("SimCodeC_abc.c");
+// Do not read the makefile; it's different depending on the OS
+// readFile("SimCodeC_abc.makefile");
+
+// Result:
+// "
+// "
+// ""
+// true
+// ""
+// true
+//
+// ""
+// "#ifndef SimCodeC_abc__H
+// #define SimCodeC_abc__H
+// #include \"meta/meta_modelica.h\"
+// #include \"util/modelica.h\"
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <errno.h>
+//
+// #ifdef __cplusplus
+// extern \"C\" {
+// #endif
+//
+//
+// DLLExport
+// void omc_SimCodeC_abc(threadData_t *threadData);
+// #define boxptr_SimCodeC_abc omc_SimCodeC_abc
+// static const MMC_DEFSTRUCTLIT(boxvar_lit_SimCodeC_abc,2,0) {(void*) boxptr_SimCodeC_abc,0}};
+// #define boxvar_SimCodeC_abc MMC_REFSTRUCTLIT(boxvar_lit_SimCodeC_abc)
+//
+//
+// #ifdef __cplusplus
+// }
+// #endif
+// #endif
+// "
+// "#include \"SimCodeC_abc.h\"
+// #include \"util/modelica.h\"
+//
+// #include \"SimCodeC_abc_includes.h\"
+//
+//
+// void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
+// void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+// void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
+// void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
+//
+// DLLExport
+// void omc_SimCodeC_abc(threadData_t *threadData)
+// {
+//   _tailrecursive: OMC_LABEL_UNUSED
+//   _return: OMC_LABEL_UNUSED
+//   return;
+// }
+// DLLExport
+// int in_SimCodeC_abc(threadData_t *threadData, type_description * inArgs, type_description * outVar)
+// {
+//   //if (!mmc_GC_state) mmc_GC_init();
+//   MMC_TRY_TOP_INTERNAL()
+//   omc_SimCodeC_abc(threadData);
+//   MMC_CATCH_TOP(return 1)
+//   write_noretcall(outVar);
+//   fflush(NULL);
+//   return 0;
+// }
+// #ifdef GENERATE_MAIN_EXECUTABLE
+// static int rml_execution_failed()
+// {
+//   fflush(NULL);
+//   fprintf(stderr, \"Execution failed!\\n\");
+//   fflush(NULL);
+//   return 1;
+// }
+//
+// int main(int argc, char **argv) {
+//   MMC_INIT();
+//   {
+//   void *lst = mmc_mk_nil();
+//   int i = 0;
+//
+//   for (i=argc-1; i>0; i--) {
+//     lst = mmc_mk_cons(mmc_mk_scon(argv[i]), lst);
+//   }
+//
+//   {
+//     MMC_TRY_TOP()
+//   
+//     MMC_TRY_STACK()
+//   
+//     omc_SimCodeC_abc(threadData, lst);
+//     
+//     MMC_ELSE()
+//     rml_execution_failed();
+//     fprintf(stderr, \"Stack overflow detected and was not caught.\\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\\n    Include the following trace:\\n\");
+//     printStacktraceMessages();
+//     fflush(NULL);
+//     return 1;
+//     MMC_CATCH_STACK()
+//     
+//     MMC_CATCH_TOP(return rml_execution_failed());
+//   }
+//   }
+//   
+//   fflush(NULL);
+//   EXIT(0);
+//   return 0;
+// }
+// #endif
+//
+// "
+// endResult

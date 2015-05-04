@@ -1,0 +1,2 @@
+checkModel("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler"); 
+exit();

@@ -1,0 +1,32 @@
+// name:     WeakAxis
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.Professional.WeakAxis* output.log
+// 
+//  Simulate Rotational Systems
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// Professional.WeakAxis
+simulate(TestModels.Professional.WeakAxis,stopTime=200.0,tolerance=1e-10);
+{val(inertia1.w,0.0),val(inertia1.w,50.0),val(inertia1.w,100.0),
+val(inertia1.w,120.0),val(inertia1.w,180.0),val(inertia1.w,200.0)};
+{val(inertia2.w,0.0),val(inertia2.w,50.0),val(inertia2.w,100.0),
+val(inertia2.w,120.0),val(inertia2.w,180.0),val(inertia2.w,200.0)};
+{val(inertia3.w,0.0),val(inertia3.w,50.0),val(inertia3.w,100.0),
+val(inertia3.w,120.0),val(inertia3.w,180.0),val(inertia3.w,200.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.Professional.WeakAxis_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'TestModels.Professional.WeakAxis', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,1.5535101878682587,0.9639949267821457,1.4956005375165216,0.17906280244203304,-0.21727835836703868}
+// {0.0,0.7956869177045428,0.7878596240496889,0.8135256700287199,0.5960005180148126,0.5337018110616497}
+// {0.0,-0.34919710556999006,0.24814544917099107,-0.3091262075424245,1.224936679545978,1.6835765473082118}
+// endResult

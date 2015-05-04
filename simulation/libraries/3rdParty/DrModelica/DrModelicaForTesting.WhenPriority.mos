@@ -1,0 +1,32 @@
+// name:     DrModelicaForTesting.WhenPriority.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.WhenPriority
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.WhenPriority.* DrModelicaForTesting.WhenPriority_* DrModelicaForTesting.WhenPriority DrModelicaForTesting.WhenPriority.exe DrModelicaForTesting.WhenPriority.cpp DrModelicaForTesting.WhenPriority.makefile DrModelicaForTesting.WhenPriority.libs DrModelicaForTesting.WhenPriority.log DrModelicaForTesting.WhenPriority.c DrModelicaForTesting.WhenPriority.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+simulate(DrModelicaForTesting.WhenPriority, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.WhenPriority_res.mat",
+  "ReferenceFiles/WhenPriority_ref.mat","DrModelicaForTesting.WhenPriority_diff.csv",0.01,0.013,
+  {"x","close"});
+ 
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.WhenPriority_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WhenPriority', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// {"Files Equal!"}
+// endResult

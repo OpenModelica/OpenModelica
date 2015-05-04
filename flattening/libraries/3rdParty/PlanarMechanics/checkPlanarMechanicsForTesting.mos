@@ -1,0 +1,105 @@
+// name: PlanarMechanicsForTesting.Examples.* [checkModel]
+// status: correct
+// provided by Dirk Zimmer with changes from Francesco Casella
+//
+
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+checkModel(PlanarMechanicsForTesting.Examples.FreeBody); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.Pendulum); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.DoublePendulum); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.CounterSpin); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.CraneCrab); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.ControlledCraneCrab); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.InvertedCraneCrab); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.WheelBasedCranCrab); getErrorString();
+
+checkModel(PlanarMechanicsForTesting.Examples.PistonEngine); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection); getErrorString();
+
+checkModel(PlanarMechanicsForTesting.Examples.KinematicLoop); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection); getErrorString();
+
+checkModel(PlanarMechanicsForTesting.Examples.TestIdealWheel); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.TestDryFrictionWheel); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.TestSlipBasedWheel); getErrorString();
+
+checkModel(PlanarMechanicsForTesting.Examples.SingleTrackWithEngine); getErrorString();
+checkModel(PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.FreeBody completed successfully.
+// Class PlanarMechanicsForTesting.Examples.FreeBody has 73 equation(s) and 73 variable(s).
+// 47 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.Pendulum completed successfully.
+// Class PlanarMechanicsForTesting.Examples.Pendulum has 227 equation(s) and 227 variable(s).
+// 142 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.DoublePendulum completed successfully.
+// Class PlanarMechanicsForTesting.Examples.DoublePendulum has 448 equation(s) and 448 variable(s).
+// 275 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.CounterSpin completed successfully.
+// Class PlanarMechanicsForTesting.Examples.CounterSpin has 199 equation(s) and 199 variable(s).
+// 94 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.CraneCrab completed successfully.
+// Class PlanarMechanicsForTesting.Examples.CraneCrab has 401 equation(s) and 401 variable(s).
+// 236 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.ControlledCraneCrab completed successfully.
+// Class PlanarMechanicsForTesting.Examples.ControlledCraneCrab has 408 equation(s) and 408 variable(s).
+// 249 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.InvertedCraneCrab completed successfully.
+// Class PlanarMechanicsForTesting.Examples.InvertedCraneCrab has 400 equation(s) and 400 variable(s).
+// 246 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.WheelBasedCranCrab completed successfully.
+// Class PlanarMechanicsForTesting.Examples.WheelBasedCranCrab has 475 equation(s) and 475 variable(s).
+// 260 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.PistonEngine completed successfully.
+// Class PlanarMechanicsForTesting.Examples.PistonEngine has 608 equation(s) and 608 variable(s).
+// 370 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection completed successfully.
+// Class PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection has 608 equation(s) and 608 variable(s).
+// 370 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.KinematicLoop completed successfully.
+// Class PlanarMechanicsForTesting.Examples.KinematicLoop has 688 equation(s) and 688 variable(s).
+// 415 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection completed successfully.
+// Class PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection has 688 equation(s) and 688 variable(s).
+// 415 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.TestIdealWheel completed successfully.
+// Class PlanarMechanicsForTesting.Examples.TestIdealWheel has 436 equation(s) and 436 variable(s).
+// 227 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.TestDryFrictionWheel completed successfully.
+// Class PlanarMechanicsForTesting.Examples.TestDryFrictionWheel has 441 equation(s) and 441 variable(s).
+// 227 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.TestSlipBasedWheel completed successfully.
+// Class PlanarMechanicsForTesting.Examples.TestSlipBasedWheel has 446 equation(s) and 446 variable(s).
+// 229 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.SingleTrackWithEngine completed successfully.
+// Class PlanarMechanicsForTesting.Examples.SingleTrackWithEngine has 756 equation(s) and 756 variable(s).
+// 371 of these are trivial equation(s)."
+// ""
+// "Check of PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear completed successfully.
+// Class PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear has 1730 equation(s) and 1730 variable(s).
+// 847 of these are trivial equation(s)."
+// ""
+// endResult

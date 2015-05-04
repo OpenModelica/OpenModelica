@@ -1,0 +1,31 @@
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+loadFile("Types.mo");
+loadFile("Absyn.mo");
+
+//loadFile("../../../Compiler/FrontEnd/Absyn.mo");
+loadFile("../../../Compiler/Util/Error.mo");
+loadFile("../../../Compiler/Util/ErrorExt.mo");  
+loadFile("../../../Compiler/FrontEnd/Dump.mo");
+loadFile("../../../Compiler/Util/Print.mo");
+loadFile("../../../Compiler/Util/Flags.mo");
+loadFile("../../../Compiler/Global/Global.mo");
+loadFile("../../../Compiler/Util/Config.mo");
+loadFile("../../../Compiler/Util/Debug.mo");
+loadFile("../../../Compiler/Util/List.mo");
+loadFile("../../../Compiler/Util/Settings.mo");
+loadFile("../../../Compiler/Util/Corba.mo");
+loadFile("../../../Compiler/Util/Util.mo");
+loadFile("../../../Compiler/Util/System.mo");
+loadFile("TokenModelica.mo");
+loadFile("LexTableModelica.mo");
+loadFile("LexerCodeModelica.mo");
+loadFile("LexerModelica.mo");
+loadFile("ParseCodeModelica.mo");
+loadFile("ParserModelica.mo");
+loadFile("ParseTableModelica.mo");
+loadFile("Main.mo");
+getErrorString();
+
+setCFlags(getCFlags() + " -O2 -g -DGENERATE_MAIN_EXECUTABLE "); getErrorString();
+generateCode(Main.main); getErrorString();
+generateEntryPoint("modelicaParserMain.c",Main.main);

@@ -1,0 +1,42 @@
+// name:     Modelica.Electrical.Digital.Examples.Counter3
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.Counter3);
+compareVars :=
+{
+   "Enable.y",
+   "Clock.y",
+   "Counter.q0",
+   "Counter.q1",
+   "Counter.q2",
+   "Counter.count"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Digital.Examples.Counter3
+// {"Enable.y","Clock.y","Counter.q0","Counter.q1","Counter.q2","Counter.count"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.Counter3.mat\"
+// "
+// ""
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

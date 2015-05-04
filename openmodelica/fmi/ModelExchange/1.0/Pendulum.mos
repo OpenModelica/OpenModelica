@@ -1,0 +1,67 @@
+// name:     PendulumFMU
+// keywords: fmi export import
+// status: correct
+// teardown_command: rm -rf Pendulum.c Pendulum Pendulum.exe Pendulum.libs Pendulum.lib Pendulum.fmu Pendulum.log Pendulum.makefile Pendulum_*.*
+//
+// 
+// Tests handling of Dynamic State Selection in FMU
+//
+
+loadFile("Pendulum.mo");
+translateModelFMU(Pendulum);
+getErrorString();
+importFMU("Pendulum.fmu");
+getErrorString();
+loadFile("Pendulum_me_FMU.mo");
+getErrorString();
+
+simulate(Pendulum_me_FMU,numberOfIntervals=300,stopTime=5.0, tolerance=1e-10);
+val(x,1.0);
+val(x,2.0);
+val(x,3.0);
+
+val(y,1.0);
+val(y,2.0);
+val(y,3.0);
+
+simulate(Pendulum,numberOfIntervals=300,stopTime=5.0, tolerance=1e-10);
+val(x,1.0);
+val(x,2.0);
+val(x,3.0);
+
+val(y,1.0);
+val(y,2.0);
+val(y,3.0);
+
+// Result:
+// true
+// "SimCode: The model Pendulum has been translated to FMU"
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// "Pendulum_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Pendulum_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// -0.9864424192997117
+// 0.7957014309231344
+// -0.1832577793297567
+// -0.1641077493786685
+// -0.6056890562218178
+// -0.9830648942542533
+// record SimulationResult
+//     resultFile = "Pendulum_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// -0.9864424195145788
+// 0.7957014346590825
+// -0.183257778899135
+// -0.1641077480871141
+// -0.6056890513138551
+// -0.9830648943345275
+// endResult

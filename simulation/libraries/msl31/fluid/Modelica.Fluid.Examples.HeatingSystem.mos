@@ -1,0 +1,70 @@
+//name:        Modelica.Fluid.Examples.HeatingSystem [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+
+simulate(Modelica.Fluid.Examples.HeatingSystem); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 6000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.HeatingSystem', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.HeatingSystem
+// Error: Too many equations, overdetermined system. The model has 579 equation(s) and 573 variable(s)
+// Warning: Alias variables tank.medium.p = tank.medium.sat.psat have start values tank.p_start != 100000.0. Use value from tank.medium.p.
+// Warning: Alias variables tank.medium.p = tank.medium.state.p have start values tank.p_start != 100000.0. Use value from tank.medium.p.
+// Warning: Alias variables tank.medium.T = tank.medium.state.T have start values tank.T_start != 300.0. Use value from tank.medium.T.
+// Warning: Alias variables tank.medium.T = tank.heatTransfer.states[1].T have start values tank.T_start != 300.0. Use value from tank.medium.T.
+// Warning: Alias variables tank.medium.p = tank.heatTransfer.states[1].p have start values tank.p_start != 100000.0. Use value from tank.medium.p.
+// Warning: Alias variables pump.medium.p = pump.medium.sat.psat have start values pump.p_start != 100000.0. Use value from pump.medium.p.
+// Warning: Alias variables pump.medium.p = pump.medium.state.p have start values pump.p_start != 100000.0. Use value from pump.medium.p.
+// Warning: Alias variables pump.medium.T = pump.medium.state.T have start values pump.T_start != 300.0. Use value from pump.medium.T.
+// Warning: Alias variables pump.medium.p = pump.port_b.p have start values pump.p_start != pump.p_b_start. Use value from pump.medium.p.
+// Warning: Alias variables heater.mediums[1].p = heater.mediums[1].sat.psat have start values heater.ps_start[1] != 100000.0. Use value from heater.mediums[1].p.
+// Warning: Alias variables heater.mediums[1].p = heater.mediums[1].state.p have start values heater.ps_start[1] != 100000.0. Use value from heater.mediums[1].p.
+// Warning: Alias variables heater.mediums[1].T = heater.mediums[1].state.T have start values 353.15 != 300.0. Use value from heater.mediums[1].T.
+// Warning: Alias variables heater.mediums[1].T = heater.heatTransfer.states[1].T have start values 353.15 != 300.0. Use value from heater.mediums[1].T.
+// Warning: Alias variables heater.mediums[1].p = heater.heatTransfer.states[1].p have start values heater.ps_start[1] != 100000.0. Use value from heater.mediums[1].p.
+// Warning: Alias variables heater.mediums[1].T = heater.statesFM[2].T have start values 353.15 != 300.0. Use value from heater.mediums[1].T.
+// Warning: Alias variables heater.mediums[1].p = heater.statesFM[2].p have start values heater.ps_start[1] != 100000.0. Use value from heater.mediums[1].p.
+// Warning: Alias variables heater.mediums[1].p = heater.port_b.p have start values heater.ps_start[1] != 100000.0. Use value from heater.mediums[1].p.
+// Warning: Alias variables radiator.mediums[1].p = radiator.mediums[1].sat.psat have start values radiator.ps_start[1] != 100000.0. Use value from radiator.mediums[1].p.
+// Warning: Alias variables radiator.mediums[1].p = radiator.mediums[1].state.p have start values radiator.ps_start[1] != 100000.0. Use value from radiator.mediums[1].p.
+// Warning: Alias variables radiator.mediums[1].T = radiator.mediums[1].state.T have start values 313.15 != 300.0. Use value from radiator.mediums[1].T.
+// Warning: Alias variables radiator.mediums[1].T = radiator.heatTransfer.states[1].T have start values 313.15 != 300.0. Use value from radiator.mediums[1].T.
+// Warning: Alias variables radiator.mediums[1].p = radiator.heatTransfer.states[1].p have start values radiator.ps_start[1] != 100000.0. Use value from radiator.mediums[1].p.
+// Warning: Alias variables radiator.mediums[1].T = radiator.statesFM[1].T have start values 313.15 != 300.0. Use value from radiator.mediums[1].T.
+// Warning: Alias variables radiator.mediums[1].p = radiator.statesFM[1].p have start values radiator.ps_start[1] != 100000.0. Use value from radiator.mediums[1].p.
+// Warning: Alias variables radiator.mediums[1].p = radiator.port_a.p have start values radiator.ps_start[1] != 100000.0. Use value from radiator.mediums[1].p.
+// Warning: Alias variables pipe.mediums[1].p = pipe.mediums[1].sat.psat have start values pipe.ps_start[1] != 100000.0. Use value from pipe.mediums[1].p.
+// Warning: Alias variables pipe.mediums[1].p = pipe.mediums[1].state.p have start values pipe.ps_start[1] != 100000.0. Use value from pipe.mediums[1].p.
+// Warning: Alias variables pipe.mediums[1].T = pipe.mediums[1].state.T have start values 353.15 != 300.0. Use value from pipe.mediums[1].T.
+// Warning: Alias variables pipe.mediums[2].p = pipe.mediums[2].sat.psat have start values pipe.ps_start[2] != 100000.0. Use value from pipe.mediums[2].p.
+// Warning: Alias variables pipe.mediums[2].p = pipe.mediums[2].state.p have start values pipe.ps_start[2] != 100000.0. Use value from pipe.mediums[2].p.
+// Warning: Alias variables pipe.mediums[2].T = pipe.mediums[2].state.T have start values 353.15 != 300.0. Use value from pipe.mediums[2].T.
+// Warning: Alias variables pipe.mediums[1].T = pipe.heatTransfer.states[1].T have start values 353.15 != 300.0. Use value from pipe.mediums[1].T.
+// Warning: Alias variables pipe.mediums[1].p = pipe.heatTransfer.states[1].p have start values pipe.ps_start[1] != 100000.0. Use value from pipe.mediums[1].p.
+// Warning: Alias variables pipe.mediums[2].T = pipe.heatTransfer.states[2].T have start values 353.15 != 300.0. Use value from pipe.mediums[2].T.
+// Warning: Alias variables pipe.mediums[2].p = pipe.heatTransfer.states[2].p have start values pipe.ps_start[2] != 100000.0. Use value from pipe.mediums[2].p.
+// Warning: Alias variables pipe.mediums[1].T = pipe.statesFM[1].T have start values 353.15 != 300.0. Use value from pipe.mediums[1].T.
+// Warning: Alias variables pipe.mediums[1].p = pipe.statesFM[1].p have start values pipe.ps_start[1] != 100000.0. Use value from pipe.mediums[1].p.
+// Warning: Alias variables pipe.mediums[2].T = pipe.statesFM[2].T have start values 353.15 != 300.0. Use value from pipe.mediums[2].T.
+// Warning: Alias variables pipe.mediums[2].p = pipe.statesFM[2].p have start values pipe.ps_start[2] != 100000.0. Use value from pipe.mediums[2].p.
+// Warning: Alias variables pipe.mediums[1].p = pipe.port_a.p have start values pipe.ps_start[1] != 100000.0. Use value from pipe.mediums[1].p.
+// Warning: Alias variables pipe.mediums[2].p = pipe.port_b.p have start values pipe.ps_start[2] != 100000.0. Use value from pipe.mediums[2].p.
+// Warning: Alias variables radiator.mediums[1].p = valve.state_b.p have start values radiator.ps_start[1] != 100000.0. Use value from radiator.mediums[1].p.
+// Warning: Alias variables tank.ports[2].p = pump.port_a.p have start values 100000.0 != pump.p_a_start. Use value from tank.ports[2].p.
+// Warning: Alias variables pump.medium.p = sensor_m_flow.port_b.p have start values pump.p_start != 100000.0. Use value from pump.medium.p.
+// Warning: Alias variables heater.mediums[1].p = sensor_T_forward.port.p have start values heater.ps_start[1] != 100000.0. Use value from heater.mediums[1].p.
+// Warning: Alias variables pipe.mediums[2].p = valve.state_a.p have start values pipe.ps_start[2] != 100000.0. Use value from pipe.mediums[2].p.
+// "
+// end SimulationResult;
+// ""
+// endResult

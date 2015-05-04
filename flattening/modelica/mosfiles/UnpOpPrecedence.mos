@@ -1,0 +1,16 @@
+// name:     Unparsing of operator precedence
+// keywords: unparser, operator, precedence
+// status:   correct
+// 
+//  Unparsing of operator precedence.
+//
+loadFile("UnpOpPrecedence.mo");
+list(UnpOpPrecedence);
+// Result:
+// true
+// "model UnpOpPrecedence
+// equation
+//   X = not (A and (B or C));
+//   Y = not A and B or C;
+// end UnpOpPrecedence;"
+// endResult

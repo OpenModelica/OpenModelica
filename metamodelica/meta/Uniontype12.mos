@@ -1,0 +1,43 @@
+// name:     Uniontype12
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Uniontype Testing
+//
+loadFile("Uniontype12.mo");
+a:=Uniontype12.REC1(3);
+c:=Uniontype12.ICONST(1);
+d:=Uniontype12.ADD(c,c);
+e:=Uniontype12.ADD(lhs=Uniontype12.ICONST(value=2),rhs=Uniontype12.SUB(lhs=Uniontype12.ICONST(value=5),rhs=Uniontype12.ICONST(value=1)));
+
+// Result:
+// true
+// record Uniontype12.UT.REC1
+//     x = 3
+// end Uniontype12.UT.REC1;
+// record Uniontype12.Expression.ICONST
+//     value = 1
+// end Uniontype12.Expression.ICONST;
+// record Uniontype12.Expression.ADD
+//     lhs = record Uniontype12.Expression.ICONST
+//     value = 1
+// end Uniontype12.Expression.ICONST;,
+//     rhs = record Uniontype12.Expression.ICONST
+//     value = 1
+// end Uniontype12.Expression.ICONST;
+// end Uniontype12.Expression.ADD;
+// record Uniontype12.Expression.ADD
+//     lhs = record Uniontype12.Expression.ICONST
+//     value = 2
+// end Uniontype12.Expression.ICONST;,
+//     rhs = record Uniontype12.Expression.SUB
+//     lhs = record Uniontype12.Expression.ICONST
+//     value = 5
+// end Uniontype12.Expression.ICONST;,
+//     rhs = record Uniontype12.Expression.ICONST
+//     value = 1
+// end Uniontype12.Expression.ICONST;
+// end Uniontype12.Expression.SUB;
+// end Uniontype12.Expression.ADD;
+// endResult

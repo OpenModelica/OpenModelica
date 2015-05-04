@@ -1,0 +1,10 @@
+// name:     Modelica.Electrical.Spice3.Examples.CoupledInductors
+// keywords: simulation MSL Examples
+// Simulation to create the _prof.xml-File.
+
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Electrical.Spice3.Examples.CoupledInductors, measureTime=true, simflags="-clock=CYC");
+getErrorString();

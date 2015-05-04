@@ -1,0 +1,56 @@
+(* main.rml *)
+module Main:
+with "Parse.rml"
+with "Absyn.rml"
+with "Static.rml"
+with "Flatten.rml"
+with "Fcode.rml"
+with "Tcode.rml"
+with "Fcemit.rml"
+
+end
+
+
+relation main: string list => ()  =
+  rule  Parse.parse() => ast  &  static(ast)
+        ----------------
+        main(_)
+
+  rule  not Parse.parse() => _  &  
+        print "Parse.parse failed\n"
+        ----------------
+        main(_) => fail
+end
+
+relation static: Absyn.Prog => ()  =
+  rule  Static.elaborate(ast) => tcode  &  flatten(tcode)
+        ----------------
+        static(ast)
+
+  rule  not Static.elaborate(ast) => _ & 
+        print "Static.elaborate failed\n"
+        ----------------
+        static(ast) => fail
+end
+
+relation flatten: TCode.Prog => ()  =
+  rule  Flatten.flatten(tcode) => fcode  &  emit(fcode)
+        ----------------
+        flatten(tcode)
+
+  rule  not Flatten.flatten(tcode) => _  &
+        print "Flatten.flatten failed\n"
+        ----------------
+        flatten(tcode) => fail
+end
+
+relation emit: FCode.Prog => ()  =
+  rule  FCEmit.emit(fcode)
+        ----------------
+        emit(fcode)
+
+  rule  not FCEmit.emit(fcode)  &  
+        print "FCEmit.emit failed\n"
+        ----------------
+        emit(fcode) => fail
+end

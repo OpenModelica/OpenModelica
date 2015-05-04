@@ -1,0 +1,17 @@
+// name: OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+buildModel(OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState","OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState_init.xml"}
+// ""
+// endResult

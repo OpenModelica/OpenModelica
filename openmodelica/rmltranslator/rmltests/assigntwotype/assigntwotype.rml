@@ -1,0 +1,216 @@
+
+module AssignTwoType:
+
+
+  datatype Program = PROGRAM of Exp list * Exp
+
+  datatype Exp     =  INT of int
+                   |  REAL of real
+                   |  BINARY   of  Exp * BinOp * Exp
+                   |  UNARY    of  UnOp * Exp
+                   |  ASSIGN  of  Ident * Exp
+                   |  IDENT   of  Ident
+
+  datatype BinOp   =  ADD | SUB | MUL | DIV
+
+  datatype UnOp    =  NEG
+
+  type Ident       =  string
+
+  datatype Value   =  INTval of int
+                   |  REALval of real
+
+  type VarBnd      =  (Ident * Value)
+  type Env         =  VarBnd list
+
+  datatype Ty2     =  INT2 of int * int
+                   |  REAL2 of real * real
+
+
+end
+
+relation printvalue:(Value) => () =
+  rule  int_string(x) => x1 &
+        print x1
+        ---------------------
+        printvalue(INTval(x))
+
+  rule  real_string(rx) => x1 &
+        print x1
+        ----------------------
+        printvalue(REALval(rx))
+end 
+
+
+relation evalprogram: Program => () =
+
+  rule  list_reverse assignments => assignments1 &
+        evals([], assignments1) => env2 &
+        eval(env2, exp) => (_, value) &
+        printvalue(value)
+        -------------------------------------
+        evalprogram(PROGRAM(assignments, exp))
+
+end
+
+
+relation evals: (Env,Exp list) => Env  =
+
+  axiom evals(e, []) => e
+
+  rule  eval(env, exp) => (env2, _) &
+        evals(env2, exp1) => env3
+        ----------------------------
+        evals(env, exp::exp1) => env3
+
+end
+
+
+ relation eval:  (Env,Exp) => (Env,Value)  =
+
+
+  axiom eval(env, INT(ival) ) => (env, INTval(ival))   (* int constant *)
+
+  axiom eval(env,REAL(rval) ) => (env,REALval(rval))  (* real constant *)
+
+  rule  lookupextend(env,id) => (env2,value)
+        -----------------------------------            (* variable id *)
+        eval(env,IDENT(id)) => (env2,value)
+
+  rule  eval(env,e1)    => (env1,v1) & 
+        eval(env,e2)    => (env2,v2) &
+        type_lub(v1,v2) => INT2(x,y) &
+        apply_int_binop(binop,x,y) => z
+        --------------------------------             (* int binop int *)
+        eval(env, BINARY(e1,binop,e2)) => (env2,INTval(z))
+
+ rule   eval(env,e1)    => (env1,v1) & 
+        eval(env,e2)    => (env2,v2) &
+        type_lub(v1,v2) => REAL2(rx,ry) &
+        apply_real_binop(binop,rx,ry) => rz
+        --------------------------------   (* int/real binop int/real *)
+        eval(env, BINARY(e1,binop,e2)) => (env2,REALval(rz))
+
+  rule  eval(env,e) => (env1,INTval(x))  &
+        apply_int_unop(unop,x) => y
+        -----------------------------------             (* int unop exp *)
+        eval(env, UNARY(unop,e) ) => (env1,INTval(y))
+
+  rule  eval(env,e) => (env1,REALval(rx))  &
+        apply_real_unop(unop,rx) => ry
+        ------------------------------------            (* real unop exp *)
+        eval(env, UNARY(unop,e) ) => (env1,REALval(ry))
+
+  
+  rule  eval(env,exp) => (env1,value)  &
+        update(env1,id,value) => env2 
+        ----------------------------------------        (* id := exp *)
+        eval(env, ASSIGN(id,exp)) => (env2,value)
+
+
+end
+
+relation type_lub: (Value,Value) => Ty2  =
+ axiom  type_lub(INTval(x), INTval(y))   =>  INT2(x,y)
+
+ rule   int_real(x) => x2
+        ----------------
+        type_lub(INTval(x), REALval(y2))  =>  REAL2(x2,y2)
+
+ rule   int_real(y) => y2
+        -----------------
+        type_lub(REALval(x2),INTval(y))   =>  REAL2(x2,y2)
+
+ axiom  type_lub(REALval(x2),REALval(y2))  =>  REAL2(x2,y2)
+end
+
+
+relation apply_int_binop: (BinOp,int,int) => int =
+
+ rule   int_add(x,y) => z
+        ------------------------                              (* x+y *)
+        apply_int_binop(ADD,x,y) => z
+
+ rule   int_sub(x,y) => z
+        ------------------------                              (* x-y *)
+        apply_int_binop(SUB,x,y) => z
+
+ rule   int_mul(x,y) => z
+        ------------------------                              (* x*y *)
+        apply_int_binop(MUL,x,y) => z
+
+ rule   int_div(x,y) => z
+        ------------------------                              (* x/y *)
+        apply_int_binop(DIV,x,y) => z
+end
+
+
+relation apply_real_binop: (BinOp,real,real) => real =
+
+ rule   real_add(x,y) => z
+        -------------------------                             (* x+y *)
+        apply_real_binop(ADD,x,y) => z
+
+ rule   real_sub(x,y) => z
+        -------------------------                             (* x-y *)
+        apply_real_binop(SUB,x,y) => z
+
+ rule   real_mul(x,y) => z
+        -------------------------                             (* x*y *)
+        apply_real_binop(MUL,x,y) => z
+
+ rule   real_div(x,y) => z
+        ------------------------                              (* x/y *)
+        apply_real_binop(DIV,x,y) => z
+
+end (* apply_real_binop *)
+
+relation apply_int_unop: (UnOp,int) => int =
+
+ rule   int_neg(x) => y
+        ------------------------                              (* -x *)
+        apply_int_unop(NEG,x) => y
+
+end (* apply_int_unop *)
+
+
+relation apply_real_unop: (UnOp,real) => real =
+
+ rule   real_neg(x) => y
+        ------------------------                              (* -x *)
+        apply_real_unop(NEG,x) => y
+
+end (* apply_real_unop *)
+
+
+ relation lookup: (Env,Ident) => Value  =
+
+   rule  id = id2
+         ------------------------------
+         lookup((id2,value) :: _, id) => value
+
+  rule  not id=id2  &  lookup(rest, id) => value
+        -------------------------------------
+        lookup((id2,_) :: rest, id)  => value
+end 
+
+relation lookupextend: (Env,Ident) => (Env,Value)  =
+
+  rule  not lookup(env,id) => v &
+        let value = INTval(0)
+        -----------------------------
+        lookupextend(env, id) => ((id, value)::env,value)
+
+  rule  lookup(env,id) => value
+        --------------------------------
+        lookupextend(env, id)  => (env,value)
+end 
+
+relation update: (Env,Ident,Value) => Env  =
+(* Store binding of id to value at front of environment env *)
+
+  axiom update(env,id,value) => ((id,value) :: env)
+
+end (* update *)
+
+

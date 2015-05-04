@@ -1,0 +1,20 @@
+// name: Rectifier2
+// keyword: simulating msl221
+// status: correct
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.Rectifier,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=0.1);
+val(uDC,0); //dymola 565.35
+val(uDC,0.05); //dymola 516.78
+val(uDC,0.1); //dymola 517
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.Rectifier_res.mat",
+//     messages = ""
+// end SimulationResult;
+// 565.685424949238
+// 516.772017805705
+// 517.032359507091
+// endResult

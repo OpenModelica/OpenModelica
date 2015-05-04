@@ -1,0 +1,39 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter);
+compareVars :=
+{
+   "Q1.vbe",
+   "Q1.vbc",
+   "Q1.vbx",
+   "Q1.vcs"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter
+// {"Q1.vbe","Q1.vbc","Q1.vbx","Q1.vcs"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter.mat\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1e-07, numberOfIntervals = 999, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter_res.mat
+// Note: Result files are now equal. Please update the test to do verified simulation!
+// endResult

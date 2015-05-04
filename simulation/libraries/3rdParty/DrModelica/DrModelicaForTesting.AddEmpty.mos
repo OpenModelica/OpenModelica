@@ -1,0 +1,32 @@
+// name:     DrModelicaForTesting.AddEmpty.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.AddEmpty
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.AddEmpty.* DrModelicaForTesting.AddEmpty_* DrModelicaForTesting.AddEmpty DrModelicaForTesting.AddEmpty.exe DrModelicaForTesting.AddEmpty.cpp DrModelicaForTesting.AddEmpty.makefile DrModelicaForTesting.AddEmpty.libs DrModelicaForTesting.AddEmpty.log DrModelicaForTesting.AddEmpty.c DrModelicaForTesting.AddEmpty.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.AddEmpty, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.AddEmpty_res.mat",
+  "ReferenceFiles/AddEmpty_ref.mat","DrModelicaForTesting.AddEmpty_diff.csv",0.01,0.013,
+  {"time"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.AddEmpty_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.AddEmpty', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

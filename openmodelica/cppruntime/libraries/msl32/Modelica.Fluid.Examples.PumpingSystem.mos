@@ -1,0 +1,41 @@
+// name:     Modelica.Fluid.Examples.PumpingSystem
+// teardown_command: rm -f Modelica.Fluid.Examples.PumpingSystem_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.PumpingSystem);
+referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.PumpingSystem.mat";
+compareVars :=
+{
+   "PT1.y",
+   "pumps.medium.T",
+   "reservoir.level",
+   "reservoir.medium.T"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.PumpingSystem
+// {"PT1.y","pumps.medium.T","reservoir.level","reservoir.medium.T"}
+// Compilation succeeded
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "true
+// "
+// ""
+// endResult

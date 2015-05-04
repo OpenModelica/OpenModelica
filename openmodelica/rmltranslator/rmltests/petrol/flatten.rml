@@ -1,0 +1,320 @@
+ module Flatten:
+     with "TCode.rml"
+     with "FCode.rml"
+     type Env = (FCode.Ident * Bnd) list
+     
+ end
+
+ datatype Scope  = SCOPE of FCode.Level * FCode.Ident
+
+ datatype Bnd    = VAR of FCode.Level * FCode.Record
+                  | PROC of FCode.Ident
+
+val env_init = [("read",        PROC "petrol_read")
+,               ("write",       PROC "petrol_write")
+,               ("trunc",       PROC "petrol_trunc")
+]
+
+relation map: ('a=>'b, 'a list) => 'b list =
+  axiom map(_, []) => []
+
+  rule  F x => y & map(F, xs) => ys
+        ----------------
+        map(F, x::xs) => (y::ys)
+end
+
+ relation lookup: (Env, FCode.Ident) => Bnd  =
+   rule  key1 = key0
+         ----------------
+         lookup((key1,bnd)::_, key0) => bnd
+
+   rule  not key1 = key0 & lookup(env, key0) => bnd
+         ----------------
+         lookup((key1,_)::env, key0) => bnd
+ end
+
+
+ relation trans_ty: TCode.Ty => FCode.Ty   =
+
+   axiom trans_ty(TCode.CHAR) => FCode.CHAR
+   axiom trans_ty(TCode.INT)  => FCode.INT
+   axiom trans_ty(TCode.REAL) => FCode.REAL
+
+   rule  trans_ty ty => ty1
+         ----------------
+         trans_ty(TCode.PTR ty) => FCode.PTR ty1
+
+   rule  trans_ty ty => ty1
+         ----------------
+         trans_ty(TCode.ARR(sz,ty)) => FCode.ARR(sz,ty1)
+ 
+   rule  trans_rec r => r1
+         ----------------
+         trans_ty(TCode.REC r) => FCode.REC r1
+
+   axiom trans_ty(TCode.UNFOLD stamp) => FCode.UNFOLD stamp
+ end
+ 
+
+and trans_rec: TCode.Record => FCode.Record  =
+  rule  map(trans_var, bnds) => bnds1
+        ----------------
+        trans_rec(TCode.RECORD(stamp,bnds)) => FCode.RECORD(stamp,bnds1)
+end
+
+
+and trans_var:  TCode.Var => FCode.Var  =
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_var(TCode.VAR(id,ty)) => FCode.VAR(id,ty1)
+end
+
+
+relation trans_tyopt:  TCode.Ty option => FCode.Ty option  =
+ 
+  axiom trans_tyopt NONE => NONE
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_tyopt(SOME ty) => SOME ty1
+end
+
+
+
+
+relation trans_unop: TCode.UnOp => FCode.UnOp   =
+
+  axiom trans_unop(TCode.CtoI) => FCode.CtoI
+  axiom trans_unop(TCode.ItoR) => FCode.ItoR
+  axiom trans_unop(TCode.RtoI) => FCode.RtoI
+  axiom trans_unop(TCode.ItoC) => FCode.ItoC
+  axiom trans_unop(TCode.PtoI) => FCode.PtoI
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_unop(TCode.TOPTR ty) => FCode.TOPTR ty1
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_unop(TCode.LOAD ty) => FCode.LOAD ty1
+
+  rule  trans_rec r => r1
+        ----------------
+        trans_unop(TCode.OFFSET(r,id)) => FCode.OFFSET(r1,id)
+end
+
+
+ relation trans_binop: (TCode.BinOp) => (FCode.BinOp) =
+
+  axiom trans_binop(TCode.IADD) => FCode.IADD
+  axiom trans_binop(TCode.ISUB) => FCode.ISUB
+  axiom trans_binop(TCode.IMUL) => FCode.IMUL
+  axiom trans_binop(TCode.IDIV) => FCode.IDIV
+  axiom trans_binop(TCode.IMOD) => FCode.IMOD
+  axiom trans_binop(TCode.IAND) => FCode.IAND
+  axiom trans_binop(TCode.IOR) => FCode.IOR
+  axiom trans_binop(TCode.ILT) => FCode.ILT
+  axiom trans_binop(TCode.ILE) => FCode.ILE
+  axiom trans_binop(TCode.IEQ) => FCode.IEQ
+  axiom trans_binop(TCode.RADD) => FCode.RADD
+  axiom trans_binop(TCode.RSUB) => FCode.RSUB
+  axiom trans_binop(TCode.RMUL) => FCode.RMUL
+  axiom trans_binop(TCode.RDIV) => FCode.RDIV
+  axiom trans_binop(TCode.RLT) => FCode.RLT
+  axiom trans_binop(TCode.RLE) => FCode.RLE
+  axiom trans_binop(TCode.REQ) => FCode.REQ 
+ 
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_binop(TCode.PADD ty) => FCode.PADD ty1
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_binop(TCode.PSUB ty) => FCode.PSUB ty1
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_binop(TCode.PDIFF ty) => FCode.PDIFF ty1
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_binop(TCode.PLT ty) => FCode.PLT ty1
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_binop(TCode.PLE ty) => FCode.PLE ty1
+
+  rule  trans_ty ty => ty1
+        ----------------
+        trans_binop(TCode.PEQ ty) => FCode.PEQ ty1 
+end
+ 
+
+relation trans_procid: (Env, TCode.Ident) => FCode.Ident   =
+
+  rule  lookup(env, id) => PROC id
+        ----------------
+        trans_procid(env, id) => id
+end
+
+
+ relation trans_exp: (Env, TCode.Exp) => FCode.Exp   =
+
+   axiom trans_exp(_, TCode.ICON x) => FCode.ICON x
+   axiom trans_exp(_, TCode.RCON r) => FCode.RCON r
+
+  (* Lookup a variable id at scope level lev, in activation recordtype r
+   * C syntax version:   (struct r* )DISPLAY[lev]->id *)
+
+  rule  lookup(env, id) => VAR(lev,rec)
+        ----------------
+        trans_exp(env, TCode.ADDR id) =>
+           FCode.UNARY(FCode.OFFSET(rec,id),
+                       FCode.UNARY(FCode.TOPTR(FCode.REC rec),
+                                   FCode.DISPLAY lev))
+  rule  trans_unop unop => unop1 &
+        trans_exp(env, exp) => exp_1
+        ----------------
+        trans_exp(env, TCode.UNARY(unop,exp)) => FCode.UNARY(unop1,exp_1)
+
+  rule  trans_binop binop => binop1 &
+        trans_exp(env, exp1) => exp1_1 &
+        trans_exp(env, exp2) => exp2_1
+        ----------------
+        trans_exp(env, TCode.BINARY(exp1,binop,exp2)) => 
+        FCode.BINARY(exp1_1,binop1,exp2_1)
+
+ (* Translate the Tcode procedure name to the disambiguated Fcode name *)
+  rule  trans_procid(env, id) => id1 &
+        trans_args(env, args, []) => args1
+        ----------------
+        trans_exp(env, TCode.FCALL(id,args)) => FCode.FCALL(id1,args1)
+end
+
+relation trans_args: (Env, TCode.Exp list, FCodeExplist) => FCode.Exp list =
+  rule  list_reverse args_1 => args_2
+        ----------------
+        trans_args(_, [], args_1) => args_2
+
+  rule  trans_exp(env, arg) => arg_1 &
+        trans_args(env, args, arg_1::args_1) => args_2
+        ----------------
+        trans_args(env, arg::args, args_1) => args_2
+end
+
+
+relation trans_return: (Env, (TCode.Ty * TCode.Exp) option) => (FCode.Ty * FCode.Exp) option  =
+  
+  axiom trans_return(_, NONE) => NONE
+
+  rule  trans_ty ty => ty1 &
+        trans_exp(env, exp) => exp1
+        ----------------
+        trans_return(env, SOME((ty,exp))) => SOME((ty1,exp1))
+end
+
+
+ relation trans_stmt: (Env, TCode.Stmt) => FCode.Stmt   =
+
+   rule  trans_ty ty => ty1 &
+         trans_exp(env, lhs) => lhs1 &
+         trans_exp(env, rhs) => rhs1
+         ----------------
+         trans_stmt(env, TCode.STORE(ty,lhs,rhs)) => FCode.STORE(ty1,lhs1,rhs1)
+
+  (* Translate procedure identifier *)
+  rule  trans_procid(env, id) => id1 &
+        trans_args(env, args, []) => args1
+        ----------------
+        trans_stmt(env, TCode.PCALL(id,args)) => FCode.PCALL(id1,args1)
+
+  rule  trans_return(env, ret) => ret1
+        ----------------
+        trans_stmt(env, TCode.RETURN ret) => FCode.RETURN ret1
+
+  rule  trans_exp(env, exp) => exp1 &
+        trans_stmt(env, stmt) => stmt_1
+        ----------------
+        trans_stmt(env, TCode.WHILE(exp,stmt)) => FCode.WHILE(exp1,stmt_1)
+
+  rule  trans_exp(env, exp) => exp1 &
+        trans_stmt(env, stmt1) => stmt1_1 &
+        trans_stmt(env, stmt2) => stmt2_1
+        ----------------
+        trans_stmt(env,TCode.IF(exp,stmt1,stmt2)) =>
+        FCode.IF(exp1,stmt1_1,stmt2_1)
+
+  rule  trans_stmt(env, stmt1) => stmt1_1 &
+        trans_stmt(env, stmt2) => stmt2_1
+        ----------------
+        trans_stmt(env, TCode.SEQ(stmt1,stmt2)) => FCode.SEQ(stmt1_1,stmt2_1)
+
+  axiom trans_stmt(_, TCode.SKIP) => FCode.SKIP
+end
+
+
+ relation flatten_proc: (Scope, Env, TCode.Proc, FCodeProclist) => (Env, FCode.Proc list) =
+
+  rule  map(trans_var, formals) => formals1 &
+        trans_tyopt tyopt => tyopt1 &
+        FCode.PROC(id,formals1,tyopt1,NONE)=> proc 
+        
+        ----------------
+        flatten_proc(_, env0, TCode.PROC(id,formals,tyopt,NONE), procs0) =>
+        ((id,PROC id)::env0, proc::procs0)
+        
+  rule  int_add(level0,1)         => level1 &
+        string_append(prefix0, id) => id1 & 
+        string_append(id1, "_")    => prefix1 &  
+        map(trans_var, formals)    => formals1 & 
+        map(trans_var, locals)     => locals1 &
+        list_append(formals1, locals1) => vars1 & 
+        tick  => stamp  & 
+        let r = FCode.RECORD(stamp,vars1) & 
+        let env1 = (id,PROC id1)::env0 & 
+        VAR(level1,r) => bnd1 &
+        env_plus_vars(env1, bnd1, vars1) => env2 & 
+        flatten_procs(SCOPE(level1,prefix1), env2, procs, procs0) => (env3,procs1) & 
+        trans_stmt(env3, stmt) => stmt1 & 
+        trans_tyopt tyopt => tyopt1 & 
+        FCode.BLOCK(level1,r,stmt1) => fcodeblock &
+        FCode.PROC(id1, formals1, tyopt1, SOME fcodeblock)=>fcodeproc 
+        ----------------
+        flatten_proc( SCOPE(level0,prefix0),env0,
+            TCode.PROC(id,formals,tyopt, SOME(TCode.BLOCK(locals,procs,stmt))),
+            procs0)
+          => 
+          (env1,fcodeproc::procs1)
+          
+end
+
+
+relation env_plus_vars: (Env, Bnd, FCode.Var list) => Env   =
+
+  axiom env_plus_vars(env, _, []) => env
+
+  rule  env_plus_vars((id,bnd)::env, bnd, vars) => env1
+        ----------------
+        env_plus_vars(env, bnd, FCode.VAR(id,_)::vars) => env1
+end
+
+
+ and flatten_procs: (Scope, Env, TCode.Proc list, FCode.Proc list) =>
+                                                       (Env, FCodeProclist) =
+
+   axiom flatten_procs(_, env0, [], procs0) => (env0,procs0)
+
+   rule  flatten_proc(scope, env0, proc, procs0) => (env1,procs1) &
+         flatten_procs(scope, env1, procs, procs1) => (env2,procs2)
+         ----------------
+         flatten_procs(scope, env0, proc::procs, procs0) => (env2,procs2)
+ end
+
+
+relation flatten: TCode.Prog => FCode.Prog   =
+
+  rule    TCode.PROC(id,[],NONE,SOME block) => (proc1) &
+          flatten_proc(SCOPE(-1,""), env_init,proc1,[])  =>  (_,procs1)
+        ----------------
+         flatten(TCode.PROG(id,block)) => FCode.PROG(procs1,id)
+end

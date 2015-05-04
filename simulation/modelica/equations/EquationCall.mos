@@ -1,0 +1,24 @@
+// Name:     EquationCall
+// keywords: equations when
+// status:   correct
+// 
+// 
+// Drmodelica: 9.2 Multiple Results (p. 302)
+// 
+
+loadFile("EquationCall.mo");
+simulate(EquationCall,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+res:=readSimulationResult("EquationCall_res.mat",{px, py},3); 
+echo(true); // turns on output
+system("rm -rf PointOnCircle.c PointOnCircle.exe PointOnCircle_.* EquationCall.plt EquationCall.exe EquationCall.c EquationCall_* output.log"); // remove tmp files.
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "EquationCall_res.mat"
+// end SimulationResult;
+// true
+// ""
+// 0
+// endResult

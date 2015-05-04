@@ -1,0 +1,25 @@
+// name:     BouncingBall
+// keywords: events
+// status: correct
+// teardown_command: rm -rf  BouncingBall.log libModelica.dll BouncingBall.cpp BouncingBall.libs BouncingBall.h BouncingBall.makefile output.log Functions.h Functions.cpp
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Event handling
+//
+loadFile("BouncingBall.mo");
+simulate(BouncingBall,method="dassl",stopTime=1.0, tolerance=1e-10, numberOfIntervals=100,outputFormat="mat");
+res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
+  "ReferenceFiles/BouncingBall.mat",
+  "BouncingBall_diff.csv",0.01,0.0001,
+  {"h","v"});
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "BouncingBall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

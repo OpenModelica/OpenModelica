@@ -1,0 +1,18 @@
+//$header$
+loadFile("../common/ModelTesting.mo");
+loadModel(Modelica,{"3.2.1"});
+modelTestingType := $testingType$;
+modelName := $TypeName($modelName$);
+referenceFile := "./ReferenceFiles/$modelName$.mat";
+stopTime := 0.0; // For reading stopTime from annotation
+relTol := 0.01;
+absTol := 0.0001;
+outputFormat :="mat";
+compareVars := {$states$};
+runScript("../common/ModelTesting.mos");
+getErrorString();
+
+
+// Result:
+//$footer$
+// endResult

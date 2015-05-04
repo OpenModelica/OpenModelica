@@ -1,0 +1,23 @@
+// name:     nonConstantParam
+// keywords: nonConstantParam
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -rf Modelica_Electrical_Machines_Examples_DCEE_start*
+//
+//
+loadFile("nonConstantParam.mo");
+simulate(Modelica_Electrical_Machines_Examples_DCEE_start,stopTime=1);
+//val(DCEE1.TurnsRatio,0);
+val(DCEE1.tau_shaft,0:0.1:1);
+getErrorString();
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica_Electrical_Machines_Examples_DCEE_start_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica_Electrical_Machines_Examples_DCEE_start', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {-0.0,-0.0,-0.0,31.658705408773024,29.837602143375044,29.257490163374747,29.497610793111075,29.44575605316379,29.45282599035951,29.452596343574204,29.452375167979802}
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// endResult

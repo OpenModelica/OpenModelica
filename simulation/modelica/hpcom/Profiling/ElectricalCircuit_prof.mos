@@ -1,0 +1,7 @@
+// name:      ElectricalCircuit
+// keywords:  hpcom
+// Simulation to create the _prof.xml-File.
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("../ElectricalCircuit.mo");
+simulate(ElectricalCircuit, measureTime=true, simflags="-clock=CYC");

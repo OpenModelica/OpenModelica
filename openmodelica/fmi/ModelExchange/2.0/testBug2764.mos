@@ -1,0 +1,160 @@
+// name:  testBug2764
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug2764* output.log
+//
+
+loadString("
+model test_Bug2764
+  constant Real c = 23;
+  parameter Real p = c;
+  input Real u(start = -2);
+  output Real y1, y2;
+  Integer i;
+  Boolean b;
+equation
+  der(y1) = p*u;
+  der(y2) = y1;
+  b = der(y1) > 0;
+  when b then 
+    i = pre(i) + 1;
+  end when;
+end test_Bug2764;
+");
+getErrorString();
+
+translateModelFMU(test_Bug2764, version="2.0");
+getErrorString();
+
+system("cat modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// Result:
+// true
+// ""
+// "SimCode: The model test_Bug2764 has been translated to FMU"
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"test_Bug2764\"
+//   description=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"1\">
+//   <ModelExchange
+//     modelIdentifier=\"test_Bug2764\">
+//   </ModelExchange>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"y1\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"y2\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"der(y1)\"
+//     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"der(y2)\"
+//     valueReference=\"3\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real derivative=\"2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"4\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     initial=\"approx\">
+//     <Real start=\"-2.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"p\"
+//     valueReference=\"5\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"23.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"i\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Integer/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"_D_whenCondition1\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Boolean/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"b\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Boolean/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"1\" dependencies=\"5\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"3\" dependencies=\"5\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//     </InitialUnknowns>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult

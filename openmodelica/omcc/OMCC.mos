@@ -1,0 +1,21 @@
+OpenModelica.Scripting.setCFlags("-g " + getCFlags());getErrorString();
+files := {
+  "OMCC.mo",
+  "../../../Compiler/FrontEnd/Absyn.mo",
+  "../../../Compiler/Util/List.mo",
+  "../../../Compiler/Util/Config.mo",
+  "../../../Compiler/Global/Global.mo",
+  "../../../Compiler/Util/Debug.mo",
+  "../../../Compiler/Util/ErrorExt.mo",
+  "../../../Compiler/Util/Error.mo",
+  "../../../Compiler/Util/Print.mo",
+  "../../../Compiler/Util/Corba.mo",
+  "../../../Compiler/Util/Settings.mo",
+  "../../../Compiler/Util/Flags.mo",
+  "../../../Compiler/Util/Util.mo",
+  "../../../Compiler/Util/System.mo",
+  "LexerGenerator.mo",
+  "ParserGenerator.mo"};getErrorString();
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+loadFile(files);getErrorString();
+OMCC.main({"Modelica"});getErrorString();

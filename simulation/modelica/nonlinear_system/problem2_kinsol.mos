@@ -1,0 +1,40 @@
+// name: problem2 [kinsol]
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem2* _nonlinear_system.problem2* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+simulate(nonlinear_system.problem2, stopTime=2, simflags="-nls=kinsol"); getErrorString();
+
+val(x[1],{0.0,1.0,2.0});
+val(x[2],{0.0,1.0,2.0});
+val(x[3],{0.0,1.0,2.0});
+val(x[4],{0.0,1.0,2.0});
+val(x[5],{0.0,1.0,2.0});
+val(x[6],{0.0,1.0,2.0});
+val(x[7],{0.0,1.0,2.0});
+val(x[8],{0.0,1.0,2.0});
+val(x[9],{0.0,1.0,2.0});
+val(x[10],{0.0,1.0,2.0});
+val(y,{0.0,1.0,2.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem2', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {1.087909512402704,0.9908697454089415,0.8650752875248886}
+// {1.0835471071762892,0.9818228523667804,0.8483552530862687}
+// {1.0740743334701046,0.9639761134296407,0.819706635439067}
+// {1.0536356738192494,0.9292499472629155,0.7719189681828355}
+// {1.0101481331445437,0.8635054644881314,0.6958588934404533}
+// {0.9203992508954068,0.7456416872008637,0.584219599580172}
+// {0.7471347810488259,0.5559815256917505,0.44131254053361646}
+// {0.45821038105287704,0.3091154569105266,0.2947567584322348}
+// {0.10995675330463267,0.09555236570100485,0.18688154664147918}
+// {-0.08790951240270416,0.009130254591058562,0.13492471247511134}
+// {-1.0,-0.00000000000000005551115123123988,0.9999999999999998}
+// endResult

@@ -1,0 +1,57 @@
+// name:     ModelicaTest.MultiBody.Forces.SpringDamperParallel
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Forces.SpringDamperParallel);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Forces.SpringDamperParallel_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Forces.SpringDamperParallel.mat",
+  "ModelicaTest.MultiBody.Forces.SpringDamperParallel_diff.csv",0.01,0.0001,
+  {"pm1.r_0[1]",
+"pm1.r_0[2]",
+"pm1.r_0[3]",
+"pm1.v_0[1]",
+"pm1.v_0[2]",
+"pm1.v_0[3]",
+"pm2.r_0[1]",
+"pm2.r_0[2]",
+"pm2.r_0[3]",
+"pm2.v_0[1]",
+"pm2.v_0[2]",
+"pm2.v_0[3]",
+"pm3.r_0[1]",
+"pm3.r_0[2]",
+"pm3.r_0[3]",
+"pm3.v_0[1]",
+"pm3.v_0[2]",
+"pm3.v_0[3]"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "",,
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Forces.SpringDamperParallel\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "Simulation execution failed for model: ModelicaTest.MultiBody.Forces.SpringDamperParallel,
+// stdout        | warning | division by zero in partial equation: universal.revolute_b.constantTorque.tau_constant / prismatic.s because prismatic.s == 0: File: C:/OpenModelica1.9.0/lib/omlibrary/Modelica 3.2.1/Mechanics/MultiBody/Joints.mo Line: 92\r,
+// stdout        | warning | at Time=0.000000\r,
+// stdout        | warning | [line] 8480 | [file] ModelicaTest.MultiBody.Forces.SpringDamperParallel.c\r,
+//               | assert  | division by zero\r,
+// ",,
+// end SimulationResult;,
+// "Error Open File!",
+// '
+// endResult

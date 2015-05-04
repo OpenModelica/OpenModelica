@@ -1,0 +1,27 @@
+// name: Bug1048.mos
+// keywords: delay
+// status: correct
+// 
+// test for #1048
+// 
+
+loadString("
+model Bug1048
+  Integer n(fixed=true);
+  Integer n2(fixed=true);
+  Integer n3(fixed=true);
+  parameter Real delayMax=10;
+equation 
+  when sample(0,0.1) then
+    n = pre(n) + 1;
+  end when;
+  n2 = integer(delay(n,0.34));
+  n3 = integer(delay(n,1.0/(n2+0.01),delayMax));
+end Bug1048;
+"); getErrorString();
+
+simulate(Bug1048); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Bug1048_res.mat", "Bug1048.mat", "Bug1048_diff.csv", 0.01, 0.0001, {"n", "n2", "n3"}); getErrorString();
+
+// Result:
+// endResult

@@ -1,0 +1,28 @@
+// name:     Parse Absyn.PROGRAM
+// keywords: algorithm
+// status:   correct
+// 
+// Test if getAstAsCorbaString works properly and parses in Java
+//
+loadFile("../../simulation/modelica/connectors/TankPID.mo");
+getAstAsCorbaString("TankPID.corbaString");
+clear();
+getAstAsCorbaString();
+loadFile("JavaExt.mo");
+b := JavaTest.extJavaParseProgramFromFile("TankPID.corbaString");
+system("rm -f TankPID.corbaString");
+
+
+// Result:
+// true
+// true
+// true
+// record Absyn.PROGRAM
+// classes = {},
+// within_ = record Absyn.TOP end Absyn.TOP;,
+// globalBuildTimes = record Absyn.TIMESTAMP lastBuildTime = 0.0, lastEditTime = 0.0 end Absyn.TIMESTAMP;
+// end Absyn.PROGRAM;
+// true
+// true
+// 0
+// endResult

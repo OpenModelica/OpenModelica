@@ -1,0 +1,34 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b,stopTime=0.5,variableFilter="(der[(])?Inertia[.](phi|w)[)]?");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_res.mat",
+  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b.mat","Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_diff.csv",0.01,0.00001,
+  {"Inertia.phi",
+  "Inertia.w",
+  "der(Inertia.phi)",
+  "der(Inertia.w)"});getErrorString();
+
+// Result:
+// true
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b', options = '', outputFormat = 'mat', variableFilter = '(der[(])?Inertia[.](phi|w)[)]?', cflags = '', simflags = ''",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.001000
+// |                 | |       | gasForce.T >= 1.0 and gasForce.T <= 6000.0
+// assert            | warning | Variable gasForce.T out of [min, max] interval: gasForce.T >= 1.0 and gasForce.T <= 6000.0 has value: 407508
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// ""
+// endResult

@@ -1,0 +1,20 @@
+// name: PreMatrix
+// status: correct
+// teardown_command: rm -rf PreMatrix_* PreMatrix PreMatrix.exe PreMatrix.cpp PreMatrix.makefile PreMatrix.libs PreMatrix.log output.log
+
+loadString("model PreMatrix
+  Integer x[2,2] = integer(time*fill(1,2,2));
+  Integer y[2,2];
+algorithm
+  for i in 1:size(x,1),j in 1:size(x,2) loop
+    y[i,j] := pre(x[i,j]);
+  end for;
+end PreMatrix;","PreMatrix.mo");getErrorString();
+buildModel(PreMatrix);getErrorString();
+
+// Result:
+// true
+// ""
+// {"PreMatrix","PreMatrix_init.xml"}
+// ""
+// endResult

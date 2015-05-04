@@ -1,0 +1,41 @@
+// name:     Modelica.StateGraph.Examples.ShowExceptions
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.StateGraph.Examples.ShowExceptions);
+compareVars :=
+{
+   "initialStep.active",
+   "compositeStep.active",
+   "step1.active"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.StateGraph.Examples.ShowExceptions
+// {"initialStep.active","compositeStep.active","step1.active"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.StateGraph.Examples.ShowExceptions.mat\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.ShowExceptions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.StateGraph.Examples.ShowExceptions_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

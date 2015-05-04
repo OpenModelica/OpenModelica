@@ -1,0 +1,38 @@
+// name: problem5 [newton]
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem5* _nonlinear_system.problem5* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+simulate(nonlinear_system.problem5, stopTime=0, simflags="-nls=newton"); getErrorString();
+
+val(x[1],{0.0});
+val(x[2],{0.0});
+val(x[3],{0.0});
+val(x[4],{0.0});
+val(x[5],{0.0});
+val(x[6],{0.0});
+val(x[7],{0.0});
+val(x[8],{0.0});
+val(x[9],{0.0});
+val(x[10],{0.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=newton'",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.04791194730372555}
+// {0.04918451816663748}
+// {0.05060870289457184}
+// {0.05222304938978824}
+// {0.05408309229485902}
+// {0.05627330346629879}
+// {0.05893213853534086}
+// {0.1863970013844758}
+// {0.1543419604011412}
+// {0.1246253769630759}
+// endResult

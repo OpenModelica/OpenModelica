@@ -1,0 +1,30 @@
+within ThermoSysPro.Examples.SimpleExamples;
+model TestFlueGasesVolumes1
+  annotation(Diagram);
+  ThermoSysPro.FlueGases.PressureLosses.SingularPressureLoss singularPressureLossFlueGases1 annotation(Placement(transformation(x=-50.0, y=-50.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.BoundaryConditions.SourceP sourceFlueGasesP annotation(Placement(transformation(x=-90.0, y=-50.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.BoundaryConditions.SinkP sinkFlueGasesP annotation(Placement(transformation(x=70.0, y=-50.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.Volumes.VolumeATh volumeFlueGasesATh annotation(Placement(transformation(x=-10.0, y=-50.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.PressureLosses.SingularPressureLoss singularPressureLossFlueGases2 annotation(Placement(transformation(x=30.0, y=-50.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.BoundaryConditions.SinkP sinkFlueGasesP1 annotation(Placement(transformation(x=70.0, y=-90.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.PressureLosses.SingularPressureLoss singularPressureLossFlueGases4 annotation(Placement(transformation(x=30.0, y=-90.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.Volumes.VolumeCTh volumeFlueGasesCTh annotation(Placement(transformation(x=-10.0, y=30.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false, rotation=90.0)));
+  ThermoSysPro.FlueGases.PressureLosses.SingularPressureLoss singularPressureLossFlueGases3 annotation(Placement(transformation(x=-10.0, y=-10.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=true, rotation=-90.0)));
+  ThermoSysPro.FlueGases.PressureLosses.SingularPressureLoss singularPressureLossFlueGases5 annotation(Placement(transformation(x=-50.0, y=30.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.BoundaryConditions.SourceP sourceFlueGasesP1 annotation(Placement(transformation(x=-90.0, y=30.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.PressureLosses.SingularPressureLoss singularPressureLossFlueGases6 annotation(Placement(transformation(x=-50.0, y=70.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.FlueGases.BoundaryConditions.SourceP sourceFlueGasesP2 annotation(Placement(transformation(x=-90.0, y=70.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+equation
+  connect(sourceFlueGasesP.C,singularPressureLossFlueGases1.C1) annotation(Line(points={{-80,-50},{-60,-50}}, color={0,0,0}, thickness=1.0));
+  connect(singularPressureLossFlueGases1.C2,volumeFlueGasesATh.Ce1) annotation(Line(points={{-40,-50},{-20,-50}}, color={0,0,0}, thickness=1.0));
+  connect(singularPressureLossFlueGases2.C2,sinkFlueGasesP.C) annotation(Line(points={{40,-50},{60.2,-50}}, color={0,0,0}, thickness=1.0));
+  connect(singularPressureLossFlueGases4.C2,sinkFlueGasesP1.C) annotation(Line(points={{40,-90},{60.2,-90}}, color={0,0,0}, thickness=1.0));
+  connect(volumeFlueGasesATh.Cs1,singularPressureLossFlueGases2.C1) annotation(Line(points={{0,-50},{20,-50}}, color={0,0,0}, thickness=1.0));
+  connect(volumeFlueGasesATh.Cs2,singularPressureLossFlueGases4.C1) annotation(Line(points={{-10,-60},{-10,-90},{20,-90}}, color={0,0,0}, thickness=1.0));
+  connect(volumeFlueGasesCTh.Cs,singularPressureLossFlueGases3.C1) annotation(Line(points={{-10,20},{-10,0}}, color={0,0,0}, thickness=1.0));
+  connect(singularPressureLossFlueGases3.C2,volumeFlueGasesATh.Ce2) annotation(Line(points={{-10,-20},{-10,-40}}, color={0,0,0}, thickness=1.0));
+  connect(sourceFlueGasesP1.C,singularPressureLossFlueGases5.C1) annotation(Line(points={{-80,30},{-60,30}}, color={0,0,0}, thickness=1.0));
+  connect(singularPressureLossFlueGases5.C2,volumeFlueGasesCTh.Ce3) annotation(Line(points={{-40,30},{-20,30}}, color={0,0,0}, thickness=1.0));
+  connect(sourceFlueGasesP2.C,singularPressureLossFlueGases6.C1) annotation(Line(points={{-80,70},{-60,70}}, color={0,0,0}, thickness=1.0));
+  connect(singularPressureLossFlueGases6.C2,volumeFlueGasesCTh.Ce1) annotation(Line(points={{-40,70},{-10,70},{-10,40}}, color={0,0,0}, thickness=1.0));
+end TestFlueGasesVolumes1;

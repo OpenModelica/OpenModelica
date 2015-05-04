@@ -1,0 +1,46 @@
+// name:     TankPI with DOPRI5
+// keywords: DOPRI5
+// cflags: +std=2.x
+// status: correct
+// teardown_command: rm -rf TankPI_* TankPI TankPI.exe TankPI.cpp TankPI.makefile TankPI.libs TankPI.log output.log
+// 
+//  <insert description here>
+//
+// Drmodelica: 12.1 Object Oriented Component-based (p. 386)
+// 
+loadFile("TankPI.mo");
+simulate(TankPI,stopTime=250,numberOfIntervals=250, tolerance=1e-4, method="dopri5"); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+//res:=readSimulationResult("TankPI_res.mat",{x,y,z},3); 
+x:=val(tank.h,25.0);
+y:=val(tank.h,100.0);
+z:=val(tank.h,150.0);
+w:=val(tank.h,200.0);
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+w:=1000*w;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+w:=floor(w);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+y/1000.0;
+z/1000.0;
+w/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TankPI_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-05, method = 'dopri5', fileNamePrefix = 'TankPI', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// true
+// 0.439
+// 0.255
+// 0.249
+// 0.214
+// endResult

@@ -1,0 +1,32 @@
+// name: InitialConstantSection
+// status: correct
+// teardown_command: rm -rf InitialConstantSection.M*
+
+loadString("
+package InitialConstantSection
+model M
+  function ext
+    input Real r;
+  external \"C\" annotation(Include=\"#define ext(X) fprintf(stderr,\\\"\\n* Should only be called once!\\n\\\")\");
+  end ext;
+  Real r = 1.0;
+algorithm
+  if initial() then
+    ext(r);
+  end if;
+end M;
+end InitialConstantSection;
+");getErrorString();
+simulate(InitialConstantSection.M);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InitialConstantSection.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'InitialConstantSection.M', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "
+// * Should only be called once!
+// "
+// end SimulationResult;
+// endResult

@@ -1,0 +1,97 @@
+// name:     SiemensPower.Components.Pipes.Tests.tube_test.mos
+// keywords: SiemensPower fluid
+// status:   correct
+// teardown_comment:
+//
+//
+//
+
+setCommandLineOptions("+d=acceptTooManyFields");
+loadModel(Modelica, {"3.2"}); getErrorString();
+loadFile("SiemensPower/package.mo"); getErrorString();
+
+simulate(SiemensPower.Components.Pipes.Tests.tube_test); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.Pipes.Tests.tube_test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.Pipes.Tests.tube_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Alias set with several free start values
+//  * candidate: ECO.portOut.p(start = ECO.pOut_start)
+//  * candidate: EVA.portIn.p(start = EVA.pIn_start)
+//  * candidate: EVA.state_from_a.p(start = EVA.pIn_start)
+//  * candidate: ECO.state_from_b.p(start = ECO.pOut_start)
+// => select value from ECO.state_from_b.p(start = ECO.pOut_start)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 2.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: EVA.fluid[1].h(start = EVA.h_start[1])
+//  * candidate: EVA.portIn.h_outflow(start = EVA.hIn_start)
+// => select value from EVA.portIn.h_outflow(start = EVA.hIn_start)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 2.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: ECO.fluid[1].h(start = ECO.h_start[1])
+//  * candidate: ECO.portIn.h_outflow(start = ECO.hIn_start)
+// => select value from ECO.portIn.h_outflow(start = ECO.hIn_start)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 2.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: ECO.fluid[9].p(start = 3011111.111111111)
+//  * candidate: ECO.fluid[10].p(start = 3000000.0)
+//  * candidate: ECO.fluid[8].p(start = 3022222.222222222)
+//  * candidate: ECO.fluid[7].p(start = 3033333.333333333)
+//  * candidate: ECO.fluid[6].p(start = 3044444.444444444)
+//  * candidate: ECO.fluid[5].p(start = 3055555.555555556)
+//  * candidate: ECO.fluid[4].p(start = 3066666.666666667)
+//  * candidate: ECO.fluid[3].p(start = 3077777.777777778)
+//  * candidate: ECO.fluid[2].p(start = 3088888.888888889)
+//  * candidate: ECO.fluid[1].p(start = 3100000.0)
+// => select value from ECO.fluid[1].p(start = 3100000.0)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: EVA.fluid[19].p(start = 3005263.157894737)
+//  * candidate: EVA.fluid[20].p(start = 3000000.0)
+//  * candidate: EVA.fluid[18].p(start = 3010526.315789474)
+//  * candidate: EVA.fluid[17].p(start = 3015789.47368421)
+//  * candidate: EVA.fluid[16].p(start = 3021052.631578947)
+//  * candidate: EVA.fluid[15].p(start = 3026315.789473684)
+//  * candidate: EVA.fluid[14].p(start = 3031578.947368421)
+//  * candidate: EVA.fluid[13].p(start = 3036842.105263158)
+//  * candidate: EVA.fluid[12].p(start = 3042105.263157895)
+//  * candidate: EVA.fluid[11].p(start = 3047368.421052631)
+//  * candidate: EVA.fluid[10].p(start = 3052631.578947369)
+//  * candidate: EVA.fluid[9].p(start = 3057894.736842105)
+//  * candidate: EVA.fluid[8].p(start = 3063157.894736842)
+//  * candidate: EVA.fluid[7].p(start = 3068421.052631579)
+//  * candidate: EVA.fluid[6].p(start = 3073684.210526316)
+//  * candidate: EVA.fluid[5].p(start = 3078947.368421053)
+//  * candidate: EVA.fluid[4].p(start = 3084210.52631579)
+//  * candidate: EVA.fluid[3].p(start = 3089473.684210526)
+//  * candidate: EVA.fluid[2].p(start = 3094736.842105263)
+//  * candidate: EVA.fluid[1].p(start = 3100000.0)
+// => select value from EVA.fluid[1].p(start = 3100000.0)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: ECO.fluid[9].p(start = 3100000.0)
+//  * candidate: ECO.p(start = 0.6 * ECO.pIn_start + (1.0 - 0.6) * ECO.pOut_start)
+// => select value from ECO.p(start = 0.6 * ECO.pIn_start + (1.0 - 0.6) * ECO.pOut_start)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 2.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: EVA.fluid[19].p(start = 3100000.0)
+//  * candidate: EVA.p(start = 0.6 * EVA.pIn_start + (1.0 - 0.6) * EVA.pOut_start)
+// => select value from EVA.p(start = 0.6 * EVA.pIn_start + (1.0 - 0.6) * EVA.pOut_start)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 2.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// "
+// endResult

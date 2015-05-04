@@ -1,0 +1,21 @@
+// name:     MatchCase13
+// keywords: Match Cases
+// status:   correct
+// cflags: +g=MetaModelica
+// teardown_command: rm -f MatchCase13_*
+//
+// Match Testing. Tests tuple output of match expressions.
+//
+loadFile("MatchCase13.mo");
+MatchCase13.func1(1);
+getErrorString();
+MatchCase13.func2(2,5);
+getErrorString();
+
+// Result:
+// true
+// (1,2)
+// ""
+// ((2,4),(5,10))
+// ""
+// endResult

@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam)
+//keyword:     simulate
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam)
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam","Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam_init.xml"}
+// endResult

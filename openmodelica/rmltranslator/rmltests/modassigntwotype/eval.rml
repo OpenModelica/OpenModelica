@@ -1,0 +1,180 @@
+
+module Eval:
+
+with "Absyn.rml"
+
+datatype Value       =  INTval  of  int 
+                     |  REALval of  real
+
+type VarBnd      =  Absyn.Ident * Value
+type Env         =  VarBnd list
+val init_env : VarBnd list
+
+
+
+end 
+
+val init_env = []
+
+datatype Ty2     =  INT2   of  int * int
+                 |  REAL2  of  real * real
+
+
+relation lookup: (Env,Absyn.Ident) => Value  =
+
+  rule  id = id2
+        ------------------------------
+        lookup((id2,value) :: _, id) => value
+
+  
+  rule  not id=id2  &  lookup(rest, id) => value
+        -------------------------------------
+        lookup((id2,_) :: rest, id)  => value
+
+end
+
+
+relation lookupextend: (Env,Absyn.Ident) => (Env,Value)  =
+
+  rule  not lookup(env,id) => v &
+        let value = INTval(0)
+        -----------------------------
+        lookupextend(env, id) => ((id, value)::env,value)
+
+  rule  lookup(env,id) => value
+        --------------------------------
+        lookupextend(env, id)  => (env,value)
+end 
+
+
+ relation update: (Env,Absyn.Ident,Value) => Env  =
+
+  axiom update(env,id,value) => ((id,value) :: env)
+
+ end 
+
+
+relation type_lub: (Value,Value) => Ty2  =
+
+ axiom  type_lub(INTval(x), INTval(y))   =>  INT2(x,y)
+
+ rule   int_real(x) => x2
+        ----------------
+        type_lub(INTval(x), REALval(ry))  =>  REAL2(x2,ry)
+
+ rule   int_real(y) => y2
+        -----------------
+        type_lub(REALval(rx),INTval(y))   =>  REAL2(rx,y2)
+
+ axiom  type_lub(REALval(rx),REALval(ry))  =>  REAL2(rx,ry)
+
+end 
+
+
+(*************** Binary and unary operators ***************)
+
+
+relation apply_int_binop:(Absyn.BinOp,int,int) => int =
+
+ rule   int_add(x,y) => z
+        ------------------------                              (* x+y *)
+        apply_int_binop(Absyn.ADD,x,y) => z
+
+ rule   int_sub(x,y) => z
+        ------------------------                              (* x-y *)
+        apply_int_binop(Absyn.SUB,x,y) => z
+
+ rule   int_mul(x,y) => z
+        ------------------------                              (* x*y *)
+        apply_int_binop(Absyn.MUL,x,y) => z
+
+ rule   int_div(x,y) => z
+        ------------------------                              (* x/y *)
+        apply_int_binop(Absyn.DIV,x,y) => z
+end
+
+
+
+relation apply_real_binop:(Absyn.BinOp,real,real) => real =
+
+ rule   real_add(x,y) => z
+        -------------------------                             (* x+y *)
+        apply_real_binop(Absyn.ADD,x,y) => z
+
+ rule   real_sub(x,y) => z
+        -------------------------                             (* x-y *)
+        apply_real_binop(Absyn.SUB,x,y) => z
+
+ rule   real_mul(x,y) => z
+        -------------------------                             (* x*y *)
+        apply_real_binop(Absyn.MUL,x,y) => z
+
+ rule   real_div(x,y) => z
+        ------------------------                              (* x/y *)
+        apply_real_binop(Absyn.DIV,x,y) => z
+
+end 
+
+
+relation apply_int_unop: (Absyn.UnOp,int) => int =
+
+ rule   int_neg(x) => y
+        ------------------------                              (* -x *)
+        apply_int_unop(Absyn.NEG,x) => y
+
+end (* apply_int_unop *)
+
+
+relation apply_real_unop: (Absyn.UnOp,real) => real =
+
+ rule   real_neg(x) => y
+        ------------------------                              (* -x *)
+        apply_real_unop(Absyn.NEG,x) => y
+
+end (* apply_real_unop *)
+
+
+
+relation eval:  (Env,Absyn.Exp) => (Env,Value)  =
+
+
+  axiom eval(env,Absyn.INT(ival)) => (env,INTval(ival))  
+
+  axiom eval(env,Absyn.REAL(rval)) => (env,REALval(rval)) 
+
+  rule  lookupextend(env,id) => (env2,value)
+         -----------------------------------            
+         eval(env,Absyn.IDENT(id)) => (env2,value)
+
+ rule   eval(env,e1)    => (env1,v1) & 
+        eval(env,e2)    => (env2,v2) &
+        type_lub(v1,v2) => INT2(x,y) &
+        apply_int_binop(binop,x,y) => z
+        --------------------------------             
+        eval(env, Absyn.BINARY(e1,binop,e2)) => (env2,INTval(z))
+
+ rule   eval(env,e1)    => (env1,v1) & 
+        eval(env,e2)    => (env2,v2) &
+        type_lub(v1,v2) => REAL2(rx,ry) &
+        apply_real_binop(binop,rx,ry) => rz
+        --------------------------------   
+        eval(env, Absyn.BINARY(e1,binop,e2)) => (env2,REALval(rz))
+
+  rule  eval(env,e) => (env1,INTval(x))  &
+        apply_int_unop(unop,x) => y
+        -----------------------------------             
+        eval(env, Absyn.UNARY(unop,e) ) => (env1,INTval(y))
+
+  rule  eval(env,e) => (env1,REALval(rx))  &
+        apply_real_unop(unop,rx) => ry
+        ------------------------------------            
+        eval(env, Absyn.UNARY(unop,e) ) => (env1,REALval(ry))
+
+  
+  rule  eval(env,exp) => (env1,value)  &
+        update(env1,id,value) => env2
+        ----------------------------------------         
+        eval(env, Absyn.ASSIGN(id,exp)) => (env2,value)
+
+end 
+

@@ -1,0 +1,64 @@
+// name:     ComplicatedInteractive
+// keywords: MetaModelica
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Testing nested complex datatypes, like tuple, list, option...
+loadFile("ComplicatedInteractive.mo");
+
+res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {}));
+res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {(1.0, SOME({}))}));
+res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {(1.0, NONE()), (1.0, SOME({1,2,3}))}));
+res2 := ComplicatedInteractive.LI2Ident(res);
+res3 := ComplicatedInteractive.NewComplicatedThingy(NONE());
+res3 := ComplicatedInteractive.NewComplicatedThingy(SOME({}));
+res3 := ComplicatedInteractive.NewComplicatedThingy(SOME({1,2,3}));
+
+res4 := ComplicatedInteractive.listOfTuple((2,3.5));
+
+// Expecting failures
+ComplicatedInteractive.RecordWithComplicatedTypes((1, {(1.0, NONE()), (1.0, SOME({true}))}));
+getErrorString();
+ComplicatedInteractive.NewComplicatedThingy(SOME({true}));
+getErrorString();
+
+// Result:
+// true
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(1.0,SOME({}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(1.0,NONE()),(1.0,SOME({1,2,3}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(1.0,NONE()),(1.0,SOME({1,2,3}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(7.5,NONE())})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
+// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(7.5,SOME({}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
+// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(7.5,SOME({1,2,3}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
+// {(2,3.5),(2,3.5),(2,3.5),(1,7.5),(2,3.5),(2,3.5)}
+//
+// "[metamodelica/meta/ComplicatedInteractive.mos:20:1-20:93:writable] Error: Type mismatch for positional argument 1 in ComplicatedInteractive.LI2(rcf=Tuple(#(1), List(Tuple(#(1.0), NONE()), Tuple(#(1.0), SOME(List(#(true))))))). The argument has type:
+//   tuple<#Integer, list<tuple<#Real, Option<list<#Boolean>>>>>
+// expected type:
+//   tuple<#Real, list<tuple<#Real, Option<list<#Integer>>>>>
+// [metamodelica/meta/ComplicatedInteractive.mos:20:1-20:93:writable] Error: In record constructor ComplicatedInteractive.LI2.RecordWithComplicatedTypes: Failed to match types:
+//     actual:   tuple<tuple<#Integer, list<tuple<#Real, Option<list<#Boolean>>>>>>
+//     expected: (tuple<#Real, list<tuple<#Real, Option<list<#Integer>>>>>)
+// "
+//
+// "[metamodelica/meta/ComplicatedInteractive.mos:22:1-22:58:writable] Error: Type mismatch for positional argument 1 in ComplicatedInteractive.NewComplicatedThingy(opt=SOME(List(#(true)))). The argument has type:
+//   Option<list<#Boolean>>
+// expected type:
+//   Option<list<#Integer>>
+// "
+// endResult

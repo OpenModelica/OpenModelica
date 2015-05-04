@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT)
+//keyword:     simulate
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT)
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT","Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT_init.xml"}
+// endResult

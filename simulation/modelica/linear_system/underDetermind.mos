@@ -1,0 +1,38 @@
+// name: underDetermined
+// keywords: linear system of equations
+// status: correct
+// teardown_command: rm -rf PointGravityWithPointMasses2* output.log
+// 
+// Solving of a linear system of equations
+
+loadModel(Modelica); getErrorString();
+
+buildModel(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2);
+getErrorString();
+
+system("./Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2");
+getErrorString();
+
+system("./Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2 -ls umfpack");
+getErrorString();
+
+system("./Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2 -ls lapack");
+getErrorString();
+
+// Result:
+// true
+// ""
+// {"Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2","Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_init.xml"}
+// ""
+// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// 0
+// ""
+// 0
+// ""
+// stdout            | warning | Solving linear system 1372 fails at time 0. For more information use -lv LOG_LS.
+// stdout            | warning | Solving linear system 1372 fails at time 0. For more information use -lv LOG_LS.
+// stdout            | warning | Error in initialization. Storing results and exiting.
+// |                 | |       | Use -lv=LOG_INIT -w for more information.
+// 255
+// ""
+// endResult

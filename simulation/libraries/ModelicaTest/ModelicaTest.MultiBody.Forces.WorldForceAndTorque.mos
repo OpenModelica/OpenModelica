@@ -1,0 +1,46 @@
+// name:     ModelicaTest.MultiBody.Forces.WorldForceAndTorque
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Forces.WorldForceAndTorque);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Forces.WorldForceAndTorque_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Forces.WorldForceAndTorque.mat",
+  "ModelicaTest.MultiBody.Forces.WorldForceAndTorque_diff.csv",0.01,0.0001,
+  {"Revolute3.phi",
+"Revolute3.w",
+"Revolute4.phi",
+"Revolute4.w",
+"Revolute1.phi",
+"Revolute1.w",
+"Revolute2.phi",
+"Revolute2.w",
+"Revolute5.phi",
+"Revolute5.w",
+"Revolute6.phi",
+"Revolute6.w"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "ModelicaTest.MultiBody.Forces.WorldForceAndTorque_res.mat",,
+//     simulationOptions = "startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Forces.WorldForceAndTorque\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "",,
+// end SimulationResult;,
+// "Files Equal!",
+// '
+// endResult

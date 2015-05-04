@@ -1,0 +1,3 @@
+openModel("_LoopsTotal.mo"); 
+checkModel("Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic"); 
+exit();

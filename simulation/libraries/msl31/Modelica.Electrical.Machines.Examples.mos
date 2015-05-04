@@ -1,0 +1,56 @@
+
+//name:        Simulate Modelica.Electrical.Machines.Examples [version 3.1]
+//keyword:     instantiating/check/simulate MSL 3.1 Modelica.Electrical.Machines.Examples
+//status:      correct
+//
+// instantiate/check/simulate model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+// Modelica.Electrical.Machines.Examples
+checkModel(Modelica.Electrical.Machines.Examples.AIMC_DOL);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.AIMC_DOL);  getErrorString();
+
+
+checkModel(Modelica.Electrical.Machines.Examples.AIMC_YD);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.AIMC_YD);  getErrorString();
+
+
+checkModel(Modelica.Electrical.Machines.Examples.AIMS_Start);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.AIMS_Start);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.AIMC_Inverter);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.AIMC_Inverter);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.SMR_Inverter);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.SMR_Inverter);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.SMPM_Inverter);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.SMPM_Inverter);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.SMEE_Generator);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.SMEE_Generator);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.DCPM_Start);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.DCPM_Start);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.DCEE_Start);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.DCEE_Start);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.DCSE_Start);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.DCSE_Start);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.TransformerTestbench);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.TransformerTestbench);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.Rectifier6pulse);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.Rectifier6pulse);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.Rectifier12pulse);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.Rectifier12pulse);  getErrorString();
+
+checkModel(Modelica.Electrical.Machines.Examples.AIMC_Steinmetz);  getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.AIMC_Steinmetz);  getErrorString();
+
+system("rm -f *.c *.dll *.log *.makefile *.cpp *.exe *.h *.libs *_init.xml *_init.txt *_res.mat");

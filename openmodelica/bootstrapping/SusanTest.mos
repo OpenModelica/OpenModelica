@@ -1,0 +1,157 @@
+// name: SusanTest
+// status: correct
+// teardown_command: rm -f SusanTest_* Tpl_* SusanTestSmall_* SusanTestSmall.mo
+// depends: SusanTestSmall.tpl
+// depends: SusanTestTV.mo
+// stack_size: 8192
+
+setCommandLineOptions({"+g=MetaModelica","+d=rml,noevalfunc"});
+loadFile("../../../Compiler/FrontEnd/Absyn.mo");
+getErrorString();
+loadFile("../../../Compiler/Global/Global.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Corba.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Debug.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Error.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/ErrorExt.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/StringUtil.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Flags.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Print.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Settings.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/System.mo");
+getErrorString();
+loadFile("../../../Compiler/Template/TplAbsyn.mo");
+getErrorString();
+loadFile("../../../Compiler/Template/TplCodegen.mo");
+if OpenModelica.Scripting.getErrorString() == "" then "" else "Errors in TplCodegen.mo";
+loadFile("../../../Compiler/Template/Tpl.mo");
+getErrorString();
+loadFile("../../../Compiler/Template/TplMain.mo");
+getErrorString();
+loadFile("../../../Compiler/Template/TplParser.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Util.mo");
+loadFile("../../../Compiler/Util/Config.mo");
+loadFile("../../../Compiler/Util/List.mo");
+loadFile("SusanTest.mo");
+getErrorString();
+
+system("cp ../../../Compiler/Template/CodegenC.tpl ../../../Compiler/Template/CodegenUtil.tpl ../../../Compiler/Template/SimCodeTV.mo .");
+system("rm -f CodegenC.mo");
+SusanTest.main({"CodegenC.tpl"});
+system("grep -v '$Id' ../../../Compiler/Template/CodegenC.mo > theirs");
+system("grep -v '$Id' CodegenC.mo > mine");
+system("diff -u theirs mine > CodegenC.diff");
+readFile("CodegenC.diff");
+
+system("rm -f SusanTestSmall.mo");
+SusanTest.main({"+d=failtrace","SusanTestSmall.tpl"});
+getErrorString();
+loadFile("SusanTestSmall.mo");
+getErrorString();
+txt:=SusanTestSmall.helloWorld(Tpl.emptyTxt);
+getErrorString();
+Tpl.textString(txt);
+getErrorString();
+
+// Result:
+// {true,true}
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// true
+// ""
+// 0
+// 0
+// 
+// Processing file 'CodegenC.tpl'
+// 
+// Susan parsing successful.
+// 
+// Writing result to file 'CodegenC.mo'
+// 
+// 0
+// 0
+// 0
+// ""
+// 0
+// 
+// Processing file 'SusanTestSmall.tpl'
+// 
+// Susan parsing successful.
+// 
+// Writing result to file 'SusanTestSmall.mo'
+// ### Error Buffer ###
+// 
+//  TEXT_CREATE ident = x
+// 
+//  BOUND_VALUE resolving boundPath = x
+// 
+//  BOUND_VALUE resolved mmexp = l_x : Tpl.Text (dealiased: Tpl.Text)
+// 
+//  FUN_CALL fname = helloWorld
+//  FUN_CALL argList stmts generation passed
+//  FUN_CALL stmt =
+// txt = helloWorld(txt);
+// 
+//  BOUND_VALUE resolving boundPath = str
+// 
+//  BOUND_VALUE resolved mmexp = i_str : String (dealiased: String)
+// 
+// ### End of Error Buffer ###
+// 
+// "[NoFileName.xxx:0:0-0:0:writable] Notification: getTypeInfo failed to lookup the type 'Values.Value' after looking up all AST definitions.
+// [NoFileName.xxx:0:0-0:0:writable] Notification: getTypeInfo failed to lookup the type 'DAE.Element' after looking up all AST definitions.
+// "
+// true
+// ""
+// record Tpl.Text.MEM_TEXT
+//     tokens = {record Tpl.StringToken.ST_STRING
+//     value = "Hello, World!"
+// end Tpl.StringToken.ST_STRING;},
+//     blocksStack = {}
+// end Tpl.Text.MEM_TEXT;
+// ""
+// "Hello, World!"
+// ""
+// endResult

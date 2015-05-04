@@ -1,0 +1,38 @@
+/* parsutil.h */
+enum uop { UOP_ADDR, UOP_INDIR, UOP_NOT, UOP_PLUS, UOP_MINUS };
+enum bop { BOP_ADD, BOP_SUB, BOP_MUL, BOP_RDIV, BOP_IDIV, BOP_IMOD, BOP_IAND, BOP_IOR };
+enum rop { ROP_LT, ROP_LE, ROP_GE, ROP_GT };
+enum eop { EOP_EQ, EOP_NE };
+
+void *pu_Constant_INTcon(void *icon);
+void *pu_Constant_REALcon(void *rcon);
+void *pu_Constant_IDENTcon(void *id);
+void *pu_CONBND(void *id, void *con);
+void *pu_Ty_NAME(void *id);
+void *pu_Ty_PTR(void *ty);
+void *pu_Ty_ARR(void *con, void *ty);
+void *pu_Ty_REC(void *tybnds);
+void *pu_VARBND(void *id, void *ty);
+void *pu_TYBND(void *id, void *ty);
+void *pu_Exp_INT(void *icon);
+void *pu_Exp_REAL(void *rcon);
+void *pu_Exp_IDENT(void *id);
+void *pu_Exp_CAST(void *ty, void *exp);
+void *pu_Exp_FIELD(void *exp, void *id);
+void *pu_Exp_UNARY(enum uop uop, void *exp);
+void *pu_Exp_BINARY(void *exp1, enum bop bop, void *exp2);
+void *pu_Exp_RELATION(void *exp1, enum rop rop, void *exp2);
+void *pu_Exp_EQUALITY(void *exp1, enum eop eop, void *exp2);
+void *pu_Exp_FCALL(void *id, void *args);
+void *pu_Stmt_ASSIGN(void *lhs, void *rhs);
+void *pu_Stmt_PCALL(void *id, void *args);
+void *pu_Stmt_FRETURN(void *exp);
+void *pu_Stmt_PRETURN(void);
+void *pu_Stmt_WHILE(void *exp, void *stmt);
+void *pu_Stmt_IF(void *exp, void *stmt1, void *stmt2);
+void *pu_Stmt_SEQ(void *stmt1, void *stmt2);
+void *pu_Stmt_SKIP(void);
+void *pu_SubBnd_FUNCBND(void *id, void *varbnds, void *ty, void *block_opt);
+void *pu_SubBnd_PROCBND(void *id, void *varbnds, void *block_opt);
+void *pu_BLOCK(void *conbnds, void *tybnds, void *varbnds, void *subbnds, void *stmt);
+void *pu_PROG(void *id, void *block);

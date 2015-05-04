@@ -1,0 +1,33 @@
+// name:     DrModelicaForTesting.HideVariable.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.HideVariable
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.HideVariable.* DrModelicaForTesting.HideVariable_* DrModelicaForTesting.HideVariable DrModelicaForTesting.HideVariable.exe DrModelicaForTesting.HideVariable.cpp DrModelicaForTesting.HideVariable.makefile DrModelicaForTesting.HideVariable.libs DrModelicaForTesting.HideVariable.log DrModelicaForTesting.HideVariable.c DrModelicaForTesting.HideVariable.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.HideVariable, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.HideVariable_res.mat",
+  "ReferenceFiles/HideVariable_ref.mat","DrModelicaForTesting.HideVariable_diff.csv",0.01,0.013,
+  {"z[1]","z[3]","z[5]"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.HideVariable_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.HideVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

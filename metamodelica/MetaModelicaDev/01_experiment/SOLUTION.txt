@@ -1,0 +1,160 @@
+Add these functions to Functions.mo for printing.
+
+// an alias for the Real type 
+// type Alias = Real; 
+// constant Alias aliasConstant = 1.0;
+function printAlias
+  input Types.Alias aliasVariable;
+algorithm
+  print(realString(aliasVariable));
+end printAlias;
+
+// an option type which can be SOME(Alias) or NONE()
+// type OptionType = Option<Alias>; 
+// constant OptionType optionAliasConstant = SOME(aliasConstant);
+function printOptionType
+  input Types.OptionType oVar;
+algorithm
+  _ := matchcontinue(oVar)
+    local Types.Alias alias;
+    case NONE() 
+      equation
+        print("NONE()");
+      then ();
+    case SOME(alias)
+      equation
+        printAlias(alias);
+      then ();
+  end matchcontinue;
+end printOptionType;
+
+// a tuple type with 3 elements
+//type TupleType = tuple<String, Alias, OptionType>; 
+//constant TupleType tupleConstant = ("a tuple element", aliasConstant, optionAliasConstant);
+function printTupleType
+  input Types.TupleType tupleVar;
+algorithm
+  _ := matchcontinue(tupleVar)
+    local 
+      Types.Alias alias;
+      Types.OptionType optionAlias;
+      String str;
+    case ((str, alias, optionAlias)) 
+      equation
+        print("(");
+        print("\"" + str + "\"");
+        print(", ");
+        printAlias(alias);
+        print(", ");        
+        printOptionType(optionAlias);
+        print(")");
+      then ();
+  end matchcontinue;
+end printTupleType;
+
+
+// a list type 
+//type ListType = list<TupleType>; 
+//constant ListType listConstant = {tupleConstant, ("another element", 2.0, NONE())};
+function printListType
+  input Types.ListType listVar;
+algorithm
+  _ := matchcontinue(listVar)
+    local 
+      Types.TupleType element;
+      Types.ListType rest;
+      String str;
+    case ({}) then ();
+    case (element::{}) 
+      equation
+        printTupleType(element);
+      then ();
+    case (element::rest) 
+      equation
+        printTupleType(element);
+        print(", ");
+        printListType(rest);
+      then ();
+  end matchcontinue;
+end printListType;
+
+
+// complex record types
+//record OneRecord
+//  String k;
+//  Alias z;
+//end OneRecord;
+//constant OneRecord oneRecord = OneRecord("first element", 3.0);
+function printOneRecord
+  input Types.OneRecord oneRecordVar;
+algorithm
+  _ := matchcontinue(oneRecordVar)
+    local 
+      String cmp1;
+      Types.Alias cmp2;      
+    case (Types.OneRecord(cmp1, cmp2)) 
+      equation
+        print("OneRecord(");
+        print("\"" + cmp1 + "\"");
+        print(", ");
+        printAlias(cmp2);
+        print(")");
+      then ();
+  end matchcontinue;
+end printOneRecord;
+
+
+// complex uniontypes
+//uniontype Select
+  
+//  record FirstAlternative
+//    String x1;
+//    String x2;
+//  end FirstAlternative;
+
+//  record SecondAlternative
+//    Select x1;
+//    Select x2;
+//  end SecondAlternative;
+//  
+//  record ThirdAlternative
+//    Select next;
+//  end ThirdAlternative;
+//end Select;
+
+//constant Select select = 
+//	ThirdAlternative(
+//	  SecondAlternative(
+//	    FirstAlternative("one", "First"),
+//	    FirstAlternative("two", "Second"))); 
+function printSelect
+  input Types.Select selectVar;
+algorithm
+  _ := matchcontinue(selectVar)
+    local 
+      String cmp1, cmp2;
+      Types.Select sel1, sel2;
+    case (Types.FirstAlternative(cmp1, cmp2)) 
+      equation
+        print("FirstAlternative(");
+        print("\"" + cmp1 + "\"");
+        print(", ");
+        print("\"" + cmp2 + "\"");
+        print(")");
+      then ();
+    case (Types.SecondAlternative(sel1, sel2)) 
+      equation
+        print("SecondAlternative(");
+        printSelect(sel1);
+        print(", ");
+        printSelect(sel2);
+        print(")");
+      then ();
+    case (Types.ThirdAlternative(sel1)) 
+      equation
+        print("ThirdAlternative(");
+        printSelect(sel1);
+        print(")");
+      then ();
+  end matchcontinue;
+end printSelect;

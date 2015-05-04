@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air)
+// {"Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air","Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air_init.xml"}
+// endResult

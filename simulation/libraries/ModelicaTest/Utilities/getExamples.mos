@@ -1,0 +1,6 @@
+openModel("printModels.mo");
+openModel("traversePackage.mo");
+openModel("C:/OpenModelica1.9.0/lib/omlibrary/Modelica 3.2.1/package.mo");
+traversePackage("Modelica");
+savelog("C:/temp/OpenModelica/testsuite/simulation/libraries/msl32/Utilities/models.txt");
+exit();

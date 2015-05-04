@@ -1,0 +1,183 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.* ThermoSysPro.Examples.SimpleExamples.TestWaterHammer_* ThermoSysPro.Examples.SimpleExamples.TestWaterHammer ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.exe ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.cpp ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.makefile ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.libs ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.log ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.c ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, stopTime=10); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestWaterHammer_res.mat",
+"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestWaterHammer_diff.csv",
+0.01, 0.0001,
+{"waterHammer.C1.Q",
+ "waterHammer.C2.P"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 1: waterHammer.Qv[8]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 2: waterHammer.Qv[6]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 3: waterHammer.H[3]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 4: waterHammer.H[2]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 5: waterHammer.H[19]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 6: waterHammer.H[20]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 7: waterHammer.Qv[1]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 8: waterHammer.Qv[2]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 9: waterHammer.Qv[3]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 10: waterHammer.Qv[4]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 11: waterHammer.Cp1[3]:DISCRETE(fixed = false ) .ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 12: waterHammer.Qv[11]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 13: waterHammer.Qv[10]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 14: waterHammer.Qv[5]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 15: waterHammer.Qv[12]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 16: waterHammer.H[11]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 17: waterHammer.H[10]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 18: waterHammer.H[5]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 19: waterHammer.H[12]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 20: waterHammer.H[6]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 21: waterHammer.H[4]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 22: waterHammer.H[17]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 23: waterHammer.H[18]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 24: waterHammer.H[14]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 25: waterHammer.H[9]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 26: waterHammer.H[8]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 27: waterHammer.H[7]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 28: waterHammer.H[13]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 29: waterHammer.H[16]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 30: waterHammer.H[15]:VARIABLE()  "Head in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.Length type: Real [21]
+// 31: waterHammer.Qv[18]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 32: waterHammer.Qv[9]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 33: waterHammer.Qv[14]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 34: waterHammer.Qv[7]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 35: waterHammer.Qv[13]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 36: waterHammer.Qv[16]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 37: waterHammer.Qv[15]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 38: waterHammer.Qv[17]:VARIABLE()  "Volume flow in segment i".ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, .ThermoSysPro.WaterSteam.PressureLosses.WaterHammer, .Modelica.SIunits.VolumeFlowRate type: Real [21]
+// 1/1 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[19] - waterHammer.Qv[18] else waterHammer.Qv[17] - (waterHammer.Cp1[17] - waterHammer.Cm1[17]) / (waterHammer.Bp1[17] + waterHammer.Bm1[17])
+// 2/2 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[18] - waterHammer.Qv[17] else waterHammer.Qv[15] - (waterHammer.Cp1[15] - waterHammer.Cm1[15]) / (waterHammer.Bp1[15] + waterHammer.Bm1[15])
+// 3/3 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[16] - waterHammer.Qv[15] else waterHammer.Qv[11] - (waterHammer.Cp1[11] - waterHammer.Cm1[11]) / (waterHammer.Bp1[11] + waterHammer.Bm1[11])
+// 4/4 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[17] - waterHammer.Qv[16] else waterHammer.Qv[13] - (waterHammer.Cp1[13] - waterHammer.Cm1[13]) / (waterHammer.Bp1[13] + waterHammer.Bm1[13])
+// 5/5 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[14] - waterHammer.Qv[13] else waterHammer.Qv[7] - (waterHammer.Cp1[7] - waterHammer.Cm1[7]) / (waterHammer.Bp1[7] + waterHammer.Bm1[7])
+// 6/6 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[8] - waterHammer.Qv[7] else waterHammer.Qv[14] - (waterHammer.Cp2[14] - waterHammer.Cm2[14]) / (waterHammer.Bp2[14] + waterHammer.Bm2[14])
+// 7/7 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[15] - waterHammer.Qv[14] else waterHammer.Qv[9] - (waterHammer.Cp1[9] - waterHammer.Cm1[9]) / (waterHammer.Bp1[9] + waterHammer.Bm1[9])
+// 8/8 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[10] - waterHammer.Qv[9] else waterHammer.Qv[18] - (waterHammer.Cp2[18] - waterHammer.Cm2[18]) / (waterHammer.Bp2[18] + waterHammer.Bm2[18])
+// 9/9 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[18] - waterHammer.H[17] - waterHammer.R * waterHammer.Qv[18] * abs(waterHammer.Qv[18]) else waterHammer.H[15] - (waterHammer.Cp1[15] * waterHammer.Bm1[15] + waterHammer.Cm1[15] * waterHammer.Bp1[15]) / (waterHammer.Bp1[15] + waterHammer.Bm1[15])
+// 10/10 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[16] - waterHammer.H[15] - waterHammer.R * waterHammer.Qv[16] * abs(waterHammer.Qv[16]) else waterHammer.H[11] - (waterHammer.Cp1[11] * waterHammer.Bm1[11] + waterHammer.Cm1[11] * waterHammer.Bp1[11]) / (waterHammer.Bp1[11] + waterHammer.Bm1[11])
+// 11/11 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[17] - waterHammer.H[16] - waterHammer.R * waterHammer.Qv[17] * abs(waterHammer.Qv[17]) else waterHammer.H[13] - (waterHammer.Cp1[13] * waterHammer.Bm1[13] + waterHammer.Cm1[13] * waterHammer.Bp1[13]) / (waterHammer.Bp1[13] + waterHammer.Bm1[13])
+// 12/12 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[14] - waterHammer.H[13] - waterHammer.R * waterHammer.Qv[14] * abs(waterHammer.Qv[14]) else waterHammer.H[7] - (waterHammer.Cp1[7] * waterHammer.Bm1[7] + waterHammer.Cm1[7] * waterHammer.Bp1[7]) / (waterHammer.Bp1[7] + waterHammer.Bm1[7])
+// 13/13 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[8] - waterHammer.H[7] - waterHammer.R * waterHammer.Qv[8] * abs(waterHammer.Qv[8]) else waterHammer.H[14] - (waterHammer.Cp2[14] * waterHammer.Bm2[14] + waterHammer.Cm2[14] * waterHammer.Bp2[14]) / (waterHammer.Bp2[14] + waterHammer.Bm2[14])
+// 14/14 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[9] - waterHammer.H[8] - waterHammer.R * waterHammer.Qv[9] * abs(waterHammer.Qv[9]) else waterHammer.H[16] - (waterHammer.Cp2[16] * waterHammer.Bm2[16] + waterHammer.Cm2[16] * waterHammer.Bp2[16]) / (waterHammer.Bp2[16] + waterHammer.Bm2[16])
+// 15/15 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[15] - waterHammer.H[14] - waterHammer.R * waterHammer.Qv[15] * abs(waterHammer.Qv[15]) else waterHammer.H[9] - (waterHammer.Cp1[9] * waterHammer.Bm1[9] + waterHammer.Cm1[9] * waterHammer.Bp1[9]) / (waterHammer.Bp1[9] + waterHammer.Bm1[9])
+// 16/16 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[10] - waterHammer.H[9] - waterHammer.R * waterHammer.Qv[10] * abs(waterHammer.Qv[10]) else waterHammer.H[18] - (waterHammer.Cp2[18] * waterHammer.Bm2[18] + waterHammer.Cm2[18] * waterHammer.Bp2[18]) / (waterHammer.Bp2[18] + waterHammer.Bm2[18])
+// 17/17 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[19] - waterHammer.H[18] - waterHammer.R * waterHammer.Qv[19] * abs(waterHammer.Qv[19]) else waterHammer.H[17] - (waterHammer.Cp1[17] * waterHammer.Bm1[17] + waterHammer.Cm1[17] * waterHammer.Bp1[17]) / (waterHammer.Bp1[17] + waterHammer.Bm1[17])
+// 18/18 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[5] - waterHammer.H[4] - waterHammer.R * waterHammer.Qv[5] * abs(waterHammer.Qv[5]) else waterHammer.H[8] - (waterHammer.Cp2[8] * waterHammer.Bm2[8] + waterHammer.Cm2[8] * waterHammer.Bp2[8]) / (waterHammer.Bp2[8] + waterHammer.Bm2[8])
+// 19/19 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[4] - waterHammer.H[3] - waterHammer.R * waterHammer.Qv[4] * abs(waterHammer.Qv[4]) else waterHammer.H[6] - (waterHammer.Cp2[6] * waterHammer.Bm2[6] + waterHammer.Cm2[6] * waterHammer.Bp2[6]) / (waterHammer.Bp2[6] + waterHammer.Bm2[6])
+// 20/20 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[7] - waterHammer.H[6] - waterHammer.R * waterHammer.Qv[7] * abs(waterHammer.Qv[7]) else waterHammer.H[12] - (waterHammer.Cp2[12] * waterHammer.Bm2[12] + waterHammer.Cm2[12] * waterHammer.Bp2[12]) / (waterHammer.Bp2[12] + waterHammer.Bm2[12])
+// 21/21 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[13] - waterHammer.H[12] - waterHammer.R * waterHammer.Qv[13] * abs(waterHammer.Qv[13]) else waterHammer.H[5] - (waterHammer.Cp1[5] * waterHammer.Bm1[5] + waterHammer.Cm1[5] * waterHammer.Bp1[5]) / (waterHammer.Bp1[5] + waterHammer.Bm1[5])
+// 22/22 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[6] - waterHammer.H[5] - waterHammer.R * waterHammer.Qv[6] * abs(waterHammer.Qv[6]) else waterHammer.H[10] - (waterHammer.Cp2[10] * waterHammer.Bm2[10] + waterHammer.Cm2[10] * waterHammer.Bp2[10]) / (waterHammer.Bp2[10] + waterHammer.Bm2[10])
+// 23/23 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[11] - waterHammer.H[10] - waterHammer.R * waterHammer.Qv[11] * abs(waterHammer.Qv[11]) else waterHammer.H[20] - (waterHammer.Cp2[20] * waterHammer.Bm2[20] + waterHammer.Cm2[20] * waterHammer.Bp2[20]) / (waterHammer.Bp2[20] + waterHammer.Bm2[20])
+// 24/24 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[12] - waterHammer.H[11] - waterHammer.R * waterHammer.Qv[12] * abs(waterHammer.Qv[12]) else waterHammer.H[3] - (waterHammer.Cp1[3] * waterHammer.Bm1[3] + waterHammer.Cm1[3] * waterHammer.Bp1[3]) / (waterHammer.Bp1[3] + waterHammer.Bm1[3])
+// 25/25 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[13] - waterHammer.Qv[12] else waterHammer.Qv[5] - (waterHammer.Cp1[5] - waterHammer.Cm1[5]) / (waterHammer.Bp1[5] + waterHammer.Bm1[5])
+// 26/26 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[6] - waterHammer.Qv[5] else waterHammer.Qv[10] - (waterHammer.Cp2[10] - waterHammer.Cm2[10]) / (waterHammer.Bp2[10] + waterHammer.Bm2[10])
+// 27/27 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[11] - waterHammer.Qv[10] else waterHammer.Qv[20] - (waterHammer.Cp2[20] - waterHammer.Cm2[20]) / (waterHammer.Bp2[20] + waterHammer.Bm2[20])
+// 28/28 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[12] - waterHammer.Qv[11] else waterHammer.Qv[3] - (waterHammer.Cp1[3] - waterHammer.Cm1[3]) / (waterHammer.Bp1[3] + waterHammer.Bm1[3])
+// 29/29 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[5] - waterHammer.Qv[4] else waterHammer.Qv[8] - (waterHammer.Cp2[8] - waterHammer.Cm2[8]) / (waterHammer.Bp2[8] + waterHammer.Bm2[8])
+// 30/30 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[4] - waterHammer.Qv[3] else waterHammer.Qv[6] - (waterHammer.Cp2[6] - waterHammer.Cm2[6]) / (waterHammer.Bp2[6] + waterHammer.Bm2[6])
+// 31/31 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[3] - waterHammer.Qv[2] else waterHammer.Qv[4] - (waterHammer.Cp2[4] - waterHammer.Cm2[4]) / (waterHammer.Bp2[4] + waterHammer.Bm2[4])
+// 32/32 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[2] - waterHammer.Qv[1] else waterHammer.Qv[2] - (waterHammer.Cp2[2] - waterHammer.Cm2[2]) / (waterHammer.Bp2[2] + waterHammer.Bm2[2])
+// 33/33 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[21] - waterHammer.H[20] - waterHammer.R * waterHammer.Qv[21] * abs(waterHammer.Qv[21]) else waterHammer.H[1] - (waterHammer.Cm1[1] + waterHammer.Bm1[1] * waterHammer.Qv[1])
+// 34/34 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[20] - waterHammer.H[19] - waterHammer.R * waterHammer.Qv[20] * abs(waterHammer.Qv[20]) else waterHammer.H[19] - (waterHammer.Cp1[19] * waterHammer.Bm1[19] + waterHammer.Cm1[19] * waterHammer.Bp1[19]) / (waterHammer.Bp1[19] + waterHammer.Bm1[19])
+// 35/35 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[2] - waterHammer.H[1] - waterHammer.R * waterHammer.Qv[2] * abs(waterHammer.Qv[2]) else waterHammer.H[2] - (waterHammer.Cp2[2] * waterHammer.Bm2[2] + waterHammer.Cm2[2] * waterHammer.Bp2[2]) / (waterHammer.Bp2[2] + waterHammer.Bm2[2])
+// 36/36 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.H[3] - waterHammer.H[2] - waterHammer.R * waterHammer.Qv[3] * abs(waterHammer.Qv[3]) else waterHammer.H[4] - (waterHammer.Cp2[4] * waterHammer.Bm2[4] + waterHammer.Cm2[4] * waterHammer.Bp2[4]) / (waterHammer.Bp2[4] + waterHammer.Bm2[4])
+// 37/37 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[7] - waterHammer.Qv[6] else waterHammer.Qv[12] - (waterHammer.Cp2[12] - waterHammer.Cm2[12]) / (waterHammer.Bp2[12] + waterHammer.Bm2[12])
+// 38/38 (1): 0.0 = if time < 2.0 * waterHammer.dt then waterHammer.Qv[9] - waterHammer.Qv[8] else waterHammer.Qv[16] - (waterHammer.Cp2[16] - waterHammer.Cm2[16]) / (waterHammer.Bp2[16] + waterHammer.Bm2[16])
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestWaterHammer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: ThermoSysPro.Examples.SimpleExamples.TestWaterHammer
+// stdout            | warning | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// "
+// end SimulationResult;
+// "[lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/BaseIF97.mo:5761:7-5778:16:writable] Warning: found was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:1125:9-1125:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:947:9-947:28:writable] Warning: v was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:871:9-871:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:801:9-801:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Error: Internal error BackendDAETransform.findDiscreteEquation failed.
+// 
+// Your model contains a mixed system involving algorithms or other complex-equations.
+// 
+// Sorry. Currently are supported only mixed system involving simple equations and boolean variables.
+// 
+// Try to break the loop by using the pre operator.
+// Error: Internal error ./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentBlock failed
+// Error: Internal error sorting equations(strongComponents failed)
+// Error: Internal error Transformation Module sort components failed!
+// Warning: No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.
+// "
+// {"Error opening file: ThermoSysPro.Examples.SimpleExamples.TestWaterHammer_res.mat"}
+// endResult

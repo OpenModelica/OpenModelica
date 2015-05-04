@@ -1,0 +1,61 @@
+// name:     Ext Java Record
+// keywords: algorithm
+// status:   correct
+// 
+// Test of External Java functions
+//
+
+loadFile("JavaExt.mo");
+
+echo(false);
+
+RecordToStringIn:=JavaTest.myRecord(1,2.0,true,":)");
+
+EmptyRecordToStringIn:=JavaTest.myEmptyRecord();
+
+RecordToRecordIn:=JavaTest.myRecord(1,2.0,true,":)");
+
+NestedRecordToRecordIn:=JavaTest.nestedRecord(RecordToRecordIn,"Nested Record Test");
+
+echo(true);
+
+"RecordToString";
+a:=JavaTest.RecordToString(RecordToStringIn);
+
+"EmptyRecordToString";
+a:=JavaTest.EmptyRecordToString(EmptyRecordToStringIn);
+
+"RecordToRecord";
+a:=JavaTest.RecordToRecord(RecordToRecordIn);
+
+"NestedRecordToRecord";
+a:=JavaTest.NestedRecordExtIdent(NestedRecordToRecordIn);
+
+// Because all tests use the same file, don't delete any the others might be using!
+// system("rm -f output.log JavaTest_*");
+
+// Result:
+// true
+// true
+// "RecordToString"
+// "JavaTest.myRecord(a=1,b=2.0,c=true,d=\":)\")"
+// "EmptyRecordToString"
+// "JavaTest.myEmptyRecord()"
+// "RecordToRecord"
+// record JavaTest.myRecord
+//     a = 1,
+//     b = 2.0,
+//     c = true,
+//     d = ":)"
+// end JavaTest.myRecord;
+// "NestedRecordToRecord"
+// record JavaTest.nestedRecord
+//     rec = record JavaTest.myRecord
+//     a = 1,
+//     b = 2.0,
+//     c = true,
+//     d = ":)"
+// end JavaTest.myRecord;,
+//     desc = "Nested Record Test"
+// end JavaTest.nestedRecord;
+// endResult

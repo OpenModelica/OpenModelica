@@ -1,0 +1,3 @@
+loadModel(Modelica); getErrorString();
+loadFile("BigModel.mo"); getErrorString();
+checkModel(BigModel.CircuitL8); getErrorString();

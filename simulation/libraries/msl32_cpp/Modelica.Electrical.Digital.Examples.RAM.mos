@@ -1,0 +1,44 @@
+// name:     Modelica.Electrical.Digital.Examples.RAM
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.RAM);
+compareVars :=
+{
+   "addr_1.y",
+   "addr_0.y",
+   "data_1.y",
+   "data_0.y",
+   "RE.y",
+   "WE.y",
+   "dLATRAM.dataOut[1]",
+   "dLATRAM.dataOut[2]"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Electrical.Digital.Examples.RAM
+// {"addr_1.y","addr_0.y","data_1.y","data_0.y","RE.y","WE.y","dLATRAM.dataOut[1]","dLATRAM.dataOut[2]"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.RAM.mat\"
+// "
+// ""
+// Translation succeeded
+// "true
+// "
+// ""
+// endResult

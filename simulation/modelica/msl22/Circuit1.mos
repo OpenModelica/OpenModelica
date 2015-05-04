@@ -1,0 +1,32 @@
+// name:     Circuit1
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.BlockModels* output.log
+// 
+//  Simulate systems of blocks 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// Circuit1
+
+simulate(TestModels.BlockModels.SystemTests.Circuit1, tolerance=1e-5, numberOfIntervals=500);
+{val(add3.y,0.0),val(add3.y,0.2),val(add3.y,0.4),
+val(add3.y,0.6),val(add3.y,0.8),val(add3.y,1.0)};
+{val(integrator2.y,0.0),val(integrator2.y,0.2),val(integrator2.y,0.4),
+val(integrator2.y,0.6),val(integrator2.y,0.8),val(integrator2.y,1.0)};
+{val(sine1.y,0.0),val(sine1.y,0.2),val(sine1.y,0.4),
+val(sine1.y,0.6),val(sine1.y,0.8),val(sine1.y,1.0)};
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SystemTests.Circuit1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.Circuit1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,-0.02415824134568002,0.05770445638890009,0.06878340392257971,0.0702827361495914,0.07048568788783238}
+// {0.0,-6.048997802701891,-6.8676255305200735,-6.9784142193264485,-6.993408452670447,-6.995437078418943}
+// {0.0,-0.00000000000013255538825697785,-0.00000000000026511077651401064,-0.0000000000021922411465050527,-0.0000000000005302215530296627,0.0000000000004321650792202638}
+// endResult

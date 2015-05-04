@@ -1,0 +1,26 @@
+// name:     Shaft
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.RotationalModels.SpringInertia.Shaft* output.log
+// 
+//  Simulate Rotational inertias with springs 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// Shaft
+simulate(TestModels.RotationalModels.SpringInertia.Shaft, tolerance=1e-5, numberOfIntervals=100);
+{val(inertia3.w,0.0),val(inertia3.w,0.2),val(inertia3.w,0.4),
+val(inertia3.w,0.6),val(inertia3.w,0.8),val(inertia3.w,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.SpringInertia.Shaft_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.Shaft', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,-0.00009272522097921075,-0.0022773597546722024,-0.01191280171726627,-0.026917482413935084,-0.027425906918207826}
+// endResult

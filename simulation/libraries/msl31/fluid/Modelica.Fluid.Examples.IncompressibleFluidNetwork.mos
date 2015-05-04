@@ -1,0 +1,24 @@
+//name:        Modelica.Fluid.Examples.IncompressibleFluidNetwork [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+simulate(Modelica.Fluid.Examples.IncompressibleFluidNetwork); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.IncompressibleFluidNetwork', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.IncompressibleFluidNetwork
+// [package.mo:8285:8-8285:71:writable] Error: No matching function found for Modelica.Fluid.Valves.ValveIncompressible.Medium.T_ph.Internal.f_nonlinear in component <NO COMPONENT>
+// [Incompressible.mo:392:6-392:79:writable] Error: Class Internal.solve not found in scope Modelica.Fluid.Valves.ValveIncompressible.Medium.T_ph (looking for a function or record).
+// "
+// end SimulationResult;
+// ""
+// endResult

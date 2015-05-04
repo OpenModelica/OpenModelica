@@ -1,0 +1,42 @@
+// name:     Uniontype9
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Uniontype Testing
+//
+loadFile("Uniontype9.mo");
+a:=REC1(1+2,cos(0)+1.5,"abc");
+a:=REC1(1+2,z="abc",y=cos(0)+1.5);
+b:=REC3(a);
+c:=REC3(REC4(foo(1+2,cos(14),"test")));
+
+// Result:
+// true
+// record UT.REC1
+//     x = 3,
+//     y = 2.5,
+//     z = "abc"
+// end UT.REC1;
+// record UT.REC1
+//     x = 3,
+//     y = 2.5,
+//     z = "abc"
+// end UT.REC1;
+// record UT.REC3
+//     ut = record UT.REC1
+//     x = 3,
+//     y = 2.5,
+//     z = "abc"
+// end UT.REC1;
+// end UT.REC3;
+// record UT.REC3
+//     ut = record UT.REC4
+//     f = record foo
+//     x = 3,
+//     y = 0.1367372182078336,
+//     z = "test"
+// end foo;
+// end UT.REC4;
+// end UT.REC3;
+// endResult

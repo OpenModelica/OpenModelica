@@ -1,0 +1,32 @@
+// name:     OptionInteractive
+// keywords: Option Type
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Option Testing
+//
+loadFile("OptionInteractive.mo");
+some := SOME(1);
+NONE();
+OptionInteractive.optionIdent(some);
+getErrorString();
+OptionInteractive.optionIdent(NONE());
+getErrorString();
+OptionInteractive.someToNone(some);
+getErrorString();
+OptionInteractive.someToNone(NONE());
+getErrorString();
+
+// Result:
+// true
+// SOME(1)
+// NONE()
+// SOME(1)
+// ""
+// NONE()
+// ""
+// NONE()
+// ""
+// NONE()
+// ""
+// endResult

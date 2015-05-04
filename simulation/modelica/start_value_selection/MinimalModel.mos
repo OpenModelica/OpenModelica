@@ -1,0 +1,120 @@
+// name:     MinimalModel.mos [BUG: #2429]
+// keywords: remove simple equation bug testing
+// status:   correct
+// teardown_command: rm -rf MinimalModel_* MinimalModel MinimalModel.exe
+
+setCommandLineOptions({"+d=dumprepl,dumpindxdae"}); getErrorString();
+loadFile("MinimalModel.mo"); getErrorString();
+buildModel(MinimalModel); getErrroString();
+
+
+// Result:
+// {true}
+// ""
+// true
+// ""
+//
+// Unreplaceable Crefs: (0)
+// ========================================
+//
+//
+// Replacements: (4)
+// ========================================
+// d -> -(-const_k)
+// b -> 0.0
+// c -> -const_k
+// a -> const_k
+//
+// ExtendReplacements: (0)
+// ========================================
+//
+//
+// Unreplaceable Crefs: (0)
+// ========================================
+//
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (0)
+// ========================================
+//
+//
+// Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 0 variables and equations
+//
+//
+// StrongComponents
+// ========================================
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (2)
+// ========================================
+// 1: b:VARIABLE()  = 0.0 .MinimalModel, .Real type: Real 
+// 2: const_k:PARAM(start = 1.0 )  = -15.0 .MinimalModel, .Real type: Real 
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (3)
+// ========================================
+// 1: d:VARIABLE()  = -(-const_k) .MinimalModel, .Real type: Real 
+// 2: c:VARIABLE()  = -const_k .MinimalModel, .Real type: Real 
+// 3: a:VARIABLE()  = const_k .MinimalModel, .Real type: Real 
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// {"MinimalModel","MinimalModel_init.xml"}
+//
+// endResult

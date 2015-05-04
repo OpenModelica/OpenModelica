@@ -1,0 +1,31 @@
+// name:     Modelica.Mechanics.Rotational.Examples.LossyGearDemo2
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.Rotational.Examples.LossyGearDemo2,stopTime=0.5, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Rotational.Examples.LossyGearDemo2_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.Rotational.Examples.LossyGearDemo2.mat","Modelica.Mechanics.Rotational.Examples.LossyGearDemo2_diff.csv",0.01,0.0001,
+  {"gear.flange_a.phi",
+  "Inertia1.w",
+  "Inertia2.w",
+  "Inertia2.phi",
+  "der(gear.flange_a.phi)",
+  "der(Inertia1.w)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Rotational.Examples.LossyGearDemo2_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.LossyGearDemo2', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

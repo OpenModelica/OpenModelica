@@ -1,0 +1,32 @@
+// name:     TestMedia.TestModels.ColdWater.Test1.mos [simulation checking]
+// keywords: simulation TestMedia.TestModels.ColdWater.Test1
+// status: correct
+// teardown_command: rm -rf _TestMedia.TestModels.ColdWater.Test1.* TestMedia.TestModels.ColdWater.Test1_* TestMedia.TestModels.ColdWater.Test1 TestMedia.TestModels.ColdWater.Test1.exe TestMedia.TestModels.ColdWater.Test1.cpp TestMedia.TestModels.ColdWater.Test1.makefile TestMedia.TestModels.ColdWater.Test1.libs TestMedia.TestModels.ColdWater.Test1.log TestMedia.TestModels.ColdWater.Test1.c TestMedia.TestModels.ColdWater.Test1.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("TestMedia.mo"); getErrorString();
+
+
+simulate(TestMedia.TestModels.ColdWater.Test1, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.ColdWater.Test1_res.mat",
+  "ReferenceFiles/ColdWater/ColdWater_Test1_ref.mat","TestMedia.TestModels.ColdWater.Test1_diff.csv",0.01,0.013,
+  {"state1.T", "d1", "d2"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestMedia.TestModels.ColdWater.Test1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.ColdWater.Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

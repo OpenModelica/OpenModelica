@@ -1,0 +1,30 @@
+// name:     Pendulum
+// keywords: Simulate, readSimulationData
+// status: correct
+// teardown_command: rm -rf Pendulum.cpp Pendulum Pendulum.exe Pendulum.libs Pendulum.log Pendulum.makefile Pendulum_*.*
+// 
+//  Simulate Pendulum example (index reduction, linear and nonlinear equation systems)
+//
+loadFile("Pendulum.mo");
+simulate(Pendulum,numberOfIntervals=300,stopTime=5.0, tolerance=1e-10);
+val(x,1.0);
+val(x,2.0);
+val(x,3.0);
+
+val(y,1.0);
+val(y,2.0);
+val(y,3.0);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Pendulum_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// -0.9864424195145453
+// 0.7957014346589923
+// -0.18325777889916567
+// -0.16410774808731604
+// -0.6056890513139731
+// -0.9830648943345209
+// endResult

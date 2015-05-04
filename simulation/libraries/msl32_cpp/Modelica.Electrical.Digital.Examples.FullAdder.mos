@@ -1,0 +1,45 @@
+// name:     Modelica.Electrical.Digital.Examples.FullAdder
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.FullAdder);
+compareVars :=
+{
+   "Enable.y",
+   "CLK.y",
+   "Counter.q0",
+   "Counter.q1",
+   "Counter.q2",
+   "Adder1.s",
+   "Adder1.c_out",
+   "s.y[1]",
+   "c_out.y[1]"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Digital.Examples.FullAdder
+// {"Enable.y","CLK.y","Counter.q0","Counter.q1","Counter.q2","Adder1.s","Adder1.c_out","s.y[1]","c_out.y[1]"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.FullAdder.mat\"
+// "
+// ""
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

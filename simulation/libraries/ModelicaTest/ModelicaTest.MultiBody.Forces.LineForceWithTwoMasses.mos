@@ -1,0 +1,35 @@
+// name:     ModelicaTest.MultiBody.Forces.LineForceWithTwoMasses
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Forces.LineForceWithTwoMasses,stopTime=3);
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Forces.LineForceWithTwoMasses_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Forces.LineForceWithTwoMasses.mat",
+  "ModelicaTest.MultiBody.Forces.LineForceWithTwoMasses_diff.csv",0.01,0.0001,
+  {"revolute1.phi","revolute1.w",
+  "revolute2.phi","revolute2.w"});
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// true
+// record SimulationResult
+    // resultFile = "ModelicaTest/ModelicaTest.MultiBody.Forces.DifferentiationOfForces_res.mat",
+    // simulationOptions = "startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaTest.MultiBody.Forces.DifferentiationOfForces', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+    // messages = "",
+// end SimulationResult;
+// "Files Equal!"
+// endResult

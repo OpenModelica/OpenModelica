@@ -1,0 +1,101 @@
+// name: diesel_model
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("DM.mo");
+getErrorString();
+
+optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_res.csv",0.05,0.0005);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "diesel_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1'",
+//     messages = "
+// Optimizer Variables
+// ========================================================
+// State[0]:p_em(start = 0.339267, nominal = 1.01111, min = 0.337038, max = 1.01111, init = 0.339267)
+// State[1]:p_im(start = 0.50615, nominal = 1.01111, min = 0.404445, max = 1.01111, init = 0.50615)
+// State[2]:w_ice(start = 0.249899, nominal = 1, min = 0.0181818, max = 1, init = 0.249899)
+// State[3]:w_tc(start = 0.0681, nominal = 1, min = 0.03, max = 1, init = 0.0681)
+// Input[4]:u_f(start = 0.5, nominal = 1, min = 0, max = 1)
+// Input[5]:u_wg(start = 0.5, nominal = 1, min = 0, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max error is 0.00365165 for the approximation of the state p_em(time = 0.00111111)
+// LOG_IPOPT_ERROR   | info    | max error is 7.96934e-05 for the approximation of the state p_em(time = 0.00111111)
+// LOG_IPOPT_ERROR   | info    | max error is 3.58674e-05 for the approximation of the state p_em(time = 0.5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000374174 for the approximation of the state p_em(time = 0.5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000191356 for the approximation of the state p_em(time = 0.5)
+// LOG_IPOPT_ERROR   | info    | max error is 6.18369e-05 for the approximation of the state p_em(time = 0.5)
+// LOG_IPOPT_ERROR   | info    | max error is 4.98417e-05 for the approximation of the state p_em(time = 0.307778)
+// LOG_IPOPT_ERROR   | info    | max error is 1.2239e-05 for the approximation of the state p_em(time = 0.353333)
+// LOG_IPOPT_ERROR   | info    | max error is 3.27751e-05 for the approximation of the state p_em(time = 0.195556)
+// LOG_IPOPT_ERROR   | info    | max error is 3.98523e-05 for the approximation of the state p_em(time = 0.142222)
+// LOG_IPOPT_ERROR   | info    | max error is 2.32873e-06 for the approximation of the state p_em(time = 0.146667)
+// LOG_IPOPT_ERROR   | info    | max error is 8.80584e-06 for the approximation of the state p_em(time = 0.248889)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000142916 for the approximation of the state p_em(time = 0.105556)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000338078 for the approximation of the state p_em(time = 0.238889)
+// LOG_IPOPT_ERROR   | info    | max error is 3.53868e-05 for the approximation of the state p_em(time = 0.31)
+// LOG_IPOPT_ERROR   | info    | max error is 7.41911e-05 for the approximation of the state p_em(time = 0.236667)
+// LOG_IPOPT_ERROR   | info    | max error is 6.29828e-05 for the approximation of the state p_em(time = 0.257778)
+// LOG_IPOPT_ERROR   | info    | max error is 8.47029e-05 for the approximation of the state p_em(time = 0.374444)
+// LOG_IPOPT_ERROR   | info    | max error is 7.10957e-05 for the approximation of the state p_em(time = 0.374444)
+// LOG_IPOPT_ERROR   | info    | max error is 7.26293e-05 for the approximation of the state p_em(time = 0.272222)
+// LOG_IPOPT_ERROR   | info    | max error is 3.8516e-05 for the approximation of the state p_em(time = 0.272222)
+// LOG_IPOPT_ERROR   | info    | max error is 5.75497e-05 for the approximation of the state p_em(time = 0.277778)
+// LOG_IPOPT_ERROR   | info    | max error is 2.56964e-05 for the approximation of the state p_em(time = 0.277778)
+// LOG_IPOPT_ERROR   | info    | max error is 4.28267e-05 for the approximation of the state p_em(time = 0.28)
+// LOG_IPOPT_ERROR   | info    | max error is 1.34018e-05 for the approximation of the state p_em(time = 0.282222)
+// LOG_IPOPT_ERROR   | info    | max error is 4.46566e-05 for the approximation of the state p_em(time = 0.285556)
+// LOG_IPOPT_ERROR   | info    | max error is 6.20602e-06 for the approximation of the state p_em(time = 0.285556)
+// LOG_IPOPT_ERROR   | info    | max error is 3.23615e-05 for the approximation of the state p_em(time = 0.287778)
+// LOG_IPOPT_ERROR   | info    | max error is 3.11883e-06 for the approximation of the state p_em(time = 0.29)
+// LOG_IPOPT_ERROR   | info    | max error is 3.29411e-05 for the approximation of the state p_em(time = 0.293333)
+// LOG_IPOPT_ERROR   | info    | max error is 9.41058e-07 for the approximation of the state p_em(time = 0.377778)
+// LOG_IPOPT_ERROR   | info    | max error is 2.57369e-05 for the approximation of the state p_em(time = 0.295556)
+// LOG_IPOPT_ERROR   | info    | max error is 2.55176e-05 for the approximation of the state p_em(time = 0.298889)
+// LOG_IPOPT_ERROR   | info    | max error is 2.04302e-05 for the approximation of the state p_em(time = 0.301111)
+// LOG_IPOPT_ERROR   | info    | max error is 1.87852e-05 for the approximation of the state p_em(time = 0.304444)
+// LOG_IPOPT_ERROR   | info    | max error is 1.6209e-05 for the approximation of the state p_em(time = 0.306667)
+// LOG_IPOPT_ERROR   | info    | max error is 1.48516e-05 for the approximation of the state p_em(time = 0.308889)
+// LOG_IPOPT_ERROR   | info    | max error is 1.26786e-05 for the approximation of the state p_em(time = 0.311111)
+// LOG_IPOPT_ERROR   | info    | max error is 1.0643e-05 for the approximation of the state p_em(time = 0.313333)
+// LOG_IPOPT_ERROR   | info    | max error is 8.84456e-06 for the approximation of the state p_em(time = 0.314444)
+// LOG_IPOPT_ERROR   | info    | max error is 5.7494e-06 for the approximation of the state p_em(time = 0.315556)
+// LOG_IPOPT_ERROR   | info    | max error is 7.60245e-06 for the approximation of the state p_em(time = 0.487778)
+// LOG_IPOPT_ERROR   | info    | max error is 3.47432e-06 for the approximation of the state p_em(time = 0.317778)
+// LOG_IPOPT_ERROR   | info    | max error is 6.64763e-06 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 2.02918e-06 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 1.10602e-06 for the approximation of the state p_em(time = 0.312222)
+// LOG_IPOPT_ERROR   | info    | max error is 1.90156e-07 for the approximation of the state w_tc(time = 0.415556)
+// LOG_IPOPT_ERROR   | info    | max error is 3.45886e-07 for the approximation of the state p_em(time = 0.313333)
+// LOG_IPOPT_ERROR   | info    | max error is 5.48123e-07 for the approximation of the state p_em(time = 0.313333)
+// LOG_IPOPT_ERROR   | info    | max error is 1.33572e-08 for the approximation of the state p_em(time = 0.313333)
+// LOG_IPOPT_ERROR   | info    | max error is 2.72997e-09 for the approximation of the state p_em(time = 0.446667)
+// LOG_IPOPT_ERROR   | info    | max error is 1.74531e-10 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 4.40019e-13 for the approximation of the state p_em(time = 0.446667)
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult

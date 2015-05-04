@@ -1,0 +1,67 @@
+// name:     Uniontype8
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Uniontype Testing
+//
+loadFile("Uniontype8.mo");
+
+a:=Uniontype8.test(5);getErrorString();
+a:=Uniontype8.test3(5);getErrorString();
+a:=Uniontype8.test4(5);getErrorString();
+a:=foo(1,1.5,"z");getErrorString();
+a:=Uniontype8.test5(5);getErrorString();
+a:=Uniontype8.test6(5);getErrorString();
+
+// Result:
+// true
+// 5
+// ""
+// record UT.REC1
+//     x = 5,
+//     y = 6.0,
+//     z = "z"
+// end UT.REC1;
+// ""
+// record UT.REC4
+//     ut = record UT.REC4
+//     ut = record UT.REC1
+//     x = 1,
+//     y = 2.5,
+//     z = "z"
+// end UT.REC1;
+// end UT.REC4;
+// end UT.REC4;
+// ""
+// record foo
+//     x = 1,
+//     y = 1.5,
+//     z = "z"
+// end foo;
+// ""
+// record UT.REC4
+//     ut = record UT.REC4
+//     ut = record UT.REC5
+//     f = record foo
+//     x = 1,
+//     y = 2.5,
+//     z = "z"
+// end foo;
+// end UT.REC5;
+// end UT.REC4;
+// end UT.REC4;
+// ""
+// record UT.REC4
+//     ut = record UT.REC4
+//     ut = record UT.REC5
+//     f = record foo
+//     x = 1,
+//     y = 2.5,
+//     z = "z"
+// end foo;
+// end UT.REC5;
+// end UT.REC4;
+// end UT.REC4;
+// ""
+// endResult

@@ -1,0 +1,11 @@
+// name: NonlinearSolverSimulation
+// status: correct
+// teardown_command: rm -f NonlinearSolverSimulation* output.log
+
+loadModel(Modelica);
+loadFile("DebugPackage.mo"); getErrorString();
+
+simulate(SolverFailure.NonlinearSolverSimulation); getErrorString();
+
+// Result:
+// endResult

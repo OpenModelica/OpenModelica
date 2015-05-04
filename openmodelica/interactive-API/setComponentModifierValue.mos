@@ -1,0 +1,108 @@
+// name: setComponentModifierValue
+// keywords: 
+// status: correct
+//
+// Tests the setComponentModifierValue API functions.
+//
+
+loadString("
+  model M
+    model A
+      model B
+        Real x;
+        model C
+          Real u;
+        end C;
+        C c;
+      end B;
+
+      Real y;
+      Real z;
+      B b;
+    end A;
+
+    A a(b.x = 2, b.c(u = 2));
+    A a2(b(x = 2));
+    Real w = 4;
+  end M;
+"); getErrorString();
+
+setComponentModifierValue(M, w, $Code(= 3));
+setComponentModifierValue(M, w.start, $Code(=4));
+setComponentModifierValue(M, w, $Code((min=5)));
+setComponentModifierValue(M.A, y, $Code(=6));
+setComponentModifierValue(M.A, z, $Code(=7));
+setComponentModifierValue(M.A.B, x, $Code(=8));
+setComponentModifierValue(M, a.y, $Code(=9));
+setComponentModifierValue(M, a.z, $Code(=10));
+setComponentModifierValue(M, a.b.x, $Code(=11));
+setComponentModifierValue(M, a2.b.x, $Code(=12));
+setComponentModifierValue(M, a.b.c.u, $Code(=13));
+list(M);
+setComponentModifierValue(M, a.b.x, $Code(()));
+setComponentModifierValue(M, a2.b.x, $Code(()));
+setComponentModifierValue(M, w.min, $Code(()));
+list(M);
+setComponentModifierValue(M, q, $Code(=1));
+
+// Result:
+// true
+// ""
+// Ok
+// Ok
+// Ok
+// Ok
+// Ok
+// Ok
+// Ok
+// Ok
+// Ok
+// Ok
+// Ok
+// "model M
+//   model A
+//     model B
+//       Real x = 8;
+//
+//       model C
+//         Real u;
+//       end C;
+//
+//       C c;
+//     end B;
+//
+//     Real y = 6;
+//     Real z = 7;
+//     B b;
+//   end A;
+//
+//   A a(b.x = 11, b.c(u = 13), y = 9, z = 10);
+//   A a2(b(x = 12));
+//   Real w(min = 5, start = 4) = 3;
+// end M;"
+// Ok
+// Ok
+// Ok
+// "model M
+//   model A
+//     model B
+//       Real x = 8;
+//
+//       model C
+//         Real u;
+//       end C;
+//
+//       C c;
+//     end B;
+//
+//     Real y = 6;
+//     Real z = 7;
+//     B b;
+//   end A;
+//
+//   A a(b.c(u = 13), y = 9, z = 10);
+//   A a2;
+//   Real w(start = 4) = 3;
+// end M;"
+// Error
+// endResult

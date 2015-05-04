@@ -1,0 +1,103 @@
+// name:     simulate FlueGasZoneSingleTube
+// keywords: SiemensPower FlueGasZoneSingleTube
+// status:   correct
+// env:			 LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
+// teardown_command: rm -rf SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_* _SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_* SiemensPower_Media_TTSE_Utilities_* output.log
+//
+//  Test SiemensPower component FlueGasZone
+//
+
+loadModel(Modelica);
+loadFile("SiemensPower/package.mo");
+
+// test simple model
+simulate(SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_testsimple, stopTime=200, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/FlueGasZoneSingleTube_testsimple.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_testsimple_res.mat",
+  "./ReferenceFiles/FlueGasZoneSingleTube_testsimple.mat","SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_testsimple_diff.csv",0.01,0.00001,
+  { "flueGasZoneSingleCompGas.tube.h[1]",
+    "flueGasZoneSingleCompGas.tube.h[2]",
+    "flueGasZoneSingleCompGas.tube.h[3]",
+    "flueGasZoneSingleCompGas.tube.h[4]",
+    "flueGasZoneSingleCompGas.tube.h[5]",
+    "flueGasZoneSingleCompGas.tube.h[6]",
+    "flueGasZoneSingleCompGas.tube.h[7]",
+    "flueGasZoneSingleCompGas.tube.h[8]",
+    "flueGasZoneSingleCompGas.tube.h[9]",
+    "flueGasZoneSingleCompGas.tube.h[10]",
+    "flueGasZoneSingleCompGas.tube.h[11]",
+    "flueGasZoneSingleCompGas.tube.h[12]",
+    "flueGasZoneSingleCompGas.tube.h[13]",
+    "flueGasZoneSingleCompGas.tube.h[14]",
+    "flueGasZoneSingleCompGas.tube.h[15]",
+    "flueGasZoneSingleCompGas.tube.h[16]",
+    "flueGasZoneSingleCompGas.tube.h[17]",
+    "flueGasZoneSingleCompGas.tube.h[18]",
+    "flueGasZoneSingleCompGas.tube.h[19]",
+    "flueGasZoneSingleCompGas.tube.h[20]",
+    "flueGasZoneSingleCompGas.tube.wall.layer[1].T[1]",
+    "flueGasZoneSingleCompGas.tube.wall.layer[2].T[1]",
+    "flueGasZoneSingleCompGas.tube.wall.layer[3].T[1]",
+    "timeTable.C1signal.y",
+    "flueGasZoneSingleCompGas.hOut",
+    "flueGasZoneSingleCompGas.T"
+  });
+
+// test jacobians
+// simulate(SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_testsimple, stopTime=200, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/FlueGasZoneSingleTube_testsimple.mat");
+
+// test full model
+simulate(SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_test, stopTime=200, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/FlueGasZoneSingleTube_test.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_test_res.mat",
+  "./ReferenceFiles/FlueGasZoneSingleTube_test.mat","SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_test_diff.csv",0.01,0.00001,
+  { "flueGasZoneSingleCompGas.tube.h[1]",
+    "flueGasZoneSingleCompGas.tube.h[2]",
+    "flueGasZoneSingleCompGas.tube.h[3]",
+    "flueGasZoneSingleCompGas.tube.h[4]",
+    "flueGasZoneSingleCompGas.tube.h[5]",
+    "flueGasZoneSingleCompGas.tube.h[6]",
+    "flueGasZoneSingleCompGas.tube.h[7]",
+    "flueGasZoneSingleCompGas.tube.h[8]",
+    "flueGasZoneSingleCompGas.tube.h[9]",
+    "flueGasZoneSingleCompGas.tube.h[10]",
+    "flueGasZoneSingleCompGas.tube.h[11]",
+    "flueGasZoneSingleCompGas.tube.h[12]",
+    "flueGasZoneSingleCompGas.tube.h[13]",
+    "flueGasZoneSingleCompGas.tube.h[14]",
+    "flueGasZoneSingleCompGas.tube.h[15]",
+    "flueGasZoneSingleCompGas.tube.h[16]",
+    "flueGasZoneSingleCompGas.tube.h[17]",
+    "flueGasZoneSingleCompGas.tube.h[18]",
+    "flueGasZoneSingleCompGas.tube.h[19]",
+    "flueGasZoneSingleCompGas.tube.h[20]",
+    "flueGasZoneSingleCompGas.tube.wall.layer[1].T[1]",
+    "flueGasZoneSingleCompGas.tube.wall.layer[2].T[1]",
+    "flueGasZoneSingleCompGas.tube.wall.layer[3].T[1]",
+    "timeTable.C1signal.y",
+    "flueGasZoneSingleCompGas.hOut",
+    "flueGasZoneSingleCompGas.T"
+  });
+
+
+// test jacobians
+// simulate(SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_test, stopTime=200, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/FlueGasZoneSingleTube_test.mat");
+
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_testsimple_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_testsimple', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/FlueGasZoneSingleTube_testsimple.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_test', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/FlueGasZoneSingleTube_test.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResults
+

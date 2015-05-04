@@ -1,0 +1,25 @@
+// name:     terminal
+// keywords: simulation, terminal, initial
+// status: correct
+// teardown_command: rm -rf test111* output.log
+// 
+//  Simulate model that contain terminal and initial
+//
+loadFile("terminal.mo");
+
+simulate(test111);
+val(a,0.0);
+val(a,0.9);
+val(a,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "test111_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'test111', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.1
+// 0.1
+// 1.0
+// endResult

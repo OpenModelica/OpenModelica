@@ -1,0 +1,96 @@
+// name: GraphTest
+// cflags: +g=MetaModelica +d=rml
+// status: correct
+// teardown_command: rm -f GraphTest_*
+
+loadFile("../../../Compiler/Util/Debug.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Util.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/List.mo");
+getErrorString();
+loadFile("../../../Compiler/Util/Graph.mo");
+getErrorString();
+loadFile("GraphTest.mo");
+getErrorString();
+
+// Very simple graph, 1 -> 2.
+GraphTest.topologicalSortTest({(1, {2}), (2, {})});
+getErrorString();
+
+// Simple graph with a cycle, 1 -> 2 -> 1.
+GraphTest.topologicalSortTest({(1, {2}), (2, {1})});
+getErrorString();
+
+// A bit more complex graph.
+GraphTest.topologicalSortTest({
+    (7, {11, 8}),
+    (5, {11}),
+    (3, {8, 10}),
+    (11, {2, 9}),
+    (8, {9}),
+    (2, {}),
+    (9, {}),
+    (10, {})});
+getErrorString();
+
+// Almost the same graph as above, but with a cycle, 2 -> 7 -> 11 -> 2.
+GraphTest.topologicalSortTest({
+    (7, {11, 8}),
+    (5, {11}),
+    (3, {8, 10}),
+    (11, {2, 9}),
+    (8, {9}),
+    (2, {7}),
+    (9, {}),
+    (10, {})});
+getErrorString();
+
+GraphTest.topologicalSortTestDetectCycles({(1, {2}), (2, {})});
+getErrorString();
+
+GraphTest.topologicalSortTestDetectCycles({(1, {2}), (2, {1})});
+getErrorString();
+
+GraphTest.topologicalSortTestDetectCycles({(1, {2}), (2, {1, 3}), (3, {2})});
+getErrorString();
+
+GraphTest.topologicalSortTestDetectCycles({
+    (7, {11, 8}),
+    (5, {11}),
+    (3, {8, 10}),
+    (11, {2, 9}),
+    (8, {9}),
+    (2, {7}),
+    (9, {}),
+    (10, {})});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// ({2,1},{})
+// ""
+// ({},{(1,{2}),(2,{1})})
+// ""
+// ({2,9,10,11,8,5,7,3},{})
+// ""
+// ({9,10,8,3},{(7,{11}),(5,{11}),(11,{2}),(2,{7})})
+// ""
+// ({2,1},{})
+// ""
+// ({},{{2,1}})
+// ""
+// ({},{{2,1},{2,3}})
+// ""
+// ({9,10,8,3},{{2,11,7}})
+// ""
+// endResult

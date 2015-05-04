@@ -1,0 +1,21 @@
+// name:     Redeclare6
+// keywords: redeclare
+// status:   correct
+// 
+
+loadFile("Redeclare6.mo");
+instantiateModel(Redeclare6);
+getErrorString();
+
+// Result:
+// true
+// "class Redeclare6
+//   Real mod1.v;
+//   Real mod2.v;
+// equation
+//   mod1.v = 1.0;
+//   mod2.v = 1.0;
+// end Redeclare6;
+// "
+// ""
+// endResult

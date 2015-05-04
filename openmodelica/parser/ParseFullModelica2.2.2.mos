@@ -1,0 +1,17 @@
+// name:     ParseFullModelica2.2.2
+// keywords: parse
+// status:   correct
+//
+// Parse/Unparse entire MSL 2.2.2
+//
+
+loadModel(Modelica,{"2.2.2"});getErrorString();
+loadString(list());getErrorString();
+
+// Result:
+// true
+// "Notification: Modelica language version set to 2.x due to loading of MSL 2.2.2.
+// "
+// true
+// ""
+// endResult

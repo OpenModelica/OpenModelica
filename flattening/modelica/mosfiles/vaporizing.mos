@@ -1,0 +1,19 @@
+// name: vaporizing
+// status: correct
+
+ loadFile("vaporizing.mo"); getErrorString();
+ instantiateModel(Modelica.Fluid.Valves.ValveVaporizing); getErrorString();
+// Result:
+// true
+// ""
+// "class Modelica.Fluid.Valves.ValveVaporizing
+//   parameter Real system.m_flow_small(min = 0.0) = 0.01;
+//   Real port_a.m_flow;
+//   Real port_a.p;
+//   parameter Real m_flow_small = system.m_flow_small;
+// equation
+//   port_a.m_flow = 0.0;
+// end Modelica.Fluid.Valves.ValveVaporizing;
+// "
+// ""
+// endResult

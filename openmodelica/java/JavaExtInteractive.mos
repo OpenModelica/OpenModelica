@@ -1,0 +1,49 @@
+// name:     Java Interactive
+// keywords: algorithm
+// status:   correct
+// 
+// Tests that the interactive interface works from Java
+//
+
+loadFile("JavaExt.mo");
+
+"GetJavaInternalValues";
+JavaTest.GetJavaInternalValues(1,1.5);
+a:=JavaTest.RunInteractiveTestsuite();
+
+// Because all tests use the same file, don't delete any the others might be using!
+// system("rm -f output.log JavaTest_*");
+
+// Result:
+// true
+// "GetJavaInternalValues"
+// (2,3.0,"Java function got: Values from OMC")
+// "RunInteractiveTestsuite
+// Modelica Constructs:
+// JavaTest.JavaIntegerToInteger  [OK]
+// JavaTest.JavaRealToReal        [OK]
+// JavaTest.JavaBooleanToBoolean  [OK]
+// JavaTest.JavaStringToString    [OK]
+// JavaTest.JavaMultipleInOut     [OK]
+// JavaTest.arrayTestInteger      [OK]
+// JavaTest.arrayTestReal         [OK]
+// JavaTest.arrayTestReal         [OK]
+// JavaTest.arrayTestBoolean      [OK]
+// JavaTest.arrayTestString       [OK]
+// JavaTest.RecordToRecord        [OK]
+// JavaTest.RecordToString        [OK]
+// JavaTest.EmptyRecordToString   [OK]
+// MetaModelica Constructs:
+// JavaTest.listIntegerIdent      [OK]
+// JavaTest.someToNone            [OK]
+// JavaTest.tupleIdent            [OK]
+// JavaTest.ApplyIntOp            [failed]
+// Expression JavaTest.ApplyIntOp(JavaTest.JavaIntegerToInteger,1)
+// JavaTest.anyToString           [OK]
+// JavaTest.anyToString           [OK]
+// JavaTest.uniontypeIdent        [OK]
+// JavaTest.calcExpressionDummy   [OK]
+// JavaTest.calcExpressionExtJava [OK]
+// JavaTest.calcExpressionMatchcontinue [OK]
+// "
+// endResult

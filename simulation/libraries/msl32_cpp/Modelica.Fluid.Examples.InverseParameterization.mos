@@ -1,0 +1,115 @@
+// name:     Modelica.Fluid.Examples.InverseParameterization
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.InverseParameterization);
+compareVars :=
+{
+   "source.ports[1].m_flow",
+   "source.ports[1].p",
+   "source.ports[1].h_outflow",
+   "sink.ports[1].m_flow",
+   "sink.ports[1].p",
+   "sink.ports[1].h_outflow",
+   "sink1.ports[1].m_flow",
+   "sink1.ports[1].p",
+   "sink1.ports[1].h_outflow",
+   "sink2.ports[1].m_flow",
+   "sink2.ports[1].p",
+   "sink2.ports[1].h_outflow"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.InverseParameterization
+// {"source.ports[1].m_flow","source.ports[1].p","source.ports[1].h_outflow","sink.ports[1].m_flow","sink.ports[1].p","sink.ports[1].h_outflow","sink1.ports[1].m_flow","sink1.ports[1].p","sink1.ports[1].h_outflow","sink2.ports[1].m_flow","sink2.ports[1].p","sink2.ports[1].h_outflow"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Fluid.Examples.InverseParameterization.mat\"
+// "
+// ""
+// Compilation failed
+// [Modelica 3.2.1/Fluid/Interfaces.mo:740:9-745:39:writable] Notification: From here:
+// [Modelica 3.2.1/Fluid/Interfaces.mo:332:3-334:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer) "mass flow rates between states"
+// 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start) "Mass flow rate in design flow direction"
+// Continue ....
+// Warning: Alias set with several free start values
+//  * candidate: pump.medium.p(start = pump.p_start)
+//  * candidate: pump.port_b.p(start = pump.p_b_start)
+//  * candidate: orifice.port_a.p(start = 5000000.0)
+//  * candidate: pipe2.port_a.p(start = 5000000.0)
+//  * candidate: pipe2.flowModel.states[1].p(start = 5000000.0)
+//  * candidate: pipe1.port_a.p(start = 5000000.0)
+//  * candidate: pipe1.flowModel.states[1].p(start = 5000000.0)
+//  * candidate: orifice.state_a.p(start = 5000000.0)
+//  * candidate: pump.medium.state.p(start = 5000000.0)
+//  * candidate: pump.monitoring.state.p(start = 5000000.0)
+//  * candidate: pump.heatTransfer.states[1].p(start = 5000000.0)
+//  * candidate: pump.medium.sat.psat(start = 5000000.0)
+// => select value from pump.medium.p(start = pump.p_start) for variable: pump.medium.p
+// Warning: Alias set with different nominal values
+//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: pump.heatTransfer.states[1].p(nominal = 1000000.0)
+//  * candidate: pump.monitoring.state.p(nominal = 1000000.0)
+//  * candidate: pump.medium.state.p(nominal = 1000000.0)
+//  * candidate: orifice.state_a.p(nominal = 1000000.0)
+//  * candidate: pipe1.flowModel.states[1].p(nominal = 1000000.0)
+//  * candidate: pipe1.port_a.p(nominal = 1000000.0)
+//  * candidate: pipe2.flowModel.states[1].p(nominal = 1000000.0)
+//  * candidate: pipe2.port_a.p(nominal = 1000000.0)
+//  * candidate: orifice.port_a.p(nominal = 1000000.0)
+//  * candidate: pump.port_b.p(nominal = 1000000.0)
+//  * candidate: pump.medium.p(nominal = 100000.0)
+// => select value from pump.medium.p(nominal = 100000.0) for variable: pump.medium.p
+// Warning: Alias set with several free start values
+//  * candidate: pump.medium.h(start = pump.h_start)
+//  * candidate: pump.port_b.h_outflow(start = 100000.0)
+//  * candidate: pump.port_a.h_outflow(start = 100000.0)
+//  * candidate: pump.medium.state.h(start = 100000.0)
+//  * candidate: pump.monitoring.state.h(start = 100000.0)
+//  * candidate: pump.heatTransfer.states[1].h(start = 100000.0)
+// => select value from pump.medium.h(start = pump.h_start) for variable: pump.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: pump.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: pump.medium.state.T(start = 500.0)
+//  * candidate: pump.medium.T(start = pump.T_start)
+//  * candidate: pump.monitoring.state.T(start = 500.0)
+// => select value from pump.medium.T(start = pump.T_start) for variable: pump.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: pump.monitoring.state.T(nominal = 500.0)
+//  * candidate: pump.medium.T(nominal = 500.0)
+//  * candidate: pump.medium.state.T(nominal = 500.0)
+//  * candidate: pump.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: pump.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: pump.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from pump.heatTransfer.Ts[1](nominal = 300.0) for variable: pump.heatTransfer.Ts[1]
+// Error: Error building simulator. Build log: g++   -Winvalid-pch -O0 -DNDEBUG -DBOOST_ALL_DYN_LINK   -DOMC_BUILD -DUSE_BOOST_LOG -DUSE_BOOST_THREAD -DPMC_USE_SUNDIALS -DUSE_UMFPACK -I"d:/Projekte/OpenModelica/build/include/omc/cpp/Core" -I"d:/Projekte/OpenModelica/build/include/omc/cpp/" -I.  -I"d:/Projekte/OpenModelica/build/include/omc/cpp" -I"d:/Projekte/OpenModelica/build/include/omc/c/suitesparse/Include"      -c -o OMCppModelica.Fluid.Examples.InverseParameterization.o OMCppModelica.Fluid.Examples.InverseParameterization.cpp
+// g++   -Winvalid-pch -O0 -DNDEBUG -DBOOST_ALL_DYN_LINK   -DOMC_BUILD -DUSE_BOOST_LOG -DUSE_BOOST_THREAD -DPMC_USE_SUNDIALS -DUSE_UMFPACK -I"d:/Projekte/OpenModelica/build/include/omc/cpp/Core" -I"d:/Projekte/OpenModelica/build/include/omc/cpp/" -I.  -I"d:/Projekte/OpenModelica/build/include/omc/cpp" -I"d:/Projekte/OpenModelica/build/include/omc/c/suitesparse/Include"      -c -o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain.cpp
+// g++   -Winvalid-pch -O0 -DNDEBUG -DBOOST_ALL_DYN_LINK   -DOMC_BUILD -DUSE_BOOST_LOG -DUSE_BOOST_THREAD -DPMC_USE_SUNDIALS -DUSE_UMFPACK -I"d:/Projekte/OpenModelica/build/include/omc/cpp/Core" -I"d:/Projekte/OpenModelica/build/include/omc/cpp/" -I.  -I"d:/Projekte/OpenModelica/build/include/omc/cpp" -I"d:/Projekte/OpenModelica/build/include/omc/c/suitesparse/Include"      -c -o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain2.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain2.cpp
+// g++   -Winvalid-pch -O0 -DNDEBUG -DBOOST_ALL_DYN_LINK   -DOMC_BUILD -DUSE_BOOST_LOG -DUSE_BOOST_THREAD -DPMC_USE_SUNDIALS -DUSE_UMFPACK -I"d:/Projekte/OpenModelica/build/include/omc/cpp/Core" -I"d:/Projekte/OpenModelica/build/include/omc/cpp/" -I.  -I"d:/Projekte/OpenModelica/build/include/omc/cpp" -I"d:/Projekte/OpenModelica/build/include/omc/c/suitesparse/Include"      -c -o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain3.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain3.cpp
+// g++   -Winvalid-pch -O0 -DNDEBUG -DBOOST_ALL_DYN_LINK   -DOMC_BUILD -DUSE_BOOST_LOG -DUSE_BOOST_THREAD -DPMC_USE_SUNDIALS -DUSE_UMFPACK -I"d:/Projekte/OpenModelica/build/include/omc/cpp/Core" -I"d:/Projekte/OpenModelica/build/include/omc/cpp/" -I.  -I"d:/Projekte/OpenModelica/build/include/omc/cpp" -I"d:/Projekte/OpenModelica/build/include/omc/c/suitesparse/Include"      -c -o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain4.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain4.cpp
+// g++   -Winvalid-pch -O0 -DNDEBUG -DBOOST_ALL_DYN_LINK   -DOMC_BUILD -DUSE_BOOST_LOG -DUSE_BOOST_THREAD -DPMC_USE_SUNDIALS -DUSE_UMFPACK -I"d:/Projekte/OpenModelica/build/include/omc/cpp/Core" -I"d:/Projekte/OpenModelica/build/include/omc/cpp/" -I.  -I"d:/Projekte/OpenModelica/build/include/omc/cpp" -I"d:/Projekte/OpenModelica/build/include/omc/c/suitesparse/Include"      -c -o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain5.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain5.cpp
+// g++   -Winvalid-pch -O0 -DNDEBUG -DBOOST_ALL_DYN_LINK   -DOMC_BUILD -DUSE_BOOST_LOG -DUSE_BOOST_THREAD -DPMC_USE_SUNDIALS -DUSE_UMFPACK -I"d:/Projekte/OpenModelica/build/include/omc/cpp/Core" -I"d:/Projekte/OpenModelica/build/include/omc/cpp/" -I.  -I"d:/Projekte/OpenModelica/build/include/omc/cpp" -I"d:/Projekte/OpenModelica/build/include/omc/c/suitesparse/Include"      -c -o OMCppModelica.Fluid.Examples.InverseParameterizationAlgLoopMain.o OMCppModelica.Fluid.Examples.InverseParameterizationAlgLoopMain.cpp
+// g++ -shared -o OMCppModelica.Fluid.Examples.InverseParameterization.dll OMCppModelica.Fluid.Examples.InverseParameterization.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain2.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain3.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain4.o OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain5.o OMCppModelica.Fluid.Examples.InverseParameterizationAlgLoopMain.o -L"d:/Projekte/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Fluid/Examples"  "-Ld:/Projekte/OpenModelica/build/lib/" "-Ld:/Projekte/OpenModelica/build/lib/omc" "-L%APPDATA%/.openmodelica/binaries/Modelica" "-Ld:/Projekte/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Resources/Library/mingw32" "-Ld:/Projekte/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Resources/Library/win32" "-Ld:/Projekte/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Resources/Library" -lModelicaExternalC  -L"d:/Projekte/OpenModelica/build/lib/omc/cpp"   -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath   -Wl,-rpath,"d:/Projekte/OpenModelica/build/lib/omc/cpp" -lOMCppExtensionUtilities -L"d:/Projekte/OpenModelica/build/bin" -lboost_log-mgw44-mt-1_55 -lboost_log-mgw44-mt-d-1_55 -lboost_log_setup-mgw44-mt-1_55 -lboost_log_setup-mgw44-mt-d-1_55 -lboost_thread-mgw44-mt-1_55 -lboost_thread-mgw44-mt-d-1_55 -lboost_atomic-mgw44-mt-1_55 -lboost_atomic-mgw44-mt-d-1_55 -lboost_filesystem-mgw44-mt-1_55 -lboost_filesystem-mgw44-mt-d-1_55 -lboost_system-mgw44-mt-1_55 -lboost_system-mgw44-mt-d-1_55 -lboost_serialization-mgw44-mt-d-1_55 -lboost_program_options-mgw44-mt-1_55 -lboost_program_options-mgw44-mt-d-1_55 
+// OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain.o:OMCppModelica.Fluid.Examples.InverseParameterizationCalcHelperMain.cpp:(.text+0x112d3): undefined reference to `dgesv_'
+// collect2: ld returned 1 exit status
+// mingw32-make: *** [Modelica.Fluid.Examples.InverseParameterization] Error 1
+// RESULT: 2
+// "true
+// "
+// ""
+// endResult

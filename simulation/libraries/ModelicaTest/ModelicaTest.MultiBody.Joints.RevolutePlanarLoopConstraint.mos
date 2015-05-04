@@ -1,0 +1,25 @@
+// name:     ModelicaTest.MultiBody.Joints.RevolutePlanarLoopConstraint
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Joints.RevolutePlanarLoopConstraint);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Joints.RevolutePlanarLoopConstraint_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Joints.RevolutePlanarLoopConstraint.mat",
+  "ModelicaTest.MultiBody.Joints.RevolutePlanarLoopConstraint_diff.csv",0.01,0.0001,
+  {"$states$"});
+
+
+// Result:
+// $simulation_output$
+// endResult

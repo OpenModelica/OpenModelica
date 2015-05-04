@@ -1,0 +1,590 @@
+//name:         First2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Rotational.Examples.First,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=10);
+
+"fixed.flange_b.tau:";
+val(fixed.flange_b.tau,0.0);
+val(fixed.flange_b.tau,0.25);
+val(fixed.flange_b.tau,0.5);
+val(fixed.flange_b.tau,0.75);
+val(fixed.flange_b.tau,1.0);
+
+"torque.tau:";
+val(torque.tau,0.0);
+val(torque.tau,0.25);
+val(torque.tau,0.5);
+val(torque.tau,0.75);
+val(torque.tau,1.0);
+
+"torque.flange_b.phi:";
+val(torque.flange_b.phi,0.0);
+val(torque.flange_b.phi,0.25);
+val(torque.flange_b.phi,0.5);
+val(torque.flange_b.phi,0.75);
+val(torque.flange_b.phi,1.0);
+
+"torque.flange_b.tau:";
+val(torque.flange_b.tau,0.0);
+val(torque.flange_b.tau,0.25);
+val(torque.flange_b.tau,0.5);
+val(torque.flange_b.tau,0.75);
+val(torque.flange_b.tau,1.0);
+
+"inertia1.phi:";
+val(inertia1.phi,0.0);
+val(inertia1.phi,0.25);
+val(inertia1.phi,0.5);
+val(inertia1.phi,0.75);
+val(inertia1.phi,1.0);
+
+"inertia1.flange_a.phi:";
+val(inertia1.flange_a.phi,0.0);
+val(inertia1.flange_a.phi,0.25);
+val(inertia1.flange_a.phi,0.5);
+val(inertia1.flange_a.phi,0.75);
+val(inertia1.flange_a.phi,1.0);
+
+"inertia1.flange_a.tau:";
+val(inertia1.flange_a.tau,0.0);
+val(inertia1.flange_a.tau,0.25);
+val(inertia1.flange_a.tau,0.5);
+val(inertia1.flange_a.tau,0.75);
+val(inertia1.flange_a.tau,1.0);
+
+"inertia1.flange_b.phi:";
+val(inertia1.flange_b.phi,0.0);
+val(inertia1.flange_b.phi,0.25);
+val(inertia1.flange_b.phi,0.5);
+val(inertia1.flange_b.phi,0.75);
+val(inertia1.flange_b.phi,1.0);
+
+"inertia1.flange_b.tau:";
+val(inertia1.flange_b.tau,0.0);
+val(inertia1.flange_b.tau,0.25);
+val(inertia1.flange_b.tau,0.5);
+val(inertia1.flange_b.tau,0.75);
+val(inertia1.flange_b.tau,1.0);
+
+"inertia1.w:";
+val(inertia1.w,0.0);
+val(inertia1.w,0.25);
+val(inertia1.w,0.5);
+val(inertia1.w,0.75);
+val(inertia1.w,1.0);
+
+"inertia1.a:";
+val(inertia1.a,0.0);
+val(inertia1.a,0.25);
+val(inertia1.a,0.5);
+val(inertia1.a,0.75);
+val(inertia1.a,1.0);
+
+"idealGear.flange_a.phi:";
+val(idealGear.flange_a.phi,0.0);
+val(idealGear.flange_a.phi,0.25);
+val(idealGear.flange_a.phi,0.5);
+val(idealGear.flange_a.phi,0.75);
+val(idealGear.flange_a.phi,1.0);
+
+"idealGear.flange_a.tau:";
+val(idealGear.flange_a.tau,0.0);
+val(idealGear.flange_a.tau,0.25);
+val(idealGear.flange_a.tau,0.5);
+val(idealGear.flange_a.tau,0.75);
+val(idealGear.flange_a.tau,1.0);
+
+"idealGear.flange_b.phi:";
+val(idealGear.flange_b.phi,0.0);
+val(idealGear.flange_b.phi,0.25);
+val(idealGear.flange_b.phi,0.5);
+val(idealGear.flange_b.phi,0.75);
+val(idealGear.flange_b.phi,1.0);
+
+"idealGear.flange_b.tau:";
+val(idealGear.flange_b.tau,0.0);
+val(idealGear.flange_b.tau,0.25);
+val(idealGear.flange_b.tau,0.5);
+val(idealGear.flange_b.tau,0.75);
+val(idealGear.flange_b.tau,1.0);
+
+"idealGear.tau_support:";
+val(idealGear.tau_support,0.0);
+val(idealGear.tau_support,0.25);
+val(idealGear.tau_support,0.5);
+val(idealGear.tau_support,0.75);
+val(idealGear.tau_support,1.0);
+
+"idealGear.phi_a:";
+val(idealGear.phi_a,0.0);
+val(idealGear.phi_a,0.25);
+val(idealGear.phi_a,0.5);
+val(idealGear.phi_a,0.75);
+val(idealGear.phi_a,1.0);
+
+"idealGear.phi_b:";
+val(idealGear.phi_b,0.0);
+val(idealGear.phi_b,0.25);
+val(idealGear.phi_b,0.5);
+val(idealGear.phi_b,0.75);
+val(idealGear.phi_b,1.0);
+
+"inertia2.phi:";
+val(inertia2.phi,0.0);
+val(inertia2.phi,0.25);
+val(inertia2.phi,0.5);
+val(inertia2.phi,0.75);
+val(inertia2.phi,1.0);
+
+"inertia2.flange_a.phi:";
+val(inertia2.flange_a.phi,0.0);
+val(inertia2.flange_a.phi,0.25);
+val(inertia2.flange_a.phi,0.5);
+val(inertia2.flange_a.phi,0.75);
+val(inertia2.flange_a.phi,1.0);
+
+"inertia2.flange_a.tau:";
+val(inertia2.flange_a.tau,0.0);
+val(inertia2.flange_a.tau,0.25);
+val(inertia2.flange_a.tau,0.5);
+val(inertia2.flange_a.tau,0.75);
+val(inertia2.flange_a.tau,1.0);
+
+"inertia2.flange_b.phi:";
+val(inertia2.flange_b.phi,0.0);
+val(inertia2.flange_b.phi,0.25);
+val(inertia2.flange_b.phi,0.5);
+val(inertia2.flange_b.phi,0.75);
+val(inertia2.flange_b.phi,1.0);
+
+"inertia2.flange_b.tau:";
+val(inertia2.flange_b.tau,0.0);
+val(inertia2.flange_b.tau,0.25);
+val(inertia2.flange_b.tau,0.5);
+val(inertia2.flange_b.tau,0.75);
+val(inertia2.flange_b.tau,1.0);
+
+"inertia2.w:";
+val(inertia2.w,0.0);
+val(inertia2.w,0.25);
+val(inertia2.w,0.5);
+val(inertia2.w,0.75);
+val(inertia2.w,1.0);
+
+"inertia2.a:";
+val(inertia2.a,0.0);
+val(inertia2.a,0.25);
+val(inertia2.a,0.5);
+val(inertia2.a,0.75);
+val(inertia2.a,1.0);
+
+"spring.phi_rel:";
+val(spring.phi_rel,0.0);
+val(spring.phi_rel,0.25);
+val(spring.phi_rel,0.5);
+val(spring.phi_rel,0.75);
+val(spring.phi_rel,1.0);
+
+"spring.tau:";
+val(spring.tau,0.0);
+val(spring.tau,0.25);
+val(spring.tau,0.5);
+val(spring.tau,0.75);
+val(spring.tau,1.0);
+
+"spring.flange_a.phi:";
+val(spring.flange_a.phi,0.0);
+val(spring.flange_a.phi,0.25);
+val(spring.flange_a.phi,0.5);
+val(spring.flange_a.phi,0.75);
+val(spring.flange_a.phi,1.0);
+
+"spring.flange_a.tau:";
+val(spring.flange_a.tau,0.0);
+val(spring.flange_a.tau,0.25);
+val(spring.flange_a.tau,0.5);
+val(spring.flange_a.tau,0.75);
+val(spring.flange_a.tau,1.0);
+
+"spring.flange_b.phi:";
+val(spring.flange_b.phi,0.0);
+val(spring.flange_b.phi,0.25);
+val(spring.flange_b.phi,0.5);
+val(spring.flange_b.phi,0.75);
+val(spring.flange_b.phi,1.0);
+
+"spring.flange_b.tau:";
+val(spring.flange_b.tau,0.0);
+val(spring.flange_b.tau,0.25);
+val(spring.flange_b.tau,0.5);
+val(spring.flange_b.tau,0.75);
+val(spring.flange_b.tau,1.0);
+
+"inertia3.phi:";
+val(inertia3.phi,0.0);
+val(inertia3.phi,0.25);
+val(inertia3.phi,0.5);
+val(inertia3.phi,0.75);
+val(inertia3.phi,1.0);
+
+"inertia3.flange_a.phi:";
+val(inertia3.flange_a.phi,0.0);
+val(inertia3.flange_a.phi,0.25);
+val(inertia3.flange_a.phi,0.5);
+val(inertia3.flange_a.phi,0.75);
+val(inertia3.flange_a.phi,1.0);
+
+"inertia3.flange_a.tau:";
+val(inertia3.flange_a.tau,0.0);
+val(inertia3.flange_a.tau,0.25);
+val(inertia3.flange_a.tau,0.5);
+val(inertia3.flange_a.tau,0.75);
+val(inertia3.flange_a.tau,1.0);
+
+"inertia3.flange_b.phi:";
+val(inertia3.flange_b.phi,0.0);
+val(inertia3.flange_b.phi,0.25);
+val(inertia3.flange_b.phi,0.5);
+val(inertia3.flange_b.phi,0.75);
+val(inertia3.flange_b.phi,1.0);
+
+"inertia3.w:";
+val(inertia3.w,0.0);
+val(inertia3.w,0.25);
+val(inertia3.w,0.5);
+val(inertia3.w,0.75);
+val(inertia3.w,1.0);
+
+"inertia3.a:";
+val(inertia3.a,0.0);
+val(inertia3.a,0.25);
+val(inertia3.a,0.5);
+val(inertia3.a,0.75);
+val(inertia3.a,1.0);
+
+"damper.phi_rel:";
+val(damper.phi_rel,0.0);
+val(damper.phi_rel,0.25);
+val(damper.phi_rel,0.5);
+val(damper.phi_rel,0.75);
+val(damper.phi_rel,1.0);
+
+"damper.tau:";
+val(damper.tau,0.0);
+val(damper.tau,0.25);
+val(damper.tau,0.5);
+val(damper.tau,0.75);
+val(damper.tau,1.0);
+
+"damper.flange_a.phi:";
+val(damper.flange_a.phi,0.0);
+val(damper.flange_a.phi,0.25);
+val(damper.flange_a.phi,0.5);
+val(damper.flange_a.phi,0.75);
+val(damper.flange_a.phi,1.0);
+
+"damper.flange_a.tau:";
+val(damper.flange_a.tau,0.0);
+val(damper.flange_a.tau,0.25);
+val(damper.flange_a.tau,0.5);
+val(damper.flange_a.tau,0.75);
+val(damper.flange_a.tau,1.0);
+
+"damper.flange_b.tau:";
+val(damper.flange_b.tau,0.0);
+val(damper.flange_b.tau,0.25);
+val(damper.flange_b.tau,0.5);
+val(damper.flange_b.tau,0.75);
+val(damper.flange_b.tau,1.0);
+
+"damper.w_rel:";
+val(damper.w_rel,0.0);
+val(damper.w_rel,0.25);
+val(damper.w_rel,0.5);
+val(damper.w_rel,0.75);
+val(damper.w_rel,1.0);
+
+"sine.y:";
+val(sine.y,0.0);
+val(sine.y,0.25);
+val(sine.y,0.5);
+val(sine.y,0.75);
+val(sine.y,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Rotational.Examples.First_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.First', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "fixed.flange_b.tau:"
+// 0.0
+// -34.23020394295047
+// 4.34723593143832
+// 39.427870355846835
+// 4.261382476620728
+// "torque.tau:"
+// 0.0
+// 9.510565162951536
+// 0.000000000000003224733239242218
+// -9.510565162951536
+// -0.000000000000036179601753499647
+// "torque.flange_b.phi:"
+// 0.0
+// 0.4547179994637377
+// 0.9572234700389061
+// 1.3857538901401836
+// 1.621585472307629
+// "torque.flange_b.tau:"
+// -0.0
+// -9.510565162951536
+// -0.000000000000003224733239242218
+// 9.510565162951536
+// 0.000000000000036179601753499647
+// "inertia1.phi:"
+// 0.0
+// 0.4547179994637377
+// 0.9572234700389061
+// 1.3857538901401836
+// 1.621585472307629
+// "inertia1.flange_a.phi:"
+// 0.0
+// 0.4547179994637377
+// 0.9572234700389061
+// 1.3857538901401836
+// 1.621585472307629
+// "inertia1.flange_a.tau:"
+// 0.0
+// 9.510565162951536
+// 0.000000000000003224733239242218
+// -9.510565162951536
+// -0.000000000000036179601753499647
+// "inertia1.flange_b.phi:"
+// 0.0
+// 0.4547179994637377
+// 0.9572234700389061
+// 1.3857538901401836
+// 1.621585472307629
+// "inertia1.flange_b.tau:"
+// 0.0
+// -2.956188574965686
+// 0.0703775910043445
+// 3.1855981495667356
+// 0.5970457434930909
+// "inertia1.w:"
+// 0.0
+// 1.8860583946922524
+// 3.7138376123992227
+// 1.2469218467946828
+// -1.1120292148171265
+// "inertia1.a:"
+// 0.0
+// 65.54376587985851
+// 0.7037759100434767
+// -63.24967013384799
+// 5.970457434930543
+// "idealGear.flange_a.phi:"
+// 0.0
+// 0.4547179994637377
+// 0.9572234700389061
+// 1.3857538901401836
+// 1.621585472307629
+// "idealGear.flange_a.tau:"
+// -0.0
+// 2.956188574965686
+// -0.0703775910043445
+// -3.1855981495667356
+// -0.5970457434930909
+// "idealGear.flange_b.phi:"
+// 0.0
+// 0.045471799946373764
+// 0.09572234700389061
+// 0.13857538901401834
+// 0.1621585472307629
+// "idealGear.flange_b.tau:"
+// -0.0
+// -29.561885749656863
+// 0.7037759100434451
+// 31.855981495667358
+// 5.97045743493091
+// "idealGear.tau_support:"
+// 0.0
+// 26.60569717469118
+// -0.6333983190391005
+// -28.67038334610062
+// -5.373411691437819
+// "idealGear.phi_a:"
+// 0.0
+// 0.4547179994637377
+// 0.9572234700389061
+// 1.3857538901401836
+// 1.621585472307629
+// "idealGear.phi_b:"
+// 0.0
+// 0.045471799946373764
+// 0.09572234700389061
+// 0.13857538901401834
+// 0.1621585472307629
+// "inertia2.phi:"
+// 0.0
+// 0.045471799946373764
+// 0.09572234700389061
+// 0.13857538901401834
+// 0.1621585472307629
+// "inertia2.flange_a.phi:"
+// 0.0
+// 0.045471799946373764
+// 0.09572234700389061
+// 0.13857538901401834
+// 0.1621585472307629
+// "inertia2.flange_a.tau:"
+// 0.0
+// 29.561885749656863
+// -0.7037759100434451
+// -31.855981495667358
+// -5.97045743493091
+// "inertia2.flange_b.phi:"
+// 0.0
+// 0.045471799946373764
+// 0.09572234700389061
+// 0.13857538901401834
+// 0.1621585472307629
+// "inertia2.flange_b.tau:"
+// 0.0
+// -16.45313257368516
+// 0.8445310920521404
+// 19.206047468897758
+// 7.164548921917017
+// "inertia2.w:"
+// 0.0
+// 0.18860583946922527
+// 0.3713837612399223
+// 0.12469218467946827
+// -0.11120292148171265
+// "inertia2.a:"
+// -0.0
+// 6.5543765879858515
+// 0.07037759100434766
+// -6.324967013384798
+// 0.5970457434930543
+// "spring.phi_rel:"
+// 0.0
+// -0.001456707417899291
+// 0.00045583687044513626
+// 0.002045296931569244
+// 0.0006052519707099891
+// "spring.tau:"
+// 0.0
+// -14.567074178992907
+// 4.558368704451364
+// 20.452969315692442
+// 6.052519707099892
+// "spring.flange_a.phi:"
+// 0.0
+// 0.045471799946373764
+// 0.09572234700389061
+// 0.13857538901401834
+// 0.1621585472307629
+// "spring.flange_a.tau:"
+// -0.0
+// 14.567074178992907
+// -4.558368704451364
+// -20.452969315692442
+// -6.052519707099892
+// "spring.flange_b.phi:"
+// 0.0
+// 0.04401509252847448
+// 0.09617818387433576
+// 0.14062068594558758
+// 0.1627637992014729
+// "spring.flange_b.tau:"
+// 0.0
+// -14.567074178992907
+// 4.558368704451364
+// 20.452969315692442
+// 6.052519707099892
+// "inertia3.phi:"
+// 0.0
+// 0.04401509252847448
+// 0.09617818387433576
+// 0.14062068594558758
+// 0.1627637992014729
+// "inertia3.flange_a.phi:"
+// 0.0
+// 0.04401509252847448
+// 0.09617818387433576
+// 0.14062068594558758
+// 0.1627637992014729
+// "inertia3.flange_a.tau:"
+// -0.0
+// 14.567074178992907
+// -4.558368704451364
+// -20.452969315692442
+// -6.052519707099892
+// "inertia3.flange_b.phi:"
+// 0.0
+// 0.04401509252847448
+// 0.09617818387433576
+// 0.14062068594558758
+// 0.1627637992014729
+// "inertia3.w:"
+// 0.0
+// 0.23095409087142205
+// 0.47474923719888734
+// 0.14875464921155618
+// -0.14537612480954998
+// "inertia3.a:"
+// -0.0
+// 7.283537089496454
+// -2.279184352225682
+// -10.226484657846221
+// -3.026259853549946
+// "damper.phi_rel:"
+// 0.0
+// -0.045471799946373764
+// -0.09572234700389061
+// -0.13857538901401834
+// -0.1621585472307629
+// "damper.tau:"
+// -0.0
+// -1.8860583946922524
+// -3.7138376123992227
+// -1.2469218467946828
+// 1.1120292148171265
+// "damper.flange_a.phi:"
+// 0.0
+// 0.045471799946373764
+// 0.09572234700389061
+// 0.13857538901401834
+// 0.1621585472307629
+// "damper.flange_a.tau:"
+// 0.0
+// 1.8860583946922524
+// 3.7138376123992227
+// 1.2469218467946828
+// -1.1120292148171265
+// "damper.flange_b.tau:"
+// -0.0
+// -1.8860583946922524
+// -3.7138376123992227
+// -1.2469218467946828
+// 1.1120292148171265
+// "damper.w_rel:"
+// -0.0
+// -0.18860583946922527
+// -0.3713837612399223
+// -0.12469218467946827
+// 0.11120292148171265
+// "sine.y:"
+// 0.0
+// 9.510565162951536
+// 0.000000000000003224733239242218
+// -9.510565162951536
+// -0.000000000000036179601753499647
+// endResult

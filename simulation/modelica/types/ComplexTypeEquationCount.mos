@@ -1,0 +1,16 @@
+// name:     ComplexTypeEquationCount
+// keywords: extends basetype matching bug1354
+// status: correct
+// 
+// Checks that the equation matching is correct when extending from a basetype.
+//
+
+loadFile("ComplexTypeEquationCount.mo");
+checkModel(ComplexTypeEquationCount);
+
+// Result:
+// true
+// "Check of ComplexTypeEquationCount completed successfully.
+// Class ComplexTypeEquationCount has 1 equation(s) and 1 variable(s).
+// 1 of these are trivial equation(s)."
+// endResult

@@ -1,0 +1,45 @@
+// name:     InOutTest
+// keywords: FMU Export Import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml InOutTest.fmu InOutTest_* testInOut_* InOutTest_me_FMU.mo InOutTest.libs testInOut.libs InOutTest.lib testInOut.lib InOutTest.so testInOut.so InOutTest.dll testInOut.dll InOutTest.c testInOut.c testInOut.makefile
+// Simulation Results 
+//
+
+loadModel(Modelica);getErrorString();
+loadFile("InOutTest.mo");getErrorString();
+translateModelFMU(InOutTest);getErrorString();
+importFMU("InOutTest.fmu");getErrorString();
+loadFile("InOutTest_me_FMU.mo");getErrorString();
+loadFile("testInOut.mo");getErrorString();
+simulate(testInOut);
+
+// add.y should be zero all the time
+val(add.y,0);
+val(add.y,0.5);
+val(add.y,1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "SimCode: The model InOutTest has been translated to FMU"
+// "[Modelica 3.2.1/Blocks/Continuous.mo:331:5-331:54:writable] Warning: Parameter firstOrder.T has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Blocks/Continuous.mo:566:5-567:37:writable] Warning: Parameter PI.T has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// "InOutTest_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testInOut_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testInOut', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// -0.0004791584189611786
+// -0.0003682170453443989
+// endResult

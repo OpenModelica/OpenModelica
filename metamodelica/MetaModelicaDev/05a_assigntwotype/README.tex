@@ -1,0 +1,28 @@
+{\bf Assignment}
+
+In this exercise you will:
+\begin{itemize}
+\item add a new String type to the current Exp node which can hold only integers as strings 
+\item add cases to evaluate expressions and assignments of type "2" + 1 + "1" + 1.0 in the eval function
+\item search for \code{// your code here} within \code{AssignTwoType.mo}
+\end{itemize}
+
+{\bf Optional assignment}
+Change the code to allow the use of identifiers before actual declaration.
+For example:
+\begin{verbatim}
+	a := b + 1
+	b := 3
+	;
+	a+b
+\end{verbatim}
+Should return 7 instead of 4 as it returns now.
+
+NOTE: the parser/lexer are ready, but you have to implement the types
+before they start parsing \code{STRING} properly.
+
+\code{SOLUTION.txt} presents the solution to the assignment.
+
+To run the calculator type \code{run} when building the project (or \code{make run} from a terminal).
+
+If you need to edit the input of the calculator edit the file called \code{program.txt}.

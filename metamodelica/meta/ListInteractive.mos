@@ -1,0 +1,50 @@
+// name:     ListInteractive
+// keywords: Lists
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// List Testing
+loadFile("ListInteractive.mo");
+lst := {2,3};
+lst1 := {1, 2, 3};
+lst2 := ListInteractive.listPrepend(lst, 1);
+lst2 := ListInteractive.listPrepend({2,3,4}, 1);
+lst3 := {lst,{2,3},lst};
+lst4 := ListInteractive.listlistIdent(lst3);
+lst5 := ListInteractive.listlistlistIdent({lst3,lst3});
+
+// Empty list?
+tmp := ListInteractive.listPrepend({}, 1);
+// Nested array/list
+lst6 := ListInteractive.listlistIdent({tmp,tmp});
+
+// cref to list<Integer> (builtin type)
+lst7 := ListInteractive.listPrepend(ListInteractive.intList, 1);
+lst8 := ListInteractive.listPrepend(ListInteractive.intCons, 1);
+
+// Illegal calls
+lst9 := ListInteractive.testCompiledArrayToList(lst); // Let's say this works anyway
+
+ListInteractive.listPrepend({1.5,2.5}, 1);
+ListInteractive.listlistIdent({{1.5,2.5}}, 1);
+
+// TODO: Test Matrix-3D to list<Matrix-2D>? C list datatype doesn't support it
+// TODO: Test Matrix-3D to Matrix-2D<list>? Codegen doesn't support it
+
+// Result:
+// true
+// {2,3}
+// {1,2,3}
+// {1,2,3}
+// {1,2,3,4}
+// {{2,3},{2,3},{2,3}}
+// {{2,3},{2,3},{2,3}}
+// {{{2,3},{2,3},{2,3}},{{2,3},{2,3},{2,3}}}
+// {1}
+// {{1},{1}}
+// {1,2,3,4,5}
+// {1,2,3,4,5}
+// {1,2,3}
+// 
+// 
+// endResult

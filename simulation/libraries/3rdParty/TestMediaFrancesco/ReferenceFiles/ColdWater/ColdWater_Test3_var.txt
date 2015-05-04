@@ -1,0 +1,9 @@
+TestMedia.TestModels.ColdWater.Test3
+number of intervals = 200
+stopTime = 1
+
+relevant variables
+medium1.baseProperties.d
+medium1.baseProperties.h
+medium2.baseProperties.d
+medium2.baseProperties.h

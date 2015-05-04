@@ -1,0 +1,42 @@
+// name:     Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX);
+compareVars :=
+{
+   "h1",
+   "s1",
+   "Th",
+   "Ts",
+   "h2",
+   "s2"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX
+// {"h1","s1","Th","Ts","h2","s2"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX.mat\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

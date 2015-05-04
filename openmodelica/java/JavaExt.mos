@@ -1,0 +1,56 @@
+// name:     Ext Java Base Types
+// keywords: algorithm
+// status:   correct
+// 
+// Test of External Java functions
+//
+
+loadFile("JavaExt.mo");
+
+echo(false);
+
+IntegerToIntegerIn:=1;
+IntegerToIntegerOut:=JavaTest.JavaIntegerToInteger(IntegerToIntegerIn);
+
+RealToRealIn:=1.0;
+RealToRealOut:=JavaTest.JavaRealToReal(RealToRealIn);
+
+BooleanToBooleanIn:=true;
+BooleanToBooleanOut:=JavaTest.JavaBooleanToBoolean(BooleanToBooleanIn);
+
+StringToStringIn:="EscapedString\\\\n";
+StringToStringOut:=JavaTest.JavaStringToString(StringToStringIn);
+
+echo(true);
+
+"IntegerToInteger";
+IntegerToIntegerOut;
+"RealToReal";
+RealToRealOut;
+"BooleanToBoolean";
+BooleanToBooleanOut;
+"StringToString";
+StringToStringOut;
+
+"MultipleInOut";
+JavaTest.JavaMultipleInOut(1.0,2.0,3.0,4.0);
+
+readFile("output.log"); // Check that output log is emtpy
+// Because all tests use the same file, don't delete any the others might be using!
+// system("rm -f output.log JavaTest_*");
+
+// Result:
+// true
+// true
+// "IntegerToInteger"
+// 2
+// "RealToReal"
+// 2.5
+// "BooleanToBoolean"
+// false
+// "StringToString"
+// "EscapedString\\\\n:EscapedString\\\\n"
+// "MultipleInOut"
+// (1.5,5.0,10.5,18.0)
+// "No such file"
+// endResult

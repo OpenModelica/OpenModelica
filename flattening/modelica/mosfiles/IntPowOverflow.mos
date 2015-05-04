@@ -1,0 +1,28 @@
+// name:     Integer Power Overflow
+// keywords: 
+// status:   correct
+// 
+//  Making sure that integer power is correct when using large integers
+//
+22^22;
+3^10;
+b := 5121;
+a := b^4;
+i := 0;
+k := 2;
+while i <= 5 loop
+  k := k^2;
+  i := i + 1;
+end while;
+k
+
+// Result:
+// 3.4142787736422e+029
+// 59049.0
+// 5121
+// 687731795578881
+// 0
+// 2
+// 
+// 1.84467440737096e+019
+// endResult

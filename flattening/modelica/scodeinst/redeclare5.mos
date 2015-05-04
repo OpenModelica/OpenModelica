@@ -1,0 +1,2 @@
+loadFile("redeclare5.mo");
+list(C);

@@ -1,0 +1,66 @@
+// name:     Ext Java Arrays
+// keywords: algorithm
+// status:   correct
+// 
+// Test of External Java functions
+//
+
+loadFile("JavaExt.mo");
+
+echo(false);
+
+arrayIntegerIn:={{{{1},{2}},{{3},{4}}},{{{5},{6}},{{7},{8}}}};
+arrayIntegerOut:=JavaTest.arrayTestInteger(arrayIntegerIn);
+
+arrayRealIn:={{{1.0,2.0},{3.0,4.0}},{{5.0,6.0},{7.0,8.0}}};
+arrayRealOut:=JavaTest.arrayTestReal(arrayRealIn);
+
+arrayBooleanIn:={true,false,false,true,true,false,false,true};
+arrayBooleanOut:=JavaTest.arrayTestBoolean(arrayBooleanIn);
+
+arrayStringIn:={{{"1.0","2.0"},{"3.0","4.0"}},{{"5.0","6.0"},{"7.0","8.0"}}};
+arrayStringOut:=JavaTest.arrayTestString(arrayStringIn);
+
+arraySumFlatIn:={1,2,3,4,5,6};
+arraySumFlatOut:=JavaTest.SumArray(arraySumFlatIn);
+
+arraySumNestedIn:={{1,2},{3,4},{5,6}};
+arraySumNestedOut:=JavaTest.SumArray(arraySumFlatIn);
+
+echo(true);
+
+"arrayTestInteger";
+arrayIntegerOut;
+"arrayTestReal";
+arrayRealOut;
+"arrayTestBoolean";
+arrayBooleanOut;
+"arrayTestString";
+arrayStringOut;
+"arraySum Flat";
+arraySumFlatOut;
+"arraySum Nest";
+arraySumNestedOut;
+
+readFile("output.log"); // Check that output log is emtpy
+echo(false);
+// Because all tests use the same file, don't delete any the others might be using!
+// system("rm -f output.log JavaTest_*");
+
+// Result:
+// true
+// true
+// "arrayTestInteger"
+// {{{{2},{4}},{{6},{8}}},{{{10},{12}},{{14},{16}}}}
+// "arrayTestReal"
+// {{{2.5,5.0},{7.5,10.0}},{{12.5,15.0},{17.5,20.0}}}
+// "arrayTestBoolean"
+// {false,true,true,false,false,true,true,false}
+// "arrayTestString"
+// {{{"1.0:1.0","2.0:2.0"},{"3.0:3.0","4.0:4.0"}},{{"5.0:5.0","6.0:6.0"},{"7.0:7.0","8.0:8.0"}}}
+// "arraySum Flat"
+// 21
+// "arraySum Nest"
+// 21
+// "No such file"
+// endResult

@@ -1,0 +1,68 @@
+// name:     FinalPropagation.mos [BUG https://openmodelica.org:8443/cb/issue/1488]
+// keywords: checks propagation of final element prefix to the back-end!
+// status:   correct
+// teardown_command: rm -rf FinalPropagation_* FinalPropagation.exe FinalPropagation.cpp FinalPropagation.makefile FinalPropagation.libs FinalPropagation.log output.log
+// 
+// Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+//
+
+loadFile("FinalPropagation.mo"); getErrorString();
+instantiateModel(FinalPropagation); getErrorString();
+setCommandLineOptions({"+d=dumpdaelow"});
+simulate(FinalPropagation); getErrorString();
+
+// Result:
+// true
+// ""
+// "function FinalPropagation.R \"Automatically generated record constructor for FinalPropagation.R\"
+//   input Real b;
+//   output R res;
+// end FinalPropagation.R;
+// 
+// class FinalPropagation
+//   final parameter Real r.b = 1.0;
+// end FinalPropagation;
+// "
+// ""
+// {true}
+// dumpdaelow:
+// Variables (0)
+// =========
+// 
+// 
+// Equations (0, 0)
+// =========
+// 
+// NoMatching
+// 
+// BackendDAEType: simulation
+// 
+// Known Variables (constants) (1)
+// =============================
+// 1:  r.b:PARAM(final = true )  = 1.0 .FinalPropagation, .FinalPropagation.R, .Real type: Real (final = true )
+// External Objects (0)
+// =============================
+// Classes of External Objects (0)
+// =============================
+// AliasVariables: 0
+// ===============
+// 
+// Simple Equations (0)
+// =========
+// Initial Equations (0)
+// =========
+// Zero Crossings :
+// ===============
+// 
+// When Clauses :
+// ===============
+// 
+// Constraints:
+// ===============
+// record SimulationResult
+//     resultFile = "FinalPropagation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'FinalPropagation', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

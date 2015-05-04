@@ -1,0 +1,21 @@
+// name:     For-statement 6
+// keywords: for
+// status:   correct
+// 
+//  Make sure that the iterator is hidden.
+//
+test := {1,2,3};
+i := 10;
+k := 0;
+for i in test loop
+  k := k + i;
+end for;
+i
+
+// Result:
+// {1,2,3}
+// 10
+// 0
+// 
+// 10
+// endResult

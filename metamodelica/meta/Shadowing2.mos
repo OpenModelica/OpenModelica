@@ -1,0 +1,22 @@
+// name:     Shadowing2
+// keywords: Shadowing
+// status:   incorrect
+// cflags:   +g=MetaModelica
+//
+// Local Delcaration Shadowing
+//
+loadFile("Shadowing2.mo");
+getErrorString();
+a:=Shadowing2.test(1);
+
+// Result:
+// true
+// ""
+// Error processing file: Shadowing2.mos
+// [metamodelica/meta/Shadowing2.mo:9:9-9:20:writable] Error: Local variable 'x' shadows another variable.
+// 
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+// 
+// Execution failed!
+// endResult

@@ -1,0 +1,46 @@
+// name:     ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC_* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.exe ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.cpp ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.makefile ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.libs ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.log ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.c ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC, stopTime=1000);  getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC_res.mat",
+"ReferenceFiles/ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.mat",
+"ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC_diff.csv",
+0.01, 0.0001,
+{"singularPressureLoss.Q",
+ "singularPressureLoss.T",
+ "singularPressureLoss.deltaPf"});
+ 
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Warning: Variable singularPressureLoss.p_rho out of [min, max] interval: singularPressureLoss.p_rho >= 0.000001 and singularPressureLoss.p_rho <= 30000.0 has value: 0
+// "
+// end SimulationResult;
+// "[lib/omlibrary/ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:635:3-681:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1074:3-1125:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// "
+// {"Files not Equal!","\"singularPressureLoss.deltaPf\""}
+// endResult

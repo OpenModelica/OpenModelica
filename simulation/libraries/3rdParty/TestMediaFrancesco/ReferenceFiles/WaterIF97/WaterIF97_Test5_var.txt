@@ -1,0 +1,9 @@
+TestMedia.TestModels.WaterIF97.Test5
+number of intervals = 200
+stopTime = 1
+
+relevant variables
+medium1.baseProperties.T
+medium1.baseProperties.d
+medium2.baseProperties.T
+medium2.baseProperties.d

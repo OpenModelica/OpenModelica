@@ -1,0 +1,14 @@
+// name: Bug2882.mos [BUG: #2882]
+// status: correct
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+getDerivedClassModifierValue(Modelica.Fluid.Vessels.BaseClasses.PartialLumpedVessel.Medium.MassFlowRate,unit); getErrorString();
+not regularFileExists("Modelica_specificEnthalpy_pTX_0.log");
+
+// Result:
+// true
+// ""
+//
+// ""
+// true
+// endResult

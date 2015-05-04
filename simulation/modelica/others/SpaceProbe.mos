@@ -1,0 +1,64 @@
+// name:     SpaceProbe
+// keywords: DOPRI5
+// status: correct
+// teardown_command: rm -rf SpaceProbe_* SpaceProbe SpaceProbe.exe SpaceProbe.cpp SpaceProbe.makefile SpaceProbe.libs SpaceProbe.log output.log
+// 
+//  <insert description here>
+//
+//from Numerical Methods for Differential Equations - A Computational Approach
+//John R. Dormand
+//
+loadFile("spaceprobe.mo");
+simulate(SpaceProbe, stopTime=29.460200000000000, numberOfIntervals=2000, tolerance=1e-5, method="dopri5"); 
+echo(false); // turns off output 
+x1:=val(x,3.0);
+x2:=val(x,9.3);
+x3:=val(x,25.9);
+x4:=val(x,29.4602);
+y1:=val(y,3.0);
+y2:=val(y,9.3);
+y3:=val(y,25.9);
+y4:=val(y,29.4602);
+x1:=1000*x1;
+x2:=1000*x2;
+x3:=1000*x3;
+x4:=1000*x4;
+y1:=1000*y1;
+y2:=1000*y2;
+y3:=1000*y3;
+y4:=1000*y4;
+x1:=floor(x1);
+x2:=floor(x2);
+x3:=floor(x3);
+x4:=floor(x4);
+y1:=floor(y1);
+y2:=floor(y2);
+y3:=floor(y3);
+y4:=floor(y4);
+echo(true); // turns on output
+x1/1000.0; // rounded value to 3 digits
+x2/1000.0;
+x3/1000.0;
+x4/1000.0;
+y1/1000.0;
+y2/1000.0;
+y3/1000.0;
+y4/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//    resultFile = "SpaceProbe_res.mat",
+//    simulationOptions = "startTime = 0.0, stopTime = 29.4602, numberOfIntervals = 2000, tolerance = 1e-05, method = 'dopri5', fileNamePrefix = 'SpaceProbe', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//    messages = ""
+// end SimulationResult;
+// true
+// 0.986
+// -0.1
+// 0.952
+// 1.15
+// 0.063
+// -0.417
+// 0.089
+// 0.004
+// endResult

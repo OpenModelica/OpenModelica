@@ -1,0 +1,38 @@
+// name:     Modelica.Electrical.Spice3.Examples.Graetz
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Graetz);
+compareVars :=
+{
+   "D1.pin",
+   "D3.n.v"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Electrical.Spice3.Examples.Graetz
+// {"D1.pin","D3.n.v"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Spice3.Examples.Graetz.mat\"
+// "
+// ""
+// Translation succeeded
+// "true
+// "
+// ""
+// endResult

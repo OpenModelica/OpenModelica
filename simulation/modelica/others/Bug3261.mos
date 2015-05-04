@@ -1,0 +1,66 @@
+// name: Bug3261.mos
+// keywords: handling of array in -override
+// status: correct
+// teardown_command: rm -rf overrideBug*
+//
+// test for #3261
+//
+
+loadString("
+model overrideBug
+  parameter Real[2,2] A = {{1,2},{3,4}};
+  Real[2] x(start={1,2});
+  Real[2] y;
+equation
+  y = der(x);
+  der(y) = A * x;
+end overrideBug;
+"); getErrorString();
+
+simulate(overrideBug); getErrorString();
+val(x[1], 0);
+val(x[1], 1);
+val(x[2], 0);
+val(x[2], 1);
+val(A[1,1], 0);
+val(A[1,1], 1);
+
+simulate(overrideBug, simflags="-override x[2]=5,A[1,1]=100,x[1]=4 -output x[1],x[2],A[1,1]"); getErrorString();
+val(x[1], 0);
+val(x[1], 1);
+val(x[2], 0);
+val(x[2], 1);
+val(A[1,1], 0);
+val(A[1,1], 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "overrideBug_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'overrideBug', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 1.0
+// 4.846927041353899
+// 2.0
+// 10.44351031260567
+// 1.0
+// 1.0
+// record SimulationResult
+//     resultFile = "overrideBug_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'overrideBug', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override x[2]=5,A[1,1]=100,x[1]=4 -output x[1],x[2],A[1,1]'",
+//     messages = "time=1,x[1]=45311.588691569712,x[2]=1433.1325544734625,A[1,1]=100
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 4.0
+// 45311.58869156971
+// 5.0
+// 1433.132554473463
+// 100.0
+// 100.0
+// endResult

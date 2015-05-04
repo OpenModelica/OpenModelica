@@ -1,0 +1,23 @@
+// name: ZeroCrossingAlg
+// keywords: event, algorithm
+// status: correct
+// teardown_command: rm -rf eventTests.ZeroCrossingAlg* output.log
+
+loadString("
+package eventTests
+  model ZeroCrossingAlg
+    Real a;
+    Integer d;
+  algorithm
+    a := 2*time;
+    d := if a > 1.0 then 1 else 2;
+    a := 0.5;
+  end ZeroCrossingAlg;
+end eventTests;
+"); getErrorString();
+
+simulate(eventTests.ZeroCrossingAlg, simflags="-lv=LOG_EVENTS"); getErrorString();
+val(d, {0.1, 0.9});
+
+// Result:
+// endResult

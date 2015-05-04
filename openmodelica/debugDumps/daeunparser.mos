@@ -1,0 +1,25 @@
+// name: daeunparser.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=daeunparser
+// 
+
+// TODO: change this model to test the dump +d=daeunparser
+loadString("
+model testDaeunparser
+end testDaeunparser;
+"); getErrorString();
+
+setDebugFlags("daeunparser"); getErrorString();
+buildModel(testDaeunparser); getErrorString();
+
+// Result:
+// true
+// ""
+// false
+// "Error: Unknown debug flag daeunparser.
+// "
+// {"testDaeunparser","testDaeunparser_init.xml"}
+// ""
+// endResult

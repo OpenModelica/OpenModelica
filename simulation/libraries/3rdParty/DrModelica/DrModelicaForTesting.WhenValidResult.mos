@@ -1,0 +1,33 @@
+// name:     DrModelicaForTesting.WhenValidResult.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.WhenValidResult
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.WhenValidResult.* DrModelicaForTesting.WhenValidResult_* DrModelicaForTesting.WhenValidResult DrModelicaForTesting.WhenValidResult.exe DrModelicaForTesting.WhenValidResult.cpp DrModelicaForTesting.WhenValidResult.makefile DrModelicaForTesting.WhenValidResult.libs DrModelicaForTesting.WhenValidResult.log DrModelicaForTesting.WhenValidResult.c DrModelicaForTesting.WhenValidResult.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.WhenValidResult, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.WhenValidResult_res.mat",
+  "ReferenceFiles/WhenValidResult_ref.mat","DrModelicaForTesting.WhenValidResult_diff.csv",0.01,0.013,
+  {"x","y"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.WhenValidResult_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WhenValidResult', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

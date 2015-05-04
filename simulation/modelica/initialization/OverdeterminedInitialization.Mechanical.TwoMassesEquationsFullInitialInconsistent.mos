@@ -1,0 +1,20 @@
+// name: OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent","OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitialInconsistent_init.xml"}
+// "Notification: The following equation is consistent and got removed from the initialization problem: v1 = 0.0
+// Error: The initialization problem is inconsistent due to the following equation: x1 = 0.0 (1.0 = 0.0)
+// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// "
+// endResult

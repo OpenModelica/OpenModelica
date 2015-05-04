@@ -1,0 +1,158 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.* ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_* ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.log ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.c ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe, stopTime=1000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_res.mat",
+"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_diff.csv",
+0.01, 0.0001,
+{"dynamicOnePhaseFlowPipe.T1[1]", "dynamicOnePhaseFlowPipe.T1[2]", "dynamicOnePhaseFlowPipe.T1[3]", "dynamicOnePhaseFlowPipe.T1[4]", "dynamicOnePhaseFlowPipe.T1[5]",
+ "dynamicOnePhaseFlowPipe.T1[6]", "dynamicOnePhaseFlowPipe.T1[7]", "dynamicOnePhaseFlowPipe.T1[8]", "dynamicOnePhaseFlowPipe.T1[9]", "dynamicOnePhaseFlowPipe.T1[10]",
+ "dynamicOnePhaseFlowPipe.P[1]", "dynamicOnePhaseFlowPipe.P[2]", "dynamicOnePhaseFlowPipe.P[3]", "dynamicOnePhaseFlowPipe.P[4]", "dynamicOnePhaseFlowPipe.P[5]",
+ "dynamicOnePhaseFlowPipe.P[6]", "dynamicOnePhaseFlowPipe.P[7]", "dynamicOnePhaseFlowPipe.P[8]", "dynamicOnePhaseFlowPipe.P[9]", "dynamicOnePhaseFlowPipe.P[10]"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/BaseIF97.mo:5761:7-5778:16:writable] Warning: found was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:1125:9-1125:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:947:9-947:28:writable] Warning: v was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:871:9-871:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:801:9-801:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [lib/omlibrary/ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Error: Too many equations, over-determined system. The model has 2077 equation(s) and 817 variable(s).
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[10](start = dynamicOnePhaseFlowPipe.T0[10])
+//          Candidate heatExchangerWall.Tp1[10](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[10](start = dynamicOnePhaseFlowPipe.T0[10])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[9](start = dynamicOnePhaseFlowPipe.T0[9])
+//          Candidate heatExchangerWall.Tp1[9](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[9](start = dynamicOnePhaseFlowPipe.T0[9])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[8](start = dynamicOnePhaseFlowPipe.T0[8])
+//          Candidate heatExchangerWall.Tp1[8](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[8](start = dynamicOnePhaseFlowPipe.T0[8])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[7](start = dynamicOnePhaseFlowPipe.T0[7])
+//          Candidate heatExchangerWall.Tp1[7](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[7](start = dynamicOnePhaseFlowPipe.T0[7])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[6](start = dynamicOnePhaseFlowPipe.T0[6])
+//          Candidate heatExchangerWall.Tp1[6](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[6](start = dynamicOnePhaseFlowPipe.T0[6])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[5](start = dynamicOnePhaseFlowPipe.T0[5])
+//          Candidate heatExchangerWall.Tp1[5](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[5](start = dynamicOnePhaseFlowPipe.T0[5])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[4](start = dynamicOnePhaseFlowPipe.T0[4])
+//          Candidate heatExchangerWall.Tp1[4](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[4](start = dynamicOnePhaseFlowPipe.T0[4])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[3](start = dynamicOnePhaseFlowPipe.T0[3])
+//          Candidate heatExchangerWall.Tp1[3](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[3](start = dynamicOnePhaseFlowPipe.T0[3])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[2](start = dynamicOnePhaseFlowPipe.T0[2])
+//          Candidate heatExchangerWall.Tp1[2](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[2](start = dynamicOnePhaseFlowPipe.T0[2])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Tp[1](start = dynamicOnePhaseFlowPipe.T0[1])
+//          Candidate heatExchangerWall.Tp1[1](start = 300.0)
+//          Select value from dynamicOnePhaseFlowPipe.Tp[1](start = dynamicOnePhaseFlowPipe.T0[1])
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Q[11](start = 10.0)
+//          Candidate dynamicOnePhaseFlowPipe.C2.Q(start = 500.0)
+//          Candidate sinkP.C.Q(start = 500.0)
+//          Select value from dynamicOnePhaseFlowPipe.Q[11](start = 10.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.Q[1](start = 10.0)
+//          Candidate dynamicOnePhaseFlowPipe.C1.Q(start = 500.0)
+//          Candidate sourceP.C.Q(start = 500.0)
+//          Select value from dynamicOnePhaseFlowPipe.Q[1](start = 10.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[10](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[10](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[10](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[9](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[9](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[9](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[8](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[8](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[8](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[7](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[7](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[7](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[6](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[6](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[6](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[5](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[5](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[5](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[4](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[4](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[4](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[3](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[3](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[3](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[2](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[2](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[2](start = 300000.0)
+// Warning: Aliasset with several free start values
+//          Candidate dynamicOnePhaseFlowPipe.dW1[1](start = 300000.0)
+//          Candidate heatExchangerWall.dW1[1](start = -300000.0)
+//          Select value from dynamicOnePhaseFlowPipe.dW1[1](start = 300000.0)
+// "
+// end SimulationResult;
+// ""
+// {"Error opening file: ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_res.mat"}
+// endResult

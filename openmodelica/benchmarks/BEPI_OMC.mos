@@ -1,0 +1,3 @@
+loadFile("BEPI_OMC.mo");
+loadModel(Modelica);
+checkModel(BEPI_OMC.Room2D_10x10); getErrorString();

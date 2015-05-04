@@ -1,0 +1,25 @@
+// name:      SumVectorForIf
+// keywords:  equation
+// status: incorrect
+// teardown_command: rm -rf SumVectorForIf_* SumVectorForIf SumVectorForIf.exe SumVectorForIf.cpp SumVectorForIf.makefile SumVectorForIf.libs SumVectorForIf.log output.log
+// 
+// Drmodelica: 9.1  if-Statement (p. 292)
+// 
+loadFile("SumVectorForIf.mo");
+simulate(SumVector, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+echo(false);
+res:=readSimulationResult("SumVectorForIf_res.mat",{sum},3);
+x := res[1];
+x := 1000*x;
+x := floor(x);
+echo(true);
+x/1000.0;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "SumVectorForIf_res.mat"
+// end SimulationResult;
+// true
+// {1500.0,1500.0,1500.0}
+// ""
+// endResult

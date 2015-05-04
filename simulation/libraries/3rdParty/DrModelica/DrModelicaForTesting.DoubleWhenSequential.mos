@@ -1,0 +1,32 @@
+// name:     DrModelicaForTesting.DoubleWhenSequential.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.DoubleWhenSequential
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.DoubleWhenSequential.* DrModelicaForTesting.DoubleWhenSequential_* DrModelicaForTesting.DoubleWhenSequential DrModelicaForTesting.DoubleWhenSequential.exe DrModelicaForTesting.DoubleWhenSequential.cpp DrModelicaForTesting.DoubleWhenSequential.makefile DrModelicaForTesting.DoubleWhenSequential.libs DrModelicaForTesting.DoubleWhenSequential.log DrModelicaForTesting.DoubleWhenSequential.c DrModelicaForTesting.DoubleWhenSequential.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.DoubleWhenSequential, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.DoubleWhenSequential_res.mat",
+  "ReferenceFiles/DoubleWhenSequential_ref.mat","DrModelicaForTesting.DoubleWhenSequential_diff.csv",0.01,0.013,
+  {"close"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.DoubleWhenSequential_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.DoubleWhenSequential', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

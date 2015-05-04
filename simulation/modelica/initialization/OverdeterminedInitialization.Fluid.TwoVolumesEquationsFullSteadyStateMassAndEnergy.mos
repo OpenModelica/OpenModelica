@@ -1,0 +1,20 @@
+// name: OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy_init.xml"}
+// "Notification: It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// endResult

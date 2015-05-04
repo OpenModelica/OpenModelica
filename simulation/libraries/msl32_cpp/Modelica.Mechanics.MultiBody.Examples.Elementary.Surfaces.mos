@@ -1,0 +1,38 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces);
+compareVars :=
+{
+   "prismatic.v",
+   "position.s"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
+// {"prismatic.v","position.s"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces.mat\"
+// "
+// ""
+// Translation succeeded
+// "true
+// "
+// ""
+// endResult

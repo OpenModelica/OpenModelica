@@ -1,0 +1,47 @@
+// name: ComplexConnect
+// status: correct
+// teardown_command: rm -rf ComplexConnect.Test*
+
+loadString("
+package ComplexConnect
+
+class Loop 
+  input Real sIn; 
+  output Real sOut; 
+equation 
+  sOut = sIn; 
+  //connect(sIn, sOut); 
+end Loop; 
+
+// This model works 
+model Test 
+  Real sIn; 
+  Real sOut; 
+  Loop l; 
+equation 
+  sIn = time; 
+  connect(sIn, l.sIn); 
+  connect(l.sOut, sOut); 
+end Test; 
+
+// This model does not work 
+model TestArray 
+  Real sIn; 
+  Real sOut; 
+  Loop l[1]; 
+equation 
+  sIn = time; 
+  connect(sIn, l[1].sIn); 
+  connect(l[1].sOut, sOut); 
+end TestArray;
+end ComplexConnect;
+");
+
+translateModel(ComplexConnect.TestArray);
+translateModel(ComplexConnect.Test);
+
+// Result:
+// true
+// true
+// true
+// endResult

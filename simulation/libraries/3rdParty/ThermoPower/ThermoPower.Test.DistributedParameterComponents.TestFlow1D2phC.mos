@@ -1,0 +1,125 @@
+// name: ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phC
+// keywords: over-determined initialization
+// status: correct
+
+// Test5
+loadFile("TestOverdeterminedInitializationTotal.mo"); getErrorString();
+simulate(ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phC); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phC_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 500, tolerance = 1e-09, method = 'dassl', fileNamePrefix = 'ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "assert            | warning | The following assertion has been violated at time 10.500000
+// |                 | |       | Merr >= 0.0
+// assert            | warning | Variable Merr out of [min, max] interval: Merr >= 0.0 has value: -1.23405e-07
+// "
+// end SimulationResult;
+// "Warning: Alias set with several free start values
+//  * candidate: hex.h[1](start = hex.hstart[1])
+//  * candidate: Source.flange.h_outflow(start = 100000.0)
+//  * candidate: hex.fluidState[1].h(start = 100000.0)
+// => select value from hex.h[1](start = hex.hstart[1]) for variable: hex.h[1]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[19](start = hex.hstart[20])
+//  * candidate: hex.h[20](start = hex.hstart[20])
+//  * candidate: hex.fluidState[20].h(start = 100000.0)
+//  * candidate: hex.outfl.h_outflow(start = hex.hstartout)
+// => select value from hex.htilde[19](start = hex.hstart[20]) for variable: hex.htilde[19]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[18](start = hex.hstart[19])
+//  * candidate: hex.h[19](start = hex.hstart[19])
+//  * candidate: hex.fluidState[19].h(start = 100000.0)
+// => select value from hex.htilde[18](start = hex.hstart[19]) for variable: hex.htilde[18]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[17](start = hex.hstart[18])
+//  * candidate: hex.h[18](start = hex.hstart[18])
+//  * candidate: hex.fluidState[18].h(start = 100000.0)
+// => select value from hex.htilde[17](start = hex.hstart[18]) for variable: hex.htilde[17]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[16](start = hex.hstart[17])
+//  * candidate: hex.h[17](start = hex.hstart[17])
+//  * candidate: hex.fluidState[17].h(start = 100000.0)
+// => select value from hex.htilde[16](start = hex.hstart[17]) for variable: hex.htilde[16]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[15](start = hex.hstart[16])
+//  * candidate: hex.h[16](start = hex.hstart[16])
+//  * candidate: hex.fluidState[16].h(start = 100000.0)
+// => select value from hex.htilde[15](start = hex.hstart[16]) for variable: hex.htilde[15]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[14](start = hex.hstart[15])
+//  * candidate: hex.h[15](start = hex.hstart[15])
+//  * candidate: hex.fluidState[15].h(start = 100000.0)
+// => select value from hex.htilde[14](start = hex.hstart[15]) for variable: hex.htilde[14]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[13](start = hex.hstart[14])
+//  * candidate: hex.h[14](start = hex.hstart[14])
+//  * candidate: hex.fluidState[14].h(start = 100000.0)
+// => select value from hex.htilde[13](start = hex.hstart[14]) for variable: hex.htilde[13]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[12](start = hex.hstart[13])
+//  * candidate: hex.h[13](start = hex.hstart[13])
+//  * candidate: hex.fluidState[13].h(start = 100000.0)
+// => select value from hex.htilde[12](start = hex.hstart[13]) for variable: hex.htilde[12]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[11](start = hex.hstart[12])
+//  * candidate: hex.h[12](start = hex.hstart[12])
+//  * candidate: hex.fluidState[12].h(start = 100000.0)
+// => select value from hex.htilde[11](start = hex.hstart[12]) for variable: hex.htilde[11]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[10](start = hex.hstart[11])
+//  * candidate: hex.h[11](start = hex.hstart[11])
+//  * candidate: hex.fluidState[11].h(start = 100000.0)
+// => select value from hex.htilde[10](start = hex.hstart[11]) for variable: hex.htilde[10]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[9](start = hex.hstart[10])
+//  * candidate: hex.h[10](start = hex.hstart[10])
+//  * candidate: hex.fluidState[10].h(start = 100000.0)
+// => select value from hex.htilde[9](start = hex.hstart[10]) for variable: hex.htilde[9]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[8](start = hex.hstart[9])
+//  * candidate: hex.h[9](start = hex.hstart[9])
+//  * candidate: hex.fluidState[9].h(start = 100000.0)
+// => select value from hex.htilde[8](start = hex.hstart[9]) for variable: hex.htilde[8]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[7](start = hex.hstart[8])
+//  * candidate: hex.h[8](start = hex.hstart[8])
+//  * candidate: hex.fluidState[8].h(start = 100000.0)
+// => select value from hex.htilde[7](start = hex.hstart[8]) for variable: hex.htilde[7]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[6](start = hex.hstart[7])
+//  * candidate: hex.h[7](start = hex.hstart[7])
+//  * candidate: hex.fluidState[7].h(start = 100000.0)
+// => select value from hex.htilde[6](start = hex.hstart[7]) for variable: hex.htilde[6]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[5](start = hex.hstart[6])
+//  * candidate: hex.h[6](start = hex.hstart[6])
+//  * candidate: hex.fluidState[6].h(start = 100000.0)
+// => select value from hex.htilde[5](start = hex.hstart[6]) for variable: hex.htilde[5]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[4](start = hex.hstart[5])
+//  * candidate: hex.h[5](start = hex.hstart[5])
+//  * candidate: hex.fluidState[5].h(start = 100000.0)
+// => select value from hex.htilde[4](start = hex.hstart[5]) for variable: hex.htilde[4]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[3](start = hex.hstart[4])
+//  * candidate: hex.h[4](start = hex.hstart[4])
+//  * candidate: hex.fluidState[4].h(start = 100000.0)
+// => select value from hex.htilde[3](start = hex.hstart[4]) for variable: hex.htilde[3]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[2](start = hex.hstart[3])
+//  * candidate: hex.h[3](start = hex.hstart[3])
+//  * candidate: hex.fluidState[3].h(start = 100000.0)
+// => select value from hex.htilde[2](start = hex.hstart[3]) for variable: hex.htilde[2]
+// Warning: Alias set with several free start values
+//  * candidate: hex.htilde[1](start = hex.hstart[2])
+//  * candidate: hex.h[2](start = hex.hstart[2])
+//  * candidate: hex.fluidState[2].h(start = 100000.0)
+//  * candidate: hex.infl.h_outflow(start = hex.hstartin)
+// => select value from hex.htilde[1](start = hex.hstart[2]) for variable: hex.htilde[1]
+// Notification: The following equation is consistent and got removed from the initialization problem: $DER.hex.p = 0.0
+// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// "
+// endResult

@@ -1,0 +1,29 @@
+//name:        Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+
+simulate(Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation
+// [HeatExchanger.mo:190:7-195:111:writable] Error: No matching function found for Medium_1.specificEnthalpy_pTX(p_a_start1 / 2.0 + p_b_start1 / 2.0, T_start_1, {})
+// of type
+//   .Modelica.Fluid.Examples.HeatExchanger.BaseClasses.BasicHX.Medium_1.specificEnthalpy_pTX<function>(p:Real, T:Real(min=1.0, max=10000.0, nominal=300.0, start=300.0, quantity=\"ThermodynamicTemperature\", unit=\"K\", displayUnit=\"degC\"), X:Real(quantity=\"MassFraction\", unit=\"kg/kg\", min=0.0, max=1.0, nominal=0.1)[0]) => Real(min=-100000000.0, max=100000000.0, nominal=1000000.0, quantity=\"SpecificEnergy\", unit=\"J/kg\") in component HEX
+// candidates are 
+//   .Modelica.Fluid.Examples.HeatExchanger.BaseClasses.BasicHX.Medium_1.specificEnthalpy_pTX<function>(p:Real(min=0.0, max=100000000.0, nominal=100000.0, start=100000.0, quantity=\"Pressure\", unit=\"Pa\", displayUnit=\"bar\"), T:Real(min=1.0, max=10000.0, nominal=300.0, start=300.0, quantity=\"ThermodynamicTemperature\", unit=\"K\", displayUnit=\"degC\"), X:Real(quantity=\"MassFraction\", unit=\"kg/kg\", min=0.0, max=1.0, nominal=0.1)[1]) => Real(min=-100000000.0, max=100000000.0, nominal=1000000.0, quantity=\"SpecificEnergy\", unit=\"J/kg\")
+// Error: Error occurred while flattening model Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation
+// "
+// end SimulationResult;
+// ""
+// endResult

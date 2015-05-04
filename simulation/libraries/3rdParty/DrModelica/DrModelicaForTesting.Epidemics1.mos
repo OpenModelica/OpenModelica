@@ -1,0 +1,33 @@
+// name:     DrModelicaForTesting.Epidemics1.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.Epidemics1
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.Epidemics1.* DrModelicaForTesting.Epidemics1_* DrModelicaForTesting.Epidemics1 DrModelicaForTesting.Epidemics1.exe DrModelicaForTesting.Epidemics1.cpp DrModelicaForTesting.Epidemics1.makefile DrModelicaForTesting.Epidemics1.libs DrModelicaForTesting.Epidemics1.log DrModelicaForTesting.Epidemics1.c DrModelicaForTesting.Epidemics1.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.Epidemics1, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Epidemics1_res.mat",
+  "ReferenceFiles/Epidemics1_ref.mat","DrModelicaForTesting.Epidemics1_diff.csv",0.01,0.013,
+  {"Indv","S","R","tau","k"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.Epidemics1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.Epidemics1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// {"Files Equal!"}
+// endResult

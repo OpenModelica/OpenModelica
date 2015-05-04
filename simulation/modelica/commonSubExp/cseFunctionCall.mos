@@ -1,0 +1,397 @@
+// name: cseFunctions
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  package types
+    record R
+      Real r1;
+      Integer r2;
+    end R;
+  end types;
+
+  package functions
+    function f1
+      input Real x1;
+      input Real x2;
+      output Real y;
+   protected
+      Integer z;
+    algorithm
+      y := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y));
+      for i in 1:z loop
+        y := y+x1*x2;
+      end for;
+    end f1;
+
+    function f2
+      input Real x1;
+      input Real x2;
+      output Real y1;
+      output Real y2;
+   protected
+      Integer z;
+    algorithm
+      y1 := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y1));
+      for i in 1:z loop
+        y2 := y1+x1*x2;
+      end for;
+    end f2;
+
+    function f3
+      input Real x1;
+      input Real x2;
+      output types.R y;
+    algorithm
+      y.r1 := if x1>x2 then sin(x1) else cos(x2);
+      y.r2 := integer(ceil(y.r1));
+      for i in 1:y.r2 loop
+        y.r1 := y.r1+x1*x2;
+      end for;
+    end f3;
+
+    function f4
+      input Real x1;
+      input Real x2;
+      input types.R r;
+      output types.R y1;
+      output Real y2;
+    algorithm
+      y1.r1 := if x1>x2 then sin(r.r1) else cos(r.r2);
+      y1.r2 := integer(ceil(y1.r1));
+      for i in 1:y1.r2 loop
+        y1.r1 := y1.r1+x1*x2+r.r1*r.r2;
+      end for;
+      y2 := r.r1*r.r2;
+    end f4;
+
+    function f5
+      input Real x1;
+      input Real x2;
+      input types.R r;
+      output Real y1;
+      output Real y2[2];
+    protected
+      Integer z;
+    algorithm
+      y1 := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y1));
+      for i in 1:z loop
+        y1 := y1+x1*x2+r.r1*r.r2;
+      end for;
+      y2 := {r.r1,r.r2};
+    end f5;
+
+    function f6
+      input Real x1;
+      input Real x2;
+      output types.R y;
+    algorithm
+      y.r1 := x1*x2;
+      y.r2 := 42+23;
+    end f6;
+  end functions;
+
+  model FunctionCallTest1
+    import CSE.functions.*;
+    Real x,y,z;
+  equation
+    x = sin(time*cos(time));
+    der(y) = f1(time, x);
+    der(z) = f1(time, x);
+  end FunctionCallTest1;
+
+  model FunctionCallTest2
+    import CSE.functions.*;
+    Real x;
+    Real a,b,c,d;
+  equation
+    x = sin(time*cos(time));
+    (a,b) = f2(time, x);
+    (c,d) = f2(time, x);
+  end FunctionCallTest2;
+
+  model FunctionCallTest3
+    import CSE.functions.*;
+    Real x,y,z;
+    Real a,b,c,d;
+  equation
+    x = sin(time*cos(time));
+    der(y) = f2(time, x)+2;
+    der(z) = f2(time, x)+2;
+
+    (a,b) = f2(time, x);
+    (c,d) = f2(time, x);
+  end FunctionCallTest3;
+
+  model FunctionCallTest4
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    R y,z;
+  equation
+    x = sin(time*cos(time));
+    y = f3(time, x);
+    z = f3(time, x);
+  end FunctionCallTest4;
+
+  model FunctionCallTest5
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    R y,z;
+    Real a,b;
+  equation
+    x = sin(time*cos(time));
+    (y,a) = f4(time, x, f3(time, x));
+    (z,b) = f4(time, x, f3(time, x));
+  end FunctionCallTest5;
+
+  model FunctionCallTest6
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    Real y,z;
+    Real a[2],b[2];
+  equation
+    x = sin(time*cos(time));
+    (y,a) = f5(time, x, f3(time, x));
+    (z,b) = f5(time, x, f3(time, x));
+  end FunctionCallTest6;
+
+  model FunctionCallTest7
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    Real y,z;
+    Real a[2],b[2];
+    R r;
+  equation
+    x = sin(time*cos(time))*r.r1;
+    (y,a) = f5(time, x, f6(time, x));
+    (z,b) = f5(time, x, f6(time, x));
+    r = f6(time,time);
+  end FunctionCallTest7;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("+cseCall"); getErrorString();
+
+simulate(CSE.FunctionCallTest1); getErrorString();
+simulate(CSE.FunctionCallTest2); getErrorString();
+simulate(CSE.FunctionCallTest3); getErrorString();
+simulate(CSE.FunctionCallTest4); getErrorString();
+simulate(CSE.FunctionCallTest5); getErrorString();
+simulate(CSE.FunctionCallTest6); getErrorString();
+simulate(CSE.FunctionCallTest7); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########### Updated Variable List ########### (4)
+// ========================================
+// 1: z:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real 
+// 2: y:STATE(1)() .CSE.FunctionCallTest1, .Real type: Real 
+// 3: x:VARIABLE() .CSE.FunctionCallTest1, .Real type: Real 
+// 4: $cse3:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List ########### (4, 4)
+// ========================================
+// 1/1 (1): x = sin(time * cos(time))   [dynamic]
+// 2/2 (1): der(y) = $cse3   [dynamic]
+// 3/3 (1): der(z) = $cse3   [dynamic]
+// 4/4 (1): $cse3 = CSE.functions.f1(time, x)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+//
+// ########### Updated Variable List ########### (7)
+// ========================================
+// 1: d:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
+// 2: c:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
+// 3: b:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
+// 4: a:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
+// 5: x:VARIABLE() .CSE.FunctionCallTest2, .Real type: Real 
+// 6: $cse4:VARIABLE()  type: Real 
+// 7: $cse3:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List ########### (4, 7)
+// ========================================
+// 1/1 (1): x = sin(time * cos(time))   [dynamic]
+// 2/2 (2): (a, b) = ($cse3, $cse4)   [dynamic]
+// 3/4 (2): (c, d) = ($cse3, $cse4)   [dynamic]
+// 4/6 (2): ($cse3, $cse4) = CSE.functions.f2(time, x)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+//
+// ########### Updated Variable List ########### (9)
+// ========================================
+// 1: d:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
+// 2: c:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
+// 3: b:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
+// 4: a:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
+// 5: z:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real 
+// 6: y:STATE(1)() .CSE.FunctionCallTest3, .Real type: Real 
+// 7: x:VARIABLE() .CSE.FunctionCallTest3, .Real type: Real 
+// 8: $cse4:VARIABLE()  type: Real 
+// 9: $cse3:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List ########### (6, 9)
+// ========================================
+// 1/1 (1): x = sin(time * cos(time))   [dynamic]
+// 2/2 (1): der(y) = 2.0 + ($cse3, $cse4)[1]   [dynamic]
+// 3/3 (1): der(z) = 2.0 + ($cse3, $cse4)[1]   [dynamic]
+// 4/4 (2): (a, b) = ($cse3, $cse4)   [dynamic]
+// 5/6 (2): (c, d) = ($cse3, $cse4)   [dynamic]
+// 6/8 (2): ($cse3, $cse4) = CSE.functions.f2(time, x)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+//
+// ########### Updated Variable List ########### (7)
+// ========================================
+// 1: z.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer 
+// 2: z.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real 
+// 3: y.r2:DISCRETE() .CSE.FunctionCallTest4, .CSE.types.R, .Integer type: Integer 
+// 4: y.r1:VARIABLE() .CSE.FunctionCallTest4, .CSE.types.R, .Real type: Real 
+// 5: x:VARIABLE() .CSE.FunctionCallTest4, .Real type: Real 
+// 6: $cse3.r2:DISCRETE()  type: Integer 
+// 7: $cse3.r1:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List ########### (4, 7)
+// ========================================
+// 1/1 (1): x = sin(time * cos(time))   [dynamic]
+// 2/2 (2): y = $cse3   [dynamic]
+// 3/4 (2): z = $cse3   [dynamic]
+// 4/6 (2): $cse3 = CSE.functions.f3(time, x)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+//
+// ########### Updated Variable List ########### (12)
+// ========================================
+// 1: b:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real 
+// 2: a:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real 
+// 3: z.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer 
+// 4: z.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real 
+// 5: y.r2:DISCRETE() .CSE.FunctionCallTest5, .CSE.types.R, .Integer type: Integer 
+// 6: y.r1:VARIABLE() .CSE.FunctionCallTest5, .CSE.types.R, .Real type: Real 
+// 7: x:VARIABLE() .CSE.FunctionCallTest5, .Real type: Real 
+// 8: $cse6.r2:DISCRETE()  type: Integer 
+// 9: $cse6.r1:VARIABLE()  type: Real 
+// 10: $cse4:VARIABLE()  type: Real 
+// 11: $cse3.r2:DISCRETE()  type: Integer 
+// 12: $cse3.r1:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List ########### (5, 12)
+// ========================================
+// 1/1 (1): x = sin(time * cos(time))   [dynamic]
+// 2/2 (3): (y, a) = ($cse3, $cse4)   [dynamic]
+// 3/5 (3): (z, b) = ($cse3, $cse4)   [dynamic]
+// 4/8 (3): ($cse3, $cse4) = CSE.functions.f4(time, x, $cse6)   [binding]
+// 5/11 (2): $cse6 = CSE.functions.f3(time, x)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+//
+// ########### Updated Variable List ########### (12)
+// ========================================
+// 1: b[2]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 2: b[1]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 3: a[2]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 4: a[1]:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 5: z:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 6: y:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 7: x:VARIABLE() .CSE.FunctionCallTest6, .Real type: Real 
+// 8: $cse6.r2:DISCRETE()  type: Integer 
+// 9: $cse6.r1:VARIABLE()  type: Real 
+// 10: $cse4[2]:VARIABLE()  type: Real 
+// 11: $cse4[1]:VARIABLE()  type: Real 
+// 12: $cse3:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List ########### (5, 12)
+// ========================================
+// 1/1 (1): x = sin(time * cos(time))   [dynamic]
+// 2/2 (3): (y, a) = ($cse3, $cse4)   [dynamic]
+// 3/5 (3): (z, b) = ($cse3, $cse4)   [dynamic]
+// 4/8 (3): ($cse3, $cse4) = CSE.functions.f5(time, x, $cse6)   [binding]
+// 5/11 (2): $cse6 = CSE.functions.f3(time, x)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+//
+// ########### Updated Variable List ########### (13)
+// ========================================
+// 1: r.r1:VARIABLE() .CSE.FunctionCallTest7, .CSE.types.R, .Real type: Real 
+// 2: b[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 3: b[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 4: a[2]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 5: a[1]:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 6: z:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 7: y:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 8: x:VARIABLE() .CSE.FunctionCallTest7, .Real type: Real 
+// 9: $cse6.r2:DISCRETE()  type: Integer 
+// 10: $cse6.r1:VARIABLE()  type: Real 
+// 11: $cse4[2]:VARIABLE()  type: Real 
+// 12: $cse4[1]:VARIABLE()  type: Real 
+// 13: $cse3:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List ########### (6, 13)
+// ========================================
+// 1/1 (1): x = sin(time * cos(time)) * r.r1   [dynamic]
+// 2/2 (3): (y, a) = ($cse3, $cse4)   [dynamic]
+// 3/5 (3): (z, b) = ($cse3, $cse4)   [dynamic]
+// 4/8 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [dynamic]
+// 5/9 (3): ($cse3, $cse4) = CSE.functions.f5(time, x, $cse6)   [binding]
+// 6/12 (2): $cse6 = CSE.functions.f6(time, x)   [binding]
+//
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

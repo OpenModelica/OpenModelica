@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen)
+// {"Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen","Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_init.xml"}
+// endResult

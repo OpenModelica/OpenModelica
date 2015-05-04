@@ -1,0 +1,30 @@
+// name:     ModelicaTest.MultiBody.FourbarVariants.JointUSR
+// keywords: simulation ModelicaTest library models
+// status: correct
+//
+// Simulation Results 
+// ModelicaTest library
+//
+
+loadModel(Modelica, {"3.2.1"});
+loadModel(ModelicaTest);
+
+simulate(ModelicaTest.MultiBody.FourbarVariants.JointUSR); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.FourbarVariants.JointUSR_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.FourbarVariants.JointUSR.mat",
+  "ModelicaTest.MultiBody.FourbarVariants.JointUSR_diff.csv",0.01,0.0001,
+  {"j2.s",
+   "j2.v"});
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "ModelicaTest.MultiBody.FourbarVariants.JointUSR_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaTest.MultiBody.FourbarVariants.JointUSR', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "",
+// end SimulationResult;
+// ""
+// "Files Equal!"
+// endResult

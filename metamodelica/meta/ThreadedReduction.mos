@@ -1,0 +1,21 @@
+// status: correct
+
+setCommandLineOptions("+g=MetaModelica");
+loadString("function testThreadedReduction
+  output list<Integer> l1 = list(a+b threaded for a in 1:2, b in 3:4);
+  output list<list<Integer>> l2 = list(a+b for a in 1:2, b in 3:4);
+end testThreadedReduction;
+");
+list();
+testThreadedReduction();getErrorString();
+
+// Result:
+// true
+// true
+// "function testThreadedReduction
+//   output list<Integer> l1 = list(a + b threaded for a in 1:2, b in 3:4);
+//   output list<list<Integer>> l2 = list(a + b for a in 1:2, b in 3:4);
+// end testThreadedReduction;"
+// ({4,6},{{4,5},{5,6}})
+// ""
+// endResult

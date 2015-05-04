@@ -1,0 +1,271 @@
+// name:     Ext Java Uniontype
+// keywords: algorithm
+// status:   correct
+// 
+// Test of External Java functions
+//
+
+loadFile("JavaExt.mo");
+
+echo(false);
+val5:=JavaTest.ADD(JavaTest.ICONST(2),JavaTest.ICONST(3));
+val3:=JavaTest.SUB(JavaTest.RCONST(5),JavaTest.ICONST(2));
+val2:=JavaTest.SUB(val5,val3);
+val4:=JavaTest.ADD(val2,val2);
+val7:=JavaTest.IFEXP(false,JavaTest.ADD(val4,val4),JavaTest.ADD(val5,val2));
+val8:=JavaTest.IFEXP(true,JavaTest.ADD(val4,val4),JavaTest.ADD(val5,val2));
+val12:=JavaTest.STRLEN("OpenModelica");
+echo(true);
+res:=JavaTest.calcExpressionExtJava(val5);
+res:=JavaTest.calcExpressionExtJava(val3);
+res:=JavaTest.calcExpressionExtJava(val2);
+res:=JavaTest.calcExpressionExtJava(val4);
+res:=JavaTest.calcExpressionExtJava(val7);
+res:=JavaTest.calcExpressionExtJava(val8);
+res:=JavaTest.calcExpressionExtJava(val12);
+"ident1";
+res:=JavaTest.expIdentExtJava(val8);
+"ident2";
+res:=JavaTest.expIdentExtJava2(val8);
+"testAll";
+res:=JavaTest.extJavaTestAllMMCTypes();
+// Because all tests use the same file, don't delete any the others might be using!
+// system("rm -f output.log JavaTest_*");
+
+// Result:
+// true
+// true
+// 5.0
+// 3.0
+// 2.0
+// 4.0
+// 7.0
+// 8.0
+// 12.0
+// "ident1"
+// record JavaTest.IFEXP
+//     cond = 1,
+//     trueExp = record JavaTest.ADD
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.ADD
+//     lhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;
+// end JavaTest.ADD;
+// end JavaTest.ADD;,
+//     falseExp = record JavaTest.ADD
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;
+// end JavaTest.ADD;
+// end JavaTest.IFEXP;
+// "ident2"
+// record JavaTest.IFEXP
+//     cond = 1,
+//     trueExp = record JavaTest.ADD
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.ADD
+//     lhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;
+// end JavaTest.ADD;
+// end JavaTest.ADD;,
+//     falseExp = record JavaTest.ADD
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.ADD
+//     lhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 3
+// end JavaTest.ICONST;
+// end JavaTest.ADD;,
+//     rhs = record JavaTest.SUB
+//     lhs = record JavaTest.RCONST
+//     value = 5.0
+// end JavaTest.RCONST;,
+//     rhs = record JavaTest.ICONST
+//     value = 2
+// end JavaTest.ICONST;
+// end JavaTest.SUB;
+// end JavaTest.SUB;
+// end JavaTest.ADD;
+// end JavaTest.IFEXP;
+// "testAll"
+// record dummy
+//     none = NONE(),
+//     some = SOME((1,2.5,0,"OpenModelica Test")),
+//     arr = {1,2.5,0,"OpenModelica Test"}
+// end dummy; 
+// endResult

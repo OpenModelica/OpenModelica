@@ -1,0 +1,17 @@
+// name:     ActualStreamCodeGen
+// keywords: events
+// status: correct
+// teardown_command: rm -rf ActualStreamCodeGen_* ActualStreamCodeGen ActualStreamCodeGen.exe ActualStreamCodeGen.cpp ActualStreamCodeGen.makefile ActualStreamCodeGen.libs ActualStreamCodeGen.log output.log
+//
+// Checks code generation for the actualStream operator.
+// 
+
+loadFile("ActualStreamCodeGen.mo"); getErrorString();
+buildModel(ActualStreamCodeGen); getErrorString();
+
+// Result:
+// true
+// ""
+// {"ActualStreamCodeGen","ActualStreamCodeGen_init.xml"}
+// ""
+// endResult

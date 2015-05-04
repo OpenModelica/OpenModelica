@@ -1,0 +1,32 @@
+//name:        Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+
+simulate(Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 86400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if boundary4.medium.preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if freshAir.medium.preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [TraceSubstances.mo:109:7-109:25:writable] Error: Array dimension mismatch, expression {0.001519} has type Real[1], expected array dimensions [0]
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if volume.medium.preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [TraceSubstances.mo:109:7-109:25:writable] Error: Array dimension mismatch, expression {0.001519} has type Real[1], expected array dimensions [0]
+// Error: Error occurred while flattening model Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls
+// "
+// end SimulationResult;
+// ""
+// endResult

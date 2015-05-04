@@ -1,0 +1,14 @@
+within ThermoSysPro.InstrumentationAndControl.Blocks.Math;
+block Acos
+  annotation(Icon(coordinateSystem(extent={{-100,-100},{100,100}}), graphics={Text(lineColor={0,0,255}, extent={{-150,150},{150,110}}, textString="%name"),Rectangle(lineColor={0,0,255}, extent={{-100,100},{100,-100}}),Polygon(points={{0,90},{-8,68},{8,68},{0,90}}, fillPattern=FillPattern.Solid, lineColor={192,192,192}, fillColor={192,192,192}),Line(points={{-80,80},{-79.2,72.8},{-77.6,67.5},{-73.6,59.4},{-66.3,49.8},{-53.5,37.3},{-30.2,19.7},{37.4,-24.8},{57.5,-40.8},{68.7,-52.7},{75.2,-62.2},{77.6,-67.5},{80,-80}}, color={0,0,0}),Line(points={{0,-88},{0,68}}, color={192,192,192}),Line(points={{-90,-80},{68,-80}}, color={192,192,192}),Polygon(points={{90,-80},{68,-72},{68,-88},{90,-80}}, fillPattern=FillPattern.Solid, lineColor={192,192,192}, fillColor={192,192,192}),Text(lineColor={0,0,255}, extent={{-86,-14},{-14,-62}}, textString="acos", fillColor={192,192,192})}), Diagram(coordinateSystem(extent={{-100,-100},{100,100}}), graphics={Line(points={{0,80},{-8,80}}, color={192,192,192}),Line(points={{0,-80},{-8,-80}}, color={192,192,192}),Line(points={{0,-90},{0,84}}, color={192,192,192}),Text(lineColor={0,0,255}, extent={{3,98},{32,80}}, textString="y", fillColor={160,160,160}),Polygon(points={{0,100},{-6,84},{6,84},{0,100}}, fillPattern=FillPattern.Solid, lineColor={192,192,192}, fillColor={192,192,192}),Line(points={{-100,-80},{84,-80}}, color={192,192,192}),Polygon(points={{100,-80},{84,-74},{84,-86},{100,-80}}, fillPattern=FillPattern.Solid, lineColor={192,192,192}, fillColor={192,192,192}),Line(points={{-80,80},{-79.2,72.8},{-77.6,67.5},{-73.6,59.4},{-66.3,49.8},{-53.5,37.3},{-30.2,19.7},{37.4,-24.8},{57.5,-40.8},{68.7,-52.7},{75.2,-62.2},{77.6,-67.5},{80,-80}}, color={0,0,0}),Text(lineColor={0,0,255}, extent={{-30,88},{-5,72}}, textString=" pi"),Text(lineColor={0,0,255}, extent={{-94,-57},{-74,-77}}, textString="-1"),Text(lineColor={0,0,255}, extent={{80,-45},{100,-65}}, textString="+1"),Text(lineColor={0,0,255}, extent={{76,-84},{102,-102}}, textString="u", fillColor={160,160,160})}), Documentation(info="<html>
+<p><b>Adapted from the Modelica.Blocks.Math library</b></p>
+</HTML>
+<html>
+<p><b>Version 1.0</b></p>
+</HTML>
+"));
+  ThermoSysPro.InstrumentationAndControl.Connectors.InputReal u annotation(Placement(transformation(x=-110.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false), iconTransformation(x=-110.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.InstrumentationAndControl.Connectors.OutputReal y annotation(Placement(transformation(x=110.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false), iconTransformation(x=110.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+equation
+  y.signal=Modelica.Math.acos(u.signal);
+end Acos;

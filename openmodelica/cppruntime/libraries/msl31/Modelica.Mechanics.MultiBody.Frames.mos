@@ -1,0 +1,51 @@
+// name: Modelica.Mechanics.MultiBody.Frames
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+
+
+loadModel(Modelica,{"3.1"});
+loadString("model TestFromNxz
+  import Modelica.Mechanics.MultiBody.Frames; 
+  
+  Frames.Orientation o; 
+algorithm 
+  o := Frames.from_nxz({1,0,0}, {0,0,1}); 
+end TestFromNxz;",filename="TestFromNxz.mo");
+simulate(TestFromNxz, outputFormat="csv");
+
+val(o.T[1,1],0:0.1:1);
+val(o.T[1,2],0:0.1:1);
+val(o.T[1,3],0:0.1:1);
+val(o.T[2,1],0:0.1:1);
+val(o.T[2,2],0:0.1:1);
+val(o.T[2,3],0:0.1:1);
+val(o.T[3,1],0:0.1:1);
+val(o.T[3,2],0:0.1:1);
+val(o.T[3,3],0:0.1:1);
+val(o.w[1],0:0.1:1);
+val(o.w[2],0:0.1:1);
+val(o.w[3],0:0.1:1);
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestFromNxz_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'TestFromNxz', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}
+// endResult

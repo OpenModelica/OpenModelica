@@ -1,0 +1,24 @@
+// name:     Uniontype14
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Test matching of list constructor in Uniontype
+//
+loadFile("Uniontype14.mo");
+e1 := Uniontype14.INT(17);
+e2 := Uniontype14.func(e1,-4);
+
+// Result:
+// true
+// record Uniontype14.Exp.INT
+//     int = 17
+// end Uniontype14.Exp.INT;
+// record Uniontype14.Exp.CALL
+//     args = {record Uniontype14.Exp.INT
+//     int = 17
+// end Uniontype14.Exp.INT;,record Uniontype14.Exp.INT
+//     int = -4
+// end Uniontype14.Exp.INT;}
+// end Uniontype14.Exp.CALL;
+// endResult

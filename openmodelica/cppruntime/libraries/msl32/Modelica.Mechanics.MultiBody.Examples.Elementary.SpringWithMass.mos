@@ -1,0 +1,44 @@
+// name: Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+loadFile("../../../../simulation/libraries/common/ModelTesting.mo");
+loadModel(Modelica,{"3.2.1"});
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass);
+referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass.mat";
+stopTime := 0.0; // For reading stopTime from annotation
+relTol := 0.01;
+absTol := 0.0001;
+outputFormat :="mat";
+compareVars := {"body.frame_a.r_0[1]","body.frame_a.r_0[2]","body.frame_a.r_0[3]","body.v_0[1]","body.v_0[2]","body.v_0[3]","body.w_a[1]","body.w_a[2]","body.w_a[3]"};
+runScript("../../../../simulation/libraries/common/ModelTesting.mos");
+getErrorString();
+
+
+// Result:
+// true
+// true
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass
+// "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass.mat"
+// 0.0
+// 0.01
+// 0.0001
+// "mat"
+// {"body.frame_a.r_0[1]","body.frame_a.r_0[2]","body.frame_a.r_0[3]","body.v_0[1]","body.v_0[2]","body.v_0[3]","body.w_a[1]","body.w_a[2]","body.w_a[3]"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// 
+// "true
+// "
+// ""
+// endResult

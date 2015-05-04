@@ -1,0 +1,29 @@
+// name:     StepTorque
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.RotationalModels.SpringInertia.StepTorque* output.log
+// 
+//  Simulate Rotational inertias with springs 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// // StepTorque
+simulate(TestModels.RotationalModels.SpringInertia.StepTorque, tolerance=1e-5, numberOfIntervals=100);
+{val(inertia1.w,0.0),val(inertia1.w,0.2),val(inertia1.w,0.4),
+val(inertia1.w,0.6),val(inertia1.w,0.8),val(inertia1.w,1.0)};
+{val(inertia1.phi,0.0),val(inertia1.phi,0.2),val(inertia1.phi,0.4),
+val(inertia1.phi,0.6),val(inertia1.phi,0.8),val(inertia1.phi,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.SpringInertia.StepTorque_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.StepTorque', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,0.9670046798837847,1.7438310393231817,2.1776452712604644,2.183129292554618,1.7591793383318648}
+// {0.0,0.09833521002496409,0.3740338214289635,0.7728543990309185,1.2163489187045455,1.6172839143643545}
+// endResult

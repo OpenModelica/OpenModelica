@@ -1,0 +1,29 @@
+// name:     DCMotor (Blocks)
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.BlockModels* output.log
+// 
+//  Simulate systems of blocks 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+//DCmotor
+simulate(TestModels.BlockModels.SystemTests.DCmotor, tolerance=1e-5, numberOfIntervals=50);
+{val(integrator2.y,0.0),val(integrator2.y,0.2),val(integrator2.y,0.4),
+val(integrator2.y,0.6),val(integrator2.y,0.8),val(integrator2.y,1.0)};
+{val(firstOrder1.y,0.0),val(firstOrder1.y,0.2),val(firstOrder1.y,0.4),
+val(firstOrder1.y,0.6),val(firstOrder1.y,0.8),val(firstOrder1.y,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SystemTests.DCmotor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.DCmotor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,0.0012719578137377033,0.009615148429739045,0.030667188283215765,0.06859587422490322,0.1261964500177123}
+// {0.0,0.18006532151561502,0.32098198013815504,0.4247586025096863,0.49437578742590144,0.5335118647569943}
+// endResult

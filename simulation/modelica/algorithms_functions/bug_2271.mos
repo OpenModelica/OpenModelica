@@ -1,0 +1,50 @@
+// name: bug_2271
+// keywords:
+// status: correct
+// teardown_command: rm -rf bug_2271_* _bug_2271_* output.log
+//
+//  tests for algorithms with arrays as lhs
+//
+
+loadString("
+model bug_2271_b
+  parameter Integer N = 5;
+  parameter Integer M = 2;
+  Real x[N];
+  Integer n;
+algorithm
+  n:=M;
+  x[1:n]:=fill(0.0, n);
+  x[n + 1:N]:=fill(1.0, N - n);
+end bug_2271_b;
+
+model bug_2271_c
+  Real x[2];
+algorithm
+  x[1] := 1.0;
+algorithm
+  x[2] := 2.0;
+end bug_2271_c;
+"); getErrorString();
+
+// bug_2271_b has 6 equation(s) and 6 variable(s)
+checkModel(bug_2271_b); getErrorString();
+
+// bug_2271_c has 4 equation(s) and 2 variable(s)
+checkModel(bug_2271_c); getErrorString();
+
+// TODO: fix this
+// simulate(bug_2271_b); getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of bug_2271_b completed successfully.
+// Class bug_2271_b has 6 equation(s) and 6 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// "Check of bug_2271_c completed successfully.
+// Class bug_2271_c has 4 equation(s) and 2 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// endResult

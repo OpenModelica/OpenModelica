@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.TwoPhaseWater.ExtendedProperties)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.TwoPhaseWater.ExtendedProperties);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.TwoPhaseWater.ExtendedProperties)
+// {"Modelica.Media.Examples.TwoPhaseWater.ExtendedProperties","Modelica.Media.Examples.TwoPhaseWater.ExtendedProperties_init.xml"}
+// endResult

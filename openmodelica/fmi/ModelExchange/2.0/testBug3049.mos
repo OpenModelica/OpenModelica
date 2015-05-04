@@ -1,0 +1,93 @@
+// name:  testBug3049
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug3049* output.log
+//
+
+loadModel(Modelica);
+loadString("
+model test_Bug3049
+   output Modelica.SIunits.AbsolutePressure p1 = 1e5;
+   output Modelica.Media.Water.WaterIF97_base.AbsolutePressure p2 = 2e5;
+   output Modelica.SIunits.AbsolutePressure p3(nominal = 1e7) = 1e5;
+end test_Bug3049;
+");
+getErrorString();
+
+translateModelFMU(test_Bug3049, version="2.0");
+getErrorString();
+
+system("cat modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// Result:
+// true
+// true
+// ""
+// "SimCode: The model test_Bug3049 has been translated to FMU"
+// ""
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"test_Bug3049\"
+//   description=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"test_Bug3049\">
+//   </ModelExchange>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"p1\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"approx\">
+//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"100000.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"p2\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"approx\">
+//     <Real start=\"5000000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"p3\"
+//     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"approx\">
+//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"10000000.0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//     </Outputs>
+//     <Derivatives>
+//     </Derivatives>
+//     <InitialUnknowns>
+//     </InitialUnknowns>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult

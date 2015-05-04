@@ -1,0 +1,46 @@
+// name:     Modelica.Electrical.Digital.Examples.Multiplexer
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.Multiplexer);
+compareVars :=
+{
+   "D0.y",
+   "D1.y",
+   "D2.y",
+   "D3.y",
+   "CLK.y",
+   "Enable.y",
+   "FF.q",
+   "FF.qn",
+   "MUX.d",
+   ""
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Digital.Examples.Multiplexer
+// {"D0.y","D1.y","D2.y","D3.y","CLK.y","Enable.y","FF.q","FF.qn","MUX.d",""}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.Multiplexer.mat\"
+// "
+// ""
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,17 @@
+// name:     MatchCase12
+// keywords: Match Cases
+// status:   correct
+// cflags: +g=MetaModelica
+// teardown_command: rm -f MatchCase12_*
+//
+// Match Testing
+//
+loadFile("MatchCase12.mo");
+MatchCase12.func(1);
+MatchCase12.func(2);
+
+// Result:
+// true
+// fail()
+// 2
+// endResult

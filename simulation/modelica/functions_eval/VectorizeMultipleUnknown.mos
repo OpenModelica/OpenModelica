@@ -1,0 +1,40 @@
+// cflags: +d=nogen
+// status: correct
+// Tests vectorization and evaluation of calls with 2 arguments each having 2 unknown (expression) dimensions
+
+loadFile("VectorizeMultipleUnknown.mo");getErrorString();
+VectorizeMultipleUnknown(3);getErrorString();
+
+// Result:
+// true
+// ""
+// {{record Complex
+//     re = 0.3333333333333333,
+//     im = 0.0
+// end Complex;,record Complex
+//     re = -0.1666666666666666,
+//     im = 0.2886751345948129
+// end Complex;,record Complex
+//     re = -0.1666666666666668,
+//     im = -0.2886751345948128
+// end Complex;},{record Complex
+//     re = 0.3333333333333333,
+//     im = 0.0
+// end Complex;,record Complex
+//     re = -0.1666666666666668,
+//     im = -0.2886751345948128
+// end Complex;,record Complex
+//     re = -0.1666666666666664,
+//     im = 0.288675134594813
+// end Complex;},{record Complex
+//     re = 0.3333333333333333,
+//     im = 0.0
+// end Complex;,record Complex
+//     re = 0.3333333333333333,
+//     im = -8.164311994315688e-17
+// end Complex;,record Complex
+//     re = 0.3333333333333333,
+//     im = -1.632862398863138e-16
+// end Complex;}}
+// ""
+// endResult

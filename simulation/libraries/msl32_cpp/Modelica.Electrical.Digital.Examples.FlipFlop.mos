@@ -1,0 +1,42 @@
+// name:     Modelica.Electrical.Digital.Examples.FlipFlop
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.FlipFlop);
+compareVars :=
+{
+   "J.y",
+   "CLK.y",
+   "K.y",
+   "FF.q",
+   "FF.qn",
+   ""
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Digital.Examples.FlipFlop
+// {"J.y","CLK.y","K.y","FF.q","FF.qn",""}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.FlipFlop.mat\"
+// "
+// ""
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

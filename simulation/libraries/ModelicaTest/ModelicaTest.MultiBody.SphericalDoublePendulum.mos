@@ -1,0 +1,23 @@
+// name:     ModelicaTest.MultiBody.SphericalDoublePendulum
+// keywords: simulation ModelicaTest library models
+// status: correct
+// cflags:   +postOptModules=removeFinalParameters,removeevaluateParameters,inlineArrayEqn,constantLinearSystem,simplifysemiLinear,removeSimpleEquations,removeUnusedFunctions,simplifyTimeIndepFuncCalls,optimizeInitialSystem
+//
+// Simulation Results 
+// ModelicaTest library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.SphericalDoublePendulum,stopTime=3);
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.SphericalDoublePendulum_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.SphericalDoublePendulum.mat",
+  "ModelicaTest.MultiBody.SphericalDoublePendulum_diff.csv",0.01,0.0001,
+  {});
+
+

@@ -1,0 +1,652 @@
+module FCEmit:
+    with "Fcode.rml"
+end
+
+
+
+relation foreach: ('a=>(), 'a list) => ()  =
+  axiom foreach(_, [])
+
+  rule  F x & foreach(F, xs)
+        ----------------
+        foreach(F, x::xs)
+end
+
+relation map: ('a=>'b, 'a list) => 'b list =
+  axiom map(_, []) => []
+
+  rule  F x => y & map(F, xs) => ys
+        ----------------
+        map(F, x::xs) => (y::ys)
+end
+
+
+
+
+datatype Base	= BASE of string
+		         | REC of int
+datatype InvTy	= PTRity of InvTy
+		         | ARRity of InvTy * int
+		         | VARity of string
+		         | FUNity of string * Arg list
+and Arg		= ARG of Base * InvTy
+
+relation invert_ty:(InvTy,FCode.Ty) =>(Base,InvTy) =
+  axiom invert_ty(ity, FCode.CHAR) => (BASE "char", ity)
+  axiom invert_ty(ity, FCode.INT) => (BASE "int", ity)
+  axiom invert_ty(ity, FCode.REAL) => (BASE "double", ity)
+
+  rule	invert_ty(PTRity ity, ty) => (base, ity1)
+	----------------
+	invert_ty(ity, FCode.PTR ty) => (base, ity1)
+
+  rule	invert_ty(ARRity(ity,sz), ty) => (base, ity1)
+	----------------
+	invert_ty(ity, FCode.ARR(sz,ty)) => (base, ity1)
+
+  axiom invert_ty(ity, FCode.REC(FCode.RECORD(stamp,_))) => (REC stamp, ity)
+  axiom invert_ty(ity, FCode.UNFOLD stamp) => (REC stamp, ity)
+end
+
+relation print_int: (int) => () =
+  rule	int_string i => s & 
+        print s
+    	----------------
+    	print_int i
+end
+
+relation emit_struct: (int) => () =
+  rule	print "struct rec" & print_int stamp
+	----------------
+	emit_struct stamp
+end
+
+relation emit_base: (Base) => () = 
+  rule	print str
+	----------------
+	emit_base(BASE str)
+
+  rule	emit_struct stamp
+	----------------
+	emit_base(REC stamp)
+end
+
+
+relation emit_invty:(InvTy) => () = 
+
+  rule	print "(" & print "*" & emit_invty ity & print ")"
+	----------------
+	emit_invty(PTRity ity)
+
+  rule	emit_invty ity & print "[" & print_int sz & print "]"
+	----------------
+	emit_invty(ARRity(ity,sz))
+
+  rule	print str
+	----------------
+	emit_invty(VARity str)
+
+  rule	print id & print "(" & emit_args args & print ")"
+	----------------
+	emit_invty(FUNity(id,args))
+end
+
+
+relation emit_args:(Arglist) => () = 
+  rule	print "void"
+	----------------
+	emit_args([])
+
+  rule	emit_arg arg &
+        foreach(emit_comma_arg, args)
+	----------------
+	emit_args(arg::args)
+end
+
+
+relation emit_arg:(Arg) => () = 
+
+  rule	emit_base base & print " " &
+        emit_invty ity
+	----------------
+	   emit_arg(ARG(base, ity))
+end
+
+
+relation emit_comma_arg:(Arg) => () = 
+  rule	print ", " & emit_arg arg
+	----------------
+	emit_comma_arg arg
+end
+
+
+relation emit_var:(FCode.Var)=>() =
+  rule	invert_ty(VARity id, ty) => (base, ity) &
+	emit_base base & print " " & emit_invty ity
+	----------------
+	emit_var(FCode.VAR(id,ty))
+end
+
+
+relation emit_var_bnd:(FCode.Var)=>() =
+  rule	print "\t" & emit_var var & print ";\n"
+	----------------
+	emit_var_bnd var
+end
+
+relation emit_rec_bnds:(FCode.Var list,string) =>() =
+  axiom emit_rec_bnds([], _)
+
+  rule	string_append(prefix, id) => id' &
+	emit_var_bnd(FCode.VAR(id',ty)) &
+	emit_rec_bnds(bnds, prefix)
+	----------------
+	emit_rec_bnds(FCode.VAR(id,ty)::bnds, prefix)
+end
+
+relation emit_record:(FCode.Record)=>() =
+  axiom emit_record(FCode.RECORD(_,[]))
+
+  rule	emit_struct stamp0 & print " {\n" &
+	int_string stamp0 => stamp1 &
+	string_append("rec", stamp1) => prefix0 &
+	string_append(prefix0, "_") => prefix1 &
+	emit_rec_bnds(bnds, prefix1) &
+	print "};\n"
+	----------------
+	emit_record(FCode.RECORD(stamp0,bnds as _::_))
+end
+
+ relation emit_unop:(FCode.UnOp)=>() =
+   rule	print "(int)("
+	 ----------------
+	 emit_unop(FCode.CtoI)
+
+   rule	print "(double)("
+	 ----------------
+	 emit_unop(FCode.ItoR)
+
+   rule	print "(int)("
+	 ----------------
+	 emit_unop(FCode.RtoI)
+
+   rule	print "(char)("
+	  ----------------
+	  emit_unop(FCode.ItoC)
+
+   rule	print "(int)("
+	  ----------------
+	 emit_unop(FCode.PtoI)
+
+   rule	print "(" &
+	 invert_ty(VARity "", FCode.PTR ty) => (base, ity) &
+	 emit_base base &
+	  print " " &
+	 emit_invty ity &
+	  print ")("
+	 ----------------
+	 emit_unop(FCode.TOPTR ty)
+
+  rule	print "*("
+	----------------
+	emit_unop(FCode.LOAD _)
+
+  rule	print "P_OFFSET(rec" & print_int stamp & print "_" & print id & print ","
+	----------------
+	emit_unop(FCode.OFFSET(FCode.RECORD(stamp,_),id))
+end
+  
+
+relation binop_to_str:(FCode.BinOp)=>string =
+
+  axiom binop_to_str(FCode.IADD) => " + "
+  axiom binop_to_str(FCode.ISUB) => " - "
+  axiom binop_to_str(FCode.IMUL) => " * "
+  axiom binop_to_str(FCode.IDIV) => " / "
+  axiom binop_to_str(FCode.IMOD) => " % "
+  axiom binop_to_str(FCode.IAND) => " && "
+  axiom binop_to_str(FCode.IOR) => " || "
+  axiom binop_to_str(FCode.ILT) => " < "
+  axiom binop_to_str(FCode.ILE) => " <= "
+  axiom binop_to_str(FCode.IEQ) => " == "
+  axiom binop_to_str(FCode.RADD) => " + "
+  axiom binop_to_str(FCode.RSUB) => " - "
+  axiom binop_to_str(FCode.RMUL) => " * "
+  axiom binop_to_str(FCode.RDIV) => " / "
+  axiom binop_to_str(FCode.RLT) => " < "
+  axiom binop_to_str(FCode.RLE) => " <= "
+  axiom binop_to_str(FCode.REQ) => " == "
+  axiom binop_to_str(FCode.PADD _) => " + "
+  axiom binop_to_str(FCode.PSUB _) => " - "
+  axiom binop_to_str(FCode.PDIFF _) => " - "
+  axiom binop_to_str(FCode.PLT _) => " < "
+  axiom binop_to_str(FCode.PLE _) => " <= "
+  axiom binop_to_str(FCode.PEQ _) => " == "
+end
+
+relation emit_exp:(FCode.Exp)=>() =
+  rule	print_int i
+	----------------
+	emit_exp(FCode.ICON i)
+
+  rule	real_string r => r1 & print r1
+	----------------
+	emit_exp(FCode.RCON r)
+
+  rule	print "display[" & print_int level & print "]"
+	----------------
+	emit_exp(FCode.DISPLAY level)
+
+  rule	emit_unop unop & emit_exp exp & print ")"
+	----------------
+	emit_exp(FCode.UNARY(unop, exp))
+
+  rule	print "((" & emit_exp exp1 & print ")" & binop_to_str binop => str &
+	print str & print "(" & emit_exp exp2 & print "))"
+	----------------
+	emit_exp(FCode.BINARY(exp1, binop, exp2))
+
+  rule	print id & print "(" & emit_exps exps & print ")"
+	----------------
+	emit_exp(FCode.FCALL(id, exps))
+end
+
+ relation emit_comma_exp:(FCode.Exp)=>() =
+    rule	print ", " & emit_exp exp
+         	----------------
+	     emit_comma_exp exp
+  end
+
+
+
+relation emit_exps:(FCode.Exp list)=>() =
+
+  axiom	emit_exps []
+
+  rule	emit_exp exp 
+       // foreach(emit_comma_exp, exps)
+	    ----------------
+	   emit_exps(exp::exps)
+end
+
+relation emit_assign_retval:(FCode.Ty * FCode.Exp)option =>() =
+  axiom	emit_assign_retval(NONE)
+
+  rule	print "\tretval = " & emit_exp exp & print ";\n"
+	----------------
+	emit_assign_retval(SOME((_,exp)))
+end
+
+
+
+relation emit_stmt:(FCode.Stmt)=>() =
+  rule	print "\t*" & emit_exp lhs & print " = " & emit_exp rhs & print ";\n"
+	----------------
+	emit_stmt(FCode.STORE(_,lhs,rhs))
+
+  rule	print "\t" & print id & print "(" & emit_exps exps & print ");\n"
+	----------------
+	emit_stmt(FCode.PCALL(id,exps))
+
+  rule	emit_assign_retval ret & print "\tgoto epilogue;\n"
+	----------------
+	emit_stmt(FCode.RETURN ret)
+
+  rule	print "\twhile( " & emit_exp exp & print " ) {\n" &
+	emit_stmt stmt & print "\t}\n"
+	----------------
+	emit_stmt(FCode.WHILE(exp,stmt))
+
+  rule	print "\tif( " & emit_exp exp & print " ) {\n" & emit_stmt stmt1 &
+	print "\t} else {\n" & emit_stmt stmt2 & print "\t}\n"
+	----------------
+	emit_stmt(FCode.IF(exp,stmt1,stmt2))
+
+  rule	emit_stmt stmt1 & emit_stmt stmt2
+	----------------
+	emit_stmt(FCode.SEQ(stmt1,stmt2))
+
+  axiom	emit_stmt(FCode.SKIP)
+end
+
+
+ relation conv_formal_decl:(FCode.Var)=> Arg =
+   rule	invert_ty(VARity "", ty) => (base,ity)
+	 ----------------
+	 conv_formal_decl(FCode.VAR(_,ty)) => ARG(base,ity)
+ end
+
+
+ relation emit_proc_head:(FCode.Ty option,string,Arg list)=>() =
+   
+   rule	print "void " & print id & print "(" & emit_args args & print ")"
+    	----------------
+	    emit_proc_head(NONE, id, args)
+
+   rule	invert_ty(FUNity(id,args), ty) => (base, ity) &
+	    emit_base base & print " " & emit_invty ity
+	    ----------------
+	    emit_proc_head(SOME ty, id, args)
+ end
+
+
+ relation emit_proc_decl: (FCode.Proc)=>() =
+   
+   rule	map(conv_formal_decl, formals) => formals1 & 
+        print "extern " &
+	    emit_proc_head(ty_opt, id, formals1) & 
+	    print ";\n"
+	   ----------------
+	   emit_proc_decl(FCode.PROC(id,formals,ty_opt,_))
+ end
+ 
+
+relation conv_formal_defn:(FCode.Var)=>Arg =
+  rule	invert_ty(VARity id, ty) => (base, ity)
+	----------------
+	conv_formal_defn(FCode.VAR(id,ty)) => ARG(base,ity)
+end
+
+
+relation emit_decl_retval:(FCode.Ty option) =>() =
+  axiom	emit_decl_retval(NONE)
+
+  rule	emit_var_bnd(FCode.VAR("retval",ty))
+	----------------
+	emit_decl_retval(SOME ty)
+end
+
+
+relation emit_return_retval:(FCode.Ty option) =>()  =
+
+  axiom	emit_return_retval(NONE)
+
+  rule	print "\treturn retval;\n"
+	----------------
+	emit_return_retval(SOME _)
+end
+
+
+relation emit_load_formals:(FCode.Var list,string)=>() =
+
+  axiom emit_load_formals([], _)
+
+  rule	print "\tframe.rec" & print stamp & print "_" & print id &
+	print " = " & print id & print ";\n" &
+	emit_load_formals(formals, stamp)
+	----------------
+	emit_load_formals(FCode.VAR(id,_)::formals, stamp)
+end
+
+
+relation emit_setup_display:(int,FCode.Var list,FCode.Record)=>() =
+  
+  axiom emit_setup_display(_, _, FCode.RECORD(_,[]))
+
+  rule	print "\t" & emit_struct stamp & print " frame;\n" &
+	print "\tvoid *saveFP = display[" &
+	int_string lev => lev1 & print lev1 & print "];\n" &
+	print "\tdisplay[" & print lev1 & print "] = &frame;\n" &
+	int_string stamp => stamp1 & emit_load_formals(formals, stamp1)
+	----------------
+	emit_setup_display(lev, formals, FCode.RECORD(stamp,vars as _::_))
+end
+  
+  
+relation emit_restore_display:(int,FCode.Record)=>() =
+  axiom emit_restore_display(_, FCode.RECORD(_,[]))
+
+  rule	print "\tdisplay[" & print_int lev & print "] = saveFP;\n"
+	----------------
+	emit_restore_display(lev, FCode.RECORD(_,_::_))
+end
+
+
+relation emit_proc_defn:(FCode.Proc)=>() =
+  axiom	emit_proc_defn(FCode.PROC(_,_,_,NONE))
+
+  rule	//map(conv_formal_defn, formals) => formals1 &
+	emit_proc_head(ty_opt, id, []) & print "\n{\n" &
+	emit_decl_retval ty_opt &
+	emit_setup_display(lev,formals,r) &
+	emit_stmt stmt &
+	print "epilogue:;\n" &
+	emit_restore_display(lev,r) &
+	emit_return_retval ty_opt &
+	print "}\n"
+	----------------
+	emit_proc_defn(FCode.PROC(id,formals,ty_opt,SOME(FCode.BLOCK(lev,r,stmt))))
+end
+
+
+datatype Cmp	= LT | EQ | GT
+
+relation compare1:(int,int)=>Cmp =
+  rule	int_lt(i, j) => true
+	----------------
+	compare1(i, j) => LT
+
+  rule	int_lt(i, j) => false
+	----------------
+	compare1(i, j) => GT
+end
+
+relation compare:(int,int)=>Cmp =
+  rule	int_eq(i, j) => true
+	----------------
+	compare(i, j) => EQ
+
+  rule	int_eq(i, j) => false & compare1(i, j) => cmp
+	----------------
+	compare(i, j) => cmp
+end
+
+datatype RTree	= EMPTY
+	         	| NODE of RTree * FCode.Record * RTree
+
+
+relation insert:(FCode.Record,RTree)=> RTree =
+  axiom insert(r, EMPTY) => NODE(EMPTY,r,EMPTY)
+
+  rule	compare(stamp1, stamp) => cmp &
+	insert1(cmp, r1, left, right) => (left1, right1)
+	----------------
+	insert(r1 as FCode.RECORD(stamp1,_),NODE(left,r as FCode.RECORD(stamp,_),right))
+	=> NODE(left1, r, right1)
+end
+
+
+relation insert1:(Cmp,FCode.Record,RTree,RTree)=>(RTree,RTree) =
+  axiom insert1(EQ, _, left, right) => (left, right)
+
+  rule	insert(r1, left) => left1
+	----------------
+	insert1(LT, r1, left, right) => (left1, right)
+
+  rule	insert(r1, right) => right1
+	----------------
+	insert1(GT, r1, left, right) => (left, right1)
+end
+
+
+relation emit_rec_tree:(RTree)=>() =
+  axiom emit_rec_tree(EMPTY)
+
+  rule	emit_rec_tree left & emit_record r & emit_rec_tree right
+	----------------
+	emit_rec_tree(NODE(left,r,right))
+end
+  
+
+relation ty_recs:(FCode.Ty,RTree)=> (RTree) =
+  axiom ty_recs(FCode.CHAR, recs) => recs
+  axiom ty_recs(FCode.INT, recs) => recs
+  axiom ty_recs(FCode.REAL, recs) => recs
+
+  rule	ty_recs(ty, recs0) => recs1
+	----------------
+	ty_recs(FCode.PTR ty, recs0) => recs1
+
+  rule	ty_recs(ty, recs0) => recs1
+	----------------
+	ty_recs(FCode.ARR(_,ty), recs0) => recs1
+
+  rule	insert(r, recs0) => recs1 &
+	vars_recs(bnds, recs1) => recs2
+	----------------
+	ty_recs(FCode.REC(r as FCode.RECORD(_,bnds)), recs0) => recs2
+
+  axiom ty_recs(FCode.UNFOLD _, recs) => recs
+end
+
+
+relation vars_recs:(FCode.Var list,RTree)=>(RTree) =
+
+  axiom vars_recs([], recs) => recs
+
+  rule	ty_recs(ty, recs0) => recs1 &
+	vars_recs(vars, recs1) => recs2
+	----------------
+	vars_recs(FCode.VAR(_,ty)::vars, recs0) => recs2
+end
+
+
+relation ty_opt_recs:(FCode.Ty option,RTree)=>(RTree) =
+  axiom ty_opt_recs(NONE, recs) => recs
+
+  rule	ty_recs(ty, recs0) => recs1
+	----------------
+	ty_opt_recs(SOME ty, recs0) => recs1
+end
+
+
+relation unop_recs:(FCode.UnOp,RTree)=>(RTree) =
+ 
+  rule	ty_recs(ty, recs0) => recs1
+	    ------------------
+	    unop_recs(FCode.TOPTR ty, recs0) => recs1
+
+  axiom unop_recs(FCode.CtoI, recs) => recs
+  axiom unop_recs(FCode.ItoR, recs) => recs
+  axiom unop_recs(FCode.RtoI, recs) => recs
+  axiom unop_recs(FCode.ItoC, recs) => recs
+  axiom unop_recs(FCode.PtoI, recs) => recs
+  axiom unop_recs(FCode.LOAD _, recs) => recs
+  axiom unop_recs(FCode.OFFSET(_,_), recs) => recs
+end
+
+
+relation exp_recs:(FCode.Exp,RTree)=>RTree =
+  axiom exp_recs(FCode.ICON _, recs) => recs
+  axiom exp_recs(FCode.RCON _, recs) => recs
+  axiom exp_recs(FCode.DISPLAY _, recs) => recs
+
+  rule	unop_recs(unop, recs0) => recs1 &
+	exp_recs(exp, recs1) => recs2
+	----------------
+	exp_recs(FCode.UNARY(unop,exp), recs0) => recs1
+
+  rule	exp_recs(exp1, recs0) => recs1 &
+	exp_recs(exp2, recs1) => recs2
+	----------------
+	exp_recs(FCode.BINARY(exp1,_,exp2), recs0) => recs2
+
+  rule	exps_recs(exps, recs0) => recs1
+	----------------
+	exp_recs(FCode.FCALL(_,exps), recs0) => recs1
+end
+
+
+relation exps_recs:(FCode.Exp list,RTree)=>RTree =
+  axiom exps_recs([], recs) => recs
+
+  rule	exp_recs(exp, recs0) => recs1 &
+	exps_recs(exps, recs1) => recs2
+	----------------
+	exps_recs(exp::exps, recs0) => recs2
+end
+
+
+relation stmt_recs:(FCode.Stmt,RTree)=>RTree =
+ 
+  rule	ty_recs(ty, recs0) => recs1 &
+	    exp_recs(exp1, recs1) => recs2 &
+	    exp_recs(exp2, recs2) => recs3
+     	----------------
+	   stmt_recs(FCode.STORE(ty,exp1,exp2), recs0) => recs3
+
+  rule	exps_recs(exps, recs0) => recs1
+	    ----------------
+	   stmt_recs(FCode.PCALL(_,exps), recs0) => recs1
+
+  axiom stmt_recs(FCode.RETURN NONE, recs) => recs
+
+  rule	exp_recs(exp, recs0) => recs1
+	----------------
+	stmt_recs(FCode.RETURN(SOME((_,exp))), recs0) => recs1
+
+  rule	exp_recs(exp, recs0) => recs1 &
+	stmt_recs(stmt, recs1) => recs2
+	----------------
+	stmt_recs(FCode.WHILE(exp,stmt), recs0) => recs2
+
+  rule	exp_recs(exp, recs0) => recs1 &
+	stmt_recs(stmt1, recs1) => recs2 &
+	stmt_recs(stmt2, recs2) => recs3
+	----------------
+	stmt_recs(FCode.IF(exp,stmt1,stmt2), recs0) => recs3
+
+  rule	stmt_recs(stmt1, recs0) => recs1 &
+	stmt_recs(stmt2, recs1) => recs2
+	----------------
+	stmt_recs(FCode.SEQ(stmt1,stmt2), recs0) => recs2
+
+  axiom stmt_recs(FCode.SKIP, recs) => recs
+end
+
+
+relation block_opt_recs:(FCode.Block option,RTree)=>RTree =
+ 
+  axiom block_opt_recs(NONE, recs) => recs
+
+  rule	insert(r, recs0) => recs1 &
+	stmt_recs(stmt, recs1) => recs2
+	----------------
+	block_opt_recs(SOME(FCode.BLOCK(_,r,stmt)), recs0) => recs2
+end
+
+
+relation proc_recs:(FCode.Proc,RTree)=>RTree =
+  rule	vars_recs(formals, recs0) => recs1 &
+	    ty_opt_recs(ty_opt, recs1) => recs2 &
+	    block_opt_recs(block_opt, recs2) => recs3
+	    ----------------
+	    proc_recs(FCode.PROC(_,formals,ty_opt,block_opt), recs0) => recs3
+end
+
+relation procs_recs:(FCode.Proc list,RTree)=>RTree =
+  axiom procs_recs([], recs) => recs
+
+  rule	proc_recs(proc, recs0) => recs1 & procs_recs(procs, recs1) => recs2
+	----------------
+	procs_recs(proc::procs, recs0) => recs2
+end
+
+
+relation emit_record_defns:(FCode.Proc list)=>() =
+   rule	procs_recs(procs, EMPTY) => recs & emit_rec_tree recs
+	    ----------------
+	    emit_record_defns procs
+end
+
+relation emit:(FCode.Prog)=>() =
+
+  rule	print "#include \"petrol.h\"\nvoid *display[16];\n" &
+	emit_record_defns procs &
+	foreach(emit_proc_decl, procs) &
+	foreach(emit_proc_defn, procs) &
+	print "int main(void)\n{\n\t" & print id & print "();\n\treturn 0;\n}\n"
+	----------------
+	emit(FCode.PROG(procs,id))
+end
+

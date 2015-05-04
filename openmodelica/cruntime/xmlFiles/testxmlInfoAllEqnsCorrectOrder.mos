@@ -1,0 +1,1203 @@
+// name:     testxmlInfoAllEqnsCorrectOrder.mos
+// keywords: xml-file
+// status: correct
+// teardown_command: rm -rf testModel* output.log
+//
+//
+// checks for correct order of equations in *_info.xml file,
+// otherwise pasing of *_info.xml files fails.
+
+setCommandLineOptions("+d=-modelInfoJson");
+loadString("
+model testModel
+  parameter Real a=0.7;
+  parameter Real b=2*a;
+  parameter Real m=0.5;
+  parameter Real g=9.82;
+  parameter Real L=1;
+  Real s(start=a+b),t;
+  Real u(start=a+b),v;
+  Real x(start=1),y(start=0),xd,yd;
+  Real Fo;
+initial equation
+  der(yd) = -9;
+equation
+  a*s+b*t=0;
+  s^2=time;
+  s*u+t*v=time;
+  a*u-b*v=0;
+  der(y)=yd;
+  der(x)=xd;
+  0.5*der(xd) = -x*Fo/L;
+  0.5*der(yd) = -0.5*9.82-Fo*y/L;
+  x*x+y*y=1;
+end testModel;");
+
+getErrorString();
+
+translateModel(testModel);getErrorString();
+readFile("testModel_info.xml");getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <?xml-stylesheet type=\"application/xml\" href=\"simcodedump.xsl\"?>
+// <simcodedump model=\"testModel\">
+// <variables>
+//   <variable name=\"$STATESET1.x\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET1.x\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET2.x\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET2.x\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der($STATESET1.x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der($STATESET1.x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der($STATESET2.x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der($STATESET2.x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der(xd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(xd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"der(yd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(yd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"Fo\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"11\" lineEnd=\"11\" colStart=\"3\" colEnd=\"10\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.Fo\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"11\" lineEnd=\"11\" colStart=\"3\" colEnd=\"10\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"s\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.s\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"t\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.t\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"u\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.u\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"v\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.v\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"x\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" start=\"1.0\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.x\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" start=\"1.0\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"xd\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.xd\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"y\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" start=\"0.0\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.y\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" start=\"0.0\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"yd\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.yd\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$TMP$VAR$19$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$TMP$VAR$19$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$TMP$VAR$15$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$TMP$VAR$15$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET1.A\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"1\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET1.A[1]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"1\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET1.A[1]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"1\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET1.A[2]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"0\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET1.A[2]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"0\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET2.A\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"1\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET2.A[1]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"1\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET2.A[1]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"1\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET2.A[2]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"0\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET2.A[2]\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Integer useStart=\"true\" start=\"0\" fixed=\"true\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der(x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <alias>xd</alias>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <alias>xd</alias>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <alias>yd</alias>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <alias>yd</alias>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"L\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" start=\"1.0\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"7\" lineEnd=\"7\" colStart=\"3\" colEnd=\"21\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.L\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" start=\"1.0\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"7\" lineEnd=\"7\" colStart=\"3\" colEnd=\"21\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"a\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" start=\"0.7\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"3\" lineEnd=\"3\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.a\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" start=\"0.7\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"3\" lineEnd=\"3\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"b\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.b\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"g\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" start=\"9.82\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"6\" lineEnd=\"6\" colStart=\"3\" colEnd=\"24\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.g\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" start=\"9.82\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"6\" lineEnd=\"6\" colStart=\"3\" colEnd=\"24\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"m\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
+//     <Real useStart=\"true\" start=\"0.5\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"5\" lineEnd=\"5\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.m\" comment=\"\" variability = \"parameter\" isDiscrete = \"true\">
+//     <Real useStart=\"true\" start=\"0.5\" fixed=\"true\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"5\" lineEnd=\"5\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET2.J.$pDERStateSetJac2.dummyVarStateSetJac2\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET2.J.$pDERStateSetJac2.dummyVarStateSetJac2\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$STATESET1.J.$pDERStateSetJac3.dummyVarStateSetJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$STATESET1.J.$pDERStateSetJac3.dummyVarStateSetJac3\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"u.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.u.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res1.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res1.$pDERNLSJac0.dummyVarNLSJac0\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$res1.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.$res1.$pDERNLSJac1.dummyVarNLSJac1\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+// </variables>
+// <initial-equations size=\"14\">
+//   <equation index=\"1\">
+//     <assign>
+//       <defines name=\"$STATESET2.x\" />
+//       <depends name=\"$STATESET2.x\" />
+//       <rhs>$_start($STATESET2.x)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"2\" parent=\"4\">
+//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"3\" parent=\"4\">
+//     <residual>/*Real*/($STATESET2.A[2]) * x + /*Real*/($STATESET2.A[1]) * y - $STATESET2.x</residual>
+//     <source>
+//       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"4\">
+//     <nonlinear indexNonlinear=\"0\">
+//       <defines name=\"y\" />
+//       <defines name=\"x\" />
+//       <eq index=\"3\"/>
+//       <eq index=\"2\"/>
+//     </nonlinear>
+//   </equation>
+//   <equation index=\"5\">
+//     <assign>
+//       <defines name=\"der(yd)\" />
+//       <rhs>-9.0</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"13\" lineEnd=\"13\" colStart=\"3\" colEnd=\"15\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"6\">
+//     <assign>
+//       <defines name=\"Fo\" />
+//       <depends name=\"y\" />
+//       <depends name=\"L\" />
+//       <depends name=\"der(yd)\" />
+//       <rhs>DIVISION((-4.91 - 0.5 * $DER.yd) * L, y)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"7\">
+//     <assign>
+//       <defines name=\"der(xd)\" />
+//       <depends name=\"L\" />
+//       <depends name=\"Fo\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (-x) * DIVISION(Fo, L)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"8\">
+//     <assign>
+//       <defines name=\"der($STATESET1.x)\" />
+//       <depends name=\"der(xd)\" />
+//       <depends name=\"$STATESET1.A[2]\" />
+//       <depends name=\"der(yd)\" />
+//       <depends name=\"$STATESET1.A[1]\" />
+//       <rhs>/*Real*/($STATESET1.A[1]) * $DER.yd + /*Real*/($STATESET1.A[2]) * $DER.xd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"9\" parent=\"11\">
+//     <residual>2.0 * (x * xd + y * yd)</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"10\" parent=\"11\">
+//     <residual>2.0 * (x * $DER.xd + xd ^ 2.0 + y * $DER.yd + yd ^ 2.0)</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"11\">
+//     <nonlinear indexNonlinear=\"1\">
+//       <defines name=\"xd\" />
+//       <defines name=\"yd\" />
+//       <eq index=\"10\"/>
+//       <eq index=\"9\"/>
+//     </nonlinear>
+//   </equation>
+//   <equation index=\"12\">
+//     <assign>
+//       <defines name=\"der($STATESET2.x)\" />
+//       <depends name=\"xd\" />
+//       <depends name=\"$STATESET2.A[2]\" />
+//       <depends name=\"yd\" />
+//       <depends name=\"$STATESET2.A[1]\" />
+//       <rhs>/*Real*/($STATESET2.A[1]) * yd + /*Real*/($STATESET2.A[2]) * xd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"13\">
+//     <assign>
+//       <defines name=\"$STATESET1.x\" />
+//       <depends name=\"xd\" />
+//       <depends name=\"$STATESET1.A[2]\" />
+//       <depends name=\"yd\" />
+//       <depends name=\"$STATESET1.A[1]\" />
+//       <rhs>/*Real*/($STATESET1.A[1]) * yd + /*Real*/($STATESET1.A[2]) * xd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"14\">
+//     <assign>
+//       <defines name=\"b\" />
+//       <depends name=\"a\" />
+//       <rhs>2.0 * a</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </equation>
+//   <equation index=\"15\">
+//     <assign>
+//       <defines name=\"$TMP$VAR$15$0X$ABS\" />
+//       <depends name=\"s\" />
+//       <rhs>if initial() then $_start(s) else $_initialGuess(s)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"16\">
+//     <assign>
+//       <defines name=\"s\" />
+//       <depends name=\"time\" />
+//       <depends name=\"$TMP$VAR$15$0X$ABS\" />
+//       <rhs>$_signNoNull($TMP$VAR$15$0X$ABS) * abs(time ^ 0.5)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"16\" lineEnd=\"16\" colStart=\"3\" colEnd=\"11\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"17\">
+//     <assign>
+//       <defines name=\"t\" />
+//       <depends name=\"b\" />
+//       <depends name=\"s\" />
+//       <depends name=\"a\" />
+//       <rhs>DIVISION((-a) * s, b)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"15\" lineEnd=\"15\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"18\">
+//     <linear size=\"2\" nnz=\"4\">
+//       <defines name=\"v\" />
+//       <defines name=\"u\" />
+//       <row>
+//         <cell>-0.0</cell>
+//         <cell>time</cell>
+//       </row>
+//       <matrix>
+//         <cell row=\"0\" col=\"0\">
+//           <residual>-b</residual>
+//         </cell><cell row=\"0\" col=\"1\">
+//           <residual>a</residual>
+//         </cell><cell row=\"1\" col=\"0\">
+//           <residual>t</residual>
+//         </cell><cell row=\"1\" col=\"1\">
+//           <residual>s</residual>
+//         </cell>
+//       </matrix>
+//       <residuals>
+//       </residuals>
+//       <jacobian>
+//       </jacobian>
+//       <source>
+//         <info file=\"&lt;interactive&gt;\" lineStart=\"17\" lineEnd=\"17\" colStart=\"3\" colEnd=\"15\"/>
+//         <part-of>within testModel;</part-of>
+//       </source>
+//       <source>
+//         <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>
+//         <part-of>within testModel;</part-of>
+//       </source>
+//     </linear>
+//   </equation>
+// </initial-equations>
+// <removed-initial-equations size=\"0\">
+// </removed-initial-equations>
+// <equations size=\"9\">
+//   <equation index=\"19\">
+//     <assign>
+//       <defines name=\"$TMP$VAR$19$0X$ABS\" />
+//       <depends name=\"s\" />
+//       <rhs>if initial() then $_start(s) else $_initialGuess(s)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"20\">
+//     <assign>
+//       <defines name=\"s\" />
+//       <depends name=\"time\" />
+//       <depends name=\"$TMP$VAR$19$0X$ABS\" />
+//       <rhs>$_signNoNull($TMP$VAR$19$0X$ABS) * abs(time ^ 0.5)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"16\" lineEnd=\"16\" colStart=\"3\" colEnd=\"11\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"21\">
+//     <assign>
+//       <defines name=\"t\" />
+//       <depends name=\"b\" />
+//       <depends name=\"s\" />
+//       <depends name=\"a\" />
+//       <rhs>DIVISION((-a) * s, b)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"15\" lineEnd=\"15\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"22\" parent=\"26\">
+//     <assign>
+//       <defines name=\"u\" />
+//       <depends name=\"a\" />
+//       <depends name=\"v\" />
+//       <depends name=\"b\" />
+//       <rhs>b * v / a</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"23\" parent=\"26\">
+//     <residual>t * v + s * u - time</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"17\" lineEnd=\"17\" colStart=\"3\" colEnd=\"15\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"24\" parent=\"26\">
+//     <assign>
+//       <defines name=\"u.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"a\" />
+//       <depends name=\"vSeedNLSJac0\" />
+//       <depends name=\"b\" />
+//       <rhs>b * vSeedNLSJac0 / a</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"18\" lineEnd=\"18\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"25\" parent=\"26\">
+//     <assign>
+//       <defines name=\"$res1.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"u.$pDERNLSJac0.dummyVarNLSJac0\" />
+//       <depends name=\"s\" />
+//       <depends name=\"vSeedNLSJac0\" />
+//       <depends name=\"t\" />
+//       <rhs>t * vSeedNLSJac0 + s * u.$pDERNLSJac0.dummyVarNLSJac0</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"17\" lineEnd=\"17\" colStart=\"3\" colEnd=\"15\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"26\">
+//     <linear size=\"1\" nnz=\"0\">
+//       <defines name=\"v\" />
+//       <row>
+//
+//       </row>
+//       <matrix>
+//       </matrix>
+//       <residuals>
+//       <eq index=\"22\"/>
+//       <eq index=\"23\"/>
+//       </residuals>
+//       <jacobian>
+//       <eq index=\"24\"/>
+//       <eq index=\"25\"/>
+//       </jacobian>
+//     </linear>
+//   </equation>
+//   <equation index=\"27\" parent=\"29\">
+//     <residual>/*Real*/($STATESET2.A[2]) * x + /*Real*/($STATESET2.A[1]) * y - $STATESET2.x</residual>
+//     <source>
+//       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"28\" parent=\"29\">
+//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"29\">
+//     <nonlinear indexNonlinear=\"2\">
+//       <defines name=\"x\" />
+//       <defines name=\"y\" />
+//       <eq index=\"28\"/>
+//       <eq index=\"27\"/>
+//     </nonlinear>
+//   </equation>
+//   <equation index=\"30\">
+//     <linear size=\"2\" nnz=\"4\">
+//       <defines name=\"xd\" />
+//       <defines name=\"yd\" />
+//       <row>
+//         <cell>-0.0</cell>
+//         <cell>-$STATESET1.x</cell>
+//       </row>
+//       <matrix>
+//         <cell row=\"0\" col=\"0\">
+//           <residual>2.0 * x</residual>
+//         </cell><cell row=\"0\" col=\"1\">
+//           <residual>2.0 * y</residual>
+//         </cell><cell row=\"1\" col=\"0\">
+//           <residual>-/*Real*/($STATESET1.A[2])</residual>
+//         </cell><cell row=\"1\" col=\"1\">
+//           <residual>-/*Real*/($STATESET1.A[1])</residual>
+//         </cell>
+//       </matrix>
+//       <residuals>
+//       </residuals>
+//       <jacobian>
+//       </jacobian>
+//       <source>
+//         <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//       </source>
+//       <source>
+//         <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//         <part-of>within testModel;</part-of>
+//       </source>
+//     </linear>
+//   </equation>
+//   <equation index=\"31\">
+//     <assign>
+//       <defines name=\"der($STATESET2.x)\" />
+//       <depends name=\"xd\" />
+//       <depends name=\"$STATESET2.A[2]\" />
+//       <depends name=\"yd\" />
+//       <depends name=\"$STATESET2.A[1]\" />
+//       <rhs>/*Real*/($STATESET2.A[1]) * yd + /*Real*/($STATESET2.A[2]) * xd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"32\" parent=\"38\">
+//     <assign>
+//       <defines name=\"der(yd)\" />
+//       <depends name=\"L\" />
+//       <depends name=\"y\" />
+//       <depends name=\"Fo\" />
+//       <rhs>-9.82 - 2.0 * Fo * y / L</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"33\" parent=\"38\">
+//     <assign>
+//       <defines name=\"der(xd)\" />
+//       <depends name=\"L\" />
+//       <depends name=\"Fo\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (-x) * Fo / L</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"34\" parent=\"38\">
+//     <residual>2.0 * (x * $DER.xd + xd ^ 2.0 + y * $DER.yd + yd ^ 2.0)</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"35\" parent=\"38\">
+//     <assign>
+//       <defines name=\"der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" />
+//       <depends name=\"L\" />
+//       <depends name=\"y\" />
+//       <depends name=\"FoSeedNLSJac1\" />
+//       <rhs>2.0 * (-FoSeedNLSJac1) * y / L</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"36\" parent=\"38\">
+//     <assign>
+//       <defines name=\"der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" />
+//       <depends name=\"L\" />
+//       <depends name=\"FoSeedNLSJac1\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (-x) * FoSeedNLSJac1 / L</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"21\" lineEnd=\"21\" colStart=\"3\" colEnd=\"24\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"37\" parent=\"38\">
+//     <assign>
+//       <defines name=\"$res1.$pDERNLSJac1.dummyVarNLSJac1\" />
+//       <depends name=\"der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" />
+//       <depends name=\"y\" />
+//       <depends name=\"der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (x * $DER.xd.$pDERNLSJac1.dummyVarNLSJac1 + y * $DER.yd.$pDERNLSJac1.dummyVarNLSJac1)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"38\">
+//     <linear size=\"1\" nnz=\"0\">
+//       <defines name=\"Fo\" />
+//       <row>
+//
+//       </row>
+//       <matrix>
+//       </matrix>
+//       <residuals>
+//       <eq index=\"32\"/>
+//       <eq index=\"33\"/>
+//       <eq index=\"34\"/>
+//       </residuals>
+//       <jacobian>
+//       <eq index=\"35\"/>
+//       <eq index=\"36\"/>
+//       <eq index=\"37\"/>
+//       </jacobian>
+//     </linear>
+//   </equation>
+//   <equation index=\"39\">
+//     <assign>
+//       <defines name=\"der($STATESET1.x)\" />
+//       <depends name=\"der(xd)\" />
+//       <depends name=\"$STATESET1.A[2]\" />
+//       <depends name=\"der(yd)\" />
+//       <depends name=\"$STATESET1.A[1]\" />
+//       <rhs>/*Real*/($STATESET1.A[1]) * $DER.yd + /*Real*/($STATESET1.A[2]) * $DER.xd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+// </equations>
+// <start-equations size=\"4\">
+//   <equation index=\"40\">
+//     <assign>
+//       <defines name=\"u\" />
+//       <depends name=\"b\" />
+//       <depends name=\"a\" />
+//       <rhs>a + b</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"9\" lineEnd=\"9\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </equation>
+//   <equation index=\"41\">
+//     <assign>
+//       <defines name=\"s\" />
+//       <depends name=\"b\" />
+//       <depends name=\"a\" />
+//       <rhs>a + b</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"8\" lineEnd=\"8\" colStart=\"3\" colEnd=\"22\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </equation>
+//   <equation index=\"42\">
+//     <assign>
+//       <defines name=\"$STATESET1.x\" />
+//       <depends name=\"xd\" />
+//       <depends name=\"$STATESET1.A[2]\" />
+//       <depends name=\"yd\" />
+//       <depends name=\"$STATESET1.A[1]\" />
+//       <rhs>/*Real*/($STATESET1.A[1]) * $_start(yd) + /*Real*/($STATESET1.A[2]) * $_start(xd)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"43\">
+//     <assign>
+//       <defines name=\"$STATESET2.x\" />
+//       <depends name=\"x\" />
+//       <depends name=\"$STATESET2.A[2]\" />
+//       <depends name=\"y\" />
+//       <depends name=\"$STATESET2.A[1]\" />
+//       <rhs>/*Real*/($STATESET2.A[1]) * $_start(y) + /*Real*/($STATESET2.A[2]) * $_start(x)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+// </start-equations>
+// <nominal-equations size=\"0\">
+// </nominal-equations>
+// <min-equations size=\"0\">
+// </min-equations>
+// <max-equations size=\"0\">
+// </max-equations>
+// <parameter-equations size=\"1\">
+//   <equation index=\"44\">
+//     <assign>
+//       <defines name=\"b\" />
+//       <depends name=\"a\" />
+//       <rhs>2.0 * a</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"4\" lineEnd=\"4\" colStart=\"3\" colEnd=\"23\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </equation>
+// </parameter-equations>
+// <assertions size=\"0\">
+// </assertions>
+// <jacobian-equations>
+//   <equation index=\"45\">
+//     <assign>
+//       <defines name=\"$STATESET2.J.$pDERStateSetJac2.dummyVarStateSetJac2\" />
+//       <depends name=\"ySeedStateSetJac2\" />
+//       <depends name=\"y\" />
+//       <depends name=\"xSeedStateSetJac2\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (x * xSeedStateSetJac2 + y * ySeedStateSetJac2)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"46\">
+//     <assign>
+//       <defines name=\"$STATESET1.J.$pDERStateSetJac3.dummyVarStateSetJac3\" />
+//       <depends name=\"ydSeedStateSetJac3\" />
+//       <depends name=\"y\" />
+//       <depends name=\"xdSeedStateSetJac3\" />
+//       <depends name=\"x\" />
+//       <rhs>2.0 * (x * xdSeedStateSetJac3 + y * ydSeedStateSetJac3)</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+// </jacobian-equations>
+// <literals size=\"2\">
+//   <exp>&quot;'p&quot;</exp>
+//   <exp>&quot;'p/s&quot;</exp>
+// </literals>
+// <functions size=\"0\">
+// </functions>
+// </simcodedump>
+// "
+// ""
+// endResult

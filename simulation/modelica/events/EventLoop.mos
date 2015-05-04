@@ -1,0 +1,43 @@
+// name:     EventIterationLoop
+// keywords: EventHandling, EventIterationLoop
+// status: correct
+// teardown_command: rm -rf EventIterationLoop* output.log
+// 
+//  Simulate model containing EventIterationsLoop
+//
+
+
+loadString("
+model EventIterationLoop
+  Real x(start=1);
+  Integer i;
+  Boolean b1,b2;
+equation
+  der(x) = x;
+  when {x>1.5,pre(b1),pre(b2)} then
+    i = pre(i) + 1;
+    b2 = not pre(b2);
+  end when;
+  when {pre(b1),pre(b2)} then 
+    b1 = not pre(b1);
+  end when;
+end EventIterationLoop;
+");
+getErrorString();
+
+simulate(EventIterationLoop);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EventIterationLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: EventIterationLoop
+// assert            | debug   | ERROR: Too many event iterations. System is inconsistent. Simulation terminate.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// endResult

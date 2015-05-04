@@ -1,0 +1,38 @@
+// name:     Modelica.Math.Nonlinear.Examples.quadratureLobatto3
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(Modelica.Math.Nonlinear.Examples.quadratureLobatto3);
+compareVars :=
+{
+   "q",
+   "qd"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// Modelica.Math.Nonlinear.Examples.quadratureLobatto3
+// {"q","qd"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Math.Nonlinear.Examples.quadratureLobatto3.mat\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,13 @@
+// name:     ChatteringNoEvents2
+// keywords: EventHandling, Chattering
+// status: correct
+// teardown_command: rm -rf ChatteringNoEventsTest2* output.log
+// 
+//  Simulate model containing EventIterations
+//
+loadFile("ChatteringPackage.mo");
+
+simulate(Chattering.ChatteringNoEvents2);
+
+// Result:
+// endResult

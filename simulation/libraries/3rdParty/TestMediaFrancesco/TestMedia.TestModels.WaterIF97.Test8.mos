@@ -1,0 +1,32 @@
+// name:     TestMedia.TestModels.WaterIF97.Test8.mos [simulation checking]
+// keywords: simulation TestMedia.TestModels.WaterIF97.Test8
+// status: correct
+// teardown_command: rm -rf _TestMedia.TestModels.WaterIF97.Test8.* TestMedia.TestModels.WaterIF97.Test8_* TestMedia.TestModels.WaterIF97.Test8 TestMedia.TestModels.WaterIF97.Test8.exe TestMedia.TestModels.WaterIF97.Test8.cpp TestMedia.TestModels.WaterIF97.Test8.makefile TestMedia.TestModels.WaterIF97.Test8.libs TestMedia.TestModels.WaterIF97.Test8.log TestMedia.TestModels.WaterIF97.Test8.c TestMedia.TestModels.WaterIF97.Test8.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("TestMedia.mo"); getErrorString();
+
+
+simulate(TestMedia.TestModels.WaterIF97.Test8, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.WaterIF97.Test8_res.mat",
+  "ReferenceFiles/WaterIF97/WaterIF97_Test8_ref.mat","TestMedia.TestModels.WaterIF97.Test8_diff.csv",0.01,0.013,
+  {"medium.T","medium.d","M","U"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestMedia.TestModels.WaterIF97.Test8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test8', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

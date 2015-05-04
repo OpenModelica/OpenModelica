@@ -1,0 +1,32 @@
+// name:     DrModelicaForTesting.DAEexample.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.DAEexample
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.DAEexample.* DrModelicaForTesting.DAEexample_* DrModelicaForTesting.DAEexample DrModelicaForTesting.DAEexample.exe DrModelicaForTesting.DAEexample.cpp DrModelicaForTesting.DAEexample.makefile DrModelicaForTesting.DAEexample.libs DrModelicaForTesting.DAEexample.log DrModelicaForTesting.DAEexample.c DrModelicaForTesting.DAEexample.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.DAEexample, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.DAEexample_res.mat",
+  "ReferenceFiles/DAEexample_ref.mat","DrModelicaForTesting.DAEexample_diff.csv",0.01,0.013,
+  {"x","y","a"});
+ 
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.DAEexample_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.DAEexample', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

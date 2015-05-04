@@ -1,0 +1,104 @@
+// name:      EngineV12
+// keywords:  arrays
+// status:    correct
+//
+loadModel(Modelica); getErrorString();
+loadFile("./EngineVN.mo"); getErrorString();
+
+loadString("
+model EngineV12
+  extends Modelica.Mechanics.MultiBody.Examples.Loops.EngineVN(N=12);
+end EngineV12;
+"); getErrorString();
+
+buildModel(EngineV12, stopTime=0.1); getErrorString();
+system("./EngineV12"); getErrorString();
+system("./EngineV12 -ls umfpack"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {"EngineV12","EngineV12_init.xml"}
+// "[simulation/modelica/linear_system/EngineVN.mo:26:34-26:53:writable] Warning: Non-array modification 'animation' for array component, possibly due to missing 'each'.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[1].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[1].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[1].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[2].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[2].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[2].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[3].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[3].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[3].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[4].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[4].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[4].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[5].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[5].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[5].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[6].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[6].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[6].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[7].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[7].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[7].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[8].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[8].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[8].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[9].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[9].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[9].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[10].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[10].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[10].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[11].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[11].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[11].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// Warning: Alias set with several free start values
+//  * candidate: cylinder[12].Cylinder.s(start = -0.3)
+//  * candidate: cylinder[12].gasForce.s_rel(start = -0.0)
+// => select value from cylinder[12].Cylinder.s(start = -0.3)
+//    because its component reference (or its binding component reference) is closer to the top level scope with depth: 3.
+//    If we have equal component reference depth for several components choose the one with non zero binding.
+// "
+// 0
+// ""
+// 0
+// ""
+// endResult

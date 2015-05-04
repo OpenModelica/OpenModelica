@@ -1,0 +1,25 @@
+/* Computing factorial of the user input number N, and store it in variable Fak
+   N is read from the input stream; Fak is written to the output 
+   Fak is 1 * 2 * ... * (N-1) * N *) */
+
+
+/* uncomment to have user input
+read N; */
+N:=10;
+
+if N=0 
+then 
+    Fak := 1;
+else
+    if N > 0 
+    then
+	Fak := 1;
+	I := 0;
+	to N do
+	    I := I + 1;
+	    Fak := Fak * I;
+	end
+    endif
+endif
+
+write Fak;

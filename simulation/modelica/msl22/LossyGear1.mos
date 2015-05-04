@@ -1,0 +1,37 @@
+// name:     LossyGearDemo1
+// keywords: Simulation
+// status:   correct
+// teardown_command: rm -f LossyGearDemo1* output.log
+// LossyGearDemo1 in Modelica.Mechanics.Rotational.Examples
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("LossyGear1.mo");
+simulate(LossyGearDemo1, numberOfIntervals=200, tolerance=1e-8);
+val(gear.mode,0.0);
+val(gear.mode,0.05);
+val(gear.mode,0.1);
+val(gear.mode,0.2);
+val(gear.mode,0.4);
+val(gear.mode,0.5);
+val(gear.mode,1.0);
+val(PowerLoss,0.3);
+val(PowerLoss,0.8);
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "LossyGearDemo1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LossyGearDemo1', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// -1.0
+// -1.0
+// 0.123373666103296
+// 0.422753426760636
+// endResult

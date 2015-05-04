@@ -1,0 +1,50 @@
+// name:     ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_1
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_1);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_1_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_1.mat",
+  "ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_1_diff.csv",0.01,0.0001,
+  {"bodyCylinder1.body.Q.set[3]",
+"bodyCylinder1.body.Q.set[2]",
+"bodyCylinder1.body.Q.set[1]",
+"revolute.frame_a.R.w[1]",
+"revolute.frame_a.R.w[2]",
+"revolute.frame_a.R.w[3]",
+"revolute.phi",
+"revolute.w",
+"bodyCylinder3.body.Q.set[3]",
+"bodyCylinder3.body.Q.set[2]",
+"bodyCylinder3.body.Q.set[1]",
+"rotor1D.rotorWith3DEffects.w_a[1]",
+"rotor1D.rotorWith3DEffects.w_a[2]",
+"rotor1D.rotorWith3DEffects.w_a[3]",
+"rotor1D.rotorWith3DEffects.phi",
+"rotor1D.rotorWith3DEffects.w"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_1_res.mat",,
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-08, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_1\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "",,
+// end SimulationResult;,
+// "Files Equal!",
+// '
+// endResult

@@ -1,0 +1,18 @@
+// name: LookupBuiltin
+// status: correct
+
+loadFile("LookupBuiltin.mo");
+LookupBuiltin.identity("abc");
+getErrorString();
+// This should actually work, but we can live without it for now
+LookupBuiltin.id("abc");
+getErrorString();
+// Result:
+// true
+// "abc"
+// ""
+//
+// "[flattening/modelica/mosfiles/LookupBuiltin.mo:11:3-11:34:writable] Error: First argument to identity in component <NO COMPONENT> must be Integer expression.
+// [flattening/modelica/mosfiles/LookupBuiltin.mos:8:1-8:24:writable] Error: Class LookupBuiltin.id not found in scope <global scope> (looking for a function or record).
+// "
+// endResult

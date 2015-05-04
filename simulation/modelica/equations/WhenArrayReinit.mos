@@ -1,0 +1,61 @@
+// name:     WhenArrayReinit
+// keywords: when
+// status: correct
+// teardown_command: rm -rf equationsTests.WhenArrayReinit* _equationsTests.WhenArrayReinit* output.log
+// 
+// Conditional Equations with when-Equations and array variable in reinit
+// 
+
+loadString("
+within ;
+package equationsTests
+  function func
+    input Real[3] inX;
+    input Real dummy;
+    output Real[3] outX;
+  algorithm
+    outX := inX;
+  end func;
+
+  model WhenArrayReinit
+    Real[3] phi(each start=0);
+  equation
+    der(phi) = ones(3);
+    when phi[1] > 0.5 then
+      reinit(phi, func(zeros(3), time));
+    end when;
+  end WhenArrayReinit;
+end equationsTests;
+"); getErrorString();
+
+simulate(equationsTests.WhenArrayReinit); getErrorString();
+
+val(phi[1],0.0);
+val(phi[2],0.0);
+val(phi[3],0.0);
+val(phi[1],0.6);
+val(phi[2],0.6);
+val(phi[3],0.6);
+val(phi[1],1.0);
+val(phi[2],1.0);
+val(phi[3],1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "equationsTests.WhenArrayReinit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'equationsTests.WhenArrayReinit', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// 0.0
+// 0.1
+// 0.1
+// 0.1
+// 0.5
+// 0.5
+// 0.5
+// endResult

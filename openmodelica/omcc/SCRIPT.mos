@@ -1,0 +1,76 @@
+// name: OMCC
+// status: correct
+
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+// getInstallationDirectoryPath();
+loadFile("Types.mo");
+loadFile("../../../Compiler/FrontEnd/Absyn.mo");
+loadFile("../../../Compiler/Util/Error.mo");
+loadFile("../../../Compiler/Util/ErrorExt.mo");  
+loadFile("../../../Compiler/FrontEnd/Dump.mo");
+loadFile("../../../Compiler/Util/Print.mo");
+loadFile("../../../Compiler/Util/Flags.mo");
+loadFile("../../../Compiler/Global/Global.mo");
+//loadFile("../../../Compiler/Util/Pool.mo");
+loadFile("../../../Compiler/Util/Config.mo");
+loadFile("../../../Compiler/Util/Debug.mo");
+loadFile("../../../Compiler/Util/List.mo");
+loadFile("../../../Compiler/Util/Settings.mo");
+loadFile("../../../Compiler/Util/Corba.mo");
+//loadFile("../../../Compiler/Util/Name.mo");
+//loadFile("../../../Compiler/Util/Scope.mo");
+loadFile("../../../Compiler/Util/Util.mo");
+loadFile("../../../Compiler/Util/System.mo");
+loadFile("TokenModelica.mo");
+loadFile("LexTableModelica.mo");
+loadFile("LexerCodeModelica.mo");
+loadFile("LexerModelica.mo");
+loadFile("ParseCodeModelica.mo");
+loadFile("ParserModelica.mo");
+loadFile("ParseTableModelica.mo");
+loadFile("Main.mo");
+
+// add your test files here
+
+{Main.main({"../../../Examples/" + file,"Modelica"}) for file in {"BouncingBall.mo"}};
+
+ /*
+{Main.main({"../../flattening/modelica/algorithms-functions/" + file,"Modelica"}) for file in {"Algorithm1.mo","Algorithm3.mo","AlgorithmElseOpt.mo","AlgorithmFor1.mo",
+                                                                                             "AlgorithmFor2.mo","AlgorithmFor3.mo","AlgorithmFor4.mo","AlgorithmFor5.mo",
+                                                                                             "AlgorithmFor6.mo"}};                                                                                                                                                            
+
+
+
+{Main.main({"../../flattening/modelica/built-in-functions/" + file,"Modelica"}) for file in {"Abs.mo","Abs1.mo","Delay.mo","Delay2.mo","Delay3.mo",
+                                                                                            "Delay4.mo","Delay6.mo","DerConstant1.mo","DerConstant2.mo"}};
+
+{Main.main({"../../flattening/modelica/arrays/" + file,"Modelica"}) for file in {"Array1.mo","Array2.mo","Array3.mo","Array4.mo","Array5.mo","Array6.mo","Array7.mo","Array8.mo",
+                                                                                 "Array9.mo","Array10.mo","Array13.mo","Array14.mo","ArrayAccess.mo","ArrayAddition.mo","ArrayAddition2.mo",
+                                                                                 "ArrayBrackets.mo","ArrayCurlyBrackets.mo","ArrayDeclaration1.mo","ArrayDeclaration2.mo","ArrayDeclaration3.mo",
+                                                                                 "ArrayDeclaration4.mo","ArrayDeclaration5.mo"}};
+
+{Main.main({"../../flattening/modelica/operators/" + file,"Modelica"}) for file in {"And.mo"}};
+
+{Main.main({"../../flattening/modelica/external-functions/" + file,"Modelica"}) for file in {"AddReal1.mo"}};
+
+{Main.main({"../../flattening/modelica/others/" + file,"Modelica"}) for file in{"BooleanLiterals.mo","Class1.mo",
+                                                                                   "Comment1.mo"}};
+
+{Main.main({"../../../Examples/" + file,"Modelica"}) for file in {"BouncingBall.mo","bubblesort.mo","Circle.mo","dcmotor.mo","ExternalLibraries.mo"
+                                                                ,"HelloWorld.mo","Influenza.mo","SimpleIntegrator.mo","Switch.mo","VanDerPol.mo"
+                                                                  ,"visualize_3D_BouncingBall.mo"}};
+
+
+{Main.main({"../../flattening/modelica/arrays/" + file,"Modelica"}) for file in {"ArrayDivision.mo","ArrayEWOps1.mo","ArrayEWOps2.mo","ArrayEWOps3.mo",
+                                                                         "ArrayEWOps4.mo","ArrayEWOps5.mo","ArrayEWOps6.mo","ArrayEWOpsCEval1.mo",
+                                                                        "ArrayEWOpsCEval2.mo","ArrayEWOpsCEval3.mo","ArrayEWOpsCEval4.mo","ArrayEWOpsCEval5.mo",
+                                                                         "ArrayExtend.mo","ArrayExtendsUnknown.mo","ArrayIndex.mo","ArrayIndex2.mo",
+                                                                         "ArrayLogic.mo","ArrayMatrixSimplifier.mo"}};
+
+
+{Main.main({"../../flattening/modelica/declarations/" + file,"Modelica"}) for file in{"DeclarationOrder.mo","DeclarationOrder1.mo","DeclarationOrder2.mo"}};
+
+*/
+
+getErrorString();
+

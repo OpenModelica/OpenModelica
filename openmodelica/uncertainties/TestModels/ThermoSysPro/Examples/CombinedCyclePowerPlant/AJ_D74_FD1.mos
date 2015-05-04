@@ -1,0 +1,4 @@
+// Script to be executed before translation for analytic Jacobians
+Hidden.UseNewTearing = true;
+Advanced.GenerateAnalyticJacobian = true
+Advanced.SolveNonlinearEquationSymbolically = false

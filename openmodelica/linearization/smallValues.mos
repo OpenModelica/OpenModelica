@@ -1,0 +1,61 @@
+// name:     small values in linearization
+// keywords: VanDerPolSmallValueSmallValue, linearization, small value
+// status:   correct
+// teardown_command: rm -rf VanDerPolSmallValue.* VanDerPolSmallValue_* output.log linear_VanDerPolSmallValue.* linear_VanDerPolSmallValue_* linear_VanDerPolSmallValue VanDerPolSmallValue
+// 
+//  Case for linearization of VanDerPolSmallValue model
+//
+loadFile("smallValue.mo");
+//linearize
+linearize(VanDerPolSmallValue, stopTime=0);
+getErrorString();
+loadFile("linear_VanDerPolSmallValue.mo");
+list(linear_VanDerPolSmallValue);
+simulate(linear_VanDerPolSmallValue);
+getErrorString();
+readFile("linear_VanDerPolSmallValue.log"); // Check that output log is emtpy
+//echo(false); // turns of output
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "VanDerPolSmallValue_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VanDerPolSmallValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// true
+// "model linear_VanDerPolSmallValue
+//   parameter Integer n = 2;
+//   // states
+//   parameter Integer k = 0;
+//   // top-level inputs
+//   parameter Integer l = 0;
+//   // top-level outputs
+//   parameter Real x0[2] = {1, 2};
+//   parameter Real u0[0] = array(i for i in 1:0);
+//   parameter Real A[2, 2] = [0, 1; -2.200000000000004, 0];
+//   parameter Real B[2, 0] = zeros(2, 0);
+//   parameter Real C[0, 2] = zeros(0, 2);
+//   parameter Real D[0, 0] = zeros(0, 0);
+//   Real x[2](start = x0);
+//   input Real u[0];
+//   output Real y[0];
+//   Real x_Px = x[1];
+//   Real x_Py = x[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+// end linear_VanDerPolSmallValue;"
+// record SimulationResult
+//     resultFile = "linear_VanDerPolSmallValue_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_VanDerPolSmallValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// ""
+// endResult

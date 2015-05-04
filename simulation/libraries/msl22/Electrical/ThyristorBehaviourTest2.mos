@@ -1,0 +1,9 @@
+//name:         ThyristorBehaviourTest2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadFilee("../Modelica/package.mo");
+simulate(Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest);

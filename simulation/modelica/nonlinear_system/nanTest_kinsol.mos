@@ -1,0 +1,26 @@
+// name: nanTest [kinsol]
+// keywords: non-linear solver, nan, inf
+// status: correct
+// teardown_command: rm -f nonlinear_system.nanTest* _nonlinear_system.nanTest* output.log
+//
+
+loadFile("nanTest.mo"); getErrorString();
+simulate(nonlinear_system.nanTest, numberOfIntervals=2, simflags="-nls=kinsol"); getErrorString();
+
+val(x, 1);  // 1.0
+val(y, 1);  // 0.0
+val(z, 1);  // sin(1.0)
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.nanTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.nanTest', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 1.0
+// 0.0
+// 0.8414709848
+// endResult

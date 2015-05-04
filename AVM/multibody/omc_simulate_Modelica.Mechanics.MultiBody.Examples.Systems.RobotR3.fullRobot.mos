@@ -1,0 +1,3 @@
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot, stopTime=1); getErrorString();
+

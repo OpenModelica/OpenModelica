@@ -1,0 +1,19 @@
+// name: OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial_init.xml"}
+// "Notification: The following equation is consistent and got removed from the initialization problem: p2 = 100000.0
+// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// "
+// endResult

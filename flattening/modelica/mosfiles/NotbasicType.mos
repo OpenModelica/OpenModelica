@@ -1,0 +1,19 @@
+// name:     Not basic type
+// keywords: error handling
+// status:   correct
+//
+// Checks that pointless errors are not generated
+//
+loadFile("NotbasicType.mo");
+instantiateModel(BP);
+getErrorString();
+
+// Result:
+// true
+// "class BP
+//   parameter Integer a = b;
+//   parameter Integer b = 1;
+// end BP;
+// "
+// ""
+// endResult

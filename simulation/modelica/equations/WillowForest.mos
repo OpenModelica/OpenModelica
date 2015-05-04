@@ -1,0 +1,39 @@
+// name:     WillowForest
+// keywords: <insert keywords here>
+// status:   correct
+// 
+//  MORE WORK HAS TO BE DONE ON THIS FILE!
+//
+// Drmodelica: 15.4.2 An Energy Forest Annual Growth Model for Willow Trees (p. 559) Not in the notebook
+// 
+loadModel(Modelica);
+loadFile("WillowForest.mo");
+simulate(WillowForest,numberOfIntervals=100, tolerance=1e-5, numberOfIntervals=100); // 2 intervals == 3 values
+echo(false); // turns of output 
+x:=val(growthCycles[10],0.6);
+y:=val(mbiomasses[8],1.0);
+z:=val(mbiomasses[1],0.6);
+x:=10.0*x;
+y:=10.0*y;
+z:=10.0*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+
+echo(true); // turns on output
+x:=x/10.0; // rounded value to 1 digits
+y:=y/10.0;
+z:=z/10.0;
+system("rm -rf WillowForest WillowForest.exe WillowForest_* output.log"); // remove tmp files.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "WillowForest_res.mat"
+// end SimulationResult;
+// true
+// 4
+// 1457
+// 786
+// ""
+// 0
+// endResult

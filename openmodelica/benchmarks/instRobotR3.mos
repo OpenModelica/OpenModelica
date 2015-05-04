@@ -1,0 +1,12 @@
+// name:     Modelica3.x.Mechanics.MultiBody.Examples.Systems.RobotR3 [inst]
+// keywords: multibody, balancing, instantiation, expandable
+// status:   correct
+// teardown_command: rm -f *.so *.dll *.log *.c* *.makefile *.libs
+// 
+// Modelica MultiBody 3.x: instantiation and balance checking
+//
+
+loadModel(Modelica); getErrorString();
+loadModel(ModelicaServices); getErrorString();
+instantiateModel(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot); getErrorString();
+

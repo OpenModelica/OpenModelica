@@ -1,0 +1,24 @@
+// name:      Ricatti
+// keywords:  Nonlinear equation system
+// status:    correct
+// teardown_command: rm -rf Riccati Riccati.exe Riccati.cpp Riccati_functions.cpp Riccati_functions.h Riccati_init.xml Riccati.libs Riccati.log Riccati.makefile Riccati_records.c Riccati_res.mat output.log
+
+loadFile("Riccati.mo");
+simulate(Riccati, tolerance=1e-5, numberOfIntervals=100);
+val(X[1,1],0.0);
+val(X[1,2],0.0);
+val(X[2,1],0.0);
+val(X[2,2],0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Riccati_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'Riccati', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.5825317547305484
+// -0.7165063509461099
+// 0.649519052838329
+// 0.21650635094610982
+// endResult

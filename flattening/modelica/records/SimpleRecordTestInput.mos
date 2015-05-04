@@ -1,0 +1,17 @@
+// name:     Simple Record Input
+// keywords: algorithm
+// status:   correct
+
+loadFile("RecordTest.mo");
+
+rec:=RecordTest.ADD(1.0,2.0);
+b:=RecordTest.eval_add(rec);
+
+// Result:
+// true
+// record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;
+// 3.0
+// endResult

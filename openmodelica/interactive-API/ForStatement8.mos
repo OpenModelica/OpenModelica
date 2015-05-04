@@ -1,0 +1,22 @@
+// name:     For-statement 8
+// keywords: for
+// status:   correct
+// 
+//  Test the interactive for-statement
+//
+
+i:="";
+lst := {"Here ", "are ","some ","strings."};
+s := "";
+for i in lst loop
+  s := s + i;
+end for;
+s;
+
+// Result:
+// ""
+// {"Here ","are ","some ","strings."}
+// ""
+//
+// "Here are some strings."
+// endResult

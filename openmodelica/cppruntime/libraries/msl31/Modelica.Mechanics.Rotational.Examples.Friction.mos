@@ -1,0 +1,37 @@
+// name:     Modelica.Mechanics.Rotational.Examples.Friction
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.Rotational.Examples.Friction,stopTime=3.0, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Rotational.Examples.Friction_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.Rotational.Examples.Friction.mat","Modelica.Mechanics.Rotational.Examples.Friction_diff.csv",0.01,0.0001,
+  {"inertia3.phi",
+  "inertia3.w",
+  "clutch.phi_rel",
+  "clutch.w_rel",
+  "spring.phi_rel",
+  "spring.w_rel",
+  "der(inertia3.phi)",
+  "der(inertia3.w)",
+  "der(clutch.phi_rel)",
+  "der(clutch.w_rel)",
+  "der(spring.phi_rel)",
+  "der(spring.w_rel)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Rotational.Examples.Friction_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.Friction', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

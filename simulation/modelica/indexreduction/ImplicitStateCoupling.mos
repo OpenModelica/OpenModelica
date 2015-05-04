@@ -1,0 +1,49 @@
+// Name:     ImplicitStateCoupling
+// keywords: index reduction
+// status:   correct
+// 
+
+loadModel(Modelica,{"3.2.1"});
+loadFile("ImplicitStateCoupling.mo");
+
+simulate(ImplicitStateCoupling);
+getErrorString();
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ImplicitStateCoupling', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: ImplicitStateCoupling"
+// end SimulationResult;
+// "Error: When solving linear system 
+// 1 : resistor1.i + resistor.i - inductor.i = 0.0
+// 2 : inductor1.i + (-resistor.i) - resistor1.i = 0.0
+// [
+//   1.0 , 1.0 ;
+//   -1.0 , -1.0
+// ]
+//   *
+// [
+//   resistor1.i ;
+//   resistor.i
+// ]
+//   =
+// [
+//   inductor.i ;
+//   -inductor1.i
+// ]
+//   U(2,2) = 0.0, which means system is singular for variable resistor.i.
+// [BackEnd/BackendDAETransform.mo:457:7-457:48:writable] Error: Internal error BackendDAETransform.analyseStrongComponentBlock failed
+// variables:
+//   resistor1.i
+//   resistor.i
+// equations:
+//   resistor1.i + resistor.i - inductor.i = 0.0
+//   inductor1.i + (-resistor.i) - resistor1.i = 0.0
+// [BackEnd/BackendDAETransform.mo:461:7-461:90:writable] Error: Internal error function analyseStrongComponentBlock failed
+// [BackEnd/BackendDAETransform.mo:106:5-106:111:writable] Error: Internal error function strongComponentsScalar failed (sorting strong components)
+// [BackEnd/BackendDAEUtil.mo:7150:5-7150:89:writable] Error: Internal error Transformation module sort components failed
+// "
+// endResult

@@ -1,0 +1,46 @@
+// name: ZeroRange
+// status: correct
+// teardown_command: rm -f ZeroRange_*
+
+loadFile("ZeroRange.mo");
+
+ZeroRange.testRangeLoop(0,1,-1);
+ZeroRange.testRangeLoop(0,1,0);
+ZeroRange.testRangeLoop(0,1,1);
+
+ZeroRange.testRangeLoop(0,-1,-1);
+ZeroRange.testRangeLoop(0,-1,0);
+ZeroRange.testRangeLoop(0,-1,1);
+
+ZeroRange.testRangeLoop(0,0,1);
+
+setCommandLineOptions("+d=noevalfunc");
+ZeroRange.testRangeLoop(0,1,-1);
+ZeroRange.testRangeLoop(0,1,0);
+ZeroRange.testRangeLoop(0,1,1);
+
+ZeroRange.testRangeLoop(0,-1,-1);
+ZeroRange.testRangeLoop(0,-1,0);
+ZeroRange.testRangeLoop(0,-1,1);
+ZeroRange.testRangeLoop(0,0,1);
+
+// Result:
+// true
+// 0
+// 1
+// 2
+// 2
+// 1
+// 0
+// [:-1:-1--1:-1:readonly]Modelica Assert: assertion range step != 0 failed!
+// fail()
+// true
+// 0
+// 1
+// 2
+// 2
+// 1
+// 0
+// [:-1:-1--1:-1:readonly]Modelica Assert: assertion range step != 0 failed!
+// fail()
+// endResult

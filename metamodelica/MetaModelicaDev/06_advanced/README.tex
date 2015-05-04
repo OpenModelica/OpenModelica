@@ -1,0 +1,37 @@
+In this exercise you can experiment with MetaModelica:
+\begin{itemize}
+\item polymorphic types
+\item constants
+\item higher order functions
+\end{itemize}
+
+{\bf Assignment}
+
+\begin{enumerate}
+\item Write a polymorphic function in \code{Functions.mo} that orders a list of any type 
+  (\code{Integer}, \code{String}, \code{Real} is enough).
+   The function has as input a list and a compare function between the objects of that list. 
+   Also write the comparison functions for Integers, Strings and Reals.
+   Test your function on the \code{Types.intList}
+\item Write a polymorphic map function that applies a 
+   function over a list and returns a new list with the result.
+   Write three functions that transform from:
+   \begin{itemize}
+   \item integer $\rightarrow$ real 
+   \item integer $\rightarrow$ string
+   \item real $\rightarrow$ string 
+   \end{itemize}
+   Use your map function and the two transformation functions to transform the 
+   \code{Types.intList} to a list of reals and a list of string, then apply the
+   ordering function from point 1.
+\item Write a polymorphic map function that applies a 
+   print function over a list (of Strings) and prints the it.
+   Use the transformer functions from real $\rightarrow$ string and integer $\rightarrow$ string 
+   from point 2 to transform the real listor the integer list to a 
+   string list for printing.
+\end{enumerate}
+   
+\code{SOLUTION.txt} presents the solution to the assignment.
+
+To run the calculator type \code{run} when building the project (or \code{make run} from a terminal).
+

@@ -1,0 +1,29 @@
+// name:     DCMotor (Rotational)
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels_* output.log
+// 
+//  Simulate Rotational Systems
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// DCMotor
+simulate(TestModels.RotationalModels.SystemTests.DCMotor, tolerance=1e-5, numberOfIntervals=100);
+{val(inertia1.w,0.0),val(inertia1.w,0.2),val(inertia1.w,0.4),
+val(inertia1.w,0.6),val(inertia1.w,0.8),val(inertia1.w,1.0)};
+{val(inertia2.w,0.0),val(inertia2.w,0.2),val(inertia2.w,0.4),
+val(inertia2.w,0.6),val(inertia2.w,0.8),val(inertia2.w,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.SystemTests.DCMotor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SystemTests.DCMotor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,0.01727005034164092,0.05801300977588481,0.10582673487325084,0.14578397405091748,0.1657404968669572}
+// {0.0,-0.1986027421568276,-0.3885235890922469,-0.5606223313017767,-0.7061764514807147,-0.8178317809507099}
+// endResult

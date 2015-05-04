@@ -1,0 +1,6 @@
+// name:      BouncingBall
+// keywords:  hpcom
+// Simulation to create the _prof.xml-File.
+
+loadFile("../BouncingBall.mo"); getErrorString();
+simulate(BouncingBall, stopTime=3.0, measureTime=true, simflags="-clock=CYC"); getErrorString();

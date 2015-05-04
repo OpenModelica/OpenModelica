@@ -1,0 +1,42 @@
+// name: sample1
+// keywords: event, when, sample
+// status: correct
+// cflags:
+// teardown_command: rm -rf eventTests.sample1* _eventTests.sample1* output.log
+//
+//  case for a sample call
+//
+
+loadString("
+within ;
+package eventTests
+  model sample1
+    Real x;
+    Boolean condition;
+  algorithm
+    condition := sample(0.0, 0.1);
+    when condition then
+      x := pre(x) + 0.1;
+    end when;
+  end sample1;
+end eventTests;
+"); getErrorString();
+
+simulate(eventTests.sample1); getErrorString();
+val(x, 0.05);
+val(x, 0.55);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "eventTests.sample1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'eventTests.sample1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.1
+// 0.6
+// endResult

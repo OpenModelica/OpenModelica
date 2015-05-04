@@ -1,0 +1,33 @@
+// name: Bug3269_deleteFile.mos [BUG: #3269]
+// keywords: API for files
+// status: correct
+//
+
+"creating file";
+writeFile("nothingImportant.txt", "some text here from the nothingImportant.txt file"); getErrorString();
+"reading file";
+readFile("nothingImportant.txt"); getErrorString();
+"file exists?";
+regularFileExists("nothingImportant.txt"); getErrorString();
+"deleting file";
+deleteFile("nothingImportant.txt"); getErrorString();
+"file exists?";
+regularFileExists("nothingImportant.txt"); getErrorString();
+
+// Result:
+// "creating file"
+// true
+// ""
+// "reading file"
+// "some text here from the nothingImportant.txt file"
+// ""
+// "file exists?"
+// true
+// ""
+// "deleting file"
+// true
+// ""
+// "file exists?"
+// false
+// ""
+// endResult

@@ -1,0 +1,43 @@
+// name:     Simulation2
+// keywords: Simulation, BooleanModel, LargeSteps
+// status:   correct
+// teardown_command: rm -f Booleanmodel* Largesteps* output.log
+//
+
+// Model that tests discrete equations that do not contain zero crossings, e.g n = 1;
+loadFile("BooleanModel.mo");
+simulate(Booleanmodel, tolerance=1e-5, numberOfIntervals=100);
+val(startForward,0.0);
+val(startForward,0.5000001);
+val(startForward,0.9);
+val(mode,0.0);
+val(mode,0.5000001);
+val(mode,0.9);
+
+loadFile("LargeSteps.mo");
+simulate(Largesteps,stopTime=200,numberOfIntervals=100,tolerance=1e-10);
+val(x,0.0);
+val(x,200.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Booleanmodel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'Booleanmodel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// 1.0
+// 0.0
+// 2.0
+// 1.0
+// 0.0
+// true
+// record SimulationResult
+//     resultFile = "Largesteps_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 100, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'Largesteps', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// -0.7626479436897221
+// endResult

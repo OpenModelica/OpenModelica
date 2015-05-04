@@ -1,0 +1,360 @@
+module Eval:
+ with "Absyn.rml"
+  with "Env.rml"
+end
+ 
+(* Type lattice;  int --> real *)
+
+ relation binary_lub: (Env.Value,Env.Value) => Env.Value2 =
+ 
+   axiom binary_lub(Env.INTVAL v1, Env.INTVAL v2) => Env.INTVAL2(v1,v2)
+  
+   axiom binary_lub(Env.REALVAL r1, Env.REALVAL r2) => Env.REALVAL2(r1,r2)
+ 
+   rule  int_real(v1) => r1
+         -------------------------------------------------------------------
+         binary_lub(Env.INTVAL v1, Env.REALVAL r2) => Env.REALVAL2(r1,r2)
+        
+   rule  int_real(v2) => r2
+         -------------------------------------------------------------------
+         binary_lub(Env.REALVAL r1, Env.INTVAL v2) => Env.REALVAL2(r1,r2)
+ 
+ end
+
+(* Promotion and type check *)
+ 
+relation promote: (Env.Value, Env.Type) => Env.Value =
+ 
+  axiom promote(Env.INTVAL v, Env.INTTYPE) => Env.INTVAL v
+  axiom promote(Env.REALVAL r, Env.REALTYPE) => Env.REALVAL r
+  axiom promote(Env.BOOLVAL b, Env.BOOLTYPE) => Env.BOOLVAL b
+ 
+  rule  int_real(v) => r
+        -----------------------------------------------------
+        promote(Env.INTVAL v, Env.REALTYPE) => Env.REALVAL r
+end
+ 
+
+(* Auxiliary functions for applying the binary operators *)
+ 
+relation apply_int_binary: (Absyn.BinOp, int, int) => int =
+ 
+  rule  int_add(v1,v2) => v3
+        ---------------------------------------
+        apply_int_binary(Absyn.ADD,v1,v2) => v3
+ 
+   rule  int_sub(v1,v2) => v3
+         ---------------------------------------
+         apply_int_binary(Absyn.SUB,v1,v2) => v3
+ 
+   rule  int_mul(v1,v2) => v3
+         ---------------------------------------
+         apply_int_binary(Absyn.MUL,v1,v2) => v3
+ 
+   rule  int_div(v1,v2) => v3
+         ---------------------------------------
+         apply_int_binary(Absyn.DIV,v1,v2) => v3
+      
+end
+
+ 
+ relation apply_real_binary: (Absyn.BinOp, real, real) => real =
+ 
+   rule  real_add(v1,v2) => v3
+         ----------------------------------------
+         apply_real_binary(Absyn.ADD,v1,v2) => v3
+ 
+   rule  real_sub(v1,v2) => v3
+         ----------------------------------------
+         apply_real_binary(Absyn.SUB,v1,v2) => v3
+ 
+   rule  real_mul(v1,v2) => v3
+         ----------------------------------------
+         apply_real_binary(Absyn.MUL,v1,v2) => v3
+  
+   rule  real_div(v1,v2) => v3
+         ----------------------------------------
+        apply_real_binary(Absyn.DIV,v1,v2) => v3
+ end
+ 
+(* Auxiliary functions for applying the unary operators *)
+ 
+relation apply_int_unary: (Absyn.UnOp, int) => int = 
+ 
+  rule  int_neg v1 => v2
+        -----------------------------------
+        apply_int_unary(Absyn.NEG,v1) => v2
+end
+ 
+ 
+relation apply_real_unary: (Absyn.UnOp, real) => real = 
+ 
+  rule  real_neg v1 => v2
+        ------------------------------------
+        apply_real_unary(Absyn.NEG,v1) => v2
+end
+ 
+(* Auxiliary functions for applying the relation operators *)
+ 
+relation apply_int_relation: (Absyn.RelOp, int, int) => bool =
+ 
+  rule  int_lt(v1,v2) => v3
+        ----------------------------------------
+        apply_int_relation(Absyn.LT,v1,v2) => v3
+ 
+  rule  int_le(v1,v2) => v3
+        ----------------------------------------
+        apply_int_relation(Absyn.LE,v1,v2) => v3
+ 
+  rule  int_gt(v1,v2) => v3
+        ----------------------------------------
+        apply_int_relation(Absyn.GT,v1,v2) => v3
+ 
+  rule  int_ge(v1,v2) => v3
+        ----------------------------------------
+        apply_int_relation(Absyn.GE,v1,v2) => v3
+ 
+  rule  int_ne(v1,v2) => v3
+        ----------------------------------------
+        apply_int_relation(Absyn.NE,v1,v2) => v3
+ 
+  rule  int_eq(v1,v2) => v3
+        ----------------------------------------
+        apply_int_relation(Absyn.EQ,v1,v2) => v3
+end
+ 
+relation apply_real_relation: (Absyn.RelOp, real, real) => bool =
+ 
+  rule  real_lt(v1,v2) => v3
+        -----------------------------------------
+        apply_real_relation(Absyn.LT,v1,v2) => v3
+ 
+  rule  real_le(v1,v2) => v3
+        -----------------------------------------
+        apply_real_relation(Absyn.LE,v1,v2) => v3
+ 
+  rule  real_gt(v1,v2) => v3
+        -----------------------------------------
+        apply_real_relation(Absyn.GT,v1,v2) => v3
+ 
+  rule  real_ge(v1,v2) => v3
+        -----------------------------------------
+        apply_real_relation(Absyn.GE,v1,v2) => v3
+ 
+  rule  real_ne(v1,v2) => v3
+        -----------------------------------------
+        apply_real_relation(Absyn.NE,v1,v2) => v3
+ 
+  rule  real_eq(v1,v2) => v3
+        -----------------------------------------
+        apply_real_relation(Absyn.EQ,v1,v2) => v3
+end
+    
+(* EVALUATE A SINGLE EXPRESSION in an environment. Return
+   the new value. Expressions do not change environments. *)
+ 
+relation eval_expr: (Env.Env, Absyn.Expr) => Env.Value =
+ 
+  (* Constants *)
+ 
+  axiom eval_expr(env,Absyn.INTCONST v) => Env.INTVAL v
+  axiom eval_expr(env,Absyn.REALCONST r) => Env.REALVAL r
+ 
+  (* Binary operators *)
+ 
+  rule  eval_expr(env,e1) => v1 &
+        eval_expr(env,e2) => v2 &
+        binary_lub(v1,v2) => Env.INTVAL2(c1,c2) &
+        apply_int_binary(binop,c1,c2) => v3
+        ---------------------------------------------------------
+        eval_expr(env,Absyn.BINARY(e1,binop,e2)) => Env.INTVAL v3
+ 
+  rule  eval_expr(env,e1) => v1 &
+        eval_expr(env,e2) => v2 &
+        binary_lub(v1,v2) => Env.REALVAL2(r1,r2) &
+        apply_real_binary(binop,r1,r2) => r3
+        ---------------------------------------------------------
+        eval_expr(env,Absyn.BINARY(e1,binop,e2)) => Env.REALVAL r3
+        
+       
+
+ rule  print "Error: binary operator applied to invalid type(s)\n"
+       -------------------------------------------------------------
+       eval_expr(_,Absyn.BINARY(_,_,_)) => fail
+ 
+  (* Unary operators *)
+  
+   rule  eval_expr(env,e1) => Env.INTVAL c1 &
+        apply_int_unary(unop,c1) => c2
+        ----------------------------------------------------
+        eval_expr(env,Absyn.UNARY(unop,e1)) => Env.INTVAL c2
+ 
+  rule  eval_expr(env,e1) => Env.REALVAL r1 &
+        apply_real_unary(unop,r1) => r2
+        -----------------------------------------------------
+        eval_expr(env,Absyn.UNARY(unop,e1)) => Env.REALVAL r2
+ 
+  rule  print "Error: unary operator applied to invalid type\n"
+        ---------------------------------------------------------
+        eval_expr(_,Absyn.UNARY(_,_)) => fail
+ 
+  (* Relation operators *)
+ 
+  rule  eval_expr(env,e1) => v1 &
+        eval_expr(env,e2) => v2 &
+        binary_lub(v1,v2) => Env.INTVAL2(c1,c2) &
+        apply_int_relation(relop,c1,c2) => b
+        ---------------------------------------------------------
+        eval_expr(env,Absyn.RELATION(e1,relop,e2)) => Env.BOOLVAL b
+ 
+  rule  eval_expr(env,e1) => v1 &
+        eval_expr(env,e2) => v2 &
+        binary_lub(v1,v2) => Env.REALVAL2(r1,r2) &
+        apply_real_relation(relop,r1,r2) => b
+        ---------------------------------------------------------
+        eval_expr(env,Absyn.RELATION(e1,relop,e2)) => Env.BOOLVAL b
+ 
+ 
+  rule  print "Error: relation operator applied to invalid type(s)\n"
+        ---------------------------------------------------------------
+        eval_expr(_,Absyn.RELATION(_,_,_)) => fail
+ 
+  (* Variable lookup *)
+ 
+  rule  Env.lookup(env,id) => v1
+        --------------------------------------
+        eval_expr(env,Absyn.VARIABLE(id)) => v1
+ 
+  rule  not Env.lookup(env,id) => _ &
+        print "Error: undefined variable (" & print id & print ")\n"
+--------------------------------------------------------------
+        eval_expr(env,Absyn.VARIABLE(id)) => fail
+ 
+end
+
+ 
+
+relation print_value: Env.Value => () =
+ 
+  rule  int_string(v) => vstr &
+        print(vstr) & print("\n")
+        ------------------------
+        print_value(Env.INTVAL v)
+ 
+  rule  real_string(r) => vstr &
+        print(vstr) & print("\n")
+        -------------------------
+        print_value Env.REALVAL r
+ 
+  rule  print "true\n"
+        ----------------------------
+        print_value Env.BOOLVAL true
+ 
+  rule  print "false\n"
+        -----------------------------
+        print_value Env.BOOLVAL false
+ 
+end
+  
+(* Evaluate a single statement. Pass environment forward.*)
+ 
+relation eval_stmt: (Env.Env,Absyn.Stmt) => Env.Env =
+ 
+  rule  eval_expr(env,e) => v &
+        Env.lookuptype(env,id) => ty &
+        promote(v,ty) => v2 &
+        Env.update(env,id,ty,v2) => env1
+        -----------------------------------------
+        eval_stmt(env,Absyn.ASSIGN(id,e)) => env1
+ 
+  rule  eval_expr(env,e) => v &
+        print "Error: assignment mismatch or variable missing\n"
+        ----------------------------------------------------------
+        eval_stmt(env,Absyn.ASSIGN(id,e)) => fail
+ 
+  rule  eval_expr(env,e) => v &
+        print_value(v)
+        ------------------------------------
+        eval_stmt(env,Absyn.WRITE(e)) => env
+ 
+  axiom eval_stmt(env,NOOP) => env
+ 
+  rule  eval_expr(env,e) => Env.BOOLVAL true &
+        eval_stmt_list(env,c) => env1
+        --------------------------------------
+        eval_stmt(env,Absyn.IF(e,c,_)) => env1
+ 
+  rule  eval_expr(env,e) => Env.BOOLVAL false &
+        eval_stmt_list(env,a) => env1
+        ---------------------------------------
+        eval_stmt(env,Absyn.IF(e,_,a)) => env1
+ 
+   
+ 
+  rule  eval_expr(env,e) => Env.BOOLVAL false &
+        eval_stmt_list(env,a) => env1
+        ---------------------------------------
+        eval_stmt(env,Absyn.IF(e,_,a)) => env1
+ 
+end
+ 
+(* Evaluate a list of statements in an environent.
+   Pass environment forward *)
+
+and eval_stmt_list: (Env.Env,Absyn.StmtList) => Env.Env =
+ 
+  axiom eval_stmt_list(env,[]) => env
+ 
+  rule  eval_stmt(env,s) => env1 &
+        eval_stmt_list(env1,ss) => env2
+        ---------------------------------
+        eval_stmt_list(env,(s::ss)) => env2
+end
+
+ 
+(* EVALUATING DECLARATIONS *)
+ 
+(* Evaluate a single statement. Pass environment forward.*)
+ 
+relation eval_decl: (Env.Env,Absyn.Decl) => Env.Env =
+ 
+  rule  Env.update(env,var,Env.INTTYPE, Env.INTVAL 0) => env2
+        -----------------------------------------------------
+        eval_decl(env,Absyn.NAMEDECL(var,"integer")) => env2
+ 
+  rule  Env.update(env,var,Env.REALTYPE, Env.REALVAL 0.0) => env2
+        ---------------------------------------------------------
+        eval_decl(env,Absyn.NAMEDECL(var,"real")) => env2 
+ 
+  rule  Env.update(env,var,Env.BOOLTYPE, Env.BOOLVAL false) => env2
+        -----------------------------------------------------------
+        eval_decl(env,Absyn.NAMEDECL(var,"boolean")) => env2
+end
+
+(* Evaluate a list of declarations, extending the environent. *)
+ relation eval_decl_list: (Env.Env,Absyn.DeclList) => Env.Env =
+ 
+   axiom eval_decl_list(env,[]) => env
+ 
+   rule  eval_decl(env,s) => env1 &
+         eval_decl_list(env1,ss) => env2
+         ---------------------------------
+         eval_decl_list(env,(s::ss)) => env2
+ end
+ 
+
+
+ 
+(* EVALUTATING A PROGRAM means to evaluate the list of statements,
+   with an initial environment containing just standard defs. *)
+ 
+relation evalprog: Absyn.Prog => () =
+ 
+  rule  Env.initial => env1 &
+        eval_decl_list(env1,decls) => env2 &
+        eval_stmt_list(env2,stmts) => env3
+        ------------------------------------
+        evalprog(Absyn.PROG(decls,stmts)) => ()
+ 
+end
+

@@ -1,0 +1,40 @@
+//name:        simulate(Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+simulate(Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: simulate(Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT)
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = "Simulation failed for model: Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT
+// Error: Error building simulator. Buildlog: gcc  -O3 -falign-functions -msse2 -mfpmath=sse   -I\"c:/bin/cygwin/home/adrpo/dev/OpenModelica/build/include/omc\" -I.    -c -o Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.o Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c: In function 'eqFunction_0':
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:323: error: 'Modelica_Media_Water_StandardWater_molarMass_rettype' undeclared (first use in this function)
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:323: error: (Each undeclared identifier is reported only once
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:323: error: for each function it appears in.)
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:323: error: expected ';' before 'tmp1'
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:326: error: 'tmp1' undeclared (first use in this function)
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c: In function 'eqFunction_2':
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:341: error: 'Modelica_Media_Water_StandardWater_molarMass_rettype' undeclared (first use in this function)
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:341: error: expected ';' before 'tmp3'
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:344: error: 'tmp3' undeclared (first use in this function)
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c: In function 'eqFunction_4':
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:359: error: 'Modelica_Media_Water_StandardWater_molarMass_rettype' undeclared (first use in this function)
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:359: error: expected ';' before 'tmp5'
+// Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.c:362: error: 'tmp5' undeclared (first use in this function)
+// mingw32-make: *** [Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.o] Error 1
+// 
+// "
+// end SimulationResult;
+// endResult

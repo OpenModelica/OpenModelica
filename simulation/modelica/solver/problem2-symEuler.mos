@@ -1,0 +1,77 @@
+// name: problem2-symEuler
+// status: correct
+// teardown_command: rm -f testSolver.problem2* output.log
+
+stopTime := 321.8122;
+loadFile("testSolverPackage.mo"); getErrorString();
+setCommandLineOptions("+symEuler"); getErrorString();
+simulate(testSolver.problem2, stopTime=stopTime, numberOfIntervals=12000, method="symEuler"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
+  "ReferenceFiles/testSolver.problem2.mat",
+  "testSolver.problem2_diff.csv",0.1,0.1,
+{
+"y[1]",
+"y[2]",
+"y[3]",
+"y[4]",
+"y[5]",
+"y[6]",
+"y[7]",
+"y[8]",
+"der(y[2])",
+"der(y[3])",
+"der(y[4])",
+"der(y[5])",
+"der(y[6])",
+"der(y[7])",
+"der(y[8])"
+});
+getErrorString();
+
+val(y[1], stopTime); 
+val(y[2], stopTime);
+val(y[3], stopTime);
+val(y[4], stopTime);
+val(y[5], stopTime);
+val(y[6], stopTime);
+val(y[7], stopTime);
+val(y[8], stopTime);
+/*
+val(der(y[1]), stopTime);
+val(der(y[2]), stopTime);
+val(der(y[3]), stopTime);
+val(der(y[4]), stopTime);
+val(der(y[5]), stopTime);
+val(der(y[6]), stopTime);
+val(der(y[7]), stopTime);
+val(der(y[8]), stopTime);
+*/
+
+
+// Result:
+// 321.8122
+// true
+// ""
+// true
+// ""
+//
+// The selection of a new tearing variable failed.record SimulationResult
+//     resultFile = "testSolver.problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 12000, tolerance = 1e-06, method = 'symEuler', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// {"Files Equal!"}
+// ""
+// 0.0007369290419363762
+// 0.0001442086592844516
+// 5.884991587645002e-05
+// 0.001175269748558053
+// 0.002380428328757465
+// 0.006220476175018463
+// 0.002845778811831937
+// 0.002854221188168088
+// endResult

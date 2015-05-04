@@ -1,0 +1,21 @@
+// name:     Random2.mos
+// keywords: #2352
+// status:   correct
+
+loadModel(Modelica); getErrorString();
+loadFile("Random2.mo"); getErrorString();
+simulate(Random.TestRandom, stopTime=10); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Random.TestRandom_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Random.TestRandom', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// endResult

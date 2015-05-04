@@ -1,0 +1,37 @@
+module Main:
+with "Parse.rml"
+with "Eval.rml"
+end
+
+relation printvalue:(Eval.Value) => () =
+  rule  int_string(x) => x1 &
+        print x1
+        ---------------------
+        printvalue(Eval.INTval(x))
+
+  rule  real_string(rx) => x1 &
+        print x1
+        ----------------------
+        printvalue(Eval.REALval(rx))
+end 
+
+
+relation eval_loop:  Eval.Env => ()  =
+  rule  print("\n> ") &
+        Parse.parse => ast &
+        Eval.eval(env,ast) => (env2,value)  &
+        printvalue(value) &
+        print("\n")
+        ---------------
+        eval_loop(env)
+
+end 
+
+
+relation main:  string list => ()  =
+  rule  eval_loop(Eval.init_env) 
+        ------------------------
+        main _
+end 
+
+

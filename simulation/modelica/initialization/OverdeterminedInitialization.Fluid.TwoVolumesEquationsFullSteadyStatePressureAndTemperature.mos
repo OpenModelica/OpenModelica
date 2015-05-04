@@ -1,0 +1,20 @@
+// name: OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStatePressureAndTemperature
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStatePressureAndTemperature); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStatePressureAndTemperature","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStatePressureAndTemperature_init.xml"}
+// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.p1 = 0.0
+// Warning: The initial conditions are over specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// endResult

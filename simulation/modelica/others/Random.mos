@@ -1,0 +1,248 @@
+// name:     Random.mos
+// keywords: function calls Modelica.Utilities.Streams.print testing
+// status:  correct
+// teardown_command: rm -rf testRandom1* testRandom2* testRandom3* testRandom2_* output.log
+// tests: function calls
+//        Modelica.Utilities.Streams.print
+//        String(x, format);
+//        interactive call of functions
+//        when with no-return call in algorithm sections
+//
+
+
+setCommandLineOptions("+std=3.2"); // So we do not need to mark functions "impure"
+loadFile("Random.mo"); getErrorString();
+
+testRandom1({5,6,13});
+testRandom1({6,7,2});
+testRandom1({33,21,17});
+
+instantiateModel(testRandom2); getErrorString();
+simulate(testRandom2, stopTime=3); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// See if seed_start is OK
+// seed_start[1] = 5
+// seed_start[2] = 6
+// seed_start[3] = 13
+// See if seed is set from seed_start
+// seed[1] = 5
+// seed[2] = 6
+// seed[3] = 13
+// x = 0.1351802310973727
+// x = 0.07698908611783695
+// x = 0.6320634440543992
+// x = 0.1746304784651729
+// x = 0.2261487421133115
+// x = 0.5822825403329424
+// x = 0.8685325299092261
+// x = 0.3247009996034561
+// x = 0.1539904247592702
+// x = 0.9668480139584232
+// 0.9668480139584232
+// See if seed_start is OK
+// seed_start[1] = 6
+// seed_start[2] = 7
+// seed_start[3] = 2
+// See if seed is set from seed_start
+// seed[1] = 6
+// seed[2] = 7
+// seed[3] = 2
+// x = 0.08483547196048632
+// x = 0.5353798901434892
+// x = 0.4768262391718505
+// x = 0.7703588380462374
+// x = 0.9086443360920615
+// x = 0.9854621425896027
+// x = 0.4482131888968541
+// x = 0.2495274098011118
+// x = 0.9816385353446079
+// x = 0.4101378849580569
+// 0.4101378849580569
+// See if seed_start is OK
+// seed_start[1] = 33
+// seed_start[2] = 21
+// seed_start[3] = 17
+// See if seed is set from seed_start
+// seed[1] = 33
+// seed[2] = 21
+// seed[3] = 17
+// x = 0.4009159389765675
+// x = 0.5804987598022004
+// x = 0.5620918184705913
+// x = 0.5724159035264322
+// x = 0.8498200264820869
+// x = 0.06581013494972077
+// x = 0.2625044697939488
+// x = 0.7933464385344385
+// x = 0.8767777042924848
+// x = 0.6998297199089916
+// 0.6998297199089916
+// See if seed_start is OK
+// seed_start[1] = 23
+// seed_start[2] = 87
+// seed_start[3] = 187
+// See if seed is set from seed_start
+// seed[1] = 23
+// seed[2] = 87
+// seed[3] = 187
+// x = 0.6720613541740214
+// x = 0.3678597646977232
+// x = 0.6041085613242591
+// x = 0.1667374195729036
+// x = 0.4629589578171096
+// x = 0.9289893342375365
+// x = 0.6531921316126386
+// x = 0.5926293930235833
+// x = 0.5294703487946858
+// x = 0.7684225743864566
+// "function Modelica.Utilities.Streams.print \"Print string to terminal or file\"
+//   input String string = \"\" \"String to be printed\";
+//   input String fileName = \"\" \"File where to print (empty string is the terminal)\";
+//
+//   external \"C\" myPuts(string, fileName);
+// end Modelica.Utilities.Streams.print;
+//
+// function random \"Pseudo random number generator\"
+//   input Integer[3] seedIn \"Seed from last call\";
+//   output Real x \"Random number between 0 and 1\";
+//   output Integer[3] seedOut \"Modified seed for next call\";
+// algorithm
+//   seedOut[1] := 171 * seedIn[1] + -30269 * div(171 * seedIn[1], 30269);
+//   seedOut[2] := 172 * seedIn[2] + -30307 * div(172 * seedIn[2], 30307);
+//   seedOut[3] := 170 * seedIn[3] + -30323 * div(170 * seedIn[3], 30323);
+//   for i in 1:3 loop
+//     if seedOut[i] == 0 then
+//       seedOut[i] := 1;
+//     end if;
+//   end for;
+//   x := /*Real*/(seedOut[1]) / 30269.0 + /*Real*/(seedOut[2]) / 30307.0 + /*Real*/(seedOut[3]) / 30323.0 - div(/*Real*/(seedOut[1]) / 30269.0 + /*Real*/(seedOut[2]) / 30307.0 + /*Real*/(seedOut[3]) / 30323.0, 1.0);
+// end random;
+//
+// function testRandom3
+//   input Integer[3] seed_start = {23, 87, 187};
+//   output Real x;
+//   protected Integer[3] seed = {seed_start[1], seed_start[2], seed_start[3]};
+// algorithm
+//   Modelica.Utilities.Streams.print(\"See if seed_start is OK
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed_start[1] = \" + String(seed_start[1], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed_start[2] = \" + String(seed_start[2], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed_start[3] = \" + String(seed_start[3], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"See if seed is set from seed_start
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed[1] = \" + String(seed[1], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed[2] = \" + String(seed[2], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed[3] = \" + String(seed[3], 0, true) + \"
+//   \", \"\");
+//   for i in 1:10 loop
+//     (x, seed) := random({seed[1], seed[2], seed[3]});
+//     Modelica.Utilities.Streams.print(\"x = \" + String(x, 0, true, 16) + \"
+//     \", \"\");
+//   end for;
+// end testRandom3;
+//
+// class testRandom2
+//   parameter Integer seed_start[1] = 23;
+//   parameter Integer seed_start[2] = 87;
+//   parameter Integer seed_start[3] = 187;
+//   Integer seed[1](start = seed_start[1], fixed = true);
+//   Integer seed[2](start = seed_start[2], fixed = true);
+//   Integer seed[3](start = seed_start[3], fixed = true);
+//   parameter Real y = testRandom3({seed_start[1], seed_start[2], seed_start[3]});
+//   Real x;
+// algorithm
+//   when sample(0.0, 0.2) then
+//     (x, seed) := random({pre(seed[1]), pre(seed[2]), pre(seed[3])});
+//     Modelica.Utilities.Streams.print(\"time = \" + String(time, \".1f\") + \", x = \" + String(x, \".6f\") + \"
+//     \", \"\");
+//   end when;
+// end testRandom2;
+// "
+// ""
+// See if seed_start is OK
+// seed_start[1] = 23
+// seed_start[2] = 87
+// seed_start[3] = 187
+// See if seed is set from seed_start
+// seed[1] = 23
+// seed[2] = 87
+// seed[3] = 187
+// x = 0.6720613541740214
+// x = 0.3678597646977232
+// x = 0.6041085613242591
+// x = 0.1667374195729036
+// x = 0.4629589578171096
+// x = 0.9289893342375365
+// x = 0.6531921316126386
+// x = 0.5926293930235833
+// x = 0.5294703487946858
+// x = 0.7684225743864566
+// record SimulationResult
+//     resultFile = "testRandom2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testRandom2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "See if seed_start is OK
+// seed_start[1] = 23
+// seed_start[2] = 87
+// seed_start[3] = 187
+// See if seed is set from seed_start
+// seed[1] = 23
+// seed[2] = 87
+// seed[3] = 187
+// x = 0.6720613541740214
+// x = 0.3678597646977232
+// x = 0.6041085613242591
+// x = 0.1667374195729036
+// x = 0.4629589578171096
+// x = 0.9289893342375365
+// x = 0.6531921316126386
+// x = 0.5926293930235833
+// x = 0.5294703487946858
+// x = 0.7684225743864566
+// See if seed_start is OK
+// seed_start[1] = 23
+// seed_start[2] = 87
+// seed_start[3] = 187
+// See if seed is set from seed_start
+// seed[1] = 23
+// seed[2] = 87
+// seed[3] = 187
+// x = 0.6720613541740214
+// x = 0.3678597646977232
+// x = 0.6041085613242591
+// x = 0.1667374195729036
+// x = 0.4629589578171096
+// x = 0.9289893342375365
+// x = 0.6531921316126386
+// x = 0.5926293930235833
+// x = 0.5294703487946858
+// x = 0.7684225743864566
+// time = 0.0, x = 0.672061
+// time = 0.2, x = 0.367860
+// time = 0.4, x = 0.604109
+// time = 0.6, x = 0.166737
+// time = 0.8, x = 0.462959
+// time = 1.0, x = 0.928989
+// time = 1.2, x = 0.653192
+// time = 1.4, x = 0.592629
+// time = 1.6, x = 0.529470
+// time = 1.8, x = 0.768423
+// time = 2.0, x = 0.673137
+// time = 2.2, x = 0.677167
+// time = 2.4, x = 0.042806
+// time = 2.6, x = 0.064589
+// time = 2.8, x = 0.674971
+// time = 3.0, x = 0.180925
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// endResult

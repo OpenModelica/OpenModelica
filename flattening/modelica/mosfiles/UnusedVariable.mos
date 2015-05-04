@@ -1,0 +1,22 @@
+// name: UnusedVariable
+// status: correct
+
+loadString("
+model M
+  Real r = 1.5;
+  Real y;
+  Real z = r;
+equation
+  1.5 = 5;
+end M;
+");
+// setCommandLineOptions("+preOptModules=partitionIndependentBlocks");
+translateModel(M);getErrorString();
+
+// Result:
+// true
+// false
+// "[<interactive>:4:3-4:9:writable] Error: Variable y is not referenced in any equation (possibly after symbolic manipulations).
+// Error: Internal error pre-optimization module clockPartitioning failed.
+// "
+// endResult

@@ -1,0 +1,26 @@
+// status: correct
+
+setCommandLineOptions("+g=MetaModelica");loadString("function polymorphicReduction
+  input list<list<Integer>> ll = {{1}, {2}};
+  output Integer i = intAdd(e for e in {1,2});
+  output list<Integer> l1 = listAppend(e for e in ll);
+  output list<Integer> l2 = listAppend(e for e in {});
+  output list<Integer> l3 = cons(e for e in {});
+  output list<Integer> l4 = cons(e for e in ll);
+end polymorphicReduction;");getErrorString();
+setCommandLineOptions("+d=evalfunc,nogen");
+polymorphicReduction();getErrorString();
+setCommandLineOptions("+d=noevalfunc,gen");
+polymorphicReduction();getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// (3,{2,1},{},{},{{2},{1}})
+// ""
+// true
+// (3,{2,1},{},{},{{2},{1}})
+// ""
+// endResult

@@ -1,0 +1,59 @@
+// name:     Modelica_Electrical_Analog_Examples_ChuaCircuit
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu Modelica_Electrical_Analog_Examples_ChuaCircuit_* Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo Modelica_Electrical_Analog_Examples_ChuaCircuit.libs Modelica_Electrical_Analog_Examples_ChuaCircuit.lib Modelica_Electrical_Analog_Examples_ChuaCircuit.so Modelica_Electrical_Analog_Examples_ChuaCircuit.dll Modelica_Electrical_Analog_Examples_ChuaCircuit.c Modelica_Electrical_Analog_Examples_ChuaCircuit.makefile
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+translateModelFMU(Modelica.Electrical.Analog.Examples.ChuaCircuit, version="2.0");
+getErrorString();
+
+importFMU("Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu"); getErrorString();
+
+loadFile("Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo"); getErrorString();
+simulate(Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU,stopTime=3.0);
+
+val(L_i, 0);
+val(L_i, 1);
+val(L_i, 2);
+val(L_i, 3);
+
+val(C1_v, 0);
+val(C1_v, 1);
+val(C1_v, 2);
+val(C1_v, 3);
+
+val(C2_v, 0);
+val(C2_v, 1);
+val(C2_v, 2);
+val(C2_v, 3);
+
+// Result:
+// true
+// "SimCode: The model Modelica.Electrical.Analog.Examples.ChuaCircuit has been translated to FMU"
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// "Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// 0.0006245340117244422
+// 0.0024876865484272357
+// 0.005573487284327729
+// 4.0
+// 3.9733295653504372
+// 3.9483220664763445
+// 3.924937636301702
+// 0.0
+// 0.022458161761024432
+// 0.044631790790463644
+// 0.06651953357136013
+// endResult

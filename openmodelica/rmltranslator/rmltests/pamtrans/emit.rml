@@ -1,0 +1,121 @@
+module Emit:
+
+with "Mcode.rml"
+
+
+end
+
+relation emit_assembly:  Mcode.MCode list => ()  =
+
+  axiom  emit_assembly([])  =>  ()
+
+  rule   emit_instr(instr)  &
+         emit_assembly(rest)
+         --------------------------
+         emit_assembly(instr::rest)
+
+end (* emit_assembly *)
+
+
+
+relation emit_instr:  Mcode.MCode  =>  () =
+
+  rule  mbinop_to_str(mbinop) => op &
+        emit_op_operand(op, mopr)
+         --------------------------------------------
+         emit_instr(Mcode.MB(mbinop, mopr))
+
+  rule  mjmpop_to_str(jmpop) => op &
+        emit_op_operand(op, mlab) 
+         -------------------------------------------
+         emit_instr(Mcode.MJ(jmpop, mlab))
+
+  rule   emit_op_operand("J", mlab)
+         --------------------------
+         emit_instr(Mcode.MJMP(mlab))
+
+  rule   emit_op_operand("LOAD", mopr)
+         -----------------------------
+         emit_instr(Mcode.MLOAD(mopr))
+
+  rule   emit_op_operand("STO", mopr)
+         ----------------------------
+         emit_instr(Mcode.MSTO(mopr))
+
+  rule   emit_op_operand("GET", mopr)
+         ----------------------------
+         emit_instr(Mcode.MGET(mopr))
+
+  rule   emit_op_operand("PUT", mopr)
+         ----------------------------
+         emit_instr(Mcode.MPUT(mopr))
+
+  rule   emit_moperand(mlab)  &  print "\tLAB\n"
+         ---------------------------------------
+         emit_instr(Mcode.MLABEL(mlab))
+
+  rule   print "\tHALT\n"
+         -----------------
+         emit_instr(Mcode.MHALT)
+
+end (* emit_instr *)
+
+
+relation emit_op_operand:  (string,Mcode.MOperand) => ()  =
+
+  rule   print "\t"  &  print opstr  &  print "\t"  &
+         emit_moperand(mopr)  & print "\n"
+         ---------------------------------
+         emit_op_operand(opstr, mopr)
+
+end 
+
+relation emit_int: int => () =
+
+  rule  int_string i => s &
+        print s
+        ---------
+        emit_int i
+
+end
+
+
+
+relation emit_moperand:  Mcode.MOperand => ()  =
+
+  rule   print(id)
+         --------------------
+         emit_moperand(Mcode.I(id))
+
+  rule   emit_int(number)
+         -------------
+         emit_moperand(Mcode.N(number))
+
+  rule   print "L"  &  emit_int labno
+         -------------------------
+         emit_moperand(Mcode.L(labno))
+
+  rule   print "T"  &  emit_int tempnr
+         --------------------------
+         emit_moperand(Mcode.T(tempnr))
+
+end  (* emit_moperand *)
+
+
+relation mbinop_to_str:  Mcode.MBinOp => string  =
+  axiom  mbinop_to_str(Mcode.MADD)  => "ADD"
+  axiom  mbinop_to_str(Mcode.MSUB)  => "SUB"
+  axiom  mbinop_to_str(Mcode.MMULT) => "MULT"
+  axiom  mbinop_to_str(Mcode.MDIV)  => "DIV"
+end 
+
+
+relation mjmpop_to_str:  Mcode.MCondJmp => string  =
+  axiom mjmpop_to_str(Mcode.MJNP)  => "JNP"
+  axiom mjmpop_to_str(Mcode.MJP)   => "JP"
+  axiom mjmpop_to_str(Mcode.MJN)   => "JN"
+  axiom mjmpop_to_str(Mcode.MJNZ)  => "JNZ"
+  axiom mjmpop_to_str(Mcode.MJPZ)  => "JPZ"
+  axiom mjmpop_to_str(Mcode.MJZ)   => "JZ"
+end 
+

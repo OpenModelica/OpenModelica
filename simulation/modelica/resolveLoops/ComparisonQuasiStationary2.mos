@@ -1,0 +1,11 @@
+// name:      ComparisonQuasiStationary2
+// keywords:  resolveLoops
+// status:    correct
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("SimpleSolenoid2.mo"); getErrorString();
+
+loadFile("ComparisonQuasiStationary2.mo"); getErrorString();
+setDebugFlags("backenddaeinfo,stateselection,bltdump,resolveLoops"); getErrorString();
+simulate(ComparisonQuasiStationary2); getErrorString();

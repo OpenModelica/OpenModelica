@@ -1,0 +1,78 @@
+//name:        Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+// adrpo: add missing stateGraphRoot inner class
+addComponent(stateGraphRoot, StateGraph.StateGraphRoot, Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks);
+setComponentProperties(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, {false,false,false,false,false},{""},{true,false},{""}); getErrorString();
+setComponentComment(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, "added to make the model complete"); getErrorString();
+
+simulate(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// Ok
+// ""
+// Ok
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 900.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks
+// Warning: Parameter stop.buttonTimeTable has neither value nor start value, and is fixed during initialization (fixed=true)
+// [Sources.mo:2842:7-2843:108:writable] Warning: Failed to deduce dimensions of table due to unknown dimensions of modifier stop.buttonTimeTable.
+// Warning: Parameter start.buttonTimeTable has neither value nor start value, and is fixed during initialization (fixed=true)
+// [Sources.mo:2842:7-2843:108:writable] Warning: Failed to deduce dimensions of table due to unknown dimensions of modifier start.buttonTimeTable.
+// Warning: Alias variables tank1.medium.T = tank1.medium.state.T have start values tank1.T_start != 300.0. Use value from tank1.medium.T.
+// Warning: Alias variables tank1.medium.p = tank1.medium.state.p have start values tank1.p_start != 100000.0. Use value from tank1.medium.p.
+// Warning: Alias variables tank1.medium.p = tank1.heatTransfer.states[1].p have start values tank1.p_start != 100000.0. Use value from tank1.medium.p.
+// Warning: Alias variables tank1.medium.T = tank1.heatTransfer.states[1].T have start values tank1.T_start != 300.0. Use value from tank1.medium.T.
+// Warning: Alias variables tank2.medium.T = tank2.medium.state.T have start values tank2.T_start != 300.0. Use value from tank2.medium.T.
+// Warning: Alias variables tank2.medium.p = tank2.medium.state.p have start values tank2.p_start != 100000.0. Use value from tank2.medium.p.
+// Warning: Alias variables tank2.medium.p = tank2.heatTransfer.states[1].p have start values tank2.p_start != 100000.0. Use value from tank2.medium.p.
+// Warning: Alias variables tank2.medium.T = tank2.heatTransfer.states[1].T have start values tank2.T_start != 300.0. Use value from tank2.medium.T.
+// Error: Error building simulator. Buildlog: gcc   -falign-functions -msse2 -mfpmath=sse   -I\"c:/bin/cygwin/home/adrpo/dev/OpenModelica/build/include/omc\" -I.    -c -o Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.o Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'residualFunc91':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:833: error: too few arguments to function 'array_alloc_scalar_real_array'
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'residualFunc119':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:969: error: too few arguments to function 'array_alloc_scalar_real_array'
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:997: error: too few arguments to function 'array_alloc_scalar_real_array'
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'residualFunc142':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:1167: error: too few arguments to function 'array_alloc_scalar_real_array'
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_75':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:5619: error: '$Ptank2$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:5619: error: (Each undeclared identifier is reported only once
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:5619: error: for each function it appears in.)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_76':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:5625: error: '$Ptank2$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_94':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:5778: error: '$Ptank2$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_101':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:5976: error: '$Ptank1$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_102':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:5982: error: '$Ptank1$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_122':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:6127: error: '$Ptank1$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_130':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:6301: error: '$Ptank2$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_148':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:6430: error: '$Ptank1$Psystem$Pg' undeclared (first use in this function)
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_438':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:6627: warning: passing argument 3 of 'array_alloc_scalar_string_array' discards qualifiers from pointer target type
+// c:/bin/cygwin/home/adrpo/dev/OpenModelica/build/include/omc/string_array.h:129: note: expected 'modelica_string_t' but argument is of type 'const char *'
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c: In function 'eqFunction_433':
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:6734: warning: passing argument 3 of 'array_alloc_scalar_string_array' discards qualifiers from pointer target type
+// c:/bin/cygwin/home/adrpo/dev/OpenModelica/build/include/omc/string_array.h:129: note: expected 'modelica_string_t' but argument is of type 'const char *'
+// mingw32-make: *** [Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.o] Error 1
+// 
+// "
+// end SimulationResult;
+// ""
+// endResult

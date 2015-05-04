@@ -1,0 +1,33 @@
+// name:     DrModelicaForTesting.KyenesianModel.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.KyenesianModel
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.KyenesianModel.* DrModelicaForTesting.KyenesianModel_* DrModelicaForTesting.KyenesianModel DrModelicaForTesting.KyenesianModel.exe DrModelicaForTesting.KyenesianModel.cpp DrModelicaForTesting.KyenesianModel.makefile DrModelicaForTesting.KyenesianModel.libs DrModelicaForTesting.KyenesianModel.log DrModelicaForTesting.KyenesianModel.c DrModelicaForTesting.KyenesianModel.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.KyenesianModel, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.KyenesianModel_res.mat",
+  "ReferenceFiles/KyenesianModel_ref.mat","DrModelicaForTesting.KyenesianModel_diff.csv",0.01,0.013,
+  {"a", "b", "consumption", "expenses"});
+  
+ 
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.KyenesianModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.KyenesianModel', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

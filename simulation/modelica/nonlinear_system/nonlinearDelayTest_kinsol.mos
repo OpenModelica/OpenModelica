@@ -1,0 +1,24 @@
+// name: nonlinearDelayTest [kinsol]
+// status: correct
+// teardown_command: rm -f nonlinear_system.nonlinearDelayTest* _nonlinear_system.nonlinearDelayTest* output.log
+
+loadFile("nonlinearDelayTest.mo"); getErrorString();
+simulate(nonlinear_system.nonlinearDelayTest, simflags="-nls=kinsol"); getErrorString();
+
+val(x1, {0.0,0.25,0.5,0.75,1.0});
+val(x2, {0.0,0.25,0.5,0.75,1.0});
+val(y, {0.0,0.25,0.5,0.75,1.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.nonlinearDelayTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.nonlinearDelayTest', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {1.5723027555148466,1.6184213802380978,1.7380593714638441,1.8189456084123032,1.9070393928275182}
+// {-0.7861513777574233,-0.7500029985869118,-0.6996133736697595,-0.6092948563143592,-0.49955566400366774}
+// {0.0,0.20155291932791783,0.43834592847773446,0.7178289496303606,1.0446674364918889}
+// endResult

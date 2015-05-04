@@ -1,0 +1,22 @@
+// name:     Test to return multiple values
+// keywords: multiple return
+// status:   correct
+// 
+//
+//  Not working:
+//
+
+loadFile("func_multiple_return.mo");
+MultiRet(77);
+(a,b,c) := MultiRet(2);
+a;
+b;
+c;
+// Result:
+//true
+//(770,7700.0,0)
+//
+//20
+//200.0
+//0
+// endResult

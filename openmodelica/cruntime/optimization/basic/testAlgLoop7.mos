@@ -1,0 +1,84 @@
+// name: testAlgLoop7
+// status: correct
+
+setCommandLineOptions("+gDynOpt +d=extendsDynOpt");
+//setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model testAlgLoop7
+  Real x1(fixed=true,start=1,min=-2,max=2),x2(min=-2,max=2,start = -1, fixed=true);
+  input Real u(min=-1,max=1,start=1);
+  Real con(min=0,max=3) = (der(x2)+der(x1)+x1) annotation(isConstraint=true);
+  Real cost = (x1^2+x2^2) annotation(isMayer=true);
+equation
+  log(der(x1) + der(x2)+x1) = u*x1;
+  sin(der(x1))/(2+cos(der(x2))) = x2;
+end testAlgLoop7;
+");
+getErrorString();
+
+optimize(testAlgLoop7, numberOfIntervals=100, tolerance = 1e-12, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1",stopTime=0.5);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop7_res.mat","ReferenceFiles/testAlgLoop7_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testAlgLoop7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 100, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1'",
+//     messages = "
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 1, nominal = 2, min = -2, max = 2, init = 1)
+// State[1]:x2(start = -1, nominal = 2, min = -2, max = 2, init = -1)
+// Input[2]:OMC$Input2(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[3]:OMC$Input3(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[4]:u(start = 1, nominal = 1, min = -1, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 3
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 3 for the constraint $OMC$con$Loop$1(time = 0.005)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.835916 for the constraint $OMC$con$Loop$1(time = 0.005)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.386334 for the constraint $OMC$con$Loop$1(time = 0.005)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0942439 for the constraint $OMC$con$Loop$1(time = 0.005)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0199815 for the constraint $OMC$con$Loop$1(time = 0.005)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00278515 for the constraint $OMC$con$Loop$1(time = 0.005)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000762112 for the constraint $OMC$con$Loop$1(time = 0.12)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00712691 for the constraint $OMC$con$Loop$1(time = 0.12)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0651527 for the constraint $OMC$con$Loop$1(time = 0.125)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.31204 for the constraint $OMC$con$Loop$1(time = 0.13)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.268912 for the constraint $OMC$con$Loop$1(time = 0.13)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0840605 for the constraint $OMC$con$Loop$2(time = 0.135)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0417657 for the constraint $OMC$con$Loop$1(time = 0.155)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00668617 for the constraint $OMC$con$Loop$2(time = 0.16)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0424051 for the constraint $OMC$con$Loop$1(time = 0.165)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0577575 for the constraint $OMC$con$Loop$2(time = 0.335)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00818708 for the constraint $OMC$con$Loop$1(time = 0.165)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00415962 for the constraint $OMC$con$Loop$2(time = 0.165)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0106692 for the constraint $OMC$con$Loop$2(time = 0.435)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00303797 for the constraint $OMC$con$Loop$2(time = 0.45)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00162791 for the constraint $OMC$con$Loop$2(time = 0.445)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000598621 for the constraint $OMC$con$Loop$2(time = 0.445)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.55782e-05 for the constraint $OMC$con$Loop$2(time = 0.445)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.94449e-06 for the constraint $OMC$con$Loop$2(time = 0.445)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.57394e-09 for the constraint $OMC$con$Loop$2(time = 0.445)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.4988e-15 for the constraint $OMC$con$Loop$2(time = 0.445)
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult

@@ -1,0 +1,30 @@
+// name: 10_Test3PhaseSystemsDummyInit
+// status: correct
+//
+//  Simulation Results
+//  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("Test3PhaseSystemsDummyInit.mo"); getErrorString();
+
+simulate(Test3PhaseSystemsDummyInit, stopTime=10); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Test3PhaseSystemsDummyInit_res.mat",
+  "ReferenceFiles/Test3PhaseSystemsDummyInit.mat",
+  "Test3PhaseSystemsDummyInit_diff.csv", 0.01, 0.0001,
+  {"i_dq0[1]", "i_dq0[2]", "i_dq0[3]"}); getErrorString();
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Test3PhaseSystemsDummyInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Test3PhaseSystemsDummyInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult

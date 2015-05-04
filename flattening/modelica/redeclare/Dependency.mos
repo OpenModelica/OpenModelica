@@ -1,0 +1,76 @@
+// name:     Dependency.mos [BUG: #2359]
+// keywords: redeclare of package used via qualified path where replaced
+// status:   correct
+// 
+// Tests that the depenedency analysis works correctly in the presence of redeclares
+//
+
+
+loadFile("Dependency.mo"); getErrorString();
+saveTotalSCode("Dependency-again.mo", Dependency); getErrorString();
+readFile("Dependency-again.mo");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "package RefAir  
+//   package AirUtilities  
+//     record R  
+//       Real x;
+//       Integer y;
+//     end R;
+//
+//     package Basic  
+//       constant R Constants(x = 1, y = 2);
+//
+//       package Utilities  
+//         function f  
+//           input Real x;
+//           output Real y;
+//         algorithm
+//           y := x + Constants.x;
+//         end f;
+//       end Utilities;
+//     end Basic;
+//   end AirUtilities;
+// end RefAir;
+//
+// partial package RefAirPartial  
+//   package AirUtilities  
+//     record R  
+//       Real x;
+//       Integer y;
+//     end R;
+//
+//     package Basic  
+//       constant R Constants(x = 100, y = 200);
+//
+//       package Utilities  
+//         function f  
+//           input Real x;
+//           output Real y;
+//         algorithm
+//           y := x + Constants.x;
+//         end f;
+//       end Utilities;
+//     end Basic;
+//   end AirUtilities;
+// end RefAirPartial;
+//
+// package M  
+//   replaceable package Medium = RefAirPartial;
+//   constant Real u = Medium.AirUtilities.Basic.Utilities.f(10);
+// end M;
+//
+// model Dependency  
+//   package B = M(redeclare package Medium = RefAir);
+//   Real x = B.u;
+// end Dependency;
+//
+// model Dependency_total
+//   extends Dependency;
+// end Dependency_total;
+// "
+// endResult

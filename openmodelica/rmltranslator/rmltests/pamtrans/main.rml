@@ -1,0 +1,19 @@
+module Main:
+
+with "Parse.rml"
+with "Trans.rml"
+with "Emit.rml"
+ 
+end
+
+
+relation main: () => ()  =
+
+  rule  Parse.parse() => program &
+        Trans.trans_program(program)  =>  mcode  &
+        Emit.emit_assembly(mcode)
+        --------------------
+        main
+
+end (* main *)
+

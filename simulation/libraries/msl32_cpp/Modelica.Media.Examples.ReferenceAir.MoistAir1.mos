@@ -1,0 +1,43 @@
+// name:     Modelica.Media.Examples.ReferenceAir.MoistAir1
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(Modelica.Media.Examples.ReferenceAir.MoistAir1);
+compareVars :=
+{
+   "volume.medium.p",
+   "volume.medium.T",
+   "volume.medium.X[1]",
+   "volume.medium.X[2]",
+   "volume.medium.Xi[1]",
+   "fixedMassFlowRate.port.p",
+   "ambient.port.m_flow"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// Modelica.Media.Examples.ReferenceAir.MoistAir1
+// {"volume.medium.p","volume.medium.T","volume.medium.X[1]","volume.medium.X[2]","volume.medium.Xi[1]","fixedMassFlowRate.port.p","ambient.port.m_flow"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Media.Examples.ReferenceAir.MoistAir1.mat\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

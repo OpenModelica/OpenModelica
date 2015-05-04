@@ -1,0 +1,121 @@
+// name: ExtendsReduceDrumBoiler
+// status: correct
+
+loadModel(Modelica,{"3.2"});
+getErrorString();
+
+setCommandLineOptions("+gDynOpt +d=reduceDynOpt,extendsDynOpt");
+
+
+loadFile("DrumBoiler.mo");
+getErrorString();
+
+optimize(drumBoiler.optDrumBoiler, stopTime=3600, numberOfIntervals=50, tolerance=1e-4,simflags="-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif ReferenceFiles/drumBoiler.optDrumBoiler_init.mat -ipopt_init FILE");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("drumBoiler.optDrumBoiler_res.mat","ReferenceFiles/drumBoiler.optDrumBoiler_ref.mat","drumBoiler.optDrumBoiler_res.csv",0.01,0.0001,{"controller.x", "evaporator.V_l", "evaporator.p", "q_F", "Y_Valve", "dq_F"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "drumBoiler.optDrumBoiler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 0.0001, method = 'optimization', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif ReferenceFiles/drumBoiler.optDrumBoiler_init.mat -ipopt_init FILE'",
+//     messages = "
+// Optimizer Variables
+// ========================================================
+// State[0]:controller.x(start = 0, nominal = 10, min = -Inf, max = +Inf, init = 0)
+// State[1]:evaporator.V_l(start = 67, nominal = 68, min = -Inf, max = +Inf, init = 67)
+// State[2]:evaporator.p(start = 100000, nominal = 1e+06, min = 611.657, max = 1e+08, init = 100000)
+// State[3]:q_F(start = 0, nominal = 400, min = 0, max = 500, init = 0)
+// Input[4]:OMC$Input29(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[5]:OMC$Input7(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[6]:Y_Valve(start = 0.5, nominal = 1, min = 0, max = 1)
+// Input[7]:dq_F(start = 0.1, nominal = 0.416667, min = -0.416667, max = 0.416667)
+// --------------------------------------------------------
+// number of nonlinear constraints: 3
+// ========================================================
+// stdout            | info    | Using values from file as initial guess.
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 2.49596 for the constraint $OMC$constarintTerm1(time = 936)
+// LOG_IPOPT_ERROR   | info    | max violation is 8.20112e+07 for the constraint $OMC$con$Loop$9(time = 1368)
+// LOG_IPOPT_ERROR   | info    | max violation is 7.14352e+07 for the constraint $OMC$con$Loop$9(time = 1224)
+// LOG_IPOPT_ERROR   | info    | max violation is 6.94633e+07 for the constraint $OMC$con$Loop$9(time = 1224)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.2313e+07 for the constraint $OMC$con$Loop$9(time = 1224)
+// LOG_IPOPT_ERROR   | info    | max violation is 6.87543e+07 for the constraint $OMC$con$Loop$9(time = 1008)
+// LOG_IPOPT_ERROR   | info    | max violation is 8.20658e+06 for the constraint $OMC$con$Loop$9(time = 1008)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.04258e+07 for the constraint $OMC$con$Loop$9(time = 792)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.67888e+06 for the constraint $OMC$con$Loop$9(time = 792)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.67391e+07 for the constraint $OMC$con$Loop$9(time = 720)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.12985e+07 for the constraint $OMC$con$Loop$9(time = 720)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.45163e+06 for the constraint $OMC$con$Loop$9(time = 720)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.33007e+06 for the constraint $OMC$con$Loop$9(time = 720)
+// LOG_IPOPT_ERROR   | info    | max violation is 187319 for the constraint $OMC$con$Loop$9(time = 1080)
+// LOG_IPOPT_ERROR   | info    | max violation is 17472.1 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 3625.35 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 713.762 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 137.752 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 26.3304 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.00832 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.950255 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.180066 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.034098 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00645477 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00122182 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000231501 for the constraint $OMC$con$Loop$9(time = 144)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.36536e-05 for the constraint $OMC$con$Loop$9(time = 144)
+// "
+// end SimulationResult;
+// "Warning: Alias set with several free start values
+//  * candidate: evaporator.p(start = evaporator.p_start)
+//  * candidate: evaporator.port_b.p(start = 5000000.0)
+//  * candidate: temperature.port.p(start = 5000000.0)
+//  * candidate: pressure.port.p(start = 5000000.0)
+//  * candidate: massFlowRate.port_a.p(start = 5000000.0)
+//  * candidate: massFlowRate.port_b.p(start = 5000000.0)
+//  * candidate: SteamValve.port_a.p(start = 5000000.0)
+//  * candidate: SteamValve.state_a.p(start = 5000000.0)
+//  * candidate: evaporator.port_a.p(start = 5000000.0)
+//  * candidate: pump.ports[1].p(start = 5000000.0)
+//  * candidate: pump.medium.state.p(start = 5000000.0)
+//  * candidate: pump.medium.sat.psat(start = 5000000.0)
+//  * candidate: evaporator.sat.psat(start = 5000000.0)
+// => select value from evaporator.p(start = evaporator.p_start) for variable: evaporator.p
+// Warning: Alias set with different nominal values
+//  * candidate: evaporator.sat.psat(nominal = 1000000.0)
+//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: pump.medium.state.p(nominal = 1000000.0)
+//  * candidate: pump.medium.p(nominal = 100000.0)
+//  * candidate: pump.ports[1].p(nominal = 1000000.0)
+//  * candidate: evaporator.port_a.p(nominal = 1000000.0)
+//  * candidate: SteamValve.state_a.p(nominal = 1000000.0)
+//  * candidate: SteamValve.port_a.p(nominal = 1000000.0)
+//  * candidate: massFlowRate.port_b.p(nominal = 1000000.0)
+//  * candidate: massFlowRate.port_a.p(nominal = 1000000.0)
+//  * candidate: pressure.port.p(nominal = 1000000.0)
+//  * candidate: temperature.port.p(nominal = 1000000.0)
+//  * candidate: evaporator.port_b.p(nominal = 1000000.0)
+//  * candidate: evaporator.p(nominal = 1000000.0)
+// => select value from evaporator.p(nominal = 1000000.0) for variable: evaporator.p
+// Warning: Alias set with different nominal values
+//  * candidate: furnace.port.T(nominal = 300.0)
+//  * candidate: evaporator.heatPort.T(nominal = 300.0)
+//  * candidate: evaporator.sat.Tsat(nominal = 500.0)
+//  * candidate: evaporator.T(nominal = 500.0)
+//  * candidate: evaporator.T_D(nominal = 500.0)
+// => select value from evaporator.T_D(nominal = 500.0) for variable: evaporator.T_D
+// [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:157:9-157:39:writable] Warning: Parameter conSigma.gain has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "
+// {"Files Equal!"}
+// ""
+// endResult

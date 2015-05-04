@@ -1,0 +1,35 @@
+// name:     ComplexAlgebraicLoops
+// keywords: complex equation record system
+// status: correct
+// teardown_command: rm -rf M_* M M.exe M.c _M.h M.makefile M.libs M.log output.log
+// 
+// Tests complex equations in strong components.
+// 
+
+loadFile("ComplexAlgebraicLoop.mo");
+simulate(M);
+val(x,0);
+val(y,0);
+val(x,1);
+val(y,1);
+val(x1,0);
+val(y1,0);
+val(x1,1);
+val(y1,1);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// 1.0
+// 1.8124213944129033
+// 3.3236741098860496
+// 0.0
+// 1.0
+// 1.8124213944129033
+// 3.3236741098860496
+// endResult

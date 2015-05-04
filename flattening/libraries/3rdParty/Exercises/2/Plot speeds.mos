@@ -1,0 +1,32 @@
+// Plot commands
+removePlots();
+createPlot(id = 1,
+ position = {15, 10, 566, 320},
+ y = fill("", 0),
+ range = {0, 0.1, 0.6, (-0.6)},
+ autoscale = true,
+ autoerase = true,
+ autoreplot = true,
+ description = false,
+ grid = true,
+ color = true,
+ online = false,
+ filename = "Test2.mat",
+ leftTitleType = 1,
+ bottomTitleType = 1);
+createPlot(id = 1,
+ position = {15, 10, 566, 320},
+ y = {"inertia1.w", "inertia2.w", "inertia3.w"},
+ range = {0, 0.1, 0.6, (-0.6)},
+ erase = false,
+ autoscale = true,
+ autoerase = true,
+ autoreplot = true,
+ description = false,
+ grid = true,
+ color = true,
+ online = false,
+ filename = "Aufgabe2_3.mat",
+ leftTitleType = 1,
+ bottomTitleType = 1);
+

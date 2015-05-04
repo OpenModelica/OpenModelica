@@ -1,0 +1,7 @@
+TestMedia.TestModels.WaterIF97.Test1
+number of intervals = 200
+stopTime = 1
+
+relevant variables
+d
+T

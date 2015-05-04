@@ -1,0 +1,542 @@
+18.12.2012, r14434
+
+**** Statistics ****
+255 models in total
+CodeGen:	1
+DivByZero:	15
+Flattening:	9
+InitialNotUnique:	12
+Initialization:	1
+Initializationconvert:	2
+IntegratorFailed:	1
+NoGroup:	2
+Nonlinear:	1
+NotEqual:	42
+OK:	165
+SimExecFailed:	4
+
+**** Details - groupwise ****
+CodeGen (1):
+	Modelica.Math.Nonlinear.Examples.quadratureLobatto3
+DivByZero (15):
+	Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL
+	Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Initialize
+	Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Steinmetz
+	Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer
+	Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_YD
+	Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start
+	Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource
+	Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_Inverter
+	Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer
+	Modelica.Electrical.Spice3.Examples.CascodeCircuit
+	Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
+	Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter
+	Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater
+	Modelica.Fluid.Examples.InverseParameterization
+	Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls
+Flattening (9):
+	Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
+	Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta
+	Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar
+	Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation
+	Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator
+	Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter
+	Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter
+	Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField
+	Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine
+InitialNotUnique (12):
+	Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank
+	Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe1
+	Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2
+	Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe1
+	Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe2
+	Modelica.Fluid.Examples.AST_BatchPlant.Test.TwoTanks
+	Modelica.StateGraph.Examples.ExecutionPaths
+	Modelica.StateGraph.Examples.FirstExample
+	Modelica.StateGraph.Examples.FirstExample_Variant2
+	Modelica.StateGraph.Examples.FirstExample_Variant3
+	Modelica.StateGraph.Examples.ShowCompositeStep
+	Modelica.StateGraph.Examples.ShowExceptions
+Initialization (1):
+	Modelica.Fluid.Examples.IncompressibleFluidNetwork
+Initializationconvert (2):
+	Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks
+	Modelica.StateGraph.Examples.ControlledTanks
+IntegratorFailed (1):
+	Modelica.Electrical.Analog.Examples.DifferenceAmplifier
+NoGroup (2):
+	Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder
+	Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
+Nonlinear (1):
+	Modelica.Fluid.Examples.Tanks.TanksWithOverflow
+NotEqual (42):
+	Modelica.Electrical.Analog.Examples.AD_DA_conversion
+	Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed
+	Modelica.Electrical.Analog.Examples.CauerLowPassSC
+	Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate
+	Modelica.Electrical.Analog.Examples.NandGate
+	Modelica.Electrical.Analog.Examples.Rectifier
+	Modelica.Electrical.Analog.Examples.SimpleTriacCircuit
+	Modelica.Electrical.Digital.Examples.Adder4
+	Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter
+	Modelica.Electrical.Machines.Examples.DCMachines.DCEE_Start
+	Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling
+	Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses
+	Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase
+	Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start
+	Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+	Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter
+	Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse
+	Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse
+	Modelica.Electrical.MultiPhase.Examples.Rectifier
+	Modelica.Electrical.MultiPhase.Examples.TransformerYD
+	Modelica.Electrical.MultiPhase.Examples.TransformerYY
+	Modelica.Electrical.Spice3.Examples.Inverter
+	Modelica.Electrical.Spice3.Examples.Nand
+	Modelica.Electrical.Spice3.Examples.Oscillator
+	Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization
+	Modelica.Fluid.Examples.BranchingDynamicPipes
+	Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings
+	Modelica.Fluid.Examples.PumpingSystem
+	Modelica.Fluid.Examples.TraceSubstances.RoomCO2
+	Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke
+	Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL
+	Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start
+	Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses
+	Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainPrismaticJoint
+	Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainPrismaticJoint_dynamicStateSelection
+	Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint
+	Modelica.Mechanics.Rotational.Examples.HeatLosses
+	Modelica.Mechanics.Rotational.Examples.LossyGearDemo2
+	Modelica.Mechanics.Translational.Examples.Friction
+	Modelica.Media.Examples.MixtureGases
+	Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGas
+	Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGasFixedComposition
+OK (165):
+	Modelica.Blocks.Examples.BooleanNetwork1
+	Modelica.Blocks.Examples.BusUsage
+	Modelica.Blocks.Examples.Filter
+	Modelica.Blocks.Examples.FilterWithDifferentiation
+	Modelica.Blocks.Examples.FilterWithRiseTime
+	Modelica.Blocks.Examples.IntegerNetwork1
+	Modelica.Blocks.Examples.Interaction1
+	Modelica.Blocks.Examples.InverseModel
+	Modelica.Blocks.Examples.LogicalNetwork1
+	Modelica.Blocks.Examples.PID_Controller
+	Modelica.Blocks.Examples.RealNetwork1
+	Modelica.Blocks.Examples.ShowLogicalSources
+	Modelica.ComplexBlocks.Examples.TestConversionBlock
+	Modelica.Electrical.Analog.Examples.CauerLowPassAnalog
+	Modelica.Electrical.Analog.Examples.CauerLowPassOPV
+	Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes
+	Modelica.Electrical.Analog.Examples.CharacteristicThyristors
+	Modelica.Electrical.Analog.Examples.ChuaCircuit
+	Modelica.Electrical.Analog.Examples.CompareTransformers
+	Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc
+	Modelica.Electrical.Analog.Examples.HeatingMOSInverter
+	Modelica.Electrical.Analog.Examples.HeatingRectifier
+	Modelica.Electrical.Analog.Examples.HeatingResistor
+	Modelica.Electrical.Analog.Examples.IdealTriacCircuit
+	Modelica.Electrical.Analog.Examples.OvervoltageProtection
+	Modelica.Electrical.Analog.Examples.ShowSaturatingInductor
+	Modelica.Electrical.Analog.Examples.ShowVariableResistor
+	Modelica.Electrical.Analog.Examples.SwitchWithArc
+	Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest
+	Modelica.Electrical.Digital.Examples.BUF3S
+	Modelica.Electrical.Digital.Examples.DFFREG
+	Modelica.Electrical.Digital.Examples.DFFREGL
+	Modelica.Electrical.Digital.Examples.DFFREGSRH
+	Modelica.Electrical.Digital.Examples.DFFREGSRL
+	Modelica.Electrical.Digital.Examples.DLATREG
+	Modelica.Electrical.Digital.Examples.DLATREGL
+	Modelica.Electrical.Digital.Examples.DLATREGSRH
+	Modelica.Electrical.Digital.Examples.DLATREGSRL
+	Modelica.Electrical.Digital.Examples.HalfAdder
+	Modelica.Electrical.Digital.Examples.INV3S
+	Modelica.Electrical.Digital.Examples.MUX2x1
+	Modelica.Electrical.Digital.Examples.NRXFER
+	Modelica.Electrical.Digital.Examples.NXFER
+	Modelica.Electrical.Digital.Examples.VectorDelay
+	Modelica.Electrical.Digital.Examples.WiredX
+	Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary
+	Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Start
+	Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature
+	Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad
+	Modelica.Electrical.Machines.Examples.Transformers.TransformerTestbench
+	Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance
+	Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier
+	Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance
+	Modelica.Electrical.Spice3.Examples.CoupledInductors
+	Modelica.Electrical.Spice3.Examples.FourInverters
+	Modelica.Electrical.Spice3.Examples.Graetz
+	Modelica.Electrical.Spice3.Examples.InvertersApartRecord
+	Modelica.Electrical.Spice3.Examples.InvertersExtendedModel
+	Modelica.Electrical.Spice3.Examples.Nor
+	Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller
+	Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.InnerTank
+	Modelica.Fluid.Examples.DrumBoiler.DrumBoiler
+	Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
+	Modelica.Fluid.Examples.Tanks.EmptyTanks
+	Modelica.Fluid.Examples.Tanks.ThreeTanks
+	Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor
+	Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke
+	Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainRevoluteJoint
+	Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainSphericalJoint
+	Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum
+	Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip
+	Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque
+	Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody
+	Modelica.Mechanics.MultiBody.Examples.Elementary.HeatLosses
+	Modelica.Mechanics.MultiBody.Examples.Elementary.InitSpringConstant
+	Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses
+	Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
+	Modelica.Mechanics.MultiBody.Examples.Elementary.PendulumWithSpringDamper
+	Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity
+	Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses
+	Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel
+	Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving
+	Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling
+	Modelica.Mechanics.MultiBody.Examples.Elementary.SpringDamperSystem
+	Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem
+	Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass
+	Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings
+	Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a
+	Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b
+	Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic
+	Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic
+	Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1
+	Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2
+	Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic
+	Modelica.Mechanics.MultiBody.Examples.Loops.PlanarLoops_analytic
+	Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive
+	Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint
+	Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects
+	Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
+	Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.GearType2
+	Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.MechanicalStructure
+	Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1
+	Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning6
+	Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathToAxisControlBus
+	Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot
+	Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis
+	Modelica.Mechanics.Rotational.Examples.Backlash
+	Modelica.Mechanics.Rotational.Examples.CoupledClutches
+	Modelica.Mechanics.Rotational.Examples.ElasticBearing
+	Modelica.Mechanics.Rotational.Examples.First
+	Modelica.Mechanics.Rotational.Examples.FirstGrounded
+	Modelica.Mechanics.Rotational.Examples.Friction
+	Modelica.Mechanics.Rotational.Examples.LossyGearDemo1
+	Modelica.Mechanics.Rotational.Examples.LossyGearDemo3
+	Modelica.Mechanics.Rotational.Examples.RollingWheel
+	Modelica.Mechanics.Rotational.Examples.SimpleGearShift
+	Modelica.Mechanics.Translational.Examples.Accelerate
+	Modelica.Mechanics.Translational.Examples.Brake
+	Modelica.Mechanics.Translational.Examples.Damper
+	Modelica.Mechanics.Translational.Examples.ElastoGap
+	Modelica.Mechanics.Translational.Examples.HeatLosses
+	Modelica.Mechanics.Translational.Examples.InitialConditions
+	Modelica.Mechanics.Translational.Examples.Oscillator
+	Modelica.Mechanics.Translational.Examples.PreLoad
+	Modelica.Mechanics.Translational.Examples.Sensors
+	Modelica.Mechanics.Translational.Examples.SignConvention
+	Modelica.Mechanics.Translational.Examples.WhyArrows
+	Modelica.Media.Examples.IdealGasH2O
+	Modelica.Media.Examples.MoistAir
+	Modelica.Media.Examples.SimpleLiquidWater
+	Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T
+	Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_T
+	Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_TX
+	Modelica.Media.Examples.TestOnly.FlueGas
+	Modelica.Media.Examples.TestOnly.IdealGasN2
+	Modelica.Media.Examples.TestOnly.IdealGasN2Mix
+	Modelica.Media.Examples.TestOnly.MixIdealGasAir
+	Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa
+	Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir
+	Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir
+	Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air
+	Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen
+	Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Essotherm650
+	Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Glycol47
+	Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearColdWater
+	Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT
+	Modelica.Media.Examples.Tests.MediaTestModels.Water.ConstantPropertyLiquidWater
+	Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam
+	Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97OnePhase_ph
+	Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT
+	Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph
+	Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates
+	Modelica.Media.Examples.WaterIF97
+	Modelica.Media.Incompressible.Examples.TestGlycol
+	Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling
+	Modelica.Thermal.FluidHeatFlow.Examples.OneMass
+	Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling
+	Modelica.Thermal.FluidHeatFlow.Examples.ParallelPumpDropOut
+	Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve
+	Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut
+	Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling
+	Modelica.Thermal.FluidHeatFlow.Examples.TwoMass
+	Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature
+	Modelica.Thermal.HeatTransfer.Examples.Motor
+	Modelica.Thermal.HeatTransfer.Examples.TwoMasses
+SimExecFailed (4):
+	Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator
+	Modelica.Fluid.Examples.HeatingSystem
+	Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2
+	Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6
+
+**** Details - modelwise ****
+Modelica.Blocks.Examples.BooleanNetwork1 -> OK
+Modelica.Blocks.Examples.BusUsage -> OK
+Modelica.Blocks.Examples.Filter -> OK
+Modelica.Blocks.Examples.FilterWithDifferentiation -> OK
+Modelica.Blocks.Examples.FilterWithRiseTime -> OK
+Modelica.Blocks.Examples.IntegerNetwork1 -> OK
+Modelica.Blocks.Examples.Interaction1 -> OK
+Modelica.Blocks.Examples.InverseModel -> OK
+Modelica.Blocks.Examples.LogicalNetwork1 -> OK
+Modelica.Blocks.Examples.PID_Controller -> OK
+Modelica.Blocks.Examples.RealNetwork1 -> OK
+Modelica.Blocks.Examples.ShowLogicalSources -> OK
+Modelica.ComplexBlocks.Examples.TestConversionBlock -> OK
+Modelica.Electrical.Analog.Examples.AD_DA_conversion -> NotEqual
+Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed -> NotEqual
+Modelica.Electrical.Analog.Examples.CauerLowPassAnalog -> OK
+Modelica.Electrical.Analog.Examples.CauerLowPassOPV -> OK
+Modelica.Electrical.Analog.Examples.CauerLowPassSC -> NotEqual
+Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes -> OK
+Modelica.Electrical.Analog.Examples.CharacteristicThyristors -> OK
+Modelica.Electrical.Analog.Examples.ChuaCircuit -> OK
+Modelica.Electrical.Analog.Examples.CompareTransformers -> OK
+Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc -> OK
+Modelica.Electrical.Analog.Examples.DifferenceAmplifier -> IntegratorFailed
+Modelica.Electrical.Analog.Examples.HeatingMOSInverter -> OK
+Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate -> NotEqual
+Modelica.Electrical.Analog.Examples.HeatingRectifier -> OK
+Modelica.Electrical.Analog.Examples.HeatingResistor -> OK
+Modelica.Electrical.Analog.Examples.IdealTriacCircuit -> OK
+Modelica.Electrical.Analog.Examples.NandGate -> NotEqual
+Modelica.Electrical.Analog.Examples.OvervoltageProtection -> OK
+Modelica.Electrical.Analog.Examples.Rectifier -> NotEqual
+Modelica.Electrical.Analog.Examples.ShowSaturatingInductor -> OK
+Modelica.Electrical.Analog.Examples.ShowVariableResistor -> OK
+Modelica.Electrical.Analog.Examples.SimpleTriacCircuit -> NotEqual
+Modelica.Electrical.Analog.Examples.SwitchWithArc -> OK
+Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest -> OK
+Modelica.Electrical.Digital.Examples.Adder4 -> NotEqual
+Modelica.Electrical.Digital.Examples.BUF3S -> OK
+Modelica.Electrical.Digital.Examples.DFFREG -> OK
+Modelica.Electrical.Digital.Examples.DFFREGL -> OK
+Modelica.Electrical.Digital.Examples.DFFREGSRH -> OK
+Modelica.Electrical.Digital.Examples.DFFREGSRL -> OK
+Modelica.Electrical.Digital.Examples.DLATREG -> OK
+Modelica.Electrical.Digital.Examples.DLATREGL -> OK
+Modelica.Electrical.Digital.Examples.DLATREGSRH -> OK
+Modelica.Electrical.Digital.Examples.DLATREGSRL -> OK
+Modelica.Electrical.Digital.Examples.HalfAdder -> OK
+Modelica.Electrical.Digital.Examples.INV3S -> OK
+Modelica.Electrical.Digital.Examples.MUX2x1 -> OK
+Modelica.Electrical.Digital.Examples.NRXFER -> OK
+Modelica.Electrical.Digital.Examples.NXFER -> OK
+Modelica.Electrical.Digital.Examples.VectorDelay -> OK
+Modelica.Electrical.Digital.Examples.WiredX -> OK
+Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL -> DivByZero
+Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Initialize -> DivByZero
+Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter -> NotEqual
+Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Steinmetz -> DivByZero
+Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer -> DivByZero
+Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_YD -> DivByZero
+Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start -> DivByZero
+Modelica.Electrical.Machines.Examples.DCMachines.DCEE_Start -> NotEqual
+Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling -> NotEqual
+Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary -> OK
+Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Start -> OK
+Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature -> OK
+Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses -> NotEqual
+Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase -> NotEqual
+Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start -> NotEqual
+Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator -> SimExecFailed
+Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump -> NotEqual
+Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource -> DivByZero
+Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_Inverter -> DivByZero
+Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter -> NotEqual
+Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer -> DivByZero
+Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad -> OK
+Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse -> NotEqual
+Modelica.Electrical.Machines.Examples.Transformers.Rectifier6pulse -> NotEqual
+Modelica.Electrical.Machines.Examples.Transformers.TransformerTestbench -> OK
+Modelica.Electrical.MultiPhase.Examples.Rectifier -> NotEqual
+Modelica.Electrical.MultiPhase.Examples.TransformerYD -> NotEqual
+Modelica.Electrical.MultiPhase.Examples.TransformerYY -> NotEqual
+Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench -> Flattening
+Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta -> Flattening
+Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar -> Flattening
+Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance -> OK
+Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier -> OK
+Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance -> OK
+Modelica.Electrical.Spice3.Examples.CascodeCircuit -> DivByZero
+Modelica.Electrical.Spice3.Examples.CoupledInductors -> OK
+Modelica.Electrical.Spice3.Examples.FourInverters -> OK
+Modelica.Electrical.Spice3.Examples.Graetz -> OK
+Modelica.Electrical.Spice3.Examples.Inverter -> NotEqual
+Modelica.Electrical.Spice3.Examples.InvertersApartRecord -> OK
+Modelica.Electrical.Spice3.Examples.InvertersExtendedModel -> OK
+Modelica.Electrical.Spice3.Examples.Nand -> NotEqual
+Modelica.Electrical.Spice3.Examples.Nor -> OK
+Modelica.Electrical.Spice3.Examples.Oscillator -> NotEqual
+Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair -> DivByZero
+Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder -> NoGroup
+Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization -> NotEqual
+Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter -> DivByZero
+Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller -> OK
+Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.InnerTank -> OK
+Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater -> DivByZero
+Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank -> InitialNotUnique
+Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe1 -> InitialNotUnique
+Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2 -> InitialNotUnique
+Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe1 -> InitialNotUnique
+Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe2 -> InitialNotUnique
+Modelica.Fluid.Examples.AST_BatchPlant.Test.TwoTanks -> InitialNotUnique
+Modelica.Fluid.Examples.BranchingDynamicPipes -> NotEqual
+Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks -> Initializationconvert
+Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -> OK
+Modelica.Fluid.Examples.Explanatory.MeasuringTemperature -> OK
+Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings -> NotEqual
+Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation -> Flattening
+Modelica.Fluid.Examples.HeatingSystem -> SimExecFailed
+Modelica.Fluid.Examples.IncompressibleFluidNetwork -> Initialization
+Modelica.Fluid.Examples.InverseParameterization -> DivByZero
+Modelica.Fluid.Examples.PumpingSystem -> NotEqual
+Modelica.Fluid.Examples.Tanks.EmptyTanks -> OK
+Modelica.Fluid.Examples.Tanks.TanksWithOverflow -> Nonlinear
+Modelica.Fluid.Examples.Tanks.ThreeTanks -> OK
+Modelica.Fluid.Examples.TraceSubstances.RoomCO2 -> NotEqual
+Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls -> DivByZero
+Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke -> NotEqual
+Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor -> OK
+Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke -> OK
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL -> NotEqual
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start -> NotEqual
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator -> Flattening
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter -> Flattening
+Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter -> Flattening
+Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses -> NotEqual
+Modelica.Math.Nonlinear.Examples.quadratureLobatto3 -> CodeGen
+Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainPrismaticJoint -> NotEqual
+Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainPrismaticJoint_dynamicStateSelection -> NotEqual
+Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainRevoluteJoint -> OK
+Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainSphericalJoint -> OK
+Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint -> NotEqual
+Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.HeatLosses -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.InitSpringConstant -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.PendulumWithSpringDamper -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2 -> SimExecFailed
+Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.SpringDamperSystem -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces -> NoGroup
+Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings -> OK
+Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField -> Flattening
+Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a -> OK
+Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b -> OK
+Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic -> OK
+Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6 -> SimExecFailed
+Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic -> OK
+Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 -> OK
+Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2 -> OK
+Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic -> OK
+Modelica.Mechanics.MultiBody.Examples.Loops.PlanarLoops_analytic -> OK
+Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive -> OK
+Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint -> OK
+Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects -> OK
+Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive -> OK
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.GearType2 -> OK
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.MechanicalStructure -> OK
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1 -> OK
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning6 -> OK
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathToAxisControlBus -> OK
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot -> OK
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis -> OK
+Modelica.Mechanics.Rotational.Examples.Backlash -> OK
+Modelica.Mechanics.Rotational.Examples.CoupledClutches -> OK
+Modelica.Mechanics.Rotational.Examples.ElasticBearing -> OK
+Modelica.Mechanics.Rotational.Examples.First -> OK
+Modelica.Mechanics.Rotational.Examples.FirstGrounded -> OK
+Modelica.Mechanics.Rotational.Examples.Friction -> OK
+Modelica.Mechanics.Rotational.Examples.HeatLosses -> NotEqual
+Modelica.Mechanics.Rotational.Examples.LossyGearDemo1 -> OK
+Modelica.Mechanics.Rotational.Examples.LossyGearDemo2 -> NotEqual
+Modelica.Mechanics.Rotational.Examples.LossyGearDemo3 -> OK
+Modelica.Mechanics.Rotational.Examples.RollingWheel -> OK
+Modelica.Mechanics.Rotational.Examples.SimpleGearShift -> OK
+Modelica.Mechanics.Translational.Examples.Accelerate -> OK
+Modelica.Mechanics.Translational.Examples.Brake -> OK
+Modelica.Mechanics.Translational.Examples.Damper -> OK
+Modelica.Mechanics.Translational.Examples.ElastoGap -> OK
+Modelica.Mechanics.Translational.Examples.Friction -> NotEqual
+Modelica.Mechanics.Translational.Examples.HeatLosses -> OK
+Modelica.Mechanics.Translational.Examples.InitialConditions -> OK
+Modelica.Mechanics.Translational.Examples.Oscillator -> OK
+Modelica.Mechanics.Translational.Examples.PreLoad -> OK
+Modelica.Mechanics.Translational.Examples.Sensors -> OK
+Modelica.Mechanics.Translational.Examples.SignConvention -> OK
+Modelica.Mechanics.Translational.Examples.WhyArrows -> OK
+Modelica.Media.Examples.IdealGasH2O -> OK
+Modelica.Media.Examples.MixtureGases -> NotEqual
+Modelica.Media.Examples.MoistAir -> OK
+Modelica.Media.Examples.SimpleLiquidWater -> OK
+Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T -> OK
+Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_T -> OK
+Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_TX -> OK
+Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine -> Flattening
+Modelica.Media.Examples.TestOnly.FlueGas -> OK
+Modelica.Media.Examples.TestOnly.IdealGasN2 -> OK
+Modelica.Media.Examples.TestOnly.IdealGasN2Mix -> OK
+Modelica.Media.Examples.TestOnly.MixIdealGasAir -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGas -> NotEqual
+Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGasFixedComposition -> NotEqual
+Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Essotherm650 -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Glycol47 -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearColdWater -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Water.ConstantPropertyLiquidWater -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97OnePhase_ph -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT -> OK
+Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_ph -> OK
+Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates -> OK
+Modelica.Media.Examples.WaterIF97 -> OK
+Modelica.Media.Incompressible.Examples.TestGlycol -> OK
+Modelica.StateGraph.Examples.ControlledTanks -> Initializationconvert
+Modelica.StateGraph.Examples.ExecutionPaths -> InitialNotUnique
+Modelica.StateGraph.Examples.FirstExample -> InitialNotUnique
+Modelica.StateGraph.Examples.FirstExample_Variant2 -> InitialNotUnique
+Modelica.StateGraph.Examples.FirstExample_Variant3 -> InitialNotUnique
+Modelica.StateGraph.Examples.ShowCompositeStep -> InitialNotUnique
+Modelica.StateGraph.Examples.ShowExceptions -> InitialNotUnique
+Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling -> OK
+Modelica.Thermal.FluidHeatFlow.Examples.OneMass -> OK
+Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling -> OK
+Modelica.Thermal.FluidHeatFlow.Examples.ParallelPumpDropOut -> OK
+Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve -> OK
+Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut -> OK
+Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling -> OK
+Modelica.Thermal.FluidHeatFlow.Examples.TwoMass -> OK
+Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature -> OK
+Modelica.Thermal.HeatTransfer.Examples.Motor -> OK
+Modelica.Thermal.HeatTransfer.Examples.TwoMasses -> OK

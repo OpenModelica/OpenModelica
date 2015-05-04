@@ -1,0 +1,10 @@
+TestMedia.TestModels.FlueGas.Test2
+number of intervals = 200
+stopTime = 1
+
+relevant variables
+state1.T
+completeState1.d
+completeState1.T
+completeState2.d
+completeState1.h

@@ -1,0 +1,11 @@
+// name: FiniteEscapeTime
+// status: correct
+// teardown_command: rm -f SolverFailure.FiniteEscapeTime* output.log
+
+loadModel(Modelica);
+loadFile("DebugPackage.mo"); getErrorString();
+
+simulate(SolverFailure.FiniteEscapeTime); getErrorString();
+
+// Result:
+// endResult

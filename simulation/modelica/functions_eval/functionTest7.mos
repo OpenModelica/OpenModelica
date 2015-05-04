@@ -1,0 +1,48 @@
+// name:      functionTest7
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+
+loadFile("PartEvalFunc.mo"); getErrorString();
+setDebugFlags("dumpeqninorder");getErrorString();
+simulate(PartEvalFunc.functionTest7);getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("PartEvalFunc.functionTest7_res.mat",
+  "ReferenceFiles/functionTest7.mat",
+  "PartEvalFunc.functionTest7_diff.csv", 0.01, 0.0001,
+  {"a","b","c","d","r1.x","r1.y","r1.z","r2.x","r2.y","r2.z"});  
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// indxdae: eqns in order
+// ========================================
+// SingleEquation: 1
+// 1: a:VARIABLE() .PartEvalFunc.functionTest7, .Real type: Real 
+// 1/1 (1): a = time   [dynamic]
+//
+// ComplexEquation:
+// 1: r2.z:VARIABLE() .PartEvalFunc.functionTest7, .PartEvalFunc.record2, .Real type: Real 
+// 1/1 (1): r2.z = PartEvalFunc.recfunc4_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [dynamic]
+//
+// SingleEquation: 3
+// 1: c:VARIABLE() .PartEvalFunc.functionTest7, .Real type: Real 
+// 1/1 (1): c = a + r2.z   [dynamic]
+//
+// SingleEquation: 4
+// 1: d:STATE(1,c)(start = 0.0 fixed = true ) .PartEvalFunc.functionTest7, .Real type: Real 
+// 1/1 (1): c = der(d)   [dynamic]
+//
+//
+// record SimulationResult
+//     resultFile = "PartEvalFunc.functionTest7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PartEvalFunc.functionTest7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult

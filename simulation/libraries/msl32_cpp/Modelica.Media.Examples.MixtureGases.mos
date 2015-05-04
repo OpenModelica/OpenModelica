@@ -1,0 +1,48 @@
+// name:     Modelica.Media.Examples.MixtureGases
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Media.Examples.MixtureGases);
+compareVars :=
+{
+   "U1",
+   "m1",
+   "U2",
+   "m2"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Media.Examples.MixtureGases
+// {"U1","m1","U2","m2"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Media.Examples.MixtureGases.mat\"
+// "
+// ""
+// Translation succeeded
+// Warning: Alias set with different nominal values
+//  * candidate: medium2.state.p(nominal = 1000000.0)
+//  * candidate: medium2.p(nominal = 100000.0)
+// => select value from medium2.p(nominal = 100000.0) for variable: medium2.p
+// Warning: Alias set with different nominal values
+//  * candidate: medium1.state.p(nominal = 1000000.0)
+//  * candidate: medium1.p(nominal = 100000.0)
+// => select value from medium1.p(nominal = 100000.0) for variable: medium1.p
+// "true
+// "
+// ""
+// endResult

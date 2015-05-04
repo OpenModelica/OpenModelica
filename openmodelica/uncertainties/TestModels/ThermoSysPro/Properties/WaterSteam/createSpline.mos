@@ -1,0 +1,70 @@
+// If all libraries are opened, this script is independent of path
+// It does not clean up old files!!
+simulateModel("ThermoSysPro_AJ_addon.IF97.SplineUtilities.PhaseBoundary");
+
+import Modelica;
+import Modelica.Math;
+import Modelica_Interpolation.*;
+import DataFiles;
+
+importInitial("dsfinal.txt");
+
+last = size(p,1);
+// lastConverged is last converged data point BELOW the critical
+// (pseudocritical) point
+lastConverged = last-1;
+
+
+lp := Math.log(cat(1,p[1:lastConverged],p[last:last]));
+pn := cat(1,p[1:lastConverged],p[last:last])/p[end];
+p2 := cat(1,p[1:lastConverged],p[last:last]);
+hln := cat(1,hl[1:lastConverged],hl[last:last])/hl[end];
+//hvn := cat(1,hv[1:lastConverged],hv[last:last])/hv[end];
+
+
+data_inthlp :=  [hln,lp];
+//data_inthvp :=  [hvn,lp];
+
+
+degree = 3; //maybe good?
+spline_hlp = ThermoSysPro_AJ_addon.IF97.SplineUtilities.Modelica_Interpolation.Table1D.init(data_inthlp,degree);
+//spline_hvp = ThermoSysPro_AJ_addon.IF97.SplineUtilities.Modelica_Interpolation.Table1D.init(data_inthvp,degree);
+
+//splineNames = {"hlp","hvp"};
+//splineNames = {"hlp"};
+
+//allSplines = {spline_hlp,spline_hvp};
+//allSplines = {spline_hlp};
+
+ThermoSysPro_AJ_addon.IF97.SplineUtilities.dumpOneSpline("IF97_spline.mo", "hlp",spline_hlp);
+
+n = last;
+
+pl_intp = zeros(n);
+//pv_intp = zeros(n);
+
+error = zeros(n);
+
+derivative = 0;
+for i in 1:n loop
+
+  //pv_intp[i] := scalar(ThermoSysPro_AJ_addon.IF97.SplineUtilities.Modelica_Interpolation.Table1D.evaluate(spline_hvp,hv[i]/hv[end]));
+  pl_intp[i] := scalar(ThermoSysPro_AJ_addon.IF97.SplineUtilities.Modelica_Interpolation.Table1D.evaluate(spline_hlp,hl[i]/hl[end]));
+  
+  //error[i] := scalar(pl_intp[i]- pl[i])
+end for;
+
+
+removePlots();
+
+createPlot(autoerase=false, id=0);
+plotArray(hl, pl_intp);
+plotArray(hl, lp, legend="(lp, hl)");
+//plotArray(hv, pv_intp);
+//plotArray(hv, lp, legend="(lp, hv)");
+
+createPlot(autoerase=false, id=1);
+plotArray(hl, pl_intp-lp, legend="error");
+//plotArray(hv, pv_intp);
+//plotArray(hv, lp, legend="(lp, hv)");
+

@@ -1,0 +1,65 @@
+// name:     Modelica.Electrical.Spice3.Examples.InvertersApartRecord
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.InvertersApartRecord);
+compareVars :=
+{
+   "c1.vinternal",
+   "c2.vinternal",
+   "mp1.Dinternal",
+   "mp1.Sinternal",
+   "mp2.Dinternal",
+   "mp2.Sinternal",
+   "mn1.Dinternal",
+   "mn1.Sinternal",
+   "mn2.Dinternal",
+   "mn2.Sinternal"
+};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Spice3.Examples.InvertersApartRecord
+// {"c1.vinternal","c2.vinternal","mp1.Dinternal","mp1.Sinternal","mp2.Dinternal","mp2.Sinternal","mn1.Dinternal","mn1.Sinternal","mn2.Dinternal","mn2.Sinternal"}
+// "OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"ReferenceFiles/Modelica.Electrical.Spice3.Examples.InvertersApartRecord.mat\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.InvertersApartRecord', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.InvertersApartRecord_res.mat
+// Files Equal!
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp1.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp1.p: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp2.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp2.p: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn1.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.02 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.02 on component m_lambda.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn1.p: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.02 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.02 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn2.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.02 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.02 on component m_lambda.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn2.p: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.02 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.02 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2.0e-5}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// 
+// "true
+// "
+// ""
+// endResult

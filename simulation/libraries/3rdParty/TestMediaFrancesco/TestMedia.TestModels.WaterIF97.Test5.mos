@@ -1,0 +1,58 @@
+// name:     TestMedia.TestModels.WaterIF97.Test5.mos [simulation checking]
+// keywords: simulation TestMedia.TestModels.WaterIF97.Test5
+// status: correct
+// teardown_command: rm -rf _TestMedia.TestModels.WaterIF97.Test5.* TestMedia.TestModels.WaterIF97.Test5_* TestMedia.TestModels.WaterIF97.Test5 TestMedia.TestModels.WaterIF97.Test5.exe TestMedia.TestModels.WaterIF97.Test5.cpp TestMedia.TestModels.WaterIF97.Test5.makefile TestMedia.TestModels.WaterIF97.Test5.libs TestMedia.TestModels.WaterIF97.Test5.log TestMedia.TestModels.WaterIF97.Test5.c TestMedia.TestModels.WaterIF97.Test5.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("TestMedia.mo"); getErrorString();
+
+
+simulate(TestMedia.TestModels.WaterIF97.Test5, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.WaterIF97.Test5_res.mat",
+  "ReferenceFiles/WaterIF97/WaterIF97_Test5_ref.mat","TestMedia.TestModels.WaterIF97.Test5_diff.csv",0.01,0.013,
+  {"medium1.baseProperties.T","medium1.baseProperties.d","medium2.baseProperties.T","medium2.baseProperties.d"});
+  
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestMedia.TestModels.WaterIF97.Test5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Alias set with different nominal values
+//  * candidate: medium2.completeState.state.h(nominal = 500000.0)
+//  * candidate: medium2.baseProperties.state.h(nominal = 500000.0)
+//  * candidate: medium2.baseProperties.h(nominal = 1000000.0)
+//  * candidate: h2(nominal = 500000.0)
+// => select value from h2(nominal = 500000.0) for variable: h2
+// Warning: Alias set with different nominal values
+//  * candidate: medium1.completeState.state.h(nominal = 500000.0)
+//  * candidate: medium1.baseProperties.state.h(nominal = 500000.0)
+//  * candidate: medium1.baseProperties.h(nominal = 1000000.0)
+//  * candidate: h1(nominal = 500000.0)
+// => select value from h1(nominal = 500000.0) for variable: h1
+// Warning: Alias set with several free start values
+//  * candidate: p1(start = 5000000.0)
+//  * candidate: medium1.baseProperties.state.p(start = 5000000.0)
+//  * candidate: medium1.completeState.state.p(start = 5000000.0)
+//  * candidate: medium1.baseProperties.sat.psat(start = 100000.0)
+// => select value from p1(start = 5000000.0) for variable: p1
+// Warning: Alias set with different nominal values
+//  * candidate: medium1.baseProperties.sat.psat(nominal = 1000000.0)
+//  * candidate: medium1.completeState.state.p(nominal = 1000000.0)
+//  * candidate: medium1.baseProperties.state.p(nominal = 1000000.0)
+//  * candidate: medium1.baseProperties.p(nominal = 100000.0)
+//  * candidate: p1(nominal = 1000000.0)
+// => select value from p1(nominal = 1000000.0) for variable: p1
+// "
+// {"Files Equal!"}
+// endResult

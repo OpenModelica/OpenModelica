@@ -1,0 +1,41 @@
+// name:     WatchDog2EquationWhen
+// keywords: watchdog equation-when
+// status:   correct
+// teardown_command: rm -rf WatchDogSystem2_* WatchDogSystem2 WatchDogSystem2.exe WatchDogSystem2.cpp WatchDogSystem2.makefile WatchDogSystem2.libs WatchDogSystem2.log output.log
+// 
+//
+// Drmodelica: 13.2 WatchDog System. (p. 435)
+// 
+loadFile("WatchDog2EquationWhen.mo");
+simulate( WatchDogSystem2, stopTime=4, tolerance=1e-5, numberOfIntervals=100);
+echo(false); // turns of output 
+i11:=val(watchdog.internalTime1,0);
+i12:=val(watchdog.internalTime1,4);
+i21:=val(watchdog.internalTime2,0);
+i22:=val(watchdog.internalTime2,4);
+s1:=val(watchdog.dAlarm.signal,0);
+s2:=val(watchdog.dAlarm.signal,4);
+echo(true); // turns on output
+i11;
+i12;
+i21;
+i22;
+s1;
+s2;
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "WatchDogSystem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'WatchDogSystem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// true
+// 0.0
+// 1.000000001
+// 0.0
+// 0.25000000100000064
+// 0.0
+// 1.0
+// endResult

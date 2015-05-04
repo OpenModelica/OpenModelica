@@ -1,0 +1,231 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestJunctions2.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestJunctions2.* ThermoSysPro.Examples.SimpleExamples.TestJunctions2_* ThermoSysPro.Examples.SimpleExamples.TestJunctions2 ThermoSysPro.Examples.SimpleExamples.TestJunctions2.exe ThermoSysPro.Examples.SimpleExamples.TestJunctions2.cpp ThermoSysPro.Examples.SimpleExamples.TestJunctions2.makefile ThermoSysPro.Examples.SimpleExamples.TestJunctions2.libs ThermoSysPro.Examples.SimpleExamples.TestJunctions2.log ThermoSysPro.Examples.SimpleExamples.TestJunctions2.c ThermoSysPro.Examples.SimpleExamples.TestJunctions2.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestJunctions2, stopTime=10); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestJunctions2_res.mat",
+"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestJunctions2.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestJunctions2_diff.csv",
+0.01, 0.0001,
+{"massFlowMultiplier.Ce.Q", "massFlowMultiplier.Cs.Q",
+ "mixer2_1.Ce1.Q", "mixer2_1.Ce2.Q", "mixer2_1.Cs.Q",
+ "mixer2_2.Ce1.Q", "mixer2_2.Ce2.Q", "mixer2_2.Ce3.Q", "mixer2_2.Cs.Q"});
+
+// Result:
+// true
+// ""
+// true
+// "[ThermoSysPro 3.1/package.mo:132:31-134:169:writable] Notification: ThermoSysPro is not yet fully operational with OpenModelica.
+// The authors suggest using Dymola for full benefit of the library, in particular if you are experiencing difficulties.
+// The current operational status with OpenModelica of the included examples can be found at https://test.openmodelica.org/libraries/ThermoSysPro/BuildModelRecursive.html
+// "
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestJunctions2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestJunctions2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "[ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Warning: Alias set with several free start values
+//  * candidate: singularPressureLoss8.Q(start = 100.0)
+//  * candidate: singularPressureLoss8.C1.Q(start = 500.0)
+//  * candidate: massFlowMultiplier.Cs.Q(start = 500.0)
+//  * candidate: singularPressureLoss8.C2.Q(start = 500.0)
+//  * candidate: sinkP2.C.Q(start = 500.0)
+// => select value from singularPressureLoss8.Q(start = 100.0) for variable: singularPressureLoss8.Q
+// Warning: Alias set with several free start values
+//  * candidate: massFlowMultiplier.h(start = 1000000.0)
+//  * candidate: massFlowMultiplier.Cs.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss8.C1.h_vol(start = 100000.0)
+//  * candidate: massFlowMultiplier.Ce.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss7.C2.h_vol(start = 100000.0)
+// => select value from massFlowMultiplier.h(start = 1000000.0) for variable: massFlowMultiplier.h
+// Warning: Alias set with several free start values
+//  * candidate: massFlowMultiplier.P(start = 1000000.0)
+//  * candidate: massFlowMultiplier.Cs.P(start = 100000.0)
+//  * candidate: singularPressureLoss8.C1.P(start = 100000.0)
+//  * candidate: massFlowMultiplier.Ce.P(start = 100000.0)
+//  * candidate: singularPressureLoss7.C2.P(start = 100000.0)
+// => select value from massFlowMultiplier.P(start = 1000000.0) for variable: massFlowMultiplier.P
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss8.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss8.T(nominal = 300.0)
+// => select value from singularPressureLoss8.T(nominal = 300.0) for variable: singularPressureLoss8.T
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss7.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss7.T(nominal = 300.0)
+// => select value from singularPressureLoss7.T(nominal = 300.0) for variable: singularPressureLoss7.T
+// Warning: Alias set with different nominal values
+//  * candidate: massFlowMultiplier.pro.T(nominal = 320.0)
+//  * candidate: massFlowMultiplier.T(nominal = 300.0)
+// => select value from massFlowMultiplier.T(nominal = 300.0) for variable: massFlowMultiplier.T
+// Warning: Alias set with several free start values
+//  * candidate: mixer2_2.h(start = 1000000.0)
+//  * candidate: mixer2_2.Cs.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss3.C1.h_vol(start = 100000.0)
+//  * candidate: mixer2_2.Ce3.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss6.C2.h_vol(start = 100000.0)
+//  * candidate: mixer2_2.Ce2.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss5.C2.h_vol(start = 100000.0)
+//  * candidate: mixer2_2.Ce1.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss4.C2.h_vol(start = 100000.0)
+// => select value from mixer2_2.h(start = 1000000.0) for variable: mixer2_2.h
+// Warning: Alias set with several free start values
+//  * candidate: mixer2_2.P(start = 1000000.0)
+//  * candidate: mixer2_2.Cs.P(start = 100000.0)
+//  * candidate: singularPressureLoss3.C1.P(start = 100000.0)
+//  * candidate: mixer2_2.Ce3.P(start = 100000.0)
+//  * candidate: singularPressureLoss6.C2.P(start = 100000.0)
+//  * candidate: mixer2_2.Ce2.P(start = 100000.0)
+//  * candidate: singularPressureLoss5.C2.P(start = 100000.0)
+//  * candidate: mixer2_2.Ce1.P(start = 100000.0)
+//  * candidate: singularPressureLoss4.C2.P(start = 100000.0)
+// => select value from mixer2_2.P(start = 1000000.0) for variable: mixer2_2.P
+// Warning: Alias set with several free start values
+//  * candidate: singularPressureLoss5.Q(start = 100.0)
+//  * candidate: singularPressureLoss5.C1.Q(start = 500.0)
+//  * candidate: sourceP3.C.Q(start = 500.0)
+//  * candidate: singularPressureLoss5.C2.Q(start = 500.0)
+//  * candidate: mixer2_2.Ce2.Q(start = 500.0)
+// => select value from singularPressureLoss5.Q(start = 100.0) for variable: singularPressureLoss5.Q
+// Warning: Alias set with several free start values
+//  * candidate: singularPressureLoss4.Q(start = 100.0)
+//  * candidate: singularPressureLoss4.C1.Q(start = 500.0)
+//  * candidate: sourceP2.C.Q(start = 500.0)
+//  * candidate: singularPressureLoss4.C2.Q(start = 500.0)
+//  * candidate: mixer2_2.Ce1.Q(start = 500.0)
+// => select value from singularPressureLoss4.Q(start = 100.0) for variable: singularPressureLoss4.Q
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss6.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss6.T(nominal = 300.0)
+// => select value from singularPressureLoss6.T(nominal = 300.0) for variable: singularPressureLoss6.T
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss5.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss5.T(nominal = 300.0)
+// => select value from singularPressureLoss5.T(nominal = 300.0) for variable: singularPressureLoss5.T
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss4.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss4.T(nominal = 300.0)
+// => select value from singularPressureLoss4.T(nominal = 300.0) for variable: singularPressureLoss4.T
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss3.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss3.T(nominal = 300.0)
+// => select value from singularPressureLoss3.T(nominal = 300.0) for variable: singularPressureLoss3.T
+// Warning: Alias set with different nominal values
+//  * candidate: mixer2_2.pro.T(nominal = 320.0)
+//  * candidate: mixer2_2.T(nominal = 300.0)
+// => select value from mixer2_2.T(nominal = 300.0) for variable: mixer2_2.T
+// Warning: Alias set with several free start values
+//  * candidate: singularPressureLoss2.Q(start = 100.0)
+//  * candidate: singularPressureLoss2.C1.Q(start = 500.0)
+//  * candidate: sourceP1.C.Q(start = 500.0)
+//  * candidate: singularPressureLoss2.C2.Q(start = 500.0)
+//  * candidate: mixer2_1.Ce2.Q(start = 500.0)
+// => select value from singularPressureLoss2.Q(start = 100.0) for variable: singularPressureLoss2.Q
+// Warning: Alias set with several free start values
+//  * candidate: singularPressureLoss1.Q(start = 100.0)
+//  * candidate: singularPressureLoss1.C1.Q(start = 500.0)
+//  * candidate: sourceP.C.Q(start = 500.0)
+//  * candidate: singularPressureLoss1.C2.Q(start = 500.0)
+//  * candidate: mixer2_1.Ce1.Q(start = 500.0)
+// => select value from singularPressureLoss1.Q(start = 100.0) for variable: singularPressureLoss1.Q
+// Warning: Alias set with several free start values
+//  * candidate: mixer2_1.h(start = 1000000.0)
+//  * candidate: mixer2_1.Cs.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss.C1.h_vol(start = 100000.0)
+//  * candidate: mixer2_1.Ce2.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss2.C2.h_vol(start = 100000.0)
+//  * candidate: mixer2_1.Ce1.h_vol(start = 100000.0)
+//  * candidate: singularPressureLoss1.C2.h_vol(start = 100000.0)
+// => select value from mixer2_1.h(start = 1000000.0) for variable: mixer2_1.h
+// Warning: Alias set with several free start values
+//  * candidate: mixer2_1.P(start = 1000000.0)
+//  * candidate: mixer2_1.Cs.P(start = 100000.0)
+//  * candidate: singularPressureLoss.C1.P(start = 100000.0)
+//  * candidate: mixer2_1.Ce2.P(start = 100000.0)
+//  * candidate: singularPressureLoss2.C2.P(start = 100000.0)
+//  * candidate: mixer2_1.Ce1.P(start = 100000.0)
+//  * candidate: singularPressureLoss1.C2.P(start = 100000.0)
+// => select value from mixer2_1.P(start = 1000000.0) for variable: mixer2_1.P
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss2.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss2.T(nominal = 300.0)
+// => select value from singularPressureLoss2.T(nominal = 300.0) for variable: singularPressureLoss2.T
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss1.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss1.T(nominal = 300.0)
+// => select value from singularPressureLoss1.T(nominal = 300.0) for variable: singularPressureLoss1.T
+// Warning: Alias set with different nominal values
+//  * candidate: singularPressureLoss.pro.T(nominal = 320.0)
+//  * candidate: singularPressureLoss.T(nominal = 300.0)
+// => select value from singularPressureLoss.T(nominal = 300.0) for variable: singularPressureLoss.T
+// Warning: Alias set with different nominal values
+//  * candidate: mixer2_1.pro.T(nominal = 320.0)
+//  * candidate: mixer2_1.T(nominal = 300.0)
+// => select value from mixer2_1.T(nominal = 300.0) for variable: mixer2_1.T
+// "
+// {"Files Equal!"}
+// endResult

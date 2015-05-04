@@ -1,0 +1,12 @@
+// name: ErrorSimPackage
+// status: correct
+
+loadString("package P end P;");
+translateModel(P);getErrorString();
+
+// Result:
+// true
+// false
+// "Error: Cannot instantiate P due to class specialization PACKAGE.
+// "
+// endResult

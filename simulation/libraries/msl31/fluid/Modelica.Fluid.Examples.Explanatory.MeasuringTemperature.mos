@@ -1,0 +1,98 @@
+//name:        Modelica.Fluid.Examples.Explanatory.MeasuringTemperature [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+
+simulate(Modelica.Fluid.Examples.Explanatory.MeasuringTemperature); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Explanatory.MeasuringTemperature', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
+// Warning: Alias variables openTankCold2.medium.p = openTankCold2.medium.sat.psat have start values openTankCold2.p_start != 100000.0. Use value from openTankCold2.medium.p.
+// Warning: Alias variables openTankCold2.medium.p = openTankCold2.medium.state.p have start values openTankCold2.p_start != 100000.0. Use value from openTankCold2.medium.p.
+// Warning: Alias variables openTankCold2.medium.T = openTankCold2.medium.state.T have start values openTankCold2.T_start != 300.0. Use value from openTankCold2.medium.T.
+// Warning: Alias variables openTankCold2.medium.p = openTankCold2.heatTransfer.states[1].p have start values openTankCold2.p_start != 100000.0. Use value from openTankCold2.medium.p.
+// Warning: Alias variables openTankCold1.medium.p = openTankCold1.medium.sat.psat have start values openTankCold1.p_start != 100000.0. Use value from openTankCold1.medium.p.
+// Warning: Alias variables openTankCold1.medium.p = openTankCold1.medium.state.p have start values openTankCold1.p_start != 100000.0. Use value from openTankCold1.medium.p.
+// Warning: Alias variables openTankCold1.medium.T = openTankCold1.medium.state.T have start values openTankCold1.T_start != 300.0. Use value from openTankCold1.medium.T.
+// Warning: Alias variables openTankCold1.medium.p = openTankCold1.heatTransfer.states[1].p have start values openTankCold1.p_start != 100000.0. Use value from openTankCold1.medium.p.
+// Warning: Alias variables openTankHot1.medium.p = openTankHot1.medium.sat.psat have start values openTankHot1.p_start != 100000.0. Use value from openTankHot1.medium.p.
+// Warning: Alias variables openTankHot1.medium.p = openTankHot1.medium.state.p have start values openTankHot1.p_start != 100000.0. Use value from openTankHot1.medium.p.
+// Warning: Alias variables openTankHot1.medium.T = openTankHot1.medium.state.T have start values openTankHot1.T_start != 300.0. Use value from openTankHot1.medium.T.
+// Warning: Alias variables openTankHot1.medium.p = openTankHot1.heatTransfer.states[1].p have start values openTankHot1.p_start != 100000.0. Use value from openTankHot1.medium.p.
+// Warning: Alias variables openTankHot2.medium.p = openTankHot2.medium.sat.psat have start values openTankHot2.p_start != 100000.0. Use value from openTankHot2.medium.p.
+// Warning: Alias variables openTankHot2.medium.p = openTankHot2.medium.state.p have start values openTankHot2.p_start != 100000.0. Use value from openTankHot2.medium.p.
+// Warning: Alias variables openTankHot2.medium.T = openTankHot2.medium.state.T have start values openTankHot2.T_start != 300.0. Use value from openTankHot2.medium.T.
+// Warning: Alias variables openTankHot2.medium.p = openTankHot2.heatTransfer.states[1].p have start values openTankHot2.p_start != 100000.0. Use value from openTankHot2.medium.p.
+// Warning: Alias variables openTankCold3.medium.p = openTankCold3.medium.sat.psat have start values openTankCold3.p_start != 100000.0. Use value from openTankCold3.medium.p.
+// Warning: Alias variables openTankCold3.medium.p = openTankCold3.medium.state.p have start values openTankCold3.p_start != 100000.0. Use value from openTankCold3.medium.p.
+// Warning: Alias variables openTankCold3.medium.T = openTankCold3.medium.state.T have start values openTankCold3.T_start != 300.0. Use value from openTankCold3.medium.T.
+// Warning: Alias variables openTankCold3.medium.p = openTankCold3.heatTransfer.states[1].p have start values openTankCold3.p_start != 100000.0. Use value from openTankCold3.medium.p.
+// Warning: Alias variables openTankHot3.medium.p = openTankHot3.medium.sat.psat have start values openTankHot3.p_start != 100000.0. Use value from openTankHot3.medium.p.
+// Warning: Alias variables openTankHot3.medium.p = openTankHot3.medium.state.p have start values openTankHot3.p_start != 100000.0. Use value from openTankHot3.medium.p.
+// Warning: Alias variables openTankHot3.medium.T = openTankHot3.medium.state.T have start values openTankHot3.T_start != 300.0. Use value from openTankHot3.medium.T.
+// Warning: Alias variables openTankHot3.medium.p = openTankHot3.heatTransfer.states[1].p have start values openTankHot3.p_start != 100000.0. Use value from openTankHot3.medium.p.
+// Error: Internal error Mixed system of equations with dicrete variables of type Integer not supported. Try to rewrite using Boolean variables.
+// Error: Internal error createOdeSystem failed for {{129:149},
+// {104, 101, 105, 122, 119, 123, 132, 131, 137, 136, 138:118, 157, 113, 139, 156, 134, 154, 152, 150, 129, 108} Size: 11 No analythic jacobian} Size: 1
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {90:104}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {92:125}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {95:124}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {109:106}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {108:107}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {99:117}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {96:121}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {94:123}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {93:122}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {97:126}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {98:111}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {103:116}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {110:146}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {113:145}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {127:127}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {126:128}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {117:138}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {114:142}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {112:144}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {111:143}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {115:147}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {116:132}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error createOdeSystem failed for {121:137}
+// Error: Internal error createEquationsForSystem1 failed
+// Error: Internal error Transformation from optimised DAE to simulation code structure failed
+// "
+// end SimulationResult;
+// ""
+// endResult

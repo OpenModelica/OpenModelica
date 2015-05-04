@@ -1,0 +1,20 @@
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+loadFile("Wire.mo"); getErrorString();
+setCompiler("gcc"); getErrorString();
+setCXXCompiler("g++"); getErrorString();
+setDebugFlags("hpcom"); getErrorString();
+setCommandLineOptions("+n=2 +hpcomScheduler=levelfix +hpcomCode=pthreads +simCodeTarget=Cpp"); getErrorString();
+simulate(Wire.Wire_10, stopTime=10000.0, numberOfIntervals=10000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Wire.Wire_10_res.mat",
+  "../../ReferenceFiles/Wire.Wire_10.mat",
+  "Wire.Wire_10.csv",0.01,0.000001,
+  {"resistor[1].v",
+   "resistor[1].i",
+   "capacitor[1].v",
+   "capacitor[1].i",
+   "resistor[10].v",
+   "resistor[10].i",
+   "capacitor[9].v",
+   "capacitor[9].i"});

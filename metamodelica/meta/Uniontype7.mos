@@ -1,0 +1,16 @@
+// name:     Uniontype7
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Uniontype Testing
+//
+loadFile("Uniontype7.mo");getErrorString();
+Uniontype7.test(5);getErrorString();
+
+// Result:
+// true
+// ""
+// 5
+// ""
+// endResult

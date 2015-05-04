@@ -1,0 +1,148 @@
+(* file assignment.rml *)
+
+module Assignment:
+
+(* Abstract syntax for the Assignments language *)
+
+  datatype Program = PROGRAM of Exp list * Exp
+
+  datatype Exp     =  INT of int
+                   |  BINARY   of  Exp * BinOp * Exp
+                   |  UNARY    of  UnOp * Exp
+                   |  ASSIGN  of  Ident * Exp
+                   |  IDENT   of  Ident
+
+  datatype BinOp   =  ADD | SUB | MUL | DIV
+
+  datatype UnOp    =  NEG
+
+  type Ident       =  string
+
+  type Value       =  int
+
+  type VarBnd      =  (Ident * Value)
+  type Env         =  VarBnd list
+
+
+end
+
+relation lookup: (Env,Ident) => Value  =
+
+  rule  id = id2
+        ------------------------------
+        lookup((id2,value) :: _, id) => value
+
+  rule  not id=id2  &  lookup(rest, id) => value
+        -------------------------------------
+        lookup((id2,_) :: rest, id)  => value
+end
+
+relation lookupextend: (Env,Ident) => (Env,Value)  =
+
+  rule  not lookup(env,id) => v
+        -----------------------------
+        lookupextend(env, id)  => ((id,0)::env,0)
+
+  rule  lookup(env,id) => value
+        --------------------------------
+        lookupextend(env, id)  => (env,value)
+end
+
+relation update: (Env,Ident,Value) => Env  =
+  axiom  update(env,id,value) => ((id,value) :: env)
+end
+
+
+relation evalprogram: Program => int =
+
+  rule  list_reverse assignments => assignments1 &
+        evals([], assignments1) => env2 &
+        eval(env2, exp) => (_, value) 
+        -------------------------------------
+        evalprogram(PROGRAM(assignments, exp)) => value
+
+end
+
+
+relation evals: (Env,Exp list) => Env  =
+
+  axiom evals(e, []) => e
+
+  rule  eval(env, exp) => (env2, v) &
+        int_string v => s &
+        print "v: " & print s & print "\n" &
+        evals(env2, exp1) => env3
+        ----------------------------
+        evals(env, exp::exp1) => env3
+
+end
+
+
+relation eval: (Env,Exp) => (Env,int)  =
+  
+  (* eval of an integer constant node in an environment is the integer
+   * value together with the unchanged environment.
+   *)
+  axiom eval(env,INT(ival) ) => (env,ival)
+
+  (* eval of an identifier node will lookup the identifier and return a
+   * value if present; otherwise insert a binding to zero, and return zero.
+   *)
+  rule  lookupextend(env,id) => (env2,value) &
+        int_string value => s &
+        print "lookup: " & print s & print "\n"
+        -----------------------------------
+        eval(env,IDENT(id)) => (env2,value)
+
+  (* eval of an assignment node returns the updated environment and
+   * the assigned value.
+   *)
+  rule  eval(env,exp) => (env2,value)  &  
+        update(env2,id,value) => env3
+        ----------------------------------------
+        eval(env,ASSIGN(id,exp)) => (env3,value)
+
+(* eval of an addition node ADD(e1,e2), etc. in an environment env *)
+
+  rule  eval(env1, e1) => (env2, v1)  &
+        eval(env2, e2) => (env3, v2)  &
+        apply_binop(binop,v1,v2) => v3
+        ---------------------------------
+        eval(env1, BINARY(e1,binop,e2) ) => (env3, v3)
+
+  rule  eval(env1, e) => (env2, v1)  &
+        apply_unop(unop,v1) => v2
+        --------------------------------------------
+        eval(env1, UNARY(unop,e) ) => (env2, v2)
+
+end (* of eval *)
+
+
+relation apply_binop: (BinOp,int,int) => int =
+
+ rule   int_add(v1,v2) => v3
+        ----------------------
+        apply_binop(ADD,v1,v2) => v3
+
+ rule   int_sub(v1,v2) => v3
+        ----------------------
+        apply_binop(SUB,v1,v2) => v3
+
+ rule   int_mul(v1,v2) => v3
+        ----------------------
+        apply_binop(MUL,v1,v2) => v3
+
+ rule   int_div(v1,v2) => v3
+        -----------------------
+        apply_binop(DIV,v1,v2) => v3
+
+end 
+
+relation apply_unop: (UnOp,int) => int =
+
+ rule   int_neg(v) => v2
+        -----------------------
+        apply_unop(NEG,v) => v2
+
+end 
+

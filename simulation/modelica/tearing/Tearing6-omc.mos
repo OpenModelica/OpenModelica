@@ -1,0 +1,84 @@
+// name:      Tearing6-omc
+// keywords:  tearing
+// status:    correct
+// cflags: 	 +d=backenddaeinfo
+
+
+loadModel(Modelica); getErrorString();
+loadFile("Tearing6.mo"); getErrorString();
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+setTearingMethod("omcTearing"); getErrorString();
+simulate(Tearing6); getErrorString();
+
+val(R1.i,0.2); getErrorString();
+val(R1.v,0.2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Tearing6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 54
+//  * Number of variables: 54
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (9):
+//  * Single equations (assignments): 8
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {3 7}
+//  * Non-linear torn systems: 0
+// [Modelica 3.2.1/Electrical/Analog/Basic.mo:62:3-63:40:writable] Warning: Parameter R1.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Electrical/Analog/Basic.mo:62:3-63:40:writable] Warning: Parameter R2.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Electrical/Analog/Basic.mo:62:3-63:40:writable] Warning: Parameter R3.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Electrical/Analog/Basic.mo:62:3-63:40:writable] Warning: Parameter R4.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Electrical/Analog/Basic.mo:62:3-63:40:writable] Warning: Parameter R5.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter S.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter S.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 2
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (25):
+//  * Single equations (assignments): 24
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {3 7}
+//  * Non-linear torn systems: 0
+// "
+// 0.4755282581475768
+// ""
+// 0.4755282581475768
+// ""
+// endResult

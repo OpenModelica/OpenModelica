@@ -1,0 +1,17 @@
+// name:     For-statement 1
+// keywords: for
+// status:   correct
+// 
+//  Test the interactive for-statement
+//
+k := 0;
+for i in 1:1000 loop
+  k := k + i;
+end for;
+k
+
+// Result:
+// 0
+// 
+// 500500
+// endResult

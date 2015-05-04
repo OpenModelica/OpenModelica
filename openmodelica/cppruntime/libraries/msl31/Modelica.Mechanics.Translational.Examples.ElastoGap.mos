@@ -1,0 +1,62 @@
+// name:     Modelica.Mechanics.Translational.Examples.ElastoGap
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.Translational.Examples.ElastoGap,stopTime=10.0, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.ElastoGap_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.Translational.Examples.ElastoGap.mat","Modelica.Mechanics.Translational.Examples.ElastoGap_diff.csv",0.01,0.001,
+  {"springDamper1.s_rel",
+  "mass1.v",
+  "elastoGap1.s_rel",
+  "mass2.v",
+  "der(springDamper1.s_rel)",
+  "der(mass1.v)",
+  "der(elastoGap1.s_rel)",
+  "der(mass2.v)",
+  "fixed.flange.f",
+  "rod1.flange_b.f",
+  "rod2.flange_b.f",
+  "springDamper1.flange_b.s",
+  "springDamper2.s_rel",
+  "springDamper2.f",
+  "springDamper2.flange_a.s",
+  "mass1.s",
+  "mass1.flange_a.f",
+  "mass1.a",
+  "elastoGap1.f_c",
+  "elastoGap1.f_d2",
+  "elastoGap1.f_d",
+  "elastoGap2.s_rel",
+  "elastoGap2.f",
+  "elastoGap2.f_c",
+  "elastoGap2.f_d2",
+  "elastoGap2.f_d",
+  "mass2.s",
+  "mass2.flange_a.s",
+  "mass2.flange_a.f",
+  "mass2.flange_b.s",
+  "mass2.a",
+  "elastoGap2.flange_b.s",
+  "rod2.s",
+  "elastoGap1.flange_a.s",
+  "rod1.s",
+  "elastoGap2.contact",
+  "elastoGap1.contact"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.ElastoGap_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.ElastoGap', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

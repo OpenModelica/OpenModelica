@@ -1,0 +1,27 @@
+// name:     Modelica.Electrical.Machines.Examples.TransformerTestbench
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.Machines.Examples.TransformerTestbench,stopTime=0.10000000149);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.TransformerTestbench_res.mat",
+  "ReferenceFiles/Modelica.Electrical.Machines.Examples.TransformerTestbench.mat","Modelica.Electrical.Machines.Examples.TransformerTestbench_diff.csv",0.01,0.00001,
+  {"transformer.l1sigma.inductor[1].i",
+  "transformer.l1sigma.inductor[2].i",
+  "der(transformer.l1sigma.inductor[1].i)",
+  "der(transformer.l1sigma.inductor[2].i)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.TransformerTestbench_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.10000000149, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

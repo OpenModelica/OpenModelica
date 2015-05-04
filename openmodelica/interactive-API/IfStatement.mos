@@ -1,0 +1,34 @@
+// name:     If-statement
+// keywords: if
+// status:   correct
+// 
+//  Test the interactive IF-statement
+//
+if true then a := 5;else a:=10;end if; //test else if (true)
+a;
+if false then a := 5;else a:=34;end if; //test else if (false)
+a;
+if false then a := 77;end if; //test only if (false)
+a;
+if 5>2 then a := 77;end if; //test only if (true)
+a;
+if false then a := 5; elseif a > 50 then b:= "test"; a:= 100; else a:=34;end if;  //test else if
+a;
+b;
+if 100>40 then if a > 10 then a:=55; else a:=60; end if; else a:=70; end if; // test nested if
+a;
+// Result:
+// 
+// 5
+// 
+// 34
+// 
+// 34
+// 
+// 77
+// 
+// 100
+// "test"
+// 
+// 55
+// endResult

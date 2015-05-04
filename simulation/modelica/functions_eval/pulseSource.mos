@@ -1,0 +1,8 @@
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadFile("PulseSource.mo"); getErrorString();
+simulate(PulseSource, stopTime=1e-11,numberOfIntervals=2000);getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("PulseSource_res.mat",
+  "ReferenceFiles/PulseSource.mat",
+  "PulseSource_diff.csv", 0.01, 0.0001,
+  {"vin.v"}); 
+getErrorString();

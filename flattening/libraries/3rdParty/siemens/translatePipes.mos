@@ -1,0 +1,26 @@
+// name:     translate Pipes
+// keywords: SiemensPower Pipes
+// status:   correct
+// teardown_command: rm -rf SiemensPower.Components.Pipes.Tests.tube* _SiemensPower.Components.Pipes.Tests.tube
+//
+//  Test SiemensPower component Pipes
+//  TODO: check small differences in SH.qMetalFluidDelayed[1]
+//
+
+loadModel(Modelica);
+loadFile("SiemensPower/package.mo");getErrorString();
+
+// test simple model
+translateModel(SiemensPower.Components.Pipes.Tests.tubeTest, stopTime=2000, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/tubeTest.mat");
+
+// test full model
+translateModel(SiemensPower.Components.Pipes.Tests.tube_ownMedia_test, stopTime=2000, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/tube_ownMedia_test.mat");
+
+// Result:
+// true
+// true
+// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
+// "
+// true
+// true
+// endResult

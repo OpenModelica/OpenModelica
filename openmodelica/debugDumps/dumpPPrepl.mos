@@ -1,0 +1,24 @@
+// name: dumpPPrepl.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=dumpPPrepl
+// 
+
+// TODO: change this model to test the dump +d=dumpPPrepl
+loadString("
+model testDumpPPrepl
+end testDumpPPrepl;
+"); getErrorString();
+
+setDebugFlags("dumpPPrepl"); getErrorString();
+buildModel(testDumpPPrepl); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"testDumpPPrepl","testDumpPPrepl_init.xml"}
+// ""
+// endResult

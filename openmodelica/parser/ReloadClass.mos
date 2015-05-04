@@ -1,0 +1,25 @@
+// status: correct
+
+loadFile("ReloadClass.mo");getErrorString();
+echo(false);(r1,s1):=getTimeStamp(ReloadClass);echo(true);
+reloadClass(ReloadClass);getErrorString();
+echo(false);(r2,s2):=getTimeStamp(ReloadClass);echo(true);
+if r1 == r2 then "(Good) Reloading file without changes works fine (same mtime reported)" else "(Bad) Reloading file without changes failed";
+system("touch ReloadClass.mo");
+reloadClass(ReloadClass);
+echo(false);(r3,s3):=getTimeStamp(ReloadClass);echo(true);
+if r2 <> r3 then "(Good) the file was reloaded, mtime changed" else "(Bad) Expected mtime to change on reload";
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// true
+// "(Good) Reloading file without changes works fine (same mtime reported)"
+// 0
+// true
+// true
+// "(Good) the file was reloaded, mtime changed"
+// endResult

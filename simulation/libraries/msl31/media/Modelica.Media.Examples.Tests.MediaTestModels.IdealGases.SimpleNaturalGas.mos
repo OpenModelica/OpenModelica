@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGas)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGas);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGas)
+// {"Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGas","Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGas_init.xml"}
+// endResult

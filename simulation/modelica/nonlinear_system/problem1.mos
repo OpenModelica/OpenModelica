@@ -1,0 +1,44 @@
+// name: problem1
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem1* _nonlinear_system.problem1* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+simulate(nonlinear_system.problem1, stopTime=2); getErrorString();
+
+val(x[1],  {0.0, 1.0, 2.0});
+val(x[2],  {0.0, 1.0, 2.0});
+val(x[3],  {0.0, 1.0, 2.0});
+val(x[4],  {0.0, 1.0, 2.0});
+val(x[5],  {0.0, 1.0, 2.0});
+val(x[6],  {0.0, 1.0, 2.0});
+val(x[7],  {0.0, 1.0, 2.0});
+val(x[8],  {0.0, 1.0, 2.0});
+val(x[9],  {0.0, 1.0, 2.0});
+val(x[10], {0.0, 1.0, 2.0});
+val(z,     {0.0, 1.0, 2.0});
+val(y,     {0.0, 1.0, 2.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// {0.4044646785222299,0.2484857135631037,0.15120913599084485}
+// {0.16359167617209078,0.06174514984496482,0.02286420280709781}
+// {0.026762236512794215,0.003812463529377159,0.0005227717700040993}
+// {0.0007162173031667359,0.000014534878162830944,0.00000027329032351321894}
+// {0.000000512967225355432,0.00000000021126268320833984,0.00000000000007468760092595987}
+// {0.00000000000026313537428885054,0.000000000000000000044631921316387364,0.000000000000000000000000005578237732075441}
+// {0.00000000000000000000000006924022520213346,1.992008400392194e-39,3.111673619555016e-53}
+// {4.7942087860421577e-51,3.96809746723308e-78,9.682512714634616e-106}
+// {2.298443788416382e-101,1.5745797509461799e-155,9.3751052469061e-211}
+// {5.282843848509851e-202,2.4793013920899e-310,0.0}
+// {0.5955353214777701,0.3140578620268712,0.17459638385834494}
+// {0.0,0.437456424410025,0.6741944801508103}
+// endResult

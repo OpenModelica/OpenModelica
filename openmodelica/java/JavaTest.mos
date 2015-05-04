@@ -1,0 +1,29 @@
+// name:     Checking for Java Implementation
+// keywords: algorithm
+// status:   correct
+// 
+// Test of External Java functions
+//
+
+loadFile("JavaTest.mo");
+echo(false);
+a:=JavaTest.GetJavaSystemProperty("java.vm.name");
+b:=JavaTest.GetJavaSystemProperty("java.vm.version");
+echo(true);
+JavaTest.JavaIntString(1);
+JavaTest.JavaRealString(1.5);
+JavaTest.JavaBoolString(true);
+JavaTest.JavaStringInt("1");
+JavaTest.JavaStringReal("1.5");
+JavaTest.JavaStringBool("true");
+
+// Result:
+// true
+// true
+// "1"
+// "1.5"
+// "true"
+// 1
+// 1.5
+// true
+// endResult

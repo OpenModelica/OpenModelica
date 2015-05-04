@@ -1,0 +1,18 @@
+// name:     HumMod_HumMod_GolemEdition [instantiation]
+// keywords: instantiation
+// status:   correct
+// teardown_command: rm -f *.so *.dll *.log *.c* *.makefile *.libs
+// 
+//  Modelica HumMod_HumMod_GolemEdition
+//
+
+/*
+ * The HumModOMCTotal.mo model is GPL v2 (http://www.gnu.org/licenses/gpl-2.0.html).
+ * contact Pavol at: Pavol.Privitzer@lf1.cuni.cz if you have questions about the model
+ */
+
+loadFile("HumModOMCTotal.mo", encoding="Windows-1252"); getErrorString();
+instantiateModel(HumMod_HumMod_GolemEdition); getErrorString();
+
+// Result:
+// endResult

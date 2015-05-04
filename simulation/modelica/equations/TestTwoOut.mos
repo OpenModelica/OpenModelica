@@ -1,0 +1,29 @@
+// name:     TestTwoOut
+// keywords: when with tuple and array assigments
+// status: correct
+// teardown_command: rm -rf TestTwoOut_* TestTwoOut TestTwoOut.exe TestTwoOut.cpp TestTwoOut.makefile TestTwoOut.libs TestTwoOut.log output.log
+// 
+//
+// Ticket #1971
+// 
+
+loadFile("TestTwoOut.mo");
+simulate(TestTwoOut,stopTime=0.85);
+
+val(out,1.0);
+val(so[1],1.0);
+val(so[2],1.0);
+val(so[3],1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TestTwoOut_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestTwoOut', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 5.4
+// 9.0
+// 18.0
+// 27.0
+// endResult

@@ -1,0 +1,48 @@
+// name: sample1
+// keywords: events
+// status: correct
+// teardown_command: rm -rf *sampleTests.sample1* output.log
+//
+// Event handling
+//
+//
+
+loadString("
+package sampleTests
+  model sample1
+    parameter Real offer = 1000;
+    Real storage(start=0);
+    
+  equation
+    when sample(1, 1) then
+      storage = pre(storage) + offer;
+    end when;
+  end sample1;
+end sampleTests;
+"); getErrorString();
+
+simulate(sampleTests.sample1, startTime=0.0, stopTime=10.0, step=0.2); getErrorString();
+val(storage, 0.1);
+val(storage, 1.1);
+val(storage, 3.1);
+val(storage, 5.1);
+val(storage, 7.1);
+val(storage, 9.1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "sampleTests.sample1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'sampleTests.sample1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "
+// 0.0
+// 1000.0
+// 3000.0
+// 5000.0
+// 7000.0
+// 9000.0
+// endResult

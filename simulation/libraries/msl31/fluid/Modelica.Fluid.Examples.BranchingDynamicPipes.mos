@@ -1,0 +1,118 @@
+//name:        Modelica.Fluid.Examples.BranchingDynamicPipes [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+
+simulate(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.BranchingDynamicPipes', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.BranchingDynamicPipes
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if boundary1.medium.preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Pipes.mo:3110:11-3112:25:writable] Error: Failed to elaborate expression: Internal.m_flow_of_dp_fric(dp_grav_b - dp_grav_a, rho_a, rho_b, mu_a, mu_b, length, diameter, Re1, Re2, Delta) + m_flow_small
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe1.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe2.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe3.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[1].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[2].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[3].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[4].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if pipe4.mediums[5].preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// [Air.mo:113:10-113:95:writable] Warning: Non-array modification 'if boundary4.medium.preferredMediumStates then StateSelect.prefer else StateSelect.default' for array component, possibly due to missing 'each'.
+// "
+// end SimulationResult;
+// ""
+// endResult

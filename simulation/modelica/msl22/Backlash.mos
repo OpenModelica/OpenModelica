@@ -1,0 +1,29 @@
+// name:     BacklashTest
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModelica_* output.log
+// 
+//  Simulate Rotational inertias with springs 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// BacklashTest
+simulate(TestModels.RotationalModels.SpringInertia.BacklashTest, tolerance=1e-5, numberOfIntervals=100);
+{val(inertia1.w,0.0),val(inertia1.w,0.2),val(inertia1.w,0.4),
+val(inertia1.w,0.6),val(inertia1.w,0.8),val(inertia1.w,1.0)};
+{val(inertia1.phi,0.0),val(inertia1.phi,0.2),val(inertia1.phi,0.4),
+val(inertia1.phi,0.6),val(inertia1.phi,0.8),val(inertia1.phi,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.SpringInertia.BacklashTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.BacklashTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.0,0.1099603913540543,0.28791819611632685,0.2879115814704901,0.10996581888637622,0.00000963053425443222}
+// {0.0,0.007746071849397871,0.048778575045228915,0.1103878320560297,0.15141854065688934,0.15915308394930777}
+// endResult

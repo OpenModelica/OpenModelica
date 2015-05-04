@@ -1,0 +1,19 @@
+// name:     WhenNotValid
+// keywords: equation
+// status:   correct
+// 
+// Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// 
+loadFile("WhenNotValid.mo");
+simulate(WhenNotValid,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+getErrorString(); // simulation failed, check error string.
+
+// Result:
+// fel i lowerWhenEqntrue
+// record SimulationResult
+//     resultFile = "Simulation failed.
+// Too few equations, underdetermined system. The model has 2 variables and 1 equations
+// "
+// end SimulationResult;
+// ""
+// endResult

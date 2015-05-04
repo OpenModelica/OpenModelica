@@ -1,0 +1,43 @@
+// In function diff:
+    // (e1-e2)’ => e1’+e2’
+    case (SUB(e1,e2),id)
+      equation
+        e1prim = diff(e1,id);
+        e2prim = diff(e2,id); 
+      then SUB(e1prim,e2prim);
+    // (e1*e2)’ => e1’*e2 + e1*e2’
+    case (MUL(e1,e2),id)
+      equation
+        e1prim = diff(e1,id);
+        e2prim = diff(e2,id); 
+      then ADD(MUL(e1prim,e2),MUL(e1,e2prim));
+    // sin(e1)’ => cos(e1)*e1’
+    case (CALL("sin", {e1}),id)
+      equation
+        e1prim = diff(e1,id);
+      then MUL(CALL("cos",{e1}),e1prim);
+    // cos(e1)’ => -sin(e1)*e1’
+    case (CALL("cos", {e1}),id)
+      equation
+        e1prim = diff(e1,id);
+      then NEG(MUL(CALL("sin",{e1}),e1prim));
+    // pow(e1,INT(i))’ => i*e1’*pow(e1,INT(i-1))
+    case (CALL("pow", {e1,INT(i1)}),id)
+      local
+        Integer i1,i2;
+      equation
+        e1prim = diff(e1,id);
+        i2 = i1-1;
+      then MUL(INT(i1),MUL(e1prim,CALL("pow",{e1,INT(i2)})));
+
+// In function simplifyExp2:
+    case DIV(e,INT(1)) then e;
+    case SUB(INT(i1),INT(i2)) equation i = i1-i2; then INT(i);
+    case SUB(INT(0),e1) equation sim1 = simplifyExp2(NEG(e1)); then sim1;
+    case SUB(e1,NEG(e2)) equation sim2 = simplifyExp2(e2); e = ADD(e1,sim2); then simplifyExp2(e);
+    case NEG(INT(i1)) equation i = -i1; then INT(i);
+    case NEG(NEG(e)) then e;
+    case CALL("sin",{INT(0)}) then INT(0);
+    case CALL("cos",{INT(0)}) then INT(1);
+    case CALL("pow",{e,INT(0)}) then INT(1);
+    case CALL("pow",{e,INT(1)}) then e;

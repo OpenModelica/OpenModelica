@@ -1,0 +1,23 @@
+// name: OptionalOutput
+// status: correct
+//
+// Tests parsing/unparsing of function calls that use the Modelica wildcard
+// feature for function calls
+//
+
+loadFile("OptionalOutput.mo");
+list();
+
+// Result:
+// true
+// "class OptionalOutput
+// equation
+//   (a, , c) = fn();
+//   (a, ) = fn();
+//   () = fn();
+//   () = fn();
+//   (a, b, c) = fn();
+//   (a, b, c, ) = fn();
+//   (, a) = fn();
+// end OptionalOutput;"
+// endResult

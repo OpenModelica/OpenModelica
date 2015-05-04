@@ -1,0 +1,30 @@
+// name:     DAEexample
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf DAEexample_* DAEexample DAEexample.exe DAEexample.cpp DAEexample.makefile DAEexample.libs DAEexample.log output.log
+//
+// Equation handling
+//
+loadFile("DAEexample.mo");
+simulate(DAEexample, startTime=0.0, stopTime=1.0, tolerance=1e-5, numberOfIntervals=100);
+val(x,0.0);
+val(x,0.5);
+val(x,1.0);
+val(y,0.0);
+val(y,0.5);
+val(y,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "DAEexample_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'DAEexample', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.9
+// 0.9814703690055853
+// 1.2016745019223243
+// 0.5122399993895521
+// 0.6531549234056521
+// 1.0259242533530581
+// endResult
