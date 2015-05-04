@@ -379,17 +379,8 @@ msl22electrical.log: omc-diff
 msl22mechanics.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl22/Mechanics -f Makefile test > $@
 	@echo $@ done
-msl22flattening.log: omc-diff
-	$(MAKE) -C flattening/libraries/msl22 -f Makefile test > $@
-	@echo $@ done
-msl22additions.log: omc-diff
-	$(MAKE) -C flattening/libraries/msl22/modelicaAdditions -f Makefile test > $@
-	@echo $@ done
 biochem.log: omc-diff
 	$(MAKE) -C flattening/libraries/biochem -f Makefile test > $@
-	@echo $@ done
-msl31.log: omc-diff
-	$(MAKE) -C flattening/libraries/msl31 -f Makefile test > $@
 	@echo $@ done
 msl32simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl32 -f Makefile test > $@
@@ -414,9 +405,6 @@ siemens_simulation.log: omc-diff
 	@echo $@ done
 SiemensPower.log: omc-diff
 	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile test > $@
-	@echo $@ done
-hummod.log: omc-diff
-	$(MAKE) -C flattening/libraries/3rdParty/HumMod -f Makefile test > $@
 	@echo $@ done
 ThermoSysPro_simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/ThermoSysPro -f Makefile test > $@
