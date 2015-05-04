@@ -22,3 +22,6 @@
 [submodule "OMC"]
 	path = OMCompiler
 	url = ../OMCompiler.git
+[submodule "testsuite"]
+	path = testsuite
+	url = ../OpenModelica-testsuite.git
