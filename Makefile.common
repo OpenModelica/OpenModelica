@@ -1,4 +1,4 @@
-inclu.PHONY : all omc release mosh clean .testvariables mkbuilddirs qtclean qtclean-common modelica3d
+inclu.PHONY : all omc release clean .testvariables mkbuilddirs modelica3d
 
 unexport PREFIX
 
@@ -25,7 +25,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc qtclients omshell omnotebook omedit omvisualize omoptim omoptimbasis
+.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc
 
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -270,7 +270,6 @@ cleancompiler:
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	rm -f Compiler/.depend
-	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
 	rm -f $(autoconfGeneratedFiles)
 	rm -f config.status config.log
 	rm -rf build/
@@ -285,11 +284,10 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean
+clean: fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	# remove Ipopt/Makefile if there is no Ipopt/Ipopt/Makefile to run configure again!

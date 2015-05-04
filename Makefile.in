@@ -74,74 +74,6 @@ build/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
-qtclean-common:
-	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
-	rm -rf OMNotebook/bin/OMNotebook$(EXE)
-	rm -rf OMOptim/build/OMOptim$(EXE) OMOptim/build/omc_communication.*
-	for f in 3rdParty/qwt \
-	         OMEdit/OMEditGUI \
-	         OMNotebook/OMNotebookGUI \
-	         OMOptim/build \
-	         OMOptimBasis/build \
-	         OMShell/OMShellGUI \
-	         OMPlot/OMPlotGUI \
-	         ; do test ! -f $$f/Makefile || (make -C $$f clean && rm -f $$f/Makefile); done
-qtclean: qtclean-common
-	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
-	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
-	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
-	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
-	$(MAKE) -C OMOptim/build -f Makefile.unix clean
-	$(MAKE) -C OMOptimBasis/build -f Makefile.unix clean
-
-ifeq ($(QMAKE),)
-qtclients:
-	@echo "*** OpenModelica configured without support for Qt"
-else
-qwt-build: mkbuilddirs
-	$(MAKE) -C 3rdParty/qwt -f Makefile.unix
-	test -f $(builddir_inc)/qwt/qwt_global.h || ($(MAKE) -C 3rdParty/qwt install && cp -a 3rdParty/qwt/build/include/*.h $(builddir_inc)/qwt)
-
-build/$(LIB_OMC)/libomqwt.so: mkbuilddirs qwt-build
-	cp -a 3rdParty/qwt/lib/libomqwt.so* build/$(LIB_OMC)/
-build/$(LIB_OMC)/libomqwt.dylib: mkbuilddirs qwt-build
-	cp -a 3rdParty/qwt/lib/libomqwt*dylib build/$(LIB_OMC)/
-	install_name_tool -id @rpath/libomqwt.6.2.0.dylib build/$(LIB_OMC)/libomqwt.6.2.0.dylib
-
-qwt: build/$(LIB_OMC)/libomqwt@SHREXT@
-omplot: mkbuilddirs qwt
-	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: omc qwt omplot qjson
-	$(MAKE) -C Compiler/Script
-	cp -a Compiler/Script/OpenModelicaScriptingAPIQt.cpp Compiler/Script/OpenModelicaScriptingAPIQt.h build/include/omc/scripting-API/
-	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
-endif
-
-ifeq ($(QMAKE),)
-else ifeq (@IDLCMD@,)
-qtclients: omedit
-	@echo "*** OpenModelica configured without support for CORBA"
-else
-omnotebook: mkbuilddirs omc qwt omplot
-	mkdir -p $(builddir_share)/omnotebook
-	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix
-omshell: mkbuilddirs
-	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
-ifeq (@with_paradiseo@,)
-omoptim:
-	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
-omoptimbasis:
-	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
-else
-omoptim: mkbuilddirs qwt omoptimbasis
-	$(MAKE) -C OMOptim/build -f Makefile.unix
-omoptimbasis: mkbuilddirs qwt
-	$(MAKE) -C OMOptimBasis/build -f Makefile.unix
-endif
-
-qtclients: qwt @OMNOTEBOOK@ omshell omedit omplot omoptim omoptimbasis
-endif
-
 omc-bootstrapped:
 	$(MAKE) bootstrap-dependencies interactive sim-dependencies
 	$(MAKE) -C Compiler/boot
@@ -200,7 +132,7 @@ fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done
 
 SOURCE_DIRS=$(SOURCE_DIRS_UTF8) "libraries/Modelica 2.2.2" testsuite/flattening/libraries/3rdParty/HumMod
-SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ `bash -c echo libraries/{BioChem 1.0,ModelicaAdditions,Modelica_LinearSystems2 2.3,Modelica 1.6,ModelicaServices 1.0,ModelicaServices 1.0 modelica3d,Modelica 3.1,SimpleFluid,Modelica 3.2.1,SimpleVisual.mo}` `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
+SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ `bash -c echo libraries/{BioChem 1.0,ModelicaAdditions,Modelica_LinearSystems2 2.3,Modelica 1.6,ModelicaServices 1.0,ModelicaServices 1.0 modelica3d,Modelica 3.1,SimpleFluid,Modelica 3.2.1,SimpleVisual.mo}` `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
 
 bom-error:
 	rm -f bom-error.log bom-error.sh
