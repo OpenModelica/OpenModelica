@@ -2611,6 +2611,18 @@ external "builtin";
 annotation(preferredView="text");
 end readSimulationResultVars;
 
+public function filterSimulationResults
+  input String inFile;
+  input String outFile;
+  input String[:] vars = fill("",0);
+  output Boolean success;
+  output String[:] resultFiles;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>
+</html>"),preferredView="text");
+end filterSimulationResults;
+
 public function compareSimulationResults "compares simulation results."
   input String filename;
   input String reffilename;

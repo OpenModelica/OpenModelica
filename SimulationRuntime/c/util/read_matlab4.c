@@ -50,8 +50,8 @@ typedef struct {
 #define strdup _strdup
 #endif
 
-const char *binTrans_char = "binTrans";
-const char *binNormal_char = "binNormal";
+static const char *binTrans_char = "binTrans";
+static const char *binNormal_char = "binNormal";
 
 int omc_matlab4_comp_var(const void *a, const void *b)
 {
@@ -206,8 +206,10 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
             /* binNormal */
             /* fprintf(stderr, "use binNormal format\n"); */
             binTrans = 0;
+          } else {
+            fprintf(stderr, "row 3: %s\n", row);
+            return "Aclass matrix does not match binTrans or binNormal format";
           }
-          else return "Aclass matrix does not match binTrans or binNormal format";
         }
       }
       break;

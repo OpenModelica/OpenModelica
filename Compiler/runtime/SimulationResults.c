@@ -1,4 +1,5 @@
 #include "read_matlab4.h"
+#include "write_matlab4.h"
 #include <stdint.h>
 #include <string.h>
 #include "errorext.h"
@@ -373,5 +374,164 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("readDataSet() not implemented for plot format: %s\n"), msg, 1);
     return NULL;
+  }
+}
+
+static inline int failedToWriteToFile(const char *file)
+{
+  c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to write to file %s."), &file, 1);
+  return 0;
+}
+
+static inline int intMax(int a, int b)
+{
+  return a>b ? a : b;
+}
+
+int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars)
+{
+  const char *msg[2] = {"",""};
+  void *tmp;
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(inFile, &simresglob)) {
+    return 0;
+  }
+  vars = mmc_mk_cons(mmc_mk_scon("time"),vars);
+  switch (simresglob.curFormat) {
+  case MATLAB4: {
+    int numToFilter = listLength(vars);
+    int i, j;
+    int numUnique = 0;
+    int longestName = 0;
+    int longestDesc = 0;
+    ModelicaMatVariable_t **mat_var = GC_malloc(numToFilter*sizeof(ModelicaMatVariable_t*));
+    int *indexes = (int*) GC_malloc(simresglob.matReader.nvar*sizeof(int)); /* Need it to be zeros; note that the actual number of indexes is smaller */
+    int *indexesToOutput = NULL;
+    omc_matlab4_read_all_vals(&simresglob.matReader);
+    for (i=0; i<numToFilter; i++) {
+      const char *var = MMC_STRINGDATA(MMC_CAR(vars));
+      vars = MMC_CDR(vars);
+      mat_var[i] = omc_matlab4_find_var(&simresglob.matReader,var);
+      if (mat_var[i] == NULL) {
+        msg[0] = SystemImpl__basename(inFile);
+        msg[1] = var;
+        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
+        return 0;
+      }
+      if (mat_var[i]->isParam) {
+        msg[0] = SystemImpl__basename(inFile);
+        msg[1] = var;
+        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("filterSimulationResults not implemented for parameter variable %s in file %s."), msg, 1);
+        return 0;
+      }
+      /* Store the old index in the array */
+      if (0==indexes[mat_var[i]->index-1]++) {
+        numUnique++;
+      }
+      longestName = intMax(longestName, strlen(mat_var[i]->name));
+      longestDesc = intMax(longestDesc, strlen(mat_var[i]->descr));
+    }
+    /* Create the list of variable indexes to output */
+    indexesToOutput = GC_malloc_atomic(numUnique * sizeof(int));
+    j=0;
+    for (i=0; i<simresglob.matReader.nvar; i++) {
+      if (indexes[i]) {
+        indexesToOutput[j++] = i+1;
+      }
+      /* indexes becomes the lookup table from old index to new index */
+      indexes[i] = j;
+    }
+    FILE *fout = fopen(outFile, "wb");
+    if (fout == NULL) {
+      return failedToWriteToFile(outFile);
+    }
+    /* Matrix list: "Aclass" "name" "description" "dataInfo" "data_1" "data_2" */
+    if (writeMatVer4AclassNormal(fout)) {
+      return failedToWriteToFile(outFile);
+    }
+    if (writeMatVer4MatrixHeader(fout, "name", numToFilter, longestName, sizeof(int8_t))) {
+      return failedToWriteToFile(outFile);
+    }
+    char *tmp;
+
+    tmp = GC_malloc(numToFilter*longestName);
+    for (i=0; i<numToFilter; i++) {
+      int len = strlen(mat_var[i]->name);
+      for (j=0; j<len; j++) {
+        tmp[numToFilter*j+i] = mat_var[i]->name[j];
+      }
+    }
+    if (1 != fwrite(tmp, numToFilter*longestName, 1, fout)) {
+      return failedToWriteToFile(outFile);
+    }
+    GC_free(tmp);
+
+    if (writeMatVer4MatrixHeader(fout, "description", numToFilter, longestDesc, sizeof(int8_t))) {
+      return failedToWriteToFile(outFile);
+    }
+
+    tmp = GC_malloc(numToFilter*longestDesc);
+    for (i=0; i<numToFilter; i++) {
+      int len = strlen(mat_var[i]->descr);
+      for (j=0; j<len; j++) {
+        tmp[numToFilter*j+i] = mat_var[i]->descr[j];
+      }
+    }
+    if (1 != fwrite(tmp, numToFilter*longestDesc, 1, fout)) {
+      return failedToWriteToFile(outFile);
+    }
+    GC_free(tmp);
+
+    if (writeMatVer4MatrixHeader(fout, "dataInfo", numToFilter, 4, sizeof(int32_t))) {
+      return failedToWriteToFile(outFile);
+    }
+    for (i=0; i<numToFilter; i++) {
+      int32_t x = 2; /* data_2 */
+      if (1 != fwrite(&x, sizeof(int32_t), 1, fout)) {
+        return failedToWriteToFile(outFile);
+      }
+    }
+    for (i=0; i<numToFilter; i++) {
+      int32_t x = indexes[indexesToOutput[i]-1];
+      if (1 != fwrite(&x, sizeof(int32_t), 1, fout)) {
+        return failedToWriteToFile(outFile);
+      }
+    }
+    for (i=0; i<numToFilter; i++) {
+      int32_t x = 0; /* linear interpolation */
+      if (1 != fwrite(&x, sizeof(int32_t), 1, fout)) {
+        return failedToWriteToFile(outFile);
+      }
+    }
+    for (i=0; i<numToFilter; i++) {
+      int32_t x = -1; /* not defined outside the time interval */
+      if (1 != fwrite(&x, sizeof(int32_t), 1, fout)) {
+        return failedToWriteToFile(outFile);
+      }
+    }
+
+    if (writeMatVer4MatrixHeader(fout, "data_1", 2, 1, sizeof(double))) {
+      return failedToWriteToFile(outFile);
+    }
+    double start_stop[2] = {omc_matlab4_startTime(&simresglob.matReader), omc_matlab4_stopTime(&simresglob.matReader)};
+    if (1 != fwrite(start_stop, sizeof(double)*2, 1, fout)) {
+      return failedToWriteToFile(outFile);
+    }
+
+    if (writeMatVer4MatrixHeader(fout, "data_2", simresglob.matReader.nrows, numUnique, sizeof(double))) {
+      return failedToWriteToFile(outFile);
+    }
+    for (i=0; i<numUnique; i++) {
+      double *vals = omc_matlab4_read_vals(&simresglob.matReader, indexesToOutput[i]);
+      if (1!=fwrite(vals, sizeof(double)*simresglob.matReader.nrows, 1, fout)) {
+        return failedToWriteToFile(outFile);
+      }
+    }
+    fclose(fout);
+    return 1;
+  }
+  default:
+    msg[0] = PlotFormatStr[simresglob.curFormat];
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("filterSimulationResults not implemented for plot format: %s\n"), msg, 1);
+    return 0;
   }
 }

@@ -2897,6 +2897,16 @@ algorithm
     case (cache,_,"compareSimulationResults",_,st,_)
       then (cache,Values.STRING("Error in compareSimulationResults"),st);
 
+    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars)},st,_)
+      equation
+        vars_1 = List.map(cvars, ValuesUtil.extractValueString);
+        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"filterSimulationResults",_,st,_)
+      then (cache,Values.BOOL(false),st);
+
     case (cache,_,"diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b)},st,_)
       equation
         pwd = System.pwd();

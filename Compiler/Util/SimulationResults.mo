@@ -116,5 +116,13 @@ public function diffSimulationResultsHtml
   external "C" html=SimulationResults_diffSimulationResultsHtml(runningTestsuite,var,filename,reffilename,refTol,relTolDiffMaxMin,rangeDelta) annotation(Library = "omcruntime");
 end diffSimulationResultsHtml;
 
+public function filterSimulationResults
+  input String inFile;
+  input String outFile;
+  input list<String> vars;
+  output Boolean result;
+  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars) annotation(Library = "omcruntime");
+end filterSimulationResults;
+
 annotation(__OpenModelica_Interface="frontend");
 end SimulationResults;

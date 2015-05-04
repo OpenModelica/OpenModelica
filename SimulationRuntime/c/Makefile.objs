@@ -19,13 +19,13 @@ meta_modelica_mk_box.h \
 gc/mmc_gc.h
 
 # Files for util functions
-UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) memory_pool$(OBJ_EXT) modelica_string$(OBJ_EXT) read_write$(OBJ_EXT) read_matlab4$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) rtclock$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) tinymt64$(OBJ_EXT) omc_mmap$(OBJ_EXT) cJSON$(OBJ_EXT)
+UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) memory_pool$(OBJ_EXT) modelica_string$(OBJ_EXT) read_write$(OBJ_EXT) write_matlab4$(OBJ_EXT) read_matlab4$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) rtclock$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) tinymt64$(OBJ_EXT) omc_mmap$(OBJ_EXT) cJSON$(OBJ_EXT)
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 UTIL_OBJS=$(UTIL_OBJS_MINIMAL) java_interface$(OBJ_EXT) libcsv$(OBJ_EXT) read_csv$(OBJ_EXT) OldModelicaTables$(OBJ_EXT)
 else
 UTIL_OBJS=$(UTIL_OBJS_MINIMAL)
 endif
-UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h memory_pool.h modelica.h modelica_string.h read_write.h read_matlab4.h read_csv.h libcsv.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h tinymt64.h omc_mmap.h cJSON.h
+UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h memory_pool.h modelica.h modelica_string.h read_write.h write_matlab4.h read_matlab4.h read_csv.h libcsv.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h tinymt64.h omc_mmap.h cJSON.h
 
 # Files for math-support
 MATH_OBJS=pivot$(OBJ_EXT)

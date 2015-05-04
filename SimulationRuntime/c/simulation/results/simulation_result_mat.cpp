@@ -64,8 +64,6 @@ typedef struct mat_data {
   int numVars;
 } mat_data;
 
-extern "C" {
-
 long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment);
 void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *name, int rows, int cols, unsigned int size);
 void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int rows, int cols, const void *, unsigned int size);
@@ -652,5 +650,3 @@ void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double ts
     data_1[offset+i+cols] = (double)sInfo->booleanParameter[i];
   }
 }
-
-} /* extern C */
