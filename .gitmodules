@@ -19,3 +19,6 @@
 [submodule "libraries"]
 	path = libraries
 	url = ../OMLibraries.git
+[submodule "OMC"]
+	path = OMCompiler
+	url = ../OMCompiler.git
