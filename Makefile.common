@@ -153,6 +153,7 @@ breakprocess:
 	(cd testsuite/openmodelica/bootstrapping && cp BreakProcess.exe ../../../$(builddir_bin)/)
 
 all-runtimeCPPinstall:
+	$(MAKE) mkbuilddirs
 	$(MAKE) CMinpack
 	$(MAKE) all runtimeCPPinstall
 
