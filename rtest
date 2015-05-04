@@ -15,6 +15,7 @@ if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
   $OPENMODELICAHOME="$1build";
   $dirname=$2;
   $ENV{'OPENMODELICAHOME'} = $OPENMODELICAHOME;
+  $ENV{'REFERENCEFILES'} = "$1testsuite/ReferenceFiles";
 } else {
   print "You must run rtest from the testsuite (was run from $cwd)\n";
   exit 0;

@@ -142,7 +142,7 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
   end if;
   /* We can only compare to a reference file if we have one */
   modelNameStr := typeNameString(modelName);
-  referenceFile := if referenceFile == "" then "ReferenceFiles/" + modelNameStr + ".mat" else referenceFile;
+  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/msl32/" + modelNameStr + ".mat" else referenceFile;
   if regularFileExists(referenceFile+".xz") then
     system("if test ! -f "+referenceFile+" || test "+referenceFile+".xz -nt "+referenceFile+"; then xz --keep --decompress --force "+referenceFile+".xz ; fi");
     referenceExists := true;
