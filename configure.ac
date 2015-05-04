@@ -91,6 +91,9 @@ AC_SUBST(BOOST_INCLUDE)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
+m4_include([common/m4/pre-commit.m4])
+cp common/install-sh common/config.guess common/config.sub ./
+
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -607,7 +610,7 @@ AS_IF([test "x$with_UMFPACK" = xyes],
   UMFPACK_LDFLAGS=""
 ])
 
-m4_include([corba.m4])
+m4_include([common/m4/corba.m4])
 
 AC_MSG_CHECKING([if the user wants Modelica3D])
 MODELICA3D="yes"
@@ -623,74 +626,6 @@ AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
   AC_CHECK_HEADER([OpenCL/cl.h],[OPENCL="Yes"],[OPENCL="No"])
 ])
 FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
-
-m4_include([qmake.m4])
-
-if test -n "$QMAKE"; then
-
-  AC_MSG_CHECKING([if the user wants OMNotebook])
-  AC_ARG_ENABLE(omnotebook, [  --disable-omnotebook          OMNotebook is a notebook for Modelica. Enabled by default if CORBA is enabled. Does not work on OSX.],[test "xno" = x"$enableval" && OMNOTEBOOK=""],[OMNOTEBOOK="omnotebook"])
-  if test -z "$OMNOTEBOOK" ; then
-  AC_MSG_RESULT([no])
-  FINAL_MESSAGES="$FINAL_MESSAGES\nBuild OMNotebook: No"
-  else
-  AC_MSG_RESULT([yes])
-  FINAL_MESSAGES="$FINAL_MESSAGES\nBuild OMNotebook: Yes"
-  fi
-
-fi
-
-if test -n "$QMAKE"; then
-  AC_MSG_CHECKING([for paradisEO])
-  AC_ARG_WITH(paradiseo, [  --with-paradiseo                 Required for OMOptim. Default searches {PREFIX,/usr,/opt} for {include,lib}/paradiseo], [], [with_paradiseo=yes])
-
-  if test -f "$with_paradiseo/paradiseo-eo/src/eo"; then
-    # User used a local paradiseo installation
-    with_paradiseo_include="$with_paradiseo/paradiseo-eo/src $with_paradiseo/paradiseo-mo/src $with_paradiseo/paradiseo-moeo/src $with_paradiseo/paradiseo-eo/src/utils $with_paradiseo/paradiseo-mo/src/utils $with_paradiseo/paradiseo-moeo/src/utils"
-    if test -d "$with_paradiseo/paradiseo-eo/build/lib"; then
-      paradiseo_build="build"
-    else
-      paradiseo_build=""
-    fi
-    with_paradiseo_lib="-L$with_paradiseo/paradiseo-eo/$paradiseo_build/lib -L$with_paradiseo/paradiseo-moeo/$paradiseo_build/lib"
-    AC_MSG_RESULT(stock version in: $with_paradiseo)
-  else
-
-    if test x"$with_paradiseo" = "xyes"; then
-      with_paradiseo_checked=""
-      for f in /{usr,opt,$PREFIX}; do
-        if test -d "$f/include/paradiseo/" -a -d "$f"/lib/paradiseo/; then
-          with_paradiseo_include="$f/include/paradiseo/ $f/include/paradiseo/utils/"
-          with_paradiseo_lib="-L$f"/lib/paradiseo/
-          with_paradiseo="$f"
-        elif test -d "$f/include/paradiseo/" -a -f "$f"/lib*/libeo.a ; then
-          with_paradiseo_include=`for inc in $f/include/paradiseo/*; do echo -n " $inc"; done`
-          with_paradiseo_lib="-L"`dirname "$f"/lib*/libeo.a`
-          with_paradiseo="$f"
-        else
-          with_paradiseo_checked="$with_paradiseo_checked $f"
-        fi
-      done
-    fi
-
-    if test x"$with_paradiseo" = "xno"; then
-      with_paradiseo=""
-      AC_MSG_RESULT([disabled])
-    elif test x"$with_paradiseo" = "xyes"; then
-      AC_MSG_ERROR([not found (searched $with_paradiseo_checked)])
-    else
-      AC_MSG_RESULT($with_paradiseo)
-    fi
-
-  fi
-  if test -f /usr/bin/gcc-4.4 -a -f /usr/bin/g++-4.4; then
-    OMOPTIM_CC=gcc-4.4
-    OMOPTIM_CXX=g++-4.4
-  else
-    OMOPTIM_CC=$CC
-    OMOPTIM_CXX=$CXX
-  fi
-fi
 
 if test "$DARWIN" = "1"; then
   APP=".app"
@@ -871,28 +806,11 @@ Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
 Parser/Makefile \
-3rdParty/qwt/Makefile.unix \
-OMNotebook/OMNotebookGUI/OMNotebook.config \
-OMNotebook/OMNotebookGUI/Makefile.unix \
-OMShell/OMShellGUI/OMShell.config \
-OMShell/OMShellGUI/Makefile.unix \
-OMEdit/OMEditGUI/Makefile.unix \
-OMEdit/OMEditGUI/OMEdit.config \
-OMEdit/OMEditGUI/Debugger/Parser/Makefile.unix \
-OMEdit/OMEditGUI/Debugger/Parser/Makefile.lib.unix \
-OMPlot/OMPlotGUI/Makefile.unix \
-OMPlot/OMPlotGUI/OMPlotGUI.config \
-OMOptim/build/Makefile.unix \
-OMOptim/build/OMOptim.config \
-OMOptimBasis/build/Makefile.unix \
-OMOptimBasis/build/OMOptimBasis.config \
-OMVisualize/OMVisualizeGUI/OMVisualizeGUI.config \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/cpp/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
-mosh/src/Makefile \
 Compiler/boot/Makefile \
 "
 

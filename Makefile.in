@@ -1,5 +1,4 @@
-all:
-	$(MAKE) qtclients @OMSHELL_TERMINAL@
+all: omc
 
 autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
 
@@ -181,7 +180,7 @@ endif
 
 lis: lis-configure mkbuilddirs
 	@echo Building Lis from sources
-	$(MAKE) -C 3rdParty/lis-1.4.12
+	$(MAKE) -C 3rdParty/lis-1.4.12 src/.libs/liblis.la
 	# Copy the library; not headers (as they are not used by the runtime system)
 	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* build/$(LIB_OMC)/
 	@# FreeBSD lis does not create the symlinks...
@@ -189,7 +188,7 @@ lis: lis-configure mkbuilddirs
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so || ln -s liblis.so.0.0 build/lib/omc/liblis.so
 lis-configure:
 	# Configure and build lis
-	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure "--host=$(host)" --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && autoconf && ./configure "--host=$(host)" --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
 lis-clean:
 	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
 	rm -f 3rdParty/lis-1.4.12/Makefile

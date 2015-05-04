@@ -71,7 +71,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables mkbuilddirs boehm-gc idl libraries/msl-external-libs
+interactive-common: .testvariables mkbuilddirs boehm-gc idl
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies
@@ -162,20 +162,20 @@ breakprocess:
 	(cd testsuite/openmodelica/bootstrapping && cp BreakProcess.exe ../../../$(builddir_bin)/)
 
 all-runtimeCPPinstall:
-	$(MAKE) libraries/msl-external-libs CMinpack
+	$(MAKE) CMinpack
 	$(MAKE) all runtimeCPPinstall
 
 omc-and-runtimeCPPinstall: mkbuilddirs
-	$(MAKE) libraries/msl-external-libs CMinpack
+	$(MAKE) CMinpack
 	$(MAKE) omc runtimeCPPinstall
 
-runtimeCPP: libraries/msl-external-libs CMinpack
+runtimeCPP: CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)"
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
-runtimeCPPinstall: libraries/msl-external-libs CMinpack copycppheader
+runtimeCPPinstall: CMinpack copycppheader
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib
@@ -329,8 +329,6 @@ susan: all sustst
 sustst:
 	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
 
-include Makefile.libraries
-
 cleancompiler:
 	cd Compiler/boot && rm -rf ./build
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/Script clean
@@ -368,7 +366,6 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMi
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
 	build/bin/omc build/bin/omc.exe build/bin/omc-diff build/bin/omc-diff.exe \
 	bom-error.log bom-error.sh tab-error.log
-	rm -rf libraries/Resources libraries/link-external-libs libraries/link-external-libs-emcc libraries/msl-external-libs
 install-dirs:
 	@test ! "${DESTDIR}/${prefix}" -ef "${top_builddir}/build" || (echo Error: Install and build dirs are the same && false)
 	if [ "$(APP)" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
