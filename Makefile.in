@@ -56,6 +56,8 @@ ifeq ($(WITH_FMIL),yes)
 BOOTSTRAP_FMIL_DEP=fmil
 endif
 LIB_OMC=lib/@host_short@/omc
+LIBMODELICAEXTERNALC=build/lib/@host_short@/omc/libModelicaExternalC@SHREXT@
+LIBMODELICASTANDARDTABLES=build/lib/@host_short@/omc/libModelicaStandardTables@SHREXT@
 
 include Makefile.common
 
@@ -143,7 +145,6 @@ endif
 omc-bootstrapped:
 	$(MAKE) bootstrap-dependencies interactive sim-dependencies
 	$(MAKE) -C Compiler/boot
-	$(MAKE) omlibrary
 
 omc-no-sim:
 	$(MAKE) bootstrap-dependencies interactive-short

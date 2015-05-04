@@ -71,7 +71,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables mkbuilddirs boehm-gc idl
+interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies
@@ -389,3 +389,12 @@ graphstream-clean:
 
 sanity-check: omc
 	build/bin/omc Examples/SanityCheck.mos
+
+MODELICAEXTERNALC=3rdParty/ModelicaExternalC
+ModelicaExternalC: $(LIBMODELICAEXTERNALC) $(LIBMODELICASTANDARDTABLES)
+$(LIBMODELICAEXTERNALC):
+	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || ./autogen.sh))
+	(cd "$(MODELICAEXTERNALC)/BuildProjects/autotools" && (test -f Makefile || (./configure ${MSL321_CONFIG_EXTRA_FLAGS} "--host=$(host)" --libdir="`cd ../../../../build/$(LIB_OMC)/ && pwd -P || echo ERROR-BAD-INSTALL-PATH`" CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" $(MSL_EXTRA_ARGS) && $(MAKE) clean)))
+	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools"
+	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools" install
+$(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
