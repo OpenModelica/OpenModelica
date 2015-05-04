@@ -40,6 +40,12 @@ else
 AC_CHECK_PROG(MPICC,mpicc,[yes])
 AC_MSG_CHECKING([hdf5.h])
 for HDF_FIRST in Yes No; do
+  for d in serial mpich openmpi; do
+    if test -d /usr/include/hdf5/$d; then
+      CPPFLAGS="$CPPFLAGS -I/usr/include/hdf5/$d"
+      break
+    fi
+  done
   AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#include <hdf5.h>]],[])],AC_MSG_RESULT([OK]),[
     if ! test -z "$MPICC"; then
       CPPFLAGS_BAK=$CPPFLAGS
@@ -73,7 +79,7 @@ fi
 if test "$HDF5" = "Yes"; then
 
 LIBS_BEFORE="$LIBS"
-AC_SEARCH_LIBS([H5Eget_auto2],[hdf5],[HDF5="Yes"],[HDF5="No"])
+AC_SEARCH_LIBS([H5Eget_auto2],[hdf5 hdf5_serial hdf5_mpich hdf5_openmpi],[HDF5="Yes"],[HDF5="No"])
 AC_MSG_CHECKING([default API version])
 CPPFLAGS_BEFORE="$CPPFLAGS"
 FLAGS=`test "$HDF5" = "Yes" && echo 1.8 1.6`
