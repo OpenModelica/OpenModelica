@@ -114,7 +114,7 @@ endif
 
 lis: lis-configure mkbuilddirs
 	@echo Building Lis from sources
-	$(MAKE) -C 3rdParty/lis-1.4.12 src/.libs/liblis.la
+	$(MAKE) -C 3rdParty/lis-1.4.12/src
 	# Copy the library; not headers (as they are not used by the runtime system)
 	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* build/$(LIB_OMC)/
 	@# FreeBSD lis does not create the symlinks...
