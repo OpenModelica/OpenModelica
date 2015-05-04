@@ -26,7 +26,7 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter
 // {"Q1.vbe","Q1.vbc","Q1.vbx","Q1.vcs"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
@@ -35,5 +35,12 @@ runScript(modelTesting);getErrorString();
 // ""
 // Simulation options: startTime = 0.0, stopTime = 1e-07, numberOfIntervals = 999, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter_res.mat
-// Note: Result files are now equal. Please update the test to do verified simulation!
+// Files Equal!
+// Warning: Resultfile and Reference have different end time points!
+// Reffile[1012]=0.000000
+// File[23]=0.000000
+// 
+// "true
+// "
+// ""
 // endResult

@@ -8,7 +8,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Media.Examples.TestOnly.MixIdealGasAir);
 compareVars :=
 {
@@ -28,23 +28,26 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Translation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Media.Examples.TestOnly.MixIdealGasAir
 // {"medium.p","medium.T","medium2.p","medium2.T","medium2.X[1]","medium2.X[2]"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
 // \"ReferenceFiles/Modelica.Media.Examples.TestOnly.MixIdealGasAir.mat\"
 // "
 // ""
-// Translation succeeded
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TestOnly.MixIdealGasAir', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Media.Examples.TestOnly.MixIdealGasAir_res.mat
+// Files Equal!
 // [Modelica 3.2.1/Media/package.mo:2849:28-2849:38:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
 // Warning: Alias set with different nominal values
-//  * candidate: medium2.state.p(nominal = 1000000.0)
-//  * candidate: medium2.p(nominal = 100000.0)
+// * candidate: medium2.state.p(nominal = 1000000.0)
+// * candidate: medium2.p(nominal = 100000.0)
 // => select value from medium2.p(nominal = 100000.0) for variable: medium2.p
 // Warning: Alias set with different nominal values
-//  * candidate: medium.state.p(nominal = 1000000.0)
-//  * candidate: medium.p(nominal = 100000.0)
+// * candidate: medium.state.p(nominal = 1000000.0)
+// * candidate: medium.p(nominal = 100000.0)
 // => select value from medium.p(nominal = 100000.0) for variable: medium.p
+// 
 // "true
 // "
 // ""

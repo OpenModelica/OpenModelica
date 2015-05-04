@@ -37,4 +37,11 @@ runScript(modelTesting);getErrorString();
 // \"ReferenceFiles/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump.mat\"
 // "
 // ""
-// Alarm clock// endResult
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_res.mat
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// 
+// "true
+// "
+// ""
+// endResult
