@@ -118,16 +118,16 @@ build/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 
 ipopt: build/$(LIB_OMC)/libipopt.la
 
-build/$(LIB_OMC)/libumfpack.a: 3rdParty/SuiteSparse/UMFPACK/Makefile
+build/$(LIB_OMC)/libumfpack$(SHREXT): 3rdParty/SuiteSparse/CMakeLists.txt
 	mkdir -p 3rdParty/SuiteSparse/build
-	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="../../../build" -DLIB_OMC="$(LIB_OMC)"
+	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="../../../build" -DLIB_OMC="$(LIB_OMC)" -DBUILD_SHARED_LIBS:Bool=$(UMFPACK_SHARED)
 	$(MAKE) -C 3rdParty/SuiteSparse/build install
 	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/$(LIB_OMC)
 	#mkdir --parent build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/AMD/Include/*.h build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/UFconfig/*.h build/include/omc/c/suitesparse
-umfpack: build/$(LIB_OMC)/libumfpack.a
+umfpack: build/$(LIB_OMC)/libumfpack$(SHREXT)
 
 umfpack-clean:
 	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && make clean ; fi
