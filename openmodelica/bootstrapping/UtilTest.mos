@@ -3,14 +3,17 @@
 // teardown_command: rm -f Util_* UtilTest_*
 
 setCommandLineOptions("+g=MetaModelica +n=1");
+echo(false);
+prefixPath := "../../../OMCompiler/Compiler/Util/";
+echo(true);
 loadFiles({
-  "../../../Compiler/Util/Print.mo",
-  "../../../Compiler/Util/ErrorExt.mo",
-  "../../../Compiler/Util/Error.mo",
-  "../../../Compiler/Util/Util.mo",
-  "../../../Compiler/Util/List.mo",
-  "../../../Compiler/Util/System.mo",
-  "../../../Compiler/Util/StringUtil.mo",
+  prefixPath + "Print.mo",
+  prefixPath + "ErrorExt.mo",
+  prefixPath + "Error.mo",
+  prefixPath + "Util.mo",
+  prefixPath + "List.mo",
+  prefixPath + "System.mo",
+  prefixPath + "StringUtil.mo",
   "UtilTest.mo"
 });
 getErrorString();
@@ -70,6 +73,7 @@ StringUtil.wordWrap("this is a somewhat long string with new\nlines", 20, "\n  "
 getErrorString();
 
 // Result:
+// true
 // true
 // true
 // ""

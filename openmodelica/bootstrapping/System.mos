@@ -2,7 +2,7 @@
 // status: correct
 
 setCommandLineOptions("+g=MetaModelica +d=rml");
-loadFile("../../../Compiler/Util/System.mo");
+loadFile("../../../OMCompiler/Compiler/Util/System.mo");
 loadFile("SystemTest.mo");
 
 "System.getCurrentTimeStr";""<>System.getCurrentTimeStr();getErrorString();

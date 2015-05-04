@@ -3,13 +3,16 @@
 // status: correct
 // teardown_command: rm -f GraphTest_*
 
-loadFile("../../../Compiler/Util/Debug.mo");
+echo(false);
+pathPrefix := "../../../OMCompiler/Compiler/Util/";
+echo(true);
+loadFile(pathPrefix + "Debug.mo");
 getErrorString();
-loadFile("../../../Compiler/Util/Util.mo");
+loadFile(pathPrefix + "Util.mo");
 getErrorString();
-loadFile("../../../Compiler/Util/List.mo");
+loadFile(pathPrefix + "List.mo");
 getErrorString();
-loadFile("../../../Compiler/Util/Graph.mo");
+loadFile(pathPrefix + "Graph.mo");
 getErrorString();
 loadFile("GraphTest.mo");
 getErrorString();
@@ -67,6 +70,7 @@ GraphTest.topologicalSortTestDetectCycles({
 getErrorString();
 
 // Result:
+// true
 // true
 // ""
 // true
