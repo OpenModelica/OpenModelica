@@ -75,6 +75,7 @@ build/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
 omc-bootstrapped:
+	$(MAKE) mkbuilddirs
 	$(MAKE) bootstrap-dependencies interactive sim-dependencies
 	$(MAKE) -C Compiler/boot
 
