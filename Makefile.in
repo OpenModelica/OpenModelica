@@ -1,0 +1,20 @@
+all:
+	$(MAKE) omc
+	$(MAKE) omplot
+
+.PRECIOUS: Makefile
+
+omc:
+	$(MAKE) -C OMCompiler
+omplot:
+	$(MAKE) -C OMPlot
+
+clean:
+	test ! -d build || rm -r build/
+
+Makefile: Makefile.in config.status
+	./config.status
+config.status: configure
+	./config.status -recheck
+configure: configure.ac
+	autoconf
