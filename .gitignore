@@ -48,3 +48,6 @@ Temporary Items
 
 build/
 revision.h
+SimulationRuntime/ParModelica/explicit/openclrt/*.a
+SimulationRuntime/ParModelica/explicit/openclrt/*.o
+tools/debugging/BreakProcess.exe
