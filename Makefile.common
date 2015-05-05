@@ -150,7 +150,7 @@ opencl_rt_clean:
 
 breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
-	(cd tools/debugging/ && cp BreakProcess.exe ../../$(builddir_bin)/)
+	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
 
 all-runtimeCPPinstall:
 	$(MAKE) mkbuilddirs

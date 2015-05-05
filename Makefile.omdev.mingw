@@ -3,7 +3,7 @@ all : .testvariables settings release
 
 autoconfGeneratedFiles =
 
-OMBUILDDIR=./build
+OMBUILDDIR=$(CURDIR)/build
 prefix = ./build
 exec_prefix = ${prefix}
 bindir = ${exec_prefix}/bin
@@ -57,7 +57,7 @@ FMILIB_SHARED = OFF
 # For Windows build static CMinpack lib!
 CMINPACKLIB_SHARED = OFF
 
-CONFIG_REVISION = $(shell svn info | grep "Revision: " | cut -d ' ' -f 2)
+CONFIG_REVISION = $(shell git rev-parse HEAD)
 
 revision:
 	@echo Current revision: $(CONFIG_REVISION)
@@ -179,7 +179,7 @@ copycppheader:
 omc: mkbuilddirs interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped)
 
-boehm-gc-lib: build/lib/omc/libomcgc.a
+boehm-gc-lib: $(OMBUILDDIR)/lib/omc/libomcgc.a
 
 fmil_msvc:
 	rm -f build/lib/omc/msvc/fmil*
