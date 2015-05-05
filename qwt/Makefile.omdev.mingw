@@ -1,7 +1,5 @@
 # @author Adeel Asghar <adeel.asghar@liu.se>
 #
-# RCS: $Id: Makefile.omdev.mingw 76 2014-06-02 20:41:49Z adeas31 $
-#
 
 QMAKE=qmake
 NAME=qwt
@@ -25,4 +23,5 @@ $(NAME): Makefile
 
 build: $(NAME)
 	$(MAKE) -f Makefile install
-	cp -puf lib/libomqwt*.a ../../build/lib/omc
+	cp -puf lib/libomqwt*.a ../../OMCompiler/build/lib/omc
+	cp -puf build/include/* ../../OMCompiler/build/include/omc/qwt

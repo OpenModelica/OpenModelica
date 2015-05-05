@@ -25,14 +25,14 @@ HEADERS += Plot.h \
     PlotMainWindow.h
 
 win32 {
-QMAKE_LFLAGS += -enable-auto-import
-CONFIG(debug, debug|release){
-LIBS += -L../../build/lib/omc -lOMPlot -lomqwtd
-}
-else {
-LIBS += -L../../build/lib/omc -lOMPlot -lomqwt
-}
-INCLUDEPATH += ../../3rdParty/qwt/build/include
+  QMAKE_LFLAGS += -enable-auto-import
+  CONFIG(debug, debug|release){
+    LIBS += -L../../../OMCompiler/build/lib/omc -lOMPlot -lomqwtd
+  }
+  else {
+    LIBS += -L../../../OMCompiler/build/lib/omc -lOMPlot -lomqwt
+  }
+  INCLUDEPATH += ../../../OMCompiler/build/include/omc/qwt ../../../OMCompiler/build/include/omc/c
 } else {
   include(OMPlotGUI.config)
   LIBS += -lOMPlot

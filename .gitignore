@@ -4,6 +4,9 @@ qwt/Makefile.unix
 qwt/build
 qwt/lib
 qwt/src/Makefile
+qwt/src/Makefile.Debug
+qwt/src/Makefile.Release
+qwt/src/object_script.*
 qwt/src/moc
 qwt/src/obj
 /build
@@ -11,9 +14,16 @@ qwt/src/obj
 OMPlot/bin
 OMPlot/generatedfiles
 OMPlot/OMPlotGUI/Makefile
+OMPlot/OMPlotGUI/Makefile.Debug
+OMPlot/OMPlotGUI/Makefile.Release
 OMPlot/OMPlotGUI/Makefile.lib
+OMPlot/OMPlotGUI/Makefile.lib.Debug
+OMPlot/OMPlotGUI/Makefile.lib.Release
 OMPlot/OMPlotGUI/Makefile.unix
+OMPlot/OMPlotGUI/object_script.*
 OMPlot/OMPlotGUI/OMPlotGUI.config
+OMPlot/OMPlotGUI/OMPlotGUI.pro.*
+OMPlot/OMPlotGUI/OMPlotLib.pro.*
 config.*
 configure
 autom4te.cache

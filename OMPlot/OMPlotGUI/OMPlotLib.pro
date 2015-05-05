@@ -40,13 +40,13 @@ HEADERS  += Plot.h \
     PlotMainWindow.h
 
 win32 {
-CONFIG(debug, debug|release){
-LIBS += -L../../build/lib/omc -lomqwtd
-}
-else {
-LIBS += -L../../build/lib/omc -lomqwt
-}
-INCLUDEPATH += ../../3rdParty/qwt/build/include
+  CONFIG(debug, debug|release){
+    LIBS += -L../../../OMCompiler/build/lib/omc -lomqwtd
+  }
+  else {
+    LIBS += -L../../../OMCompiler/build/lib/omc -lomqwt
+  }
+  INCLUDEPATH += ../../../OMCompiler/build/include/omc/qwt ../../../OMCompiler/build/include/omc/c
 } else {
   include(OMPlotGUI.config)
 }
