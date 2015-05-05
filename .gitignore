@@ -65,6 +65,10 @@ Temporary Items
 # ANTLR
 *.tokens
 
+# Vim buffer files
+[._]*.sw?
+*~
+
 # =========================
 # OpenModelica Files
 # =========================
