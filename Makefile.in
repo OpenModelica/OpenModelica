@@ -10,6 +10,7 @@ libdir = @libdir@/@host_short@/omc
 
 omplot: mkbuilddirs qwt
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
+	cp -a OMPlot/OMPlotGUI/*.h @OMBUILDDIR@/include/omplot
 
 .PHONY: install
 
@@ -30,6 +31,7 @@ endif
 	mkdir -p ${DESTDIR}/$(libdir) ${DESTDIR}/$(includedir)/omplot/qwt
 	cp -a $(buildlib)/* ${DESTDIR}/$(libdir)
 	cp -a $(builddir_inc)/omplot/qwt ${DESTDIR}/$(includedir)/omplot
+	cp -a OMPlot/OMPlotGUI/*.h ${DESTDIR}/$(includedir)/omplot
 
 qwt: $(buildlib)/libomqwt@SHREXT@
 
