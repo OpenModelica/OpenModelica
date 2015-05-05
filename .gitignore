@@ -71,6 +71,8 @@ Temporary Items
 
 build/
 .externalToolBuilders/OpenModelicaBuilder.launch
+.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+.project
 revision.h
 SimulationRuntime/c/Makefile
 SimulationRuntime/c/util/java_interface/modelica_java.jar

@@ -3,6 +3,7 @@ all : .testvariables settings release
 
 autoconfGeneratedFiles =
 
+OMBUILDDIR=./build
 prefix = ./build
 exec_prefix = ${prefix}
 bindir = ${exec_prefix}/bin
