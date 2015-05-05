@@ -217,7 +217,7 @@ HEADERS  += Util/backtrace.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
 
 LIBS += -lqjson
-INCLUDEPATH += ../../3rdParty/qjson-0.8.1/build/include
+INCLUDEPATH += ../../qjson-0.8.1/build/include
 
 INCLUDEPATH += . \
   Annotations \
@@ -238,8 +238,7 @@ INCLUDEPATH += . \
   Plotting \
   Simulation \
   TransformationalDebugger \
-  Util \
-  ../../build/include/omc/scripting-API
+  Util
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Debugger/Parser/GDBMIOutput.g \

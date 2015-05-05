@@ -5,10 +5,7 @@
 
 .PHONY: install build $(NAME) always
 
-top_builddir=../../
-builddir_bin=$(top_builddir)/build/bin/
-builddir_share=$(top_builddir)/build/share/
-runtimedir=$(top_builddir)/Compiler/runtime/
+top_builddir=@top_builddir@
 resourcedir=./Resources/nls/
 
 NAME=OMEdit
@@ -19,8 +16,8 @@ LRELEASE=@LRELEASE@
 
 install: build Resources/nls/qm.stamp
 	mkdir -p ../../build/share/omedit/nls/
-	cp -p $(resourcedir)/*.qm ../../build/share/omedit/nls/
-	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
+	cp -p $(resourcedir)/*.qm @OMBUILDDIR@/share/omedit/nls/
+	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/OMEdit.app @OMBUILDDIR@/Applications/ ; else cp -p ../bin/OMEdit @OMBUILDDIR@/bin/OMEdit; fi
 
 Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
 	$(LRELEASE) $<
@@ -40,12 +37,13 @@ parsergen:
 	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix
 
 build: $(NAME)
-	$(MAKE) -f Makefile
+
 Makefile: OMEditGUI.pro OMEdit.config
+	@test ! -f $@ || rm $@
 	$(QMAKE)
 Makefile.unix: Makefile.unix.in
-	(cd ../../; ./config.status)
+	(cd @top_builddir@; ./config.status)
 OMEdit.config: OMEdit.config.in
-	(cd ../../; ./config.status)
+	(cd @top_builddir@ && ./config.status)
 omc_config.h: omc_config.h.in
-	(cd ../../; ./config.status)
+	(cd @top_builddir@ && ./config.status)

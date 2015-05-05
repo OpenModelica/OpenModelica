@@ -9,7 +9,9 @@ AC_SUBST(IDLCMD)
 AC_SUBST(RPATH_QMAKE)
 AC_SUBST(host_short)
 
+m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
+m4_include([common/m4/ombuilddir.m4])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST

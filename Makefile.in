@@ -20,7 +20,7 @@ endif
 	cp -a build/share/omedit/nls/* ${DESTDIR}/share/omedit/nls/
 
 mkbuilddirs:
-	mkdir -p build/bin build/share/omedit/nls build/lib/@host_short@/omc
+	mkdir -p build/bin @OMBUILDDIR@/share/omedit/nls @OMBUILDDIR@/lib/@host_short@/omc
 omedit: mkbuilddirs qjson
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 clean:
@@ -40,5 +40,5 @@ qjson:
 	(cd qjson-0.8.1/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET))
 	test -f qjson-0.8.1/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson-0.8.1/build
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f qjson-0.8.1/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT)
-	cp -a qjson-0.8.1/build/lib/libqjson*$(SHREXT)* build/lib/@host_short@/omc/
+	cp -a qjson-0.8.1/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
 	cp -a qjson-0.8.1/src/*.h qjson-0.8.1/build/include/qjson

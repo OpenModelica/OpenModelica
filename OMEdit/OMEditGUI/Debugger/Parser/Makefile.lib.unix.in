@@ -1,4 +1,4 @@
-builddir=../../../../build
+OMBUILDDIR=@OMBUILDDIR@
 ANTLRJAR=@OPENMODELICAHOME@/share/omc/java/antlr-3.2.jar
 
 CC=@CC@
@@ -15,4 +15,4 @@ endif
 include Makefile.lib.common
 
 Makefile.lib.unix: Makefile.lib.unix.in
-	(cd ../../../.. && ./config.status)
+	(cd @top_builddir@ && ./config.status)
