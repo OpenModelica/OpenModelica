@@ -47,7 +47,22 @@ Temporary Items
 # =========================
 
 build/
+.externalToolBuilders/OpenModelicaBuilder.launch
 revision.h
+SimulationRuntime/c/Makefile
+SimulationRuntime/c/**/*.so
+SimulationRuntime/c/**/*.o
+SimulationRuntime/c/**/*.class
+SimulationRuntime/c/util/java_interface/modelica_java.jar
+SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java
+SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java
+SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitions.tokens
+SimulationRuntime/cpp/Makefile
+SimulationRuntime/cpp/Build/
 SimulationRuntime/ParModelica/explicit/openclrt/*.a
 SimulationRuntime/ParModelica/explicit/openclrt/*.o
+SimulationRuntime/ParModelica/Makefile
+SimulationRuntime/ParModelica/auto/Makefile
+SimulationRuntime/ParModelica/explicit/Makefile
+SimulationRuntime/ParModelica/explicit/openclrt/Makefile
 tools/debugging/BreakProcess.exe
