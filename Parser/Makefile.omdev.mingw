@@ -3,6 +3,7 @@ CXX=g++
 CFLAGS=-O3 -Wall
 CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -I$(ANTLR) -I$(ANTLR)/include $(BUILDINC) -I../3rdParty/gc/include
 
+OMBUILDDIR=../build
 OMC=../build/bin/omc.exe
 LIB_OMC=lib/omc
 ANTLR_LIB=libomantlr3.a
