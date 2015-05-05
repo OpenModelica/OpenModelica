@@ -69,9 +69,9 @@ settings:
 omc: omc-bootstrapped
 
 boehm-gc-lib: @LIBGC@
-build/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
-	mkdir -p build/$(LIB_OMC)
-	cp -pPR $< $<.* build/$(LIB_OMC)/
+$(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
+	mkdir -p $(OMBUILDDIR)/$(LIB_OMC)
+	cp -pPR $< $<.* $(OMBUILDDIR)/$(LIB_OMC)/
 3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
@@ -117,10 +117,10 @@ lis: lis-configure mkbuilddirs
 	@echo Building Lis from sources
 	$(MAKE) -C 3rdParty/lis-1.4.12/src
 	# Copy the library; not headers (as they are not used by the runtime system)
-	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* build/$(LIB_OMC)/
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* $(OMBUILDDIR)/$(LIB_OMC)/
 	@# FreeBSD lis does not create the symlinks...
-	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 build/lib/omc/liblis.so.0
-	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so || ln -s liblis.so.0.0 build/lib/omc/liblis.so
+	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so.0
+	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so
 lis-configure:
 	# Configure and build lis
 	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && autoconf && ./configure "--host=$(host)" --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
@@ -174,7 +174,7 @@ utf8-iconv:
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in config.status
-	$(top_builddir)/config.status
+	./config.status
 
 config.status: configure
 	./config.status -recheck

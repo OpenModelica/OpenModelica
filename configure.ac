@@ -228,12 +228,12 @@ if test "$OMC" = "no" ; then
     AC_MSG_ERROR([cross-compilation attempt detected, but no omc executable was given])
   fi
   AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
-  OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
+  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
 elif "$OMC" +version > /dev/null 2>&1; then
   AC_MSG_RESULT([$OMC])
 else
   AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
-  OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
+  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
 fi
 
 dnl Checks for libraries.
@@ -269,16 +269,15 @@ AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
 # AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
 
 AC_MSG_CHECKING([for antlr.Tool support])
-omc_antlr_jar=build/share/omc/java/antlr-3.1.3.jar
-mkdir -p build/share/omc/java
-cp "3rdParty/antlr/3.2/tool/antlr-3.2.jar" "3rdParty/antlr/3.2/tool/antlr-2.7.7.jar" build/share/omc/java/
+mkdir -p $OMBUILDDIR/share/omc/java
+cp "3rdParty/antlr/3.2/tool/antlr-3.2.jar" "3rdParty/antlr/3.2/tool/antlr-2.7.7.jar" $OMBUILDDIR/share/omc/java/
 echo "" > $$grammar.g
-if java -cp build/share/omc/java/antlr-3.2.jar antlr.Tool $$grammar.g ; then
+if java -cp $OMBUILDDIR/share/omc/java/antlr-3.2.jar antlr.Tool $$grammar.g ; then
   rm -f $$grammar.g
   AC_MSG_RESULT([yes])
 else
   rm -f $$grammar.g
-  AC_MSG_ERROR([no antlr.Tool support])
+  AC_MSG_ERROR([no antlr.Tool support (JRE not working)])
 fi
 
 AC_MSG_CHECKING([if the user wants to compile OMShell-terminal])
@@ -624,7 +623,7 @@ if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
   SHREXT=".dylib"
-  LIBGC="build/lib/$host_short/omc/libomcgc.a"
+  LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.dylib
   LIBRUNTIME=libOpenModelicaRuntimeC.dylib
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.dylib
@@ -653,7 +652,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   EXE=".exe"
   # Yes, we build static libs on Windows, so the "shared" extension is .a
   SHREXT=".a"
-  LIBGC="build/lib/$host_short/omc/libomcgc.a"
+  LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
@@ -678,7 +677,7 @@ else
   APP=""
   EXE=""
   SHREXT=".so"
-  LIBGC="build/lib/$host_short/omc/libomcgc.so"
+  LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.so"
   LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
@@ -800,6 +799,7 @@ Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
 Parser/Makefile \
 SimulationRuntime/c/Makefile \
+SimulationRuntime/c/util/java_interface/Makefile \
 SimulationRuntime/cpp/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \

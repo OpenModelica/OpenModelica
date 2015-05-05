@@ -1,5 +1,5 @@
-OMBUILDDIR = /home/marsj/OpenModelica/build
-top_builddir = ../../../..
+OMBUILDDIR = @OMBUILDDIR@
+top_builddir = @top_builddir@
 
 include Makefile.common
 
@@ -14,4 +14,4 @@ test: $(java_sources)
 	OPENMODELICAHOME=$(OPENMODELICAHOME) $(JAVA) -cp "bin-test:src:$(antlr):$(junit)" org.junit.runner.JUnitCore $(junit_tests)
 
 Makefile: Makefile.in
-	(cd ../../../..; ./config.status)
+	(cd @top_builddir@; ./config.status)

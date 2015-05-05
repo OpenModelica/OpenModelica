@@ -1,3 +1,6 @@
+OMBUILDDIR = ../../../../build
+top_builddir = ../../../../
+
 include Makefile.common
 
 modelica_java.jar: $(java_sources)
