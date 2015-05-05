@@ -31,3 +31,4 @@ qwtspec.path  = $${QWT_INSTALL_FEATURES}
 
 INSTALLS += qwtspec
 
+include ( qwt.config )

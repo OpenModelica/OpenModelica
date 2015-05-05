@@ -1,6 +1,6 @@
-builddir_inc=build/include/omc
-buildbin=build/bin
-buildlib=build/lib/@host_short@/omc
+builddir_inc=@OMBUILDDIR@/include/omc
+buildbin=@OMBUILDDIR@/bin
+buildlib=@OMBUILDDIR@/lib/@host_short@/omc
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -22,10 +22,10 @@ $(buildlib)/libomqwt.dylib: mkbuilddirs qwt-build
 install:
 ifeq (@APP@,)
 	mkdir -p ${DESTDIR}/@bindir@
-	cp -a build/bin/OMPlot@EXE@ ${DESTDIR}/@bindir@
+	cp -a @OMBUILDDIR@/bin/OMPlot@EXE@ ${DESTDIR}/@bindir@
 else
 	mkdir -p ${DESTDIR}/Applications/
-	cp -a build/bin/OMPlot@APP@ ${DESTDIR}/Applications/
+	cp -a @OMBUILDDIR@/bin/OMPlot@APP@ ${DESTDIR}/Applications/
 endif
 	mkdir -p ${DESTDIR}/$(libdir) ${DESTDIR}/$(includedir)/omc/qwt
 	cp -a $(buildlib)/* ${DESTDIR}/$(libdir)

@@ -10,6 +10,8 @@ AC_SUBST(RPATH_QMAKE)
 AC_SUBST(OPENMODELICAHOME)
 AC_SUBST(host_short)
 
+m4_include([common/m4/ombuilddir.m4])
+m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
 
 AC_CANONICAL_BUILD
@@ -30,4 +32,4 @@ m4_include([common/m4/omhome.m4])
 
 FIND_OPENMODELICAHOME()
 
-AC_OUTPUT(Makefile qwt/Makefile.unix OMPlot/OMPlotGUI/Makefile.unix OMPlot/OMPlotGUI/OMPlotGUI.config)
+AC_OUTPUT(Makefile qwt/Makefile.unix OMPlot/OMPlotGUI/Makefile.unix OMPlot/OMPlotGUI/OMPlotGUI.config qwt/qwt.config)

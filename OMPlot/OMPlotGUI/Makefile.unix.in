@@ -1,13 +1,11 @@
 top_builddir=../../
-builddir_bin=$(top_builddir)/build/bin/
-builddir_share=$(top_builddir)/build/share/
-runtimedir=$(top_builddir)/Compiler/runtime/
 
 QMAKE=@QMAKE@
 APP=@APP@
 EXE=@EXE@
 NAME=OMPlot
 LIB=libOMPlot
+OMBUILDDIR=@OMBUILDDIR@
 
 .PHONY: always $(NAME) $(LIB)
 
@@ -34,14 +32,14 @@ endif
 
 $(LIB): Makefile.lib
 	$(MAKE) -f $<
-	cp -a ../bin/libOMPlot* $(top_builddir)/build/lib/@host_short@/omc/
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMPlot.1.0.0.dylib $(top_builddir)/build/lib/@host_short@/omc/libOMPlot.1.0.0.dylib
+	cp -a ../bin/libOMPlot* $(OMBUILDDIR)/lib/@host_short@/omc/
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMPlot.1.0.0.dylib $(OMBUILDDIR)/lib/@host_short@/omc/libOMPlot.1.0.0.dylib
 
 build: $(NAME) $(LIB)
-	cp -p ../bin/$(NAME) $(builddir_bin)
+	cp -p ../bin/$(NAME) $(OMBUILDDIR)/bin
 
 Makefile.unix: Makefile.unix.in
-	cd $(top_builddir); ./config.status
+	cd $(top_builddir) && ./config.status
 
 OMPlotGUI.config: OMPlotGUI.config.in
-	cd $(top_builddir); ./config.status
+	cd $(top_builddir) && ./config.status

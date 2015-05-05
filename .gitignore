@@ -17,3 +17,4 @@ OMPlot/OMPlotGUI/OMPlotGUI.config
 config.*
 configure
 autom4te.cache
+qwt/qwt.config
