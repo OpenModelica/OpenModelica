@@ -70,3 +70,12 @@ if test -z "$USINGPRESETBUILDDIR"; then
   AC_LANG_POP([C])
 fi
 ])
+
+define(FIND_LIBOMQWT, [
+if test -z "$USINGPRESETBUILDDIR"; then
+SAVED_LDFLAGS=$LDFLAGS
+LDFLAGS="$LDFLAGS -L$OPENMODELICAHOME/lib/$host_short/omc -lomqwt"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])], [], [AC_MSG_ERROR([OpenModelica version of qwt not found.])])
+LDFLAGS=$SAVED_LDFLAGS
+fi
+])
