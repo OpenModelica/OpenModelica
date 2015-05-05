@@ -1,7 +1,5 @@
 AC_SUBST(OPENMODELICAHOME)
-AC_ARG_WITH(openmodelicahome,  [  --with-openmodelicahome=[$OPENMODELICAHOME|$prefix]    (Find OPENMODELICAHOME - the directory where all OpenModelica dependencies are installed.)],[OMHOME="$withval"],[OMHOME=no])
-
-test "$prefix" = NONE && prefix=$ac_default_prefix
+AC_ARG_WITH(openmodelicahome,  [  --with-openmodelicahome=[$OPENMODELICAHOME|$PREFIX]    (Find OPENMODELICAHOME - the directory where all OpenModelica dependencies are installed.)],[OMHOME="$withval"],[OMHOME=no])
 
 if echo $host | grep -iq darwin; then
   APP=".app"
@@ -28,7 +26,7 @@ define(FIND_OPENMODELICAHOME, [
 AC_MSG_CHECKING([for OPENMODELICAHOME])
 if test "$OMHOME" = "no"; then
   if test -z "$OPENMODELICAHOME"; then
-    OPENMODELICAHOME="$prefix"
+    OPENMODELICAHOME="$PREFIX"
   else
     OPENMODELICAHOME="$OPENMODELICAHOME"
   fi
