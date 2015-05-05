@@ -8,8 +8,12 @@ m4_include([common/m4/ombuilddir.m4])
 cp common/install-sh common/config.guess common/config.sub ./
 
 for dir in OMCompiler OMPlot; do
-  test -d "$dir" || AC_MSG_ERROR("Subproject $dir does not exist")
-  (cd "$dir" && autoconf || AC_MSG_ERROR("Failed to autoconf $dir"))
+  if test ! -d "$dir"; then
+    AC_MSG_ERROR("Subproject $dir does not exist")
+  fi
+  if !(cd "$dir" && autoconf); then
+    AC_MSG_ERROR("Failed to autoconf $dir")
+  fi
 done
 
 AC_CONFIG_SUBDIRS([OMCompiler OMPlot])
