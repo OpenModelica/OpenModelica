@@ -34,7 +34,7 @@ encapsulated package ConnectUtil
   package:     ConnectUtil
   description: Connection set management
 
-  RCS: $Id$
+  RCS: $Id: ConnectUtil.mo 25082 2015-03-13 09:40:07Z lochel $
 
   Connections generate connection sets (datatype SET is described in Connect)
   which are constructed during instantiation.  When a connection
@@ -3570,69 +3570,63 @@ protected function countConnectorVars
   "Given a list of connector variables, this function counts how many potential,
   flow and stream variables it contains."
   input list<DAE.Var> inVars;
-  output Integer potentialVars;
-  output Integer flowVars;
-  output Integer streamVars;
+  output Integer potentialVars = 0;
+  output Integer flowVars = 0;
+  output Integer streamVars = 0;
+protected
+  DAE.Type ty, ty2;
+  DAE.Attributes attr;
+  Integer n, p, f, s;
+  list<DAE.Var> vars;
 algorithm
-  (potentialVars, flowVars, streamVars) := matchcontinue(inVars)
-    local
-      DAE.Var v;
-      list<DAE.Var> rest, vars;
-      Integer n, p, f, s, p2, f2, s2;
-      String name;
-      DAE.Type ty, ty2;
+  for var in inVars loop
+    DAE.TYPES_VAR(ty = ty, attributes = attr) := var;
+    ty2 := Types.arrayElementType(ty);
 
-    case ({}) then (0, 0, 0);
+    // Check if we have a connector inside a connector.
+    if Types.isConnector(ty2) then
+      // If we have an array of connectors, count the elements.
+      n := product(dim for dim in Types.getDimensionSizes(ty));
+      // Count the number of different variables inside the connector, and then
+      // multiply those numbers with the dimensions of the array.
+      vars := Types.getConnectorVars(ty2);
+      (p, f, s) := countConnectorVars(vars);
 
-    // A connector inside a connector.
-    case ((DAE.TYPES_VAR(ty = ty)) :: rest)
-      equation
-        // Check that it's a connector.
-        ty2 = Types.arrayElementType(ty);
-        true = Types.isConnector(ty2);
-        // If we have an array of connectors, count how many they are.
-        n = List.fold(Types.getDimensionSizes(ty), intMul, 1);
-        // Count the number of different variables inside the connector, and
-        // then multiply those numbers with the dimensions of the array.
-        vars = Types.getConnectorVars(ty2);
-        (p2, f2, s2) = countConnectorVars(vars);
-        (p, f, s) = countConnectorVars(rest);
-      then
-        (p + n * p2, f + n * f2, s + n * s2);
+      // If the variable is input/output we don't count potential variables.
+      if Absyn.isInputOrOutput(DAEUtil.getAttrDirection(attr)) then
+        p := 0;
+      end if;
 
-    // A flow variable.
-    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.FLOW()))) :: rest)
-      equation
-        n = sizeOfVariable(v);
-        (p, f, s) = countConnectorVars(rest);
-      then
-        (p, f + n, s);
+      potentialVars := potentialVars + p * n;
+      flowVars := flowVars + f * n;
+      streamVars := streamVars + s * n;
+    else
+      _ := match attr
+        // A flow variable.
+        case DAE.ATTR(connectorType = SCode.FLOW())
+          algorithm
+            flowVars := flowVars + sizeOfVariable(var);
+          then
+            ();
 
-    // A stream variable.
-    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.STREAM()))) :: rest)
-      equation
-        n = sizeOfVariable(v);
-        (p, f, s) = countConnectorVars(rest);
-      then
-        (p, f, s + n);
+        // A stream variable.
+        case DAE.ATTR(connectorType = SCode.STREAM())
+          algorithm
+            streamVars := streamVars + sizeOfVariable(var);
+          then
+            ();
 
-    // A potential variable.
-    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(
-        direction = Absyn.BIDIR(),
-        variability = SCode.VAR()))) :: rest)
-      equation
-        n = sizeOfVariable(v);
-        (p, f, s) = countConnectorVars(rest);
-      then
-        (p + n, f, s);
+        // A potential variable.
+        case DAE.ATTR(direction = Absyn.BIDIR(), variability = SCode.VAR())
+          algorithm
+            potentialVars := potentialVars + sizeOfVariable(var);
+          then
+            ();
 
-    // Something else.
-    case _ :: rest
-      equation
-        (p, f, s) = countConnectorVars(rest);
-      then
-        (p, f, s);
-  end matchcontinue;
+        else ();
+      end match;
+    end if;
+  end for;
 end countConnectorVars;
 
 protected function sizeOfVariableList
