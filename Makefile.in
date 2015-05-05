@@ -2,7 +2,7 @@ all: omc
 
 autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
 
-abs_top_builddir=@abs_top_builddir@
+OMBUILDDIR=@OMBUILDDIR@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@

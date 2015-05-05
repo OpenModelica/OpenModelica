@@ -11,6 +11,8 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
+builddir = ../../build
+
 AR = ar -ru
 CC = gcc
 FC = g77

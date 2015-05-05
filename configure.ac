@@ -93,6 +93,7 @@ FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following optio
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
+m4_include([common/m4/ombuilddir.m4])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -117,14 +118,6 @@ fi
 if test -z "$MAKE"; then
   MAKE=make
 fi
-
-if test x"$prefix" = xNONE; then
-  PREFIX=`pwd`/build
-else
-  PREFIX=$prefix
-fi
-AC_PREFIX_DEFAULT($PREFIX)
-prefix=$PREFIX
 
 AC_ARG_ENABLE(non-free-packages, [  --enable-non-free-packages     Enables you to link non-free packages. But doing so limits your ability to distribute code under GPL3, even to co-workers and the like. If you are an OSMC member you might be allowed to link and ship such libraries if you have a commercial license for the linked packages.],[test "yes" = "$enableval" && ENABLE_NON_FREE_PACKAGES=1 && NON_FREE_VERSION=") (non-free version for personal use only; seriously do not distribute this binary"] && FINAL_MESSAGES="$FINAL_MESSAGES\nLinking against non-free packages: Yes (this version of omc not for distribution)")
 
