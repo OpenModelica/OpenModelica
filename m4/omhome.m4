@@ -1,5 +1,5 @@
 AC_SUBST(OPENMODELICAHOME)
-AC_ARG_WITH(openmodelicahome,  [  --with-openmodelicahome=[$OPENMODELICAHOME|$PREFIX]    (Find OPENMODELICAHOME - the directory where all OpenModelica dependencies are installed.)],[OMHOME="$withval"],[OMHOME=no])
+AC_ARG_WITH(openmodelicahome,  [  --with-openmodelicahome=[OPENMODELICAHOME|PREFIX]    (Find OPENMODELICAHOME - the directory where all OpenModelica dependencies are installed.)],[OMHOME="$withval"],[OMHOME=no])
 
 if echo $host | grep -iq darwin; then
   APP=".app"
@@ -23,35 +23,40 @@ else
 fi
 
 define(FIND_OPENMODELICAHOME, [
-AC_MSG_CHECKING([for OPENMODELICAHOME])
-if test "$OMHOME" = "no"; then
-  if test -z "$OPENMODELICAHOME"; then
-    OPENMODELICAHOME="$PREFIX"
+if test ! -z "$USINGPRESETBUILDDIR"; then
+  OPENMODELICAHOME="$OMBUILDDIR"
+else
+  AC_MSG_CHECKING([for OPENMODELICAHOME])
+  if test "$OMHOME" = "no"; then
+    if test -z "$OPENMODELICAHOME"; then
+      OPENMODELICAHOME="$PREFIX"
+    else
+      OPENMODELICAHOME="$OPENMODELICAHOME"
+    fi
   else
-    OPENMODELICAHOME="$OPENMODELICAHOME"
+    OPENMODELICAHOME="$OMHOME"
   fi
-else
-  OPENMODELICAHOME="$OMHOME"
-fi
 
-AC_MSG_RESULT($OPENMODELICAHOME)
+  AC_MSG_RESULT($OPENMODELICAHOME)
 
-AC_MSG_CHECKING([for $OPENMODELICAHOME/lib/omc/ModelicaBuiltin.mo])
-if test -f "$OPENMODELICAHOME/lib/omc/ModelicaBuiltin.mo"; then
-  AC_MSG_RESULT(ok)
-else
-  AC_MSG_ERROR(failed)
-fi
+  AC_MSG_CHECKING([for $OPENMODELICAHOME/lib/omc/ModelicaBuiltin.mo])
+  if test -f "$OPENMODELICAHOME/lib/omc/ModelicaBuiltin.mo"; then
+    AC_MSG_RESULT(ok)
+  else
+    AC_MSG_ERROR(failed)
+  fi
 
-AC_MSG_CHECKING([for $OPENMODELICAHOME/share/omc/omc_communication.idl])
-if test -f "$OPENMODELICAHOME/share/omc/omc_communication.idl"; then
-  AC_MSG_RESULT(ok)
-else
-  AC_MSG_ERROR(failed)
+  AC_MSG_CHECKING([for $OPENMODELICAHOME/share/omc/omc_communication.idl])
+  if test -f "$OPENMODELICAHOME/share/omc/omc_communication.idl"; then
+    AC_MSG_RESULT(ok)
+  else
+    AC_MSG_ERROR(failed)
+  fi
 fi
 ])
 
 define(FIND_LIBOPENMODELICACOMPILER, [
+if test -z "$USINGPRESETBUILDDIR"; then
   AC_LANG_PUSH([C])
   AC_MSG_CHECKING([for libOpenModelicaCompiler])
   # Note: This does not do a full link. autoconf messes with some env
@@ -62,4 +67,5 @@ define(FIND_LIBOPENMODELICACOMPILER, [
   AC_TRY_LINK([], [], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed])])
   LDFLAGS="$LDFLAGS_SAVE"
   AC_LANG_POP([C])
+fi
 ])
