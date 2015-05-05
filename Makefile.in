@@ -8,9 +8,9 @@ all:
 omc:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
 omlibrary-core:
-	$(MAKE) -C libraries core
+	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary core
 omlibrary-all:
-	$(MAKE) -C libraries all
+	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary all
 omplot:
 	$(MAKE) -C OMPlot
 omedit:
