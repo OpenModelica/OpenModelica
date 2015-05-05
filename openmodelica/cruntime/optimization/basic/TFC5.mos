@@ -37,7 +37,7 @@ getErrorString();
 
 setCommandLineOptions("+maxSizeSolveLinearSystem=0");
 getErrorString();
-optimize(testFinalCon5_, numberOfIntervals=700, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1");
+optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP 1");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001); // Files not equal!!! Testing other convergence with solveLinearSystem
@@ -59,7 +59,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testFinalCon5__res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 700, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5_', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1'",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5_', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1'",
 //     messages = "
 // Optimizer Variables
 // ========================================================
@@ -76,48 +76,6 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
-// LOG_IPOPT_ERROR   | info    | max violation is 26.2917 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.642963 for the approximation of the state x1(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 3.49876 for the approximation of the state x2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 13.1459 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 2.53665 for the approximation of the state x2(time = 4.97143)
-// LOG_IPOPT_ERROR   | info    | max error is 2.24696e+06 for the approximation of the state x2(time = 4.97143)
-// LOG_IPOPT_ERROR   | info    | max violation is 6.57293 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 9.8594 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 15.0807 for the approximation of the state x2(time = 4.68571)
-// LOG_IPOPT_ERROR   | info    | max error is 2.32314e+34 for the approximation of the state x2(time = 4.70714)
-// LOG_IPOPT_ERROR   | info    | max error is 1.31762e+18 for the approximation of the state x2(time = 4.68571)
-// LOG_IPOPT_ERROR   | info    | max violation is 7.39455 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62697 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 380886 for the approximation of the state x2(time = 1.37143)
-// LOG_IPOPT_ERROR   | info    | max error is inf for the approximation of the state x2(time = 3.05714)
-// LOG_IPOPT_ERROR   | info    | max error is 50.94 for the approximation of the state x2(time = 1.36429)
-// LOG_IPOPT_ERROR   | info    | max violation is 6.47023 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 7.5486 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.08779 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.35738 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.49218 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.55957 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.59327 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.61012 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.61855 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62276 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62487 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62592 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62645 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62671 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62684 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62691 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62694 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62696 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62696 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 380886 for the approximation of the state x2(time = 1.37143)
-// LOG_IPOPT_ERROR   | info    | max error is 380886 for the approximation of the state x2(time = 1.37143)
-// LOG_IPOPT_ERROR   | info    | max error is 380886 for the approximation of the state x2(time = 1.37143)
-// LOG_IPOPT_ERROR   | info    | max violation is 8.62697 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// Sorry, things failed ?!?!
-// Exception of type: Eval_Error in file \"IpOrigIpoptNLP.cpp\" at line 568:
-//  Exception message: Error evaluating the equality constraints
 // stdout            | warning | No optimal solution found!
 // |                 | |       | Use -lv=LOG_IPOPT for more information.
 // "
