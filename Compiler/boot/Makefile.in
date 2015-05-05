@@ -21,7 +21,7 @@ SHREXT=@SHREXT@
 OMC=@OMC@
 RPATH=@RPATH@
 STATIC=@BOOTSTRAP_STATIC@
-BOOTSTRAP_OMC=../../build/bin/omc
+BOOTSTRAP_OMC=@OMBUILDDIR@/bin/omc
 defaultMakefileTarget=Makefile
 
 
@@ -30,4 +30,4 @@ default: all
 include Makefile.common
 
 Makefile: Makefile.in
-	(cd ../../ && ./config.status)
+	(cd @top_builddir@ && ./config.status)
