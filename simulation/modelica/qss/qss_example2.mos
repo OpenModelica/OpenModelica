@@ -1,22 +1,29 @@
 // name: qss_example2
 // status: correct
 
+// Quantization-Based New Integration Methods for Stiff ODEs
+// Migoni, Kofman, Cellier
+// May 2010, p. 5
+
 loadString("
 within ;
 package qssTests
   model example2
-    Real x1, x2;
+   // dQ = nominal * 10^-4
+   Real x1(nominal=10^4), x2(nominal=10^4);
   initial equation
     x1 = 0;
     x2 = 20;
   equation
     der(x1) = 0.01*x2;
-    der(x2) = -100*x1 - 100*x2 + 2020;
+    der(x2) = -100*x1-100*x2+2020;
   end example2;
 end qssTests;
 "); getErrorString();
 
 simulate(qssTests.example2, startTime=0.0, stopTime=500.0, method="qss"); getErrorString();
+val(x1, {0.0, 250.0, 500.0}); getErrorString();
+val(x2, {0.0, 250.0, 500.0}); getErrorString();
 
 // Result:
 // true
@@ -27,5 +34,9 @@ simulate(qssTests.example2, startTime=0.0, stopTime=500.0, method="qss"); getErr
 //     messages = "stdout            | warning | This QSS method is under development and should not be used yet.
 // "
 // end SimulationResult;
+// ""
+// {0.0,19.01725738678988,20.33630337525792}
+// ""
+// {20.0,1.774584926419772,0.5913039968093946}
 // ""
 // endResult

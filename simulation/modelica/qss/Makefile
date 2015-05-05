@@ -2,11 +2,17 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 qss_example1.mos \
+qss_example2.mos \
+qss_example3.mos \
+qss_example5.mos \
+qss_example6.mos \
+qss_example7.mos \
+qss_example8.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-qss_example2.mos \
+qss_example4.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

@@ -1,0 +1,31 @@
+// name: qss_example4
+// status: correct
+
+// Quantization-Based New Integration Methods for Stiff ODEs
+// Migoni, Kofman, Cellier
+// May 2010, p. 21
+
+loadString("
+within ;
+package qssTests
+  model example4
+    Real x1(nominal=100), x2(nominal=100), x3(nominal=5e-4);
+  initial equation
+    x1 = 1;
+    x2 = 1;
+    x3 = 0;
+  equation
+    der(x1) = -0.013 * x1 - 1000 * x1 * x3;
+    der(x2) = -2500 * x2 * x3;
+    der(x3) = -0.013 * x1 - 1000 * x1 * x3 - 2500 * x2 * x3;
+  end example4;
+end qssTests;
+"); getErrorString();
+
+simulate(qssTests.example4, stopTime=500, method="qss"); getErrorString();
+val(x1, {0.0, 500.0}); getErrorString();
+val(x2, {0.0, 500.0}); getErrorString();
+val(x3, {0.0, 500.0}); getErrorString();
+
+// Result:
+// endResult
