@@ -1,4 +1,4 @@
-builddir_inc=@OMBUILDDIR@/include/omc
+builddir_inc=@OMBUILDDIR@/include
 buildbin=@OMBUILDDIR@/bin
 buildlib=@OMBUILDDIR@/lib/@host_short@/omc
 
@@ -27,18 +27,18 @@ else
 	mkdir -p ${DESTDIR}/Applications/
 	cp -a @OMBUILDDIR@/bin/OMPlot@APP@ ${DESTDIR}/Applications/
 endif
-	mkdir -p ${DESTDIR}/$(libdir) ${DESTDIR}/$(includedir)/omc/qwt
+	mkdir -p ${DESTDIR}/$(libdir) ${DESTDIR}/$(includedir)/omplot/qwt
 	cp -a $(buildlib)/* ${DESTDIR}/$(libdir)
-	cp -a $(builddir_inc)/qwt ${DESTDIR}/$(includedir)/omc
+	cp -a $(builddir_inc)/omplot/qwt ${DESTDIR}/$(includedir)/omplot
 
 qwt: $(buildlib)/libomqwt@SHREXT@
 
 qwt-build: mkbuilddirs
 	$(MAKE) -C qwt -f Makefile.unix
-	test -f $(builddir_inc)/qwt/qwt_global.h || ($(MAKE) -C qwt install && cp -a qwt/build/include/*.h $(builddir_inc)/qwt)
+	test -f $(builddir_inc)/omplot/qwt/qwt_global.h || ($(MAKE) -C qwt install && cp -a qwt/build/include/*.h $(builddir_inc)/omplot/qwt)
 
 mkbuilddirs:
-	mkdir -p $(builddir_inc)/qwt
+	mkdir -p $(builddir_inc)/omplot/qwt
 	mkdir -p $(buildlib)
 	mkdir -p $(buildbin)
 
