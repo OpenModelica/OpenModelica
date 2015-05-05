@@ -1,11 +1,15 @@
 all:
-	$(MAKE) omc
+	$(MAKE) omc @OMLIBRARY_TARGET@
 	$(MAKE) omplot
 
 .PRECIOUS: Makefile
 
 omc:
 	$(MAKE) -C OMCompiler
+omlibrary-core:
+	$(MAKE) -C libraries core
+omlibrary-all:
+	$(MAKE) -C libraries all
 omplot:
 	$(MAKE) -C OMPlot
 

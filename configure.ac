@@ -7,6 +7,29 @@ m4_include([common/m4/pre-commit.m4])
 m4_include([common/m4/ombuilddir.m4])
 cp common/install-sh common/config.guess common/config.sub ./
 
+AC_SUBST(OMLIBRARY_TARGET)
+AC_ARG_WITH(omlibrary,  [  --with-omlibrary=[core,all,no]       (which libraries to build; default is core; the libraries used by the testsuite)],[OMLIBRARY_TARGET="$withval"],[OMLIBRARY_TARGET="core"])
+
+AC_MSG_CHECKING([for omlibrary target])
+case "$OMLIBRARY_TARGET" in
+  "yes"|"core")
+    OMLIBRARY_TARGET="omlibrary-core"
+    AC_MSG_RESULT([core])
+  ;;
+  "no")
+    OMLIBRARY_TARGET=""
+    AC_MSG_RESULT([none])
+  ;;
+  "all")
+    OMLIBRARY_TARGET="omlibrary-all"
+    AC_MSG_RESULT([all])
+  ;;
+  *)
+    AC_MSG_ERROR("unknown omlibrary target $OMLIBRARY_TARGET")
+  ;;
+esac
+
+
 for dir in OMCompiler OMPlot; do
   if test ! -d "$dir"; then
     AC_MSG_ERROR("Subproject $dir does not exist")
