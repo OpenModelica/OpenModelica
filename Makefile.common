@@ -143,11 +143,11 @@ openblas: $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a
 
 opencl_rt:
 ifeq ("$(OPENCL)","Yes")
-	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget)
+	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 endif
 
 opencl_rt_clean:
-	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean
+	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
 breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
