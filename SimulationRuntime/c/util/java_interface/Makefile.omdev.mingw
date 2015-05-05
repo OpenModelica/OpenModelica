@@ -1,4 +1,3 @@
-OMBUILDDIR = ../../../../build
 top_builddir = ../../../../
 
 include Makefile.common
