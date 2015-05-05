@@ -29,10 +29,6 @@ m4_include([common/m4/qmake.m4])
 m4_include([common/m4/omhome.m4])
 FIND_OPENMODELICAHOME()
 FIND_LIBOPENMODELICACOMPILER()
-
-SAVED_LDFLAGS=$LDFLAGS
-LDFLAGS="$LDFLAGS -L$prefix/lib/$host_short/omc -lomqwt"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])], [], [AC_MSG_ERROR([OpenModelica version of qwt not found.])])
-LDFLAGS=$SAVED_LDFLAGS
+FIND_LIBOMQWT()
 
 AC_OUTPUT(Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config OMEdit/OMEditGUI/Debugger/Parser/Makefile.unix OMEdit/OMEditGUI/Debugger/Parser/Makefile.lib.unix OMEdit/OMEditGUI/omc_config.h)
