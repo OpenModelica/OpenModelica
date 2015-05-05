@@ -3477,21 +3477,21 @@ algorithm
   list<DAE.ElementSource> sources;
   Boolean homotopySupport;
   Boolean mixedSystem;
-    case(SimCode.SES_NONLINEAR(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing,homotopySupport=homotopySupport,mixedSystem=mixedSystem),_)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
         oldIdx = SimCodeUtil.eqIndex(simEqIn);
         newIdx = arrayGet(assIn,oldIdx);
         jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
-        simEqSys = SimCode.SES_NONLINEAR(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing,homotopySupport,mixedSystem);
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing,homotopySupport,mixedSystem), NONE());
    then simEqSys;
-    case(SimCode.SES_LINEAR(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem),ass)
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem)),ass)
       equation
         eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,ass);
         oldIdx = SimCodeUtil.eqIndex(simEqIn);
         newIdx = arrayGet(ass,oldIdx);
         jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,ass);
-        simEqSys = SimCode.SES_LINEAR(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem);
+        simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem), NONE());
    then simEqSys;
     case(_,ass)
       equation
@@ -3524,19 +3524,19 @@ algorithm
   list<DAE.ElementSource> sources;
   Boolean homotopySupport;
   Boolean mixedSystem;
-    case(SimCode.SES_NONLINEAR(index=oldIdx,eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing,homotopySupport=homotopySupport,mixedSystem=mixedSystem),(newIdx,ass))
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=oldIdx,eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),(newIdx,ass))
       equation
         (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
         (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
         ass = arrayUpdate(ass,oldIdx,newIdx);
-        simEqSys = SimCode.SES_NONLINEAR(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing,homotopySupport,mixedSystem);
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing,homotopySupport,mixedSystem), NONE());
    then (simEqSys,(newIdx+1,ass));
-    case(SimCode.SES_LINEAR(index=oldIdx,partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem),(newIdx,ass))
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=oldIdx,partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem)),(newIdx,ass))
       equation
         (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
         (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
         ass = arrayUpdate(ass,oldIdx,newIdx);
-        simEqSys = SimCode.SES_LINEAR(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem);
+        simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem), NONE());
    then (simEqSys,(newIdx+1,ass));
     case(SimCode.SES_MIXED(index=oldIdx,cont=cont,discVars=discVars,discEqs=eqs,indexMixedSystem=indexMixedSystem),(newIdx,ass))
       equation
@@ -4032,7 +4032,7 @@ algorithm
       Integer indexLinearSystem;
    case({},_,_,_)
      then (listReverse(simEqsFold),simEqSysIdxIn);
-   case((simEqSys as SimCode.SES_LINEAR(index=index,partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,jacobianMatrix=jacobianMatrix, residual=residual,sources=sources,indexLinearSystem=indexLinearSystem))::rest,_,_,_)
+   case((simEqSys as SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index,partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,jacobianMatrix=jacobianMatrix, residual=residual,sources=sources,indexLinearSystem=indexLinearSystem)))::rest,_,_,_)
      equation
        //print("the systemSimEqSys "+SimCodeUtil.dumpSimEqSystemLst(residual)+"\n");
        numEqs = listLength(residual);
@@ -4041,7 +4041,7 @@ algorithm
        (duplicated,_) = List.map1_2(residual,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
        duplicated = List.threadMap(duplicated,systSimEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
        //print("the systemSimEqSysDupl "+SimCodeUtil.dumpSimEqSystemLst(duplicated)+"\n");
-       simEqSys = SimCode.SES_LINEAR(index,partOfMixed,vars,beqs,simJac,duplicated,jacobianMatrix,sources,indexLinearSystem);
+       simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index,partOfMixed,vars,beqs,simJac,duplicated,jacobianMatrix,sources,indexLinearSystem), NONE());
        simEqSysIdx = simEqSysIdxIn + numEqs;
        (duplicated,simEqSysIdx)  = TDS_duplicateSystemOfEquations(rest,simEqSysIdx,repl,simEqSys::simEqsFold);
      then (duplicated,simEqSysIdx);
@@ -4114,15 +4114,15 @@ algorithm
       Option<SimCode.JacobianMatrix> jac;
       Boolean homotopySupport;
       Boolean mixedSystem;
-    case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac),_)
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac)),_)
       equation
         (lsIdx,nlsIdx,mIdx) = idcsIn;
-        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,lsIdx);
+        simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,lsIdx), NONE());
       then (simEqSys,(lsIdx+1,nlsIdx,mIdx));
-    case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,jacobianMatrix=jac,linearTearing=lt,homotopySupport=homotopySupport,mixedSystem=mixedSystem),_)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,eqs=simEqSysLst,crefs=crefs,jacobianMatrix=jac,linearTearing=lt,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         (lsIdx,nlsIdx,mIdx) = idcsIn;
-        simEqSys = SimCode.SES_NONLINEAR(idx,simEqSysLst,crefs,nlsIdx,jac,lt,homotopySupport,mixedSystem);
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,nlsIdx,jac,lt,homotopySupport,mixedSystem), NONE());
       then (simEqSys,(lsIdx,nlsIdx+1,mIdx));
     case(SimCode.SES_MIXED(index=idx,cont=cont,discVars=simVars,discEqs=simEqSysLst),_)
       equation
@@ -4208,15 +4208,15 @@ algorithm
         (stmts,changed) = BackendVarTransform.replaceStatementLst(stmts,replIn,NONE(),{},false);
         simEqSys = SimCode.SES_ALGORITHM(idx,stmts);
     then (simEqSys,changed);
-    case(SimCode.SES_LINEAR(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS),_)
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS)),_)
       equation
         (simVars,bLst) = List.map1_2(simVars,replaceCrefInSimVar,replIn);
         (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
         changed = List.fold(bLst,boolOr,changed);
         simJac = List.map1(simJac,replaceInSimJac,replIn);
-        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS);
+        simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS), NONE());
     then (simEqSys,changed);
-    case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,linearTearing=lt,homotopySupport=homotopySupport,mixedSystem=mixedSystem),_)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,linearTearing=lt,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         expLst = List.map(crefs,Expression.crefExp);
         (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
@@ -4224,7 +4224,7 @@ algorithm
         (simEqSysLst,bLst) = List.map1_2(simEqSysLst,replaceExpsInSimEqSystem,replIn);
         changed = changed or List.fold(bLst,boolOr,false);
         print("implement Jacobian replacement for SES_NONLINEAR in HpcOmScheduler.replaceExpsInSimEqSystems!\n");
-        simEqSys = SimCode.SES_NONLINEAR(idx,simEqSysLst,crefs,idxNLS,NONE(),lt,homotopySupport,mixedSystem);
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,idxNLS,NONE(),lt,homotopySupport,mixedSystem), NONE());
     then (simEqSys,changed);
     case(SimCode.SES_MIXED(index=idx,cont=simEqSys,discVars=simVars,discEqs=simEqSysLst,indexMixedSystem=idxMS),_)
       equation

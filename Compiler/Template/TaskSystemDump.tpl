@@ -79,9 +79,9 @@ match eq
     case SES_RESIDUAL(__)
     case SES_SIMPLE_ASSIGN(__)
     case SES_ARRAY_CALL_ASSIGN(__)
-    case SES_ALGORITHM(__)
-    case SES_LINEAR(__)
-    case SES_NONLINEAR(__)
+    case SES_ALGORITHM(__) then index
+    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then ls.index
+    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then nls.index
     case SES_MIXED(__)
     case SES_WHEN(__)
     case SES_IFEQUATION(__) then index
@@ -149,13 +149,13 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
         </statement>
       </equation><%\n%>
       >>
-    case e as SES_LINEAR(__) then
+    case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
       let &defines = buffer ""
       let &depends = buffer ""
-      let &defines += e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
-      let _ = SimCodeUtil.sortEqSystems(e.residual) |> reseq  =>
+      let &defines += ls.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n"
+      let _ = SimCodeUtil.sortEqSystems(ls.residual) |> reseq  =>
                 eqDefinesDepends(reseq, defines, depends)
-      let _ = (match e.jacobianMatrix
+      let _ = (match ls.jacobianMatrix
         case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then
           let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
                   eqDefinesDepends(jeq, defines, depends)
@@ -163,37 +163,37 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
        )
       <<
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
-        <linear size="<%listLength(e.vars)%>" nnz="<%listLength(simJac)%>">
+        <linear size="<%listLength(ls.vars)%>" nnz="<%listLength(ls.simJac)%>">
           <%defines%>
           <%depends%>
           <residuals>
-          <%e.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+          <%ls.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
           </residuals>
           <jacobian>
-          <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
+          <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
           </jacobian>
         </linear>
       </equation><%\n%>
       >>
-    case e as SES_NONLINEAR(__) then
+    case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
       let &defines = buffer ""
       let &depends = buffer ""
-      let &defines += e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>"/>' ; separator = "\n"
-      let _ = SimCodeUtil.sortEqSystems(e.eqs) |> nleq  =>
+      let &defines += nls.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>"/>' ; separator = "\n"
+      let _ = SimCodeUtil.sortEqSystems(nls.eqs) |> nleq  =>
                 eqDefinesDepends(nleq, defines, depends)
-      let _ = (match e.jacobianMatrix
+      let _ = (match nls.jacobianMatrix
         case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then
           let _ = SimCodeUtil.sortEqSystems(eqns) |> jeq  =>
                   eqDefinesDepends(jeq, defines, depends)
           ""
        )
       <<
-      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
+      <%match nls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),nls.index,withOperations) else ''%>
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
-        <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
+        <nonlinear indexNonlinear="<%nls.indexNonLinearSystem%>">
           <%defines%>
           <%depends%>
-          <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+          <%nls.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
         </nonlinear>
       </equation><%\n%>
       >>

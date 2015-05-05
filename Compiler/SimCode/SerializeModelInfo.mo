@@ -426,6 +426,8 @@ algorithm
       Integer i,j;
       DAE.Statement stmt;
       list<SimCode.SimEqSystem> eqs,jeqs;
+      SimCode.LinearSystem lSystem;
+      SimCode.NonlinearSystem nlSystem;
     case SimCode.SES_RESIDUAL()
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -484,24 +486,24 @@ algorithm
         serializeSource(file,eq.source,withOperations);
         File.write(file, "}");
       then true;
-    case SimCode.SES_LINEAR()
+    case SimCode.SES_LINEAR(lSystem = lSystem as SimCode.LINEARSYSTEM())
       equation
-        i = listLength(eq.beqs);
-        j = listLength(eq.simJac);
+        i = listLength(lSystem.beqs);
+        j = listLength(lSystem.simJac);
 
-        jeqs = match eq.jacobianMatrix
+        jeqs = match lSystem.jacobianMatrix
           case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then jeqs;
           else {};
         end match;
-        eqs = SimCodeUtil.sortEqSystems(listAppend(eq.residual,jeqs));
+        eqs = SimCodeUtil.sortEqSystems(listAppend(lSystem.residual,jeqs));
         if listEmpty(eqs) then
           File.write(file, "\n{\"eqIndex\":");
         else
-          serializeEquation(file,listHead(eqs),section,withOperations,parent=eq.index,first=true);
-          min(serializeEquation(file,e,section,withOperations,parent=eq.index) for e in listRest(eqs));
+          serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true);
+          min(serializeEquation(file,e,section,withOperations,parent=lSystem.index) for e in listRest(eqs));
           File.write(file, ",\n{\"eqIndex\":");
         end if;
-        File.write(file, intString(eq.index));
+        File.write(file, intString(lSystem.index));
         if parent <> 0 then
           File.write(file, ",\"parent\":");
           File.write(file, intString(parent));
@@ -511,7 +513,7 @@ algorithm
         // Ax=b
         File.write(file, "\",\"tag\":\"container\",\"display\":\"linear\",\"defines\":[");
         serializeUses(file,list(match v case SimCodeVar.SIMVAR() then v.name; end match
-                                for v in eq.vars));
+                                for v in lSystem.vars));
         File.write(file, "],\"equation\":[{\"size\":");
         File.write(file,intString(i));
         if i <> 0 then
@@ -519,9 +521,9 @@ algorithm
           File.write(file,realString(j / (i*i)));
         end if;
         File.write(file,",\"A\":[");
-        serializeList1(file,eq.simJac,withOperations,serializeLinearCell);
+        serializeList1(file,lSystem.simJac,withOperations,serializeLinearCell);
         File.write(file,"],\"b\":[");
-        serializeList(file,eq.beqs,serializeExp);
+        serializeList(file,lSystem.beqs,serializeExp);
         File.write(file,"]}]}");
       then true;
     case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSIGN()})
@@ -572,19 +574,19 @@ algorithm
         File.write(file, section);
         File.write(file, "\",\"tag\":\"algorithm\",\"equation\":[]}");
       then true;
-    case SimCode.SES_NONLINEAR()
+    case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM())
       equation
-        eqs = SimCodeUtil.sortEqSystems(eq.eqs);
-        serializeEquation(file,listHead(eqs),section,withOperations,parent=eq.index,first=true);
-        min(serializeEquation(file,e,section,withOperations,parent=eq.index) for e in List.rest(eqs));
-        jeqs = match eq.jacobianMatrix
+        eqs = SimCodeUtil.sortEqSystems(nlSystem.eqs);
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
+        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in List.rest(eqs));
+        jeqs = match nlSystem.jacobianMatrix
           case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
           else {};
         end match;
         min(serializeEquation(file,e,section,withOperations) for e in jeqs);
 
         File.write(file, ",\n{\"eqIndex\":");
-        File.write(file, intString(eq.index));
+        File.write(file, intString(nlSystem.index));
         if parent <> 0 then
           File.write(file, ",\"parent\":");
           File.write(file, intString(parent));
@@ -593,7 +595,7 @@ algorithm
         File.write(file, section);
         File.write(file, "\",\"tag\":\"container\",\"display\":\"non-linear\"");
         File.write(file, ",\"defines\":[");
-        serializeUses(file,eq.crefs);
+        serializeUses(file,nlSystem.crefs);
         File.write(file, "],\"equation\":[[");
         serializeList(file,eqs,serializeEquationIndex);
         File.write(file, "],[");

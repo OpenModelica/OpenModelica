@@ -330,8 +330,11 @@ template equationIndex(SimEqSystem eq)
   case SES_ARRAY_CALL_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
-  case SES_LINEAR(__)
-  case SES_NONLINEAR(__)
+    then index
+  case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))
+    then ls.index
+  case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
+    then nls.index
   case SES_MIXED(__)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
@@ -372,17 +375,17 @@ template dumpEqs(list<SimEqSystem> eqs)
 
       <%e.statements |> stmt => escapeCComments(ppStmtStr(stmt,2))%>
       >>
-    case e as SES_LINEAR(__) then
+    case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
       <<
       equation index: <%equationIndex(eq)%>
       type: LINEAR
 
-      <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+      <%ls.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
       <row>
-        <%beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
+        <%ls.beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
       </row>
       <matrix>
-        <%simJac |> (i1,i2,eq) =>
+        <%ls.simJac |> (i1,i2,eq) =>
         <<
         <cell row="<%i1%>" col="<%i2%>">
           <%match eq case e as SES_RESIDUAL(__) then
@@ -395,14 +398,14 @@ template dumpEqs(list<SimEqSystem> eqs)
         %>
       </matrix>
       >>
-    case e as SES_NONLINEAR(__) then
+    case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
       <<
       equation index: <%equationIndex(eq)%>
-      indexNonlinear: <%indexNonLinearSystem%>
+      indexNonlinear: <%nls.indexNonLinearSystem%>
       type: NONLINEAR
 
-      vars: {<%e.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
-      eqns: {<%e.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
+      vars: {<%nls.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
+      eqns: {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
       >>
     case e as SES_MIXED(__) then
       <<

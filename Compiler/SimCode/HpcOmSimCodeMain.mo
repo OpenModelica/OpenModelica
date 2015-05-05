@@ -181,7 +181,6 @@ algorithm
       Option<SimCode.FmiModelStructure> modelStruct;
       list<SimCodeVar.SimVar> mixedArrayVars;
       HpcOmSimCode.HpcOmData hpcomData;
-      Option<HashTableCrIListArray.HashTable> optVarToArrayIndexMapping;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
 
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
@@ -368,12 +367,7 @@ algorithm
 
       //Create Memory-Map and Sim-Code
       //------------------------------
-      (optTmpMemoryMap,optVarToArrayIndexMapping) = HpcOmMemory.createMemoryMap(modelInfo, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
-      if(Util.isSome(optVarToArrayIndexMapping)) then
-        SOME(varToArrayIndexMapping) = optVarToArrayIndexMapping;
-        BaseHashTable.dumpHashTable(varToArrayIndexMapping);
-      end if;
-
+      optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
       SimCodeUtil.execStat("hpcom create memory map");
 
       hpcomData = HpcOmSimCode.HPCOMDATA(SOME(scheduleDae), SOME(scheduleOde), optTmpMemoryMap);
@@ -1185,8 +1179,8 @@ algorithm
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then index;
     case(SimCode.SES_IFEQUATION(index=index)) then index;
     case(SimCode.SES_ALGORITHM(index=index)) then index;
-    case(SimCode.SES_LINEAR(index=index)) then index;
-    case(SimCode.SES_NONLINEAR(index=index)) then index;
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index))) then index;
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index))) then index;
     case(SimCode.SES_MIXED(index=index)) then index;
     case(SimCode.SES_WHEN(index=index)) then index;
     else fail();
