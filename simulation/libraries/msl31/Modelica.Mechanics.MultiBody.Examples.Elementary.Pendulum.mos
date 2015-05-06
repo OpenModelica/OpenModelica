@@ -11,7 +11,7 @@ loadModel(Modelica,{"3.1"});
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum,stopTime=5.0);
 res := OpenModelica.Scripting.compareSimulationResults(
   "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.mat",
   "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_diff.csv",
   0.01,0.00001,{"rev.phi","rev.w","der(rev.w)"});
 

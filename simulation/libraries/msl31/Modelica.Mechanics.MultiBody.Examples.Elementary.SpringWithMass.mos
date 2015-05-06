@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass,stopTime=5.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass.mat","Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass.mat","Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass_diff.csv",0.01,0.00001,
   {"body.frame_a.r_0[1]",
   "body.frame_a.r_0[2]",
   "body.frame_a.r_0[3]",

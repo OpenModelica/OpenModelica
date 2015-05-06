@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive,stopTime=1.10000002384);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive_diff.csv",0.01,0.00001,
   {"revolute.phi",
   "revolute.w",
   "rotor1D.phi",

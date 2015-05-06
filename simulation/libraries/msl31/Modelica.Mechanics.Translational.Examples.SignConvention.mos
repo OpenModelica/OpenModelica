@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.Translational.Examples.SignConvention);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.SignConvention_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.Translational.Examples.SignConvention.mat","Modelica.Mechanics.Translational.Examples.SignConvention_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.SignConvention.mat","Modelica.Mechanics.Translational.Examples.SignConvention_diff.csv",0.01,0.0001,
   {"mass1.s",
   "mass1.v",
   "mass2.s",

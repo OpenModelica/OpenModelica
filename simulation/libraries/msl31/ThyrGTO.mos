@@ -13,7 +13,7 @@ loadFile("ThyrGTO.mo"); getErrorString();
 simulate(ThyrGTO, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("ThyrGTO_res.mat",
-  "ReferenceFiles/ThyrGTO.mat","ThyrGTO_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/ThyrGTO.mat","ThyrGTO_diff.csv",0.01,0.0001,
   {"IdealThyristor1.i", "IdealGTOThyristor1.i"});
 
 // Result:

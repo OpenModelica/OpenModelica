@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Machines.Examples.AIMC_Inverter,stopTime=1.5);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.AIMC_Inverter_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Machines.Examples.AIMC_Inverter.mat","Modelica.Electrical.Machines.Examples.AIMC_Inverter_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.AIMC_Inverter.mat","Modelica.Electrical.Machines.Examples.AIMC_Inverter_diff.csv",0.01,0.00001,
   {"aimc.idq_rr[1]","aimc.idq_rr[2]","aimc.idq_sr[1]","aimc.idq_sr[2]","loadInertia.phi","loadInertia.w","vfController.x"});
   
 // Result:

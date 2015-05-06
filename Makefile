@@ -145,9 +145,12 @@ scodeinst.log \
 xml.log \
 xogeny.log
 
-.PHONY : all omc-diff failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
+.PHONY : all omc-diff ReferenceFiles failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
 
 all : test
+
+ReferenceFiles:
+	$(MAKE) -C ReferenceFiles
 
 # This will run the test with 5 threads (cores + 1)
 # If you have more cores increase it.

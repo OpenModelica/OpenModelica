@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.NandGate);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.NandGate_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.NandGate.mat","Modelica.Electrical.Analog.Examples.NandGate_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.NandGate.mat","Modelica.Electrical.Analog.Examples.NandGate_diff.csv",0.01,0.00001,
   {"Nand.C4.v",
   "Nand.C7.v",
   "der(Nand.C4.v)",

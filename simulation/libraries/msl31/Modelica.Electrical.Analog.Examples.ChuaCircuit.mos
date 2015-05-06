@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.ChuaCircuit);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ChuaCircuit_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.ChuaCircuit.mat","Modelica.Electrical.Analog.Examples.ChuaCircuit_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ChuaCircuit.mat","Modelica.Electrical.Analog.Examples.ChuaCircuit_diff.csv",0.01,0.00001,
   {"L.i",
    "C1.v",
    "C2.v",

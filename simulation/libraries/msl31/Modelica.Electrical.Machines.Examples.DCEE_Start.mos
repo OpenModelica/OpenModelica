@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Machines.Examples.DCEE_Start,stopTime=2.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.DCEE_Start_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Machines.Examples.DCEE_Start.mat","Modelica.Electrical.Machines.Examples.DCEE_Start_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.DCEE_Start.mat","Modelica.Electrical.Machines.Examples.DCEE_Start_diff.csv",0.01,0.00001,
   {"dcee.inertiaRotor.phi",
   "dcee.inertiaRotor.w",
   "dcee.la.i",

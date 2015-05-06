@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke,stopTime=0.0500000007451);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke_res.mat",
-  "ReferenceFiles/Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke.mat","Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke.mat","Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke_diff.csv",0.01,0.00001,
   {"pmActuator.armature.stopper_xMax.s_rel",
   "pmActuator.armature.stopper_xMax.v_rel",
   "pmActuator.coil.i",
