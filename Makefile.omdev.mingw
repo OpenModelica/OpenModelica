@@ -2,7 +2,7 @@ defaultMakefileTarget = Makefile.omdev.mingw
 REALPATH = $(realpath .)
 OMBUILDDIR=$(REALPATH)/build
 
-all: omc omc-diff
+all: omc omc-diff omlibrary-core
 
 omc:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR)
@@ -13,6 +13,11 @@ omc-diff: omc
 omplot:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMPlot OMBUILDDIR=$(OMBUILDDIR)
 
+omlibrary-core:
+	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
+omlibrary-all:
+	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all
+	
 clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)
