@@ -93,6 +93,7 @@ FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following optio
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
+m4_include([common/m4/ombuilddir.m4])
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -117,14 +118,6 @@ fi
 if test -z "$MAKE"; then
   MAKE=make
 fi
-
-if test x"$prefix" = xNONE; then
-  PREFIX=`pwd`/build
-else
-  PREFIX=$prefix
-fi
-AC_PREFIX_DEFAULT($PREFIX)
-prefix=$PREFIX
 
 AC_ARG_ENABLE(non-free-packages, [  --enable-non-free-packages     Enables you to link non-free packages. But doing so limits your ability to distribute code under GPL3, even to co-workers and the like. If you are an OSMC member you might be allowed to link and ship such libraries if you have a commercial license for the linked packages.],[test "yes" = "$enableval" && ENABLE_NON_FREE_PACKAGES=1 && NON_FREE_VERSION=") (non-free version for personal use only; seriously do not distribute this binary"] && FINAL_MESSAGES="$FINAL_MESSAGES\nLinking against non-free packages: Yes (this version of omc not for distribution)")
 
@@ -235,12 +228,12 @@ if test "$OMC" = "no" ; then
     AC_MSG_ERROR([cross-compilation attempt detected, but no omc executable was given])
   fi
   AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
-  OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
+  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
 elif "$OMC" +version > /dev/null 2>&1; then
   AC_MSG_RESULT([$OMC])
 else
   AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
-  OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
+  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
 fi
 
 dnl Checks for libraries.
@@ -276,16 +269,15 @@ AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
 # AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
 
 AC_MSG_CHECKING([for antlr.Tool support])
-omc_antlr_jar=build/share/omc/java/antlr-3.1.3.jar
-mkdir -p build/share/omc/java
-cp "3rdParty/antlr/3.2/tool/antlr-3.2.jar" "3rdParty/antlr/3.2/tool/antlr-2.7.7.jar" build/share/omc/java/
+mkdir -p $OMBUILDDIR/share/omc/java
+cp "3rdParty/antlr/3.2/tool/antlr-3.2.jar" "3rdParty/antlr/3.2/tool/antlr-2.7.7.jar" $OMBUILDDIR/share/omc/java/
 echo "" > $$grammar.g
-if java -cp build/share/omc/java/antlr-3.2.jar antlr.Tool $$grammar.g ; then
+if java -cp $OMBUILDDIR/share/omc/java/antlr-3.2.jar antlr.Tool $$grammar.g ; then
   rm -f $$grammar.g
   AC_MSG_RESULT([yes])
 else
   rm -f $$grammar.g
-  AC_MSG_ERROR([no antlr.Tool support])
+  AC_MSG_ERROR([no antlr.Tool support (JRE not working)])
 fi
 
 AC_MSG_CHECKING([if the user wants to compile OMShell-terminal])
@@ -631,7 +623,7 @@ if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
   SHREXT=".dylib"
-  LIBGC="build/lib/$host_short/omc/libomcgc.a"
+  LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.dylib
   LIBRUNTIME=libOpenModelicaRuntimeC.dylib
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.dylib
@@ -660,7 +652,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   EXE=".exe"
   # Yes, we build static libs on Windows, so the "shared" extension is .a
   SHREXT=".a"
-  LIBGC="build/lib/$host_short/omc/libomcgc.a"
+  LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.a"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
@@ -685,7 +677,7 @@ else
   APP=""
   EXE=""
   SHREXT=".so"
-  LIBGC="build/lib/$host_short/omc/libomcgc.so"
+  LIBGC="$OMBUILDDIR/lib/$host_short/omc/libomcgc.so"
   LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
@@ -766,7 +758,7 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
 AC_MSG_CHECKING([for revision])
 SOURCE_REVISION=""
 test -f REVISION && SOURCE_REVISION=`head -n1 REVISION`
-test -z "$SOURCE_REVISION" && test -d .git && SOURCE_REVISION=`git describe`
+test -z "$SOURCE_REVISION" && test -d .git && SOURCE_REVISION=`git describe --dirty --match "v*.*" --always`
 test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
 AC_MSG_RESULT([$SOURCE_REVISION])
@@ -807,6 +799,7 @@ Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
 Parser/Makefile \
 SimulationRuntime/c/Makefile \
+SimulationRuntime/c/util/java_interface/Makefile \
 SimulationRuntime/cpp/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \

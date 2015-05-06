@@ -23,6 +23,7 @@ FMIINCLUDE = ../../3rdParty/FMIL/install/include
 GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
 GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
 CJSONINCLUDE = ../../3rdParty/cJSON/
+OMBUILDDIR = ../../build
 
 OMPCC = gcc -fopenmp
 

@@ -1310,33 +1310,8 @@ template equationNamesHPCOM_(Integer idx, list<SimEqSystem> allEquationsPlusWhen
 end equationNamesHPCOM_;
 
 template equationHPCOM_(SimEqSystem eq, Integer idx, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
- "Generates an equation.
-  This template should not be used for a SES_RESIDUAL.
-  Residual equations are handled differently."
 ::=
   equation_function_call(eq, context, &varDecls /*BUFC*/, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, "evaluate")
-/*  match eq
-  case e as SES_SIMPLE_ASSIGN(__) then
-    let &varDeclsLocal = buffer "" BUFL
-    let eqText = equation_(eq,context,&varDeclsLocal,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
-    <<
-    <%varDeclsLocal%>
-    <%eqText%>
-    >>
-  case e as SES_ALGORITHM(__)
-    then 'evaluate_<%idx%>();'
-  case e as SES_WHEN(__)
-    then 'evaluate_<%idx%>();'
-  case e as SES_ARRAY_CALL_ASSIGN(__)
-    then 'evaluate_<%idx%>();'
-  case e as SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-    then 'evaluate_<%idx%>();'
-  case e as SES_MIXED(__)
-    then 'evaluate_<%idx%>();'
-  else
-    "NOT IMPLEMENTED EQUATION"
-*/
 end equationHPCOM_;
 
 template function_HPCOM_joinThread(String threadIdx, String iType)

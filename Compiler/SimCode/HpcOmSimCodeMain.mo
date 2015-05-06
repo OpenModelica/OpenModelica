@@ -181,6 +181,7 @@ algorithm
       Option<SimCode.FmiModelStructure> modelStruct;
       list<SimCodeVar.SimVar> mixedArrayVars;
       HpcOmSimCode.HpcOmData hpcomData;
+      Option<HashTableCrIListArray.HashTable> optVarToArrayIndexMapping;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
 
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
@@ -367,7 +368,12 @@ algorithm
 
       //Create Memory-Map and Sim-Code
       //------------------------------
-      optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
+      (optTmpMemoryMap,optVarToArrayIndexMapping) = HpcOmMemory.createMemoryMap(modelInfo, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
+      if(Util.isSome(optVarToArrayIndexMapping)) then
+        SOME(varToArrayIndexMapping) = optVarToArrayIndexMapping;
+        BaseHashTable.dumpHashTable(varToArrayIndexMapping);
+      end if;
+
       SimCodeUtil.execStat("hpcom create memory map");
 
       hpcomData = HpcOmSimCode.HPCOMDATA(SOME(scheduleDae), SOME(scheduleOde), optTmpMemoryMap);
