@@ -1,0 +1,30 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+builddir_inc=$(OMBUILDDIR)/include
+buildbin=$(OMBUILDDIR)/bin
+buildlib=$(OMBUILDDIR)/lib/omc
+
+bindir = @bindir@
+bindir = @includedir@
+libdir = @libdir@/@host_short@/omc
+
+omplot: mkbuilddirs qwt
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw
+
+$(buildlib)/libomqwt.a: mkbuilddirs qwt-build
+
+qwt: $(buildlib)/libomqwt.a
+
+qwt-build: mkbuilddirs
+	$(MAKE) -C qwt -f Makefile.omdev.mingw
+
+mkbuilddirs:
+	mkdir -p $(builddir_inc)/omplot/qwt
+	mkdir -p $(buildlib)
+	mkdir -p $(buildbin)
+
+clean:
+	$(MAKE) -C qwt -f Makefile.omdev.mingw clean
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw clean

@@ -1,4 +1,6 @@
-OMBUILDDIR=../../../OMCompiler/build
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
 
 QMAKE=qmake
 EXE=.exe

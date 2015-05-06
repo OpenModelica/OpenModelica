@@ -1,6 +1,13 @@
 # @author Adeel Asghar <adeel.asghar@liu.se>
 #
 
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+builddir_inc=$(OMBUILDDIR)/include
+buildlib=$(OMBUILDDIR)/lib/omc
+
 QMAKE=qmake
 NAME=qwt
 
@@ -22,6 +29,5 @@ $(NAME): Makefile
 	$(MAKE) -f Makefile
 
 build: $(NAME)
-	$(MAKE) -f Makefile install
-	cp -puf lib/libomqwt*.a ../../OMCompiler/build/lib/omc
-	cp -puf build/include/* ../../OMCompiler/build/include/omc/qwt
+	cp -puf lib/libomqwt*.a $(buildlib)
+	test -f $(builddir_inc)/omplot/qwt/qwt_global.h || ($(MAKE) -f Makefile install && cp -a build/include/*.h $(builddir_inc)/omplot/qwt)
