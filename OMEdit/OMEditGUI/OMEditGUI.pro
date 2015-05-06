@@ -57,6 +57,7 @@ evil_hack_to_fool_lupdate {
 
 # Windows libraries and includes
 win32 {
+  OPENMODELICAHOME = $$(OPENMODELICAHOME)
   QMAKE_LFLAGS += -enable-auto-import
 
   DEFINES += IMPORT_INTO=1
@@ -93,7 +94,7 @@ SOURCES += main.cpp \
   Util/backtrace.c \
   Util/Helper.cpp \
   MainWindow.cpp \
-  $$(OPENMODELICAHOME)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
+  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Util/StringHandler.cpp \
   Modeling/MessagesWidget.cpp \
@@ -212,7 +213,7 @@ HEADERS  += Util/backtrace.h \
   CrashReport/CrashReportDialog.h \
   OMC/Parser/OMCOutputParser.h \
   OMC/Parser/OMCOutputLexer.h \
-  $$(OPENMODELICAHOME)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
+  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
 
 LIBS += -lqjson
 INCLUDEPATH += ../../qjson-0.8.1/build/include
@@ -237,7 +238,7 @@ INCLUDEPATH += . \
   Simulation \
   TransformationalDebugger \
   Util \
-  $$(OPENMODELICAHOME)/include/omc/scripting-API
+  $$OPENMODELICAHOME/include/omc/scripting-API
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Debugger/Parser/GDBMIOutput.g \

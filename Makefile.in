@@ -25,6 +25,8 @@ omedit: mkbuilddirs qjson
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 clean:
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
+	test ! -f qjson-0.8.1/build/Makefile || $(MAKE) -C qjson-0.8.1/build clean
+	rm -f qjson-0.8.1/build/Makefile
 distclean: clean
 	rm -f config.status configure Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config
 Makefile: Makefile.in config.status

@@ -74,6 +74,10 @@
 #include "CrashReportDialog.h"
 #include "meta/meta_modelica.h"
 
+#ifndef WIN32
+#include "omc_config.h"
+#endif
+
 #ifdef QT_NO_DEBUG
 #ifndef WIN32
 #include <signal.h>
