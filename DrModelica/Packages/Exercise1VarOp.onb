@@ -1,0 +1,74 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Exercise 1&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">There are different kinds of packages. What is a generic package?&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A generic package is a package with some kind of formal parameter, e.g. a replaceable type.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">What is a local package?&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A local package is simply a package that is declared directly inside a class that is not a package.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Is there something called a nonencapsulated package? If so, explain it.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Yes, there actually is. A nonencapsulated package is a package declared without the prefix &lt;span style=" font-family:Courier New;">encapsulated&lt;/span>. Also large encapsulated packages, containing  &lt;span style=" font-family:Courier New;">protected&lt;/span>  declarations, can be internally structured into nonencapsulated packages. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Why might it be a problem to move packages?&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">That is because used declarations may not be available in the new location for that certain subclass. When copying or moving an encapsulated package or class at most the &lt;span style=" font-family:Courier New;">import&lt;/span> statements inside this package or class, including subpackages and local classes, need to be updated.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

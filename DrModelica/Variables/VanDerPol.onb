@@ -1,0 +1,94 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <TextCell style="Title">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Van der Pol Model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />This example describes a Van der Pol oscillator. Notice that here the keyword &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">model&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is used instead of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">class&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> with the same meaning. This example contains declarations of two state variables x and y, both of type Real and a parameter constant lambda, which is a so-called simulation parameter. The keyword parameter specifies that the variable is constant during a simulation run, but can have its value initialized before a run, or between runs. Finally, there is an equation section starting with the keyword equation, containing two mutually dependent equations that define the dynamics of the model.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model VanDerPol     "Van der Pol oscillator model"
+  Real x(start = 1,fixed=true);
+  Real y(start = 1,fixed=true);
+  parameter Real lambda = 0.3;
+equation
+  der(x) = y;
+  der (y) = - x + lambda*(1 - x*x)*y;
+end VanDerPol;</Input>
+      <Output>{VanDerPol}</Output>
+    </GraphCell>
+    <GroupCell closed="false">
+      <TextCell style="Section">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of Van der Pol &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">To illustrate the behavior of the model, we give a command to simulate the Van der Pol oscillator during 25 seconds starting at time 0.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>simulate(VanDerPol, startTime=0, stopTime=25 )</Input>
+        <Output>record SimulationResult
+    resultFile = "VanDerPol_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Perform a parametric plot:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <OMCPlot PlotType="2" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" YRangeMin="0" YRangeMax="0" YLabel="y" Legend="true" XLabel="x">
+          <Curve Title="y(x)" Visible="true" XData="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" YData="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" Color="4294901760"/>
+        </OMCPlot>
+        <Input>plotParametric( x, y )</Input>
+        <Output>[done]</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

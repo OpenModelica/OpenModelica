@@ -1,0 +1,327 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Using Array Concatenation and Slices&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The following usage examples show a few common programming situations where both array concatenation and array slices are involved, and how to do this correctly in order to avoid certain mistakes. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Appending an Element to Vectors and Row/Column Matrices&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The first equations set XA1, XA2, XA3 and XA4 equal to row matrices and XB1, XB2 equal to column matrices respectively, created by appending an additional element to row/column matrices PA and PB.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>class AppendElement
+  Real[1, 3]    PA = [1, 2, 3];        // A row matrix value
+  Real[3, 1]    PB = [1; 2; 3];        // A column matrix value
+  Real[3]       q  = {1, 2, 3};        // A vector value
+
+  Real[1, 4]    XA1, XA2, XA3, XA4;    // Row matrix variables
+  Real[4, 1]    XB1, XB2;              // Column matrix variables
+  Real[4]       y;                     // Vector variable
+
+equation
+  XA1 = [PA, 4];              // Append OK, since 4 is promoted to {{4}}
+  XA2 = cat(2, PA, {{4}});    // Append OK, same as above but not promoted
+
+  XB1 = [PB; 4];                // Append OK, result is {{1}, {2}, {3}, {4}}
+  XB2 = cat(1, PB, {{2}});      // Append OK, same result
+
+  y   = cat(1, q, {4});        // Vector append OK, result is {1, 2, 3, 4}
+
+  XA3 = [-1, zeros(1, 2), 1];    // Append OK, result is {{-1, 0, 0, 1}}
+  XA4 = cat(2, {{-1}}, zeros(1, 2), {{1}} );  // Append OK, result is {{-1, 0, 0, 1}}
+
+end AppendElement;</Input>
+          <Output>{AppendElement}</Output>
+        </GraphCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of AppendElement&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate( AppendElement )    </Input>
+            <Output>record SimulationResult
+    resultFile = "AppendElement_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Take a look at the value at time=0:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GroupCell closed="false">
+            <GraphCell style="Graph" closed="false">
+              <Input>val(y[3],0)</Input>
+              <Output>3.0</Output>
+            </GraphCell>
+            <GraphCell style="Graph" closed="false">
+              <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+                <Curve Title="XA1[1,3]" Visible="true" XData="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" YData="QAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAAA=" Color="4294901760"/>
+                <Curve Title="y[2]" Visible="true" XData="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" YData="QAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAAA=" Color="4278190335"/>
+              </OMCPlot>
+              <Input>plot({XA1[1,3],y[2]})</Input>
+              <Output>[done]</Output>
+            </GraphCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Composing a Blocked Matrix Board from Submatrices&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The following example shows three very similar ways of constructing a blocked matrix from submatrices. The first two variants follow the rule of always making sure that returned array slices as arguments to the special purpose concatenation operators are matrices. The third variant breaks this rule, since two of the array slices return vectors, causing an error. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">BlockMatrix&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>class BlockMatrix
+  Real[3,3]  P = [1, 2, 3;
+                  4, 5, 6;
+                  7, 8, 9];     // A 3x3 matrix value
+  Real[6, 6]  Q;      // Q consists of four 3x3 matrix blocks to be defined
+                      // by P apart from sign
+equation
+  Q[1:3, 1:3] = P;                // Upper left block
+  Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, {3}]];  // Upper right block
+  Q[4:6, 1:3] = [Q[1:2, 1:3]; -Q[{3}, 1:3]];  // Lower left block
+  Q[4:6, 4:6] = P;                // Lower right block
+end BlockMatrix;</Input>
+            <Output>{BlockMatrix}</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate(BlockMatrix)</Input>
+            <Output>record SimulationResult
+    resultFile = "BlockMatrix_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">BlockMatrix2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>class BlockMatrix2
+  Real[3, 3]  P = [1, 2, 3;
+                   4, 5, 6;
+                   7, 8, 9];
+  Real[6, 6]  Q;
+equation
+  Q[1:3, 1:3] = P;                // Upper left block
+  Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, 3:3]];  // Upper right block
+  Q[4:6, 1:3] = [Q[1:2, 1:3]; -Q[3:3, 1:3]];  // Lower left block
+  Q[4:6, 4:6] = P;                // Lower right block
+end BlockMatrix2;</Input>
+            <Output>{BlockMatrix2}</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate(BlockMatrix2)</Input>
+            <Output>record SimulationResult
+    resultFile = "BlockMatrix2_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">BlockMatrix3&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>class BlockMatrix3
+  Real[3, 3]  P = [1, 2, 3;
+                   4, 5, 6;
+                   7, 8, 9];
+  Real[6, 6]  Q;
+equation
+  Q[1:3, 1:3] = P;                // OK!
+  Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, 3]];    // OK, correct promotion
+  Q[4:6, 1:3] = [Q[1:2, 1:3], -Q[3, 1:3]];    // ERROR!
+  Q[4:6, 4:6] = P;                // OK!
+end BlockMatrix3;</Input>
+            <Output>{BlockMatrix3}</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate(BlockMatrix3)</Input>
+            <Output>record SimulationResult
+    resultFile = "",
+    messages = "Failed to build model: BlockMatrix3"
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:9:3-9:42:writable] Error: Type mismatch in equation Q[{4, 5, 6},{1, 2, 3}]=cat(2, Q[{1, 2},{1, 2, 3}], promote(-Q[3,{1, 2, 3}], 1)) of type Real[3, 3]=Real[3, 4].
+Error: Error occurred while flattening model BlockMatrix3
+"</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Cyclic Permutation of Matrix Rows or Columns&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Cyclic permutation can be achieved by a combination of concatenation operations and array slices or just array slices using a permutation vector.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>class CyclicPerm
+  Real[1, 3] WO = [1, 2, 3];          // Row matrix
+  Real[2, 3] XO = [1, 2, 3; 4, 5, 6];      // Matrix with two rows
+
+  Real[1, 3] W;                  // Permuted row matrix
+  Real[2, 3] X;                  // Permuted matrix with two rows
+
+  Integer[3] p = {2, 3, 1};            // Permutation vector
+
+algorithm
+  W := [[2, 3], 1];                // OK, result: [2, 3, 1] = {{2, 3, 1}}
+  W := [{{2, 3}}, {{1}}];            // OK, same result: {{2, 3, 1}}
+
+  W := [WO[{1}, 2:3], WO[{1}, {1}]];      // OK, result: {{2, 3, 1}}
+  W := [WO[1:1, 2:3], WO[1:1, 1:1]];      // OK, same result: {{2, 3, 1}}
+
+  W := WO[:, p];                // OK, same result: {{2, 3, 1}}
+
+  W := cat(2, WO[1:1, 2:3], WO[1:1, 1:1]); // OK, same result: {{2, 3, 1}}
+  W := [WO[1, 2:3], WO[1, 1]];       // Error, since WO[1, 2:3] is a vector
+
+  X := [XO[:, 2:3], XO[:, {1}]];   // OK, X becomes [2, 3, 1; 5, 6, 4]
+  X := XO[:, p];                   // OK, X becomes [2, 3, 1; 5, 6, 4]
+
+  X[{1},:] := [XO[{1}, 2:3], XO[{1}, {1}]];  // OK, X becomes [2,3,1; 5,6,4]
+  X[1, :] := [XO[1, 2:3], XO[1, 1]];      // ERROR, incompatible dimensions
+end CyclicPerm;</Input>
+          <Output>{CyclicPerm,getPerson,PersonList,mkperson,Person}</Output>
+        </GraphCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of CyclicPerm&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate( CyclicPerm )    </Input>
+            <Output>record SimulationResult
+    resultFile = "",
+    messages = "Simulation failed for model: CyclicPerm
+[&lt;interactive>:20:3-20:30:writable] Error: Type mismatch in assignment in W := cat(2, {{WO[1,2]}, {WO[1,3]}}, {{WO[1,1]}}) of Real[1, 3] := Real[1, 2]
+Error: Error occurred while flattening model CyclicPerm
+"
+end SimulationResult;</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Take a look at some values at time=0:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

@@ -1,0 +1,150 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Exercise 2&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Functions&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We want to search through an array of names and find the position of a particular name. The function should have two arguments, an array of names and the name we are looking for. The output will be the index where the name where found or an error will occur if the name was not found. &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="false" >
+     <Input></Input>
+     <Output>Error occured building AST
+Syntax Error</Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;br />Write a class that tests the previous function.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="false" >
+     <Input></Input>
+     <Output>Error occured building AST
+Syntax Error</Output>
+    </InputCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Hint&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">Assert&lt;/span> can be used to check wether the result has been found or not and if it has not been found, the message in the second argument will be shown otherwise.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">findName&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="false" >
+       <Input>function findName
+  input String nameArray[:];
+  input String name;
+  output Integer index;
+protected
+  Integer i, length = size(nameArray, 1);
+algorithm
+  index := -1;
+  i := 1;
+  while index == -1 and i&lt;length loop
+    if nameArray[i] == name then
+      index := i;
+    end if;
+    i := i + 1;
+  end while;
+  assert(index&lt;>-1, "findName: Failed");
+end findName;</Input>
+       <Output>Ok</Output>
+      </InputCell>
+      <InputCell style="Input" closed="false" >
+       <Input>findName({"C++", "Lisp", "Java", "Ada", "Modelica"},"Lisp")  //??Error - not yet implemented</Input>
+       <Output>
+OMC-ERROR:
+"Internal error code  generation of expression nameArray[i] == name failed
+"</Output>
+      </InputCell>
+     </GroupCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">testFindName&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="false" >
+       <Input>class testFindName
+  Integer findLisp;
+  String nameArray[:] = {"C++", "Lisp", "Java", "Ada", "Modelica"};
+  String lisp = "Lisp";
+equation
+  findLisp = findName(nameArray, lisp);
+end testFindName;</Input>
+       <Output>Ok</Output>
+      </InputCell>
+     </GroupCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of testFindName&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We see that the name "Lisp" exist in the array and is on position 2.&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="false" >
+       <Input>simulate( testFindName )   //??Error - not yet implemented</Input>
+       <Output>record
+    resultFile = "Simulation failed.
+Internal error code  generation of expression nameArray[i] == name failed
+Internal error Code generation of Modelica functions failed.
+"
+end record</Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">Calling TestFindName:&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="false" >
+       <Input></Input>
+       <Output>
+OMC-ERROR:
+"Variable findLisp[0] not found in scope &lt;global scope>
+"</Output>
+      </InputCell>
+     </GroupCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">testFindName2&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="false" >
+       <Input>class testFindName2
+  Integer findPascal;
+  String nameArray[:] = {"C++", "Lisp", "Java", "Ada", "Modelica"};
+  String pascal = "Pascal";
+equation
+  findPascal = findName(nameArray, pascal);
+end testFindName2;</Input>
+       <Output>Ok</Output>
+      </InputCell>
+     </GroupCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of testFindName2&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">When searching for a name that is not in the array, the simulation is aborted. We see in the dslog.txt that the assertion fails.&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="false" >
+       <Input>simulate( testFindName2 )   //??Error - not yet implemented</Input>
+       <Output>record
+    resultFile = "Simulation failed.
+Internal error code  generation of expression nameArray[i] == name failed
+Internal error Code generation of Modelica functions failed.
+"
+end record</Output>
+      </InputCell>
+     </GroupCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

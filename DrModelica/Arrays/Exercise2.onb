@@ -1,0 +1,51 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Exercise 2&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Expanded Type&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Consider the classes &lt;span style=" font-family:Courier New;">Student&lt;/span>, &lt;span style=" font-family:Courier New;">Class&lt;/span> and &lt;span style=" font-family:Courier New;">GraduateClass&lt;/span> below. Which is the expanded type of &lt;span style=" font-family:Courier New;">GraduateClass&lt;/span>?&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Student
+  constant Real legs = 2;
+  constant Real arms = 2;
+  parameter Real nrOfBooks;
+  parameter String name = "Dummy";
+end Student;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Class = Student[35];</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class GraduateClass
+  Class[42] c;
+end GraduateClass;</Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The expanded type is &lt;span style=" font-family:Courier New;">Student&lt;/span>[42, 35].&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

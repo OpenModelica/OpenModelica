@@ -1,0 +1,207 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Function Call&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Polynomial Evaluator&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">There are two basic forms a of function call in Modelica: &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">positional&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> or &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">named&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> association to formal parameters. We will as an example use the function &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">PolynomiaEvaluator&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, which computes the value of a polynomial given two arguments: a coefficient vector A and a value of x.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>function PolynomialEvaluator
+  input Real A[:];          // Array, size defined at function call time
+  input Real x := 1.0;        // Default value 1.0 for x
+  output Real sum;
+protected
+  Real xpower;
+algorithm
+  sum := 0;
+  xpower := 1;
+  for i in 1:size(A, 1) loop
+    sum := sum + A[i]*xpower;
+    xpower := xpower*x;
+  end for;
+end PolynomialEvaluator;</Input>
+          <Output>{PolynomialEvaluator}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Positional Call &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Function calls with &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">positional association&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of actual arguments to formal parameters is the most common form of function call. The actual arguments are associated with the formal parameters according to their position in the argument list. &lt;br />&lt;br />Using positional association {1, 2, 3, 4} becomes the value of the coefficient vector &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">A&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and 21 becomes the value of the formal parameter &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">x&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>class PositionalCall
+  Real p;
+equation
+  p = PolynomialEvaluator({1, 2, 3, 4}, 21);
+end PositionalCall;</Input>
+          <Output>{PositionalCall,PolynomialEvaluator}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of PositionalCall &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( PositionalCall)</Input>
+          <Output>record SimulationResult
+    resultFile = "PositionalCall_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>//p[0] is replaced by the following line.
+val (p, 0)</Input>
+          <Output>38410.0</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+            <Curve Title="p" Visible="true" XData="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" YData="QOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAA==" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot(p)</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Named Call &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The same call to the function &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">PolynomialEvaluator&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> can instead be made using &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">named association&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of actual arguments to formal parameters. Here the actual argument is associated with the formal parameter through an equation in the argument list.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>class NamedCall
+  Real p;
+equation
+  p = PolynomialEvaluator(A = {1, 2, 3, 4}, x = 21);
+end NamedCall;</Input>
+          <Output>{NamedCall,PositionalCall,PolynomialEvaluator}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of NamedCall &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( NamedCall )</Input>
+          <Output>record SimulationResult
+    resultFile = "NamedCall_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+            <Curve Title="p" Visible="true" XData="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" YData="QOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAABA4sFAAAAAAEDiwUAAAAAAQOLBQAAAAAA=" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot(p)</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Direct positionalcall:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>PolynomialEvaluator({1, 2, 3, 4},  21)</Input>
+          <Output>38410.0</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

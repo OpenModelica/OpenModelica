@@ -1,0 +1,273 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Using the Traditional Approach&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Below, we show how to model a tank system using the traditional approach.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/17.png" width="402" height="128" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Image name="file:////tmp/OpenModelica/17.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAGSAAAAgAgDAAAAFjUf7AAAAANzQklUCAgI2+FP4AAAAwBQTFRFAAAAwMDA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXxqxmgAAAAlwSFlzAAALEwAACxMBAJqcGAAABkxJREFUeJztnIuSpCAMRbP8/0dv7XYjSXgIIWigc6ucnlaMkSNcRGcguIwJ3k7AxeVIzMmRmJMjMSdHYk6OxJwciTk5EnNyJObkSMzJkZiTIzEnR2JOjsScHIk5ORJzciTmBNk3jcU1IVaBoKF3zuQYZUjCdBtxJHPiSBT6LUcyJ+YlMOcH8I3hmlDWSuRM3N91VPMSaSz3kmlVvUQaLHqJj9KkMuIljiSp7SXfyzdexvEHfNjRjdM+5Pqo6SXYHK4NQO9eEqsZL3EkSU0vAfRBkJQ2XmUcyZzaXgKASZSRYHeGa8WgsTuSpNv7kmLHhfaExr79CTiSpNv7kn4kMi9pIGkEugYWB7K89RKOBNiKWS+RIzm1ffV4CRrnAqR2wDeGxGw4gTqST/irFACZrCaF/g/O43ecGmw18XbrJWOhVL0E9ZWxFO46qYt9eJGtqTFvBKTDSwZjaXsJY0DdLFY19zi2erPOreklkmDKXhIHyhEJ4I4sUiFrIa1OOS1TFnr4mrwJib1EvOi3ks8XYnLFQoA2EUJDGQ1pOZJ5HqUsOxKQIIGs0EokdMQAqH2Ga8oP9a6o3PCR+IHDNA99JPmPAhLItmoiYSFpPbEceDnBofBXDQkSqCKhE834WgzoVpGsDfyS1kISQgY/v2wYEvmh3lMDiSWNImHDEMGh3tOhSOhukkO9J0dSOdR7kiF5PG1u72ide0mQjWNmxQfBIQ0k+BADWLnRI6nkOyEBktdzXqvXT28YyV5ziAK9fn6DSI4HsgLJYMQykkoQg0D0U9oKyS8AsYqkeKYWm8geQRe1EotA1qS0CZLfAfIgktoMcReSHwLyEJLWjH2HlzzYRBY/iejLYXXEu7RvW8mjfVbfsVBKLyAZ305q874+K0gMX6HkuDsh6a2yCpI/HXoFCTurRTn8f2Z/1SB6HIZnl/FTsuZUJ/TjiLEKvZ1VJJ3TDLM5fN6vQDPOaNIfULmQ3jqsPxAY7VC2aiX5qS1rJbT6G0ho2QxJenowlMA2SBR26AvJkMQuKTWaEP0Wlc2e98fmcRiSm7HFI0hSpeNDJk8JhfW4t9JAYshLapk8iKTlJZ9fyqhSRBUJkQhqCKpfPmtsIIG6l5DLumTvofifcUbfonwQyc3+BpB8Lfqq8ss0Yt/EHKcUMavj0rrmMoAEEO7B0V7Kt24N7yDRj0h5CP6jVD+S2KzSx3i+9I6LbT4BCbveZW9+P4skHI5kxkPGvcSRdEWUe8i9l/BbA2Uk+Y3HGUjkHnLt224aKPdlreQkJFMeEpduJPTNUOmI63AkMx5y7yV5pekmz389A4nCX6E6Et2Ik31W6PYSdZ2KZJpH8I5LNd7MOCstjkQtGpARjHvJZA7VNcVNhWLk3u1aerMQeEln9AGdhSS9ThEUmLyFxOTdO8TU4kaIXxkSMhOOnyoqMOmfUNFVoTqMIPn2QBFJ7JAIElzhBE6JRylzyL71eEm5wWipUB3VAXNlhxU5hEAYQCgjSXuzN3hDgckNkgEveRqJ9g6SkJ8qST0X0K9kx2JNF5h8d4ds/usqwBdHwtYUjIEXriMptRPS9FDbI82oy0sciQRJy0toN1jtuxwJX5Pqm/zoRVLzEtT9QcRd3Me9JF9zDSlwXcq9JJXGSFpMHIlqxDsvQZ/uJU+ErHrJp0eqIHnaSyr7Houk4CXfQTBvJbFj5IsjUY1YZNKRxlovSV1nvDmKK9nUw5j2QFJuJx15LPUSfgA82KDd55A2QTLMIyay1Evo+A74tZOyGIyqrvVeIloWIrlujiD2WzN/M70HEh0mXW8vDOWVxhO8leBCo2c7usMbIXWevaundb2CF67H0eTiicmPRlXLb2FImOYRYMWZxphpJH51ZFmZ4aCasuol6mn16VAkKkzU06plylYNx1DJZHFIq15SzJVTORWJUS+ppDv3X2p2QbKZlyAqhyLZxkt40pLj7oFkIy/JdCoSrTbSdwuvK8HZasuol6hn1SNJ69wDyZ48/kn2l47qWSyIuCsTQb+1C5JNmYiOvAuSTZlItAcSFSbvSNJKZsZrlZDa+q37kgUy6iWORDvifL+lnlafDkWys78fisS9ZE7uJUSnjrh+yUsWJLrCSzRuEF7SmUi2liMxJ0diTha6WEdiTo7EnByJOf0Fj0hwlaIiwFoAAAAASUVORK5CYII=</Image>
+      </TextCell>
+      <TextCell style="">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A tank system with a tank, a source for liquid, and a controller.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">FlatTank Model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">FlatTank&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model is a &amp;quot;flat&amp;quot; model of the tank system with no internal hierarchical &amp;quot;system structure&amp;quot; visible, i.e., just a collection of variables and equations that model the system dynamics. The internal system structure consisting of components, interfaces, couplings between the components, etc. is not reflected by this model.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model FlatTank
+ // Tank related variables and parameters
+  parameter Real flowLevel(unit = "m3/s") = 0.02;
+  parameter Real area(unit = "m2")        = 1;
+  parameter Real flowGain(unit = "m2/s")  = 0.05;
+  Real           h(start = 0, fixed=true,unit = "m")     "Tank level";
+  Real           qInflow(unit = "m3/s")       "Flow through input valve";
+  Real           qOutflow(unit = "m3/s")      "Flow through output valve";
+
+ // Controller related variables and parameters
+  parameter Real K = 2                     "Gain";
+  parameter Real T(unit = "s")  = 10       "Time constant";
+  parameter Real minV = 0,  maxV = 10;  // Limits for flow output
+  Real           ref = 0.25                "Reference level for control";
+  Real           error                     "Deviation from reference level";
+  Real           outCtr                    "Control signal without limiter";
+  Real           x(fixed=true)             "State variable for controller";
+
+equation
+  assert(minV>=0, "minV must be greater or equal to zero");
+  der(h)   = (qInflow - qOutflow)/area;           // Mass balance equation
+  qInflow    = if time > 150 then 3*flowLevel else flowLevel;
+  qOutflow   = limitValue(minV, maxV, -flowGain*outCtr);
+  error    = ref - h;
+  der(x)   = error/T;
+  outCtr   = K*(error + x);
+end FlatTank;</Input>
+          <Output>{FlatTank}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">The limitValue Function&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">limiter function&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is needed in the model to reflect minimum and maximum flows through the output valve:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>function limitValue
+  input  Real pMin;
+  input  Real pMax;
+  input  Real p;
+  output Real pLim;
+ algorithm
+  pLim := if p>pMax then pMax
+          else if p&lt;pMin then pMin
+          else p;
+end limitValue;</Input>
+          <Output>{limitValue}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Examples of Calling limitValue&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Three calls. a) 6 is between 4 and 10;  b) 3 is less than 4 which is returned; c) 12 is greater than 10 which is returned.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>limitValue(4, 10, 6)</Input>
+          <Output>6.0</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>limitValue(4, 10, 3)</Input>
+          <Output>4.0</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>limitValue(1, 10, 12)</Input>
+          <Output>10.0</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="true">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Take a Look at the Flattened FlatTank Class&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>instantiateModel(FlatTank)</Input>
+          <Output>"fclass FlatTank
+parameter Real flowLevel(unit = "m3/s") = 0.02;
+parameter Real area(unit = "m2") = 1;
+parameter Real flowGain(unit = "m2/s") = 0.05;
+Real h(unit = "m", start = 0.0) "Tank level";
+Real qInflow(unit = "m3/s") "Flow through input valve";
+Real qOutflow(unit = "m3/s") "Flow through output valve";
+parameter Real K = 2 "Gain";
+parameter Real T(unit = "s") = 10 "Time constant";
+parameter Real minV = 0;
+parameter Real maxV = 10;
+Real ref = 0.25 "Reference level for control";
+Real error "Deviation from reference level";
+Real outCtr "Control signal without limiter";
+Real x "State variable for controller";
+equation
+assert(minV >= 0.0,"minV must be greater or equal to zero");
+  der(h) = (qInflow - qOutflow) / area;
+  qInflow = if time > 150.0 then 3.0 * flowLevel else flowLevel;
+  qOutflow = limitValue(minV,maxV,(-flowGain) * outCtr);
+  error = ref - h;
+  der(x) = error / T;
+  outCtr = K * (error + x);
+end FlatTank;
+"</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of FlatTank&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( FlatTank, stopTime=250 )</Input>
+          <Output>record SimulationResult
+    resultFile = "FlatTank_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+            <Curve Title="h" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot( h )</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:12pt; font-weight:600; color:#000000;">Diagram 1:&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">  Simulation of the FlatTank model with plot of the tank level.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

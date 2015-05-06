@@ -1,0 +1,321 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Modification Prevention Prefix Final&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simple Example&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A variable declared as final in a member modification cannot be further modified by another modification. All members of a &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">final&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> member are also &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">final&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">,  e.g. the fields of a &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">final&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> member that is a &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">record&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> are &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">final&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>type Angle = Real(final quantity = "Angle",
+          final unit       = "rad",
+          displayUnit       = "deg");</Input>
+          <Output>{Angle}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>class AngleInst
+  parameter Angle a1(unit = "deg",fixed=true);  // Error, since unit declared as final
+  parameter Angle a2(displayUnit = "rad", fixed=true); // Fine
+end AngleInst;  </Input>
+          <Output>{AngleInst,Angle}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of Angle&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">When we simulate the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">AngleInst&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> we see that there is an error, since we try to modify the unit which is declared as final. We also get a warning because &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">a1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">a2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> do not have any default values.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( AngleInst )</Input>
+          <Output>record SimulationResult
+    resultFile = "AngleInst_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">More Advanced Example&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here is another, slightly more advanced, example of the use of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">final&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. This example invovles a model that is used as a transfer function within a PI controller. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>block TransferBlock               // Works like a transfer function
+  parameter Real a[:] = {1, 1}           "denominator coefficient vector";
+  parameter Real b[:] = {1}           "numerator coefficient vector";
+protected
+  parameter Integer nb(max = na) = size(b, 1);
+  parameter Integer na      = size(a, 1);
+  parameter Integer n      = na - 1;
+  parameter Real[n]       x              "State vector";
+  parameter Real[na]        b0       = cat(1, zeros(na - nb), b);
+end TransferBlock;</Input>
+          <Output>{TransferBlock}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model PI                     "PI controller"
+  parameter Real k = 1              "gain";
+  parameter Real T = 1              "time constant";
+  TransferBlock tf(final a = {T, 0}, final b = {T, 1});
+end PI;</Input>
+          <Output>{PI,TransferBlock}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model Test
+  PI c1(k = 2, T = 3);              // Fine
+  PI c2(tf.b = {1});              // Error: b is declared as final
+end Test;  </Input>
+          <Output>{Test,PI,TransferBlock}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model Test2
+  PI c1(k = 2, T = 3);              // Fine
+end Test2;  </Input>
+          <Output>{Test2,Test,PI,TransferBlock}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of PI&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( TransferBlock )  </Input>
+          <Output>record SimulationResult
+    resultFile = "TransferBlock_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Assuming fixed start value for the following 1 variables:
+         x[1]:VARIABLE(protected = true )  "State vector".TransferBlock, .Real type: Real [1]
+"</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( PI )</Input>
+          <Output>record SimulationResult
+    resultFile = "PI_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Assuming fixed start value for the following 1 variables:
+         tf.x[1]:VARIABLE(protected = true )  "State vector".PI, .TransferBlock, .Real type: Real [1]
+"</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( Test2 )</Input>
+          <Output>record SimulationResult
+    resultFile = "Test2_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Assuming fixed start value for the following 1 variables:
+         c1.tf.x[1]:VARIABLE(protected = true )  "State vector".Test2, .PI, .TransferBlock, .Real type: Real [1]
+"</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We see in the simulation of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Test&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> that an error occurs because we try to modify b, which is declared as final.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( Test )</Input>
+          <Output>record SimulationResult
+    resultFile = "Test_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Assuming fixed start value for the following 2 variables:
+         c1.tf.x[1]:VARIABLE(protected = true )  "State vector".Test, .PI, .TransferBlock, .Real type: Real [1]
+         c2.tf.x[1]:VARIABLE(protected = true )  "State vector".Test, .PI, .TransferBlock, .Real type: Real [1]
+"</Output>
+        </GraphCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

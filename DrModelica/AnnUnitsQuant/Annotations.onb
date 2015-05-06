@@ -1,0 +1,46 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Annotations&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />An annotation can be understood as an attribute or property containing information associated with some element of a Modelica model. Examples are model documentation and graphical layout information concerning icons and connections associated with models. The graphical view usually makes models easier to understand. &lt;br />&lt;br />&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Resistor1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is an example of an annotation containing information about the graphical layout of an icon representing a resistor model, the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">annotation&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> has the name &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Icon&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and contains instances of the graphical annotation elements &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Rectangle&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Text&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Line&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, etc. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>model Resistor1
+  annotation(Icon(
+    Rectangle(extent = [-70, -30, 70, 30], style(fillPattern = 1)),
+    Text(extent =[-100, 55; 100, 110], string = "%name = %R"),
+    Line(points = [-90, 0; -70, 0]),
+    Line(points = [70, 0; 90, 0])
+    ));
+end Resistor1;
+</Input>
+        <Output>{Resistor1}</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>simulate(Resistor1)</Input>
+        <Output>record SimulationResult
+    messages = "",
+    simulationTime = 0.1447867848512812
+end SimulationResult;</Output>
+      </GraphCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

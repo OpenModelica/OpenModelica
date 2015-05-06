@@ -1,0 +1,331 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Frequency Analysis of Simulation Data&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Fourier Analysis&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">The Model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Consider a weak axis excited by a torque pulse train. The axis is modeled by three segments joined by two torsion springs. The following diagram is imported from the &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">MathModelica&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">Lite&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">Graphic Editor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> where the model was defined. (See Section 15.8 in the Modelica Book).&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/17.png" width="516" height="69" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Image name="file:////tmp/OpenModelica/17.png">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</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Diagram: WeakAxis&lt;/span>&lt;/p>
+&lt;p align="center" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="GeneratedCell">True</Rule>
+            <Rule name="TextAlignment">Center</Rule>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The corresponding Modelica code ...&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>loadModel(Modelica); // Load Modelica library if not already done</Input>
+            <Output>[done]</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model WeakAxis
+  import Modelica.Mechanics.Rotational;
+  import Modelica.Blocks.Sources;
+  Rotational.Sources.Torque   torque1;
+  Rotational.Components.Inertia  inertia1(J = 1.0, phi(fixed = true), w(fixed = true));
+  Rotational.Components.Spring spring1(c=0.7);
+  Rotational.Components.Inertia  inertia2(J = 1.0, phi(fixed = true), w(fixed = true));
+  Rotational.Components.Spring   spring2(c=1);
+  Rotational.Components.Inertia  inertia3(J = 1.0, phi(fixed = true), w(fixed = true));
+  Sources.Pulse       pulse1(width=1,period=200);
+equation
+  connect(pulse1.y,   torque1.tau);
+  connect(torque1.flange, inertia1.flange_a);
+  connect(inertia1.flange_b,spring1.flange_a);
+  connect(spring1.flange_b, inertia2.flange_a);
+  connect(inertia2.flange_b,spring2.flange_a);
+  connect(spring2.flange_b, inertia3.flange_a);
+end WeakAxis;</Input>
+            <Output>{WeakAxis}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of WeakAxis&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We simulate the model in 100 seconds ...&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate( WeakAxis, stopTime=200 )</Input>
+            <Output>record SimulationResult
+    resultFile = "WeakAxis_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">... and plot the angular velocity of the rightmost axis-segment.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+              <Curve Title="inertia3.w" Visible="true" XData="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" YData="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" Color="4294901760"/>
+              <Curve Title="torque1.tau" Visible="true" XData="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" YData="P/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA=" Color="4278190335"/>
+            </OMCPlot>
+            <Input>plot( { inertia3.w, torque1.tau } )</Input>
+            <Output>[done]</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Now, lets sample Inertia3.w using a sample frequency 4Hz ...&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="true">
+            <Input>data1=Table[Inertia3.w[t],{t,0,200,.25}];</Input>
+            <Output></Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />... remove the mean ...&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="true">
+            <Input>mean=Apply[Plus, data1]/Length[data1];</Input>
+            <Output></Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="true">
+            <Input>data2=data1-mean;</Input>
+            <Output></Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Compute the absolute values of the discrete Fourier transform ...&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="true">
+            <Input>fdata1=Abs[Fourier[data2]];</Input>
+            <Output></Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />... and plot the 80 first points of data.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="true">
+            <Input>ListPlot[fdata1[[Range[80]]],PlotRange->All,PlotStyle->{Red,PointSize[0.015]}];</Input>
+            <Output></Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/18.png" width="398" height="245" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="ImageCache"></Rule>
+            <Rule name="ImageRangeCache"></Rule>
+            <Image name="file:////tmp/OpenModelica/18.png">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</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The peaks&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="true">
+            <Input>{fdata1[[30]],fdata1[[52]]}</Input>
+            <Output></Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">It is easy to write a function that repeat the above operations. FourierPlot also scales the axes such that amplitude of trigonometric components are plotted against frequency (Hz).&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="true">
+            <Input>FourierPlot[Inertia3.w[t],{t,0,200},0.5,PlotRange->All,PlotJoined->True,PlotStyle->Red]</Input>
+            <Output></Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/19.png" width="381" height="235" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="ImageCache"></Rule>
+            <Rule name="ImageRangeCache"></Rule>
+            <Image name="file:////tmp/OpenModelica/19.png">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</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />It can be shown that the frequencies of the eigenmodes of the system is given by the imaginary parts of the eigenvalues of the following matrix (c&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">and c&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">are the spring constants) ...&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/20.png" width="485" height="93" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Image name="file:////tmp/OpenModelica/20.png">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</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">... which fits very well with the peaks in the diagram above.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

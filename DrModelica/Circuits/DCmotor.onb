@@ -1,0 +1,208 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">DC Motor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png" width="505" height="297" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Rule name="TextAlignment">Center</Rule>
+        <Rule name="CellTags">Model2</Rule>
+        <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png">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</Image>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; color:#000000;">Diagram 1:&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> DC Motor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Rule name="TextAlignment">Center</Rule>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>loadModel(Modelica)  // Load if not already loaded</Input>
+        <Output>true</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>model DCMotor
+   Modelica.Electrical.Analog.Basic.Resistor Resistor1;
+   Modelica.Electrical.Analog.Basic.Inductor Inductor1;
+   Modelica.Electrical.Analog.Basic.EMF EMF1;
+   Modelica.Mechanics.Rotational.Components.Inertia Inertia1;
+   Modelica.Electrical.Analog.Basic.Ground Ground1;
+   Modelica.Electrical.Analog.Sources.ConstantVoltage ConstantVoltage1;
+
+equation
+   connect(Resistor1.n, Inductor1.p);
+   connect(Inductor1.n, EMF1.p);
+   connect(EMF1.flange, Inertia1.flange_a);  
+   connect(EMF1.n, Ground1.p);
+   connect(ConstantVoltage1.n, Ground1.p);
+   connect(ConstantVoltage1.p, Resistor1.p);
+end DCMotor;</Input>
+        <Output>{DCMotor}</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>instantiateModel(DCMotor)  // Take a look at the flattened model - not needed</Input>
+        <Output>"class DCMotor
+  Real Resistor1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real Resistor1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real Resistor1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Resistor1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real Resistor1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Resistor1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Boolean Resistor1.useHeatPort = false \"=true, if HeatPort is enabled\";
+  Real Resistor1.LossPower(quantity = \"Power\", unit = \"W\") \"Loss power leaving component via HeatPort\";
+  Real Resistor1.T_heatPort(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature of HeatPort\";
+  parameter Real Resistor1.R(quantity = \"Resistance\", unit = \"Ohm\", start = 1.0) \"Resistance at temperature T_ref\";
+  parameter Real Resistor1.T_ref(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 300.15 \"Reference temperature\";
+  parameter Real Resistor1.alpha(quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\") = 0.0 \"Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))\";
+  Real Resistor1.R_actual(quantity = \"Resistance\", unit = \"Ohm\") \"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\";
+  parameter Real Resistor1.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = Resistor1.T_ref \"Fixed device temperature if useHeatPort = false\";
+  Real Inductor1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real Inductor1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real Inductor1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Inductor1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real Inductor1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Inductor1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Real Inductor1.L(quantity = \"Inductance\", unit = \"H\", start = 1.0) \"Inductance\";
+  parameter Real Inductor1.IC(quantity = \"ElectricCurrent\", unit = \"A\") = 0.0 \"Initial Value\";
+  parameter Boolean Inductor1.UIC = false;
+  parameter Boolean EMF1.useSupport = false \"= true, if support flange enabled, otherwise implicitly grounded\";
+  parameter Real EMF1.k(quantity = \"ElectricalTorqueConstant\", unit = \"N.m/A\", start = 1.0) \"Transformation coefficient\";
+  Real EMF1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins\";
+  Real EMF1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from positive to negative pin\";
+  Real EMF1.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Angle of shaft flange with respect to support (= flange.phi - support.phi)\";
+  Real EMF1.w(quantity = \"AngularVelocity\", unit = \"rad/s\") \"Angular velocity of flange relative to support\";
+  Real EMF1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real EMF1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real EMF1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real EMF1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real EMF1.flange.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+  Real EMF1.flange.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+  parameter Real EMF1.fixed.phi0(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = 0.0 \"Fixed offset angle of housing\";
+  Real EMF1.fixed.flange.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+  Real EMF1.fixed.flange.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+  input Real EMF1.internalSupport.tau(quantity = \"Torque\", unit = \"N.m\") = -EMF1.flange.tau \"External support torque (must be computed via torque balance in model where InternalSupport is used; = flange.tau)\";
+  Real EMF1.internalSupport.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"External support angle (= flange.phi)\";
+  Real EMF1.internalSupport.flange.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+  Real EMF1.internalSupport.flange.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+  Real Inertia1.flange_a.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+  Real Inertia1.flange_a.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+  Real Inertia1.flange_b.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+  Real Inertia1.flange_b.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+  parameter Real Inertia1.J(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = 0.0, start = 1.0) \"Moment of inertia\";
+  parameter enumeration(never, avoid, default, prefer, always) Inertia1.stateSelect = StateSelect.default \"Priority to use phi and w as states\";
+  Real Inertia1.a(quantity = \"AngularAcceleration\", unit = \"rad/s2\") \"Absolute angular acceleration of component (= der(w))\";
+  Real Inertia1.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\", StateSelect = StateSelect.default) \"Absolute rotation angle of component\";
+  Real Inertia1.w(quantity = \"AngularVelocity\", unit = \"rad/s\", StateSelect = StateSelect.default) \"Absolute angular velocity of component (= der(phi))\";
+  Real Ground1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Ground1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real ConstantVoltage1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real ConstantVoltage1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real ConstantVoltage1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real ConstantVoltage1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real ConstantVoltage1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real ConstantVoltage1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Real ConstantVoltage1.V(quantity = \"ElectricPotential\", unit = \"V\", start = 1.0) \"Value of constant voltage\";
+equation
+  assert(1.0 + Resistor1.alpha * (Resistor1.T_heatPort - Resistor1.T_ref) >= 0.000000000000001,\"Temperature outside scope of model!\");
+  Resistor1.R_actual = Resistor1.R * (1.0 + Resistor1.alpha * (Resistor1.T_heatPort - Resistor1.T_ref));
+  Resistor1.v = Resistor1.R_actual * Resistor1.i;
+  Resistor1.LossPower = Resistor1.v * Resistor1.i;
+  Resistor1.v = Resistor1.p.v - Resistor1.n.v;
+  0.0 = Resistor1.p.i + Resistor1.n.i;
+  Resistor1.i = Resistor1.p.i;
+  Resistor1.T_heatPort = Resistor1.T;
+  Inductor1.L * der(Inductor1.i) = Inductor1.v;
+  Inductor1.v = Inductor1.p.v - Inductor1.n.v;
+  0.0 = Inductor1.p.i + Inductor1.n.i;
+  Inductor1.i = Inductor1.p.i;
+  EMF1.fixed.flange.phi = EMF1.fixed.phi0;
+  EMF1.internalSupport.flange.tau = EMF1.internalSupport.tau;
+  EMF1.internalSupport.flange.phi = EMF1.internalSupport.phi;
+  EMF1.v = EMF1.p.v - EMF1.n.v;
+  0.0 = EMF1.p.i + EMF1.n.i;
+  EMF1.i = EMF1.p.i;
+  EMF1.phi = EMF1.flange.phi - EMF1.internalSupport.phi;
+  EMF1.w = der(EMF1.phi);
+  EMF1.k * EMF1.w = EMF1.v;
+  EMF1.flange.tau = (-EMF1.k) * EMF1.i;
+  Inertia1.phi = Inertia1.flange_a.phi;
+  Inertia1.phi = Inertia1.flange_b.phi;
+  Inertia1.w = der(Inertia1.phi);
+  Inertia1.a = der(Inertia1.w);
+  Inertia1.J * Inertia1.a = Inertia1.flange_a.tau + Inertia1.flange_b.tau;
+  Ground1.p.v = 0.0;
+  ConstantVoltage1.v = ConstantVoltage1.V;
+  ConstantVoltage1.v = ConstantVoltage1.p.v - ConstantVoltage1.n.v;
+  0.0 = ConstantVoltage1.p.i + ConstantVoltage1.n.i;
+  ConstantVoltage1.i = ConstantVoltage1.p.i;
+  Resistor1.p.i + ConstantVoltage1.p.i = 0.0;
+  Resistor1.n.i + Inductor1.p.i = 0.0;
+  Inductor1.n.i + EMF1.p.i = 0.0;
+  EMF1.n.i + Ground1.p.i + ConstantVoltage1.n.i = 0.0;
+  EMF1.flange.tau + Inertia1.flange_a.tau = 0.0;
+  EMF1.fixed.flange.tau + EMF1.internalSupport.flange.tau = 0.0;
+  EMF1.fixed.flange.phi = EMF1.internalSupport.flange.phi;
+  Inertia1.flange_b.tau = 0.0;
+  Inductor1.p.v = Resistor1.n.v;
+  EMF1.p.v = Inductor1.n.v;
+  EMF1.flange.phi = Inertia1.flange_a.phi;
+  ConstantVoltage1.n.v = EMF1.n.v;
+  ConstantVoltage1.n.v = Ground1.p.v;
+  ConstantVoltage1.p.v = Resistor1.p.v;
+end DCMotor;
+"</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>simulate(DCMotor, startTime=0, stopTime=25)</Input>
+        <Output>record SimulationResult
+    messages = "",
+    simulationTime = 0.1548192243237387
+end SimulationResult;</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+          <Curve Title="Inertia1.flange_a.tau" Visible="true" XData="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" YData="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" Color="4294901760"/>
+        </OMCPlot>
+        <Input>plot(Inertia1.flange_a.tau)</Input>
+        <Output>[done]</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+          <Curve Title="Inertia1.flange_a.phi" Visible="true" XData="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" YData="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" Color="4294901760"/>
+        </OMCPlot>
+        <Input>plot(Inertia1.flange_a.phi)</Input>
+        <Output>[done]</Output>
+      </GraphCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

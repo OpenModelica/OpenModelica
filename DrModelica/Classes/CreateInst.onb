@@ -1,0 +1,169 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Creating Instances&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />A class decleration creates a type name which makes it possible to declare variables of that type, also known as an instance of the class. First we declare the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Point&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>class Point                "Point in a three-dimensional space"
+  public
+    parameter Real x;
+    parameter Real y;
+    parameter Real z;
+end Point;    </Input>
+        <Output>{Point}</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />To create new instances the &amp;quot;new&amp;quot; keyword is not used as is common in object-oriented programming languages, since it does not exist in Modelica. In &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MyPoints&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> three instances of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Point&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> are created.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>class MyPoints
+  Point point1(x = 1, y = 2, z = 3);
+  Point point2;
+  Point point3;
+end MyPoints;</Input>
+        <Output>{MyPoints}</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MyPointsInst&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> creates three new &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Points&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> by instantiating &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MyPoints&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. There are two different ways to give the variables initial values when creating the instance as shown in &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MyPointsInst&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MyPointsInst2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>class MyPointsInst
+  MyPoints pts(point1(x= 1, y = 2, z = 3));
+end MyPointsInst;</Input>
+        <Output>{MyPointsInst}</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>class MyPointsInst2
+  MyPoints pts(point1.x = 1, point1.y = 2, point1.z = 3);
+end MyPointsInst2;</Input>
+        <Output>{MyPointsInst2}</Output>
+      </GraphCell>
+      <GroupCell closed="true">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of MyPoints&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( MyPoints );</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( MyPointsInst );</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>simulate(MyPointsInst2)</Input>
+        <Output>record SimulationResult
+    messages = "",
+    simulationTime = 0.3633998592905796
+end SimulationResult;</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+          <Curve Title="point1.x" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="P/AAAAAAAAA/8AAAAAAAAA==" Color="4294901760"/>
+          <Curve Title="point1.y" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="QAAAAAAAAABAAAAAAAAAAA==" Color="4278190335"/>
+          <Curve Title="point1.z" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="QAgAAAAAAABACAAAAAAAAA==" Color="4278255360"/>
+        </OMCPlot>
+        <Input>plot({point1.x, point1.y,point1.z})</Input>
+        <Output>[done]</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>simulate(MyPoints)</Input>
+        <Output>record SimulationResult
+    messages = "",
+    simulationTime = 0.14615155335794341
+end SimulationResult;</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+          <Curve Title="point1.x" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="P/AAAAAAAAA/8AAAAAAAAA==" Color="4294901760"/>
+          <Curve Title="point1.y" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="QAAAAAAAAABAAAAAAAAAAA==" Color="4278190335"/>
+          <Curve Title="point1.z" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="QAgAAAAAAABACAAAAAAAAA==" Color="4278255360"/>
+        </OMCPlot>
+        <Input>plot({point1.x, point1.y,point1.z})
+</Input>
+        <Output>[done]</Output>
+      </GraphCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

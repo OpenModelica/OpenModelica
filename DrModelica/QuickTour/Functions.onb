@@ -1,0 +1,74 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Functions&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A number of mathematical functions like &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">abs, sqrt, mod&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, etc. are predefined in the Modelica language whereas others such as &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">sin, cos, exp&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, etc. are available both in the language and in the Modelica standard math library &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Modelica.Math&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. The arithmetic operators +, -,*, / can be regarded as functions that are used through a convenient operator syntax. The body of a Modelica function is an algorithm section that contains procedural algorithmic code to be executed when the function is called. Formal parameters are specified using the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">input&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> keyword, whereas results are denoted using the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">output&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> keyword. This makes the syntax of function definitions quite close to Modelica block class definitions. &lt;br />&lt;br />Modelica functions are mathematical functions (without global side-effects and with no memory). A Modelica function always returns the same results given the same arguments. Below we show the algorithmic code for polynomial evaluation in a function named &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">polynomialEvaluator&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>function polynomialEvaluator
+  input Real a[:];               // Array size defined at function call time
+  input Real x = 1.0;            // Default value 1.0 for x
+  output Real y;
+protected
+  Real xpower;
+algorithm
+  y := 0;
+  xpower := 1;
+  for i in 1:size(a, 1) loop
+    y := y + a[i]*xpower;
+    xpower := xpower*x;
+  end for;
+end polynomialEvaluator;</Input>
+        <Output>{polynomialEvaluator}</Output>
+      </GraphCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Calling polynomialEvaluator&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We can now call the function with the inputs and get the value of the output(s) back.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>polynomialEvaluator({1, 2}, 2)</Input>
+          <Output>5.0</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>polynomialEvaluator({1, 2, 3, 4}, 21)</Input>
+          <Output>38410.0</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>
