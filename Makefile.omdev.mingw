@@ -6,10 +6,6 @@ builddir_inc=$(OMBUILDDIR)/include
 buildbin=$(OMBUILDDIR)/bin
 buildlib=$(OMBUILDDIR)/lib/omc
 
-bindir = @bindir@
-bindir = @includedir@
-libdir = @libdir@/@host_short@/omc
-
 omplot: mkbuilddirs qwt
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw
 
