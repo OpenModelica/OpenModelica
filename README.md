@@ -1,2 +1,47 @@
 # OpenModelica
 The OpenModelica project
+
+## Dependencies
+
+Many software packages are included inside the repositories.
+To get everything running, you will need a few extras:
+- autoconf, automake, libtool, g++, gfortran (pretty standard compilers)
+- boost (optional; used with configure --with-cppruntime)
+- clang, clang++ (optional, but highly recommended)
+- cmake (a lot of dependencies use it)
+- hwloc (optional; queries the number of hardware CPU cores instead of logical CPU cores)
+- Java JRE (JDK is option; compiles the Java CORBA interface)
+- Lapack/BLAS
+- lpsolve55
+- libhdf5 (optional part of the (MSL)[https://github.com/modelica/Modelica] tables library supported by few other Modelica tools, so it does not do much)
+- libexpat (it's actually included in the FMIL sources which are included... but we do not compile those and it's better to use the OS-provided dynamically linked version)
+- ncurses, readline (optional, used by OMShell-terminal)
+- omniORB
+- OpenSceneGraph (optional, part of Modelica3D which should be compiled but is actually not yet compiled)
+- Qt4, Webkit
+- Sundials (optional; adds more numerical solvers to the simulation runtime)
+
+## Compiling
+
+```bash
+$ autoconf
+$ ./configure CC=clang CXX=clang++
+$ make -j8
+$ build/bin/omc --version
+$ (cd testsuite/partest && ./runtests.pl -j8)
+```
+
+## Working with the repository
+
+OpenModelica.git is a superproject. Clone the project using:
+```bash
+$ git clone https://github.com/OpenModelica/OpenModelica.git --recursive
+```
+To keep the project updated, use something like:
+```bash
+$ git pull --recursive && git submodule foreach --recursive "git submodule update"
+```
+If you have push access to the submodules, you can push them all together and let [hudson](https://test.openmodelica.org/hudson/) run the tests before this project is updated (only necessary if you change an interface or the test suite at the same time as [OMCompiler](https://github.com/OpenModelica/OMCompiler)):
+```bash
+git submodule foreach --recursive "git push"
+```
