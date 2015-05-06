@@ -1,0 +1,51 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_share=$(OMBUILDDIR)/share/
+
+QMAKE=qmake
+EXE=.exe
+NAME=OMNotebook
+
+.PHONY: always $(NAME)
+
+all: build
+
+clean: Makefile
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -rf ../bin/$(NAME)$(EXE) Makefile Makefile.Debug Makefile.Release object_script.*
+
+$(NAME): Makefile
+	$(MAKE) -f Makefile
+
+build: $(NAME)
+	mkdir -p $(builddir_share)/omnotebook/drmodelica/ $(builddir_share)/omnotebook/drcontrol/
+	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin);
+	cp -p *.xml $(builddir_share)/omnotebook/
+	cp -p OMNotebookHelp.onb $(builddir_share)/omnotebook/
+	(DRMODELICAPWD=`cd ../DrModelica/ && pwd` && \
+        DIRS=`cd ../DrModelica/ && find . -type d | grep -v svn` && \
+	(cd $(builddir_share)/omnotebook/drmodelica/ && \
+	mkdir -p $$DIRS) && \
+	cd ../DrModelica/ && \
+	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drmodelica/{} \;)
+	(DRCONTROLPWD=`cd ../DrControl/ && pwd` && \
+        DIRS=`cd ../DrControl/ && find . -type d | grep -v svn` && \
+	(cd $(builddir_share)/omnotebook/drcontrol/ && \
+	mkdir -p $$DIRS) && \
+	cd ../DrControl/ && \
+	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drcontrol/{} \;)
+	echo Copying needed .dlls
+	cp -puf $(OMDEV)/tools/OMTools/dll/libgcc_s_dw2-1.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/mingwm10.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/QtSvg4.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/QtXml4.dll $(builddir_bin)
+	mkdir -p $(builddir_bin)/iconengines/
+	cp -puf $(OMDEV)/tools/OMTools/dll/qsvgicon4.dll $(builddir_bin)/iconengines/
+
+Makefile: OMNotebookGUI.pro
+	$(QMAKE) "CONFIG+=release"

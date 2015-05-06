@@ -75,7 +75,6 @@
 #include "indent.h"
 
 #include "evalthread.h"
-#include "../../OMEdit/OMEditGUI/Util/StringHandler.h"
 
 using namespace OMPlot;
 

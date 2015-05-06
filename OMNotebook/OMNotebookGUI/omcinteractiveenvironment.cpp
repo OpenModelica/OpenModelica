@@ -44,7 +44,9 @@
 
 //IAEX Headers
 #include "omcinteractiveenvironment.h"
+#ifndef WIN32
 #include "../../Compiler/runtime/omc_config.h"
+#endif
 
 extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;

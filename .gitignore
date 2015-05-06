@@ -1,0 +1,11 @@
+/build
+*.o
+OMNotebook/bin
+OMNotebook/generatedfiles
+OMNotebook/OMNotebookGUI/Makefile
+OMNotebook/OMNotebookGUI/Makefile.Debug
+OMNotebook/OMNotebookGUI/Makefile.Release
+OMNotebook/OMNotebookGUI/Makefile.unix
+OMNotebook/OMNotebookGUI/object_script.*
+OMNotebook/OMNotebookGUI/OMNotebookGUI.pro.*
+OMNotebook/OMNotebookGUI/*.qm

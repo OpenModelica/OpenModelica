@@ -59,9 +59,7 @@ SOURCES += \
     ../OMSketch/Draw_Ellipse.cpp \
     ../OMSketch/Draw_Arrow.cpp \
     ../OMSketch/Draw_Arc.cpp \
-    ../OMSketch/CustomDailog.cpp \
-    ../../OMEdit/OMEditGUI/Util/StringHandler.cpp \
-    ../../OMEdit/OMEditGUI/Util/Helper.cpp
+    ../OMSketch/CustomDailog.cpp
 
 HEADERS += \
     application.h \
@@ -138,9 +136,7 @@ HEADERS += \
     ../OMSketch/Draw_Arrow.h \
     ../OMSketch/Draw_Arc.h \
     ../OMSketch/CustomDialog.h \
-    ../OMSketch/basic.h \
-    ../../OMEdit/OMEditGUI/Util/StringHandler.h \
-    ../../OMEdit/OMEditGUI/Util/Helper.h
+    ../OMSketch/basic.h
 
 FORMS += ImageSizeDlg.ui \
     OtherDlg.ui \
@@ -149,11 +145,11 @@ FORMS += ImageSizeDlg.ui \
 win32 {
   QMAKE_LFLAGS += -enable-auto-import
   DEFINES += IMPORT_INTO=1
-  PLOTLIBS = -L../../build/lib/omc -lOMPlot -lomqwt
-  PLOTINC = ../../3rdParty/qwt/build/include \
-            ../../OMPlot/OMPlotGUI
-  OMCLIBS = -L../../build/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
-  OMCINC = ../../build/include/omc/c
+  PLOTLIBS = -L$$(OMBUILDDIR)/build/lib/omc -lOMPlot -lomqwt
+  PLOTINC = $$(OMBUILDDIR)/include/omplot \
+            $$(OMBUILDDIR)/include/omplot/qwt
+  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread
+  OMCINC = $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMNotebook.config)
 }
