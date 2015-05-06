@@ -604,7 +604,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
     char *str = (char*) malloc(25+strlen(filename));
     *str = 0;
-    strcat(strcat(str,"Error opening file: "),runningTestsuite ? SystemImpl__basename(filename) : filename);
+    strcat(strcat(str,"Error opening file: "), filename);
     void *res = mmc_mk_scon(str);
     free(str);
     return mmc_mk_cons(res,mmc_mk_nil());
@@ -613,7 +613,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
     char *str = (char*) malloc(35+strlen(reffilename));
     *str = 0;
-    strcat(strcat(str,"Error opening reference file: "),runningTestsuite ? SystemImpl__basename(reffilename) : reffilename);
+    strcat(strcat(str,"Error opening reference file: "), reffilename);
     void *res = mmc_mk_scon(str);
     free(str);
     return mmc_mk_cons(res,mmc_mk_nil());
