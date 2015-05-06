@@ -41,3 +41,4 @@ build: $(NAME) $(LIB)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtSvg4.dll $(OMBUILDDIR)/bin
 	mkdir -p $(OMBUILDDIR)/bin/iconengines/
 	cp -puf $(OMDEV)/tools/OMTools/dll/qsvgicon4.dll $(OMBUILDDIR)/bin/iconengines/
+	cp -a *.h $(OMBUILDDIR)/include/omplot
