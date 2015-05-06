@@ -1,0 +1,228 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Transfer Function&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt;">It is sometimes practical to study the Laplace transform of the involved quantities. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/376.png" width="227" height="43" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/376.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAADjAAAAKwgDAAAAvevPpwAAAANzQklUCAgI2+FP4AAAAHtQTFRFAAAAAAAAAAA6AABmADpmADqQAGa2OgAAOgA6OgBmOjqQOmZmOpDbZgAAZgA6ZgBmZjoAZjqQZma2ZpDbZrb/kDoAkDo6kDpmkGYAkGaQkNvbkNv/tmYAtmY6ttuQtv//25A625Bm25CQ2/+22////7Zm/9uQ//+2///b/l1eswAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAADOElEQVRoge1Z2XbbIBAVdiO1Lu4qdZNSk9Za/v8LOxsILbj4nDpqOJ4XJ4Z7mY0ZJsmyu2whRqmyVSrfWo8bSv/xnDX7U/ZUb63JTQSiV2b9p2yoIIhp2tgdzk1JuaqTzVU0MHHp3yWZnRPp3py2VuHm0u7Tt9E8nLdW4ebSpG8jNcVnEJcuTcx5Q6X0GprB5soO9zw2DtWockQBmCnloRns1uM81x8vrUZx9O/Xle4K8DdEBDiMH5X2wu3gV0j3etLPfDSDralxnuuPOrj2dw5Qaf+z8F5HXeHtM/gzAqc9eKiCrw4wrivKWT8TNFvHYN4Q67muCNvIHAL2OSBCILt6+FIP38/Lo2QvhoMUnJ3fBI+UvJn6RNCCog/6Kt5zYRuFQ7hXOboCIvjoH0UGO4hmFGc6pK2iUhJuV3IlBIWjwnFX05fk1tyCTZ6NgRXWsOdWbLTcxOG4maM/Kq/iwZDSlHAdf52ES736UDKEDX74pkc3oXbkDxtWUo8zgvn6I/uR7qMpsa21uaBt1MZEkSJrWcVzC1LUax6ekTv3uYkDd5ux/DQKCgqYrR1Vi8wOQmF2NrorHbw6Umvsxpbn2Sl6LDqxrFA1lim4yo0cWISCRYoKOnvZQmx9lBRspTYFc9UuSDwBDmOtjZffLjiOesJ6nY2WW/vcyEFZGLranGC5D7E6j8mpPZMXaQUlLKO/SEgiwLV8shXL1fjGXcqRRnuHreRqu1uOVsJNHGP/AI6LMwouUgAcxLVqLq5aVkIVUO46XC57TvP2s0UDaPh6mvQOzhk999xS1mwUbvEfcxMHNYNAx8fFodrVjzVBCOGCjtUWflN8l9aTCo9BM8tx3pPQcK3mwDCYNpDtjvVC7zBrNjI3Z4xwM4eBnh8MJez8UaGKjZqT+gpEDKzy+BLn+mgGDxUpGPsGMCs6W+7oF1iEuPEmas6BeJZ+47Ug/jTKXr04z63ZaLmv9P6/laEKVrdR4jy3WJxwX+f9/1WixrmXLc81Im8p/viUqmB/oFk2YYFyiUNguH8mIPC0xK4Qnr1eunSH35iqh7M/LyUmcBHlcWiSjSMLzApp30eUZP/reJe73OUuSckfZcFahG213V4AAAAASUVORK5CYII=</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The obvious reason to why the transformed quantities are preferred is that the derivative of a signal y(t) is sY(s) if the initial condition y(0) is zero. Now by assuming the initial value of the signal itself and its derivative inital values are all zero and then Laplace transforming the differential equation &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/377.png" width="528" height="42" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/377.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAIQAAAAKggDAAAA1aCSWQAAAANzQklUCAgI2+FP4AAAAIpQTFRFAAAAAAAAAAA6AABmADo6ADpmADqQAGa2OgAAOgA6OgBmOjoAOjqQOmZmOma2OpDbZgAAZgA6ZgBmZjoAZjqQZmYAZma2ZpC2ZpDbZrb/kDoAkDo6kDpmkJA6kNvbkNv/tmYAtmY6tpCQtv//25A625Bm27Zm27a229uQ2////7Zm/9uQ//+2///bUqQFqQAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAAEmklEQVR4nO1aDVOcMBA9tPW0tb2r/QRbQaUfcvD//14TIGGBTVhiEnIzeeM4Orm899jbBLLsbhcRERERERERcTaoLp+3thARDurjm3cxIULH6Zqt2tP1vkquXpzTns4mIYT/Mrn6k2y4r7U+/KJi39jTv+t9/cVmQkDa03XCcJGfU0II/4f6uG9+bui6srpOKSgP/Nd+V+3d055RQgj/p9sX9rOxD29ga/ft55T9UaTs58nWdStpzyQhoH/2hZSHv9tkhPThTzDdVXwrrz/luyKxJa2kLdidw2vCm2Hwf/fc3Oe7Mvm4SUJIH77QZHsX9yhHtN4Qin//Pk43eXubPA9abwjFv38f/I5eH63foxzRekMo/v37YCnYZBf5o+W7lCNabwjF/wY+iuTiIdM+S5b9LaxYs3Mt01oQcchM8u/OtB8fRvOaTJ4J3L2FcCfi0L6XyDj0YTgPFkWcPe66E6Ew10ejc90rTRuqrvOhEzHzz8sIckKTpdMBKzAToThQMo9glIMmpkdDljIf9SGF1CK00MzQExZdNhVDUtlMCDMRigMl8whG5zoT06MhS6dJ1IcUUovQQiPBi4t8v2mfN9o3U/yPcsg3eG1s/PKXwdlolcgMOgeLzGMfaUF9z8uf+bvwmZgeDa1QXe1DCs1E5ERaaATKtGCfqPZ95gj+Cr1s0/LqKpE5NA70zE2WdOhn1Hdf07YCtIzm/iFLu8qAiWk4tEJ1vQ/x70xkmIjNS3B0n2APnr/zfpp4CkUjOiuvKmhfKcK/YbbuW7UlB3rmKXg6weqP1jSPYPt+jmB6/B1OhqaqM+hjp/YBhRARMZEUGhilm7z+Jo6o4k6EboxDeXX16YsuMkkIlQMyMwQf5hRs/1y+rfPItdEjmJ4BDglVTIMQR70PIYSIiImk0ACw5062wjpNeWIFFQzwdfTlVYPuOLoIgrkDIvN0rRZpG5DmPic8bLMIdjlpYhoO9arIh0hx1PsQQoiImKj0r0Lx4YdgZnFqO4bww9VQXqW2OgwrgCyCAHEA+vUWmCEPSyW+9wz7qA4sco/vD1VKMs137PLyuT4eZkNSFWnRo8RR76MXwkTEREpoRugTqy1fFN1igjcacG2yvEpLCLgC6CIIz9wBaANcYAY4fc+63r7bF8JRsEyStOwezJdNaxJCqA4teuu6DPU+eqG5CJio8g9aOGFDrGgiBLmz6BN+QEE7/pyJiBayX8+AmY8P1buxf6zP1pJppEVvHR3FB9YHqJzXZkf7C/bZDi/YCvEKZPlBFPLOaJEVYCKihezXM2Bm+yvcOUf+8T5bK6aRFj0QR1LH9bIPvA9QMa/bOtqlIRZYs+ZF5cCfwO44hFagu2AzES36fj1D5iqBp4yxf2d9tkiL3iiOQ17aFVGgb+EUBStbfbYLtMH32c79b9ZnC/LSA0atsPb6bBdog++znfrfqs92kpfuMZxHrb7Qd0TrDaH4n+SlD0VZ4bPax+mI1hsC8b9BXsoKH2ieCZfWGwLxv0FeygqfKFgFTesNgfjfIi9ljbFAXs8FR+sNYfgPJC8jgkEYeRkRERERERERocd/E2XzXgBMBzcAAAAASUVORK5CYII=</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">leads to&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/378.png" width="337" height="22" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/378.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAFRAAAAFggDAAAAToJfEAAAAANzQklUCAgI2+FP4AAAAHhQTFRFAAAAAAAAAAA6AABmADo6ADqQAGa2OgAAOgA6OgBmOjqQOma2OpDbZgAAZgA6ZgBmZjqQZmYAZpC2Zrb/kDoAkDo6kDpmkGYAkJA6kNvbkNv/tmYAtmY6tpCQtv//25A627Zm27a229uQ2////7Zm/9uQ//+2///bHrQvlwAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAADCElEQVRYhe2YC2/UMAzHmxvXG9AyoOV1YSuwPr7/N8Rx3onTJlwnNKnWpE1X5+9f7TjxraoOO+w12HB+3ktqvHu6VYLX0UcGkHhGeL2UrUZ3bOmbvULO7Zu3N2c0qooLmK7Yjq+RNCI6VezBIZku9cgKSh35TztktBpBcbqwGrIkxF1AfEYaes3t6UpBDuz8ixW2D6WF0R00stjzB2fd459LPX80zN4zypQ/xAATAE5GVxevPlz6DjIkAAWl74rP0oJUwgGymdt6+VqIRmjJ6Ig23V8rutj+uqGuRrt9NzMa+O+U0Yo3khi9ghfjdHMrr4E66uDD6d0z/JShUVoYHRtcBKSLLfsfNjFj4M07+HnUod0VsA/vvnd2NeX/bxn1lfFdZENJRB8wdf+oY4x33DmF1CKAhM00NL+p90qj+VoumcaSZTRoqtjyl/D8KTcFZ10kLl67q0Z7sND+8LfUzseOlIUh6XD+1kSAZjPia+izxnjND586bEeXcn54Wr5cq4G9L8pooGXJ8ENMqyyjQVPFlijxLeYjL33t9d/GlBQuhoUjJB5VNpRNRuFCcXJlAiauJuklqjO3psIUZTZaoGWjSzqRVhpNtcvIiFPD1lKew7VdT/onFgfYKWVrg2GOAVe7XuiIdXgdpymz0LRWRGaOUd3mOorKqK45Nc857w3noyiYnTg357/MrtfKriGzTl0AqBIcdr304h2ugyZX1wRNmYWmtPyHvFaSiKFnUBVFecv7tNnK6D0wnq5wXODdk/Avx3aU7WyL2TCbxgdcnZ5EZcSGE4ywf5KUOWhGy51m5ekptvXJnOk2ik6wmKnEjUJ0kxOZs9OPXtxBmNGEfzG2q2xnYdlRTN94HuDqhD997uVUDIMSNG2SMgdNa3nTLEafW90Z6GqimGKnqp6wXb4VkaZn2zCCC5iOHnoNGy1UgqWn2Sh66uscL/kXw8tlVM22BI35aJXUPoSOLdwn61hqmo2j5xV7Q9+ZOPe1cLa9xUa2OYrkWjzNepZX7MMOO+ywww77X/YXl81nf/gS3QsAAAAASUVORK5CYII=</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now the differential equation with all its derivative terms is described with the help of a polynomial fraction. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/379.png" width="311" height="42" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/379.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAE3AAAAKggDAAAA4cPs8QAAAANzQklUCAgI2+FP4AAAAHtQTFRFAAAAAAAAAAA6AABmADo6ADqQAGa2OgAAOgA6OgBmOjqQOma2OpCQOpDbZgAAZgA6ZgBmZjqQZmYAZpC2Zrb/kDoAkDo6kDpmkGYAkJA6kNvbkNv/tmYAtmY6tpCQtv//25A627Zm27a229uQ2////7Zm/9uQ//+2///bYN71SwAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAAEBklEQVRoge1Z2ZbaMAzFTAndQqct6UY6pO1k+f8vrCUvsh0lOJAA4eQeHgDLIle25Cu8Wi24NYrN67Q/kCfT+r8Jmiyd/DfKp+Pkv3FtFBC2erc+tIeqbVKIzR8xjDXnq5x6S18d9SckyRJ7+bdN613SfD/6xr2eWF9Ntr/4Se8LmmTBliD5bfX+Vb7057i4cb7y6YvBdaFrdr7PBW2TJhNCpPAtpHGR/tUjcXHzfSlMfvZcG2oj1M9f9tVbGxRg+fsgvz023w6rQnwYErfAl8LDFTgVt2q7l/Xc1iDu/MM9CMCq32QyEKXYyzdJMBj40h4fLm6Yp1CSYI9UW4GfS8HWO9pvQdzcQePLw8PlqdoIspABNZmV+uTjVV1Unmpf/uDDSV9kC2kFm6d6d4TELdML4mZ9ueLvXnWIXd/h6wq6t/qaYdkCxSHTLJeFis2rmLgZX574G1DehlK5gLq7OQa3NO5WgP1WjKW0HPEHfmOfZhiVE/ZUL2xUsYTLc0yOeFSHn1y5nSFzbLyMIvGX9z+SwySaikmJtr3jzSs2NqoFvIFPfvZcRLwU/EF6BlrirxvIBI/gSCoy/1XIOHvy5qeOWQUYwnnBssyvpcEcQhZxVEj7cPbWW1CNzSrIXajeqtQ1vdH8pJLDIo5Kaf9wYezJmw6qHTWrUGx+4Dv1WfdGtAa+wL9jYE5puiyVkAnVS8aevOmjwI6aVZAKyZls615HNRX3CfPAqsOIooLlvlB/PLTtyZveXy1vppnRcTW90ezylMpbHBVsflWNY+zJm8lLM2riZrxSYqYr8jWbPFWPrZ6apxIwwbipfw7a9o43K9n0aGGyXn+vDlXTG/XpkPG24hg3BoYXlCtd6qOoIPECJzD25E0FlZpG81ejENot6BTbG3WLxfFuYOrdm+gOoAc6+PWOciKKCkz4+Hzk7cmb0iF2tL0KYavUAVcGyjOl5HtQFi3z+M6pD+3ARFKJs+d1rwt7Mve0NJ4MlF13Un+OujdwzGUPo6uM84z9k3tHuUSMoRJp77k/e6X9eMuuu7Qt1cm4+earseI2eW/jKL2zS7uvrWXXne9fmHsDuaeeftp1Ys1XZ8bNdw2Yg2bytDXQyc254pKD2wHqY3hzVWzT9mQG3a4Bc7h2CLS1QXjfknhsTuiNQFn13Na0XaP7OcTN19YuaFOo/19QcquIddzQsJP7bmtc14Q55GmgrV045GTdAilOCu2k6ovNU+PaxRyua3xt3R5CyE3RZOuDLGlY+TtvaNjJ/aPWNYnBe72u8eFpaw8O9Vysf2VwAmDcOm9o+Mn9o8Y1acc5lLehqztOR8DCiMEJf2JcDBF/E5LSYvB8KXrHcBXayAjF4IIFCxYsWHAr/Ad/3Yf4c5o+tQAAAABJRU5ErkJggg==</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This polynomial fraction is called the transfer function of the system, denoted as G(s). The poles of the transfer function are the roots of the denominator which is the same as the roots to the characteristic equation. The zeros are the roots to the numerator of the transfer function. The inverse Laplace transform of G(s) is called the weight function and is the impulse response of the system. In Modelica the transfer function is reformulated in a state space (differential) form. Therefore the initial conditions are important for getting the right result.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Example&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Consider a tank system with the following transfer function&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/380.png" width="87" height="63" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/380.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAABXAAAAPwgDAAAAorGkaQAAAANzQklUCAgI2+FP4AAAAFpQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgBmOjqQOpCQOpC2OpDbZgAAZgA6ZgBmZjqQZrb/kDoAkDpmkNv/tmYAtmY6tv//25A625Bm2////7Zm/9uQ//+2///bqAFDugAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAABgElEQVRYhe2X63KDIBCFpWnatKaNNjRUlPd/zcJyCTiiaNhWZzw/Mkkmfiy7h2VTFKtV93HFwDJyuCFgaclRuEWxczfKfcLwLydSKORdiCJW/x3IGtS+VChcSlC4/L0uEbDi60Ynuey50W/oMZXLqmKKK7wNpba/7tJEg6DS2CpQ5q/LbejjUs+SQW53PmpkOAmIOqXK7anxsudL1Ha1XoTT1bCLD3Lv/V6nSdRyY2Xs16G6s8of17/vibrHdYAK9329hw/rzL8VwAMMVtRcZ4ThwpEUwVYqm2NjF27Km5CHEQEXXlyAxsZmmTl58BwFoTJ4Br7lpeGm+SxQMFvKmpK3T/isTGzPSOq58BSdLf0Q29cFY0z08DvT0UVF29ystjXu+mdLpL9vObmuQ2fmug6dmevcFLa6x2dL7l3AWevmDRr5uK5D97iq4UaHiQS5Dt3jys6q7p2U8WCW5D5URX8QzsljV21UAmUQttd6fmG1X7T0LrXuuKSxcfK766/0C63jGHyKVzD4AAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">What is the weight function? Can you plot the step response of the tank?&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;"> &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Tank Transfer Function&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+            <Input>loadModel(Modelica.Blocks)</Input>
+            <Output>true</Output>
+          </GraphCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="2.50324628739243e-308" Antialiasing="false" MinorY="2.50324628739243e-308" Title="Plot title" LogX="false" LogY="false" MajorX="2.50324628732767e-308" MajorY="2.50324628732767e-308" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+            <Input>model Tank
+  Modelica.Blocks.Continuous.TransferFunction G(b={1/A}, a={1,1/T},y_start(fixed=true)=1/A); //Modelica 3.1, y_start = 1/A
+  Modelica.Blocks.Continuous.TransferFunction GStep(b={1/A}, a={1,1/T}); 
+  parameter Real T = 15;                                                        //Time constant
+  parameter Real A = 5; 
+  Real u = if (time > 0 or time&lt;0) then 0 else Modelica.Constants.inf;          // dirac function time &lt;> 0
+  Real uStep = if (time > 0 or time&lt;0) then 1 else 0;                           // step function 
+  // Real y = T/A*(1-exp(-1/T*time));                                        // The analytical solution for a step input function
+  // Real weight_analyt = 1/A*exp(-1/T*time); 
+initial equation                                                      // initial equation is not yet supported in OpenModelica
+ // G.y = 1/A;
+equation
+  G.u =  if time > 0 then 0 else 1e10;
+  GStep.u = uStep;
+end Tank;</Input>
+            <Output>{Tank}</Output>
+          </GraphCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="1.06810267799807e-306" Antialiasing="false" MinorY="1.37961301743269e-306" Title="Plot title" LogX="false" LogY="false" MajorX="1.51309639967742e-306" MajorY="1.78022205817553e-306" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+            <Input>simulate(Tank,startTime=-1e-10,numberOfIntervals=500,stopTime=10);</Input>
+            <Output>[done]</Output>
+          </GraphCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="2" MajorY="0.2" closed="false" YLabel="" Area="v6OxnijsioK/mL0pPLLEDEAkRVJLH3iRP/hBd26DRjg=" ShowGraph="true" Grid="true" XLabel="time" Legend="true">
+            <Data Id="0" Label="G.y">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</Data>
+            <Data Id="0" Label="GStep.y">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</Data>
+            <Data Id="0" Label="time">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</Data>
+            <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="G.y" Color="#ff0000"/>
+            <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="GStep.y" Color="#0000ff"/>
+            <Input>plot({G.y,GStep.y})</Input>
+            <Output>true</Output>
+          </GraphCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="true" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+            <Input>checkSettings()  //checking the environment varaibles, among them OPENMODELICALIBRARY</Input>
+            <Output></Output>
+          </GraphCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+            <Input>setEnvironmentVar("OPENMODELICALIBRARY","C:\OpenModelica\libraries\msl31") //changing the standard library version</Input>
+            <Output>Ok</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In the plot from above the GStep.y is the step response of the tank system and G.y is the impulse response of the same system. The weight_analyt is the analytical impulse response. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

@@ -1,0 +1,339 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Exercise 3.4.3&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <GroupCell closed="false">
+          <TextCell style="Section">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">/* This exercise is about modeling a pendulum in 3D, in another words with multibody library which at the moment is not supported in OpenModelica  */&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GroupCell closed="false">
+            <TextCell style="Subsection">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <TextCell style="Text">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Taking the above values from the above example and implementing it with the Modelica standard library components leads to the following model. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GroupCell closed="false">
+              <GroupCell closed="false">
+                <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                  <Input>loadModel(Modelica);</Input>
+                  <Output>[done]</Output>
+                </GraphCell>
+                <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                  <Input>loadModel(Modelica.Mechanics.MultiBody);</Input>
+                  <Output>[done]</Output>
+                </GraphCell>
+                <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="8.29391918203635e-264" Antialiasing="false" MinorY="8.30797194912779e-264" Title="Plot title" LogX="false" LogY="false" MajorX="8.28689279849064e-264" MajorY="8.30094556558207e-264" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                  <Input>block RegulatorTwoOut 
+  "Multiple Input Multiple Output continuous control block" 
+  extends Modelica.Blocks.Interfaces.BlockIcon;
+  parameter Integer nin=9 "Number of inputs";
+  parameter Integer nout=2 "Number of outputs";
+  Modelica.Blocks.Interfaces.RealInput u[nin] "Connector of Real input signals";
+  Modelica.Blocks.Interfaces.RealOutput y[nout] "Connector of Real output signals";                                             
+  Real[2,2] A;
+  Real[2,2] B;
+  Real[2,2] C;
+  parameter Real[2,2] I=[1,0;0,1];
+  parameter Real xref=1.2;
+  parameter Real yref=1.2;
+  parameter Real L1=1;
+  parameter Real L2=1;
+  parameter Real K=300;
+  parameter Real Ti=8;
+  parameter Real Td=1.2;
+  Real[2,1] e;
+  Real[2,1] v;
+  Real posAx3,posAy3,posAz3;
+  Real posBx3,posBy3,posBz3;
+  Real posAx4,posAy4,posAz4;
+  Real v1,v2,x3_x1;
+  Real y3_y1,x3_x2;
+  Real y3_y2,I1,I2;
+  Real D1,D2,etot;
+equation 
+  A*C=I;
+  etot=sqrt(e[1,1]^2 + e[2,1]^2);
+  der(I1)=e[1,1]/Ti;
+  der(I2)=e[2,1]/Ti;
+  D1=Td*der(e[1,1]);
+  D2=Td*der(e[2,1]);
+  x3_x1=posBx3 - posAx3;
+  y3_y1=posBy3 - posAy3;
+  x3_x2=posBx3 - posAx4;
+  y3_y2=posBy3 - posAy4;
+  e[1,1]=xref - posBx3;
+  e[2,1]=yref - posBy3;
+  posBx3=u[1];
+  posBy3=u[2];
+  posBz3=u[3];
+  posAx4=u[4];
+  posAy4=u[5];
+  posAz4=u[6];
+  posAx3=u[7];
+  posAy3=u[8];
+  posAz3=u[9];
+  v1=Modelica.Math.atan2(posAx3, posAy3);
+  v2=Modelica.Math.atan2(posAx4, posAy4);
+  A[1,1]=-(y3_y2);
+  A[1,2]=-(y3_y1); // "/sqrt(y3_y1^2 + x3_x1^2)";
+  A[2,1]=x3_x2; // "/sqrt(x3_x2^2 + y3_y2^2))";
+  A[2,2]=x3_x1; // "/sqrt(x3_x1^2 + y3_y1^2))";
+  B[1,1]=-(x3_x1*(x3_x2 - y3_y2)/((-(x3_x2*y3_y1)) + x3_x1*y3_y2));
+  B[1,2]=y3_y1*(x3_x2 - y3_y2)/(x3_x2*y3_y1 - x3_x1*y3_y2);
+  B[2,1]=x3_x2*((-(x3_x1)) + y3_y1)/(x3_x2*y3_y1 - x3_x1*y3_y2);
+  B[2,2]=(x3_x1 - y3_y1)*y3_y2/((-(x3_x2*y3_y1)) + x3_x1*y3_y2);
+  v[1,1]=K*(e[1,1] + I1 + D1)*C[1,1] + K*(e[2,1] + I2 + D2)*C[1,2];
+  v[2,1]=K*(e[1,1] + I1 + D1)*C[2,1] + K*(e[2,1] + I2 + D2)*C[2,2];
+  y[1]=v[1,1];
+  y[2]=v[2,1];
+end RegulatorTwoOut;</Input>
+                  <Output>{RegulatorTwoOut}</Output>
+                </GraphCell>
+              </GroupCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>model possensor 
+  extends Modelica.Mechanics.MultiBody.Sensors.Sensor;
+  Modelica.Blocks.Interfaces.RealOutput posAx;
+  Modelica.Blocks.Interfaces.RealOutput posAy;
+  Modelica.Blocks.Interfaces.RealOutput posAz;
+equation 
+  posAx=r0a[1];
+  posAy=r0a[2];
+  posAz=r0a[3];
+end possensor;</Input>
+                <Output>{possensor}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>block mymultiplexer2 "Multiplexer block for two input connectors" 
+  extends Modelica.Blocks.Interfaces.BlockIcon;
+  parameter Integer n1=6 "dimension of input signal connector 1";
+  parameter Integer n2=6 "dimension of input signal connector 2";
+  Modelica.Blocks.Interfaces.RealInput u1[n1] "Connector of Real input signals 1" ;
+  Modelica.Blocks.Interfaces.RealInput u2[n2] "Connector of Real input signals 2" ;                                      
+  Modelica.Blocks.Interfaces.RealOutput y[n1 + n2] "Connector of Real output signals" ;
+equation 
+  [y]=[u1;u2];
+end mymultiplexer2;</Input>
+                <Output>{mymultiplexer2}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>model myinertialsys "Inertial system" 
+  parameter Modelica.SIunits.Acceleration g=9.81 "Gravity constant";
+  parameter Real ng[3]={0,-(1),0} "Direction of gravity (gravity = g*ng)";
+  parameter String label1="x" "Label of horizontal axis in icon";
+  parameter String label2="y" "Label of vertical axis in icon";
+  Modelica.SIunits.Acceleration gravity[3] "Gravity acceleration vector";
+equation 
+  gravity=0*g*ng;
+  frame_b.S=identity(3);
+  frame_b.r0=zeros(3);
+  frame_b.v=zeros(3);
+  frame_b.w=zeros(3); 
+  frame_b.a=-(gravity);
+  frame_b.z=zeros(3);
+end myinertialsys; </Input>
+                <Output>{myinertialsys}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>block Regulatortwoout "Multiple Input Multiple Output continuous control block"
+extends Modelica.Blocks.Interfaces.BlockIcon;
+parameter Integer nin=9 "Number of inputs";
+parameter Integer nout=2 "Number of outputs";
+Modelica.Blocks.Interfaces.RealInput u[nin] "Connector of Real input signals";
+Modelica.Blocks.Interfaces.RealOutput y[nout] "Connector of Real output signals";
+Real[2,2] A = [1,1;1,1];
+Real[2,2] B;
+parameter Real[2,2] I=[1,0;0,1];
+parameter Real xref=1.2;
+parameter Real yref=1.2;
+parameter Real L1=1;
+parameter Real L2=1;
+parameter Real K=70;
+parameter Real Ti=5;
+parameter Real Td=5;
+Real[2,1] e;
+Real[2,1] v;
+Real posAx3,posAy3,posAz3,posBx3,posBy3,posBz3,posAx4,posAy4,posAz4;
+Real v1,v2;
+Real kl1,kl2,kl3,kl4;
+Real I1,I2,D1,D2;
+equation
+der(I1)=e[1,1]/Ti;
+der(I2)=e[2,1]/Ti;
+D1=Td*der(e[1,1]);
+D2=Td*der(e[2,1]);
+kl1=posAz4 - posBz3;
+kl2=posAz3 - posBz3;
+kl3=posBx3 - posAx4;
+kl4=posBx3 - posAx3;
+e[1,1]=xref - posBx3;
+e[2,1]=yref - posBz3;
+posBx3=u[1];
+posBy3=u[2];
+posBz3=u[3];
+posAx4=u[4];
+posAy4=u[5];
+posAz4=u[6];
+posAx3=u[7];
+posAy3=u[8];
+posAz3=u[9];
+v1=Modelica.Math.atan2(posAx3, posAz3);
+v2=Modelica.Math.atan2(posAx4, posAz4);
+v[1,1]=K*(e[1,1] + I1 + D1)*B[1,1] + K*(e[2,1] + I2 + D2)*B[1,2];
+v[2,1]=K*(e[1,1] + I1 + D1)*B[2,1] + K*(e[2,1] + I2 + D2)*B[2,2];
+B[1,1]=-(kl4/((kl2*kl3 - kl1*kl4)*L1));
+B[1,2]=kl2/((kl2*kl3 - kl1*kl4)*L1);
+B[2,1]=kl3/((kl2*kl3 - kl1*kl4)*L1);
+B[2,2]=-(kl1/((kl2*kl3 - kl1*kl4)*L1));
+y[1]=v[1,1];
+y[2]=v[2,1];
+end Regulatortwoout;</Input>
+                <Output>{Regulatortwoout}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>model loopsys 
+
+  annotation(Diagram(coordinateSystem(extent={{-(148.5),-(105.0)},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})));
+  Modelica.Mechanics.MultiBody.Parts.BodyBox boxBody1(r={1,0,0}) annotation(Placement(visible=true, transformation(origin={-(27.3868),70.0}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute1(n={0,0,1}) annotation(Placement(visible=true, transformation(origin={-(64.6327),70.0}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.Parts.BodyBox boxBody2(r={0,1,0}) annotation(Placement(visible=true, transformation(origin={-(27.0139),25.2917}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute2(n={0,0,1}, q0=0) annotation(Placement(visible=true, transformation(origin={12.3966,70.0}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.Parts.BodyBox boxBody3(r={1,0,0}) annotation(Placement(visible=true, transformation(origin={53.5153,25.0538}, extent={{-(10.442),-(10.442)},{10.442,10.442}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute3(n={0,0,1}) annotation(Placement(visible=true, transformation(origin={-(63.8389),25.2917}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute4(n={0,0,1}) annotation(Placement(visible=true, transformation(origin={13.0403,25.2917}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.Parts.BodyBox boxBody4(r={0,1,0}) annotation(Placement(visible=true, transformation(origin={60.0,70.0}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  Modelica.Mechanics.MultiBody.CutJoints.Revolute2Dloop revolute2Dloop1(n={0,0,1}) annotation(Placement(visible=true, transformation(origin={100.0,52.8084}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=-(90))));
+  kloop2d.myinertialsys myinertialsys1 annotation(Placement(visible=true, transformation(origin={-(120.0),51.5334}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=0)));
+  ModelicaAdditions.MultiBody.Forces.ExtLineTorque extLineTorque1(n={0,0,1}) annotation(Placement(visible=true, transformation(origin={-(86.7833),-(80.0)}, extent={{10.0,-(10.0)},{-(10.0),10.0}}, rotation=360)));
+  kloop2d.RegulatorTwoOut myRegulatorTwoOut annotation(Placement(visible=true, transformation(origin={-(14.8167),-(80.0)}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=-(180))));
+  ModelicaAdditions.MultiBody.Forces.ExtLineTorque extLineTorque2(n={0,0,1}) annotation(Placement(visible=true, transformation(origin={-(86.825),-(50.0)}, extent={{10.0,-(10.0)},{-(10.0),10.0}}, rotation=360)));
+  kloop2d.possensor possensor2 annotation(Placement(visible=true, transformation(origin={97.5167,6.8792}, extent={{10.0,-(10.0)},{-(10.0),10.0}}, rotation=0)));
+  kloop2d.possensor possensor3 annotation(Placement(visible=true, transformation(origin={-(17.8834),-(12.6458)}, extent={{10.0,-(10.0)},{-(10.0),10.0}}, rotation=0)));
+  kloop2d.possensor possensor4 annotation(Placement(visible=true, transformation(origin={27.3,-(5.2375)}, extent={{10.0,-(10.0)},{-(10.0),10.0}}, rotation=0)));
+  Modelica.Blocks.Routing.Multiplex3 multiplex31(n1=1, n3=1) annotation(Placement(visible=true, transformation(origin={95.8208,-(40.0)}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=-(90))));
+  Modelica.Blocks.Routing.Multiplex3 multiplex32 annotation(Placement(visible=true, transformation(origin={27.3542,-(40.0)}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=-(90))));
+  Modelica.Blocks.Routing.Multiplex3 multiplex33 annotation(Placement(visible=true, transformation(origin={-(17.9916),-(44.45)}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=-(90))));
+  Modelica.Blocks.Routing.Multiplex3 multiplex34(n1=3, n2=3, n3=3) annotation(Placement(visible=true, transformation(origin={50.0,-(78.3167)}, extent={{-(10.0),-(10.0)},{10.0,10.0}}, rotation=-(90))));
+equation 
+  connect(possensor4.posAz,multiplex32.u3[1]) annotation(Line(visible=true, origin={20.9676,-(21.7095)}, points={{0.6135,8.8664},{0.6135,-(1.288)},{-(0.6135),-(1.288)},{-(0.6135),-(6.2905)}}));
+  connect(possensor4.posAy,multiplex32.u2[1]) annotation(Line(visible=true, origin={27.3271,-(21.7263)}, points={{-(0.0271),8.816},{-(0.0271),-(1.2712)},{0.0271,-(1.2712)},{0.0271,-(6.2737)}}));
+  connect(possensor4.posAx,multiplex32.u1[1]) annotation(Line(visible=true, origin={33.6814,-(21.7223)}, points={{-(0.6727),8.8282},{-(0.6727),-(1.2752)},{0.6727,-(1.2752)},{0.6727,-(6.2777)}}));
+  connect(multiplex32.y[:],multiplex34.u2[:]) annotation(Line(visible=true, origin={38.6771,-(59.9863)}, points={{-(11.3229),8.9863},{-(11.3229),-(1.3279)},{11.3229,-(1.3279)},{11.3229,-(6.3304)}}));
+  connect(possensor4.frame_b,myinertialsys1.frame_b) annotation(Line(visible=true, origin={-(75.6741),23.148}, points={{92.474,-(28.3855)},{-(29.3241),-(28.3855)},{-(29.3241),28.3854},{-(33.8259),28.3854}}));
+  connect(possensor4.frame_a,boxBody1.frame_b) annotation(Line(visible=true, origin={26.3792,32.3813}, points={{11.4208,-(37.6188)},{15.9226,-(37.6188)},{15.9226,37.6187},{-(43.266),37.6187}}));
+  connect(extLineTorque1.inPort,myRegulatorTwoOut.y[1]) annotation(Line(visible=true, origin={-(51.3),-(80.0)}, points={{-(25.4833),0.0},{25.4833,0.0}}));
+  connect(extLineTorque1.frame_b,revolute3.frame_b) annotation(Line(visible=true, origin={-(75.3111),-(40.5694)}, points={{-(21.9722),-(39.4306)},{-(26.4741),-(39.4306)},{-(26.4741),-(26.4306)},{26.4741,-(26.4306)},{26.4741,65.8611},{21.9722,65.8611}}));
+  connect(extLineTorque2.inPort,myRegulatorTwoOut.y[2]) annotation(Line(visible=true, origin={-(40.5694),-(65.0)}, points={{-(36.2556),15.0},{6.1736,15.0},{6.1736,-(15.0)},{14.7527,-(15.0)}}));
+  connect(multiplex33.y[:],multiplex34.u3[:]) annotation(Line(visible=true, origin={12.5042,-(61.0988)}, points={{-(30.4958),5.6487},{-(30.4958),-(0.2154)},{30.4958,-(0.2154)},{30.4958,-(5.2179)}}));
+  connect(possensor3.posAx,multiplex33.u1[1]) annotation(Line(visible=true, origin={-(11.5831),-(26.9119)}, points={{-(0.5915),6.6095},{-(0.5915),-(0.5357)},{0.5915,-(0.5357)},{0.5915,-(5.5382)}}));
+  connect(possensor3.posAy,multiplex33.u2[1]) annotation(Line(visible=true, origin={-(17.9375),-(26.9159)}, points={{0.0541,6.5973},{0.0541,-(0.5316)},{-(0.0541),-(0.5316)},{-(0.0541),-(5.5341)}}));
+  connect(possensor3.posAz,multiplex33.u3[1]) annotation(Line(visible=true, origin={-(24.2969),-(26.8991)}, points={{0.6947,6.6477},{0.6947,-(0.5484)},{-(0.6947),-(0.5484)},{-(0.6947),-(5.5509)}}));
+  connect(possensor3.frame_a,boxBody2.frame_b) annotation(Line(visible=true, origin={-(7.4151),6.3229}, points={{0.0317,-(18.9688)},{4.5336,-(18.9688)},{4.5336,18.9688},{-(9.0988),18.9688}}));
+  connect(possensor3.frame_b,myinertialsys1.frame_b) annotation(Line(visible=true, origin={-(86.9699),19.4438}, points={{58.5865,-(32.0896)},{-(18.0282),-(32.0896)},{-(18.0282),32.0896},{-(22.5301),32.0896}}));
+  connect(revolute1.frame_b,boxBody1.frame_a) annotation(Line(visible=true, origin={-(46.0097),70.0}, points={{-(8.1229),0.0},{8.1229,0.0}}));
+  connect(extLineTorque2.frame_b,revolute1.frame_b) annotation(Line(visible=true, origin={-(75.7288),-(5.6667)}, points={{-(21.5962),-(44.3333)},{-(26.098),-(44.3333)},{-(26.098),-(31.3333)},{26.0981,-(31.3333)},{26.0981,75.6667},{21.5962,75.6667}}));
+  connect(revolute1.frame_a,myinertialsys1.frame_b) annotation(Line(visible=true, origin={-(83.1624),65.2917}, points={{8.0297,4.7083},{-(6.8376),4.7083},{-(6.8376),-(14.1854)},{-(26.3376),-(13.7583)}}));
+  connect(revolute2.frame_b,boxBody4.frame_a) annotation(Line(visible=true, origin={36.1983,70.0}, points={{-(13.3017),0.0},{13.3017,0.0}}));
+  connect(boxBody4.frame_b,revolute2Dloop1.frame_a) annotation(Line(visible=true, origin={90.1667,67.7695}, points={{-(19.6667),2.2305},{9.8333,2.2305},{9.8333,-(4.4611)}}));
+  connect(boxBody1.frame_b,revolute2.frame_a) annotation(Line(visible=true, origin={-(7.4951),70.0}, points={{-(9.3917),0.0},{9.3917,0.0}}));
+  connect(possensor2.posAz,multiplex31.u3[1]) annotation(Line(visible=true, origin={90.3093,-(18.6804)}, points={{1.4885,17.9539},{1.4885,-(4.3171)},{-(1.4885),-(4.3171)},{-(1.4885),-(9.3196)}}));
+  connect(possensor2.posAy,multiplex31.u2[1]) annotation(Line(visible=true, origin={96.9333,-(16.1942)}, points={{0.5833,15.4006},{1.1125,-(0.7391)},{-(1.1125),-(0.7391)},{-(1.1125),-(11.8058)}}));
+  connect(possensor2.posAx,multiplex31.u1[1]) annotation(Line(visible=true, origin={103.0231,-(18.6931)}, points={{0.2023,17.9157},{0.2023,-(4.3044)},{-(0.2023),-(4.3044)},{-(0.2023),-(9.3069)}}));
+  connect(possensor2.frame_b,myinertialsys1.frame_b) annotation(Line(visible=true, origin={-(58.1199),29.2063}, points={{145.1366,-(22.3271)},{-(46.8782),-(22.3271)},{-(46.8782),22.3271},{-(51.3801),22.3271}}));
+  connect(possensor2.frame_a,boxBody3.frame_b) annotation(Line(visible=true, origin={99.3833,15.9665}, points={{8.6334,-(9.0873)},{13.1353,-(9.0873)},{13.1353,9.0873},{-(34.9039),9.0873}}));
+  connect(multiplex31.y[:],multiplex34.u1[:]) annotation(Line(visible=true, origin={76.4104,-(59.9863)}, points={{19.4104,8.9863},{19.4104,-(1.3279)},{-(19.4104),-(1.3279)},{-(19.4104),-(6.3304)}}));
+  connect(multiplex34.y[:],myRegulatorTwoOut.u[:]) annotation(Line(visible=true, origin={20.311,-(87.1905)}, points={{29.689,-(2.1262)},{29.689,-(6.1274)},{-(18.1252),-(6.1274)},{-(18.1252),7.1905},{-(23.1277),7.1905}}));
+  connect(myinertialsys1.frame_b,revolute3.frame_a) annotation(Line(visible=true, origin={-(81.2358),34.3012}, points={{-(28.2642),17.2322},{-(9.6072),17.2322},{-(9.6072),-(9.0095)},{-(2.6031),-(9.0095)},{6.8969,-(9.0095)}}));
+  connect(boxBody3.frame_b,revolute2Dloop1.frame_b) annotation(Line(visible=true, origin={88.1598,30.8054}, points={{-(23.6804),-(5.7515)},{11.8402,-(5.7515)},{11.8402,11.503}}));
+  connect(revolute4.frame_b,boxBody3.frame_a) annotation(Line(visible=true, origin={35.5143,25.1728}, points={{-(11.974),0.1189},{2.4686,0.1189},{2.4686,-(0.1189)},{7.0368,-(0.1189)}}));
+  connect(revolute3.frame_b,boxBody2.frame_a) annotation(Line(visible=true, origin={-(45.4264),25.2917}, points={{-(7.9125),0.0},{7.9125,0.0}}));
+  connect(boxBody2.frame_b,revolute4.frame_a) annotation(Line(visible=true, origin={-(6.9868),25.2917}, points={{-(9.5271),0.0},{9.5271,0.0}}));
+end loopsys;</Input>
+                <Output>{loopsys}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="-8.65800920475502e+306" Antialiasing="false" MinorY="-1.62497366202263e+308" Title="Plot title" LogX="false" LogY="false" MajorX="-1.51217723573022e+308" MajorY="nan" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>instantiateModel(loopsys)</Input>
+                <Output>""
+OMC-ERROR: 
+"Warning: No corresponding 'inner' declaration found for component boxBody1.world declared as 'outer '.
+  The existing 'inner' components are: 
+    There are no 'inner' components defined in the model in the any of the parent scopes of 'outer' component's scope: Modelica.Mechanics.MultiBody.Parts.BodyBox.
+  Check if you have not misspelled the 'outer' component name.
+  Please declare an 'inner' component with the same name in the top scope.
+  Continuing flattening by only considering the 'outer' component declaration.
+[C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/package.mo:1085:3-1093:63:writable] Error: Variable boxBody1.world.x_arrowLine: Base class ModelicaServices.Animation.Shape not found in scope Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape
+[C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/parts.mo:1253:5-1254:21:writable] Error: Variable world.defaultWidthFraction not found in scope Modelica.Mechanics.MultiBody.Parts.BodyBox
+Error: Error occured while flattening model loopsys
+Warning: No corresponding 'inner' declaration found for component boxBody1.world declared as 'outer '.
+  The existing 'inner' components are: 
+    There are no 'inner' components defined in the model in the any of the parent scopes of 'outer' component's scope: Modelica.Mechanics.MultiBody.Parts.BodyBox.
+  Check if you have not misspelled the 'outer' component name.
+  Please declare an 'inner' component with the same name in the top scope.
+  Continuing flattening by only considering the 'outer' component declaration.
+[C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/package.mo:1085:3-1093:63:writable] Error: Variable boxBody1.world.x_arrowLine: Base class ModelicaServices.Animation.Shape not found in scope Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape
+[C:\OpenModelica1.6.0\lib\omc\omlibrary\msl31/Modelica/Mechanics/MultiBody/parts.mo:1253:5-1254:21:writable] Error: Variable world.defaultWidthFraction not found in scope Modelica.Mechanics.MultiBody.Parts.BodyBox
+Error: Error occured while flattening model loopsys
+"</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.2" MajorY="0.2" closed="false" YLabel="" Area="AAAAAAAAAAC/8a9TFAoZkT/wWrru13aKP/JrLikNtKc=" ShowGraph="true" Grid="true" XLabel="time" Legend="true">
+                <Data Id="0" Label="posBx3">AAAB9gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</Data>
+                <Data Id="0" Label="time">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</Data>
+                <Data Id="0" Label="y[1]">AAAB9r/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAA</Data>
+                <Data Id="0" Label="y[2]">AAAB9r/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAAv/AAAAAAAAC/8AAAAAAAAL/wAAAAAAAA</Data>
+                <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="posBx3" Color="#00ff00"/>
+                <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="y[1]" Color="#ff0000"/>
+                <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="y[2]" Color="#0000ff"/>
+                <Input>//plot({y[1],y[2],posBx3})
+loadModel(Modelica.Mechanics.MultiBody.Parts.BoxBody)</Input>
+                <Output>true</Output>
+              </GraphCell>
+            </GroupCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>
