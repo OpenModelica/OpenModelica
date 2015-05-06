@@ -9,12 +9,18 @@ Plotting tool for OpenModelica-generated results files.
 
 Install the dependencies.
 
+### Unix
 ```bash
 $ autoconf
 # OPENMODELICAHOME is usually /usr, /opt, /opt/openmodelica, or /path/to/svn/OpenModelica/build
 $ ./configure --prefix=/path/to/OPENMODELICAHOME CXX=clang++
 $ make
 $ make install
+```
+
+### Windows MinGW
+```bash
+$ make -f Makefile.omdev.mingw OMBUILDDIR=/path/to/OpenModelica/build
 ```
 
 ## Bug Reports
