@@ -1,5 +1,5 @@
 # OpenModelica
-The OpenModelica project
+[OpenModelica](https://openmodelica.org) is an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.
 
 ## Dependencies
 
@@ -7,21 +7,21 @@ Many software packages are included inside the repositories.
 To get everything running, you will need a few extras:
 - autoconf, automake, libtool, g++, gfortran (pretty standard compilers)
 - boost (optional; used with configure --with-cppruntime)
-- clang, clang++ (optional, but highly recommended)
-- cmake (a lot of dependencies use it)
+- [clang](http://clang.llvm.org/), clang++ (optional, but *highly recommended*)
+- [cmake](http://www.cmake.org)
 - hwloc (optional; queries the number of hardware CPU cores instead of logical CPU cores)
 - Java JRE (JDK is option; compiles the Java CORBA interface)
 - Lapack/BLAS
-- lpsolve55
-- libhdf5 (optional part of the (MSL)[https://github.com/modelica/Modelica] tables library supported by few other Modelica tools, so it does not do much)
+- [lpsolve55](http://lpsolve.sourceforge.net)
+- libhdf5 (optional part of the [MSL](https://github.com/modelica/Modelica) tables library supported by few other Modelica tools, so it does not do much)
 - libexpat (it's actually included in the FMIL sources which are included... but we do not compile those and it's better to use the OS-provided dynamically linked version)
 - ncurses, readline (optional, used by OMShell-terminal)
-- omniORB
+- omniORB (optional; CORBA is used by OMOptim and OMShell)
 - OpenSceneGraph (optional, part of Modelica3D which should be compiled but is actually not yet compiled)
 - Qt4, Webkit
-- Sundials (optional; adds more numerical solvers to the simulation runtime)
+- [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 
-## Compiling
+## Compilation (Linux/OSX)
 
 ```bash
 $ autoconf
