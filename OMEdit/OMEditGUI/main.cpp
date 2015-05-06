@@ -71,7 +71,6 @@
 
 #include "MainWindow.h"
 #include "Helper.h"
-#include "omc_config.h"
 #include "CrashReportDialog.h"
 #include "meta/meta_modelica.h"
 

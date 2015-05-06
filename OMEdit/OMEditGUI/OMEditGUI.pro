@@ -52,7 +52,7 @@ TEMPLATE = app
 
 # This is very evil, lupdate just look for SOURCES variable and creates translations. This section is not compiled at all :)
 evil_hack_to_fool_lupdate {
-  SOURCES += ../../OMPlot/OMPlotGUI/*.cpp
+  SOURCES += ../../../OMPlot/OMPlotGUI/*.cpp
 }
 
 # Windows libraries and includes
@@ -70,15 +70,13 @@ win32 {
     # required for backtrace
     LIBS += -L$$(OMDEV)/tools/mingw/bin -lintl-8 -lbfd -liberty -limagehlp
   }
-  LIBS += -L../../build/lib/omc -lOMPlot -lomqwt \
-    -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-    -L../../Parser -lantlr3 \
+  LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
+    -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread \
     -lws2_32
-  INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
-    ../../3rdParty/qwt/build/include \
-    ../../OMPlot/OMPlotGUI \
-    ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include ../../build/include/omc/c
+  INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
+    $$(OMBUILDDIR)/include/omplot/qwt \
+    $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
 } else { # Unix libraries and includes
   include(OMEdit.config)
   # On unix we use backtrace of execinfo.h which requires -rdynamic
@@ -95,7 +93,7 @@ SOURCES += main.cpp \
   Util/backtrace.c \
   Util/Helper.cpp \
   MainWindow.cpp \
-  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
+  $$(OPENMODELICAHOME)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Util/StringHandler.cpp \
   Modeling/MessagesWidget.cpp \
@@ -214,7 +212,7 @@ HEADERS  += Util/backtrace.h \
   CrashReport/CrashReportDialog.h \
   OMC/Parser/OMCOutputParser.h \
   OMC/Parser/OMCOutputLexer.h \
-  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
+  $$(OPENMODELICAHOME)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
 
 LIBS += -lqjson
 INCLUDEPATH += ../../qjson-0.8.1/build/include
@@ -238,7 +236,8 @@ INCLUDEPATH += . \
   Plotting \
   Simulation \
   TransformationalDebugger \
-  Util
+  Util \
+  $$(OPENMODELICAHOME)/include/omc/scripting-API
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Debugger/Parser/GDBMIOutput.g \

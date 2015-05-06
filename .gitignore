@@ -19,6 +19,10 @@ configure
 /OMEdit/OMEditGUI/Debugger/Parser/Makefile.lib.unix
 /OMEdit/OMEditGUI/Debugger/Parser/libGDBMIParser.a
 /OMEdit/OMEditGUI/Makefile
+OMEdit/OMEditGUI/Makefile.Debug
+OMEdit/OMEditGUI/Makefile.Release
+OMEdit/OMEditGUI/object_script.*
+OMEdit/OMEditGUI/OMEditGUI.pro.*
 /OMEdit/OMEditGUI/OMC/Parser/OMCOutput.tokens
 /OMEdit/OMEditGUI/OMC/Parser/OMCOutputLexer.c
 /OMEdit/OMEditGUI/OMC/Parser/OMCOutputLexer.cpp
