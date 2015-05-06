@@ -76,8 +76,13 @@ interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(IPOPT_TARGET) $(UMFPACK_TARGET)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+
+docs:
+	$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
+	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
+	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
 
 GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h gc_pthread_redirects.h
 libgc-dev: /usr/include/gc/gc_inline.h
@@ -321,19 +326,19 @@ install: install-dirs
 	# Application directory (OSX)
 	if [ "$(APP)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
 	# Binaries
-	cp -a ./${builddir_bin}/* ${INSTALL_BINDIR}
+	cp -a ${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries
-	cp -a ./${builddir_lib}/* ${INSTALL_LIBDIR}
+	cp -a ${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
-	cp -a ./${builddir_inc}/* ${INSTALL_INCLUDEDIR}/omc
-	cp -a ./${builddir_inc}/$(host_short)/omc/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/omc/antlr3
+	cp -a ${builddir_inc}/* ${INSTALL_INCLUDEDIR}/omc
+	cp -a $(OMBUILDDIR)/include/$(host_short)/omc/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/omc/antlr3
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
-	cp -p ./${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
-	cp -p ./${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
+	test -z "$(HAVE_DOCDIR)" || cp -p ${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
+	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	# man pages
-	cp -p ./${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
+	# cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
 	cp -p ${builddir_share}/omc/*.* ${INSTALL_SHAREDIR}/omc/
 	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
@@ -343,10 +348,9 @@ install: install-dirs
 	# Scripts
 	cp -rp ${builddir_share}/omc/scripts/*.* ${builddir_share}/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
-	cp -p ./${builddir_java}/* ${INSTALL_JAVADIR}
+	cp -p /${builddir_java}/* ${INSTALL_JAVADIR}
 	# Translations
-	cp -rp ./${builddir_locale}/* ${INSTALL_LOCALEDIR}/
-
+	cp -rp /${builddir_locale}/* ${INSTALL_LOCALEDIR}/
 
 3rdParty/msgpack-0.5.8/Makefile:
 	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(MSGPACK_CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
