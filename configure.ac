@@ -7,6 +7,16 @@ m4_include([common/m4/pre-commit.m4])
 m4_include([common/m4/ombuilddir.m4])
 cp common/install-sh common/config.guess common/config.sub ./
 
+AC_SUBST(OMC_TARGET)
+AC_ARG_WITH(cppruntime,  [  --with-cppruntime       (build the optional cppruntime simulation libraries)],[OMC_TARGET="$withval"],[OMC_TARGET="no"])
+
+AC_MSG_CHECKING([if cppruntime is requested])
+if test "$OMC_OR_CPPRUNTIME" = "yes"; then
+  OMC_TARGET=all-runtimeCPPinstall
+else
+  OMC_TARGET=
+fi
+
 AC_SUBST(OMLIBRARY_TARGET)
 AC_ARG_WITH(omlibrary,  [  --with-omlibrary=[core,all,no]       (which libraries to build; default is core; the libraries used by the testsuite)],[OMLIBRARY_TARGET="$withval"],[OMLIBRARY_TARGET="core"])
 
@@ -30,7 +40,7 @@ case "$OMLIBRARY_TARGET" in
 esac
 
 
-for dir in OMCompiler OMPlot; do
+for dir in OMCompiler OMPlot OMEdit OMOptim; do
   if test ! -d "$dir"; then
     AC_MSG_ERROR("Subproject $dir does not exist")
   fi
@@ -39,6 +49,6 @@ for dir in OMCompiler OMPlot; do
   fi
 done
 
-AC_CONFIG_SUBDIRS([OMCompiler OMPlot])
+AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit OMOptim])
 
 AC_OUTPUT(Makefile)
