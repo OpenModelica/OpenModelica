@@ -6041,6 +6041,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
     _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
     >>
+    end match
 
   case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
     let num = nls.index
@@ -6051,6 +6052,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
     _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
     >>
+    end match
 
   case SES_MIXED(__)
     then
@@ -6062,6 +6064,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
     _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
     >>
+    end match
   else
     " "
  end writeoutputAlgloopsolvers;
@@ -6085,11 +6088,11 @@ template writeoutput3(SimEqSystem eqn, SimCode simCode ,Text& extraFuncs,Text& e
   >>
   case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
   <<
-  <%(ls.vars |> var hasindex myindex2 => writeoutput4(e.index,myindex2));separator=",";empty%>
+  <%(ls.vars |> var hasindex myindex2 => writeoutput4(ls.index,myindex2));separator=",";empty%>
   >>
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
   <<
-  <%(nls.eqs |> eq hasindex myindex2 => writeoutput4(e.index,myindex2));separator=",";empty%>
+  <%(nls.eqs |> eq hasindex myindex2 => writeoutput4(nls.index,myindex2));separator=",";empty%>
   >>
   case SES_MIXED(__) then writeoutput3(cont,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case SES_WHEN(__) then
@@ -10011,7 +10014,7 @@ template generateInitAlgloopsolverVariables2(SimEqSystem eq, Context context, Te
   match eq
     case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))
       then
-    let num = ls.index
+        let num = ls.index
         match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
             <<
@@ -10086,24 +10089,34 @@ template generateDeleteAlgloopsolverVariables2(SimEqSystem eq, Context context, 
   match eq
   case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))
     then
-  let num = ls.index
-  match simCode
-
-  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
-    then
-  let num = nls.index
-  match simCode
-
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
+    let num = ls.index
+    match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+    <<
       if(_conditions0<%num%>)
         delete [] _conditions0<%num%>;
       if(_conditions1<%num%>)
         delete [] _conditions1<%num%>;
       if(_algloop<%num%>Vars)
         delete [] _algloop<%num%>Vars;
-   >>
+    >>
+    end match
+  
+  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
+    then
+    let num = nls.index
+    match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+    <<
+      if(_conditions0<%num%>)
+        delete [] _conditions0<%num%>;
+      if(_conditions1<%num%>)
+        delete [] _conditions1<%num%>;
+      if(_algloop<%num%>Vars)
+        delete [] _algloop<%num%>Vars;
+    >>
    end match
+  
   else
     ""
  end generateDeleteAlgloopsolverVariables2;
@@ -10147,12 +10160,16 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
     then
   let num = ls.index
   match simCode
-
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+   <<
+   if(_algLoopSolver<%num%>)
+       _algLoopSolver<%num%>->initialize();
+   >>
+   end match
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
     then
   let num = nls.index
   match simCode
-
   case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
    if(_algLoopSolver<%num%>)
@@ -10194,14 +10211,8 @@ template initAlgloopVars2(SimEqSystem eq, Context context, Text &varDecls, SimCo
   match eq
   case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))
     then
-  let num = ls.index
+  let index = ls.index
   match simCode
-
-  case  SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
-    then
-  let num = nls.index
-  match simCode
-
   case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
      if(_algloop<%index%>Vars)
@@ -10216,6 +10227,26 @@ template initAlgloopVars2(SimEqSystem eq, Context context, Text &varDecls, SimCo
      _conditions1<%index%> = new bool[_dimZeroFunc];
    >>
    end match
+
+  case  SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
+    then
+  let index = nls.index
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+   <<
+     if(_algloop<%index%>Vars)
+       delete [] _algloop<%index%>Vars;
+     if(_conditions0<%index%>)
+       delete [] _conditions0<%index%>;
+     if(_conditions1<%index%>)
+       delete [] _conditions1<%index%>;
+     unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
+     _algloop<%index%>Vars = new double[dim<%index%>];
+     _conditions0<%index%> = new bool[_dimZeroFunc];
+     _conditions1<%index%> = new bool[_dimZeroFunc];
+   >>
+   end match
+
    case e as SES_MIXED(cont = eq_sys)
   then
    <<
@@ -10409,13 +10440,13 @@ template algloopMainfile2(SimEqSystem eq, SimCode simCode ,Text& extraFuncs,Text
 ::=
   match eq
   case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
-    let num = ls.index
+    let index = ls.index
     <<
     #include "OMCpp<%filename%>Algloop<%index%>.h"
     #include "OMCpp<%filename%>Algloop<%index%>.cpp"<%\n%>
     >>
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
-    let num = nls.index
+    let index = nls.index
     <<
     #include "OMCpp<%filename%>Algloop<%index%>.h"
     #include "OMCpp<%filename%>Algloop<%index%>.cpp"<%\n%>
