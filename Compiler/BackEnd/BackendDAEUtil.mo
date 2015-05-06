@@ -34,8 +34,6 @@ encapsulated package BackendDAEUtil
   package:     BackendDAEUtil
   description: BackendDAEUtil comprised functions for BackendDAE data types.
 
-  RCS: $Id$
-
   This module is a lowered form of a DAE including equations
   and simple equations in
   two separate lists. The variables are split into known variables
@@ -62,8 +60,8 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendDAEEXT;
 protected import BackendInline;
-protected import BackendVariable;
 protected import BackendVarTransform;
+protected import BackendVariable;
 protected import BinaryTree;
 protected import Causalize;
 protected import Ceval;
@@ -93,10 +91,12 @@ protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
 protected import HpcOmSimCodeMain;
 protected import IndexReduction;
+protected import Initialization;
 protected import Inline;
 protected import InlineArrayEquations;
 protected import List;
 protected import Matching;
+protected import MetaModelica.Dangerous.listReverseInPlace;
 protected import OnRelaxation;
 protected import RemoveSimpleEquations;
 protected import ResolveLoops;
@@ -112,7 +112,6 @@ protected import Types;
 protected import UnitCheck;
 protected import Values;
 protected import XMLDump;
-protected import MetaModelica.Dangerous.listReverseInPlace;
 
 protected
 type Var = BackendDAE.Var;
@@ -6494,6 +6493,11 @@ public function getSolvedSystem "Run the equation system pipeline."
   input Option<String> strdaeHandler = NONE();
   input Option<list<String>> strPostOptModules = NONE();
   output BackendDAE.BackendDAE outSODE;
+  output BackendDAE.BackendDAE outInitDAE;
+  output Boolean outUseHomotopy "true if homotopy(...) is used during initialization";
+  output list<BackendDAE.Equation> outRemovedInitialEquationLst;
+  output list<BackendDAE.Var> outPrimaryParameters "already sorted";
+  output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
 protected
   BackendDAE.BackendDAE optdae, sode, sode1, optsode;
   list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> preOptModules;
@@ -6532,6 +6536,9 @@ algorithm
     // prepare the equations
     sode := BackendDAEOptimize.evaluateOutputsOnly(sode);
   end if;
+
+  // generate system for initialization
+  (outInitDAE, outUseHomotopy, outRemovedInitialEquationLst, outPrimaryParameters, outAllPrimaryParameters) := Initialization.solveInitialSystem(sode);
 
   // post-optimization phase
   optsode := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
@@ -7192,7 +7199,8 @@ algorithm
                        (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false),
                        (CommonSubExpression.CSE_EachCall, "CSE_EachCall", false),
                        (BackendDump.dumpDAE, "dumpDAE", false),
-                       (XMLDump.dumpDAEXML, "dumpDAEXML", false)
+                       (XMLDump.dumpDAEXML, "dumpDAEXML", false),
+                       (FindZeroCrossings.encapsulateWhenConditions, "encapsulateWhenConditions", true)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
@@ -7210,10 +7218,10 @@ public function getPostOptModules
   input Option<list<String>> ostrpostOptModules;
   output list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean>> postOptModules;
 protected
-  list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean>> allpostOptModules;
+  list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean/*stopOnFailure*/>> allpostOptModules;
   list<String> strpostOptModules;
 algorithm
-  allpostOptModules := {(FindZeroCrossings.encapsulateWhenConditions, "encapsulateWhenConditions", true),
+  allpostOptModules := {(Initialization.removeInitializationStuff, "removeInitializationStuff", true),
                         (BackendInline.lateInlineFunction, "lateInlineFunction", false),
                         (RemoveSimpleEquations.removeSimpleEquations, "removeSimpleEquations", false),
                         (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
@@ -7228,7 +7236,6 @@ algorithm
                         (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                         (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
                         (BackendDAEOptimize.symEuler, "symEuler", false),
-                        (BackendDAEOptimize.symEulerInit, "symEulerInit", false),
                         (SymbolicJacobian.constantLinearSystem, "constantLinearSystem", false),
                         (OnRelaxation.relaxSystem, "relaxSystem", false),
                         (BackendDAEOptimize.countOperations, "countOperations", false),
@@ -7654,34 +7661,33 @@ protected function getConditionList1 "author: lochel"
   output list<DAE.ComponentRef> outConditionVarList;
   output Boolean outInitialCall;
 algorithm
-  (outConditionVarList, outInitialCall) := matchcontinue (inConditionList, inConditionVarList, inInitialCall)
+  (outConditionVarList, outInitialCall) := match inConditionList
     local
       list<DAE.Exp> conditionList;
       list<DAE.ComponentRef> conditionVarList;
       Boolean initialCall;
       DAE.ComponentRef componentRef;
       DAE.Exp exp;
-      String msg;
 
-    case ({}, _, _)
-      then (inConditionVarList, inInitialCall);
+    case {}
+    then (inConditionVarList, inInitialCall);
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, _, _)
-      equation
-        (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, true);
-      then (conditionVarList, initialCall);
+    case DAE.BCONST(false)::conditionList equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, inInitialCall);
+    then (conditionVarList, initialCall);
 
-    case (DAE.CREF(componentRef=componentRef)::conditionList, _, _)
-      equation
-        (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
-      then (conditionVarList, initialCall);
+    case DAE.CALL(path=Absyn.IDENT(name="initial"))::conditionList equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, true);
+    then (conditionVarList, initialCall);
 
-    case (exp::_, _ ,_)
-      equation
-        msg = "./Compiler/BackEnd/BackendDAEUtil.mo: function getConditionList1 failed for " + ExpressionDump.printExpStr(exp) + "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
-     then fail();
-  end matchcontinue;
+    case DAE.CREF(componentRef=componentRef)::conditionList equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
+    then (conditionVarList, initialCall);
+
+    case exp::_ equation
+      Error.addInternalError("function getConditionList1 failed for " + ExpressionDump.printExpStr(exp), sourceInfo());
+    then fail();
+  end match;
 end getConditionList1;
 
 public function isArrayComp"outputs true if the strongComponent is an arrayEquation"
@@ -8093,15 +8099,9 @@ end setSharedEventInfo;
 public function setSharedKnVars
   input BackendDAE.Shared inShared;
   input BackendDAE.Variables knownVars;
-  output BackendDAE.Shared outShared;
+  output BackendDAE.Shared outShared = inShared;
 algorithm
-  outShared := match inShared
-    local
-      BackendDAE.Shared shared;
-    case shared as BackendDAE.SHARED()
-      algorithm shared.knownVars := knownVars;
-      then shared;
-  end match;
+  outShared.knownVars := knownVars;
 end setSharedKnVars;
 
 public function setSharedAliasVars

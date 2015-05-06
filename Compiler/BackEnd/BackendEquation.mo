@@ -2479,6 +2479,7 @@ algorithm
        b := listEmpty(inputsKnVars);
     end if;
 
+    b := false "hack";
     if b then
       if noPara then
         oExp := ExpressionSimplify.simplify(iExp);

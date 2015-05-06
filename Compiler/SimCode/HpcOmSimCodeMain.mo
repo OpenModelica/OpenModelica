@@ -67,6 +67,11 @@ protected import Util;
 public function createSimCode "function createSimCode
   entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inInitDAE;
+  input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
+  input list<BackendDAE.Equation> inRemovedInitialEquationLst;
+  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
+  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inString11;
@@ -87,7 +92,7 @@ algorithm
       Integer lastEqMappingIdx, maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
       Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys;
       BackendDAE.BackendDAE dlow, dlow2;
-      Option<BackendDAE.BackendDAE> initDAE;
+      BackendDAE.BackendDAE initDAE;
       BackendDAE.IncidenceMatrix incidenceMatrix;
       DAE.FunctionTree functionTree;
       BackendDAE.SymbolicJacobians symJacs;
@@ -182,15 +187,13 @@ algorithm
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
       //Initial System
       //--------------
-      //(initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
-      //removedInitialEquations = {};
-      //createAndExportInitialSystemTaskGraph(initDAE, filenamePrefix);
+      //createAndExportInitialSystemTaskGraph(inInitDAE, filenamePrefix);
 
       //Setup
       //-----
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) =
-          SimCodeUtil.createSimCode( inBackendDAE, inClassName, filenamePrefix, inString11, functions,
+          SimCodeUtil.createSimCode( inBackendDAE, inInitDAE, inUseHomotopy, inRemovedInitialEquationLst, inPrimaryParameters, inAllPrimaryParameters, inClassName, filenamePrefix, inString11, functions,
                                      externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args );
 
       simVarMapping = SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);

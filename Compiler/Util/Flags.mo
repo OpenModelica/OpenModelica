@@ -683,7 +683,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     // "addInitialStmtsToAlgorithms",
     "resolveLoops",
     "evalFunc",
-    "sortEqnsVars"
+    "sortEqnsVars",
+    "encapsulateWhenConditions"
     }),
   SOME(STRING_DESC_OPTION({
     ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
@@ -716,7 +717,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("evalFunc", Util.gettext("evaluates functions partially")),
     ("comSubExp", Util.gettext("replaces common sub expressions")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
-    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state"))
+    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
+    ("encapsulateWhenConditions", Util.gettext("This module replaces each when condition with a boolean variable."))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -763,6 +765,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "removeInitializationStuff",
     "lateInlineFunction",
     "simplifyConstraints",
     "CSE",
@@ -775,7 +778,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeSimpleEquations",
     "simplifyComplexFunction",
     "symEuler",
-    "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",
     "reduceDynamicOptimization", // before tearing
     "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
@@ -798,7 +800,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     //"addInitialStmtsToAlgorithms",
     }),
   SOME(STRING_DESC_OPTION({
-    ("encapsulateWhenConditions", Util.gettext("Replace each condition/relation with a boolean variable.")),
+    ("removeInitializationStuff", Util.gettext("Does simplifications by removing initialization information like homotopy(..) and initial().")),
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),

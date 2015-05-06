@@ -627,18 +627,17 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   dumpInitialSolution(data);
   infoStreamPrint(LOG_INIT, 0, "### END INITIALIZATION ###");
 
-  data->simulationInfo.initial = 0;
-  /* initialization is done */
-
   overwriteOldSimulationData(data);     /* overwrite the whole ring-buffer with initialized values */
   storePreValues(data);                 /* save pre-values */
   updateDiscreteSystem(data, threadData);           /* evaluate discrete variables (event iteration) */
   saveZeroCrossings(data, threadData);
 
+  data->simulationInfo.initial = 0;
+  /* initialization is done */
+
   initSample(data, threadData, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   data->callback->function_storeDelayed(data, threadData);
   data->callback->function_updateRelations(data, threadData, 1);
-
   initSynchronous(data, threadData, data->simulationInfo.startTime);
 
   printRelations(data, LOG_EVENTS);

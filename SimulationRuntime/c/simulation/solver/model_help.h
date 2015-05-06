@@ -37,7 +37,8 @@ extern "C" {
 #include "simulation_data.h"
 
 /* lochel: I guess this is used for discrete relations */
-#define RELATION(res,exp1,exp2,index,op_w) { \
+#define RELATION(res,exp1,exp2,index,op_w) \
+{ \
   if(data->simulationInfo.initial) \
   { \
     res = ((op_w)((exp1),(exp2))); \
@@ -55,7 +56,8 @@ extern "C" {
 }
 
 /* lochel: I guess this is used for continuous relations */
-#define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
+#define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) \
+{ \
   if(data->simulationInfo.initial) \
   { \
     res = ((op_w)((exp1),(exp2))); \

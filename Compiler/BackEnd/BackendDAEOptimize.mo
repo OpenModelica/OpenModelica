@@ -4340,7 +4340,8 @@ algorithm
   functionTree := shared.functionTree;
 
   simDAE := match shared
-            case BackendDAE.SHARED(backendDAEType = BackendDAE.SIMULATION()) then true;
+            case BackendDAE.SHARED(backendDAEType=BackendDAE.SIMULATION()) then true;
+            case BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM()) then true;
             else false;
             end match;
 
@@ -4818,17 +4819,6 @@ public function symEuler
 algorithm
  outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(inDAE, true) else inDAE;
 end symEuler;
-public function symEulerInit
-"
-fix the difference quotient for initial equations[0/0]
-ToDo: remove me
-"
- input BackendDAE.BackendDAE inDAE;
- output BackendDAE.BackendDAE outDAE;
-algorithm
- outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(BackendDAEUtil.copyBackendDAE(inDAE), false) else inDAE;
-
-end symEulerInit;
 
 protected function symEulerWork
   input BackendDAE.BackendDAE inDAE;

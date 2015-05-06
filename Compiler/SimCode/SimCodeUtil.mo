@@ -86,12 +86,10 @@ import Expression;
 import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
-import FindZeroCrossings;
 import Flags;
 import Graph;
 import HashSet;
 import HpcOmSimCode;
-import Initialization;
 import Inline;
 import List;
 import Matching;
@@ -150,6 +148,11 @@ end simulationFindLiterals;
 
 public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inInitDAE;
+  input Boolean inUseHomotopy "true if homotopy(...) is used during initialization";
+  input list<BackendDAE.Equation> inRemovedInitialEquationLst;
+  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
+  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inFileDir;
@@ -173,7 +176,6 @@ protected
   BackendDAE.SymbolicJacobians symJacs;
   BackendDAE.Variables knownVars;
   Boolean ifcpp;
-  Boolean useHomotopy "true if homotopy(...) is used during initialization";
   HashTableCrIListArray.HashTable varToArrayIndexMapping "maps each array-variable to a array of positions";
   HashTableCrILst.HashTable varToIndexMapping "maps each variable to an array position";
   Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians, sccOffset;
@@ -221,6 +223,7 @@ protected
 algorithm
   try
     dlow := inBackendDAE;
+    initDAE := inInitDAE;
 
     System.tmpTickReset(0);
     uniqueEqIndex := 1;
@@ -236,16 +239,6 @@ algorithm
       VisualXML.visualizationInfoXML(dlow, filenamePrefix);
     end if;
 
-    // fcall(Flags.FAILTRACE, print, "is that Cpp? : " + Dump.printBoolStr(ifcpp) + "\n");
-  else
-    Error.addInternalError("function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]", sourceInfo());
-    fail();
-  end try;
-
-  // generate initDAE before replacing pre(alias)!
-  (initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters) := Initialization.solveInitialSystem(dlow);
-
-  try
     if Flags.isSet(Flags.ITERATION_VARS) then
       BackendDAEOptimize.listAllIterationVariables(dlow);
     end if;
@@ -254,7 +247,7 @@ algorithm
     dlow := BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
     // initialization stuff
-    (initialEquations, removedInitialEquations, uniqueEqIndex, tempvars) := createInitialEquations(initDAE, removedInitialEquationLst, uniqueEqIndex, {});
+    (initialEquations, removedInitialEquations, uniqueEqIndex, tempvars) := createInitialEquations(initDAE, inRemovedInitialEquationLst, uniqueEqIndex, {});
 
     // addInitialStmtsToAlgorithms
     dlow := BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
@@ -297,7 +290,7 @@ algorithm
     ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
     ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
     ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-    (uniqueEqIndex, parameterEquations) := createParameterEquations(uniqueEqIndex, parameterEquations, primaryParameters, allPrimaryParameters);
+    (uniqueEqIndex, parameterEquations) := createParameterEquations(uniqueEqIndex, parameterEquations, inPrimaryParameters, inAllPrimaryParameters);
     //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     //parameterEquations := listAppend(parameterEquations, paramAssertSimEqs);
 
@@ -420,7 +413,7 @@ algorithm
                               odeEquations,
                               algebraicEquations,
                               clockedPartitions,
-                              useHomotopy,
+                              inUseHomotopy,
                               initialEquations,
                               removedInitialEquations,
                               startValueEquations,
