@@ -1,5 +1,5 @@
 all:
-	$(MAKE) omc @OMLIBRARY_TARGET@
+	$(MAKE) omc @OMLIBRARY_TARGET@ omc-diff
 	$(MAKE) omplot
 	$(MAKE) omedit omoptim
 
@@ -17,6 +17,8 @@ omedit:
 	$(MAKE) -C OMEdit
 omoptim:
 	$(MAKE) -C OMOptim
+omc-diff:
+	$(MAKE) -C testsuite/difftool "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@"
 
 clean:
 	test ! -d build || rm -r build/
