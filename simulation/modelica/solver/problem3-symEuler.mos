@@ -31,10 +31,7 @@ val(x2,1);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-06, method = 'symEuler', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Notification: It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-// Warning: The initial conditions are over specified. Use +d=initialization for more information.
-// "
+// ""
 // 2.0
 // 2.2
 // 0.401877572016461
