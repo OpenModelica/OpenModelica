@@ -1,0 +1,11 @@
+/build
+*.o
+OMShell/bin
+OMShell/generatedfiles
+OMShell/OMShellGUI/Makefile
+OMShell/OMShellGUI/Makefile.Debug
+OMShell/OMShellGUI/Makefile.Release
+OMShell/OMShellGUI/Makefile.unix
+OMShell/OMShellGUI/object_script.*
+OMShell/OMShellGUI/OMShellGUI.pro.*
+OMShell/OMShellGUI/*.qm

@@ -1,0 +1,44 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_share=$(OMBUILDDIR)/share/
+
+QMAKE=qmake
+EXE=.exe
+NAME=OMShell
+
+.PHONY: always $(NAME)
+
+all: build
+
+Makefile: OMShellGUI.pro
+	$(QMAKE) "CONFIG+=release"
+
+clean: Makefile
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -rf ../bin/$(NAME)$(EXE) omc_communication.* Makefile Makefile.Debug Makefile.Release object_script.*
+
+omc_communication.cc: $(builddir_share)/omc/omc_communication.idl
+	$(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc $<
+omc_communication.h: omc_communication.cc
+
+$(NAME): omc_communication.cc Makefile
+	$(MAKE) -f Makefile
+
+build: $(NAME)
+	mkdir -p $(builddir_share)/omshell/nls/
+	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin)
+	cp -p commands.xml $(builddir_share)/omshell/
+	cp -p OMShell_*.qm $(builddir_share)/omshell/nls/
+	cp -puf $(OMDEV)/tools/OMTools/dll/mingwm10.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/libgcc_s_dw2-1.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/mingw/bin/libintl-8.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/mingw/bin/libiconv-2.dll $(builddir_bin)
+	cp -puf $(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniORB416_rt.dll $(builddir_bin)
+	cp -puf $(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omnithread34_rt.dll $(builddir_bin)
+	cp -puf $(OMDEV)/lib/pthread/pthreadGC2.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(builddir_bin)
+	cp -puf $(OMDEV)/tools/OMTools/dll/QtXml4.dll $(builddir_bin)

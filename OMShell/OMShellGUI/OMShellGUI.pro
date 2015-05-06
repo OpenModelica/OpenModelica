@@ -29,7 +29,6 @@ win32 {
              __WIN32__
   CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
   CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
-  INCLUDEPATH += ../../
 } else {
   include(OMShell.config)
 }
