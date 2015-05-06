@@ -109,8 +109,11 @@ protected
   list<BackendDAE.Equation> removedEqns;
 algorithm
   try
+    // TODO: remove this once the initialization is moved before post-optimization
+    dae := BackendDAEOptimize.symEulerInit(inDAE);
+
     // inline all when equations, if active with body else with lhs=pre(lhs)
-    dae := inlineWhenForInitialization(BackendDAEOptimize.symEulerInit(inDAE));
+    dae := inlineWhenForInitialization(dae);
     // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
 
     (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
