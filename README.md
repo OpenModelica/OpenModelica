@@ -10,12 +10,18 @@ A Modelica connection editor for OpenModelica.
 
 Install the dependencies.
 
+### Unix
 ```bash
 $ autoconf
 # OPENMODELICAHOME is usually /usr, /opt, /opt/openmodelica, or /path/to/svn/OpenModelica/build
 $ ./configure --prefix=/path/to/OPENMODELICAHOME
 $ make
 $ make install
+```
+
+### Windows MinGW
+```bash
+$ make -f Makefile.omdev.mingw OMBUILDDIR=/path/to/OpenModelica/build
 ```
 
 ## Bug Reports
