@@ -11,3 +11,5 @@ openmodelica/bootstrapping/theirs
 /runtest.db.*
 simulation/libraries/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.csv
 simulation/modelica/solver/externalInput.csv
+# Reference files are stored as .mat.xz
+ReferenceFiles/**/*.mat
