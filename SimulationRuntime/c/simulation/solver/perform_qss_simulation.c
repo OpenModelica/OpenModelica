@@ -44,7 +44,7 @@
  */
 enum error_msg
 {
-	INFNAN = -3L,		/*!< Time of next change is #INF or #QNAN. */
+	ISNAN = -3L,		/*!< Time of next change is #QNAN. */
 	UNKNOWN = -2L,		/*!< Unspecific error. */
 	OO_MEMORY = -1L,	/*!< Allocation of memory fails.*/
 	OK = 0L			/*!< Everything is fine. */
@@ -140,7 +140,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
   /* further initialization of local variables */
 
   modelica_real diffQ = 0.0, dTnextQ = 0.0, nextQ = 0.0;
-  for (i = 0; i < STATES; i++ )
+  for (i = 0; i < STATES; i++)
   {
 	  dQ[i] = 0.0001 * data->modelData.realVarsData[i].attribute.nominal;
 	  tx[i] = tq[i] = simInfo->startTime;
@@ -148,16 +148,18 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
 	  xik[i] = state[i];
 	  derXik[i] = stateDer[i];
 	  retValue = deltaQ(data, dQ[i], i, &dTnextQ, &nextQ, &diffQ);
-	  if (OK != retValue) return retValue;
+	  if (OK != retValue)
+      return retValue;
 	  tqp[i] = tq[i] + dTnextQ;
 	  nQh[i] = nextQ;
-
   }
 
 /* Transform the sparsity pattern into a data structure for an index based access. */
   modelica_integer* der = calloc(ROWS, sizeof(modelica_integer));
-  if (NULL==der) return OO_MEMORY;
-  for(i = 0; i < ROWS; i++) der[i] = -1;
+  if (NULL==der)
+    return OO_MEMORY;
+  for(i = 0; i < ROWS; i++)
+    der[i] = -1;
 
   /* how many states are involved in each derivative */
   /* **** This is needed if we have QSS2 or higher **** */
@@ -179,7 +181,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
 /*  for ( i = 0; i < ROWS; i++)
   {
 	  *(StatesInDer + i) = calloc(numStatesInDer[i], sizeof(uinteger));
-	  if (NULL==*(StatesInDer + i) ) return OO_MEMORY;
+	  if (NULL==*(StatesInDer + i)) return OO_MEMORY;
   }
 
   retValue = getStatesInDer(pattern->index, pattern->leadindex, ROWS, STATES, StatesInDer);
@@ -217,47 +219,60 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
 
 
 #ifdef D
-        fprintf(fid,"t = %.8f\n",solverInfo->currentTime);
-        fprintf(fid,"%16s\t%16s\t%16s\t%16s\t%16s\t%16s\n","tx","x","dx","tq","q","tqp");
-        for ( i = 0; i < STATES; i++ )
-        {
-        	fprintf(fid,"%16.8f\t%16.8f\t%16.8f\t%16.8f\t%16.8f\t%16.8f\n",tx[i],xik[i],derXik[i],tq[i],qik[i],tqp[i]);
-        }
+    fprintf(fid,"t = %.8f\n",solverInfo->currentTime);
+    fprintf(fid,"%16s\t%16s\t%16s\t%16s\t%16s\t%16s\n","tx","x","dx","tq","q","tqp");
+    for ( i = 0; i < STATES; i++ )
+    {
+      fprintf(fid,"%16.8f\t%16.8f\t%16.8f\t%16.8f\t%16.8f\t%16.8f\n",tx[i],xik[i],derXik[i],tq[i],qik[i],tqp[i]);
+    }
 #endif
 
     currStepNo++;
 
     ind = minStep(tqp, STATES);
 
-    if (isinf(tqp[ind]) || isnan(tqp[ind]) )
-	{
+    if (isnan(tqp[ind]))
+    {
 #ifdef D
-        	fprintf(fid,"Exit caused by #INF or #QNAN!\tind=%d",ind);
+      fprintf(fid,"Exit caused by #QNAN!\tind=%d",ind);
 #endif
-		return INFNAN;
-	}
+      return ISNAN;
+    }
+    if (isinf(tqp[ind]))
+    {
+      /* If all derivatives are zero, there won't be any change in statevars. So
+       * the simulation will stop and all values will be propagated as constant.
+       */
+      solverInfo->currentTime = simInfo->stopTime;
 
-	qik[ind] = nQh[ind];
+      sData->timeValue = solverInfo->currentTime;
+      solverInfo->laststep = solverInfo->currentTime;
 
-	xik[ind] = qik[ind];
-	state[ind] = qik[ind];
+      continue;
+    }
+    else
+    {
+      qik[ind] = nQh[ind];
 
-	tx[ind] = tqp[ind];
-	tq[ind] = tqp[ind];
+      xik[ind] = qik[ind];
+      state[ind] = qik[ind];
 
-	solverInfo->currentTime = tqp[ind];
+      tx[ind] = tqp[ind];
+      tq[ind] = tqp[ind];
 
+      solverInfo->currentTime = tqp[ind];
+    }
 
 
 #ifdef D
-        fprintf(fid,"Index: %d\n\n",ind);
+    fprintf(fid,"Index: %d\n\n",ind);
 #endif
 
     /* the state[ind] will change again in dTnextQ*/
-	retValue = deltaQ(data, dQ[ind], ind, &dTnextQ, &nextQ, &diffQ);
-	if (OK != retValue) return retValue;
-	tqp[ind] = tq[ind] + dTnextQ;
-	nQh[ind] = nextQ;
+    retValue = deltaQ(data, dQ[ind], ind, &dTnextQ, &nextQ, &diffQ);
+    if (OK != retValue) return retValue;
+    tqp[ind] = tq[ind] + dTnextQ;
+    nQh[ind] = nextQ;
 
     if (0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
     {
@@ -274,9 +289,9 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
     	j = der[k];
     	if (j != ind)
     	{
-            xik[j] = xik[j] + derXik[j] * (solverInfo->currentTime - tx[j]);
-            state[j] = xik[j];
-            tx[j] = solverInfo->currentTime;
+        xik[j] = xik[j] + derXik[j] * (solverInfo->currentTime - tx[j]);
+        state[j] = xik[j];
+        tx[j] = solverInfo->currentTime;
     	}
     }
 
@@ -332,6 +347,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
       tqp[j] = solverInfo->currentTime + dTnextQ;
       nQh[j] = nextQ;
     }
+
 
     sData->timeValue = solverInfo->currentTime;
     solverInfo->laststep = solverInfo->currentTime;
@@ -406,7 +422,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
   /* free memory*/
   free(der);
  /*  for ( i = 0; i < ROWS; i++) free(*(StatesInDer + i));
-  free(StatesInDer);
+    free(StatesInDer);
   free(numStatesInDer); */
   free(qik);
   free(xik);
@@ -452,15 +468,14 @@ static modelica_integer deltaQ( DATA* data, const modelica_real dQ, const modeli
       *nextQ = *nextQ - dQ;
   }
 
-
   *diffQ = fabs(*nextQ - sDataOld->realVars[index]);
   if (0 == stateDer[index])
-    *dTnextQ = fabs( *nextQ / stateDer[index] ); /* #INF */
+	  *dTnextQ = fabs(*nextQ / stateDer[index]); /* #INF */
   else
-    *dTnextQ = fabs( *nextQ / stateDer[index] - sDataOld->realVars[index] / stateDer[index] );
+	  *dTnextQ = fabs(*nextQ / stateDer[index] - sDataOld->realVars[index] / stateDer[index]);
 
   return OK;
- }
+}
 
 /*! static int getDerWithStateK(const unsigned int *index, const unsigned int* leadindex, int* der, unsigned int* numDer, const unsigned int k)
  *	\brief	Returns the indices of all derivatives with state k inside.
@@ -499,14 +514,18 @@ static modelica_integer getStatesInDer(const unsigned int* index, const unsigned
 	uinteger i = 0, k = 0; /* loop var */
 	uinteger numDer = 0;
 	modelica_integer* der = calloc(ROWS, sizeof(modelica_integer));
-	if (NULL == der) return OO_MEMORY;
 
-	for (i = 0; i < ROWS; i++) der[i] = -1;
+	if (NULL == der)
+    return OO_MEMORY;
+
+	for (i = 0; i < ROWS; i++)
+    der[i] = -1;
 
 	uinteger stackPointer[ROWS];
-	for (i = 0; i < ROWS; i++) stackPointer[i] = 0;
+	for (i = 0; i < ROWS; i++)
+    stackPointer[i] = 0;
 
-	/* 	 Ask for all states in which derivative they occur. */
+	/* Ask for all states in which derivative they occur. */
 	for (k = 0; k < STATES; k++)
 	{
 		getDerWithStateK(index, leadindex, der, &numDer, k);
@@ -539,7 +558,7 @@ static uinteger minStep(const modelica_real* tqp, const uinteger size )
 
 	for (i = 0; i < size; i++ )
 	{
-		if (tqp[i] < tmin && !isnan(tqp[i]) )
+		if (tqp[i] < tmin && !isnan(tqp[i]))
 		{
 			ind = i;
 			tmin = tqp[i];
