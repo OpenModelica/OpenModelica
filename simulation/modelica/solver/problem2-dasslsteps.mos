@@ -7,7 +7,7 @@ loadFile("testSolverPackage.mo"); getErrorString();
 simulate(testSolver.problem2, stopTime=stopTime, simflags="-noEquidistantTimeGrid"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
-  "ReferenceFiles/testSolver.problem2.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem2.mat",
   "testSolver.problem2_diff.csv",0.1,0.1,
 {
 "y[1]",
