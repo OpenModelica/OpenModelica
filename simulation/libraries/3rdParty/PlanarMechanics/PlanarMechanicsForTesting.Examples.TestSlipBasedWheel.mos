@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.TestSlipBasedWheel, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_res.mat",
-  "ReferenceFiles/TestSlipBasedWheel.mat","PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_diff.csv",0.01,0.34,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//TestSlipBasedWheel.mat","PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_diff.csv",0.01,0.34,
   {"revolute.w", "prismatic.s", "slipBasedWheelJoint.f_lat", "slipBasedWheelJoint.f_long"});
 
 // Result:

@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.FreeBody); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.FreeBody_res.mat",
-  "ReferenceFiles/FreeBody.mat","PlanarMechanicsForTesting.Examples.FreeBody_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//FreeBody.mat","PlanarMechanicsForTesting.Examples.FreeBody_diff.csv",0.01,0.00001,
   {"body.r[1]", "body.r[2]", "body.v[2]"});
 
 // Result:

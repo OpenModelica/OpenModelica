@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.CounterSpin, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.CounterSpin_res.mat",
-  "ReferenceFiles/CounterSpin.mat","PlanarMechanicsForTesting.Examples.CounterSpin_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//CounterSpin.mat","PlanarMechanicsForTesting.Examples.CounterSpin_diff.csv",0.01,0.0001,
   {"body.frame_a.x", "body.frame_a.y", "body.w"});
 
 // Result:

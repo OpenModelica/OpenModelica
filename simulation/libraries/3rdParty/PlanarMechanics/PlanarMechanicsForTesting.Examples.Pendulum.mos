@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.Pendulum); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.Pendulum_res.mat",
-  "ReferenceFiles/Pendulum.mat","PlanarMechanicsForTesting.Examples.Pendulum_diff.csv",0.01,0.013,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//Pendulum.mat","PlanarMechanicsForTesting.Examples.Pendulum_diff.csv",0.01,0.013,
   {"revolute.phi", "revolute.w", "revolute.z", "body.r[1]", "body.r[2]"});
 
 // Result:
