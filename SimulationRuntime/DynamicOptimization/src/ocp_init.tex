@@ -1,0 +1,158 @@
+
+% /*
+%  * This file is part of OpenModelica.
+%  *
+%  * Copyright (c) 1998-2014, Linköpings University,
+%  * Department of Computer and Information Science,
+%  * SE-58183 Linköping, Sweden.
+%  *
+%  * All rights reserved.
+%  *
+%  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+%  * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+%  * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+%  * PUBLIC LICENSE.
+%  *
+%  * The OpenModelica software and the Open Source Modelica
+%  * Consortium (OSMC) Public License (OSMC-PL) are obtained
+%  * from Linköpings University, either from the above address,
+%  * from the URL: http://www.ida.liu.se/projects/OpenModelica
+%  * and in the OpenModelica distribution.
+%  *
+%  * This program is distributed  WITHOUT ANY WARRANTY; without
+%  * even the implied warranty of  MERCHANTABILITY or FITNESS
+%  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+%  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+%  * OF OSMC-PL.
+%  *
+%  * See the full OSMC Public License conditions for more details.
+%  *
+%  */
+
+\documentclass[12pt, a4paper]{article}
+\usepackage[left=1cm,right=1cm,top=1.5cm,bottom=1cm,includeheadfoot]{geometry}
+
+\usepackage{amsmath, amssymb, amsfonts, amsthm, amsbsy}
+\usepackage{graphicx, color}
+\usepackage[utf8]{inputenc}
+\usepackage{caption}
+\usepackage{hyperref}
+\parindent0pt
+
+%****************** Modelica Listings **********************************
+\usepackage{listings}
+\input{listings-modelica.cfg}
+
+%-------------------
+\newcommand{\x}[0]{{{x}}}
+\newcommand{\dx}[0]{{{\dot{x}}}}
+\newcommand{\uu}[0]{{{u}}}
+\newcommand{\z}[0]{{{z}}}
+\newcommand{\R}{{\mathbb R}}
+\newcommand{\diffp}[2]{{\cfrac{\partial #1}{\partial #2}}}
+\newcommand{\diff}[2]{{\cfrac{d #1}{d #2}}}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+\fancyhead[L]{Optimization}
+\fancyhead[R]{\OpenModelica}
+
+\newcommand{\OpenModelica}[0]{
+\textcolor{cyan}{\textbf{Open}}\textbf{Modelica}}
+
+\title{
+Initial Guess For Dynamic Optimization In \\ \OpenModelica{}
+}
+
+\author{Vitalij Ruge}
+\date{\today}
+
+\begin{document}
+
+
+\maketitle
+\abstract{
+The initial guess is (any other nonlinear problem) important to find the soulation. The optimizer need for each time point an initial guess. Currently it's not possible formulate a initial guess/start value for each time point with Modelica. The following notes help to make a initial guess for dyn. optimization with \OpenModelica{}.\\
+
+tip: see \url{https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html} for \OpenModelica{} scripting.
+}
+
+\section{prior simulator}
+\OpenModelica{} automaticly done a prior simulatn and use the simulation as intial guess.
+\begin{lstlisting}[language=Pascal, caption={initial guess with simulation},frame=single,
+				   label=lst:init]
+optimize(modelxxx, simflags="-ipopt_init SIM");
+\end{lstlisting}
+
+\subsection{prior simulator with const inputs}
+\OpenModelica{} keep the inputs around the prior simulation on the start values.
+
+\subsection{prior simulator with external inputs}
+\OpenModelica{} fetch the inputs around the prior simulation from a file.
+\begin{lstlisting}[language=Pascal, caption={external inputs},frame=single]
+optimize(modelxxx, simflags="-exInputFile xxx.csv -ipopt_init SIM");
+\end{lstlisting}
+\begin{lstlisting}[language=Pascal, caption={example xxx.csv},frame=single,
+				   label=lst:exInputFile2]
+time input1 input2 input3
+0 -1 2 3
+0.2 -0.9 2.3 3.5
+0.6 -0.5 2.0 2.9
+1.1 0.3 1.6 3.1);
+\end{lstlisting}
+
+\section{file}
+\OpenModelica{} fetch all variables from file.
+\begin{lstlisting}[language=Pascal, caption={initial guess with file},frame=single]
+optimize(modelxxx, simflags="-ipopt_init FILE -iif xxx.mat");
+\end{lstlisting}
+\subsection{example}
+
+\begin{lstlisting}[language=Modelica, caption={model for initial guess},frame=single]
+model simModel
+  Real u;
+  ...
+ equation
+  ...
+  u = f(time,x,...);
+  ...
+end simModel;
+);
+\end{lstlisting}
+\begin{lstlisting}[language=Modelica, caption={model for optimization},frame=single]
+model optModel
+  input Real u;
+  ...
+ equation
+  ...
+  ...
+end optModel;
+);
+\end{lstlisting}
+
+\begin{lstlisting}[language=Pascal, caption={initial guess with file},frame=single]
+simulate(simModel);
+optimize(optModel, simflags="-ipopt_init FILE -iif simModel_res.mat");
+\end{lstlisting}
+
+Note: \OpenModelica{} map the variables between file and optimization via name.
+
+\section{start values}
+\OpenModelica{} keep all variables on the start values.
+\begin{lstlisting}[language=Pascal, caption={start values},frame=single]
+optimize(modelxxx, simflags="-ipopt_init CONST");
+\end{lstlisting}
+
+\section{show guess}
+
+\begin{lstlisting}[language=Pascal, caption={result with intial guess},frame=single]
+optimize(modelxxx, simflags="-ipopt_max_iter -1");
+\end{lstlisting}
+
+\begin{lstlisting}[language=Pascal, caption={result with intial guess after preprocessing},frame=single]
+optimize(modelxxx, simflags="-ipopt_max_iter 0");
+\end{lstlisting}
+
+\end{document}
