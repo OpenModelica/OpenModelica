@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2, stopT
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2_diff.csv",
 0.01, 0.0001,
 {"DynamicCentrifugalPump1.Q",

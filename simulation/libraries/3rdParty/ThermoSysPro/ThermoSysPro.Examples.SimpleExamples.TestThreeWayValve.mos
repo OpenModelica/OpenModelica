@@ -15,7 +15,7 @@ getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve_diff.csv",
 0.01, 0.0001,
 {"threeWayValve.C1.Q","threeWayValve.C2.Q","threeWayValve.C3.Q"});

@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve, stopTime=1
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestDynamicReliefValve_diff.csv",
 0.01, 0.0001,
 {"ReliefValve.Q",

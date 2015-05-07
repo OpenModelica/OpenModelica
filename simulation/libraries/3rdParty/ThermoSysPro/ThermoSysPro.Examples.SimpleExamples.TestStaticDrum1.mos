@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1, stopTime=1000); g
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestStaticDrum1_diff.csv",
 0.01, 0.0001,
 {"StaticDrumTh1.Ce_eco.Q","StaticDrumTh1.Cs_purg.Q","StaticDrumTh1.Cs_sur.Q",

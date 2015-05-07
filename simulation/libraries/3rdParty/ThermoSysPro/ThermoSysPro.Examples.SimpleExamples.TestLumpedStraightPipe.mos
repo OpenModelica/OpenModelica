@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe, stopTime=1
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe_diff.csv",
 0.01, 0.0001,
 {"lumpedStraightPipe.Q", "lumpedStraightPipe.h", "lumpedStraightPipe.deltaP",

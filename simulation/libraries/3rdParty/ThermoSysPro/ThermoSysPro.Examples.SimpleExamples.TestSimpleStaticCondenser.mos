@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser, stopTim
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser_diff.csv",
 0.01, 0.0001,
 {"simpleStaticCondenser.Qf", "simpleStaticCondenser.Qc",

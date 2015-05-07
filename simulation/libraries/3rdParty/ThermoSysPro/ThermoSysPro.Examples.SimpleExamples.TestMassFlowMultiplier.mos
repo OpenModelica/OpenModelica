@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier, stopTime=1
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier_diff.csv",
 0.01, 0.0001,
 {"massFlowMultiplier.Ce.Q", "massFlowMultiplier.Cs.Q"});

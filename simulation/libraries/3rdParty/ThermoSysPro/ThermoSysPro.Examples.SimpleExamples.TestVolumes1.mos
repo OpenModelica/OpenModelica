@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestVolumes1, stopTime=10); getErr
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestVolumes1_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestVolumes1.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestVolumes1.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestVolumes1_diff.csv",
 0.01, 0.0001,
 {"volumeB1.Ce1.Q","volumeB1.Ce2.Q","volumeB1.Ce3.Q","volumeB1.Cs.Q",

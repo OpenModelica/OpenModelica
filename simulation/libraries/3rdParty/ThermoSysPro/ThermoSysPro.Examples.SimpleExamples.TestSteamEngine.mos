@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestSteamEngine, stopTime=1000); g
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestSteamEngine_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestSteamEngine.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestSteamEngine.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestSteamEngine_diff.csv",
 0.01, 0.0001,
 {"steamEngine1.Q",

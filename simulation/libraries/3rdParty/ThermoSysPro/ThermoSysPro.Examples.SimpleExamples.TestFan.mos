@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestFan, stopTime=1000); getErrorS
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestFan_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestFan.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestFan.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestFan_diff.csv",
 0.01, 0.0001,
 {"staticFan.Q", "staticFan.deltaH", "staticFan.deltaP",
