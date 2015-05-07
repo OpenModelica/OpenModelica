@@ -25,7 +25,8 @@ TestMedia.TestModels.WaterIF97.Test8.mos
 DEPENDENCIES = \
  *.mo \
  *.mos \
- Makefile 
+ Makefile \
+ ReferenceFiles
 	
 
 

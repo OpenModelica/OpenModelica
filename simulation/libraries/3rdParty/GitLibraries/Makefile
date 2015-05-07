@@ -15,7 +15,8 @@ DEPENDENCIES = \
  *.mo \
  *.mos \
  *.mat \
- Makefile
+ Makefile \
+ ReferenceFiles
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

@@ -558,7 +558,6 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean
-	$(MAKE) -C openmodelica/dependency -f Makefile clean
 	$(MAKE) -C openmodelica/interactive-API -f Makefile clean
 	$(MAKE) -C openmodelica/parser -f Makefile clean
 	$(MAKE) -C openmodelica/typed-API -f Makefile clean
