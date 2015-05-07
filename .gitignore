@@ -151,3 +151,4 @@ Parser/ParModelica_Lexer.c
 Parser/ParModelica_Lexer.h
 Parser/ParModelica_Lexer_BaseModelica_Lexer.c
 Parser/ParModelica_Lexer_BaseModelica_Lexer.h
+SimulationRuntime/**/test_files/*.jar
