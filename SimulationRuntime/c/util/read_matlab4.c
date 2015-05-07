@@ -441,9 +441,17 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
 ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const char *varName)
 {
   ModelicaMatVariable_t key;
+  ModelicaMatVariable_t *res;
   key.name = (char*) varName;
 
-  return (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+  res = (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+  if (res == NULL) { /* Try to convert the name to a Dymola name */
+    if (0==strcmp(varName, "time")) {
+      key.name = "Time";
+      return (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+    }
+  }
+  return res;
 }
 
 /* Writes the number of values in the returned array if nvals is non-NULL */
