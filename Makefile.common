@@ -46,7 +46,6 @@ mkbuilddirs:
 	@mkdir -p $(builddir_inc)/c/fmi1/
 	@mkdir -p $(builddir_inc)/c/fmi2/
 	@mkdir -p $(builddir_inc)/scripting-API
-	@mkdir -p $(builddir_inc)/qwt
 	@mkdir -p $(builddir_java)
 	@mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
 	@mkdir -p $(builddir_doc)/omc/testmodels
@@ -57,10 +56,10 @@ release: omc
 
 bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP)
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler OpenModelicaBootstrappingHeader.h
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin install_scripts
-	$(MAKE) -f $(defaultMakefileTarget) -C Parser install
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin install_scripts OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Parser install OMBUILDDIR=$(OMBUILDDIR)
 
 sim-dependencies: fmi fmil opencl_rt lis metis fmi fmil
 
@@ -75,10 +74,15 @@ idl: $(builddir_share)/omc/omc_communication.idl
 interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC
 
 interactive-short: .testvariables interactive-common
-	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies
+	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
-	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs $(IPOPT_TARGET) $(UMFPACK_TARGET)
+	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+
+docs:
+	$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
+	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
+	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
 
 GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h gc_pthread_redirects.h
 libgc-dev: /usr/include/gc/gc_inline.h
@@ -156,20 +160,20 @@ breakprocess:
 all-runtimeCPPinstall:
 	$(MAKE) mkbuilddirs
 	$(MAKE) CMinpack
-	$(MAKE) all runtimeCPPinstall
+	$(MAKE) all runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
 omc-and-runtimeCPPinstall: mkbuilddirs
 	$(MAKE) CMinpack
-	$(MAKE) omc runtimeCPPinstall
+	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
 runtimeCPP: CMinpack
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget)
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
 runtimeCPPinstall: CMinpack copycppheader
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS)
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppEuler.dylib
@@ -189,7 +193,7 @@ testlibrariemsl32cpp:
 	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl32/testsuite-msl32-cpp-trace.txt"
 
 runtimeCPPclean:
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
 fmil:
 	test -d 3rdParty/FMIL
@@ -267,10 +271,10 @@ sustst:
 
 cleancompiler:
 	cd Compiler/boot && rm -rf "$(OMBUILDDIR)"
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/Script clean
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/Script clean OMBUILDDIR=$(OMBUILDDIR)
 
 distclean: clean
-	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
+	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean OMBUILDDIR=$(OMBUILDDIR))
 	rm -f Compiler/.depend
 	rm -f $(autoconfGeneratedFiles)
 	rm -f config.status config.log
@@ -281,17 +285,19 @@ gc-clean:
 	if test -f 3rdParty/gc/Makefile; then make -C 3rdParty/gc distclean; fi
 	rm -f 3rdParty/gc/Makefile
 bootstrap-clean:
-	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget)
+	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
 clean: fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean
-	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean)
-	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean
-	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
+	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
+	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
+	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
+	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
+	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean OMBUILDDIR=$(OMBUILDDIR); fi
+	# remove ModelicaExternalC stuff
+	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
 	# remove Ipopt/Makefile if there is no Ipopt/Ipopt/Makefile to run configure again!
 	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
 	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
@@ -320,19 +326,19 @@ install: install-dirs
 	# Application directory (OSX)
 	if [ "$(APP)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
 	# Binaries
-	cp -a ./${builddir_bin}/* ${INSTALL_BINDIR}
+	cp -a ${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries
-	cp -a ./${builddir_lib}/* ${INSTALL_LIBDIR}
+	cp -a ${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
-	cp -a ./${builddir_inc}/* ${INSTALL_INCLUDEDIR}/omc
-	cp -a ./${builddir_inc}/$(host_short)/omc/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/omc/antlr3
+	cp -a ${builddir_inc}/* ${INSTALL_INCLUDEDIR}/omc
+	cp -a $(OMBUILDDIR)/include/$(host_short)/omc/antlr3 ${INSTALL_INCLUDEDIR}/$(host_short)/omc/antlr3
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
-	cp -p ./${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
-	cp -p ./${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
+	test -z "$(HAVE_DOCDIR)" || cp -p ${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
+	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	# man pages
-	cp -p ./${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
+	# cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
 	cp -p ${builddir_share}/omc/*.* ${INSTALL_SHAREDIR}/omc/
 	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
@@ -342,10 +348,9 @@ install: install-dirs
 	# Scripts
 	cp -rp ${builddir_share}/omc/scripts/*.* ${builddir_share}/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
-	cp -p ./${builddir_java}/* ${INSTALL_JAVADIR}
+	cp -p /${builddir_java}/* ${INSTALL_JAVADIR}
 	# Translations
-	cp -rp ./${builddir_locale}/* ${INSTALL_LOCALEDIR}/
-
+	cp -rp /${builddir_locale}/* ${INSTALL_LOCALEDIR}/
 
 3rdParty/msgpack-0.5.8/Makefile:
 	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(MSGPACK_CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "

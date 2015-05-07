@@ -3597,4 +3597,40 @@ package HpcOmScheduler
   end convertFixedLevelScheduleToTaskLists;
 end HpcOmScheduler;
 
+package HashTableCrIListArray
+  type Key = DAE.ComponentRef;
+  type Value = tuple<list<Integer>, array<Integer>>;
+
+  type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
+  type HashTable = tuple<
+    array<list<tuple<Key,Integer>>>,
+    tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
+    Integer,
+    Integer,
+    HashTableCrefFunctionsType
+  >;
+
+  function FuncHashCref
+    input Key cr;
+    input Integer mod;
+    output Integer res;
+  end FuncHashCref;
+
+  function FuncCrefEqual
+    input Key cr1;
+    input Key cr2;
+    output Boolean res;
+  end FuncCrefEqual;
+
+  function FuncCrefStr
+    input Key cr;
+    output String res;
+  end FuncCrefStr;
+
+  function FuncExpStr
+    input Value exp;
+    output String res;
+  end FuncExpStr;
+end HashTableCrIListArray;
+
 end SimCodeTV;

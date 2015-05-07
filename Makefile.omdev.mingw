@@ -1,5 +1,5 @@
 # makefile for Windows MinGW OMDev
-all : .testvariables settings release
+all : .testvariables settings omc
 
 autoconfGeneratedFiles =
 
@@ -94,8 +94,8 @@ settings:
 	@echo Using OMDev: $(OMDEV)
 	@echo Using Files: $(OMC_BUILD_FROM)
 	@echo Using Path : '$(PATH)'
-	@echo Current directory : `pwd`
-	@echo BUILD DIRECTORY : $(OMBUILDDIR)
+	@echo Current directory: `pwd`
+	@echo Building in OMBUILDDIR: $(OMBUILDDIR)
 	which gcc
 
 # on windows run also msvc test
@@ -268,7 +268,7 @@ Umfpack_msvc:
 	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/ $(OMBUILDDIR)/include/omc/msvc/suitesparse)
 
 runtimeCPPmsvcinstall: CMinpack_msvc copycppheader
-	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc
+	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	# mkdir -p $(OMBUILDDIR)/lib/omc/msvc/ && cp -p ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100/*.lib $(OMBUILDDIR)/lib/omc/msvc/
 	cp -p ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100/*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH)/lib/*vc*.dll $(OMBUILDDIR)/bin/
@@ -323,7 +323,7 @@ simulationruntimecmsvc: Umfpack_msvc CMinpack_msvc fmil_msvc
 	rm -rf 3rdParty/gc/build_msvc/
 
 omc-bootstrapped:
-	$(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" bootstrap-dependencies sim-dependencies OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR) bootstrap-dependencies sim-dependencies
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 
 modelica3d:

@@ -983,7 +983,6 @@ algorithm
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         // check equations
         (m_1,(mT_1,_,_,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,{}));
-        _ = not listEmpty(changed);
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE(),changed);
@@ -4129,7 +4128,7 @@ ToDo: remove me
  input BackendDAE.BackendDAE inDAE;
  output BackendDAE.BackendDAE outDAE;
 algorithm
- outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(inDAE, false) else inDAE;
+ outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(BackendDAEUtil.copyBackendDAE(inDAE), false) else inDAE;
 
 end symEulerInit;
 
@@ -4149,7 +4148,7 @@ algorithm
   // make dt
   cref := ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {});
   tmpv := BackendVariable.makeVar(cref);
-  tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
+  //tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
   tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
   shared := BackendVariable.addKnVarDAE(tmpv, shared);
 
@@ -4231,6 +4230,7 @@ algorithm
   for cr in crlst loop
     cref := ComponentReference.crefPrefixDer(cr);
     v := BackendVariable.makeVar(cref);
+    v := BackendVariable.setBindExp(v, SOME(DAE.RCONST(0.0)));
     outShared := BackendVariable.addKnVarDAE(v, outShared);
   end for;
 end symEulerDerVars;
