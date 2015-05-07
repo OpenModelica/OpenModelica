@@ -79,6 +79,7 @@ build/
 .project
 revision.h
 SimulationRuntime/c/Makefile
+SimulationRuntime/c/util/java_interface/Makefile
 SimulationRuntime/c/util/java_interface/modelica_java.jar
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java

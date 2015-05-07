@@ -546,17 +546,11 @@ end dumpTaskSystemIfFlag;
 protected function callTargetTemplatesCPP
   input SimCode.SimCode iSimCode;
 algorithm
-  _ := matchcontinue(iSimCode)
-    case(_)
-      equation
-        true = Flags.isSet(Flags.HPCOM);
-        Tpl.tplNoret(CodegenCppHpcom.translateModel, iSimCode);
-      then ();
-    else
-      equation
-        Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
-      then ();
-   end matchcontinue;
+  if(Flags.isSet(Flags.HPCOM)) then
+    Tpl.tplNoret(CodegenCppHpcom.translateModel, iSimCode);
+  else
+    Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
+  end if;
 end callTargetTemplatesCPP;
 
 protected function callTargetTemplatesFMU

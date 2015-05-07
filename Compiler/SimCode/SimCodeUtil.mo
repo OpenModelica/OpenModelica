@@ -7709,7 +7709,7 @@ algorithm
    end match;
 end dumpVar;
 
-protected function dumpVarLst"dumps a list of SimVars to stdout.
+public function dumpVarLst"dumps a list of SimVars to stdout.
 author:Waurich TUD 2014-05"
   input list<SimCodeVar.SimVar> varLst;
   input String header;
@@ -12519,15 +12519,22 @@ protected
   list<SimCodeVar.SimVar> discreteAlgVars;
   list<SimCodeVar.SimVar> intAlgVars;
   list<SimCodeVar.SimVar> boolAlgVars;
+  list<SimCodeVar.SimVar> inputVars;
+  list<SimCodeVar.SimVar> outputVars;
   list<SimCodeVar.SimVar> aliasVars;
   list<SimCodeVar.SimVar> intAliasVars;
   list<SimCodeVar.SimVar> boolAliasVars;
   list<SimCodeVar.SimVar> paramVars;
   list<SimCodeVar.SimVar> intParamVars;
   list<SimCodeVar.SimVar> boolParamVars;
-  list<SimCodeVar.SimVar> inputVars;
-  list<SimCodeVar.SimVar> outputVars;
+  //list<SimCodeVar.SimVar> stringAlgVars;
+  //list<SimCodeVar.SimVar> stringParamVars;
+  //list<SimCodeVar.SimVar> stringAliasVars;
+  //list<SimCodeVar.SimVar> extObjVars;
   list<SimCodeVar.SimVar> constVars;
+  list<SimCodeVar.SimVar> intConstVars;
+  list<SimCodeVar.SimVar> boolConstVars;
+  list<SimCodeVar.SimVar> stringConstVars;
   //list<SimCodeVar.SimVar> jacobianVars;
   list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
   list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
@@ -12538,12 +12545,12 @@ algorithm
   oVarToArrayIndexMapping := match(iModelInfo)
     case(SimCode.MODELINFO(vars = SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,
         intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,paramVars=paramVars,
-        intParamVars=intParamVars,boolParamVars=boolParamVars,inputVars=inputVars,outputVars=outputVars, constVars=constVars,
+        intParamVars=intParamVars,boolParamVars=boolParamVars,inputVars=inputVars,outputVars=outputVars, constVars=constVars, intConstVars=intConstVars, boolConstVars=boolConstVars,
         realOptimizeConstraintsVars=realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars=realOptimizeFinalConstraintsVars)))
       equation
         varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTable();
         varIndexMappingHashTable = HashTableCrILst.emptyHashTable();
-        currentVarIndices = (0,0,0);
+        currentVarIndices = (1,1,1); //0 is reserved for unused variables
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stateVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(derivativeVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(algVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
@@ -12556,6 +12563,8 @@ algorithm
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(inputVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(outputVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(constVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(intConstVars, function addVarToArrayIndexMapping(iVarType=2), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolConstVars, function addVarToArrayIndexMapping(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeConstraintsVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeFinalConstraintsVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
@@ -12710,13 +12719,13 @@ public function getVarIndexListByMapping "author: marcusw
   Return the variable indices stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
   input DAE.ComponentRef iVarName;
-  input Integer iIndexForUndefinedReferences;
-  output list<Integer> oVarIndexList;
+  input String iIndexForUndefinedReferences;
+  output list<String> oVarIndexList;
 protected
   DAE.ComponentRef varName = iVarName;
   Integer arrayIdx, idx, arraySize;
   array<Integer> varIndices;
-  list<Integer> tmpVarIndexListNew = {};
+  list<String> tmpVarIndexListNew = {};
 algorithm
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
@@ -12725,13 +12734,13 @@ algorithm
     for arrayIdx in 0:(arraySize-1) loop
       idx := arrayGet(varIndices, arraySize-arrayIdx);
       if(intLt(idx, 0)) then
-        tmpVarIndexListNew := (intMul(idx, -1) - 1)::tmpVarIndexListNew;
+        tmpVarIndexListNew := intString((intMul(idx, -1) - 1))::tmpVarIndexListNew;
         //print("SimCodeUtil.tmpVarIndexListNew: Warning, negativ aliases (" + ComponentReference.printComponentRefStr(iVarName) + ") are not supported at the moment!\n");
       else
         if(intEq(idx, 0)) then
           tmpVarIndexListNew := iIndexForUndefinedReferences::tmpVarIndexListNew;
         else
-          tmpVarIndexListNew := (idx - 1)::tmpVarIndexListNew;
+          tmpVarIndexListNew := intString(idx - 1)::tmpVarIndexListNew;
         end if;
       end if;
     end for;
@@ -12836,6 +12845,10 @@ algorithm
   varCount := varCount + listLength(boolAliasVars);
   ((idxSimVarMappingTplList, highestIdx)) := List.fold1(paramVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
   varCount := varCount + listLength(paramVars);
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(intParamVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  varCount := varCount + listLength(intParamVars);
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolParamVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  varCount := varCount + listLength(boolParamVars);
 
   mappingArray := arrayCreate(highestIdx, NONE());
   mappingArray := List.fold(idxSimVarMappingTplList, createAllSCVarMapping1, mappingArray);

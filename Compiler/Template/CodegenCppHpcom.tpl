@@ -26,22 +26,23 @@ template translateModel(SimCode simCode)
       let numRealVars = numRealvars(modelInfo, hpcomData.hpcOmMemory)
       let numIntVars = numIntvars(modelInfo, hpcomData.hpcOmMemory)
       let numBoolVars = numBoolvars(modelInfo, hpcomData.hpcOmMemory)
+      let numPreVars = getPreVarsCount(modelInfo, hpcomData.hpcOmMemory)
 
       let() = textFile(simulationMainFile(target, simCode, &extraFuncs, &extraFuncsDecl, "",
                                           (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""),
                                           (if Flags.isSet(USEMPI) then MPIInit() else ""),
                                           (if Flags.isSet(USEMPI) then MPIFinalize() else ""),
-                                          numRealVars, numIntVars, numBoolVars, getPreVarsCount(modelInfo, hpcomData.hpcOmMemory)),
+                                          numRealVars, numIntVars, numBoolVars, numPreVars),
                                           'OMCpp<%fileNamePrefix%>Main.cpp')
       let() = textFile(simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
                       generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)),
-                      generateAdditionalPublicMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, ""),
+                      "",
                       generateAdditionalProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)),
-                      MemberVariable(modelInfo, hpcomData.hpcOmMemory, stringBool(useMemoryOptimization),false),
-                      MemberVariablePreVariables(modelInfo, hpcomData.hpcOmMemory, stringBool(useMemoryOptimization),false), false),
+                      MemberVariable(modelInfo, false),
+                      MemberVariablePreVariables(modelInfo, false), false),
                       //CodegenCpp.MemberVariablePreVariables(modelInfo,false), false),
                       'OMCpp<%fileNamePrefix%>.h')
-      let() = textFile(simulationCppFile(simCode ,contextOther, stringInt(numRealVars), stringInt(numIntVars), stringInt(numBoolVars), &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>.cpp')
+      let() = textFile(simulationCppFile(simCode, contextOther, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>.cpp')
       let() = textFile(simulationFunctionsHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "",modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
       let() = textFile(simulationFunctionsFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
       let() = textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "",modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Types.h')
@@ -102,46 +103,6 @@ template generateAdditionalIncludes(SimCode simCode, Text& extraFuncs, Text& ext
   end match
 end generateAdditionalIncludes;
 
-template generateAdditionalPublicMemberDeclaration(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
-::=
-  match simCode
-    case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
-      if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-        let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcomData.hpcOmMemory, false)
-        <<
-        <%addHpcomArrayHeaders%>
-
-        void* operator new(size_t size)
-        {
-           //see: http://stackoverflow.com/questions/12504776/aligned-malloc-in-c
-           void *p1;
-           void **p2;
-           size_t alignment = 64;
-           int offset=alignment - 1 + sizeof(void*);
-           p1 = malloc(size + offset);
-           p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
-           p2[-1]=p1; //line 6
-
-           if(((size_t)p2) % 64 != 0)
-              throw std::runtime_error("Memory was not alligned correctly!");
-
-           return p2;
-        }
-        void operator delete(void *p)
-        {
-           void* p1 = ((void**)p)[-1];         // get the pointer to the buffer we allocated
-           free( p1 );
-        }
-        >>
-        /*
-
-        */
-
-      else ''
-    else ''
-  end match
-end generateAdditionalPublicMemberDeclaration;
-
 template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
@@ -152,7 +113,6 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& ext
       let type = getConfigString(HPCOM_CODE)
 
       <<
-
       static long unsigned int getThreadNumber()
       {
         <% match type
@@ -260,40 +220,6 @@ template getAddHpcomFunctionHeaders(Option<Schedule> odeScheduleOpt)
     else ""
   end match
 end getAddHpcomFunctionHeaders;
-
-template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap, Boolean createConstructorDeclaration)
-::=
-  match optHpcomMemoryMap
-    case(SOME(hpcomMemoryMap)) then
-      match hpcomMemoryMap
-        case(MEMORYMAP_ARRAY(__)) then
-          <<
-          /*
-          <%if intGt(floatArraySize,0) then
-              if(createConstructorDeclaration) then
-                'varArray1(new double[<%floatArraySize%>]),'
-              else
-                'double *varArray1; //float variables <%floatArraySize%>'
-          %>
-          <%if intGt(intArraySize,0) then
-              if(createConstructorDeclaration) then
-                'varArray2(new int[<%intArraySize%>]),'
-              else
-                'int *varArray2; //int variables <%intArraySize%>'
-          %>
-          <%if intGt(boolArraySize,0) then
-              if(createConstructorDeclaration) then
-                'varArray3(new bool[<%boolArraySize%>]),'
-              else
-                'bool *varArray3; //bool variables - size <%boolArraySize%>'
-          %>
-          */
-          >>
-        else ''
-      end match
-    else ''
-  end match
-end getAddHpcomVarArrays;
 
 template getAddHpcomVarHeaders(Option<Schedule> odeScheduleOpt)
 ::=
@@ -419,7 +345,7 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
 end generateThreadFunctionHeaderDecl;
 
 
-template simulationCppFile(SimCode simCode, Context context, Integer numRealVars, Integer numIntVars, Integer numBoolVars, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template simulationCppFile(SimCode simCode, Context context, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt, Text indexForUndefinedReferencesBool, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
   match simCode
@@ -430,6 +356,7 @@ template simulationCppFile(SimCode simCode, Context context, Integer numRealVars
       let type = getConfigString(HPCOM_CODE)
       let className = lastIdentOfPath(modelInfo.name)
       let &additionalBodyStatements = buffer ""
+
       <<
       #include <Core/Modelica.h>
       #include <Core/ModelicaDefine.h>
@@ -441,13 +368,13 @@ template simulationCppFile(SimCode simCode, Context context, Integer numRealVars
       #include <DataExchange/SimDouble.h>
       #endif
 
-      /* Constructor */
+
       <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
-        : <%getAddHpcomVarArrays(hpcomData.hpcOmMemory, true)%>
+        :
         SystemDefaultImplementation(globalSettings,sim_data,sim_vars)
         , _algLoopSolverFactory(nonlinsolverfactory)
         <%hpcomMemberVariableDefinition%>
-        <%CodegenCpp.MemberVariableInitialize(modelInfo,varToArrayIndexMapping,numRealVars,numIntVars,numBoolVars,useFlatArrayNotation,additionalBodyStatements)%>
+        <%CodegenCpp.MemberVariableInitialize(modelInfo,varToArrayIndexMapping,indexForUndefinedReferencesReal,indexForUndefinedReferencesInt,indexForUndefinedReferencesBool,useFlatArrayNotation,additionalBodyStatements)%>
         <%simulationInitFile(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       {
         <%additionalBodyStatements%>
@@ -511,7 +438,6 @@ template simulationCppFile(SimCode simCode, Context context, Integer numRealVars
         <%hpcomConstructorExtension%>
       }
 
-      /* Destructor */
       <%className%>::~<%className%>()
       {
         <%hpcomDestructorExtension%>
@@ -1468,7 +1394,7 @@ template assignLockByDepTask(Task depTask, String lockPrefix, String iType)
   match(depTask)
     case(DEPTASK(__)) then
       let lockName = getLockNameByDepTask(depTask)
-      let commInfoStr = printCommunicationInfoVariables(depTask.communicationInfo)
+      //let commInfoStr = printCommunicationInfoVariables(depTask.communicationInfo)
       <<
       <%assignLockByLockName(lockName, lockPrefix, iType)%>
       >>
@@ -1617,440 +1543,29 @@ template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Te
                                 additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI))
 end simulationMakefile;
 
-
-// --------------------------------------------------------------------------------------------------------------------------------------------
-// Member Variable Stuff
-// --------------------------------------------------------------------------------------------------------------------------------------------
-template MemberVariable(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
- "Define membervariable in simulation file."
-::=
-  match modelInfo
-    case MODELINFO(vars=SIMVARS(__)) then
-    <<
-    //Using optimized variables
-    /*parameter real vars*/
-    <%vars.paramVars |> var =>
-      MemberVariableDefine2(var, "parameters", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-      ;separator="\n"%>
-    /*parameter int vars*/
-    <%vars.intParamVars |> var =>
-      MemberVariableDefine2(var, "intVariables.parameters", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-      ;separator="\n"%>
-    /*parameter bool vars*/
-    <%vars.boolParamVars |> var =>
-      MemberVariableDefine2(var, "boolVariables.parameters", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-      ;separator="\n"%>
-    <%vars.stringParamVars |> var =>
-      MemberVariableDefine2(var, "stringVariables.parameters", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, false)
-      ;separator="\n"%>
-    <%vars.stringAliasVars |> var =>
-      MemberVariableDefine2(var, "stringVariables.AliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, false)
-      ;separator="\n"%>
-    <%vars.extObjVars |> var =>
-      MemberVariableDefine2(var, "extObjVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-      ;separator="\n"%>
-    /*alias real vars*/
-    <%vars.aliasVars |> var =>
-      MemberVariableDefine2(var, "aliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-      ;separator="\n"%>
-    /*alias int vars*/
-    <%vars.intAliasVars |> var =>
-      MemberVariableDefine2(var, "intVariables.AliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-      ;separator="\n"%>
-    /*alias bool vars*/
-    <%vars.boolAliasVars |> var =>
-      MemberVariableDefine2(var, "boolVariables.AliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-      ;separator="\n"%>
-    <%vars.stringAlgVars |> var =>
-      MemberVariableDefine2(var, "stringVariables.AliasVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, false)
-      ;separator="\n"%>
-    >>
-  end match
-end MemberVariable;
-
-template MemberVariablePreVariables(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
- "Define membervariable in simulation file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  <<
-  //Variables saved for pre, edge and change operator
-   /*real algvars*/
-  <%vars.algVars |> var =>
-    MemberVariableDefine("double", var, "algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-   ;separator="\n"%>
-  /*discrete algvars*/
-  <%vars.discreteAlgVars |> var =>
-    MemberVariableDefine("double", var, "algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-   ;separator="\n"%>
-  /*bool algvars*/
-  <%vars.boolAlgVars |> var =>
-    MemberVariableDefine("bool", var, "boolVariables.algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-   ;separator="\n"%>
-  /*int algvars*/
-  <%vars.intAlgVars |> var =>
-   MemberVariableDefine("int", var, "intVariables.algebraics", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-   ;separator="\n"%>
-   /*mixed array variables*/
-  <%vars.mixedArrayVars |> arrVar =>
-   MemberVariableDefine2(arrVar, "mixed", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration, true)
-   ;separator="\n"%>
-  >>
-end MemberVariablePreVariables;
-
-template MemberVariableDefine(String type, SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration, Boolean createRefVar)
-::=
-  match simVar
-    case simVar as SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
-      if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-        MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)
-      else
-        <<
-        <%if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine(simVar, arrayName, useFlatArrayNotation, createRefVar)%> //no cacheMap defined case1'%>
-        >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      let varType = variableType(type_)
-      if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-        match dims
-          case "0" then
-            MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,name), simVar, useFlatArrayNotation, createConstructorDeclaration)
-          else
-            let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,crefLocal), crefLocal, type_, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
-            <<
-            // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
-            <%varDeclarations%>
-            >>
-        end match
-      else
-        if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine(simVar, arrayName, useFlatArrayNotation, createRefVar)%> //no cacheMap defined case3'
-    case SIMVAR(numArrayElement=_::_) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
-      match dims
-        case "0" then  if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine(simVar, arrayName, useFlatArrayNotation, createRefVar)%>'
-        else ''
-      end match
-  end match
-end MemberVariableDefine;
-
-template MemberVariableDefine2(SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration,  Boolean createRefVar)
-::=
-  match simVar
-    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-    case simVar as SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
-      if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-          <<
-          <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
-          >>
-        else
-          <<
-          <%if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine2(simVar, arrayName, useFlatArrayNotation, createRefVar)%> //no cacheMap defined'%>
-          >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      match dims
-        case "0" then
-          if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-            <<
-            <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,name), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
-            >>
-          else
-            <<
-            <%if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine2(simVar, arrayName, useFlatArrayNotation, createRefVar)%> //no cacheMap defined' %>
-            >>
-        else
-          if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-            let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
-            <<
-            // case 2 MemberVariableDefine2
-            <%varDeclarations%>
-            >>
-          else
-            <<
-            <%if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine2(simVar, arrayName, useFlatArrayNotation,createRefVar)%> //no cacheMap defined' %>
-            >>
-       end match
-   case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      match dims
-        case "0" then
-          if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-            <<
-            <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,name), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
-            >>
-          else
-            <<
-            <%if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine2(simVar, arrayName, useFlatArrayNotation, createRefVar)%> //no cacheMap defined' %>
-            >>
-        else
-          if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-            let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
-            <<
-            // case 3 MemberVariableDefine2 dims:<%dims%> nums:<%num%>
-            <%varDeclarations%>
-            >>
-          else
-            <<
-            <%if createConstructorDeclaration then '' else '<%CodegenCpp.MemberVariableDefine2(simVar, arrayName, useFlatArrayNotation, createRefVar)%> //no cacheMap defined' %>
-            >>
-       end match
-    /*special case for varibales that marked as array but are not arrays */
-    case SIMVAR(numArrayElement=_::_,type_=varType,name=varName) then
-      let& dims = buffer "" /*BUFD*/
-      let varNameStr = arraycref2(name,dims)
-      let varTypeStr = variableType(type_)
-      match dims
-        case "0" then (if createConstructorDeclaration then '' else (
-          if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-            <<
-            <%MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,varName), varName, varType, useFlatArrayNotation, createConstructorDeclaration)%>
-            >>
-          else
-            <<
-            <%CodegenCpp.MemberVariableDefine2(simVar, arrayName, useFlatArrayNotation, createRefVar)%>
-            >>
-          )
-        )
-        else ''
-      end match
-  end match
-end MemberVariableDefine2;
-
-template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignment, SimVar simVar, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
-::=
-  match optVarArrayAssignment
-    case SOME((varIdx, arrayIdx)) then
-      match simVar
-        case SIMVAR(__) then
-          <<
-          <%if createConstructorDeclaration then ',<%cref(name, useFlatArrayNotation)%>(_sim_vars->init<%MemoryArrayIndexToArrayName(arrayIdx)%>Var(<%varIdx%>))'
-            else '<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;//#define <%cref(name, useFlatArrayNotation)%> _sim_vars->init<%MemoryArrayIndexToArrayName(arrayIdx)%>Var(<%varIdx%>) // = _sim_vars->init<%MemoryArrayIndexToArrayName(arrayIdx)%>Var(<%varIdx%>) - MemberVariableDefine3' %>
-          >>
-        end match
-      else
-        match simVar
-          case SIMVAR(__) then
-            <<
-            <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(name,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(name, useFlatArrayNotation)%>; //not optimized' %>
-            >>
-        end match
-  end match
-end MemberVariableDefine3;
-
-template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignment, DAE.ComponentRef varName, DAE.Type type_, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
-::=
-  match optVarArrayAssignment
-    case SOME((varIdx, arrayIdx)) then
-      <<
-      <%if createConstructorDeclaration then ',<%cref(varName,useFlatArrayNotation)%>(_sim_vars->init<%MemoryArrayIndexToArrayName(arrayIdx)%>Var(<%varIdx%>))'
-        else '<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>; //#define <%cref(varName,useFlatArrayNotation)%> _sim_vars->init<%MemoryArrayIndexToArrayName(arrayIdx)%>Var(<%varIdx%>) // = _sim_vars->init<%MemoryArrayIndexToArrayName(arrayIdx)%>Var(<%varIdx%>) - MemberVariableDefine4' %>
-      >>
-    else
-      <<
-      <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(varName,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(varName,useFlatArrayNotation)%>;'%>
-      >>
-  end match
-end MemberVariableDefine4;
-
-template MemoryArrayIndexToArrayName(Integer arrayIndex)
-::=
-  match arrayIndex
-    case 1 then
-      <<
-      Real
-      >>
-    case 2 then
-      <<
-      Int
-      >>
-    case 3 then
-      <<
-      Bool
-      >>
-    else 'wrongMemoryArrayIndex'
-end MemoryArrayIndexToArrayName;
-
-template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Option<MemoryMap> hpcOmMemoryOpt, Integer numRealVars, Integer numIntVars, Integer numBoolVars, Boolean useFlatArrayNotation, Text& additionalBodyStatements)
- "Define membervariable in simulation file."
-::=
-match modelInfo
-  case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numOptimizeConstraints=numOptimizeConstraints, numOptimizeFinalConstraints=numOptimizeFinalConstraints), vars=SIMVARS(__)) then
-    <<
-     /*real algvars*/
-     <%vars.algVars |> var hasindex idx =>
-       MemberVariableInitialize1(var, varToArrayIndexMapping, hpcOmMemoryOpt, true, numRealVars, useFlatArrayNotation, "Real", additionalBodyStatements)
-       ;separator="\n"%>
-     /*discrete algvars*/
-     <%vars.discreteAlgVars |> var hasindex idx =>
-       MemberVariableInitialize1(var, varToArrayIndexMapping, hpcOmMemoryOpt, true, numRealVars, useFlatArrayNotation, "Real", additionalBodyStatements)
-       ;separator="\n"%>
-     /*int algvars*/
-     <%vars.intAlgVars |> var hasindex idx =>
-       MemberVariableInitialize1(var, varToArrayIndexMapping, hpcOmMemoryOpt, true, numIntVars, useFlatArrayNotation, "Int", additionalBodyStatements)
-       ;separator="\n"%>
-     /*bool algvars*/
-     <%vars.boolAlgVars |> var hasindex idx =>
-       MemberVariableInitialize1(var, varToArrayIndexMapping, hpcOmMemoryOpt, true, numBoolVars, useFlatArrayNotation, "Bool", additionalBodyStatements)
-       ;separator="\n"%>
-     <%vars.paramVars |> var =>
-       MemberVariableInitialize1(var, varToArrayIndexMapping, hpcOmMemoryOpt, false, numRealVars, useFlatArrayNotation, "Real", additionalBodyStatements)
-       ;separator="\n"%>
-     /*parameter int vars*/
-     <%vars.intParamVars |> var =>
-       MemberVariableInitialize1(var, varToArrayIndexMapping, hpcOmMemoryOpt, false, numIntVars, useFlatArrayNotation, "Int", additionalBodyStatements)
-       ;separator="\n"%>
-     /*parameter bool vars*/
-     <%vars.boolParamVars |> var =>
-       MemberVariableInitialize1(var, varToArrayIndexMapping, hpcOmMemoryOpt, false, numBoolVars, useFlatArrayNotation, "Bool", additionalBodyStatements)
-       ;separator="\n"%>
-     >>
-   else ''
-end MemberVariableInitialize;
-
-template MemberVariableInitialize1(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Option<MemoryMap> hpcOmMemoryOpt, Boolean createDefaultInitialization, Integer indexForUndefinedReferences, Boolean useFlatArrayNotation, String type, Text& additionalBodyStatements)
-::=
-  if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-    match simVar
-      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-      case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-        MemberVariableInitialize2(simVar, HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,name), varToArrayIndexMapping, hpcOmMemoryOpt, createDefaultInitialization, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements)
-      case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-      case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num) then
-        let &dims = buffer "" /*BUFD*/
-        let arrayName = arraycref2(name,dims)
-        match dims
-          case "0" then
-            MemberVariableInitialize2(simVar, HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,name), varToArrayIndexMapping, hpcOmMemoryOpt, createDefaultInitialization, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements)
-          else
-            let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,crefLocal), crefLocal, v.type_, useFlatArrayNotation, true); separator="\n"
-            <<
-            // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
-            <%varDeclarations%>
-            >>
-        end match
-      /*special case for variables that marked as array but are not arrays */
-      case SIMVAR(numArrayElement=_::_) then
-        MemberVariableInitialize2(simVar, HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,name), varToArrayIndexMapping, hpcOmMemoryOpt, createDefaultInitialization, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements)
-    end match
-  else
-    CodegenCpp.MemberVariableInitialize2(simVar, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements)
-end MemberVariableInitialize1;
-
-template MemberVariableInitialize2(SimVar simVar, Option<tuple<Integer,Integer>> optVarArrayAssignment, HashTableCrIListArray.HashTable varToArrayIndexMapping, Option<MemoryMap> hpcOmMemoryOpt, Boolean createDefaultInitialization, Integer indexForUndefinedReferences, Boolean useFlatArrayNotation, String type, Text& additionalBodyStatements)
-::=
-match simVar
-    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
-      '/*case 0*/'
-    case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-      match(optVarArrayAssignment)
-        case SOME(arrayPosition) then
-          '<%MemberVariableDefine3(optVarArrayAssignment, simVar, useFlatArrayNotation, true)%>'
-        else
-          if createDefaultInitialization then CodegenCpp.MemberVariableInitialize2(simVar, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements) else ''
-      end match
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      match dims
-        case "0" then
-          match(optVarArrayAssignment)
-            case SOME(arrayPosition) then
-              MemberVariableDefine3(optVarArrayAssignment, simVar, useFlatArrayNotation, true)
-            else
-              if createDefaultInitialization then CodegenCpp.MemberVariableInitialize2(simVar, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements) else ''
-          end match
-        else
-          match(optVarArrayAssignment)
-            case SOME(arrayPosition) then
-              let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemoryOpt,crefLocal), crefLocal, v.type_, useFlatArrayNotation, true); separator="\n"
-              <<
-              // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
-              <%varDeclarations%>
-              >>
-            else
-              if createDefaultInitialization then '<%CodegenCpp.MemberVariableInitialize2(simVar, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements)%>' else ''
-          end match
-    /*special case for variables that marked as array but are not arrays */
-    case SIMVAR(numArrayElement=_::_) then
-      match(optVarArrayAssignment)
-        case SOME(arrayPosition) then
-          CodegenCpp.MemberVariableInitialize2(simVar, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements)
-        else
-          CodegenCpp.MemberVariableInitialize2(simVar, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, additionalBodyStatements)
-      end match
-end MemberVariableInitialize2;
-
 template getPreVarsCount(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
-    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(otherVars = (floatVars,_,_), floatArraySize = floatArraySize))) then
-      match modelInfo
-        case MODELINFO(varInfo=VARINFO(__)) then
-          <<
-          <%numRealvars(modelInfo, hpcOmMemoryOpt)%> + <%numRealvars(modelInfo, hpcOmMemoryOpt)%> + <%numBoolvars(modelInfo, hpcOmMemoryOpt)%>
-          >>
-        else
-          ''
+    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(floatArraySize=floatArraySize,intArraySize=intArraySize,boolArraySize=boolArraySize))) then
+      '<%floatArraySize%> + <%intArraySize%> + <%boolArraySize%>'
     else
       CodegenCpp.getPreVarsCount(modelInfo)
 end getPreVarsCount;
 
-template getStartIndices(Option<MemoryMap> hpcOmMemoryOpt, Text& floatStartIndex, Text& intStartIndex, Text& boolStartIndex)
-::=
-  match(hpcOmMemoryOpt)
-    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(intArraySize = intArraySize, boolArraySize = boolArraySize, floatArraySize = floatArraySize))) then
-      let floatStartIndex = floatArraySize
-      let intStartIndex = intArraySize
-      let boolStartIndex = boolArraySize
-      ''
-    else
-      let floatStartIndex = "0"
-      let intStartIndex = "0"
-      let boolStartIndex = "0"
-      ''
-end getStartIndices;
-
 template numRealvars(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
-    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(otherVars = (floatVars,_,_), floatArraySize = floatArraySize))) then
-      match modelInfo
-        case MODELINFO(varInfo=VARINFO(__)) then
-          <<
-          <%intAdd(varInfo.numStateVars ,intAdd(varInfo.numAlgAliasVars, intAdd(floatArraySize, listLength(floatVars))))%>
-          >>
-        else
-          ''
+    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(floatArraySize=floatArraySize))) then
+      '<%floatArraySize%>'
     else
-      CodegenCpp.numRealvars(modelInfo)
+      '<%CodegenCpp.numRealvars(modelInfo)%>'
 end numRealvars;
 
 template numIntvars(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
-    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(otherVars = (_,intVars,_), intArraySize = intArraySize))) then
-      match modelInfo
-        case MODELINFO(varInfo=VARINFO(__)) then
-          <<
-          <%intAdd(varInfo.numIntAlgVars, intAdd(intArraySize, listLength(intVars)))%>
-          >>
-        else
-          ''
+    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(intArraySize=intArraySize))) then
+      '<%intArraySize%>'
     else
       CodegenCpp.numIntvars(modelInfo)
 end numIntvars;
@@ -2058,14 +1573,8 @@ end numIntvars;
 template numBoolvars(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
-    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(otherVars = (_,_,boolVars), boolArraySize = boolArraySize))) then
-      match modelInfo
-        case MODELINFO(varInfo=VARINFO(__)) then
-          <<
-          <%intAdd(varInfo.numBoolAlgVars, intAdd(boolArraySize, listLength(boolVars)))%>
-          >>
-        else
-          ''
+    case(SOME(hpcomMemory as MEMORYMAP_ARRAY(boolArraySize=boolArraySize))) then
+      '<%boolArraySize%>'
     else
       CodegenCpp.numBoolvars(modelInfo)
 end numBoolvars;
