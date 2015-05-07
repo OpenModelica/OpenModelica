@@ -589,7 +589,7 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/types -f Makefile clean
 
 clean_g_3 :
-	$(MAKE) -C flattening/ibraries/msl22/modelicaAdditions -f Makefile clean
+	$(MAKE) -C flattening/libraries/msl22/modelicaAdditions -f Makefile clean
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
 	$(MAKE) -C flattening/libraries/msl22 -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean
