@@ -13,7 +13,7 @@ loadFile("RectifierOM.mo"); getErrorString();
 simulate(Rectifier, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Rectifier_res.mat",
-  "ReferenceFiles/Rectifier.mat","Rectifier_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Rectifier.mat","Rectifier_diff.csv",0.01,0.0001,
   {"uDC", "Inductor1.i"});
 
 // Result:

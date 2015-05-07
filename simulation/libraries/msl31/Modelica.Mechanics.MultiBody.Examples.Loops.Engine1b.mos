@@ -11,7 +11,7 @@ setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b,stopTime=0.5,variableFilter="(der[(])?Inertia[.](phi|w)[)]?");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b.mat","Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b.mat","Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_diff.csv",0.01,0.00001,
   {"Inertia.phi",
   "Inertia.w",
   "der(Inertia.phi)",

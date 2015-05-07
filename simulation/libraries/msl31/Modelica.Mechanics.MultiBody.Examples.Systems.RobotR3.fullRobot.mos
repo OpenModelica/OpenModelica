@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot,stopTime=1.85604500771);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot.mat","Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot.mat","Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_diff.csv",0.01,0.00001,
   {"axis1.controller.PI.x","axis1.gear.spring.phi_rel","axis1.gear.spring.w_rel","axis1.motor.C.v","axis1.motor.La.i","axis2.controller.PI.x","axis2.gear.spring.phi_rel",
    "axis2.gear.spring.w_rel","axis2.motor.C.v","axis2.motor.La.i","axis3.controller.PI.x","axis3.gear.spring.phi_rel","axis3.gear.spring.w_rel","axis3.motor.C.v",
    "axis3.motor.La.i","axis4.controller.PI.x","axis4.motor.C.v","axis4.motor.La.i","axis5.controller.PI.x","axis5.motor.C.v","axis5.motor.La.i","axis6.controller.PI.x",

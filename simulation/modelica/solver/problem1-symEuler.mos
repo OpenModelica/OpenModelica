@@ -7,7 +7,7 @@ setCommandLineOptions("+symEuler"); getErrorString();
 simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="symEuler", simflags =""); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
-  "ReferenceFiles/testSolver.problem1.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
   "testSolver.problem1_diff.csv",0.01,0.0001,
 {
 "u[1]",
@@ -48,14 +48,12 @@ getErrorString();
 // ""
 // true
 // ""
-//
-// The selection of a new tearing variable failed.record SimulationResult
+// record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'symEuler', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.
-// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // {"Files Equal!"}
 // ""

@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Blocks.Examples.InverseModel,stopTime=2);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.InverseModel_res.mat",
-  "ReferenceFiles/Modelica.Blocks.Examples.InverseModel.mat","Modelica.Blocks.Examples.InverseModel_diff.csv",0.01,0.01,{"firstOrder1.y",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.InverseModel.mat","Modelica.Blocks.Examples.InverseModel_diff.csv",0.01,0.01,{"firstOrder1.y",
   "firstOrder2.y",
   "der(firstOrder2.y)",
   "sine.y",

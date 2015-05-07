@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.MultiPhase.Examples.Rectifier);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.MultiPhase.Examples.Rectifier_res.mat",
-  "ReferenceFiles/Modelica.Electrical.MultiPhase.Examples.Rectifier.mat","Modelica.Electrical.MultiPhase.Examples.Rectifier_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.MultiPhase.Examples.Rectifier.mat","Modelica.Electrical.MultiPhase.Examples.Rectifier_diff.csv",0.01,0.00001,
   {"cDC1.v",
   "cDC2.v",
   "supplyL.inductor[2].i",

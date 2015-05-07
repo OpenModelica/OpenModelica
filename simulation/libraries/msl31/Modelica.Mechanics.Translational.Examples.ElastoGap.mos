@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.Translational.Examples.ElastoGap,stopTime=10.0,simflags="-emit_protected");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.ElastoGap_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.Translational.Examples.ElastoGap.mat","Modelica.Mechanics.Translational.Examples.ElastoGap_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.ElastoGap.mat","Modelica.Mechanics.Translational.Examples.ElastoGap_diff.csv",0.01,0.001,
   {"springDamper1.s_rel",
   "mass1.v",
   "elastoGap1.s_rel",

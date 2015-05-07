@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.StateGraph.Examples.FirstExample,stopTime=5.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.StateGraph.Examples.FirstExample_res.mat",
-  "ReferenceFiles/Modelica.StateGraph.Examples.FirstExample.mat","Modelica.StateGraph.Examples.FirstExample_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.StateGraph.Examples.FirstExample.mat","Modelica.StateGraph.Examples.FirstExample_diff.csv",0.01,0.0001,
   {"stateGraphRoot.subgraphStatePort.activeSteps",
   "transition1.t","transition2.t"});
 

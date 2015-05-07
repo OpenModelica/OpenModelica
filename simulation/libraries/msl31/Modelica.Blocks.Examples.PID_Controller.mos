@@ -12,7 +12,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Blocks.Examples.PID_Controller,stopTime=4.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.PID_Controller_res.mat",
-  "ReferenceFiles/Modelica.Blocks.Examples.PID_Controller.mat","Modelica.Blocks.Examples.PID_Controller_diff.csv",0.01,0.0001,{"PI.I.y",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.PID_Controller.mat","Modelica.Blocks.Examples.PID_Controller_diff.csv",0.01,0.0001,{"PI.I.y",
   "spring.phi_rel",
   "spring.w_rel",
   "inertia2.w",

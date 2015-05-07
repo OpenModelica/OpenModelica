@@ -9,7 +9,7 @@
 loadModel(Modelica,{"3.1"});
 simulate(Modelica.Mechanics.Rotational.Examples.LossyGearDemo1,stopTime=0.5);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Rotational.Examples.LossyGearDemo1_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.Rotational.Examples.LossyGearDemo1.mat","Modelica.Mechanics.Rotational.Examples.LossyGearDemo1_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Rotational.Examples.LossyGearDemo1.mat","Modelica.Mechanics.Rotational.Examples.LossyGearDemo1_diff.csv",0.01,0.0001,
   {"gear.flange_a.phi",
   "Inertia1.w",
   "Inertia2.w",

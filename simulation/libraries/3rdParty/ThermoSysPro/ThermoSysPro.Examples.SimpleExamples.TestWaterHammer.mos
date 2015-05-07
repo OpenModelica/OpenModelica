@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestWaterHammer, stopTime=10); get
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestWaterHammer_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestWaterHammer_diff.csv",
 0.01, 0.0001,
 {"waterHammer.C1.Q",

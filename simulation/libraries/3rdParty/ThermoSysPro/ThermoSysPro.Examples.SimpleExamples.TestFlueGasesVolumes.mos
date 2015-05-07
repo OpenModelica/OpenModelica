@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes, stopTime=200
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes_diff.csv",
 0.01, 0.0001,
 {"dynamicExchanger.Ce.Q", "dynamicExchanger.T", "dynamicExchanger.P",

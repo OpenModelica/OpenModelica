@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Machines.Examples.SMEE_Generator,stopTime=30.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.SMEE_Generator_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Machines.Examples.SMEE_Generator.mat","Modelica.Electrical.Machines.Examples.SMEE_Generator_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.SMEE_Generator.mat","Modelica.Electrical.Machines.Examples.SMEE_Generator_diff.csv",0.01,0.00001,
   {"smee.i_0_s",
   "smee.idq_sr[1]",
   "smee.idq_sr[2]",

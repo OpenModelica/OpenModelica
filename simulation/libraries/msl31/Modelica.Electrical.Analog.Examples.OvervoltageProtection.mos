@@ -12,7 +12,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.OvervoltageProtection,stopTime=0.40000000596);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.OvervoltageProtection_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.OvervoltageProtection.mat","Modelica.Electrical.Analog.Examples.OvervoltageProtection_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.OvervoltageProtection.mat","Modelica.Electrical.Analog.Examples.OvervoltageProtection_diff.csv",0.01,0.00001,
   {"CL.v",
   "der(CL.v)",
   "sineVoltage.p.v",

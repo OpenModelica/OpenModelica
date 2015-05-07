@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Machines.Examples.TransformerTestbench,stopTime=0.10000000149);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.TransformerTestbench_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Machines.Examples.TransformerTestbench.mat","Modelica.Electrical.Machines.Examples.TransformerTestbench_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.TransformerTestbench.mat","Modelica.Electrical.Machines.Examples.TransformerTestbench_diff.csv",0.01,0.00001,
   {"transformer.l1sigma.inductor[1].i",
   "transformer.l1sigma.inductor[2].i",
   "der(transformer.l1sigma.inductor[1].i)",

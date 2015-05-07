@@ -11,7 +11,7 @@ setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic,stopTime=5.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic.mat","Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic.mat","Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic_diff.csv",0.01,0.00001,
   {"j1.phi","j1.w"});
 
 // Result:

@@ -11,7 +11,7 @@ setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6, cflags="-Wl,--stack,7340032,--large-address-aware");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mat","Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mat","Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_diff.csv",0.01,0.00001,
   {"filter.x","der(filter.x)","load.phi","load.w","der(load.w)"});
 
 

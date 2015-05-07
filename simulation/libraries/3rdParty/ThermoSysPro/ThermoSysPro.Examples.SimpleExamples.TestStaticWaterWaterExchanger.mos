@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger, sto
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger_diff.csv",
 0.01, 0.0001,
 {"plateHeatExchanger.Qf","plateHeatExchanger.Qc",

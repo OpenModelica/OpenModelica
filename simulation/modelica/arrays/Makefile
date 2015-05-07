@@ -58,7 +58,8 @@ bug_2300.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile 
+Makefile \
+ReferenceFiles
 
 
 

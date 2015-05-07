@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestSteamDryer, stopTime=1000); ge
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestSteamDryer_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestSteamDryer.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestSteamDryer.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestSteamDryer_diff.csv",
 0.01, 0.0001,
 {"steamDryer.Cev.Q","steamDryer.Csl.Q","steamDryer.Csv.Q",

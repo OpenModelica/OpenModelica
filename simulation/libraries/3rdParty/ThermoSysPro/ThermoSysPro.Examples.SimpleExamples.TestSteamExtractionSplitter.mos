@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter, stopT
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter_diff.csv",
 0.01, 0.0001,
 {"steamExtractionSplitter.Ce.Q","steamExtractionSplitter.Cex.Q","steamExtractionSplitter.Cs.Q",

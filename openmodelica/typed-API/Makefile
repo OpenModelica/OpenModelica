@@ -15,7 +15,8 @@ SolveLinearSystem.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile 
+Makefile \
+UriLookup
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

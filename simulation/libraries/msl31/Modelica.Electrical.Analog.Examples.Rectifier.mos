@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.Rectifier,stopTime=0.10000000149);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.Rectifier_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.Rectifier.mat","Modelica.Electrical.Analog.Examples.Rectifier_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.Rectifier.mat","Modelica.Electrical.Analog.Examples.Rectifier_diff.csv",0.01,0.00001,
   {"Inductor2.i",
   "Inductor3.i",
   "Capacitor1.v",

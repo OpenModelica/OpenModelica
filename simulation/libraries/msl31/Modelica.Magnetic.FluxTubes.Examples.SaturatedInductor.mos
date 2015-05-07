@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor,stopTime=0.10000000149);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor_res.mat",
-  "ReferenceFiles/Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor.mat","Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor.mat","Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor_diff.csv",0.01,0.00001,
   {"coil.Phi","der(coil.Phi)","r.v","r_mLeak.port_p.V_m","r_mAirPar.H","r_mAirPar.R_m"});
 
 // Result:

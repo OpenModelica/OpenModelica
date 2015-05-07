@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC,stopTime=60.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat","Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat","Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff.csv",0.01,0.001,
   {"C3.v",
   "C5.v",
   "C7.v",

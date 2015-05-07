@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Machines.Examples.Rectifier6pulse,stopTime=0.10000000149);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.Rectifier6pulse_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Machines.Examples.Rectifier6pulse.mat","Modelica.Electrical.Machines.Examples.Rectifier6pulse_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.Rectifier6pulse.mat","Modelica.Electrical.Machines.Examples.Rectifier6pulse_diff.csv",0.01,0.00001,
   {"cDC1.v",
   "cDC2.v",
   "transformer1.l1sigma.inductor[1].i",

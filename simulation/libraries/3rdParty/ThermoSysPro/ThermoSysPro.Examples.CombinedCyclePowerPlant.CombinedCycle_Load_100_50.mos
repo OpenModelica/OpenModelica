@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.mat",
 "ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50_diff.csv",
 0.01, 0.0001,
 {"singularPressureLoss.Q",

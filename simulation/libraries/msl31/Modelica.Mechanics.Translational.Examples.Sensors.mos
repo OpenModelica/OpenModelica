@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.Translational.Examples.Sensors);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Sensors_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.Translational.Examples.Sensors.mat","Modelica.Mechanics.Translational.Examples.Sensors_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.Sensors.mat","Modelica.Mechanics.Translational.Examples.Sensors_diff.csv",0.01,0.0001,
   {"speedSensor1.flange.s",
   "accSensor1.v",
   "der(accSensor1.v)",
