@@ -1989,6 +1989,17 @@ algorithm
   end match;
 end getVarKind;
 
+public function getVarKindForVar"fetch the varkind for an indexed var inside the variable-array."
+  input Integer idx;
+  input BackendDAE.Variables varsIn;
+  output BackendDAE.VarKind kind;
+protected
+  BackendDAE.Var var;
+algorithm
+  var := getVarAt(varsIn,idx);
+  kind := getVarKind(var);
+end getVarKindForVar;
+
 public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and
   check if the list-length is 1"

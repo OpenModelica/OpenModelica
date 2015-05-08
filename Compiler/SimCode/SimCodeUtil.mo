@@ -7590,7 +7590,7 @@ algorithm
         isalias = isAliasVar(simvar);
         /* figure out in which lists to put it */
         stateVars = List.consOnTrue((not isalias) and
-          BackendVariable.isStateVar(dlowVar), simvar, stateVars);
+          (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), simvar, stateVars);
         derivativeVars = List.consOnTrue((not isalias) and
           BackendVariable.isStateVar(dlowVar), derivSimvar, derivativeVars);
         algVars = List.consOnTrue((not isalias) and

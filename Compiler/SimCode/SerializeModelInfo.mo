@@ -791,6 +791,10 @@ algorithm
       equation
         File.write(file,"variable for transform loop in constraint");
       then ();
+    case BackendDAE.ALG_STATE()
+      equation
+        File.write(file,"helper variable transform ode for symEuler");
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});
