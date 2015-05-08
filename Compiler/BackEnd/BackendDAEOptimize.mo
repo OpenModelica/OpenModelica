@@ -4196,9 +4196,6 @@ algorithm
   end for;
   // states -> vars
   vars := symEulerState(vars, crlst, b);
-  if b then // der(x)
-    oShared := symEulerDerVars(crlst, oShared);
-  end if;
   oSyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(),  BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end symEulerUpdateSyst;
 
@@ -4223,21 +4220,6 @@ algorithm
     ovars :=  BackendVariable.setVarKindForVar(idx, kind, ovars);
   end for;
 end symEulerState;
-
-protected function symEulerDerVars
-  input list<DAE.ComponentRef> crlst;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared outShared = shared;
-protected
-  DAE.ComponentRef cref;
-  BackendDAE.Var v;
-algorithm
-  for cr in crlst loop
-    cref := ComponentReference.crefPrefixDer(cr);
-    v := BackendVariable.makeVar(cref);
-    outShared := BackendVariable.addKnVarDAE(v, outShared);
-  end for;
-end symEulerDerVars;
 
 protected function symEulerUpdateEqn
   input DAE.Exp inExp;
