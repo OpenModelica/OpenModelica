@@ -58,7 +58,7 @@ protected import VisualXMLTpl;
 
 public uniontype Visualization
   record SHAPE
-    String ident;
+    DAE.ComponentRef ident;
     String shapeType;
     array<list<DAE.Exp>> T;
     array<DAE.Exp> r;
@@ -88,7 +88,7 @@ protected
   BackendDAE.Variables knownVars, aliasVars;
   list<BackendDAE.Var> knownVarLst, allVarLst, aliasVarLst;
   list<Visualization> visuals;
-  list<String> allVisuals;
+  list<DAE.ComponentRef> allVisuals;
 algorithm
   BackendDAE.DAE(eqs=eqs, shared=shared) := daeIn;
   BackendDAE.SHARED(knownVars=knownVars,aliasVars=aliasVars) := shared;
@@ -99,14 +99,14 @@ algorithm
 
   //collect all visualization objects
   (knownVarLst,allVisuals) := List.fold(knownVarLst,isVisualizationVar,({},{}));
-    //print("ALL VISUALS "+stringDelimitList(allVisuals," |")+"\n");
-  (allVarLst,_) := List.fold(allVarLst,isVisualizationVar,({},{}));
-  (aliasVarLst,_) := List.fold(aliasVarLst,isVisualizationVar,({},{}));
+  (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVar,({},allVisuals));
+  (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVar,({},allVisuals));
+  print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
   allVarLst := listAppend(listAppend(knownVarLst,allVarLst),aliasVarLst);
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
-    //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printViusalization),"\n")+"\n");
+    print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
 
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
@@ -114,12 +114,12 @@ end visualizationInfoXML;
 
 protected function fillVisualizationObjects"gets the identifier of a visualization object as an input and collects all information from allVars.
 author:Waurich TUD 2015-04"
-  input String nameIn;
+  input DAE.ComponentRef crefIn;
   input list<BackendDAE.Var> allVarsIn;
   output Visualization visOut;
   output list<BackendDAE.Var> allVarsOut;
 algorithm
-  (visOut,allVarsOut) := matchcontinue(nameIn,allVarsIn)
+  (visOut,allVarsOut) := matchcontinue(crefIn,allVarsIn)
     local
       String name;
       list<String> nameChars,prefix;
@@ -127,12 +127,13 @@ algorithm
       list<BackendDAE.Var> allVars;
   case(_,_)
     algorithm
-      nameChars := stringListStringChar(nameIn);
-      (prefix,nameChars) := List.split(nameChars,6);
-      name := stringCharListString(nameChars);
-      name := Util.stringReplaceChar(name,"$",".");
-      true := stringEqual(stringCharListString(prefix),"Shape$");
-      vis := SHAPE(name,"",arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
+      //nameChars := stringListStringChar(nameIn);
+      //(prefix,nameChars) := List.split(nameChars,6);
+      //name := stringCharListString(nameChars);
+      //name := Util.stringReplaceChar(name,"$",".");
+      //true := stringEqual(stringCharListString(prefix),"Shape$");
+      //name := ComponentReference.printComponentRefStr(crefIn);
+      vis := SHAPE(crefIn,"",arrayCreate(3,{DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1)}),
                            arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)), arrayCreate(3,DAE.RCONST(-1)),arrayCreate(3,DAE.RCONST(-1)),
                            DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1),DAE.RCONST(-1), arrayCreate(3,DAE.RCONST(-1)), DAE.RCONST(-1));
       (allVars,vis) := List.fold(allVarsIn,fillVisualizationObjects1,({},vis));
@@ -168,27 +169,26 @@ author:Waurich TUD 2015-04"
 algorithm
   (crefOut,wasCut) := matchcontinue(crefIn,crefCut)
     local
-      DAE.Ident ident1,ident2;
       DAE.ComponentRef crefCut1, crefIn1;
-  case(DAE.CREF_QUAL(ident=ident1, componentRef=crefIn1),DAE.CREF_QUAL(ident=ident2, componentRef=crefCut1))
+  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
     equation
       // the crefs are not equal, check the next cref in crefIn
-      true = not stringEq(ident1,ident2);
+      true = not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
     then splitCrefAfter(crefIn1,crefCut);
-  case(DAE.CREF_QUAL(ident=ident1, componentRef=crefIn1),DAE.CREF_QUAL(ident=ident2, componentRef=crefCut1))
+  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
     equation
       // the crefs are equal, continue checking
-      true = stringEq(ident1,ident2);
+      true = ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
     then splitCrefAfter(crefIn1,crefCut1);
-  case(DAE.CREF_QUAL(ident=ident1, componentRef=crefIn1),DAE.CREF_IDENT(ident=ident2))
+  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
     equation
       // the cref has to be cut after this step
-      true = stringEq(ident1,ident2);
+      true = ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
     then (crefIn1,true);
-  case(DAE.CREF_QUAL(ident=ident1, componentRef=crefIn1),DAE.CREF_IDENT(ident=ident2))
+  case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
     equation
       // there is no identical cref
-      true = not stringEq(ident1,ident2);
+      true = not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
     then (crefIn1,false);
    else
      then (crefCut,false);
@@ -203,15 +203,15 @@ author:Waurich TUD 2015-04"
 algorithm
    tplOut := matchcontinue(varIn,tplIn)
     local
-      String ident, compIdent;
+      String compIdent;
       list<BackendDAE.Var> vars;
-      DAE.ComponentRef cref,crefIdent,cref0,cref1;
+      DAE.ComponentRef cref,crefIdent,cref1,ident;
       Visualization vis;
   case(BackendDAE.VAR(varName=cref),(vars, vis as SHAPE(ident=ident)))
     algorithm
       //this var belongs to the visualization object
-      crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
-      (cref1,true) := splitCrefAfter(cref,crefIdent); // check if this occures in the qualified var cref
+      //crefIdent := makeCrefQualFromString(ident); // make a qualified cref out of the shape ident
+      (cref1,true) := splitCrefAfter(cref,ident); // check if this occures in the qualified var cref
       vis := fillShapeObject(cref1,varIn,vis);
     then (vars, vis);
   else
@@ -231,8 +231,9 @@ algorithm
   visOut := matchcontinue(cref,var,visIn)
     local
       Option<DAE.Exp> bind;
+      DAE.ComponentRef ident;
       DAE.Exp exp, length, width, height, extra, specularCoeff;
-      String ident, shapeType, svalue;
+      String shapeType, svalue;
       Integer ivalue, pos, pos1;
       Real rvalue;
       array<DAE.Exp> color, r, lengthDir, widthDir, r_shape ;
@@ -337,80 +338,89 @@ algorithm
   end matchcontinue;
 end fillShapeObject;
 
-protected function printViusalization"printing function for debugging.
+protected function printVisualization"printing function for debugging.
 author:Waurich TUD 2015-04"
   input Visualization vis;
   output String s;
 algorithm
   s := match(vis)
     local
-      String ident, shapeType;
+      DAE.ComponentRef ident;
+      String shapeType;
       DAE.Exp length, width, height;
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height))
-  then ("SHAPE "+ident+" '"+shapeType + "' r{"+stringDelimitList(List.map(arrayList(r),ExpressionDump.printExpStr),",")+"}" +
-        " lD{"+stringDelimitList(List.map(arrayList(lengthDir),ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.map(arrayList(widthDir),ExpressionDump.printExpStr),",")+"}"+
-        " color("+stringDelimitList(List.map(arrayList(color),ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
-        " T {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}");
+  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+shapeType + "' r{"+stringDelimitList(List.map(arrayList(r),ExpressionDump.printExpStr),",")+"}" +
+        "\nlD{"+stringDelimitList(List.map(arrayList(lengthDir),ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.map(arrayList(widthDir),ExpressionDump.printExpStr),",")+"}"+
+        "\ncolor("+stringDelimitList(List.map(arrayList(color),ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
+        "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}");
   else
     then "-";
   end match;
-end printViusalization;
+end printVisualization;
 
 protected function isVisualizationVar"the var inherits from an visualization object. Therefore, the paths are checked.
 author:Waurich TUD 2015-04"
   input BackendDAE.Var var;
-  input tuple<list<BackendDAE.Var>,list<String>> tplIn;//visualizationVars, types
-  output tuple<list<BackendDAE.Var>,list<String>> tplOut;
+  input tuple<list<BackendDAE.Var>,list<DAE.ComponentRef>> tplIn;//visualizationVars, visualization Identifiers
+  output tuple<list<BackendDAE.Var>,list<DAE.ComponentRef>> tplOut;
 algorithm
   tplOut := matchcontinue(var,tplIn)
   local
     Boolean b;
+    Integer idx;
     BackendDAE.Type varType;
-    DAE.ComponentRef varName;
+    DAE.ComponentRef varName, cref;
+    list<DAE.ComponentRef> crefs;
     DAE.ElementSource source;
     list<BackendDAE.Var> varLst;
     String obj;
     list<Absyn.Path> paths;
-    list<String> paths_lst, typeLst;
-    case(BackendDAE.VAR(varName=varName, varType = varType, source=source), (varLst,typeLst))
+    list<String> paths_lst;
+    case(BackendDAE.VAR(varName=varName, varType = varType, source=source), (varLst,crefs))
       algorithm
        paths := DAEUtil.getElementSourceTypes(source);
        paths_lst := List.map(paths, Absyn.pathString);
-       obj := hasVisPath(paths);
+         //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
+       (obj,idx) := hasVisPath(paths,1);
        true := Util.stringNotEqual(obj,"");
-       typeLst := List.unique(obj::typeLst);
-    then (var::varLst,typeLst);
+         //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
+       cref := ComponentReference.firstNCrefs(varName,idx-1);
+       crefs := List.unique(cref::crefs);
+    then (var::varLst,crefs);
     else
       then tplIn;
   end matchcontinue;
 end isVisualizationVar;
 
-protected function hasVisPath"checks if the path is Modelica.Mechanics.MultiBody.Visualizers.Advanced.* and outputs * if true.
+protected function hasVisPath"checks if the path is Modelica.Mechanics.MultiBody.Visualizers.Advanced.* and outputs * if true. outputs which path is the vis path
 author:Waurich TUD 2015-04"
   input  list<Absyn.Path> pathsIn;
+  input Integer numIn;
   output String visPath;
+  output Integer numOut;
 algorithm
-  visPath := matchcontinue(pathsIn)
+  (visPath,numOut) := matchcontinue(pathsIn,numIn)
     local
       String name;
+      Integer num;
       Boolean b;
       Absyn.Path path;
       list<Absyn.Path> rest;
-  case({})
-    then "";
-  case(Absyn.FULLYQUALIFIED(path=path)::rest)
+  case({},_)
+    then ("",-1);
+  case(Absyn.FULLYQUALIFIED(path=path)::rest,_)
     algorithm
-    (name) := hasVisPath(path::rest);
-    then name;
-  case(Absyn.QUALIFIED(name="Modelica",path=Absyn.QUALIFIED(name="Mechanics",path=Absyn.QUALIFIED(name="MultiBody",path=Absyn.QUALIFIED(name="Visualizers",path=Absyn.QUALIFIED(name="Advanced",path=Absyn.IDENT(name=name))))))::_)
+    (name,num) := hasVisPath(path::rest,numIn);
+    then (name,num);
+  case(Absyn.QUALIFIED(name="Modelica",path=Absyn.QUALIFIED(name="Mechanics",path=Absyn.QUALIFIED(name="MultiBody",path=Absyn.QUALIFIED(name="Visualizers",path=Absyn.QUALIFIED(name="Advanced",path=Absyn.IDENT(name=name))))))::_,_)
     algorithm
-    then name;
-  case(_::rest)
+    then (name,numIn);
+  case(_::rest,_)
     algorithm
-      (name) := hasVisPath(rest);
-    then name;
+      (name,num) := hasVisPath(rest,numIn+1);
+    then (name,num);
   end matchcontinue;
 end hasVisPath;
 
