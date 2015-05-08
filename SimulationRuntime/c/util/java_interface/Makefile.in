@@ -10,7 +10,7 @@ modelica_java.jar: $(java_sources)
 	@$(JAR) cf modelica_java.jar $(java_sources:src/%=-C src %) $(resources:src/%=-C src %) -C bin-jar . || (rm $@ && false)
 test: $(java_sources)
 	rm -rf bin-test; mkdir bin-test
-	@"$(JAVAC)" -source 5 -cp "$(antlr):$(junit)" -d bin-test $(java_sources) $(java_tests)
+	"$(JAVAC)" -source 5 -cp "$(antlr):$(junit)" -d bin-test $(java_sources) $(java_tests)
 	OPENMODELICAHOME="@OMBUILDDIR@" $(JAVA) -cp "bin-test:src:$(antlr):$(junit)" org.junit.runner.JUnitCore $(junit_tests)
 
 Makefile: Makefile.in
