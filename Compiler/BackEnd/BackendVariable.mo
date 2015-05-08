@@ -1000,6 +1000,7 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) :: _)) then true;
     case ((_ :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;

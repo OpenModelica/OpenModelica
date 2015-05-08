@@ -4210,11 +4210,16 @@ protected function symEulerState
 
 protected
   Integer idx;
-  BackendDAE.VarKind kind;
+  BackendDAE.VarKind kind, oldKind;
 algorithm
-  kind := if b then BackendDAE.VARIABLE() else BackendDAE.STATE(0,NONE());
   for cref in crlst loop
     (_, idx) := BackendVariable.getVar2(cref, ovars);
+    oldKind := BackendVariable.getVarKindForVar(idx,ovars);
+    if b then
+      kind := BackendDAE.ALG_STATE(oldKind);
+    else
+     BackendDAE.ALG_STATE(kind) := oldKind;
+    end if;
     ovars :=  BackendVariable.setVarKindForVar(idx, kind, ovars);
   end for;
 end symEulerState;
