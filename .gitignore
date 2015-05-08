@@ -8,3 +8,4 @@ config.status
 config.sub
 configure
 install-sh
+.metadata/
