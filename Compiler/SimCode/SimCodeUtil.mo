@@ -1641,7 +1641,8 @@ algorithm
 
       if Flags.isSet(Flags.VECTORIZE) then
         // prepare the variables
-        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE1);
+        //dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE1);
+        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.enlargeIteratedArrayVars);
       end if;
 
       modelInfo = createModelInfo(class_, dlow, functions, {}, numStateSets, fileDir);
@@ -3935,7 +3936,7 @@ protected function makeSolvedSES_FOR_LOOP
 algorithm
   (outSimEq,ouniqueEqIndex) := matchcontinue(inEqn,lhsCrefIn,rhs,iuniqueEqIndex)
     local
-      Integer id;
+      Integer id, stopIdx;
       DAE.ComponentRef cref,lhsCref;
       DAE.Exp iterator,startIt,endIt, rhsExp, body,sigma;
       DAE.ElementSource source;
@@ -3951,8 +3952,9 @@ algorithm
   case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs as BackendDAE.ACCUM_ITER_CREF(cref=cref)::{}))),_,_,_)
     equation
       // has an accumulated expression (i.e. SIGMA)
+      DAE.ICONST(stopIdx) = endIt;
       iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
-      (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(cref),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
+      (DAE.CREF(componentRef=cref),(_,_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(cref),Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
       body = DAE.CREF(cref,ComponentReference.crefType(cref));
         //print("body:"+ExpressionDump.printExpStr(body)+"\n");
       sigma = DAE.SUM(ComponentReference.crefType(cref),iterator,startIt,endIt,body);
@@ -3967,9 +3969,10 @@ algorithm
   case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
     equation
       // is a for equation
+      DAE.ICONST(stopIdx) = endIt;
       iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
-      (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
-      (rhsExp,(_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
+      (DAE.CREF(componentRef=cref),(_,_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
+      (rhsExp,(_,_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
     then ({SimCode.SES_FOR_LOOP(iuniqueEqIndex,iterator,startIt,endIt,cref,rhsExp,source)},iuniqueEqIndex+1);
 
   else
