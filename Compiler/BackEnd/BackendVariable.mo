@@ -1398,6 +1398,17 @@ algorithm
   end matchcontinue;
 end isExtObj;
 
+public function isAlgState
+"Return true if variable is alg state"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) then true;
+    else false;
+  end match;
+end isAlgState;
+
 public function isRealParam
 "Return true if variable is a parameter of real-type"
   input BackendDAE.Var inVar;
@@ -1967,6 +1978,16 @@ algorithm
            case(BackendDAE.VAR(values = attr)) then DAEUtil.getNominalAttr(attr);
          end match;
 end getVarNominalValue;
+
+public function getVarKind "
+  Get the DAE.VarKind of a variable"
+  input BackendDAE.Var inVar;
+  output BackendDAE.VarKind varKind;
+algorithm
+  varKind := match (inVar)
+    case (BackendDAE.VAR(varKind = varKind)) then  varKind;
+  end match;
+end getVarKind;
 
 public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and
