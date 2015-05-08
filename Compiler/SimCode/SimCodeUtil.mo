@@ -7592,7 +7592,7 @@ algorithm
         stateVars = List.consOnTrue((not isalias) and
           (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), simvar, stateVars);
         derivativeVars = List.consOnTrue((not isalias) and
-          BackendVariable.isStateVar(dlowVar), derivSimvar, derivativeVars);
+          (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), derivSimvar, derivativeVars);
         algVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, algVars);
         discreteAlgVars = List.consOnTrue((not isalias) and
