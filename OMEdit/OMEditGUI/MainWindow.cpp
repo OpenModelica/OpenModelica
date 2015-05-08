@@ -1407,6 +1407,57 @@ void MainWindow::showAlgorithmicDebugger()
 }
 
 /*!
+ * \brief MainWindow::closeWindow
+ * Closes the active window.
+ */
+void MainWindow::closeWindow()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      mpModelWidgetContainer->closeActiveSubWindow();
+      break;
+    case 2:
+      mpPlotWindowContainer->closeActiveSubWindow();
+    default:
+      break;
+  }
+}
+
+/*!
+ * \brief MainWindow::closeAllWindows
+ * Closes all windows of the selected perspective.
+ */
+void MainWindow::closeAllWindows()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      mpModelWidgetContainer->closeAllSubWindows();
+      break;
+    case 2:
+      mpPlotWindowContainer->closeAllSubWindows();
+    default:
+      break;
+  }
+}
+
+/*!
+ * \brief MainWindow::closeAllWindowsButThis
+ * Closes all windows of the selected perspective except the active window.
+ */
+void MainWindow::closeAllWindowsButThis()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      closeAllWindowsButThis(mpModelWidgetContainer);
+      break;
+    case 2:
+      closeAllWindowsButThis(mpPlotWindowContainer);
+    default:
+      break;
+  }
+}
+
+/*!
   Slot activated when mpCascadeWindowsAction triggered signal is raised.\n
   Arranges all child windows in a cascade pattern.
   */
@@ -2204,6 +2255,18 @@ void MainWindow::createActions()
   mpShowAlgorithmicDebuggerAction->setShortcut(QKeySequence("ctrl+t"));
   mpShowAlgorithmicDebuggerAction->setStatusTip(Helper::algorithmicDebugger);
   connect(mpShowAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(showAlgorithmicDebugger()));
+  // close window action
+  mpCloseWindowAction = new QAction(tr("Close Window"), this);
+  mpCloseWindowAction->setStatusTip(tr("Closes the active window"));
+  connect(mpCloseWindowAction, SIGNAL(triggered()), SLOT(closeWindow()));
+  // close all windows action
+  mpCloseAllWindowsAction = new QAction(tr("Close All Windows"), this);
+  mpCloseAllWindowsAction->setStatusTip(tr("Closes all windows"));
+  connect(mpCloseAllWindowsAction, SIGNAL(triggered()), SLOT(closeAllWindows()));
+  // close all windows but this action
+  mpCloseAllWindowsButThisAction = new QAction(tr("Close All Windows But This"), this);
+  mpCloseAllWindowsButThisAction->setStatusTip(tr("Closes all windows except active window"));
+  connect(mpCloseAllWindowsButThisAction, SIGNAL(triggered()), SLOT(closeAllWindowsButThis()));
   // Cascade windows action
   mpCascadeWindowsAction = new QAction(tr("Cascade Windows"), this);
   mpCascadeWindowsAction->setStatusTip(tr("Arranges all the child windows in a cascade pattern"));
@@ -2503,6 +2566,10 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpShowAlgorithmicDebuggerAction);
   pViewWindowsMenu->addSeparator();
+  pViewWindowsMenu->addAction(mpCloseWindowAction);
+  pViewWindowsMenu->addAction(mpCloseAllWindowsAction);
+  pViewWindowsMenu->addAction(mpCloseAllWindowsButThisAction);
+  pViewWindowsMenu->addSeparator();
   pViewWindowsMenu->addAction(mpCascadeWindowsAction);
   pViewWindowsMenu->addAction(mpTileWindowsHorizontallyAction);
   pViewWindowsMenu->addAction(mpTileWindowsVerticallyAction);
@@ -2645,6 +2712,22 @@ void MainWindow::switchToPlottingPerspective()
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpVariablesDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpVariablesDockWidget);
+  }
+}
+
+/*!
+ * \brief MainWindow::closeAllWindowsButThis
+ * Closes all windows except the active window.
+ * \param pMdiArea
+ */
+void MainWindow::closeAllWindowsButThis(QMdiArea *pMdiArea)
+{
+  foreach (QMdiSubWindow *pSubWindow, pMdiArea->subWindowList(QMdiArea::ActivationHistoryOrder)) {
+    if (pSubWindow == pMdiArea->activeSubWindow()) {
+      continue;
+    } else {
+      pSubWindow->close();
+    }
   }
 }
 

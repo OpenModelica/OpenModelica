@@ -27,13 +27,6 @@
  # See the full OSMC Public License conditions for more details.
  #
  #/
-#!
- #
- # @author Adeel Asghar <adeel.asghar@liu.se>
- #
- # RCS: $Id$
- #
- #/
 
 QT += network core gui webkit xml xmlpatterns svg
 
@@ -78,6 +71,8 @@ win32 {
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
     $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
+
+  RC_FILE = rc_omedit.rc
 } else { # Unix libraries and includes
   include(OMEdit.config)
   # On unix we use backtrace of execinfo.h which requires -rdynamic
@@ -250,10 +245,6 @@ OTHER_FILES += Resources/css/stylesheet.qss \
 CONFIG += warn_on
 
 RESOURCES += resource_omedit.qrc
-
-win32 {
-  RC_FILE = rc_omedit.rc
-}
 
 DESTDIR = ../bin
 

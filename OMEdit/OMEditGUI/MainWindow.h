@@ -231,6 +231,9 @@ private:
   QAction *mpZoomInAction;
   QAction *mpZoomOutAction;
   QAction *mpShowAlgorithmicDebuggerAction;
+  QAction *mpCloseWindowAction;
+  QAction *mpCloseAllWindowsAction;
+  QAction *mpCloseAllWindowsButThisAction;
   QAction *mpCascadeWindowsAction;
   QAction *mpTileWindowsHorizontallyAction;
   QAction *mpTileWindowsVerticallyAction;
@@ -319,6 +322,9 @@ public slots:
   void zoomIn();
   void zoomOut();
   void showAlgorithmicDebugger();
+  void closeWindow();
+  void closeAllWindows();
+  void closeAllWindowsButThis();
   void cascadeSubWindows();
   void tileSubWindowsHorizontally();
   void tileSubWindowsVertically();
@@ -372,6 +378,7 @@ private:
   void switchToWelcomePerspective();
   void switchToModelingPerspective();
   void switchToPlottingPerspective();
+  void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
