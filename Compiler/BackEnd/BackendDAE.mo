@@ -231,6 +231,9 @@ uniontype VarKind "variable kind"
   record OPT_LOOP_INPUT
     .DAE.ComponentRef replaceExp;
   end OPT_LOOP_INPUT;
+  record ALG_STATE "algebraic state"
+    VarKind oldKind;
+  end ALG_STATE;
 end VarKind;
 
 public uniontype TearingSelect

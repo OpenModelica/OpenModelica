@@ -875,6 +875,7 @@ algorithm
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT())) then ();
+    case BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) then ();
   end match;
 end failIfNonState;
 
