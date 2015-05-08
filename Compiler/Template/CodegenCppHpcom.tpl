@@ -23,6 +23,7 @@ template translateModel(SimCode simCode)
       let stateDerVectorName = "__zDot"
       let useMemoryOptimization = Flags.isSet(Flags.HPCOM_MEMORY_OPT)
 
+      let className = lastIdentOfPath(modelInfo.name)
       let numRealVars = numRealvars(modelInfo, hpcomData.hpcOmMemory)
       let numIntVars = numIntvars(modelInfo, hpcomData.hpcOmMemory)
       let numBoolVars = numBoolvars(modelInfo, hpcomData.hpcOmMemory)
@@ -34,42 +35,55 @@ template translateModel(SimCode simCode)
                                           (if Flags.isSet(USEMPI) then MPIFinalize() else ""),
                                           numRealVars, numIntVars, numBoolVars, numPreVars),
                                           'OMCpp<%fileNamePrefix%>Main.cpp')
+      let() = textFile(simulationCppFile(simCode, contextOther, Update(simCode, extraFuncs, extraFuncsDecl, className, stateDerVectorName, false),
+                                         '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, className,
+                                         generateAdditionalConstructorDefinitions(hpcomData.odeSchedule),
+                                         generateAdditionalConstructorBodyStatements(hpcomData.odeSchedule, className, dotPath(modelInfo.name)),
+                                         generateAdditionalDestructorBodyStatements(hpcomData.odeSchedule),
+                                         stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
+
       let() = textFile(simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
-                      generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)),
+                      generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
                       "",
-                      generateAdditionalProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)),
+                      generateAdditionalProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", false),
                       MemberVariable(modelInfo, false),
                       MemberVariablePreVariables(modelInfo, false), false),
                       //CodegenCpp.MemberVariablePreVariables(modelInfo,false), false),
                       'OMCpp<%fileNamePrefix%>.h')
-      let() = textFile(simulationCppFile(simCode, contextOther, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>.cpp')
-      let() = textFile(simulationFunctionsHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "",modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
-      let() = textFile(simulationFunctionsFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
+
       let() = textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "",modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Types.h')
       let() = textFile(simulationMakefile(target,simCode, &extraFuncs, &extraFuncsDecl, ""), '<%fileNamePrefix%>.makefile')
-      let() = textFile(simulationInitHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
-      let() = textFile(simulationInitCppFile(simCode ,&extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>Initialize.cpp')
-      let() = textFile(simulationInitParameterCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-      let() = textFile(simulationInitExtVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
-      let() = textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
-      let() = textFile(simulationInitAlgVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+
+      let &extraFuncsFun = buffer "" /*BUFD*/
+      let &extraFuncsDeclFun = buffer "" /*BUFD*/
+      let() = textFile(simulationFunctionsHeaderFile(simCode, &extraFuncsFun, &extraFuncsDeclFun, "",modelInfo.functions, literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
+      let() = textFile(simulationFunctionsFile(simCode, &extraFuncsFun, &extraFuncsDeclFun, "", modelInfo.functions, literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
+      let &extraFuncsInit = buffer "" /*BUFD*/
+      let &extraFuncsDeclInit = buffer "" /*BUFD*/
+      let() = textFile(simulationInitHeaderFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
+      let() = textFile(simulationInitCppFile(simCode ,&extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Initialize.cpp')
+      let() = textFile(simulationInitParameterCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+      let() = textFile(simulationInitExtVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+      let() = textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+      let() = textFile(simulationInitAlgVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+
       let() = textFile(simulationJacobianHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-      let() = textFile(simulationJacobianCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>Jacobian.cpp')
-      let() = textFile(simulationStateSelectionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+      let() = textFile(simulationJacobianCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+      let() = textFile(simulationStateSelectionCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
       let() = textFile(simulationStateSelectionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>StateSelection.h')
       let() = textFile(simulationExtensionHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Extension.h')
       let() = textFile(simulationExtensionCppFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Extension.cpp')
       let() = textFile(simulationWriteOutputHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>WriteOutput.h')
-      let() = textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-      let() = textFile(simulationWriteOutputAlgVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
-      let() = textFile(simulationWriteOutputParameterCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
-      let() = textFile(simulationWriteOutputAliasVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
+      let() = textFile(simulationWriteOutputCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+      let() = textFile(simulationWriteOutputAlgVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
+      let() = textFile(simulationWriteOutputParameterCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", false), 'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
+      let() = textFile(simulationWriteOutputAliasVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
       let() = textFile(simulationFactoryFile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
       let() = textFile(simulationMainRunScript(simCode, &extraFuncs, &extraFuncsDecl, ""), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode, &extraFuncs, &extraFuncsDecl, "")%>')
       let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode, &extraFuncs, &extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, stringBool(useMemoryOptimization)) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode, &extraFuncs, &extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, false) ;separator="")
           ;separator="")
-      let alg = algloopfiles(listAppend(allEquations,initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, stateDerVectorName, stringBool(useMemoryOptimization))
+      let alg = algloopfiles(listAppend(allEquations,initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, stateDerVectorName, false)
       let() = textFile(algloopMainfile(listAppend(allEquations,initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
       let() = textFile(calcHelperMainfile(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
       let() = textFile(calcHelperMainfile2(simCode, &extraFuncs, &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
@@ -98,18 +112,51 @@ template generateAdditionalIncludes(SimCode simCode, Text& extraFuncs, Text& ext
   match simCode
     case SIMCODE(__) then
       <<
-      <%generateHpcomSpecificIncludes(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
+      <%generateAdditionalIncludesForParallelCode(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
       >>
   end match
 end generateAdditionalIncludes;
+
+template generateAdditionalIncludesForParallelCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
+::=
+  let type = getConfigString(HPCOM_CODE)
+  match type
+    case ("openmp") then
+      <<
+      #include <omp.h>
+      >>
+    case ("pthreads")
+    case ("pthreads_spin") then
+      <<
+      #include <boost/thread.hpp>
+      #include <Core/Utils/extension/busywaiting_barrier.hpp>
+      >>
+    case ("tbb") then
+      <<
+      #include <tbb/tbb.h>
+      #include <tbb/flow_graph.h>
+      #include <boost/function.hpp>
+      #include <boost/bind.hpp>
+      >>
+    case ("mpi") then // MF: mpi.h
+      <<
+      #include <mpi.h>
+      >>
+    else
+      <<
+      #include <boost/thread/mutex.hpp>
+      #include <boost/thread.hpp>
+      >>
+  end match
+end generateAdditionalIncludesForParallelCode;
 
 template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
-      let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcomData.odeSchedule)
-      let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcomData.odeSchedule)
+      let &extraFuncsDecl += generateAdditionalFunctionHeaders(hpcomData.odeSchedule)
+      let &extraFuncsDecl += generateAdditionalHpcomVarHeaders(hpcomData.odeSchedule)
       let type = getConfigString(HPCOM_CODE)
 
       <<
@@ -136,9 +183,6 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& ext
         end match %>
       }
 
-      <%addHpcomFunctionHeaders%>
-      <%addHpcomVarHeaders%>
-
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
       std::vector<MeasureTimeData> measureTimeArrayHpcom;
@@ -150,7 +194,7 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& ext
   end match
 end generateAdditionalProtectedMemberDeclaration;
 
-template getAddHpcomStructHeaders(Option<Schedule> odeScheduleOpt)
+template generateAdditionalStructHeaders(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match odeScheduleOpt
@@ -175,9 +219,9 @@ template getAddHpcomStructHeaders(Option<Schedule> odeScheduleOpt)
       end match
     else ""
   end match
-end getAddHpcomStructHeaders;
+end generateAdditionalStructHeaders;
 
-template getAddHpcomFunctionHeaders(Option<Schedule> odeScheduleOpt)
+template generateAdditionalFunctionHeaders(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match odeScheduleOpt
@@ -211,7 +255,7 @@ template getAddHpcomFunctionHeaders(Option<Schedule> odeScheduleOpt)
         case ("tbb") then
           let voidfuncs = odeSchedule.tasks |> task => getAddHpcomFuncHeadersTaskDep(task); separator="\n"
           <<
-          <%getAddHpcomStructHeaders(odeScheduleOpt)%>
+          <%generateAdditionalStructHeaders(odeScheduleOpt)%>
 
           <%voidfuncs%>
           >>
@@ -219,9 +263,9 @@ template getAddHpcomFunctionHeaders(Option<Schedule> odeScheduleOpt)
       end match
     else ""
   end match
-end getAddHpcomFunctionHeaders;
+end generateAdditionalFunctionHeaders;
 
-template getAddHpcomVarHeaders(Option<Schedule> odeScheduleOpt)
+template generateAdditionalHpcomVarHeaders(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match odeScheduleOpt
@@ -278,10 +322,10 @@ template getAddHpcomVarHeaders(Option<Schedule> odeScheduleOpt)
       end match
     else ""
   end match
-end getAddHpcomVarHeaders;
+end generateAdditionalHpcomVarHeaders;
 
 
-template getAddHpcomFuncHeadersTaskDep(tuple<Task, list<Integer>> taskIn)
+template getAddHpcomFuncHeadersTaskDep(tuple<Task, list<Integer>> taskIn) //TODO: Move up
 ::=
   match taskIn
     case ((task as CALCTASK(__),parents)) then
@@ -290,39 +334,6 @@ template getAddHpcomFuncHeadersTaskDep(tuple<Task, list<Integer>> taskIn)
       >>
   end match
 end getAddHpcomFuncHeadersTaskDep;
-
-template generateHpcomSpecificIncludes(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
-::=
-  let type = getConfigString(HPCOM_CODE)
-  match type
-    case ("openmp") then
-      <<
-      #include <omp.h>
-      >>
-    case ("pthreads")
-    case ("pthreads_spin") then
-      <<
-      #include <boost/thread.hpp>
-      #include <Core/Utils/extension/busywaiting_barrier.hpp>
-      >>
-    case ("tbb") then
-      <<
-      #include <tbb/tbb.h>
-      #include <tbb/flow_graph.h>
-      #include <boost/function.hpp>
-      #include <boost/bind.hpp>
-      >>
-    case ("mpi") then // MF: mpi.h
-      <<
-      #include <mpi.h>
-      >>
-    else
-      <<
-      #include <boost/thread/mutex.hpp>
-      #include <boost/thread.hpp>
-      >>
-  end match
-end generateHpcomSpecificIncludes;
 
 template generateThreadHeaderDecl(Integer threadIdx, String iType)
 ::=
@@ -345,13 +356,13 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
 end generateThreadFunctionHeaderDecl;
 
 
-template simulationCppFile(SimCode simCode, Context context, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt, Text indexForUndefinedReferencesBool, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates code for main cpp file for simulation target."
+/*
+template simulationCppFile(SimCode simCode, Context context, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt, Text indexForUndefinedReferencesBool, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
 ::=
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
       let hpcomConstructorExtension = getHpcomConstructorExtension(hpcomData.odeSchedule, lastIdentOfPath(modelInfo.name), dotPath(modelInfo.name))
-      let hpcomMemberVariableDefinition = getHpcomMemberVariableDefinition(hpcomData.odeSchedule)
+      let hpcomMemberVariableDefinition = getHpcomConstructorDefinition(hpcomData.odeSchedule)
       let hpcomDestructorExtension = getHpcomDestructorExtension(hpcomData.odeSchedule)
       let type = getConfigString(HPCOM_CODE)
       let className = lastIdentOfPath(modelInfo.name)
@@ -374,8 +385,6 @@ template simulationCppFile(SimCode simCode, Context context, Text indexForUndefi
         SystemDefaultImplementation(globalSettings,sim_data,sim_vars)
         , _algLoopSolverFactory(nonlinsolverfactory)
         <%hpcomMemberVariableDefinition%>
-        <%CodegenCpp.MemberVariableInitialize(modelInfo,varToArrayIndexMapping,indexForUndefinedReferencesReal,indexForUndefinedReferencesInt,indexForUndefinedReferencesBool,useFlatArrayNotation,additionalBodyStatements)%>
-        <%simulationInitFile(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       {
         <%additionalBodyStatements%>
         //Number of equations
@@ -498,8 +507,8 @@ template simulationCppFile(SimCode simCode, Context context, Text indexForUndefi
       >>
   end match
 end simulationCppFile;
-
-template getHpcomMemberVariableDefinition(Option<Schedule> odeScheduleOpt)
+*/
+template generateAdditionalConstructorDefinitions(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match odeScheduleOpt
@@ -525,9 +534,9 @@ template getHpcomMemberVariableDefinition(Option<Schedule> odeScheduleOpt)
       end match
     else ""
   end match
-end getHpcomMemberVariableDefinition;
+end generateAdditionalConstructorDefinitions;
 
-template getHpcomConstructorExtension(Option<Schedule> odeScheduleOpt, String modelNamePrefixStr, String fullModelName)
+template generateAdditionalConstructorBodyStatements(Option<Schedule> odeScheduleOpt, String modelNamePrefixStr, String fullModelName)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match odeScheduleOpt
@@ -598,10 +607,9 @@ template getHpcomConstructorExtension(Option<Schedule> odeScheduleOpt, String mo
         else ""
     else ""
   end match
-end getHpcomConstructorExtension;
+end generateAdditionalConstructorBodyStatements;
 
-
-template getHpcomDestructorExtension(Option<Schedule> odeScheduleOpt)
+template generateAdditionalDestructorBodyStatements(Option<Schedule> odeScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match odeScheduleOpt
@@ -653,7 +661,7 @@ template getHpcomDestructorExtension(Option<Schedule> odeScheduleOpt)
         else ""
     else ""
   end match
-end getHpcomDestructorExtension;
+end generateAdditionalDestructorBodyStatements;
 
 
 template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
