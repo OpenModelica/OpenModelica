@@ -40,14 +40,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -113,14 +113,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -186,14 +186,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -259,14 +259,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -332,14 +332,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -405,14 +405,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -478,14 +478,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -551,14 +551,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -624,14 +624,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -697,14 +697,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -770,14 +770,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -843,14 +843,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -916,14 +916,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -989,14 +989,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -1062,14 +1062,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -1135,14 +1135,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -1209,14 +1209,14 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding]
+// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
 //
 //
 // State Sets
@@ -1292,16 +1292,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1367,16 +1367,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1454,16 +1454,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1541,16 +1541,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1628,16 +1628,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1715,16 +1715,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1802,16 +1802,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1889,16 +1889,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -1976,16 +1976,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2063,16 +2063,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2150,16 +2150,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2237,16 +2237,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2324,16 +2324,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2411,16 +2411,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2498,16 +2498,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2585,16 +2585,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2672,16 +2672,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2759,16 +2759,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2846,16 +2846,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -2933,16 +2933,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -3020,16 +3020,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -3107,16 +3107,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -3194,16 +3194,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -3281,16 +3281,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = time ^ 3.0 + $cse1   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): $cse1 = exp(time ^ 3.0)   [binding]
+// 1/1 (1): x = time ^ 3.0 + $cse1    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)    [binding]
 //
 //
 // State Sets
@@ -3369,16 +3369,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $cse1 = exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): x = time ^ 3.0 + $cse1   [binding]
+// 1/1 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): x = time ^ 3.0 + $cse1    [binding]
 //
 //
 // State Sets
@@ -3444,16 +3444,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $cse1 = exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): x = time ^ 3.0 + $cse1   [binding]
+// 1/1 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): x = time ^ 3.0 + $cse1    [binding]
 //
 //
 // State Sets
@@ -3533,103 +3533,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $cse1 = exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): x = time ^ 3.0 + $cse1   [binding]
-//
-//
-// State Sets
-// ========================================
-//
-//
-// Matching
-// ========================================
-// 3 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 3
-// var 3 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:3}
-// {3:2}
-// {2:1}
-//
-//
-//
-// BackendDAEType: initialization
-//
-//
-// Known Variables (constants) (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// When Clauses (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// post-optimization module symEulerInit:
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): $cse1 = exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): x = time ^ 3.0 + $cse1   [binding]
+// 1/1 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): x = time ^ 3.0 + $cse1    [binding]
 //
 //
 // State Sets
@@ -3707,16 +3620,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $cse1 = exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): x = time ^ 3.0 + $cse1   [binding]
+// 1/1 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): x = time ^ 3.0 + $cse1    [binding]
 //
 //
 // State Sets
@@ -3794,16 +3707,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $cse1 = exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): x = time ^ 3.0 + $cse1   [binding]
+// 1/1 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): x = time ^ 3.0 + $cse1    [binding]
 //
 //
 // State Sets
@@ -3881,16 +3794,16 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: y:VARIABLE() .testOptdaedump, .Real type: Real 
-// 2: x:VARIABLE() .testOptdaedump, .Real type: Real 
-// 3: $cse1:VARIABLE()  type: Real 
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: $cse1:VARIABLE()  type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): $cse1 = exp(time ^ 3.0)   [binding]
-// 2/2 (1): y = $cse1 + x   [binding]
-// 3/3 (1): x = time ^ 3.0 + $cse1   [binding]
+// 1/1 (1): $cse1 = exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = $cse1 + x    [binding]
+// 3/3 (1): x = time ^ 3.0 + $cse1    [binding]
 //
 //
 // State Sets

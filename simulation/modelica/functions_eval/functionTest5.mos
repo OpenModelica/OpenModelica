@@ -21,21 +21,21 @@ getErrorString();
 // indxdae: eqns in order
 // ========================================
 // SingleEquation: 4
-// 1: a:VARIABLE() .PartEvalFunc.functionTest5, .Real type: Real 
-// 1/1 (1): a = time   [dynamic]
+// 1: a:VARIABLE() .PartEvalFunc.functionTest5, .Real type: Real []
+// 1/1 (1): a = time    [dynamic]
 //
 // ComplexEquation:
-// 1: r2.z:VARIABLE() .PartEvalFunc.functionTest5, .PartEvalFunc.record2, .Real type: Real 
-// 2: r2.y:VARIABLE() .PartEvalFunc.functionTest5, .PartEvalFunc.record2, .Real type: Real 
+// 1: r2.z:VARIABLE() .PartEvalFunc.functionTest5, .PartEvalFunc.record2, .Real type: Real []
+// 2: r2.y:VARIABLE() .PartEvalFunc.functionTest5, .PartEvalFunc.record2, .Real type: Real []
 // 1/1 (2): (r2.y, r2.z) = PartEvalFunc.recfunc2_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [dynamic]
 //
 // SingleEquation: 2
-// 1: c:VARIABLE() .PartEvalFunc.functionTest5, .Real type: Real 
-// 1/1 (1): c = r2.y + a   [dynamic]
+// 1: c:VARIABLE() .PartEvalFunc.functionTest5, .Real type: Real []
+// 1/1 (1): c = r2.y + a    [dynamic]
 //
 // SingleEquation: 1
-// 1: d:STATE(1,c)(start = 0.0 fixed = true ) .PartEvalFunc.functionTest5, .Real type: Real 
-// 1/1 (1): c = der(d)   [dynamic]
+// 1: d:STATE(1,c)(start = 0.0 fixed = true ) .PartEvalFunc.functionTest5, .Real type: Real []
+// 1/1 (1): c = der(d)    [dynamic]
 //
 //
 // record SimulationResult

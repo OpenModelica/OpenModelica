@@ -32,12 +32,12 @@ buildModel(testParamdlowdump); getErrorString();
 //
 // parameters in order (6)
 // ========================================
-// 1: b2:PARAM()  = not b1 .testParamdlowdump, .Boolean type: Boolean 
-// 2: b3:PARAM()  = b1 or b2 .testParamdlowdump, .Boolean type: Boolean 
-// 3: i2:PARAM()  = 1 + i1 .testParamdlowdump, .Integer type: Integer 
-// 4: i3:PARAM()  = i1 + i2 .testParamdlowdump, .Integer type: Integer 
-// 5: r2:PARAM()  = 1.0 + r1 .testParamdlowdump, .Real type: Real 
-// 6: r3:PARAM()  = r1 + r2 .testParamdlowdump, .Real type: Real 
+// 1: b2:PARAM()  = not b1 .testParamdlowdump, .Boolean type: Boolean []
+// 2: b3:PARAM()  = b1 or b2 .testParamdlowdump, .Boolean type: Boolean []
+// 3: i2:PARAM()  = 1 + i1 .testParamdlowdump, .Integer type: Integer []
+// 4: i3:PARAM()  = i1 + i2 .testParamdlowdump, .Integer type: Integer []
+// 5: r2:PARAM()  = 1.0 + r1 .testParamdlowdump, .Real type: Real []
+// 6: r3:PARAM()  = r1 + r2 .testParamdlowdump, .Real type: Real []
 //
 // {"testParamdlowdump","testParamdlowdump_init.xml"}
 // ""

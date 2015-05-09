@@ -50,16 +50,16 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: w:VARIABLE() .SamplingWithClocks, .Real type: Real 
-// 2: z:VARIABLE() .SamplingWithClocks, .Real type: Real 
-// 3: x:VARIABLE() .SamplingWithClocks, .Real type: Real 
+// 1: w:VARIABLE() .SamplingWithClocks, .Real type: Real []
+// 2: z:VARIABLE() .SamplingWithClocks, .Real type: Real []
+// 3: x:VARIABLE() .SamplingWithClocks, .Real type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = sample(1, time, Clock(0.1))   [dynamic, sub-partition index: 3]
-// 2/2 (1): z = subSample(x, 2)   [dynamic, sub-partition index: 2]
-// 3/3 (1): w = superSample(x, 3)   [dynamic, sub-partition index: 1]
+// 1/1 (1): x = sample(1, time, Clock(0.1))    [dynamic, sub-partition index: 3]
+// 2/2 (1): z = subSample(x, 2)    [dynamic, sub-partition index: 2]
+// 3/3 (1): w = superSample(x, 3)    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets
@@ -74,12 +74,12 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: y:VARIABLE() .SamplingWithClocks, .Real type: Real 
+// 1: y:VARIABLE() .SamplingWithClocks, .Real type: Real []
 //
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): y = sample(1, time, Clock(0.1))   [dynamic, sub-partition index: 1]
+// 1/1 (1): y = sample(1, time, Clock(0.1))    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets

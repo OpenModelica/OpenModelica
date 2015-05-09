@@ -45,16 +45,16 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE(unit = "N" )  "Force".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Force type: Real 
-// 2: v:VARIABLE(start = 0.0 unit = "m/s" fixed = true )  "Velocity".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Velocity$v type: Real 
-// 3: x:VARIABLE(start = 1.0 unit = "m" fixed = true )  "Position".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Position$x type: Real 
+// 1: f:VARIABLE(unit = "N" )  "Force".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Force type: Real []
+// 2: v:VARIABLE(start = 0.0 unit = "m/s" fixed = true )  "Velocity".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Velocity$v type: Real []
+// 3: x:VARIABLE(start = 1.0 unit = "m" fixed = true )  "Position".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Position$x type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = hold(u)   [dynamic, sub-partition index: 1]
-// 2/2 (1): der(x) = v   [dynamic, sub-partition index: 1]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic, sub-partition index: 1]
+// 1/1 (1): f = hold(u)    [dynamic, sub-partition index: 1]
+// 2/2 (1): der(x) = v    [dynamic, sub-partition index: 1]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets
@@ -69,14 +69,14 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: u:DISCRETE(start = 0.0 ) .SynchronousFeatures.SpeedControl, .Real type: Real 
-// 2: vd:DISCRETE() .SynchronousFeatures.SpeedControl, .Real type: Real 
+// 1: u:DISCRETE(start = 0.0 ) .SynchronousFeatures.SpeedControl, .Real type: Real []
+// 2: vd:DISCRETE() .SynchronousFeatures.SpeedControl, .Real type: Real []
 //
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): vd = sample(1, v, Clock(0.01))   [dynamic, sub-partition index: 1]
-// 2/2 (1): u = K * (vref - vd)   [dynamic, sub-partition index: 1]
+// 1/1 (1): vd = sample(1, v, Clock(0.01))    [dynamic, sub-partition index: 1]
+// 2/2 (1): u = K * (vref - vd)    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets

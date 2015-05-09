@@ -31,11 +31,11 @@ val(y, {0.0,0.25,0.5,0.75,1.0});
 //     messages = ""
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
-//          y:VARIABLE() .nonlinear_system.nonlinearDelayTest, .Real type: Real
+//          y:VARIABLE() .nonlinear_system.nonlinearDelayTest, .Real type: Real []
 // Warning: Iteration variables with default zero start attribute in torn nonlinear equation system:
-//          x2:VARIABLE() .nonlinear_system.nonlinearDelayTest, .Real type: Real
+//          x2:VARIABLE() .nonlinear_system.nonlinearDelayTest, .Real type: Real []
 // "
-// {-1.572302755514846,-1.618421380238099,-1.738059371463846,-1.818945608412304,-1.907039392827518}
-// {0.7861513777574231,0.7500029985869122,0.6996133736697601,0.6092948563143592,0.4995556640036673}
-// {0.0,-0.201552919327918,-0.4383459284777348,-0.717828949630361,-1.04466743649189}
+// {-1.572302755514847,-1.618421380238098,-1.738059371463845,-1.818945608412304,-1.907039392827518}
+// {0.7861513777574233,0.7500029985869119,0.6996133736697597,0.609294856314359,0.4995556640036673}
+// {0.0,-0.201552919327918,-0.4383459284777347,-0.7178289496303617,-1.04466743649189}
 // endResult

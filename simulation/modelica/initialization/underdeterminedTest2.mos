@@ -37,7 +37,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.underdet
 //     messages = ""
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
-//          y:VARIABLE() .initializationTests.underdeterminedTest2, .Real type: Real
+//          y:VARIABLE() .initializationTests.underdeterminedTest2, .Real type: Real []
 // "
 // {{0.0,0.0},{1.0,1.0},{0.0,0.0}}
 // ""

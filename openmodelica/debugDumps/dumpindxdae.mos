@@ -1,37 +1,24 @@
-// name:     MinimalModel.mos [BUG: #2429]
-// keywords: remove simple equation bug testing
-// status:   correct
-// teardown_command: rm -rf MinimalModel_* MinimalModel MinimalModel.exe
+// name: dumpindxdae.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=dumpindxdae
+// 
 
-setCommandLineOptions({"+d=dumprepl,dumpindxdae"}); getErrorString();
-loadFile("MinimalModel.mo"); getErrorString();
-buildModel(MinimalModel); getErrroString();
+// TODO: change this model to test the dump +d=dumpindxdae
+loadString("
+model test_dumpindxdae
+end test_dumpindxdae;
+"); getErrorString();
 
+setDebugFlags("dumpindxdae"); getErrorString();
+buildModel(test_dumpindxdae); getErrorString();
 
 // Result:
-// {true}
+// true
 // ""
 // true
 // ""
-//
-// Unreplaceable Crefs: (0)
-// ========================================
-//
-//
-// Replacements: (4)
-// ========================================
-// d -> -(-const_k)
-// b -> 0.0
-// c -> -const_k
-// a -> const_k
-//
-// ExtendReplacements: (0)
-// ========================================
-//
-//
-// Unreplaceable Crefs: (0)
-// ========================================
-//
 //
 // ########################################
 // dumpindxdae
@@ -66,10 +53,8 @@ buildModel(MinimalModel); getErrroString();
 // BackendDAEType: simulation
 //
 //
-// Known Variables (constants) (2)
+// Known Variables (constants) (0)
 // ========================================
-// 1: b:VARIABLE()  = 0.0 .MinimalModel, .Real type: Real []
-// 2: const_k:PARAM(start = 1.0 )  = -15.0 .MinimalModel, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -80,11 +65,8 @@ buildModel(MinimalModel); getErrroString();
 // ========================================
 //
 //
-// Alias Variables (3)
+// Alias Variables (0)
 // ========================================
-// 1: d:VARIABLE()  = -(-const_k) .MinimalModel, .Real type: Real []
-// 2: c:VARIABLE()  = -const_k .MinimalModel, .Real type: Real []
-// 3: a:VARIABLE()  = const_k .MinimalModel, .Real type: Real []
 //
 //
 // Simple Equations (0, 0)
@@ -115,6 +97,6 @@ buildModel(MinimalModel); getErrroString();
 // ========================================
 //
 //
-// {"MinimalModel","MinimalModel_init.xml"}
-//
+// {"test_dumpindxdae","test_dumpindxdae_init.xml"}
+// ""
 // endResult

@@ -57,16 +57,16 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE(unit = "N" )  "Force".SynchronousFeatures.ControlledMassBasic, .SynchronousFeatures.Force type: Real 
-// 2: v:VARIABLE(start = 0.0 unit = "m/s" fixed = true )  "Velocity".SynchronousFeatures.ControlledMassBasic, .SynchronousFeatures.Velocity$v type: Real 
-// 3: x:VARIABLE(start = 1.0 unit = "m" fixed = true )  "Position".SynchronousFeatures.ControlledMassBasic, .SynchronousFeatures.Position$x type: Real 
+// 1: f:VARIABLE(unit = "N" )  "Force".SynchronousFeatures.ControlledMassBasic, .SynchronousFeatures.Force type: Real []
+// 2: v:VARIABLE(start = 0.0 unit = "m/s" fixed = true )  "Velocity".SynchronousFeatures.ControlledMassBasic, .SynchronousFeatures.Velocity$v type: Real []
+// 3: x:VARIABLE(start = 1.0 unit = "m" fixed = true )  "Position".SynchronousFeatures.ControlledMassBasic, .SynchronousFeatures.Position$x type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = hold(uInner)   [dynamic, sub-partition index: 1]
-// 2/2 (1): der(x) = v   [dynamic, sub-partition index: 1]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic, sub-partition index: 1]
+// 1/1 (1): f = hold(uInner)    [dynamic, sub-partition index: 1]
+// 2/2 (1): der(x) = v    [dynamic, sub-partition index: 1]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets
@@ -81,24 +81,24 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 //
 // Variables (7)
 // ========================================
-// 1: uInner:DISCRETE(start = 0.0 ) .SynchronousFeatures.ControlledMassBasic, .Real type: Real 
-// 2: vref:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real 
-// 3: vd:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real 
-// 4: uOuter:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real 
-// 5: intE:DISCRETE(start = 0.0 ) .SynchronousFeatures.ControlledMassBasic, .Real type: Real 
-// 6: eOuter:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real 
-// 7: xd:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real 
+// 1: uInner:DISCRETE(start = 0.0 ) .SynchronousFeatures.ControlledMassBasic, .Real type: Real []
+// 2: vref:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real []
+// 3: vd:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real []
+// 4: uOuter:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real []
+// 5: intE:DISCRETE(start = 0.0 ) .SynchronousFeatures.ControlledMassBasic, .Real type: Real []
+// 6: eOuter:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real []
+// 7: xd:DISCRETE() .SynchronousFeatures.ControlledMassBasic, .Real type: Real []
 //
 //
 // Equations (7, 7)
 // ========================================
-// 1/1 (1): xd = sample(1, x, Clock(0.01))   [dynamic, sub-partition index: 1]
-// 2/2 (1): eOuter = xref - xd   [dynamic, sub-partition index: 1]
-// 3/3 (1): intE = previous(intE) + eOuter   [dynamic, sub-partition index: 1]
-// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic, sub-partition index: 1]
-// 5/5 (1): vd = sample(2, v, Clock())   [dynamic, sub-partition index: 1]
-// 6/6 (1): vref = uOuter   [dynamic, sub-partition index: 1]
-// 7/7 (1): uInner = KInner * (vref - vd)   [dynamic, sub-partition index: 1]
+// 1/1 (1): xd = sample(1, x, Clock(0.01))    [dynamic, sub-partition index: 1]
+// 2/2 (1): eOuter = xref - xd    [dynamic, sub-partition index: 1]
+// 3/3 (1): intE = previous(intE) + eOuter    [dynamic, sub-partition index: 1]
+// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)    [dynamic, sub-partition index: 1]
+// 5/5 (1): vd = sample(2, v, Clock())    [dynamic, sub-partition index: 1]
+// 6/6 (1): vref = uOuter    [dynamic, sub-partition index: 1]
+// 7/7 (1): uInner = KInner * (vref - vd)    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets

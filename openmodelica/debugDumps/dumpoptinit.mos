@@ -17,8 +17,9 @@ buildModel(testDumpoptinit); getErrorString();
 // Result:
 // true
 // ""
-// true
-// ""
+// false
+// "Error: Unknown debug flag dumpoptinit.
+// "
 // {"testDumpoptinit","testDumpoptinit_init.xml"}
 // ""
 // endResult

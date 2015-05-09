@@ -88,7 +88,7 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesFullInitial); getErrorSt
 //  * candidate: V1.ports[2].p(start = 1000000.0)
 //  * candidate: V1.ports[1].p(start = 1000000.0)
 // => select value from V2.medium.p(start = V2.p_start) for variable: V2.medium.p
-// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: V1.medium.p = V1.p_start (V2.p_start = V1.p_start)
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: V1.medium.p = V1.p_start  (V2.p_start = V1.p_start )
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
 // "
