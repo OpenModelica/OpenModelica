@@ -1776,7 +1776,11 @@ protected
   BackendDAE.Variables v;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  if Flags.getConfigBool(Flags.SYM_EULER) then
+    (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+  else
+    (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  end if;
   eqns := List.map1r(statevarindx_lst,arrayGet,ass1);
   eqns := List.select(eqns, Util.intPositive);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);

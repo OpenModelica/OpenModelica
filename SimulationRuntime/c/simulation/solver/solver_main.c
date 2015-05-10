@@ -709,7 +709,7 @@ static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
   externalInputUpdate(data);
   data->callback->input_function(data);
   /* eval alg equations, note ode is empty */
-  data->callback->functionDAE(data);
+  data->callback->functionODE(data);
   return retVal;
 }
 
