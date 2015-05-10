@@ -438,12 +438,70 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   return 0;
 }
 
+static char* dymolaStyleVariableName(const char *varName)
+{
+  int i=1,j=0,has_dot=0,is_der=0==strncmp("der(", varName, 4);
+  const char *c = varName;
+  char *res = NULL;
+  while (*c) {
+    if (*c==',') {
+      j++;
+      i+=2;
+    } else {
+      if (*c=='.') {
+        has_dot = i-j;
+      }
+      i+=1;
+    }
+    c++;
+  }
+  if (!(is_der&&has_dot) && 0==j) {
+    return NULL; /* The Dymola name is the same as OMC */
+  }
+  res = (char*) malloc(i);
+  res[i-1]='\0';
+  if (is_der && has_dot) {
+    memcpy(res, varName+4, has_dot-4);
+    sprintf(res+has_dot-4, "der(%s", varName+has_dot);
+  } else {
+    memcpy(res, varName, i);
+  }
+  if (j) {
+    c = res;
+    for (j=j+i; j>=0; j--, i--) {
+      if (res[i]==',') {
+        i--;
+        res[j--]=' ';
+        res[j--]=',';
+      } else {
+        res[j]=res[i];
+      }
+    }
+  }
+  return res;
+}
+
 ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const char *varName)
 {
   ModelicaMatVariable_t key;
+  ModelicaMatVariable_t *res;
   key.name = (char*) varName;
 
-  return (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+  res = (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+  if (res == NULL) { /* Try to convert the name to a Dymola name */
+    if (0==strcmp(varName, "time")) {
+      key.name = "Time";
+      return (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+    }
+    char *dymolaName = dymolaStyleVariableName(varName);
+    if (dymolaName == NULL) {
+      return NULL;
+    }
+    key.name = dymolaName;
+    res = (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+    free(dymolaName);
+  }
+  return res;
 }
 
 /* Writes the number of values in the returned array if nvals is non-NULL */

@@ -1421,15 +1421,17 @@ algorithm
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
+      BackendDAE.EquationAttributes attr;
       DAE.Algorithm alg;
       DAE.ElementSource source;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse,eqns;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2, attr=attr))
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+        s3 = printEqAtts(attr);
+        res = stringAppendList({s1," = ",s2," ",s3});
       then
         res;
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2))
@@ -2319,7 +2321,7 @@ algorithm
   outStr := DAEDump.dumpDirectionStr(dir) + ComponentReference.printComponentRefStr(cr) + ":"
             + kindString(kind) + "(" + connectorTypeString(ct) + attributesString(dae_var_attr)
             + ") " + optExpressionString(bindExp,"") + DAEDump.dumpCommentAnnotationStr(comment)
-            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type);
+            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type) + "["+ExpressionDump.dimensionsString(arrayDim)+"]";
 end varString;
 
 public function dumpKind
@@ -3646,13 +3648,13 @@ algorithm
     local
       String s1,s2,s3;
       String loopId;
-      Integer pos;
+      Integer id;
       DAE.Exp startIt;
       DAE.Exp endIt;
       list<BackendDAE.IterCref> crefs;
-  case(BackendDAE.LOOP(startIt=startIt, endIt=endIt, crefs=crefs))
+  case(BackendDAE.LOOP(loopId=id, startIt=startIt, endIt=endIt, crefs=crefs))
     equation
-      s1 = "LOOP:";
+      s1 = "LOOP"+intString(id)+":";
       s2 = "[ "+ExpressionDump.printExpStr(startIt)+"->"+ExpressionDump.printExpStr(endIt)+" ] ";
       s3 = stringDelimitList(List.map(crefs,printIterCrefStr),"| ");
   then s1+s2+s3;

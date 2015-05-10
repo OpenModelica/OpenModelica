@@ -2616,7 +2616,6 @@ public function filterSimulationResults
   input String outFile;
   input String[:] vars = fill("",0);
   output Boolean success;
-  output String[:] resultFiles;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>

@@ -79,6 +79,7 @@ build/
 .project
 revision.h
 SimulationRuntime/c/Makefile
+SimulationRuntime/c/util/java_interface/Makefile
 SimulationRuntime/c/util/java_interface/modelica_java.jar
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java
@@ -150,3 +151,4 @@ Parser/ParModelica_Lexer.c
 Parser/ParModelica_Lexer.h
 Parser/ParModelica_Lexer_BaseModelica_Lexer.c
 Parser/ParModelica_Lexer_BaseModelica_Lexer.h
+SimulationRuntime/**/test_files/*.jar

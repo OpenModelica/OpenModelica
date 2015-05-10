@@ -46,12 +46,9 @@ encapsulated package HpcOmSimCode
 
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way
     record MEMORYMAP_ARRAY
-      array<tuple<Integer,Integer>> positionMapping; //map each simCodeVar to a memory (array) position and to arrayIdx
-      Integer floatArraySize; //arrayIdx: 1
-      Integer intArraySize; //arrayIdx: 2
-      Integer boolArraySize; //arrayIdx: 3
-      HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
-      tuple<list<Integer>, list<Integer>, list<Integer>> otherVars; //a list of not optimized variables (float, int bool)
+      Integer floatArraySize; //array size including state, state der and other float variables that are necessary for code generation
+      Integer intArraySize;
+      Integer boolArraySize;
     end MEMORYMAP_ARRAY;
     record MEMORYMAP_UNIFORM
     end MEMORYMAP_UNIFORM;

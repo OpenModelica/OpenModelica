@@ -940,8 +940,8 @@ package SimCodeUtil
   function getVarIndexListByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;
-    input Integer iIndexForUndefinedReferences;
-    output list<Integer> oVarIndexList;
+    input String iIndexForUndefinedReferences;
+    output list<String> oVarIndexList;
   end getVarIndexListByMapping;
 
 end SimCodeUtil;
@@ -3556,41 +3556,12 @@ package HpcOmSimCode
 
   uniontype MemoryMap
     record MEMORYMAP_ARRAY
-      array<tuple<Integer,Integer>> positionMapping;
       Integer floatArraySize;
       Integer intArraySize;
       Integer boolArraySize;
-      HashTableCrILst.HashTable scVarNameIdxMapping;
-      tuple<list<Integer>, list<Integer>, list<Integer>> otherVars;
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 end HpcOmSimCode;
-
-package HpcOmMemory
-  function getPositionMappingByArrayName
-    input Option<HpcOmSimCode.MemoryMap> iMemoryMapOpt;
-    input DAE.ComponentRef iVarName;
-    output Option<tuple<Integer,Integer>> oResult;
-  end getPositionMappingByArrayName;
-
-  function expandCref
-    input DAE.ComponentRef iCref;
-    input list<String> iNumArrayElems;
-    output list<DAE.ComponentRef> oCrefs;
-  end expandCref;
-
-  function expandCrefWithDims
-    input DAE.ComponentRef iCref;
-    input DAE.Dimensions iDims;
-    output list<DAE.ComponentRef> oCrefs;
-  end expandCrefWithDims;
-
-  function getSubscriptListOfArrayCref
-    input DAE.ComponentRef iCref;
-    input list<String> iNumArrayElems;
-    output list<list<DAE.Subscript>> oSubscriptList;
-  end getSubscriptListOfArrayCref;
-end HpcOmMemory;
 
 package HpcOmScheduler
   function convertFixedLevelScheduleToTaskLists

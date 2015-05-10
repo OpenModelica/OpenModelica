@@ -5268,6 +5268,31 @@ algorithm
   sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
 end replaceAliasVarsInShared;
 
+public function replaceRemovedEqsInShared"replaces the aliasVars in the BackendDAE.Shared
+author:Waurich TUD 2014-11"
+  input BackendDAE.Shared sharedIn;
+  input BackendDAE.EquationArray remEqs;
+  output BackendDAE.Shared sharedOut;
+protected
+    BackendDAE.Variables knownVars,externalObjects,aliasVars;
+    BackendDAE.EquationArray initialEqs,removedEqs;
+    list<DAE.Constraint> constraints;
+    list<DAE.ClassAttributes> classAttrs;
+    FCore.Cache cache;
+    FCore.Graph graph;
+    DAE.FunctionTree functionTree;
+    BackendDAE.EventInfo eventInfo;
+    BackendDAE.ExternalObjectClasses extObjClasses;
+    BackendDAE.BackendDAEType backendDAEType;
+    BackendDAE.SymbolicJacobians symjacs;
+    BackendDAE.ExtraInfo info;
+algorithm
+  BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,
+  constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
+  backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
+  sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,remEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
+end replaceRemovedEqsInShared;
+
 protected function adjacencyRowExpEnhanced
 "author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced, investigates expressions for

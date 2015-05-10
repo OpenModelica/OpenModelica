@@ -757,8 +757,8 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
 
 AC_MSG_CHECKING([for revision])
 SOURCE_REVISION=""
-test -f REVISION && SOURCE_REVISION=`head -n1 REVISION`
-test -z "$SOURCE_REVISION" && test -d .git && SOURCE_REVISION=`git describe --dirty --match "v*.*" --always`
+test -f REVISION && SOURCE_REVISION=`test -f REVISION && head -n1 REVISION`
+test -z "$SOURCE_REVISION" && test -e .git && SOURCE_REVISION=`git describe --dirty --match "v*.*" --always`
 test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
 AC_MSG_RESULT([$SOURCE_REVISION])
