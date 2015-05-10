@@ -3410,10 +3410,6 @@ algorithm
       equation
         failure(_ = List.getMemberOnTrue(i, vars, intEq));
       then incidenceRowExp1(rest,irest,i::vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_)
-      equation
-        failure(_ = List.getMemberOnTrue(i, vars, intEq));
-      then incidenceRowExp1(rest,irest,i::vars,diffindex);
     case (_ :: rest,_::irest,_,_)
       then incidenceRowExp1(rest,irest,vars,diffindex);
   end matchcontinue;
@@ -5559,6 +5555,21 @@ algorithm
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_,_,_,true)
+      equation
+        b = intEq(rowmark[i],mark);
+        b1 = intEq(rowmark[i],-mark);
+        b = b or b1;
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
+        res = List.consOnTrue(not b, i, vars);
+        res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_,_,_,_)
+      equation
+        false = intEq(intAbs(rowmark[i]),mark);
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
+        res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_,_,_,true)
       equation
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);
