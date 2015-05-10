@@ -458,7 +458,8 @@ static char* dymolaStyleVariableName(const char *varName)
   if (!(is_der&&has_dot) && 0==j) {
     return NULL; /* The Dymola name is the same as OMC */
   }
-  res = (char*) malloc(i);
+  res = (char*) malloc(i + 10);
+  //fprintf(stderr, "alloc1 %d, %s\n", i, varName); fflush(NULL);
   res[i-1]='\0';
   if (is_der && has_dot) {
     memcpy(res, varName+4, has_dot-4);
@@ -478,6 +479,7 @@ static char* dymolaStyleVariableName(const char *varName)
       }
     }
   }
+  //fprintf(stderr, "alloc2 %s, %s\n", varName, res); fflush(NULL);
   return res;
 }
 
