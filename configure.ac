@@ -228,12 +228,12 @@ if test "$OMC" = "no" ; then
     AC_MSG_ERROR([cross-compilation attempt detected, but no omc executable was given])
   fi
   AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
-  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
+  OMC="$OMBUILDDIR/bin/omc"
 elif "$OMC" +version > /dev/null 2>&1; then
   AC_MSG_RESULT([$OMC])
 else
   AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
-  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
+  OMC="$OMBUILDDIR/bin/omc"
 fi
 
 dnl Checks for libraries.
