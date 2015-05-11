@@ -478,13 +478,12 @@ static char* dymolaStyleVariableName(const char *varName)
   }
   len = strlen(varName);
   res = (char*) malloc(len+1);
-  /* fprintf(stderr, "alloc1 %d, %s\n", len+1, varName); */
   res[len]='\0';
 
-  memcpy(res, varName+4, has_dot-varName+1);
-  sprintf(res+(has_dot-varName)+1, "der(%s", has_dot+1);
+  memcpy(res, varName+4, has_dot-varName-3);
+  sprintf(res+(has_dot-varName)-3, "der(%s", has_dot+1);
 
-  /* fprintf(stderr, "alloc2 %s, %s\n", varName, res); */
+  /* fprintf(stderr, "Dymola style %s -> %s\n", varName, res); */
   return res;
 }
 
