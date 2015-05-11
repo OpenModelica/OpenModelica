@@ -231,7 +231,22 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename,
   }
 }
 
-static void* SimulationResultsImpl__readVars(const char *filename, int readParameters, SimulationResult_Globals* simresglob)
+static void* makeOMCStyle(const char *var, int omcStyle)
+{
+  char *res1 = NULL;
+  const char *res2 = NULL;
+  if (!omcStyle) {
+    return mmc_mk_scon(var);
+  }
+  res1 = openmodelicaStyleVariableName(var);
+  res2 = _replace(res1 ? res1 : var, " ", "");
+  if (res1 == NULL) {
+    free(res1);
+  }
+  return mmc_mk_scon(res2);
+}
+
+static void* SimulationResultsImpl__readVars(const char *filename, int readParameters, int omcStyle, SimulationResult_Globals* simresglob)
 {
   const char *msg[2] = {"",""};
   void *res;
@@ -244,13 +259,13 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
     int i;
     for (i=simresglob->matReader.nall-1; i>=0; i--) {
       if (readParameters || !simresglob->matReader.allInfo[i].isParam) {
-        res = mmc_mk_cons(mmc_mk_scon(simresglob->matReader.allInfo[i].name),res);
+        res = mmc_mk_cons(makeOMCStyle(simresglob->matReader.allInfo[i].name, omcStyle),res);
       }
     }
     return res;
   }
   case PLT: {
-    return read_ptolemy_variables(filename);
+    return read_ptolemy_variables(filename /* Assume it is in OMC style */);
   }
   case CSV: {
     if (simresglob->csvReader && simresglob->csvReader->variables) {
@@ -258,7 +273,7 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
       int i;
       for (i=simresglob->csvReader->numvars-1; i>=0; i--) {
         if (variables[i][0] != '\0') {
-          res = mmc_mk_cons(mmc_mk_scon(variables[i]),res);
+          res = mmc_mk_cons(makeOMCStyle(variables[i], omcStyle),res);
         }
       }
     }
@@ -297,7 +312,7 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
     free(vars);
     return res;
   }
-  default: return SimulationResultsImpl__readVars(filename, 0, simresglob);
+  default: return SimulationResultsImpl__readVars(filename, 0, 0, simresglob);
   }
 }
 

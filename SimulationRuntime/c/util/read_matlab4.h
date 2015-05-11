@@ -89,6 +89,9 @@ void matrix_transpose(double *m, int w, int h);
 void matrix_transpose_uint32(uint32_t *m, int w, int h);
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader);
 
+/* Fix the placement of a.der(b) -> der(a.b) */
+char* openmodelicaStyleVariableName(const char *varName);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

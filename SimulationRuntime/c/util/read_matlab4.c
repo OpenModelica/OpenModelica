@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
 #include "read_matlab4.h"
 
 extern const char *omc_mat_Aclass;
@@ -53,11 +54,33 @@ typedef struct {
 static const char *binTrans_char = "binTrans";
 static const char *binNormal_char = "binNormal";
 
+/* strcmp ignore whitespace */
+static inline int strcmp_iws(const char *a, const char *b)
+{
+  while (*a && *b) {
+    if (isspace(*a)) {
+      a++;
+      continue;
+    }
+    if (isspace(*b)) {
+      b++;
+      continue;
+    }
+    if (*a != *b) {
+      return *a > *b ? 1 : -1;
+    }
+    a++;
+    b++;
+  }
+  return *a == *b ? 0 : (*a ? 1 : -1);
+}
+
 int omc_matlab4_comp_var(const void *a, const void *b)
 {
   char *as = ((ModelicaMatVariable_t*)a)->name;
   char *bs = ((ModelicaMatVariable_t*)b)->name;
-  return strcmp(as,bs);
+
+  return strcmp_iws(as,bs);
 }
 
 int mat_element_length(int type)
@@ -440,46 +463,48 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
 
 static char* dymolaStyleVariableName(const char *varName)
 {
-  int i=1,j=0,has_dot=0,is_der=0==strncmp("der(", varName, 4);
+  int len,is_der=0==strncmp("der(", varName, 4);
+  const char *has_dot=NULL;
   const char *c = varName;
   char *res = NULL;
   while (*c) {
-    if (*c==',') {
-      j++;
-      i+=2;
-    } else {
-      if (*c=='.') {
-        has_dot = i-j;
-      }
-      i+=1;
+    if (*c=='.') {
+      has_dot = c;
     }
     c++;
   }
-  if (!(is_der&&has_dot) && 0==j) {
+  if (!(is_der&&has_dot)) {
     return NULL; /* The Dymola name is the same as OMC */
   }
-  res = (char*) malloc(i + 10);
-  //fprintf(stderr, "alloc1 %d, %s\n", i, varName); fflush(NULL);
-  res[i-1]='\0';
-  if (is_der && has_dot) {
-    memcpy(res, varName+4, has_dot-4);
-    sprintf(res+has_dot-4, "der(%s", varName+has_dot);
-  } else {
-    memcpy(res, varName, i);
+  len = strlen(varName);
+  res = (char*) malloc(len+1);
+  /* fprintf(stderr, "alloc1 %d, %s\n", len+1, varName); */
+  res[len]='\0';
+
+  memcpy(res, varName+4, has_dot-varName+1);
+  sprintf(res+(has_dot-varName)+1, "der(%s", has_dot+1);
+
+  /* fprintf(stderr, "alloc2 %s, %s\n", varName, res); */
+  return res;
+}
+
+char* openmodelicaStyleVariableName(const char *varName)
+{
+  int len;
+  const char *der=strstr(varName, "der(");
+  const char *c = varName;
+  char *res = NULL;
+  if (!der || der == varName) {
+    return NULL;
   }
-  if (j) {
-    c = res;
-    for (j=j+i; j>=0; j--, i--) {
-      if (res[i]==',') {
-        i--;
-        res[j--]=' ';
-        res[j--]=',';
-      } else {
-        res[j]=res[i];
-      }
-    }
-  }
-  //fprintf(stderr, "alloc2 %s, %s\n", varName, res); fflush(NULL);
+  len = strlen(varName);
+  res = (char*) malloc(len+1);
+  res[len]='\0';
+
+  memcpy(res, "der(", 4);
+  memcpy(res+4, varName, der-varName);
+  memcpy(res+(der-varName)+4, der+4, len-(der-varName+4));
+
   return res;
 }
 
@@ -491,15 +516,23 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
 
   res = (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
   if (res == NULL) { /* Try to convert the name to a Dymola name */
+    /* fprintf(stderr, "Did not find: %s\n", varName); */
     if (0==strcmp(varName, "time")) {
       key.name = "Time";
+      return (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
+    } else if (0==strcmp(varName, "Time")) {
+      key.name = "time";
       return (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
     }
     char *dymolaName = dymolaStyleVariableName(varName);
     if (dymolaName == NULL) {
+      dymolaName = openmodelicaStyleVariableName(varName);
+    }
+    if (dymolaName == NULL) {
       return NULL;
     }
     key.name = dymolaName;
+    /* fprintf(stderr, "Look for dymola style name: %s\n", dymolaName); */
     res = (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
     free(dymolaName);
   }
