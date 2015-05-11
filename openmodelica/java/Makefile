@@ -39,7 +39,7 @@ check_javac:
 	@"$(JAVAC)" -version 2>version.txt || (echo "No Java Compiler found." && echo "Install a Java Development Kit (JDK) and set JAVA_HOME to that location." && echo "Sun Java installs both JRE and JDK in Windows, but we MUST load the JDK so we can access javac." && false)
 JavaExtDefs.jar: JavaExt.mo $(OMC) $(RUNTIME)
 	"$(JAVA)" -classpath "$(RUNTIME)$(SEP)$(ANTLR)" org.openmodelica.corba.parser.DefinitionsCreator $@ org.openmodelica.JavaExtTest "." $<
-AbsynTest.jar: ../../../Compiler/FrontEnd/Absyn.mo $(OMC) $(RUNTIME)
+AbsynTest.jar: ../../../OMCompiler/Compiler/FrontEnd/Absyn.mo $(OMC) $(RUNTIME)
 	OPENMODELICAHOME=$(OPENMODELICAHOME) "$(JAVA)" -classpath "$(RUNTIME)$(SEP)$(ANTLR)" org.openmodelica.corba.parser.DefinitionsCreator $@ org.openmodelica.AbsynTest "." $<
 JavaExt.class: JavaExt.java JavaExtDefs.jar AbsynTest.jar $(OMC) $(RUNTIME)
 	"$(JAVAC)" -classpath "$(CLASSPATH)" $<
