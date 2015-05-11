@@ -1,7 +1,6 @@
 all:
 	$(MAKE) omc @OMLIBRARY_TARGET@ testsuite-depends
-	$(MAKE) omplot
-	$(MAKE) omedit omoptim
+	$(MAKE) omedit omnotebook omoptim
 
 .PRECIOUS: Makefile
 .PHONY: omc omlibrary-all omlibrary-core omplot omedit omoptim testsuite-depends
@@ -14,10 +13,12 @@ omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary all
 omplot:
 	$(MAKE) -C OMPlot
-omedit:
+omedit: omplot
 	$(MAKE) -C OMEdit
-omoptim:
+omoptim: omplot
 	$(MAKE) -C OMOptim
+omnotebook: omplot
+	$(MAKE) -C OMNotebook
 testsuite-depends:
 	$(MAKE) --quiet -C testsuite "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@" omc-diff ReferenceFiles
 
