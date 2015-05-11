@@ -7310,7 +7310,7 @@ template MemberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           '<%typeString%> <%arrayName%>;'
       else
         <<
-        RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
+        RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>; //consecutive: <%SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name)%>
         >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then

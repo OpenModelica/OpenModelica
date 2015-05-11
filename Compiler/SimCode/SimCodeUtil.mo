@@ -12768,6 +12768,53 @@ algorithm
   oVarIndexList := tmpVarIndexListNew;
 end getVarIndexListByMapping;
 
+public function isVarIndexListConsecutive "author: marcusw
+  Check if all variable indices of the given variables, stored in the hash table, are consecutive."
+  input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+  input DAE.ComponentRef iVarName;
+  output Boolean oIsConsecutive;
+protected
+  DAE.ComponentRef varName = iVarName;
+  Integer arrayIdx, idx, arraySize;
+  Integer currentIndex = -1;
+  array<Integer> varIndices;
+  Boolean consecutive = true;
+algorithm
+  varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
+  if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
+    ((_,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
+    arraySize := arrayLength(varIndices);
+    for arrayIdx in 0:(arraySize-1) loop
+      idx := arrayGet(varIndices, arraySize-arrayIdx);
+      if(intLt(idx, 0)) then
+        if(intEq(currentIndex, -1)) then
+          currentIndex := intMul(idx, -1) - 1;
+        else
+          consecutive := boolAnd(consecutive, intEq(currentIndex, intMul(idx, -1)));
+          currentIndex := intMul(idx, -1) - 1;
+        end if;
+        //print("SimCodeUtil.isVarIndexListConsecutive: Warning, negativ aliases (" + ComponentReference.printComponentRefStr(iVarName) + ") are not supported at the moment!\n");
+      else
+        if(intEq(idx, 0)) then
+          currentIndex := -2;
+          consecutive := false;
+        else
+          if(intEq(currentIndex, -1)) then
+            currentIndex := idx - 1;
+          else
+            //print("SimCodeUtil.isVarIndexListConsecutive: Checking if " + intString(currentIndex) + " is consecutive with " + intString(idx) + "\n");
+            consecutive := boolAnd(consecutive, intEq(currentIndex, idx));
+            //print("SimCodeUtil.isVarIndexListConsecutive: " + boolString(consecutive) + "\n");
+            currentIndex := idx - 1;
+          end if;
+        end if;
+      end if;
+    end for;
+  end if;
+  oIsConsecutive := consecutive;
+end isVarIndexListConsecutive;
+
+
 protected function getUnrolledArrayIndex "author: marcusw
   Calculate a flat array index, by the given subscripts. E.g. [2,1] for array of size 3x3 will lead to: 2."
   input DAE.Subscript iCurrentSubscript;
