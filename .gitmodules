@@ -25,3 +25,6 @@
 [submodule "testsuite"]
 	path = testsuite
 	url = ../OpenModelica-testsuite.git
+[submodule "OMShell"]
+	path = OMShell
+	url = ../OMShell.git
