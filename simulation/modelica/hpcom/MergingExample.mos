@@ -13,7 +13,7 @@ simulate(MergingExample, stopTime = 1.0); getErrorString();
 
 res := OpenModelica.Scripting.checkTaskGraph("taskGraphMergingExampleODE.graphml","ReferenceGraphs/MergingExample_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("MergingExample_res.mat",
-  "ReferenceFiles/MergingExample.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/hpcom/MergingExample.mat",
   "MergingExample_diff.csv",0.01,0.0001,
   {"a",
    "b",

@@ -13,7 +13,7 @@ simulate(SimpleResistor);getErrorString();
 
 res := OpenModelica.Scripting.checkTaskGraph("taskGraphSimpleResistorODE.graphml","ReferenceGraphs/SimpleResistor_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("SimpleResistor_res.mat",
-  "ReferenceFiles/SimpleResistor.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/hpcom/SimpleResistor.mat",
   "SimpleResistor_diff.csv",0.01,0.0001,
   {"sineVoltage.v",
    "sineVoltage.i",
@@ -29,7 +29,7 @@ res := OpenModelica.Scripting.compareSimulationResults("SimpleResistor_res.mat",
    "resistor.n.i",
    "resistor.n.v",
    "resistor.LossPower"});
-   
+
 // Result:
 // true
 // ""

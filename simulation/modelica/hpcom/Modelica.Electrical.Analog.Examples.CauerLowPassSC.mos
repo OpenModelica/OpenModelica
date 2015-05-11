@@ -14,7 +14,7 @@ setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=2 +hpcomScheduler=mcp +hpcomCode=pthreads_spin"); getErrorString();
 simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, stopTime=10.0); getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat",
   "Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff.csv",0.01,0.0001,
 {
 "C1.v","C2.v","C3.v","C4.v","C7.v","R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v"

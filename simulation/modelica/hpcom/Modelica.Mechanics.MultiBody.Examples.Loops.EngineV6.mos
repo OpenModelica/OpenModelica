@@ -17,7 +17,7 @@ simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6); getErrorString()
 
 res := OpenModelica.Scripting.checkTaskGraph("taskGraphModelica.Mechanics.MultiBody.Examples.Loops.EngineV6ODE.graphml","ReferenceGraphs/Mechanics.EngineV6_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mat",
   "Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_diff.csv",0.13,0.0005,
   {"load.phi",
    "load.w",

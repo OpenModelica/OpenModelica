@@ -21,7 +21,7 @@ setComponentProperties(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTa
 setComponentComment(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, "added to make the model complete"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks_res.mat",
-  "ReferenceFiles/Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.mat",
   "Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks_diff.csv",0.13,0.0005,
 	{
 	  "tank1.level", 

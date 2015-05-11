@@ -13,7 +13,7 @@ simulate(ElectricalCircuit); getErrorString();
 
 res := OpenModelica.Scripting.checkTaskGraph("taskGraphElectricalCircuitODE.graphml","ReferenceGraphs/ElectricalCircuit_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit_res.mat",
-  "ReferenceFiles/ElectricalCircuit.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/hpcom/ElectricalCircuit.mat",
   "ElectricalCircuit_diff.csv",0.01,0.0001,
   {"resistor.v",
    "resistor.i",
