@@ -39,7 +39,7 @@ git clone https://github.com/OpenModelica/OpenModelica.git --recursive
 ```
 To keep the project updated, use something like:
 ```bash
-git pull --recursive && git submodule foreach --recursive "git submodule update"
+git pull --recurse-submodules && git submodule foreach --recursive "git submodule update"
 ```
 If you have push access to the submodules, you can push them all together and let [hudson](https://test.openmodelica.org/hudson/) run the tests before this project is updated (only necessary if you change an interface or the test suite at the same time as [OMCompiler](https://github.com/OpenModelica/OMCompiler)):
 ```bash
