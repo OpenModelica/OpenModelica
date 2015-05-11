@@ -7698,7 +7698,7 @@ algorithm
     case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i, initialValue=init, arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
-        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3=""; end if;
+        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
         print(" No Alias for var : " + s1 + " index: "+intString(i)+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] " + "\n");
      then ();
     case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2), arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement))
@@ -13157,6 +13157,7 @@ algorithm
     case SimCode.SES_NONLINEAR(index=index) then index;
     case SimCode.SES_MIXED(index=index) then index;
     case SimCode.SES_WHEN(index=index) then index;
+    case SimCode.SES_FOR_LOOP(index=index) then index;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.equationIndex failed"});

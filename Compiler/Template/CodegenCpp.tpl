@@ -4038,12 +4038,28 @@ end functionBodyRecordConstructor;
 template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, Boolean useFlatArrayNotation)
  "Generates code for a match expression."
 ::=
-match exp case exp as SHARED_LITERAL(__) then
- match context case FUNCTION_CONTEXT(__) then
- ' _OMC_LIT<%exp.index%>'
- else
-'_functions->_OMC_LIT<%exp.index%>'
+  match exp case exp as SHARED_LITERAL(__) then
+    match context case FUNCTION_CONTEXT(__) then
+      ' _OMC_LIT<%exp.index%>'
+    else
+      '_functions->_OMC_LIT<%exp.index%>'
 end daeExpSharedLiteral;
+
+
+template daeExpSum(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                   Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates code for a match expression."
+::=
+  match exp case exp as SUM(__) then
+    let bodyExp = daeExp(body, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let iteratorExp = daeExp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let startItExp = daeExp(startIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let endItExp = daeExp(endIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let &preExp += 'double sum = 0.0;<%\n%>for(int <%iteratorExp%> = <%startItExp%>; <%iteratorExp%> != <%endItExp%>; <%iteratorExp%>++)<%\n%>  sum += <%bodyExp%>[<%iteratorExp%>]<%\n%>'
+    <<
+    sum
+    >>
+end daeExpSum;
 
 
 template functionHeaderRegularFunction2(Function fn,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -7000,12 +7016,18 @@ match simVar
             ""
           else
             let size =  Util.mulStringDelimit2Int(array_num_elem,",")
-            let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
-            <<
-            <%typeString%>* <%arrayName%>_ref_data[<%size%>];
-            _sim_vars->init<%type%>AliasArray(boost::assign::list_of<%arrayIndices%>,<%arrayName%>_ref_data);
-            <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
-            >>
+            if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+              let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))
+              <<
+              <%arrayName%> = StatRefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
+              >>
+            else
+              let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
+              <<
+              <%typeString%>* <%arrayName%>_ref_data[<%size%>];
+              _sim_vars->init<%type%>AliasArray(boost::assign::list_of<%arrayIndices%>,<%arrayName%>_ref_data);
+              <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
+              >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
 
@@ -7309,9 +7331,14 @@ template MemberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
         else
           '<%typeString%> <%arrayName%>;'
       else
-        <<
-        RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>; //consecutive: <%SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name)%>
-        >>
+        if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+          <<
+          StatRefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
+          >>
+        else
+          <<
+          RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
+          >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
@@ -9147,89 +9174,85 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     then equationArrayCallAssign(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
-
     then
-
-    let i = index
-    match context
-    case  ALGLOOP_CONTEXT(genInitialisation=true)
-    then
-    <<
-    try
-    {
-      _algLoopSolver<%index%>->initialize();
-      _algLoop<%index%>->evaluate();
-      for(int i=0; i<_dimZeroFunc; i++)
-      {
-        getCondition(i);
-      }
-      IContinuous::UPDATETYPE calltype = _callType;
-      _callType = IContinuous::CONTINUOUS;
-      _algLoopSolver<%index%>->solve();
-      _callType = calltype;
-    }
-    catch(ModelicaSimulationError& ex)
-    {
-
-         string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
-          throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
-    }
-    >>
-    else
-    <<
-    bool restart<%index%> = true;
-
-    unsigned int iterations<%index%> = 0;
-    _algLoop<%index%>->getReal(_algloop<%index%>Vars);
-    bool restatDiscrete<%index%> = false;
-    try
-      {
-         _algLoop<%index%>->evaluate();
-          if( _callType == IContinuous::DISCRETE )
-          {
-             while(restart<%index%> && !(iterations<%index%>++>500))
-             {
-               getConditions(_conditions0<%index%>);
-               _callType = IContinuous::CONTINUOUS;
-               _algLoopSolver<%index%>->solve();
-               _callType = IContinuous::DISCRETE;
-               for(int i=0;i<_dimZeroFunc;i++)
-               {
-                 getCondition(i);
-               }
-               getConditions(_conditions1<%index%>);
-               restart<%index%> = !std::equal (_conditions1<%index%>, _conditions1<%index%>+_dimZeroFunc,_conditions0<%index%>);
-             }
-          }
-          else
-             _algLoopSolver<%index%>->solve();
-      }
-      catch(ModelicaSimulationError &ex)
-      {
-        restatDiscrete<%index%>=true;
-      }
-
-      if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
-      {
-            try
-             {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+      let i = index
+      match context
+        case  ALGLOOP_CONTEXT(genInitialisation=true)
+          then
+              <<
+              try
+              {
+                _algLoopSolver<%index%>->initialize();
+                _algLoop<%index%>->evaluate();
+                for(int i=0; i<_dimZeroFunc; i++)
+                {
+                  getCondition(i);
+                }
                 IContinuous::UPDATETYPE calltype = _callType;
-               _callType = IContinuous::DISCRETE;
-                 _algLoop<%index%>->setReal(_algloop<%index%>Vars );
+                _callType = IContinuous::CONTINUOUS;
                 _algLoopSolver<%index%>->solve();
-               _callType = calltype;
-             }
-             catch(ModelicaSimulationError& ex)
-             {
-                 string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
-                 throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+                _callType = calltype;
+              }
+              catch(ModelicaSimulationError& ex)
+              {
 
-             }
-      }
-     >>
-    end match
+                   string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                    throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+              }
+              >>
+            else
+              <<
+              bool restart<%index%> = true;
 
+              unsigned int iterations<%index%> = 0;
+              _algLoop<%index%>->getReal(_algloop<%index%>Vars);
+              bool restatDiscrete<%index%> = false;
+              try
+                {
+                   _algLoop<%index%>->evaluate();
+                    if( _callType == IContinuous::DISCRETE )
+                    {
+                       while(restart<%index%> && !(iterations<%index%>++>500))
+                       {
+                         getConditions(_conditions0<%index%>);
+                         _callType = IContinuous::CONTINUOUS;
+                         _algLoopSolver<%index%>->solve();
+                         _callType = IContinuous::DISCRETE;
+                         for(int i=0;i<_dimZeroFunc;i++)
+                         {
+                           getCondition(i);
+                         }
+                         getConditions(_conditions1<%index%>);
+                         restart<%index%> = !std::equal (_conditions1<%index%>, _conditions1<%index%>+_dimZeroFunc,_conditions0<%index%>);
+                       }
+                    }
+                    else
+                       _algLoopSolver<%index%>->solve();
+                }
+                catch(ModelicaSimulationError &ex)
+                {
+                  restatDiscrete<%index%>=true;
+                }
 
+                if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
+                {
+                      try
+                       {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                          IContinuous::UPDATETYPE calltype = _callType;
+                         _callType = IContinuous::DISCRETE;
+                           _algLoop<%index%>->setReal(_algloop<%index%>Vars );
+                          _algLoopSolver<%index%>->solve();
+                         _callType = calltype;
+                       }
+                       catch(ModelicaSimulationError& ex)
+                       {
+                           string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                           throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+
+                       }
+                }
+               >>
+         end match
   case e as SES_MIXED(__)
     /*<%equationMixed(e, context, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
     then
@@ -9239,20 +9262,16 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   case e as SES_FOR_LOOP(__)
     then
     <<
-    This is a foor loop, it works!
+    FOR LOOPS ARE NOT IMPLEMENTED
+    >>
+  case e as SES_IFEQUATION(__)
+    then
+    <<
+    IF EQUATIONS ARE NOT IMPLEMENTED
     >>
   else
     "NOT IMPLEMENTED EQUATION"
 end equation_;
-/*ranking: removed from equation_ before try block:
-   if(!(command & IContinuous::RANKING))
-    {
-
-     }
-       else _algLoop<%i%>->initialize();
- */
-
-
 
 template equation_function_call(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text method)
  "Generates an equation.
@@ -9301,7 +9320,10 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
       let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime)
       "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
-      else
+    case e as SES_FOR_LOOP(__)
+      then
+        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
+    else
       "NOT IMPLEMENTED EQUATION"
   end match
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
@@ -10502,6 +10524,23 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
 end equationLinearOrNonLinear;
 
 
+template equationForLoop(SimEqSystem eq, Context context,Text &varDecls, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/)
+::=
+  match eq
+    case SES_FOR_LOOP(__) then
+      let &preExp = buffer ""
+      let iterExp = daeExp(iter, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let startExp = daeExp(startIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let endExp = daeExp(endIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let expPart = daeExp(exp, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      <<
+      <%preExp%>
+      double *result = &<%cref(cref, false)%>[0];
+      for(int <%iterExp%> = <%startExp%>; <%iterExp%> != <%endExp%>; <%iterExp%>++)
+        result[i] = <%expPart%>;
+      >>
+end equationForLoop;
+
 template testDaeDimensionExp(Exp exp)
  "Generates code for an expression."
 ::=
@@ -10573,6 +10612,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ARRAY(__)           then     '/*t4*/<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
+  case e as SUM(__)             then     daeExpSum(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   else error(sourceInfo(), 'Unknown exp:<%printExpStr(exp)%>')
 end daeExp;

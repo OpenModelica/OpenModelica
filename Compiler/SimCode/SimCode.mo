@@ -386,21 +386,18 @@ uniontype SimEqSystem
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
 
-    record SES_LINEAR
-      Integer index;
-      Boolean partOfMixed;
-
-      list<SimCodeVar.SimVar> vars;
-      list<DAE.Exp> beqs;
-      list<tuple<Integer, Integer, SimEqSystem>> simJac;
-      /* solver linear tearing system */
-      list<SimEqSystem> residual;
-      Option<JacobianMatrix> jacobianMatrix;
-
-
-      list<DAE.ElementSource> sources;
-      Integer indexLinearSystem;
-    end SES_LINEAR;
+  record SES_LINEAR
+    Integer index;
+    Boolean partOfMixed;
+    list<SimCodeVar.SimVar> vars;
+    list<DAE.Exp> beqs;
+    list<tuple<Integer, Integer, SimEqSystem>> simJac;
+    /* solver linear tearing system */
+    list<SimEqSystem> residual;
+    Option<JacobianMatrix> jacobianMatrix;
+    list<DAE.ElementSource> sources;
+    Integer indexLinearSystem;
+  end SES_LINEAR;
 
   record SES_NONLINEAR
     Integer index;
