@@ -9,7 +9,7 @@ setDebugFlags("backenddaeinfo,reshufflePost");getErrorString();
 simulate(Pendulum.Pendulum2, stopTime=1); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum2_res.mat",
-  "ReferenceFiles/Pendulum2.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/resolveLoops/Pendulum2.mat",
   "Pendulum_2_diff.csv",0.01,0.0001,
   {"revolute[2].w",
    "revolute[2].phi",
