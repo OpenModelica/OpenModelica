@@ -1939,7 +1939,7 @@ encapsulated package HpcOmMemory
             currentVarIndices = (stateAndStateDerSize + (maxNumElemsFloat - intMod(stateAndStateDerSize, maxNumElemsFloat)), 0, 0);
           end if;
 
-          print("convertCacheToVarArrayMapping: The first " + intString(Util.tuple31(currentVarIndices)) + " elements are reserved for states and state derivatives\n");
+          //print("convertCacheToVarArrayMapping: The first " + intString(Util.tuple31(currentVarIndices)) + " elements are reserved for states and state derivatives\n");
           varSizeFloat = Util.tuple31(currentVarIndices);
 
           varIdxOffsets = arrayCreate(3,0);

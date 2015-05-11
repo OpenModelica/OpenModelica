@@ -25,7 +25,10 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationCppFile(simCode, contextOther, Update(simCode , &extraFuncs , &extraFuncsDecl,  className, stateDerVectorName, false),
                         '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', &extraFuncs, &extraFuncsDecl, className, "", "", "",
                         stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
-        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, className, "", "", "", MemberVariable(modelInfo, false), MemberVariablePreVariables(modelInfo,false), false), 'OMCpp<%fileNamePrefix%>.h')
+        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, className, "", "", "",
+                                             MemberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', false),
+                                             MemberVariablePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', false),
+                                             false), 'OMCpp<%fileNamePrefix%>.h')
         let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
         let()= textFile(simulationMakefile(target,simCode , &extraFuncs , &extraFuncsDecl, "","","","","",false), '<%fileNamePrefix%>.makefile')
 
@@ -3083,7 +3086,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     #include <Core/ModelicaDefine.h>
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
-    #include <Core/System/EventHandling.h>   #include <Core/System/DiscreteEvents.h>
+    #include <Core/System/EventHandling.h>
+    #include <Core/System/DiscreteEvents.h>
     #if defined(__TRICORE__) || defined(__vxworks)
     #include <DataExchange/SimDouble.h>
     #endif
@@ -3093,6 +3097,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
         : SystemDefaultImplementation(globalSettings,sim_data,sim_vars)
         , _algLoopSolverFactory(nonlinsolverfactory)
+        , _pointerToRealVars(sim_vars->getRealVarsVector())
+        , _pointerToIntVars(sim_vars->getIntVarsVector())
+        , _pointerToBoolVars(sim_vars->getBoolVarsVector())
         <%additionalConstructorVarDefsBuffer%>
         <%simulationInitFile(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, false)%>
     {
@@ -6211,12 +6218,17 @@ match modelInfo
       void defineAliasIntVars();
       void defineAliasBoolVars();
 
-
       void getJacobian(SparseMatrix& matrix);
       void deleteObjects();
+
       //Variables:
-       boost::shared_ptr<EventHandling> _event_handling;
+      boost::shared_ptr<EventHandling> _event_handling;
       boost::shared_ptr<DiscreteEvents> _discrete_events;
+
+      //pointer to simVars-array to speedup simulation and compile time
+      double* _pointerToRealVars;
+      int* _pointerToIntVars;
+      bool* _pointerToBoolVars;
 
       <%memberVariableDefinitions%>
       <%memberPreVariableDefinitions%>
@@ -6751,7 +6763,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 //void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);
 end generateAlgloopMethodDeclarationCode;
 
-template MemberVariable(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+template MemberVariableDefine(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt,
+                        Text indexForUndefinedReferencesBool, Boolean useFlatArrayNotation)
  /*Define membervariable in simulation file.*/
 ::=
 match modelInfo
@@ -6759,48 +6772,49 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
    /*parameter real vars*/
    <%vars.paramVars |> var =>
-    MemberVariableDefine2(var, "parameters", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
    ;separator="\n"%>
    /*parameter int vars*/
    <%vars.intParamVars |> var =>
-    MemberVariableDefine2( var, "intVariables.parameters", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int", true)
   ;separator="\n"%>
    /*parameter bool vars*/
    <%vars.boolParamVars |> var =>
-    MemberVariableDefine2(var, "boolVariables.parameters", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool", true)
   ;separator="\n"%>
   /*string parameter variables*/
    <%vars.stringParamVars |> var =>
-    MemberVariableDefine2(var, "stringVariables.parameters", useFlatArrayNotation, false)
+    MemberVariableDefine2(var, varToArrayIndexMapping, "0", useFlatArrayNotation, "String", false)
   ;separator="\n"%>
    /*string alias variables*/
    <%vars.stringAliasVars |> var =>
-    MemberVariableDefine2(var, "stringVariables.AliasVars", useFlatArrayNotation, false)
+    MemberVariableDefine2(var, varToArrayIndexMapping, "0", useFlatArrayNotation, "String", false)
    ;separator="\n"%>
    /*external variables*/
    <%vars.extObjVars |> var =>
-    MemberVariableDefine2(var, "extObjVars", useFlatArrayNotation, false)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",  false)
    ;separator="\n"%>
    /*alias real vars*/
    <%vars.aliasVars |> var =>
-    MemberVariableDefine2(var, "aliasVars", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
    ;separator="\n"%>
    /*alias int vars*/
    <%vars.intAliasVars |> var =>
-    MemberVariableDefine2( var, "intVariables.AliasVars", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int", true)
    ;separator="\n"%>
     /*alias bool vars*/
    <%vars.boolAliasVars |> var =>
-    MemberVariableDefine2(var, "boolVariables.AliasVars", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool", true)
    ;separator="\n"%>
    /*string algvars*/
    <%vars.stringAlgVars |> var =>
-    MemberVariableDefine2(var, "stringVariables.AliasVars", useFlatArrayNotation, false)
+    MemberVariableDefine2(var, varToArrayIndexMapping, "0", useFlatArrayNotation, "String", true)
   ;separator="\n"%>
  >>
-end MemberVariable;
+end MemberVariableDefine;
 
-template MemberVariablePreVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+template MemberVariablePreVariables(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt,
+                                    Text indexForUndefinedReferencesBool, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
@@ -6809,24 +6823,23 @@ case MODELINFO(vars=SIMVARS(__)) then
   //Variables saved for pre, edge and change operator
    /*real algvars*/
   <%vars.algVars |> var =>
-    MemberVariableDefine(var, "algebraics", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
   ;separator="\n"%>
   /*discrete algvars*/
   <%vars.discreteAlgVars |> var =>
-    MemberVariableDefine(var, "algebraics", useFlatArrayNotation, true)
-  ;separator="\n"%>
-  /*bool algvars*/
-  <%vars.boolAlgVars |> var =>
-    MemberVariableDefine(var, "boolVariables.algebraics", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
   ;separator="\n"%>
    /*int algvars*/
    <%vars.intAlgVars |> var =>
-    MemberVariableDefine(var, "intVariables.algebraics", useFlatArrayNotation, true)
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int", true)
   ;separator="\n"%>
-
+  /*bool algvars*/
+  <%vars.boolAlgVars |> var =>
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool", true)
+  ;separator="\n"%>
    /*mixed array variables*/
-   <%vars.mixedArrayVars |> arrVar =>
-    MemberVariableDefine2(arrVar, "mixed", useFlatArrayNotation, true)
+   <%vars.mixedArrayVars |> var =>
+    MemberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
    ;separator="\n"%>
   >>
 end MemberVariablePreVariables;
@@ -6853,7 +6866,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AlgVars
       <%List.partition(vars.algVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
-                                          additionalAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
 
       void <%classname%>::defineAlgVars()
       {
@@ -6863,7 +6876,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //DiscreteAlgVars
       <%List.partition(vars.discreteAlgVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineDiscreteAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
-                                          additionalDiscreteAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalDiscreteAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
 
       void <%classname%>::defineDiscreteAlgVars()
       {
@@ -6873,7 +6886,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //IntAlgVars
       <%List.partition(vars.intAlgVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineIntAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int",
-                                          additionalIntAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalIntAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineIntAlgVars()
       {
         <%additionalIntAlgVarFunctionCalls%>
@@ -6882,7 +6895,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //BoolAlgVars
       <%List.partition(vars.boolAlgVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineBoolAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool",
-                                          additionalBoolAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalBoolAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineBoolAlgVars()
       {
         <%additionalBoolAlgVarFunctionCalls%>
@@ -6891,7 +6904,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //ParameterRealVars
       <%List.partition(vars.paramVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineParameterRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
-                                          additionalParameterRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalParameterRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineParameterRealVars()
       {
         <%additionalParameterRealVarFunctionCalls%>
@@ -6900,7 +6913,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //ParameterIntVars
       <%List.partition(vars.intParamVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineParameterIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int",
-                                          additionalParameterIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalParameterIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineParameterIntVars()
       {
         <%additionalParameterIntVarFunctionCalls%>
@@ -6909,7 +6922,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //ParameterBoolVars
       <%List.partition(vars.boolParamVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineParameterBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool",
-                                          additionalParameterBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalParameterBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineParameterBoolVars()
       {
         <%additionalParameterBoolVarFunctionCalls%>
@@ -6918,7 +6931,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasRealVars
       <%List.partition(vars.aliasVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineAliasRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
-                                          additionalAliasRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalAliasRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineAliasRealVars()
       {
         <%additionalAliasRealVarFunctionCalls%>
@@ -6927,7 +6940,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasIntVars
       <%List.partition(vars.intAliasVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineAliasIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int",
-                                          additionalAliasIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalAliasIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineAliasIntVars()
       {
         <%additionalAliasIntVarFunctionCalls%>
@@ -6936,7 +6949,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasBoolVars
       <%List.partition(vars.boolAliasVars, 100) |> varPartition hasindex i0 =>
         MemberVariableInitializeWithSplit(varPartition, i0, "defineAliasBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool",
-                                          additionalAliasBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          true, additionalAliasBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::defineAliasBoolVars()
       {
         <%additionalAliasBoolVarFunctionCalls%>
@@ -6945,7 +6958,7 @@ template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 end MemberVariableInitialize;
 
 template MemberVariableInitializeWithSplit(list<SimVar> simVars, Text idx, Text functionPrefix, Text className, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences, Boolean useFlatArrayNotation,
-                                   String type, Text& additionalFunctionCalls, Text& additionalConstructorVariables, Text& additionalFunctionDefinitions)
+                                   String type, Boolean createRefVar, Text& additionalFunctionCalls, Text& additionalConstructorVariables, Text& additionalFunctionDefinitions)
 ::=
   let &additionalFunctionCalls += '  <%functionPrefix%>_<%idx%>();<%\n%>'
   let &additionalFunctionDefinitions += 'void <%functionPrefix%>_<%idx%>();<%\n%>'
@@ -6953,23 +6966,23 @@ template MemberVariableInitializeWithSplit(list<SimVar> simVars, Text idx, Text 
   void <%className%>::<%functionPrefix%>_<%idx%>()
   {
     <%simVars |> var =>
-        MemberVariableInitialize2(var, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, additionalConstructorVariables)
+        MemberVariableInitialize2(var, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, createRefVar, additionalConstructorVariables)
         ;separator="\n"%>
   }
   >>
 end MemberVariableInitializeWithSplit;
 
 template MemberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences, Boolean useFlatArrayNotation,
-                                   String type, Text& additionalConstructorVariables)
+                                   String type, Boolean createRefVar, Text& additionalConstructorVariables)
 ::=
 
 match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
 
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-    let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
-    let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(_sim_vars->init<%type%>Var(<%index%>))<%\n%>'
-     ""
+      //let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+      //let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(_sim_vars->init<%type%>Var(<%index%>))<%\n%>'
+      ""
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -6982,8 +6995,8 @@ match simVar
       else
         match dims
           case "0" then
-            let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
-            let& additionalConstructorVariables += ',<%arrayName%>(_sim_vars->init<%type%>Var(<%index%>))'
+            //let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+            //let& additionalConstructorVariables += ',<%arrayName%>(_sim_vars->init<%type%>Var(<%index%>))'
             ""
           else
             let size =  Util.mulStringDelimit2Int(array_num_elem,",")
@@ -7001,9 +7014,9 @@ match simVar
       let varType = variableType(type_)
       match dims
         case "0" then
-        let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
-        let& additionalConstructorVariables += ',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
-        ""
+          //let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+          //let& additionalConstructorVariables += ',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
+          ""
         else ''
       end match
 end MemberVariableInitialize2;
@@ -7226,44 +7239,9 @@ case MODELINFO(vars=SIMVARS(__)) then
     InitAlgloopParam(var, "stringVariables.AliasVars",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.stringAliasVars then "," else "" %>
  >>
- end InitAlgloopParams;
+end InitAlgloopParams;
 
-/*
-template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
-::=
-match simVar
-    case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-      //SimVar is not an array
-      <<
-      <%type%> <%cref(name,useFlatArrayNotation)%>;
-      >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      let &dims = buffer ""
-      let arrayName = arraycref2(name,dims)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
-      let varType = variableType(type_)
 
-      match dims
-        case "0" then
-          <<
-          <%varType%> <%arrayName%>;
-          >>
-        else
-          <<
-          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>;
-          >>
-    case SIMVAR(numArrayElement=_::_) then
-      let test = numArrayElement |> index =>  '<%index%>'; separator=","
-      let& dims = buffer ""
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
-      match dims
-        case "0" then  '<%varType%> <%varName%>;'
-        else ''
-end MemberVariableDefine;
-*/
 template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre, Boolean useFlatArrayNotation)
 ::=
 match simVar
@@ -7290,16 +7268,26 @@ match simVar
 end MemberVariableDefineReference;
 
 
-template MemberVariableDefine(SimVar simVar, String arrayName, Boolean useFlatArrayNotation, Boolean createRefVar)
+template MemberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences,
+                              Boolean useFlatArrayNotation, String type, Boolean createRefVar)
 ::=
-
-match simVar
+  match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
 
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
+      /*
       <<
       <%variableType(type_)%><%if createRefVar then '&' else ''%> <%cref(name,useFlatArrayNotation)%>;
       >>
+      */
+      if createRefVar then
+        let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+        <<
+        #define <%cref(name,useFlatArrayNotation)%> _pointerTo<%type%>Vars[<%index%>]
+        >>
+      else
+        '<%variableType(type_)%> <%cref(name,useFlatArrayNotation)%>;'
+
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -7308,9 +7296,18 @@ match simVar
       let array_dimensions =  arrayextentDims(name, v.numArrayElement)
       match dims
       case "0" then
+        /*
         <<
         <%typeString%><%if createRefVar then '&' else ''%> <%arrayName%>;
         >>
+        */
+        if createRefVar then
+          let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+          <<
+          #define <%arrayName%> _pointerTo<%type%>Vars[<%index%>]
+          >>
+        else
+          '<%typeString%> <%arrayName%>;'
       else
         <<
         RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
@@ -7321,51 +7318,15 @@ match simVar
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims
-        case "0" then  '<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
-        else ''
-      end match
-
-
-end MemberVariableDefine;
-
-
-
-template MemberVariableDefine2(SimVar simVar, String arrayName, Boolean useFlatArrayNotation, Boolean createRefVar)
-::=
-
-match simVar
-    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-    case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-      <<
-      <%variableType(type_)%><%if createRefVar then '&' else ''%> <%cref(name,useFlatArrayNotation)%>;
-      >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let array_dimensions =  arrayextentDims(name, v.numArrayElement)
-      match dims
         case "0" then
-          <<
-          <%typeString%><%if createRefVar then '&' else ''%> <%arrayName%>;
-          >>
-        else
-          <<
-          RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
-          >>
-   /*special case for variables that marked as array but are not arrays */
-    case SIMVAR(numArrayElement=_::_) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
-      match dims
-        case "0" then  '<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
+          //'<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
+          if createRefVar then
+            let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+            '#define <%varName%> _pointerTo<%type%>Vars[<%index%>]'
+          else
+            '<%varType%> <%varName%>;'
         else ''
       end match
-
-
 end MemberVariableDefine2;
 
 

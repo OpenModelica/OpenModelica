@@ -109,8 +109,10 @@ double* SimVars::getDerStateVector()
 *  \return pointer to the real variable vector
 *  \details Details
 */
-const double* SimVars::getRealVarsVector() const
+double* SimVars::getRealVarsVector() const
 {
+  if(!_real_vars.get())
+    return NULL;
   return _real_vars.get()->get();
 }
 /**
@@ -118,8 +120,10 @@ const double* SimVars::getRealVarsVector() const
 *  \return pointer to the integer variable vector
 *  \details Details
 */
-const int* SimVars::getIntVarsVector() const
+int* SimVars::getIntVarsVector() const
 {
+  if(!_int_vars.get())
+    return NULL;
   return _int_vars.get()->get();
 }
 /**
@@ -127,8 +131,10 @@ const int* SimVars::getIntVarsVector() const
 *  \return pointer to the bool variable vector
 *  \details Details
 */
-const bool* SimVars::getBoolVarsVector() const
+bool* SimVars::getBoolVarsVector() const
 {
+  if(!_bool_vars.get())
+    return NULL;
   return _bool_vars.get()->get();
 }
 /**
