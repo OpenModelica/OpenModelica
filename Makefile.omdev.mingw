@@ -2,7 +2,7 @@ defaultMakefileTarget = Makefile.omdev.mingw
 REALPATH = $(realpath .)
 OMBUILDDIR=$(REALPATH)/build
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook
+.PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim
 
 omc:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR)
@@ -24,6 +24,12 @@ omedit: omplot
 
 omnotebook: omplot
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR)  
+
+omshell:
+	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR)
+
+omoptim: omplot
+	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR)
 
 clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
