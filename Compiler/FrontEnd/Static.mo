@@ -7041,7 +7041,9 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
         (cache,e,prop,st) = BackendInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, st, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
-        ErrorExt.rollBack("elabCall_InteractiveFunction");
+        if impl==true then
+          ErrorExt.rollBack("elabCall_InteractiveFunction");
+        end if;
       then
         (cache,e,prop,st);
     else
