@@ -1,5 +1,6 @@
-#include <Core/Modelica.h>
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
+
 #include <Core/SimController/Configuration.h>
 #if defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #include "LibrariesConfig.h"

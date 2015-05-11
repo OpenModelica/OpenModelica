@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Solver/RTEuler/RTEuler.h>
 #include <Solver/RTEuler/RTEulerSettings.h>
 

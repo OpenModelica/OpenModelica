@@ -227,7 +227,7 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(PAPI DEFAULT_MSG PAPI_LIBRARIES PAPI_INCLUDE_D
 IF(PAPI_FOUND)
   ADD_DEFINITIONS(-DUSE_PAPI)
 ENDIF(PAPI_FOUND)
-
+ 
 
 # Find Boost
 #  - The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
@@ -377,7 +377,7 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 #build of simulation.core
 include_directories ("Include")
 include_directories ("Solver")
-
+ADD_DEFINITIONS(-DWinvalid-pch)
 add_subdirectory (Core/Modelica)
 add_subdirectory (Core/Math)
 add_subdirectory (SimCoreFactory/OMCFactory)

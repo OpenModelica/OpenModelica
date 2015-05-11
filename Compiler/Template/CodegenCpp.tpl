@@ -1573,6 +1573,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 
 <<
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <stdio.h>
 #include <string>
@@ -1883,14 +1884,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let moLib     = makefileParams.compileDir
   let home      = makefileParams.omhome
   <<
+  
+  #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
-  #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
 
-  #ifdef RUNTIME_STATIC_LINKING
-    #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
-  #endif //RUNTIME_STATIC_LINKING
-
+ 
   <%
   match(getConfigString(PROFILING_LEVEL))
      case("none") then ''
@@ -3071,8 +3070,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let className = lastIdentOfPath(modelInfo.name)
   let &additionalBodyStatements = buffer ""
     <<
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include <Core/System/EventHandling.h>
@@ -9981,8 +9980,8 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode ,Text& 
     *
     *****************************************************************************/
 
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
     #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%modelfilename%>.h"
     #include "OMCpp<%modelfilename%>Functions.h"

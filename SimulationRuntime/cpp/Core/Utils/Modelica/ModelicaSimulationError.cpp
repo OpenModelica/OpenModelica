@@ -1,3 +1,4 @@
+ #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
 
  #include  <Core/Utils/Modelica/ModelicaSimulationError.h>

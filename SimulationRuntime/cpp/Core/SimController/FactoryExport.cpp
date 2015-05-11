@@ -1,8 +1,9 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
 
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 #include <Core/SimController/SimController.h>
 
 extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path)
@@ -13,7 +14,7 @@ extern "C" ISimController* createSimController(PATH library_path, PATH modelicas
 #elif defined(SIMSTER_BUILD)
 
 
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 #include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>
 /*Simster factory*/
@@ -26,7 +27,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simcontroller(boost
 #elif defined(OMC_BUILD)
 
 
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>

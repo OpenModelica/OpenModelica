@@ -1,5 +1,6 @@
-#include <Core/Modelica.h>
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
+
 #include <Core/System/FactoryExport.h>
 #include <Core/System/SimVars.h>
 #include <boost/lambda/bind.hpp>
