@@ -61,6 +61,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+ReferenceFiles
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

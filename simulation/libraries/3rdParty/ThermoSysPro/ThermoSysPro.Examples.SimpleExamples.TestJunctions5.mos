@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestJunctions5, stopTime=10); getE
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestJunctions5_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestJunctions5.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestJunctions5.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestJunctions5_diff.csv",
 0.01, 0.0001,
 {"splitter2_1.Ce.Q", "splitter2_1.Cs1.Q", "splitter2_1.Cs2.Q",

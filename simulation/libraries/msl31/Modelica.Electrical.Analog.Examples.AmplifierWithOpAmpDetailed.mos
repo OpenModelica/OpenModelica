@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mat","Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed_diff.csv",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mat","Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed_diff.csv",
   0.01,0.001,{"opAmp.q_fp1","opAmp.q_fr1","opAmp.q_fr2","opAmp.q_fr3","opAmp.v_in","opAmp.v_source","opAmp.x"});
 
 // Result:

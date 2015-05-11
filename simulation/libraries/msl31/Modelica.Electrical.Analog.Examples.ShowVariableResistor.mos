@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.ShowVariableResistor);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ShowVariableResistor_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.ShowVariableResistor.mat","Modelica.Electrical.Analog.Examples.ShowVariableResistor_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ShowVariableResistor.mat","Modelica.Electrical.Analog.Examples.ShowVariableResistor_diff.csv",0.01,0.00001,
   {"VariableResistor.v",
   "VariableResistor.p.v",
   "VariableResistor.n.v",

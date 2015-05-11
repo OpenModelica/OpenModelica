@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Digital.Examples.Adder4,stopTime=5.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.Adder4_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Digital.Examples.Adder4.mat","Modelica.Electrical.Digital.Examples.Adder4_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.Adder4.mat","Modelica.Electrical.Digital.Examples.Adder4_diff.csv",0.01,0.001,
   {"Adder4.s",
   "Adder4.c_out"});
 

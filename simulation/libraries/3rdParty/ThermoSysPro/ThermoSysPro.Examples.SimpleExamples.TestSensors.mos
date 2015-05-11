@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestSensors, stopTime=1000); getEr
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestSensors_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestSensors.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestSensors.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestSensors_diff.csv",
 0.01, 0.0001,
 {"specificEnthalpySensor.Measure.signal",

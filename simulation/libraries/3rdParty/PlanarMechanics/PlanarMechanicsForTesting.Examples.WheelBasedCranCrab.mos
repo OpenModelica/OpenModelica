@@ -16,7 +16,7 @@ setIndexReductionMethod("dynamicStateSelection");
 simulate(PlanarMechanicsForTesting.Examples.WheelBasedCranCrab); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.WheelBasedCranCrab_res.mat",
-  "ReferenceFiles/WheelBasedCranCrab.mat","PlanarMechanicsForTesting.Examples.WheelBasedCranCrab_diff.csv",0.01,0.035,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//WheelBasedCranCrab.mat","PlanarMechanicsForTesting.Examples.WheelBasedCranCrab_diff.csv",0.01,0.035,
   {"revolute.phi", "der(revolute.phi)", "idealRolling.w", "idealRolling.vx", "idealRolling.phi"});
 
 // Result:

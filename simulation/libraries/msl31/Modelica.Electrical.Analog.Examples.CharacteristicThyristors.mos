@@ -12,7 +12,7 @@ setTearingMethod("omcTearing");
 
 simulate(Modelica.Electrical.Analog.Examples.CharacteristicThyristors);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CharacteristicThyristors_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.CharacteristicThyristors.mat","Modelica.Electrical.Analog.Examples.CharacteristicThyristors_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CharacteristicThyristors.mat","Modelica.Electrical.Analog.Examples.CharacteristicThyristors_diff.csv",0.01,0.00001,
   {"IdealThyristor1.v",
   "IdealThyristor1.LossPower",
   "SineVoltage1.p.v",

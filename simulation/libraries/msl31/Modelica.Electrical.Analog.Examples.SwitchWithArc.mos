@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.SwitchWithArc,stopTime=2.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.CompareTransformers.mat","Modelica.Electrical.Analog.Examples.CompareTransformers_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CompareTransformers.mat","Modelica.Electrical.Analog.Examples.CompareTransformers_diff.csv",0.01,0.00001,
   {"inductor1.i",
   "inductor2.i",
   "der(inductor1.i)",

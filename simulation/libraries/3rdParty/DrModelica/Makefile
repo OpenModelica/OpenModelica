@@ -103,7 +103,8 @@ DrModelicaForTesting.KyenesianModel.mos \
 DEPENDENCIES = \
  *.mo \
  *.mos \
- Makefile 
+ Makefile \
+ ReferenceFiles
 	
 
 

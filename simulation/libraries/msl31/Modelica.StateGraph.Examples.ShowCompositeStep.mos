@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.StateGraph.Examples.ShowCompositeStep,stopTime=15.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.StateGraph.Examples.ShowCompositeStep_res.mat",
-  "ReferenceFiles/Modelica.StateGraph.Examples.ShowCompositeStep.mat","Modelica.StateGraph.Examples.ShowCompositeStep_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.StateGraph.Examples.ShowCompositeStep.mat","Modelica.StateGraph.Examples.ShowCompositeStep_diff.csv",0.01,0.0001,
   {"stateGraphRoot.subgraphStatePort.activeSteps",
   "compositeStep.transition3.t",
   "compositeStep.transition4.t",

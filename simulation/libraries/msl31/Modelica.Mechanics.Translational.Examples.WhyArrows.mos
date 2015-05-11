@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.Translational.Examples.WhyArrows);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.WhyArrows_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.Translational.Examples.WhyArrows.mat","Modelica.Mechanics.Translational.Examples.WhyArrows_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.WhyArrows.mat","Modelica.Mechanics.Translational.Examples.WhyArrows_diff.csv",0.01,0.001,
   {"mass1.s",
   "mass1.v",
   "inertia2.s",

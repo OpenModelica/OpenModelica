@@ -16,7 +16,7 @@ setIndexReductionMethod("dynamicStateSelection");
 simulate(PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection_res.mat",
-  "ReferenceFiles/KinematicLoop.mat","PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//KinematicLoop.mat","PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection_diff.csv",0.01,0.001,
   {"actuatedPrismatic.s", "actuatedPrismatic.v", "revolute3.w", "revolute3.phi"});
 
 // Result:

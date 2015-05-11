@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes.mat","Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_diff.csv",0.001,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes.mat","Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_diff.csv",0.001,0.00001,
   {"Ideal.v",
   "Ideal.LossPower",
   "With_Ron_Goff.v",

@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.HeatingResistor,stopTime=5.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.HeatingResistor_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.HeatingResistor.mat","Modelica.Electrical.Analog.Examples.HeatingResistor_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.HeatingResistor.mat","Modelica.Electrical.Analog.Examples.HeatingResistor_diff.csv",0.01,0.00001,
   {"heatingResistor.p.v",
   "heatingResistor.n.i",
   "heatingResistor.LossPower",

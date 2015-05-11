@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Analog.Examples.ShowSaturatingInductor);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.ShowSaturatingInductor.mat","Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ShowSaturatingInductor.mat","Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_diff.csv",0.01,0.00001,
   {"SaturatingInductance1.Psi",
   "der(SaturatingInductance1.Psi)",
   "v",

@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC, st
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.mat",
 "ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC_diff.csv",
 0.01, 0.0001,
 {"singularPressureLoss.Q",

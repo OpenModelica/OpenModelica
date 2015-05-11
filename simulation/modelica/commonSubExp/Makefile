@@ -18,7 +18,8 @@ FAILINGTESTFILES=  \
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile 
+Makefile \
+ReferenceFiles
 
 
 

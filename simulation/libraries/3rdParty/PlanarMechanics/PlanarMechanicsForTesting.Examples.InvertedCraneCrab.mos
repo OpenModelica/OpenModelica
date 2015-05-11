@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.InvertedCraneCrab, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.InvertedCraneCrab_res.mat",
-  "ReferenceFiles/InvertedCraneCrab.mat","PlanarMechanicsForTesting.Examples.InvertedCraneCrab_diff.csv",0.01,0.006,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//InvertedCraneCrab.mat","PlanarMechanicsForTesting.Examples.InvertedCraneCrab_diff.csv",0.01,0.006,
   {"actuatedPrismatic.v", "actuatedPrismatic.s", "actuatedRevolute.phi", "actuatedRevolute.w", "force.f"});
 
 // Result:

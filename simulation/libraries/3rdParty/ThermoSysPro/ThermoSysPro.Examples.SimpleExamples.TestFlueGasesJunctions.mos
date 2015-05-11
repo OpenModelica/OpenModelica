@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions, stopTime=2
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions_diff.csv",
 0.01, 0.0001,
 {"splitter2.Ce.Q", "splitter2.Cs1.Q", "splitter2.Cs2.Q",

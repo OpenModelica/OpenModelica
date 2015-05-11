@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestCheckValve, stopTime=1000); ge
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestCheckValve_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCheckValve.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestCheckValve.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestCheckValve_diff.csv",
 0.01, 0.0001,
 {"checkValve1.Q",

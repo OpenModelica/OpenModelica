@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestDiaphragm, stopTime=1000);  ge
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestDiaphragm_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestDiaphragm_diff.csv",
 0.01, 0.0001,
 {"Diaphragm.Q",

@@ -7,7 +7,7 @@ loadFile("testSolverPackage.mo"); getErrorString();
 simulate(testSolver.problem2, stopTime=stopTime, numberOfIntervals=3000, method="radau5", tolerance=1e-8); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
-  "ReferenceFiles/testSolver.problem2.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem2.mat",
   "testSolver.problem2_diff.csv",0.0001,0.0001,
 {
 "y[1]",

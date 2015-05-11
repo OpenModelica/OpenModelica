@@ -145,9 +145,12 @@ scodeinst.log \
 xml.log \
 xogeny.log
 
-.PHONY : all omc-diff failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
+.PHONY : all omc-diff ReferenceFiles failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
 
 all : test
+
+ReferenceFiles:
+	$(MAKE) -C ReferenceFiles
 
 # This will run the test with 5 threads (cores + 1)
 # If you have more cores increase it.
@@ -555,7 +558,6 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean
-	$(MAKE) -C openmodelica/dependency -f Makefile clean
 	$(MAKE) -C openmodelica/interactive-API -f Makefile clean
 	$(MAKE) -C openmodelica/parser -f Makefile clean
 	$(MAKE) -C openmodelica/typed-API -f Makefile clean
@@ -586,7 +588,7 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/types -f Makefile clean
 
 clean_g_3 :
-	$(MAKE) -C flattening/ibraries/msl22/modelicaAdditions -f Makefile clean
+	$(MAKE) -C flattening/libraries/msl22/modelicaAdditions -f Makefile clean
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
 	$(MAKE) -C flattening/libraries/msl22 -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean

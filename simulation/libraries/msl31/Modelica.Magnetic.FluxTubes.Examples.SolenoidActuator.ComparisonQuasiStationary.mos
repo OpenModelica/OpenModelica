@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary,stopTime=10.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary_res.mat",
-  "ReferenceFiles/Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary.mat","Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary.mat","Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary_diff.csv",0.01,0.00001,
   {"simpleSolenoid.armature.flange_a.f","advancedSolenoid.armature.flange_a.f","comparisonWithFEA.y[1]","simpleSolenoid.G_mFeArm.Phi","advancedSolenoid.G_mFeArm.Phi","comparisonWithFEA.y[2]",
    "simpleSolenoid.coil.L_stat","advancedSolenoid.L_statTot","comparisonWithFEA.y[3]",
    "advancedSolenoid.c_par1.v","advancedSolenoid.c_par2.v","advancedSolenoid.coil1.Phi",

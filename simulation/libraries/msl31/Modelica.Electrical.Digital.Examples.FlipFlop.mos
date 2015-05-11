@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.Digital.Examples.FlipFlop,stopTime=250.0);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.FlipFlop_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Digital.Examples.FlipFlop.mat","Modelica.Electrical.Digital.Examples.FlipFlop_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.FlipFlop.mat","Modelica.Electrical.Digital.Examples.FlipFlop_diff.csv",0.01,0.00001,
   {"J.y","CLK.y","K.y","FF.q","FF.qn"});
   
 // Result:

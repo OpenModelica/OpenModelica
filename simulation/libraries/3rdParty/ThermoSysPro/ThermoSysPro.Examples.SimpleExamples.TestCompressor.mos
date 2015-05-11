@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestCompressor, stopTime=1000); ge
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestCompressor_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCompressor.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestCompressor.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestCompressor_diff.csv",
 0.01, 0.0001,
 {"compressor.Q",

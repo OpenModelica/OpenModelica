@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.DoublePendulum, tolerance=0.0001, stopTime=9.5); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.DoublePendulum_res.mat",
-  "ReferenceFiles/DoublePendulum.mat","PlanarMechanicsForTesting.Examples.DoublePendulum_diff.csv",0.01,0.4,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//DoublePendulum.mat","PlanarMechanicsForTesting.Examples.DoublePendulum_diff.csv",0.01,0.4,
   {"revolute1.phi", "revolute.phi", "revolute.w", "revolute1.w"});
 getErrorString();
 

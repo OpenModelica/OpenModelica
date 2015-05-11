@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Electrical.MultiPhase.Examples.TransformerYY,stopTime=0.1);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.MultiPhase.Examples.TransformerYY_res.mat",
-  "ReferenceFiles/Modelica.Electrical.MultiPhase.Examples.TransformerYY.mat","Modelica.Electrical.MultiPhase.Examples.TransformerYY_diff.csv",0.01,0.0003,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.MultiPhase.Examples.TransformerYY.mat","Modelica.Electrical.MultiPhase.Examples.TransformerYY_diff.csv",0.01,0.0003,
   {"transformerL.inductor[1].i",
   "transformerL.inductor[2].i",
   "der(transformerL.inductor[1].i)",

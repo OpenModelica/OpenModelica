@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestPipePressureLoss, stopTime=100
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestPipePressureLoss_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestPipePressureLoss.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestPipePressureLoss.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestPipePressureLoss_diff.csv",
 0.01, 0.0001,
 {"pipePressureLoss.Q",

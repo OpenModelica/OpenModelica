@@ -14,7 +14,7 @@ simulate(ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine, stopTime=1000)
 
 res := OpenModelica.Scripting.compareSimulationResults(
 "ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine_res.mat",
-"ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.mat",
 "ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine_diff.csv",
 0.01, 0.0001,
 {"stodolaTurbine.Q","stodolaTurbine.Ts","stodolaTurbine.Te","stodolaTurbine.Ps","stodolaTurbine.Pe",

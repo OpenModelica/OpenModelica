@@ -10,7 +10,7 @@ loadModel(Modelica,{"3.1"});
 
 simulate(Modelica.Mechanics.Translational.Examples.Damper);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Damper_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.Translational.Examples.Damper.mat","Modelica.Mechanics.Translational.Examples.Damper_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.Damper.mat","Modelica.Mechanics.Translational.Examples.Damper_diff.csv",0.01,0.00001,
   {"damper1.s_rel",
   "damper1.v_rel",
   "damper2.s_rel",

@@ -11,7 +11,7 @@ setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.Translational.Examples.PreLoad);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.PreLoad_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.Translational.Examples.PreLoad.mat","Modelica.Mechanics.Translational.Examples.PreLoad_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.PreLoad.mat","Modelica.Mechanics.Translational.Examples.PreLoad_diff.csv",0.01,0.00001,
   {"friction.v_rel","innerContactA.s_rel","innerContactB.s_rel","outerContactA.v_rel","outerContactB.s_rel","outerContactB.v_rel"});
 
 // Result:
