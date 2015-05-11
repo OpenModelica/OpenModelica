@@ -46,7 +46,7 @@ If you have push access to the submodules, you can push them all together and le
 git submodule foreach --recursive "git push"
 ```
 If you are a developer and want to track the latest heads, use:
-```
+```bash
 # To clone
 git clone https://github.com/OpenModelica/OpenModelica.git --recursive && (cd OpenModelica && git submodule foreach --recursive "git checkout master")
 # To update
