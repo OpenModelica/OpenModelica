@@ -944,6 +944,11 @@ package SimCodeUtil
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
 
+  function isVarIndexListConsecutive
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    output Boolean oIsConsecutive;
+  end isVarIndexListConsecutive;
 end SimCodeUtil;
 
 

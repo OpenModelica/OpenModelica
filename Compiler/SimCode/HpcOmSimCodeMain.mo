@@ -371,7 +371,7 @@ algorithm
       (optTmpMemoryMap,optVarToArrayIndexMapping) = HpcOmMemory.createMemoryMap(modelInfo, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
       if(Util.isSome(optVarToArrayIndexMapping)) then
         SOME(varToArrayIndexMapping) = optVarToArrayIndexMapping;
-        BaseHashTable.dumpHashTable(varToArrayIndexMapping);
+        //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
       end if;
 
       SimCodeUtil.execStat("hpcom create memory map");

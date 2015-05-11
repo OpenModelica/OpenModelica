@@ -24,11 +24,11 @@ SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pr
     throw std::runtime_error("Wrong pre variable size");
   //allocate memory for all model variables
   if(dim_bool>0)
-  _bool_vars = boost::shared_ptr<AlignedArray<bool> >(new AlignedArray<bool>(dim_bool));
+    _bool_vars = boost::shared_ptr<AlignedArray<bool> >(new AlignedArray<bool>(dim_bool));
   if(dim_int>0)
-  _int_vars = boost::shared_ptr<AlignedArray<int> >(new AlignedArray<int>(dim_int));
+    _int_vars = boost::shared_ptr<AlignedArray<int> >(new AlignedArray<int>(dim_int));
   if(dim_real>0)
-  _real_vars = boost::shared_ptr<AlignedArray<double> >(new AlignedArray<double>(dim_real));
+    _real_vars = boost::shared_ptr<AlignedArray<double> >(new AlignedArray<double>(dim_real));
   if (dim_pre_vars > 0)
     _pre_vars =  new double[dim_pre_vars];
   //initialize all model variables
@@ -110,8 +110,10 @@ double* SimVars::getDerStateVector()
 *  \return pointer to the real variable vector
 *  \details Details
 */
-const double* SimVars::getRealVarsVector() const
+double* SimVars::getRealVarsVector() const
 {
+  if(!_real_vars.get())
+    return NULL;
   return _real_vars.get()->get();
 }
 /**
@@ -119,8 +121,10 @@ const double* SimVars::getRealVarsVector() const
 *  \return pointer to the integer variable vector
 *  \details Details
 */
-const int* SimVars::getIntVarsVector() const
+int* SimVars::getIntVarsVector() const
 {
+  if(!_int_vars.get())
+    return NULL;
   return _int_vars.get()->get();
 }
 /**
@@ -128,8 +132,10 @@ const int* SimVars::getIntVarsVector() const
 *  \return pointer to the bool variable vector
 *  \details Details
 */
-const bool* SimVars::getBoolVarsVector() const
+bool* SimVars::getBoolVarsVector() const
 {
+  if(!_bool_vars.get())
+    return NULL;
   return _bool_vars.get()->get();
 }
 /**

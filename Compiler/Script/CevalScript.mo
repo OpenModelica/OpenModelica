@@ -2868,12 +2868,12 @@ algorithm
       then
         (cache,Values.INTEGER(i),st);
 
-    case (cache,_,"readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b)},st,_)
+    case (cache,_,"readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b1),Values.BOOL(b2)},st,_)
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename_1 = if System.strncmp("/",filename,1)==0 then filename else stringAppendList({pwd,pd,filename});
-        args = SimulationResults.readVariables(filename_1,b);
+        args = SimulationResults.readVariables(filename_1, b1, b2);
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then
