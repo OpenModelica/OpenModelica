@@ -45,7 +45,7 @@
 //IAEX Headers
 #include "omcinteractiveenvironment.h"
 #ifndef WIN32
-#include "../../Compiler/runtime/omc_config.h"
+#include "omc_config.h"
 #endif
 
 extern "C" {

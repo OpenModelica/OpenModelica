@@ -1,7 +1,4 @@
 top_builddir=../../
-builddir_bin=$(top_builddir)/build/bin/
-builddir_share=$(top_builddir)/build/share/
-runtimedir=$(top_builddir)/Compiler/runtime/
 
 QMAKE=@QMAKE@
 EXE=@EXE@
@@ -22,22 +19,13 @@ $(NAME): Makefile OMNotebook.config
 	$(MAKE) -f Makefile
 
 build: $(NAME)
-	mkdir -p $(builddir_share)/omnotebook/drmodelica/ $(builddir_share)/omnotebook/drcontrol/
-	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/$(NAME)$(APP) ../../build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin)/$(NAME); fi
-	cp -p *.xml $(builddir_share)/omnotebook/
-	cp -p OMNotebookHelp.onb $(builddir_share)/omnotebook/
-	(DRMODELICAPWD=`cd ../DrModelica/ && pwd` && \
-        DIRS=`cd ../DrModelica/ && find . -type d | grep -v svn` && \
-	(cd $(builddir_share)/omnotebook/drmodelica/ && \
-	mkdir -p $$DIRS) && \
-	cd ../DrModelica/ && \
-	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drmodelica/{} \;)
-	(DRCONTROLPWD=`cd ../DrControl/ && pwd` && \
-        DIRS=`cd ../DrControl/ && find . -type d | grep -v svn` && \
-	(cd $(builddir_share)/omnotebook/drcontrol/ && \
-	mkdir -p $$DIRS) && \
-	cd ../DrControl/ && \
-	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drcontrol/{} \;)
+	mkdir -p @OMBUILDDIR@/share/omnotebook/drmodelica/ @OMBUILDDIR@/share/omnotebook/drcontrol/
+	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin/$(NAME); fi
+	cp -p *.xml @OMBUILDDIR@/share/omnotebook/
+	(cd @DRMODELICADIR@ && find . -type d -exec mkdir -p @OMBUILDDIR@/share/omnotebook/drmodelica/{} ";")
+	(cd @DRMODELICADIR@ && find . -name "*.onb" -exec cp {} @OMBUILDDIR@/share/omnotebook/drmodelica/{} ";")
+	(cd @DRCONTROLDIR@ && find . -type d -exec mkdir -p @OMBUILDDIR@/share/omnotebook/drcontrol/{} ";")
+	(cd @DRCONTROLDIR@ && find . -name "*.onb" -exec cp {} @OMBUILDDIR@/share/omnotebook/drcontrol/{} ";")
 
 Makefile.unix: Makefile.unix.in
 	cd $(top_builddir); ./config.status
