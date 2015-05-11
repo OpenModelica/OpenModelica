@@ -12,7 +12,7 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.CoupledInductors);
 timeout := 60;
 
-referenceFile := "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.CoupledInductors.mat";
+referenceFile := "../../../ReferenceFiles/msl32/Modelica.Electrical.Spice3.Examples.CoupledInductors.mat";
 compareVars :=
 {
    "L1.iinternal",
@@ -23,7 +23,7 @@ compareVars :=
 };
 
 setDebugFlags("hpcom"); getErrorString();
-setCommandLineOptions("+n=4 +hpcomScheduler=list +hpcomCode=openmp"); getErrorString();
+setCommandLineOptions("+n=1 +hpcomScheduler=list +hpcomCode=openmp"); getErrorString();
 
 runScript(modelTesting);getErrorString();
 

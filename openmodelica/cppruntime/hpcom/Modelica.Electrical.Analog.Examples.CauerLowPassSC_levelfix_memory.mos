@@ -12,7 +12,7 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
 timeout := 600;
 outputFormat := "mat";
-referenceFile := "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat";
+referenceFile := "../../../ReferenceFiles/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat";
 compareVars :=
 {
    "R4.Capacitor1.v",
@@ -49,7 +49,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Analog.Examples.CauerLowPassSC
 // 600
 // "mat"
-// "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat"
+// "../../../ReferenceFiles/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat"
 // {"R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v","R7.Capacitor1.v","R10.Capacitor1.v","R11.Capacitor1.v","C3.v","C7.v","C1.v","C4.v","C8.v"}
 // true
 // ""
