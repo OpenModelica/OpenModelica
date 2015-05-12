@@ -8,16 +8,11 @@
 // Modelica Standard Library
 //
 
-loadFile("../../../../simulation/libraries/common/ModelTesting.mo");
-loadModel(Modelica,{"3.2.1"});
+runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass);
-stopTime := 0.0; // For reading stopTime from annotation
-relTol := 0.01;
-absTol := 0.0001;
-outputFormat :="mat";
 compareVars := {"body.frame_a.r_0[1]","body.frame_a.r_0[2]","body.frame_a.r_0[3]","body.v_0[1]","body.v_0[2]","body.v_0[3]","body.w_a[1]","body.w_a[2]","body.w_a[3]"};
-runScript("../../../../simulation/libraries/common/ModelTesting.mos");
+runScript(modelTesting);
 getErrorString();
 
 

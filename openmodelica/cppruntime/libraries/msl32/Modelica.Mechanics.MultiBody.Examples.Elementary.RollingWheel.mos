@@ -8,14 +8,9 @@
 // Modelica Standard Library
 //
 
-loadFile("../../../../simulation/libraries/common/ModelTesting.mo");
-loadModel(Modelica,{"3.2.1"});
+runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel);
-stopTime := 0.0; // For reading stopTime from annotation
-relTol := 0.01;
-absTol := 0.0001;
-outputFormat :="mat";
 compareVars := {"wheel1.x","wheel1.y","wheel1.angles[1]","wheel1.angles[2]","wheel1.angles[3]","wheel1.der_angles[1]","wheel1.der_angles[2]","wheel1.der_angles[3]"};
 runScript("ModelTestingDefaults.mos");getErrorString();
 getErrorString();

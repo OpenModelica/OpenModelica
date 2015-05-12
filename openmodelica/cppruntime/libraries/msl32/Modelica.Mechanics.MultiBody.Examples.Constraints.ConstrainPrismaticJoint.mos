@@ -7,16 +7,11 @@
 // Modelica Standard Library
 //
 
-loadFile("../../../../simulation/libraries/common/ModelTesting.mo");
-loadModel(Modelica,{"3.2.1"});
+runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainPrismaticJoint);
-stopTime := 0.0; // For reading stopTime from annotation
-relTol := 0.01;
-absTol := 0.0001;
-outputFormat :="mat";
 compareVars := {"bodyOfJoint.v_0[2]","bodyOfJoint.v_0[3]","bodyOfJoint.body.frame_a.r_0[2]","bodyOfJoint.body.frame_a.r_0[3]","bodyOfConstraint.v_0[2]","bodyOfConstraint.v_0[3]","bodyOfConstraint.body.frame_a.r_0[2]","bodyOfConstraint.body.frame_a.r_0[3]"};
-runScript("../../../../simulation/libraries/common/ModelTesting.mos");
+runScript(modelTesting);
 getErrorString();
 
 
