@@ -31,6 +31,35 @@ omshell:
 omoptim: omplot
 	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR)
 
+qtclients: omplot omedit omnotebook omshell omoptim
+	
+clean-qtclients:
+
+
+simulationruntimecmsvc:
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) simulationruntimecmsvc
+	
+runtimeCPPmsvcinstall:
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) runtimeCPPmsvcinstall
+
+runtimeCPPinstall:
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) runtimeCPPinstall
+
+runtimeCPPinstall:
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) runtimeCPPinstall
+
+testlogwindows:
+	(time $(MAKE) -C testsuite -f Makefile 2>&1 | tee testsuite/testsuite-trace.txt) || true
+	(time $(MAKE) -C testsuite/openmodelica/cruntime/msvc/ -f Makefile >> testsuite/testsuite-trace.txt 2>&1) || true
+	(export RTEST_OMCFLAGS=+target=msvc ; time $(MAKE) -C testsuite/openmodelica/cppruntime/ -f Makefile >> testsuite/testsuite-trace.txt 2>&1) || true
+	echo "log is in testsuite/testsuite-trace.txt"
+	fgrep -v "... ok" testsuite/testsuite-trace.txt
+	echo "Successful tests: "
+	cat testsuite/testsuite-trace.txt | grep "... ok" | wc -l
+	echo "Failed models: "
+	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
+	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
+
 clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)
