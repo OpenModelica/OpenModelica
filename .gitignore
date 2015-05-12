@@ -9,3 +9,6 @@ config.sub
 configure
 install-sh
 .metadata/
+.externalToolBuilders/
+.project-sample
+.project
