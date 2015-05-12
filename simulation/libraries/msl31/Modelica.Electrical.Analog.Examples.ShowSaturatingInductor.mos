@@ -2,31 +2,38 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Electrical.Analog.Examples.ShowSaturatingInductor);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ShowSaturatingInductor.mat","Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_diff.csv",0.01,0.00001,
-  {"SaturatingInductance1.Psi",
-  "der(SaturatingInductance1.Psi)",
-  "v",
-  "i",
-  "Ground1.p.i",
-  "SaturatingInductance1.Lact",
-  "SineVoltage1.n.v",
-  "Ground1.p.v",
-  "SaturatingInductance1.n.v"});
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.ShowSaturatingInductor);
+compareVars :=
+{
+   // "Inductance1.i", // Not part of the 3.2.1 version
+   "SaturatingInductance1.Psi"
+};
+
+runScript(modelTesting);getErrorString();
 
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 6.2832, numberOfIntervals = 628, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowSaturatingInductor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.ShowSaturatingInductor
+// {"SaturatingInductance1.Psi"}
+// Simulation options: startTime = 0.0, stopTime = 6.2832, numberOfIntervals = 628, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowSaturatingInductor', options = '', outputFormat = 'mat', variableFilter = 'time|SaturatingInductance1.Psi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat
+// Files Equal!
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+//
+// "true
+// "
+// ""
 // endResult

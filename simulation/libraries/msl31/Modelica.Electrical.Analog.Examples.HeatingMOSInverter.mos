@@ -2,78 +2,38 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Electrical.Analog.Examples.HeatingMOSInverter,stopTime=5.0,simflags="-emit_protected");
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.HeatingMOSInverter_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.HeatingMOSInverter.mat","Modelica.Electrical.Analog.Examples.HeatingMOSInverter_diff.csv",0.01,0.00001,
-  {"Capacitor1.v",
-  "HeatCapacitor1.T",
-  "der(Capacitor1.v)",
-  "der(HeatCapacitor1.T)",
-  "G.p.i",
-  "Sin.p.v",
-  "Capacitor1.p.i",
-  "HeatCapacitor1.der_T",
-  "HeatCapacitor1.port.Q_flow",
-  "TC1.dT",
-  "TC1.port_a.T",
-  "H_PMOS.LossPower",
-  "H_PMOS.S.i",
-  "H_PMOS.v",
-  "H_PMOS.uds",
-  "H_PMOS.ubs",
-  "H_PMOS.ugst",
-  "H_PMOS.ud",
-  "H_PMOS.us",
-  "H_PMOS.id",
-  "H_PMOS.beta_t",
-  "H_PMOS.vt_t",
-  "H_PMOS.k2_t",
-  "H_NMOS.LossPower",
-  "H_NMOS.D.i",
-  "H_NMOS.S.i",
-  "H_NMOS.v",
-  "H_NMOS.uds",
-  "H_NMOS.ubs",
-  "H_NMOS.ugst",
-  "H_NMOS.ud",
-  "H_NMOS.us",
-  "H_NMOS.id",
-  "H_NMOS.beta_t",
-  "H_NMOS.vt_t",
-  "H_NMOS.k2_t",
-  "V.p.v",
-  "V.p.i",
-  "TC2.dT",
-  "TC2.port_a.T",
-  "TC3.Q_flow",
-  "TC3.dT",
-  "G.p.v",
-  "Sin.p.i",
-  "Sin.n.v",
-  "Capacitor1.n.v",
-  "H_PMOS.G.i",
-  "H_PMOS.B.i",
-  "H_NMOS.G.i",
-  "H_NMOS.S.v",
-  "H_NMOS.B.v",
-  "H_NMOS.B.i",
-  "V.n.v",
-  "H_NMOS.gds",
-  "H_PMOS.gds"});
-  
-  
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.HeatingMOSInverter);
+compareVars :=
+{
+   "Capacitor1.v",
+   "HeatCapacitor1.T"
+};
+
+runScript(modelTesting);getErrorString();
+
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Electrical.Analog.Examples.HeatingMOSInverter_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.HeatingMOSInverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.HeatingMOSInverter
+// {"Capacitor1.v","HeatCapacitor1.T"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.HeatingMOSInverter', options = '', outputFormat = 'mat', variableFilter = 'time|Capacitor1.v|HeatCapacitor1.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.HeatingMOSInverter_res.mat
+// Files Equal!
+// [Modelica 3.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter Sin.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+//
+// "true
+// "
+// ""
 // endResult

@@ -6,20 +6,33 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum,stopTime=3.0);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.mat",
-  "Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_diff.csv",0.01,0.0001,
-  {"revolute1.phi","revolute1.w","der(revolute1.w)","revolute2.phi","revolute2.w","der(revolute2.w)"});
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum);
+compareVars :=
+{
+   "revolute1.phi",
+   "revolute1.w",
+   "revolute2.phi",
+   "revolute2.w"
+};
+
+runScript(modelTesting);getErrorString();
 
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum
+// {"revolute1.phi","revolute1.w","revolute2.phi","revolute2.w"}
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum', options = '', outputFormat = 'mat', variableFilter = 'time|revolute1.phi|revolute1.w|revolute2.phi|revolute2.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_res.mat
+// Files Equal!
+// "true
+// "
+// ""
 // endResult

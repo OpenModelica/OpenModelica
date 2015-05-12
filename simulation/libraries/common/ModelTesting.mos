@@ -19,6 +19,14 @@ compareVars := {"revolute1.phi","revolute1.w","revolute1.a","revolute2.phi","rev
 */
 
 echo(false);
+
+b:=loadModel(packageName,{packageVersion});
+if not b then
+  print("loadModel("+typeNameString(packageName)+","+packageVersion+")\n");
+  print(OpenModelica.Scripting.cd() + "\n");
+  exit(1);
+end if;
+
 debug := false;
 startRun := true;
 alarm(timeout);

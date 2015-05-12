@@ -2,36 +2,46 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive_diff.csv",0.01,0.00001,
-  {"revolute.phi",
-  "revolute.w",
-  "r1.phi",
-  "r1.w",
-  "r2.phi",
-  "r2.w",
-  "rotor1D.phi",
-  "rotor1D.w",
-  "der(revolute.phi)",
-  "der(revolute.w)",
-  "der(r1.phi)",
-  "der(r1.w)",
-  "der(r2.phi)",
-  "der(r2.w)"});
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive);
+compareVars :=
+{
+   "revolute.phi",
+   "revolute.w",
+   "r1.phi",
+   "r1.w",
+   "r2.phi",
+   "r2.w",
+   "rotor1D.phi",
+   "rotor1D.w",
+   "revolute.a",
+   "r1.a",
+   "r2.a"
+};
+
+runScript(modelTesting);getErrorString();
 
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.10000002384, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
+// {"revolute.phi","revolute.w","r1.phi","r1.w","r2.phi","r2.w","rotor1D.phi","rotor1D.w","revolute.a","r1.a","r2.a"}
+// Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive', options = '', outputFormat = 'mat', variableFilter = 'time|revolute.phi|revolute.w|r1.phi|r1.w|r2.phi|r2.w|rotor1D.phi|rotor1D.w|revolute.a|r1.a|r2.a', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive_res.mat
+// Files Equal!
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+//
+// "true
+// "
+// ""
 // endResult
