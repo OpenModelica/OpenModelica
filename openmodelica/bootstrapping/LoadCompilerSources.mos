@@ -2,7 +2,7 @@
 
 // "FrontEnd";
 if true then /* Suppress output */
-  prefixPath := "../../../OMCompiler/Compiler/";
+  prefixPath := getEnvironmentVar("OMCOMPILERSOURCES")+"/";
   setCommandLineOptions("+g=MetaModelica");
   files := {
     prefixPath + "FrontEnd/Absyn.mo",
