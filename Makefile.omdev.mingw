@@ -8,6 +8,7 @@ buildlib=$(OMBUILDDIR)/lib/omc
 
 omplot: mkbuilddirs qwt
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.omdev.mingw
+	cp -puf common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
 
 $(buildlib)/libomqwt.a: mkbuilddirs qwt-build
 
