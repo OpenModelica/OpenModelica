@@ -15,7 +15,7 @@ simulate(Modelica.Blocks.Examples.IntegerNetwork1, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.IntegerNetwork1_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Blocks.Examples.IntegerNetwork1.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.IntegerNetwork1.mat",
   "Modelica.Blocks.Examples.IntegerNetwork1_diff.csv",0.01,0.0001,
   {"showValue.showNumber","showValue1.showNumber","showValue2.showNumber","showValue3.showNumber","multiSwitch1.y"});
 

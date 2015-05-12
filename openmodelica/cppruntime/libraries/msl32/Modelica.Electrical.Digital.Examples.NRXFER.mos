@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Digital.Examples.NRXFER, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.NRXFER_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Digital.Examples.NRXFER.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.NRXFER.mat",
   "Modelica.Electrical.Digital.Examples.NRXFER_diff.csv",0.01,0.0001,
   {"nRXFERGATE.y"});
 

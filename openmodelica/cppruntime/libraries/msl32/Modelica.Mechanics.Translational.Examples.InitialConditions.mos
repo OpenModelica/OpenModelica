@@ -12,7 +12,7 @@ loadModel(Modelica,{"3.2.1"});
 
 simulate(Modelica.Mechanics.Translational.Examples.InitialConditions,outputFormat="mat",stopTime=5.0); getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.InitialConditions_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.Translational.Examples.InitialConditions.mat","Modelica.Mechanics.Translational.Examples.InitialConditions_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.InitialConditions.mat","Modelica.Mechanics.Translational.Examples.InitialConditions_diff.csv",0.01,0.0001,
   {"m3.s",
   "m3.v",
   "sd2.s_rel",

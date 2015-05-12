@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Spice3.Examples.Graetz, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spice3.Examples.Graetz_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.Graetz.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Spice3.Examples.Graetz.mat",
   "Modelica.Electrical.Spice3.Examples.Graetz_diff.csv",0.01,0.0001,
   {"D1.pin","D3.n.v"});
 

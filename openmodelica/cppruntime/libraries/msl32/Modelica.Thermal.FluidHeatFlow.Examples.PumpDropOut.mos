@@ -14,7 +14,7 @@ simulate(Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut, outputFormat="mat"
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut.mat",
   "Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut_diff.csv",0.01,0.0001,
   {"pipe.T",
    "heatCapacitor.T"});

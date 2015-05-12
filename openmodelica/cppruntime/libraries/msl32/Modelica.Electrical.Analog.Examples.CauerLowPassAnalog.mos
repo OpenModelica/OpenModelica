@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Analog.Examples.CauerLowPassAnalog, outputFormat="m
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CauerLowPassAnalog_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.mat",
   "Modelica.Electrical.Analog.Examples.CauerLowPassAnalog_diff.csv",0.01,0.0001,
   {"L1.i",
    "L2.i",

@@ -14,7 +14,7 @@ simulate(Modelica.Blocks.Examples.BusUsage, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.BusUsage_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Blocks.Examples.BusUsage.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.BusUsage.mat",
   "Modelica.Blocks.Examples.BusUsage_diff.csv",0.01,0.0001,
   {"controlBus.realSignal1",
    "controlBus.booleanSignal",

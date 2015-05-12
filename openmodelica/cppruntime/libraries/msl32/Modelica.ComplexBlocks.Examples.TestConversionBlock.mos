@@ -6,7 +6,7 @@ loadModel(Modelica,{"3.2"});getErrorString();
 simulate(Modelica.ComplexBlocks.Examples.TestConversionBlock, outputFormat="mat");getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.ComplexBlocks.Examples.TestConversionBlock_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.ComplexBlocks.Examples.TestConversionBlock.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.ComplexBlocks.Examples.TestConversionBlock.mat",
   "Modelica.ComplexBlocks.Examples.TestConversionBlock_diff.csv",0.01,0.0001,
   {"polarToComplex.y.re",
    "polarToComplex.y.im",

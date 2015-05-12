@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Digital.Examples.MUX2x1, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.MUX2x1_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Digital.Examples.MUX2x1.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.MUX2x1.mat",
   "Modelica.Electrical.Digital.Examples.MUX2x1_diff.csv",0.01,0.0001,
   {"Mux2x1.out"});
 

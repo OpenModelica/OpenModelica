@@ -15,7 +15,7 @@ simulate(Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta,
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta.mat",
   "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta_diff.csv",0.01,0.0001,
   {"voltageSource.plug_p.reference.gamma",
    "voltageSource.voltageSource[2].pin_p.reference.gamma",

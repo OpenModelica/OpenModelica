@@ -13,7 +13,7 @@ loadModel(Modelica,{"3.2.1"});
 simulate(Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller.mat",
   "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller_diff.csv",0.01,0.0001,
   {"QI_302","QIS_502","Transition8.enableFire","Transition5.enableFire",
 "Transition10.enableFire",

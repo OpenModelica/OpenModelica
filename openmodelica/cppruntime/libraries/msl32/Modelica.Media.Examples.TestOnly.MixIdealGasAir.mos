@@ -14,7 +14,7 @@ simulate(Modelica.Media.Examples.TestOnly.MixIdealGasAir, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.TestOnly.MixIdealGasAir_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.TestOnly.MixIdealGasAir.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.TestOnly.MixIdealGasAir.mat",
   "Modelica.Media.Examples.TestOnly.MixIdealGasAir_diff.csv",0.01,0.0001,
   {"medium.p",
    "medium.T",

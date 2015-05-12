@@ -13,7 +13,7 @@ loadModel(Modelica,{"3.2.1"});
 simulate(Modelica.Mechanics.Translational.Examples.HeatLosses, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.HeatLosses_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.Translational.Examples.HeatLosses.mat","Modelica.Mechanics.Translational.Examples.HeatLosses_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.HeatLosses.mat","Modelica.Mechanics.Translational.Examples.HeatLosses_diff.csv",0.01,0.001,
   {"damper.s_rel", 
    "damper.v_rel", 
    "massWithStopAndFriction.s", 

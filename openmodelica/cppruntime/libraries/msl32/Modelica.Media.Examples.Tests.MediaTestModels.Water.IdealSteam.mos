@@ -15,7 +15,7 @@ simulate(Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam, outputF
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam.mat",
   "Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam_diff.csv",0.01,0.0001,
   {"volume.U",
    "volume.m"});

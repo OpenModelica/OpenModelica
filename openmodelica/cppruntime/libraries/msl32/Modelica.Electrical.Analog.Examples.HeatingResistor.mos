@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Analog.Examples.HeatingResistor, outputFormat="mat"
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.HeatingResistor_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.HeatingResistor.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.HeatingResistor.mat",
   "Modelica.Electrical.Analog.Examples.HeatingResistor_diff.csv",0.01,0.0001,
   {"heatingResistor.i",
    "heatingResistor.v",

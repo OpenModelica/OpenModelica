@@ -14,7 +14,7 @@ simulate(Modelica.Media.Examples.TestOnly.FlueGas, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.TestOnly.FlueGas_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.TestOnly.FlueGas.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.TestOnly.FlueGas.mat",
   "Modelica.Media.Examples.TestOnly.FlueGas_diff.csv",0.01,0.0001,
   {"state.p",
    "state.T",

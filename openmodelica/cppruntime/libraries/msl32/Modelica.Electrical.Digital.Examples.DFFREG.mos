@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Digital.Examples.DFFREG, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.DFFREG_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Digital.Examples.DFFREG.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.DFFREG.mat",
   "Modelica.Electrical.Digital.Examples.DFFREG_diff.csv",0.01,0.0001,
   {"dFFREG.reset",
    "dFFREG.clock",

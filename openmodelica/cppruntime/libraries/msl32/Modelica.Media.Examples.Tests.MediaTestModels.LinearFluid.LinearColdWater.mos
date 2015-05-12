@@ -16,7 +16,7 @@ setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 simulate(Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearColdWater, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearColdWater_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearColdWater.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearColdWater.mat",
   "Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearColdWater_diff.csv",0.01,0.0001,
   {"volume.U",
    "volume.m"});
