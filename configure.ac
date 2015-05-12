@@ -14,10 +14,12 @@ AC_SUBST(OMC_TARGET)
 AC_ARG_WITH(cppruntime,  [  --with-cppruntime       (build the optional cppruntime simulation libraries)],[OMC_TARGET="$withval"],[OMC_TARGET="no"])
 
 AC_MSG_CHECKING([if cppruntime is requested])
-if test "$OMC_OR_CPPRUNTIME" = "yes"; then
+if test "$OMC_TARGET" = "yes"; then
   OMC_TARGET=all-runtimeCPPinstall
+  AC_MSG_RESULT([yes])
 else
   OMC_TARGET=
+  AC_MSG_RESULT([no])
 fi
 
 AC_SUBST(OMLIBRARY_TARGET)
