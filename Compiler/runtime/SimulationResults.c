@@ -436,20 +436,14 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
         c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
         return 0;
       }
-      if (mat_var[i]->index < 0) {
-        msg[0] = SystemImpl__basename(inFile);
-        msg[1] = var;
-        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Variable has negative index %s in file %s."), msg, 2);
-        return 0;
-      }
       if (mat_var[i]->isParam) {
         /* Store the old index in the array */
-        if (0==parameter_indexes[mat_var[i]->index-1]++) {
+        if (0==parameter_indexes[abs(mat_var[i]->index)-1]++) {
           numUniqueParam++;
         }
       } else {
         /* Store the old index in the array */
-        if (0==indexes[mat_var[i]->index-1]++) {
+        if (0==indexes[abs(mat_var[i]->index)-1]++) {
           numUnique++;
         }
       }
