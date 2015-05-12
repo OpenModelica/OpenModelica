@@ -1,5 +1,5 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimulationSettings//IGlobalSettings.h>
 #include <Core/DataExchange/IHistory.h>
@@ -8,7 +8,7 @@
 #include <boost/range/algorithm/copy.hpp>
 using std::map;
 #endif
-
+*/
 template< template <size_t,size_t,size_t,size_t>  class ResultsPolicy,size_t dim_1, size_t dim_2,size_t dim_3,size_t dim_4>
 class HistoryImpl : public IHistory,
   public ResultsPolicy<dim_1,dim_2,dim_3,dim_4>
