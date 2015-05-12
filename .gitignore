@@ -12,3 +12,4 @@ install-sh
 .externalToolBuilders/
 .project-sample
 .project
+.openmodelica.aspell
