@@ -11,14 +11,25 @@ omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary core
 omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary all
+
 omplot:
 	$(MAKE) -C OMPlot
+
 omedit: omplot
 	$(MAKE) -C OMEdit
-omoptim: omplot
-	$(MAKE) -C OMOptim
+
 omnotebook: omplot
 	$(MAKE) -C OMNotebook
+
+omshell:
+	$(MAKE) -C OMShell/OMShell/OMShellGUI
+	
+mosh:
+	$(MAKE) -C OMShell/mosh/src
+
+omoptim: omplot
+	$(MAKE) -C OMOptim
+
 testsuite-depends:
 	$(MAKE) --quiet -C testsuite "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@" omc-diff ReferenceFiles
 
