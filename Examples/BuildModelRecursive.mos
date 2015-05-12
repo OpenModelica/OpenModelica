@@ -188,6 +188,7 @@ elseif referenceExists then
 else
   variableFilter := \"\";
   outputFormat := \"empty\";
+  emit_protected := \"\";
 end if;
 
 writeFile(\"files/" + s + ".uses\", sum(typeNameString(c) + \"\n\" for c in OpenModelica.Scripting.getUsedClassNames("+s+")));getErrorString();
