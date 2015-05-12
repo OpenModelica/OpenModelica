@@ -1041,6 +1041,7 @@ package BackendDAE
 
   constant String optimizationMayerTermName;
   constant String optimizationLagrangeTermName;
+  constant String symEulerDT;
 
 end BackendDAE;
 

@@ -670,6 +670,7 @@ public constant String functionDerivativeNamePrefix = "$funDER";
 
 public constant String optimizationMayerTermName = "$OMC$objectMayerTerm";
 public constant String optimizationLagrangeTermName = "$OMC$objectLagrangeTerm";
+public constant String symEulerDT = "__OMC_DT";
 
 type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
 

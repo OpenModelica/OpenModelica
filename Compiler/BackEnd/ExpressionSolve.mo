@@ -674,7 +674,7 @@ protected
   DAE.Exp dt;
 algorithm
   if Flags.getConfigBool(Flags.SYM_EULER) then
-    dt := Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+    dt := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
     if expHasCref(rhs, dt) then
       // x = dt != 0 ? k1(y,dt) : old_x
       tp := Expression.typeof(X);
@@ -1232,7 +1232,7 @@ protected function unifyFunCallsWork
      guard expHasCref(e1, X)
      equation
       tp = Expression.typeof(e1);
-      e2 = Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+      e2 = Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
       e3 = Expression.makePureBuiltinCall("$_old", {e1}, tp);
       e3 = Expression.expSub(e1,e3);
       e = Expression.expDiv(e3,e2);
@@ -1644,7 +1644,7 @@ algorithm
     true = expHasCref(e1, inExp3);
     false = expHasCref(inExp2, inExp3);
     tp = Expression.typeof(e1);
-    e2 = Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+    e2 = Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
     lhs = Expression.makePureBuiltinCall("$_old", {e1}, tp);
     lhs = Expression.expAdd(Expression.expMul(inExp2,e2), lhs);
   then(e1, lhs, true, ieqnForNewVars, inewVarsCrefs, idepth + 1);
