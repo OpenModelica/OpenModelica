@@ -22,7 +22,7 @@ omc-diff:
 	$(MAKE) -C testsuite/difftool "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@"
 
 SOURCE_DIRS_UTF8=OMEdit/ OMShell/ OMNotebook/ OMOptim/ OMPlot/ OMCompiler/Compiler/ OMCompiler/SimulationRuntime/ `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
-SOURCE_DIRS=$(SOURCE_DIRS_UTF8) testsuite/flattening/libraries/3rdParty/HumMod
+SOURCE_DIRS=$(SOURCE_DIRS_UTF8) # testsuite/flattening/libraries/3rdParty/HumMod
 
 bom-error:
 	rm -f bom-error.log bom-error.sh
@@ -41,7 +41,24 @@ fix-whitespace:
 
 spellcheck:
 	grep -oE 'gettext[(]["]([^"]|([\\]["]))*["]' `ls OMCompiler/Compiler/*/*.mo | grep -v Flags.mo` | sed "s/[\\%]./ /g" | aspell -p ./.openmodelica.aspell --mode=ccpp --lang=en_US list | sort -u | sed 's/^/aspell: /' | tee aspell.log
+	@test ! -s aspell.log
+thumbsdb-error:
+	! find . -name "Thumbs.db" | grep Thumbs.db
 
+utf8-error:
+	rm -f utf8-error.log*
+	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
+	# Also detect some valid UTF-8 that were obviously fracked up by Eclipse on Windows.
+	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v Linköping && (echo '{}: Failed Linköping test')"  ';' 2>&1 >> utf8-error.log
+	@cat utf8-error.log
+	@test ! -s utf8-error.log
+	rm -f utf8-error.log*
+
+utf8-iconv:
+	rm -f tmp
+	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>tmp || (rm -f tmp && cp '{}' tmp && iconv -f ISO-8859-1 -t UTF-8 tmp -o '{}' && echo Converted {} to UTF-8)" ';'
+	rm -f tmp	
+	
 clean:
 	test ! -d build || rm -r build/
 
