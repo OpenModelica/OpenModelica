@@ -42,3 +42,4 @@ build: $(NAME)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtCore4.dll $(builddir_bin)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtGui4.dll $(builddir_bin)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtXml4.dll $(builddir_bin)
+	cp -puf ../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
