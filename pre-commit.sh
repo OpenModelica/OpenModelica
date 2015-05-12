@@ -1,3 +1,4 @@
+#!/bin/sh
 # A git hook script to find and fix trailing whitespace in your commits. Bypass
 # it with the --no-verify option to git-commit.
 
