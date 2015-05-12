@@ -91,6 +91,9 @@ SimulationRuntime/ParModelica/auto/Makefile
 SimulationRuntime/ParModelica/explicit/Makefile
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile
 
+# OpenModelicaSetup
+Compiler/OpenModelicaSetup
+# Compiler files
 Compiler/Makefile
 Compiler/OpenModelicaBootstrappingHeader.h.log
 Compiler/Script/Makefile
@@ -136,6 +139,7 @@ Compiler/runtime/omc_communication.cc
 Compiler/runtime/omc_communication.h
 Compiler/susan_codegen/TplCodegen.mo
 Makefile
+# Parser files
 Parser/Makefile
 Parser/MetaModelica_Lexer.c
 Parser/MetaModelica_Lexer.h
