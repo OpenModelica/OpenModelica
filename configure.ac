@@ -45,7 +45,7 @@ case "$OMLIBRARY_TARGET" in
 esac
 
 
-for dir in OMCompiler OMPlot OMEdit OMNotebook OMOptim; do
+for dir in OMCompiler OMPlot OMEdit OMNotebook OMOptim OMShell; do
   if test ! -d "$dir"; then
     AC_MSG_ERROR("Subproject $dir does not exist")
   fi
@@ -54,6 +54,6 @@ for dir in OMCompiler OMPlot OMEdit OMNotebook OMOptim; do
   fi
 done
 
-AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit OMNotebook OMOptim])
+AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit OMNotebook OMOptim OMShell])
 
 AC_OUTPUT(Makefile)

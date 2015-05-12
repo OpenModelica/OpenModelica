@@ -1,9 +1,6 @@
-all:
-	$(MAKE) omc @OMLIBRARY_TARGET@ testsuite-depends
-	$(MAKE) omedit omnotebook omoptim
+all: omc @OMLIBRARY_TARGET@ omc-diff omplot omnotebook omshell omedit omoptim
 
 .PRECIOUS: Makefile
-.PHONY: omc omlibrary-all omlibrary-core omplot omedit omoptim testsuite-depends
 
 omc:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
@@ -11,66 +8,19 @@ omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary core
 omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary all
-
-omplot:
+omplot: omc
 	$(MAKE) -C OMPlot
-
-omedit: omplot
+omedit: omc omplot
 	$(MAKE) -C OMEdit
-
-omnotebook: omplot
+omnotebook: omc omplot
 	$(MAKE) -C OMNotebook
-
-omshell:
-	$(MAKE) -C OMShell/OMShell/OMShellGUI
-	
-mosh:
-	$(MAKE) -C OMShell/mosh/src
-
-omoptim: omplot
+omoptim: omc omplot
 	$(MAKE) -C OMOptim
+omshell: omc
+	$(MAKE) -C OMShell
+omc-diff:
+	$(MAKE) -C testsuite/difftool "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@"
 
-testsuite-depends:
-	$(MAKE) --quiet -C testsuite "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@" omc-diff ReferenceFiles
-
-SOURCE_DIRS_UTF8=OMEdit/ OMShell/ OMNotebook/ OMOptim/ OMPlot/ OMCompiler/Compiler/ OMCompiler/SimulationRuntime/ `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
-SOURCE_DIRS=$(SOURCE_DIRS_UTF8) testsuite/flattening/libraries/3rdParty/HumMod
-
-bom-error:
-	rm -f bom-error.log bom-error.sh
-	echo "#!/bin/sh\ntest \"\`head -c3 \\\"\$$1\\\"\`\" = \"\`/bin/echo -ne \"\\xef\\xbb\\xbf\"\`\" && (echo \$$1 contains BOM >> bom-error.log)" > bom-error.sh
-	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
-	@if test -e bom-error.log; then cat bom-error.log; fi
-	@test ! -e bom-error.log
-	rm -f bom-error.log bom-error.sh
-
-tab-error:
-	! find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
-          grep -v " 0\$$" | egrep -v '/GenTest/|/antlr-3.2/|Parser/MetaModelica_|Parser/ParModelica_|Parser/Modelica_3_|Parser/ModelicaParser'
-# Trims trailing whitespace and replaces tabs with spaces
-fix-whitespace:
-	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
-
-spellcheck:
-	grep -oE 'gettext[(]["]([^"]|([\\]["]))*["]' `ls Compiler/*/*.mo | grep -v Flags.mo` | sed "s/[\\%]./ /g" | aspell -p ./.openmodelica.aspell --mode=ccpp --lang=en_US list | sort -u | sed 's/^/aspell: /' | tee aspell.log
-	@test ! -s aspell.log
-thumbsdb-error:
-	! find . -name "Thumbs.db" | grep Thumbs.db
-
-utf8-error:
-	rm -f utf8-error.log*
-	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
-	# Also detect some valid UTF-8 that were obviously fracked up by Eclipse on Windows.
-	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v Linköping && (echo '{}: Failed Linköping test')"  ';' 2>&1 >> utf8-error.log
-	@cat utf8-error.log
-	@test ! -s utf8-error.log
-	rm -f utf8-error.log*
-
-utf8-iconv:
-	rm -f tmp
-	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>tmp || (rm -f tmp && cp '{}' tmp && iconv -f ISO-8859-1 -t UTF-8 tmp -o '{}' && echo Converted {} to UTF-8)" ';'
-	rm -f tmp	
-	
 clean:
 	test ! -d build || rm -r build/
 
