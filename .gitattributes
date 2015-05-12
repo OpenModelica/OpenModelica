@@ -1,0 +1,11 @@
+*.c text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.m4 text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+*.md text eol=lf
+LICENSE text eol=lf
+configure.ac text eol=lf
+Makefile* text eol=lf
+*.pro text eol=lf

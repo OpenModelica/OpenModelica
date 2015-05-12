@@ -45,6 +45,7 @@ build: $(NAME)
 	cp -puf $(OMDEV)/tools/OMTools/dll/QtXml4.dll $(builddir_bin)
 	mkdir -p $(builddir_bin)/iconengines/
 	cp -puf $(OMDEV)/tools/OMTools/dll/qsvgicon4.dll $(builddir_bin)/iconengines/
+	cp -puf ../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
 
 Makefile: OMNotebookGUI.pro
 	$(QMAKE) "CONFIG+=release"
