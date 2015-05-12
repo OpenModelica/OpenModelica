@@ -509,6 +509,9 @@ cse.log: omc-diff
 modelica3d.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/Modelica3D -f Makefile test > $@
 	@echo $@ done
+hummod.log: omc-diff
+	$(MAKE) -C simulation/libraries/3rdParty/HumMod -f Makefile test > $@
+	@echo $@ done
 
 failingtest: omc-diff
 	cd mofiles; $(MAKE) -f Makefile failingtest; \
