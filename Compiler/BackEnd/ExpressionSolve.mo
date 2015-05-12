@@ -319,6 +319,7 @@ algorithm
                         then fail();
                         end matchcontinue;
 
+ outExp := symEuler_helper(outExp, inExp3);
  (outExp,_) := ExpressionSimplify.simplify1(outExp);
 
 end solve2;
@@ -651,6 +652,7 @@ preprocessing for solve1,
 
    // h(x) = k(y)
    (h,_) := ExpressionSimplify.simplify(x);
+
 /*
    if not Expression.expEqual(inExp1,h) then
      print("\nIn: ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
@@ -659,6 +661,32 @@ preprocessing for solve1,
    end if;
 */
 end preprocessingSolve;
+
+protected function symEuler_helper
+"
+ special case for symEuler
+"
+  input DAE.Exp rhs;
+  input DAE.Exp X;
+  output DAE.Exp orhs = rhs;
+protected
+  DAE.Type tp;
+  DAE.Exp dt;
+algorithm
+  if Flags.getConfigBool(Flags.SYM_EULER) then
+    dt := Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+    if expHasCref(rhs, dt) then
+      // x = dt != 0 ? k1(y,dt) : old_x
+      tp := Expression.typeof(X);
+      orhs := DAE.IFEXP(Expression.makeNoEvent(DAE.RELATION(
+                dt,
+                  DAE.EQUAL(tp),
+                DAE.RCONST(0.0),-1,NONE())),
+              Expression.makePureBuiltinCall("$_old", {X}, tp), rhs);
+    end if;
+  end if;
+
+end symEuler_helper;
 
 protected function preprocessingSolve2
 "
