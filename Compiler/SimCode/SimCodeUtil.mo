@@ -9553,7 +9553,7 @@ algorithm
     case (_, _, _, {}) then {};
     case (_, _, _, _)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
+        SCode.MOD(binding = SOME(Absyn.STRING(str))) =
           Mod.getUnelabedSubMod(inMod, "IncludeDirectory");
         str = CevalScript.getFullPathFromUri(program, str, false);
         istr = "\"-I"+str+"\"";
@@ -9590,7 +9590,7 @@ algorithm
         str := matchcontinue inMod
           case _
             equation
-              SCode.MOD(binding = SOME((Absyn.STRING(str), _))) = Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
+              SCode.MOD(binding = SOME(Absyn.STRING(str))) = Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
             then str;
           else "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Library";
         end matchcontinue;
@@ -9638,7 +9638,7 @@ algorithm
       Boolean isLinux;
     case (_, _, _)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
+        SCode.MOD(binding = SOME(Absyn.STRING(str))) =
           Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
@@ -9813,28 +9813,28 @@ algorithm
       Absyn.Exp exp;
     case ("msvc",_)
       equation
-        SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
+        SCode.MOD(binding = SOME(Absyn.ARRAY(arr))) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libsList, namesList) = List.map_2(arr, getLibraryStringInMSVCFormat);
       then
         (List.flatten(libsList), List.flatten(namesList));
     case ("msvc",_)
       equation
-        SCode.MOD(binding = SOME((exp, _))) =
+        SCode.MOD(binding = SOME(exp)) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libs,names) = getLibraryStringInMSVCFormat(exp);
       then
         (libs,names);
     case (_,_)
       equation
-        SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
+        SCode.MOD(binding = SOME(Absyn.ARRAY(arr))) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libsList, namesList) = List.map_2(arr, getLibraryStringInGccFormat);
       then
         (List.flatten(libsList), List.flatten(namesList));
     case (_,_)
       equation
-        SCode.MOD(binding = SOME((exp, _))) =
+        SCode.MOD(binding = SOME(exp)) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libs,names) = getLibraryStringInGccFormat(exp);
       then
@@ -9854,7 +9854,7 @@ algorithm
       String str,fileName;
     case (_)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(inc), _)), info = SOURCEINFO(fileName=fileName,lineNumberStart=lineNumberStart)) =
+        SCode.MOD(binding = SOME(Absyn.STRING(inc)), info = SOURCEINFO(fileName=fileName,lineNumberStart=lineNumberStart)) =
           Mod.getUnelabedSubMod(inMod, "Include");
         str = "#line "+intString(lineNumberStart)+" \""+fileName+"\"";
         inc_1 = System.unescapedString(inc);
@@ -9873,7 +9873,7 @@ algorithm
       Boolean b;
     case (_)
       equation
-        SCode.MOD(binding = SOME((Absyn.BOOL(b), _))) =
+        SCode.MOD(binding = SOME((Absyn.BOOL(b)))) =
           Mod.getUnelabedSubMod(inMod, "DynamicLoad");
       then
         b;

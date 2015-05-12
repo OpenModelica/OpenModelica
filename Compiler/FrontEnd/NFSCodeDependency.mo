@@ -1084,7 +1084,7 @@ algorithm
     local
       SCode.Element el;
       list<SCode.SubMod> sub_mods;
-      Option<tuple<Absyn.Exp, Boolean>> bind_exp;
+      Option<Absyn.Exp> bind_exp;
 
     // No modifier.
     case (SCode.NOMOD(), _, _, _) then ();
@@ -1276,17 +1276,17 @@ end analyseSubscript;
 
 protected function analyseModBinding
   "Analyses an optional modifier binding."
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input Option<Absyn.Exp> inBinding;
   input Env inEnv;
   input SourceInfo inInfo;
 algorithm
-  _ := match(inBinding, inEnv, inInfo)
+  _ := match inBinding
     local
       Absyn.Exp bind_exp;
 
-    case (NONE(), _, _) then ();
+    case NONE() then ();
 
-    case (SOME((bind_exp, _)), _, _)
+    case SOME(bind_exp)
       equation
         analyseExp(bind_exp, inEnv, inInfo);
       then

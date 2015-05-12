@@ -462,7 +462,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       list<SCode.SubMod> sub_mods;
-      Option<tuple<Absyn.Exp, Boolean>> opt_exp;
+      Option<Absyn.Exp> opt_exp;
       SCode.Element el;
       SourceInfo info;
 
@@ -484,23 +484,22 @@ algorithm
 end flattenModifier;
 
 protected function flattenModOptExp
-  input Option<tuple<Absyn.Exp, Boolean>> inOptExp;
+  input Option<Absyn.Exp> inOptExp;
   input Env inEnv;
   input SourceInfo inInfo;
-  output Option<tuple<Absyn.Exp, Boolean>> outOptExp;
+  output Option<Absyn.Exp> outOptExp;
 algorithm
-  outOptExp := match(inOptExp, inEnv, inInfo)
+  outOptExp := match inOptExp
     local
       Absyn.Exp exp;
-      Boolean delay_elab;
 
-    case (SOME((exp, delay_elab)), _, _)
+    case SOME(exp)
       equation
         exp = flattenExp(exp, inEnv, inInfo);
       then
-        SOME((exp, delay_elab));
+        SOME(exp);
 
-    case (NONE(), _, _) then inOptExp;
+    case NONE() then inOptExp;
   end match;
 end flattenModOptExp;
 
