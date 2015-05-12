@@ -21,6 +21,27 @@ omshell: omc
 omc-diff:
 	$(MAKE) -C testsuite/difftool "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@"
 
+SOURCE_DIRS_UTF8=OMEdit/ OMShell/ OMNotebook/ OMOptim/ OMPlot/ OMCompiler/Compiler/ OMCompiler/SimulationRuntime/ `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
+SOURCE_DIRS=$(SOURCE_DIRS_UTF8) testsuite/flattening/libraries/3rdParty/HumMod
+
+bom-error:
+	rm -f bom-error.log bom-error.sh
+	echo "#!/bin/sh\ntest \"\`head -c3 \\\"\$$1\\\"\`\" = \"\`/bin/echo -ne \"\\xef\\xbb\\xbf\"\`\" && (echo \$$1 contains BOM >> bom-error.log)" > bom-error.sh
+	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
+	@if test -e bom-error.log; then cat bom-error.log; fi
+	@test ! -e bom-error.log
+	rm -f bom-error.log bom-error.sh
+
+tab-error:
+	! find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
+				 grep -v " 0\$$" | egrep -v '/GenTest/|/antlr-3.2/|Parser/MetaModelica_|Parser/ParModelica_|Parser/Modelica_3_|Parser/ModelicaParser'
+# Trims trailing whitespace and replaces tabs with spaces
+fix-whitespace:
+	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
+
+spellcheck:
+	grep -oE 'gettext[(]["]([^"]|([\\]["]))*["]' `ls OMCompiler/Compiler/*/*.mo | grep -v Flags.mo` | sed "s/[\\%]./ /g" | aspell -p ./.openmodelica.aspell --mode=ccpp --lang=en_US list | sort -u | sed 's/^/aspell: /' | tee aspell.log
+
 clean:
 	test ! -d build || rm -r build/
 
