@@ -13,7 +13,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter.mat";
 compareVars :=
 {
    "Q1.vbe",

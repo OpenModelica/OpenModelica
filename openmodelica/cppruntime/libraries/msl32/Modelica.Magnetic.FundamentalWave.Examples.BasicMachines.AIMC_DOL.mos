@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMC_DOL.mat";
 compareVars :=
 {
   "aimcE.i_0_s", 

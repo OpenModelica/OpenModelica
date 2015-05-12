@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.Transformers.AIMC_Transformer.mat";
 compareVars :=
 {
   "aimc.idq_rr[1]",

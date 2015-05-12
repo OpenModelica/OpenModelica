@@ -13,7 +13,6 @@ loadModel(Modelica,{"3.2.1"});
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem.mat";
 stopTime := 0.0; // For reading stopTime from annotation
 relTol := 0.01;
 absTol := 0.0001;

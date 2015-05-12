@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation.mat";
 compareVars :=
 {
    "HEX.pipe_1.mediums[1].T",

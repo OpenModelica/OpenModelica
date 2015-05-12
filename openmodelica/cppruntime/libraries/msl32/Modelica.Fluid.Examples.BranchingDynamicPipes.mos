@@ -15,7 +15,6 @@ absTol := 0.0005; // Tolerance for the simulation comparison
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.BranchingDynamicPipes);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.BranchingDynamicPipes.mat";
 compareVars :=
 {
    "pipe1.mediums[1].p",

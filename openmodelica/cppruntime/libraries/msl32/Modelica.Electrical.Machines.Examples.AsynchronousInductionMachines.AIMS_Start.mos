@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMS_Start.mat";
 compareVars :=
 {
   "aims.idq_rr[1]",

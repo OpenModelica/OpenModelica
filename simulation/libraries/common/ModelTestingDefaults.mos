@@ -1,5 +1,5 @@
 echo(false);
-loadFile("../common/ModelTesting.mo");
+loadFile(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTesting.mo");
 GC_expand_hp(500*1024*1024); // ~300 MB to load MSL, 200MB more for the smallest models to simulate
 packageName := $TypeName(Modelica);
 packageVersion := "3.2.1";
@@ -11,7 +11,7 @@ relTol := 0.01; // Tolerance for the simulation comparison
 absTol := 0.0001; // Tolerance for the simulation comparison
 compareVars := fill("",0); // Default compares all variables. Not recommended, but is the only reasonable default'
 referenceFile := ""; // Default reference file is $REFERENCEFILES/msl32/modelName.mat
-modelTesting := "../common/ModelTesting.mos";
+modelTesting := getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTesting.mos";
 outputFormat :="mat";
 simflags := ""; // Options sent to the simulation runtime
 timeout := 480; // 8 minutes should be enough for any model

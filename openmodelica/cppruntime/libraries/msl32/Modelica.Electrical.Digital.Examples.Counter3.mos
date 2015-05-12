@@ -13,7 +13,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Digital.Examples.Counter3);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Digital.Examples.Counter3.mat";
 
 runScript(modelTesting);getErrorString();
 

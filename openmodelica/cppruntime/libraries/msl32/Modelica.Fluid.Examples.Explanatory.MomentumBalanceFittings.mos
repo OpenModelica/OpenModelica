@@ -13,7 +13,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings.mat";
 compareVars :=
 {
   "leftBoundary1.ports[1].m_flow",

@@ -11,7 +11,6 @@
 runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.InvertersExtendedModel);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.InvertersExtendedModel.mat";
 compareVars :=
 {
    "c1.vinternal",

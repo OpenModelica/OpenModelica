@@ -15,7 +15,6 @@ setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.ONEBIT);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.ONEBIT.mat";
 compareVars :=
 {
    "X1.Q1.vbc",

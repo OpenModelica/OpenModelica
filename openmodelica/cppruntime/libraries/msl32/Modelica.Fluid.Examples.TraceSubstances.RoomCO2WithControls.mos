@@ -13,7 +13,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls.mat";
 compareVars :=
 {
    "volume.medium.Xi[1]",

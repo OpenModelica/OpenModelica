@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter.mat";
 compareVars :=
 {
   "loadInertiaE.phi",

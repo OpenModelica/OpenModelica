@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start.mat";
 
 // adrpo: hack to get it to work
 relTol := 1.5;
