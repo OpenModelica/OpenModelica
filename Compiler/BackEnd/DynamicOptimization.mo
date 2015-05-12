@@ -642,6 +642,7 @@ algorithm
     var := BackendVariable.makeVar(cr);
     var := BackendVariable.setVarMinMax(var, SOME(DAE.RCONST(0.0)), SOME(DAE.RCONST(0.0)));
     var := BackendVariable.setVarKind(var, BackendDAE.OPT_CONSTR());
+    var := BackendVariable.setVarDirection(var, DAE.OUTPUT());
 
     ovars := BackendVariable.addNewVar(var, ovars);
     res := BackendDAEOptimize.makeEquationToResidualExp(eqn);
