@@ -90,6 +90,7 @@ SimulationRuntime/ParModelica/Makefile
 SimulationRuntime/ParModelica/auto/Makefile
 SimulationRuntime/ParModelica/explicit/Makefile
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile
+SimulationRuntime/build_c/
 
 # OpenModelicaSetup
 Compiler/OpenModelicaSetup
