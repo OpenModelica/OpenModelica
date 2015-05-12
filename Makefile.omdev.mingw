@@ -334,8 +334,12 @@ simulationruntimecmsvc: mkbuilddirs Umfpack_msvc CMinpack_msvc fmil_msvc
 	# build gc as well, as it is needed for the msvc c runtime
 	echo 'Build gc (RelWithDebInfo)'
 	mkdir -p 3rdParty/gc/build_msvc
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > 3rdParty/gc/build_msvc/build.bat
+	echo @echo on > 3rdParty/gc/build_msvc/build.bat
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' >> 3rdParty/gc/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles"' >> 3rdParty/gc/build_msvc/build.bat
+	echo @echo on >> 3rdParty/gc/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/gc/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/gc/build_msvc/build.bat
 	echo nmake /f Makefile >> 3rdParty/gc/build_msvc/build.bat
 	cd 3rdParty/gc/build_msvc &&	cmd /c build.bat
 	echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'

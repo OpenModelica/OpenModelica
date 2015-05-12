@@ -13,9 +13,9 @@ SET(util_headers  base_array.h boolean_array.h division.h omc_error.h index_spec
 		  ../ModelicaUtilities.h)
 
 if(MSVC)
-    INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/3rdParty/regex-0.12)
-    SET(util_sources ${util_sources} ${OMCTRUNCHOME}/3rdParty/regex-0.12/regex.c)
-    SET(util_headers ${util_headers} ${OMCTRUNCHOME}/3rdParty/regex-0.12/regex.h)
+    INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/3rdParty/regex-0.12)
+    SET(util_sources ${util_sources} ${OMCTRUNCHOME}/OMCompiler/3rdParty/regex-0.12/regex.c)
+    SET(util_headers ${util_headers} ${OMCTRUNCHOME}/OMCompiler/3rdParty/regex-0.12/regex.h)
 endif(MSVC)
 
 # Library util
