@@ -1,8 +1,3 @@
-top_builddir=../../
-builddir_bin=$(top_builddir)/build/bin/
-builddir_share=$(top_builddir)/build/share/
-runtimedir=$(top_builddir)/Compiler/runtime/
-
 QMAKE=@QMAKE@
 APP=@APP@
 EXE=@EXE@
@@ -18,19 +13,19 @@ Makefile: OMShell.config
 clean: Makefile
 	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) omc_communication.* Makefile
 
-omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
+omc_communication.cc omc_communication.h: @OPENMODELICAHOME@/share/omc/omc_communication.idl
 	@IDLCMD@ $<
 
 $(NAME): Makefile OMShell.config omc_communication.cc
 	$(MAKE) -f Makefile
 
 build: $(NAME)
-	mkdir -p $(builddir_share)/omshell/nls/
-	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/$(NAME)$(APP) $(top_builddir)/build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin); fi
-	cp -p $(top_builddir)/OMNotebook/OMNotebookGUI/commands.xml $(builddir_share)/omshell/
-	cp -p OMShell_*.qm $(builddir_share)/omshell/nls/
+	mkdir -p @OMBUILDDIR@/share/omshell/nls/
+	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/build/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin; fi
+	cp -p commands.xml @OMBUILDDIR@/share/omshell/
+	cp -p OMShell_*.qm @OMBUILDDIR@/share/omshell/nls/
 
 Makefile.unix: Makefile.unix.in
-	cd $(top_builddir); ./config.status
+	cd @top_builddir@ && ./config.status
 OMShell.config: OMShell.config.in
-	cd $(top_builddir); ./config.status
+	cd @top_builddir@ && ./config.status

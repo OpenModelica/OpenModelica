@@ -1,13 +1,5 @@
 all: release
 
-top_builddir=../..
-builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib
-builddir_inc=$(top_builddir)/build/include
-builddir_doc=$(top_builddir)/build/doc
-runtimedir=$(top_builddir)/Compiler/runtime/
-
-
 CC=@CC@
 CXX=@CXX@
 
@@ -36,14 +28,14 @@ endif
 PROG = OMShell-terminal
 
 release: $(PROG)$(EXEEXT)
-	cp $(PROG)$(EXEEXT) $(builddir_bin)/
+	cp $(PROG)$(EXEEXT) @OMBUILDDIR@/bin
 
 $(PROG)$(EXEEXT) : $(OBJS)
 	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LDFLAGS)
 
 omc_communication.cpp: omc_communication.cc
 	ln -s $< $@
-omc_communication.cc: $(runtimedir)/omc_communication.idl
+omc_communication.cc: @OPENMODELICAHOME@/share/omc/omc_communication.idl
 	@IDLCMD@ $<
 omc_communication.h: omc_communication.cc
 
@@ -58,4 +50,4 @@ options.o: options.cpp
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in
-	cd $(top_builddir) && ./config.status
+	cd @top_builddir@ && ./config.status
