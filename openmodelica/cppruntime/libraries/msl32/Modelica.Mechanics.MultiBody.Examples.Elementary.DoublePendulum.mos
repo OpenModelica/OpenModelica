@@ -2,7 +2,7 @@
 // teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: 	 +simCodeTarget=Cpp
+// cflags:   +simCodeTarget=Cpp
 //
 // Simulation Results
 // Modelica Standard Library
@@ -17,9 +17,10 @@ getErrorString();
 
 
 // Result:
-// true
-// true
+// "\"true
+// \"
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
+// "
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum
 // "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.mat"
