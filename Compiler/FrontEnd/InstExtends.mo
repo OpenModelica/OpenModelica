@@ -1768,7 +1768,6 @@ algorithm
       SCode.Each eachPrefix;
       list<SCode.SubMod> subModLst;
       Absyn.Exp exp;
-      Boolean b;
       SCode.Element elt;
       FCore.Cache cache;
       FCore.Graph env;
@@ -1778,12 +1777,12 @@ algorithm
 
     case (cache,_,SCode.NOMOD(),_) then (cache,SCode.NOMOD());
 
-    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b)),info),ht)
+    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME(exp),info),ht)
       equation
         (cache, subModLst) = fixSubModList(cache, env, subModLst, ht);
         (cache,exp) = fixExp(cache,env,exp,ht);
       then
-        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b)),info));
+        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME(exp),info));
 
     case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info),ht)
       equation

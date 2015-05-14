@@ -1641,7 +1641,8 @@ algorithm
 
       if Flags.isSet(Flags.VECTORIZE) then
         // prepare the variables
-        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE1);
+        //dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE1);
+        dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.enlargeIteratedArrayVars);
       end if;
 
       modelInfo = createModelInfo(class_, dlow, functions, {}, numStateSets, fileDir);
@@ -3935,7 +3936,7 @@ protected function makeSolvedSES_FOR_LOOP
 algorithm
   (outSimEq,ouniqueEqIndex) := matchcontinue(inEqn,lhsCrefIn,rhs,iuniqueEqIndex)
     local
-      Integer id;
+      Integer id, stopIdx;
       DAE.ComponentRef cref,lhsCref;
       DAE.Exp iterator,startIt,endIt, rhsExp, body,sigma;
       DAE.ElementSource source;
@@ -3951,8 +3952,9 @@ algorithm
   case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs as BackendDAE.ACCUM_ITER_CREF(cref=cref)::{}))),_,_,_)
     equation
       // has an accumulated expression (i.e. SIGMA)
+      DAE.ICONST(stopIdx) = endIt;
       iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
-      (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(cref),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
+      (DAE.CREF(componentRef=cref),(_,_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(cref),Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
       body = DAE.CREF(cref,ComponentReference.crefType(cref));
         //print("body:"+ExpressionDump.printExpStr(body)+"\n");
       sigma = DAE.SUM(ComponentReference.crefType(cref),iterator,startIt,endIt,body);
@@ -3967,9 +3969,10 @@ algorithm
   case(BackendDAE.EQUATION(source=source,attr=BackendDAE.EQUATION_ATTRIBUTES(loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=iterCrefs))),_,_,_)
     equation
       // is a for equation
+      DAE.ICONST(stopIdx) = endIt;
       iterator = DAE.CREF(ComponentReference.makeCrefIdent("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
-      (DAE.CREF(componentRef=cref),(_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
-      (rhsExp,(_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,iterCrefs));
+      (DAE.CREF(componentRef=cref),(_,_,iterCrefs)) = Expression.traverseExpTopDown(Expression.crefExp(lhsCrefIn),Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
+      (rhsExp,(_,_,iterCrefs)) = Expression.traverseExpTopDown(rhs,Vectorization.setIteratedSubscriptInCref,(iterator,stopIdx,iterCrefs));
     then ({SimCode.SES_FOR_LOOP(iuniqueEqIndex,iterator,startIt,endIt,cref,rhsExp,source)},iuniqueEqIndex+1);
 
   else
@@ -7590,9 +7593,9 @@ algorithm
         isalias = isAliasVar(simvar);
         /* figure out in which lists to put it */
         stateVars = List.consOnTrue((not isalias) and
-          BackendVariable.isStateVar(dlowVar), simvar, stateVars);
+          (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), simvar, stateVars);
         derivativeVars = List.consOnTrue((not isalias) and
-          BackendVariable.isStateVar(dlowVar), derivSimvar, derivativeVars);
+          (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)), derivSimvar, derivativeVars);
         algVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarNonDiscreteAlg(dlowVar), simvar, algVars);
         discreteAlgVars = List.consOnTrue((not isalias) and
@@ -7687,29 +7690,42 @@ algorithm
     Integer i;
     DAE.ComponentRef name, name2;
     Option<DAE.Exp> init;
+    Option<DAE.ComponentRef> arrCref;
+    Option<Integer> variable_index;
     SimCodeVar.AliasVariable aliasvar;
-    String s1, s2;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i, initialValue=init))
+    String s1, s2, s3;
+    list<String> numArrayElement;
+    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i, initialValue=init, arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
-        print(" No Alias for var : " + s1 + " index: "+intString(i)+" initial: "+ExpressionDump.printOptExpStr(init) +"\n");
+        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
+        print(" No Alias for var : " + s1 + " index: "+intString(i)+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] " + "\n");
      then ();
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2)))
+    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2), arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         s2 = ComponentReference.printComponentRefStr(name2);
-        print(" Alias for var " + s1 + " is " + s2 + "\n");
+        if Util.isSome(arrCref) then s3 = " arrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3=""; end if;
+        print(" Alias for var " + s1 + " is " + s2 + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] " + "\n");
     then ();
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NEGATEDALIAS(varName = name2)))
+    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NEGATEDALIAS(varName = name2), arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
         s2 = ComponentReference.printComponentRefStr(name2);
-        print(" Minus Alias for var " + s1 + " is " + s2 + "\n");
+        if Util.isSome(arrCref) then s3 = " arrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3=""; end if;
+        print(" Minus Alias for var " + s1 + " is " + s2 + s3 + " index:("+printVarIndx(variable_index)+")" +  " [" + stringDelimitList(numArrayElement,",")+"] " + "\n");
      then ();
    end match;
 end dumpVar;
 
-protected function dumpVarLst"dumps a list of SimVars to stdout.
+protected function printVarIndx
+  input Option<Integer> i;
+  output String s;
+algorithm
+  if Util.isSome(i) then s:=intString(Util.getOption(i)); else s := ""; end if;
+end printVarIndx;
+
+public function dumpVarLst"dumps a list of SimVars to stdout.
 author:Waurich TUD 2014-05"
   input list<SimCodeVar.SimVar> varLst;
   input String header;
@@ -9537,7 +9553,7 @@ algorithm
     case (_, _, _, {}) then {};
     case (_, _, _, _)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
+        SCode.MOD(binding = SOME(Absyn.STRING(str))) =
           Mod.getUnelabedSubMod(inMod, "IncludeDirectory");
         str = CevalScript.getFullPathFromUri(program, str, false);
         istr = "\"-I"+str+"\"";
@@ -9574,7 +9590,7 @@ algorithm
         str := matchcontinue inMod
           case _
             equation
-              SCode.MOD(binding = SOME((Absyn.STRING(str), _))) = Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
+              SCode.MOD(binding = SOME(Absyn.STRING(str))) = Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
             then str;
           else "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Library";
         end matchcontinue;
@@ -9622,7 +9638,7 @@ algorithm
       Boolean isLinux;
     case (_, _, _)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
+        SCode.MOD(binding = SOME(Absyn.STRING(str))) =
           Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
@@ -9797,28 +9813,28 @@ algorithm
       Absyn.Exp exp;
     case ("msvc",_)
       equation
-        SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
+        SCode.MOD(binding = SOME(Absyn.ARRAY(arr))) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libsList, namesList) = List.map_2(arr, getLibraryStringInMSVCFormat);
       then
         (List.flatten(libsList), List.flatten(namesList));
     case ("msvc",_)
       equation
-        SCode.MOD(binding = SOME((exp, _))) =
+        SCode.MOD(binding = SOME(exp)) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libs,names) = getLibraryStringInMSVCFormat(exp);
       then
         (libs,names);
     case (_,_)
       equation
-        SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
+        SCode.MOD(binding = SOME(Absyn.ARRAY(arr))) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libsList, namesList) = List.map_2(arr, getLibraryStringInGccFormat);
       then
         (List.flatten(libsList), List.flatten(namesList));
     case (_,_)
       equation
-        SCode.MOD(binding = SOME((exp, _))) =
+        SCode.MOD(binding = SOME(exp)) =
           Mod.getUnelabedSubMod(inMod, "Library");
         (libs,names) = getLibraryStringInGccFormat(exp);
       then
@@ -9838,7 +9854,7 @@ algorithm
       String str,fileName;
     case (_)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(inc), _)), info = SOURCEINFO(fileName=fileName,lineNumberStart=lineNumberStart)) =
+        SCode.MOD(binding = SOME(Absyn.STRING(inc)), info = SOURCEINFO(fileName=fileName,lineNumberStart=lineNumberStart)) =
           Mod.getUnelabedSubMod(inMod, "Include");
         str = "#line "+intString(lineNumberStart)+" \""+fileName+"\"";
         inc_1 = System.unescapedString(inc);
@@ -9857,7 +9873,7 @@ algorithm
       Boolean b;
     case (_)
       equation
-        SCode.MOD(binding = SOME((Absyn.BOOL(b), _))) =
+        SCode.MOD(binding = SOME((Absyn.BOOL(b)))) =
           Mod.getUnelabedSubMod(inMod, "DynamicLoad");
       then
         b;
@@ -12519,15 +12535,22 @@ protected
   list<SimCodeVar.SimVar> discreteAlgVars;
   list<SimCodeVar.SimVar> intAlgVars;
   list<SimCodeVar.SimVar> boolAlgVars;
+  list<SimCodeVar.SimVar> inputVars;
+  list<SimCodeVar.SimVar> outputVars;
   list<SimCodeVar.SimVar> aliasVars;
   list<SimCodeVar.SimVar> intAliasVars;
   list<SimCodeVar.SimVar> boolAliasVars;
   list<SimCodeVar.SimVar> paramVars;
   list<SimCodeVar.SimVar> intParamVars;
   list<SimCodeVar.SimVar> boolParamVars;
-  list<SimCodeVar.SimVar> inputVars;
-  list<SimCodeVar.SimVar> outputVars;
+  //list<SimCodeVar.SimVar> stringAlgVars;
+  //list<SimCodeVar.SimVar> stringParamVars;
+  //list<SimCodeVar.SimVar> stringAliasVars;
+  //list<SimCodeVar.SimVar> extObjVars;
   list<SimCodeVar.SimVar> constVars;
+  list<SimCodeVar.SimVar> intConstVars;
+  list<SimCodeVar.SimVar> boolConstVars;
+  list<SimCodeVar.SimVar> stringConstVars;
   //list<SimCodeVar.SimVar> jacobianVars;
   list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
   list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
@@ -12538,12 +12561,12 @@ algorithm
   oVarToArrayIndexMapping := match(iModelInfo)
     case(SimCode.MODELINFO(vars = SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,
         intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,paramVars=paramVars,
-        intParamVars=intParamVars,boolParamVars=boolParamVars,inputVars=inputVars,outputVars=outputVars, constVars=constVars,
+        intParamVars=intParamVars,boolParamVars=boolParamVars,inputVars=inputVars,outputVars=outputVars, constVars=constVars, intConstVars=intConstVars, boolConstVars=boolConstVars,
         realOptimizeConstraintsVars=realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars=realOptimizeFinalConstraintsVars)))
       equation
         varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTable();
         varIndexMappingHashTable = HashTableCrILst.emptyHashTable();
-        currentVarIndices = (0,0,0);
+        currentVarIndices = (1,1,1); //0 is reserved for unused variables
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stateVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(derivativeVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(algVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
@@ -12556,6 +12579,8 @@ algorithm
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(inputVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(outputVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(constVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(intConstVars, function addVarToArrayIndexMapping(iVarType=2), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolConstVars, function addVarToArrayIndexMapping(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeConstraintsVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
         ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeFinalConstraintsVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
@@ -12710,13 +12735,13 @@ public function getVarIndexListByMapping "author: marcusw
   Return the variable indices stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
   input DAE.ComponentRef iVarName;
-  input Integer iIndexForUndefinedReferences;
-  output list<Integer> oVarIndexList;
+  input String iIndexForUndefinedReferences;
+  output list<String> oVarIndexList;
 protected
   DAE.ComponentRef varName = iVarName;
   Integer arrayIdx, idx, arraySize;
   array<Integer> varIndices;
-  list<Integer> tmpVarIndexListNew = {};
+  list<String> tmpVarIndexListNew = {};
 algorithm
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
@@ -12725,13 +12750,13 @@ algorithm
     for arrayIdx in 0:(arraySize-1) loop
       idx := arrayGet(varIndices, arraySize-arrayIdx);
       if(intLt(idx, 0)) then
-        tmpVarIndexListNew := (intMul(idx, -1) - 1)::tmpVarIndexListNew;
+        tmpVarIndexListNew := intString((intMul(idx, -1) - 1))::tmpVarIndexListNew;
         //print("SimCodeUtil.tmpVarIndexListNew: Warning, negativ aliases (" + ComponentReference.printComponentRefStr(iVarName) + ") are not supported at the moment!\n");
       else
         if(intEq(idx, 0)) then
           tmpVarIndexListNew := iIndexForUndefinedReferences::tmpVarIndexListNew;
         else
-          tmpVarIndexListNew := (idx - 1)::tmpVarIndexListNew;
+          tmpVarIndexListNew := intString(idx - 1)::tmpVarIndexListNew;
         end if;
       end if;
     end for;
@@ -12742,6 +12767,53 @@ algorithm
   end if;
   oVarIndexList := tmpVarIndexListNew;
 end getVarIndexListByMapping;
+
+public function isVarIndexListConsecutive "author: marcusw
+  Check if all variable indices of the given variables, stored in the hash table, are consecutive."
+  input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+  input DAE.ComponentRef iVarName;
+  output Boolean oIsConsecutive;
+protected
+  DAE.ComponentRef varName = iVarName;
+  Integer arrayIdx, idx, arraySize;
+  Integer currentIndex = -1;
+  array<Integer> varIndices;
+  Boolean consecutive = true;
+algorithm
+  varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
+  if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
+    ((_,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
+    arraySize := arrayLength(varIndices);
+    for arrayIdx in 0:(arraySize-1) loop
+      idx := arrayGet(varIndices, arraySize-arrayIdx);
+      if(intLt(idx, 0)) then
+        if(intEq(currentIndex, -1)) then
+          currentIndex := intMul(idx, -1) - 1;
+        else
+          consecutive := boolAnd(consecutive, intEq(currentIndex, intMul(idx, -1)));
+          currentIndex := intMul(idx, -1) - 1;
+        end if;
+        //print("SimCodeUtil.isVarIndexListConsecutive: Warning, negativ aliases (" + ComponentReference.printComponentRefStr(iVarName) + ") are not supported at the moment!\n");
+      else
+        if(intEq(idx, 0)) then
+          currentIndex := -2;
+          consecutive := false;
+        else
+          if(intEq(currentIndex, -1)) then
+            currentIndex := idx - 1;
+          else
+            //print("SimCodeUtil.isVarIndexListConsecutive: Checking if " + intString(currentIndex) + " is consecutive with " + intString(idx) + "\n");
+            consecutive := boolAnd(consecutive, intEq(currentIndex, idx));
+            //print("SimCodeUtil.isVarIndexListConsecutive: " + boolString(consecutive) + "\n");
+            currentIndex := idx - 1;
+          end if;
+        end if;
+      end if;
+    end for;
+  end if;
+  oIsConsecutive := consecutive;
+end isVarIndexListConsecutive;
+
 
 protected function getUnrolledArrayIndex "author: marcusw
   Calculate a flat array index, by the given subscripts. E.g. [2,1] for array of size 3x3 will lead to: 2."
@@ -12836,6 +12908,10 @@ algorithm
   varCount := varCount + listLength(boolAliasVars);
   ((idxSimVarMappingTplList, highestIdx)) := List.fold1(paramVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
   varCount := varCount + listLength(paramVars);
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(intParamVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  varCount := varCount + listLength(intParamVars);
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolParamVars, createAllSCVarMapping0, varCount, (idxSimVarMappingTplList,highestIdx));
+  varCount := varCount + listLength(boolParamVars);
 
   mappingArray := arrayCreate(highestIdx, NONE());
   mappingArray := List.fold(idxSimVarMappingTplList, createAllSCVarMapping1, mappingArray);
@@ -13081,6 +13157,7 @@ algorithm
     case SimCode.SES_NONLINEAR(index=index) then index;
     case SimCode.SES_MIXED(index=index) then index;
     case SimCode.SES_WHEN(index=index) then index;
+    case SimCode.SES_FOR_LOOP(index=index) then index;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.equationIndex failed"});

@@ -44,30 +44,19 @@ template dumpVisualization(VisualXML.Visualization vis)
           let colorDump = dumpVecExp(arrayList(color))
             <<
               <shape>
-                  <ident><%ident%></ident>
+                  <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
                   <type><%shapeType%></type>
-                  <T>
-                      <%TDump%></T>
-                  <r>
-                      <%rDump%></r>
-                  <r_shape>
-                      <%r_shapeDump%></r_shape>
-                  <lengthDir>
-                     <%lDirDump%></lengthDir>
-                  <widthDir>
-                      <%wDirDump%></widthDir>
-                  <length>
-                      <%dumpExp(length)%></length>
-                  <width>
-                      <%dumpExp(width)%></width>
-                  <height>
-                      <%dumpExp(height)%></height>
-                  <extra>
-                      <%dumpExp(extra)%></extra>
-                  <color>
-                      <%colorDump%></color>
-                  <specCoeff>
-                      <%dumpExp(specularCoeff)%></specCoeff>
+                  <T><%TDump%></T>
+                  <r><%rDump%></r>
+                  <r_shape><%r_shapeDump%></r_shape>
+                  <lengthDir><%lDirDump%></lengthDir>
+                  <widthDir><%wDirDump%></widthDir>
+                  <length><%dumpExp(length)%></length>
+                  <width><%dumpExp(width)%></width>
+                  <height><%dumpExp(height)%></height>
+                  <extra><%dumpExp(extra)%></extra>
+                  <color><%colorDump%></color>
+                  <specCoeff><%dumpExp(specularCoeff)%></specCoeff>
               </shape>
             >>
     end match
@@ -75,16 +64,21 @@ end dumpVisualization;
 
 template dumpVecExp (list<DAE.Exp> vector)
 ::=
-let vecDump = vector |> vec => <<<%dumpExp(vec)%>>> ; separator="\n"
-    <<<%vecDump%>>>
+let vecDump = vector |> vec => <<<%dumpExp(vec)%>>> ; separator="\t\n"
+    <<
+    <%vecDump%>>>
 end dumpVecExp;
 
 template dumpExp (DAE.Exp exp)
 ::=
     match exp
-        case CREF as CREF(__) then
+        case exp as BCONST(__) then
             <<
-            <cref><%ExpressionDump.printExpStr(exp)%></cref>
+                <bexp><%ExpressionDump.printExpStr(exp)%></bexp>
+            >>
+        case exp as CREF(__) then
+            <<
+                <cref><%ExpressionDump.printExpStr(exp)%></cref>
             >>
         case exp as BINARY(__) then
             <<<binary>
@@ -96,56 +90,46 @@ template dumpExp (DAE.Exp exp)
         case exp as UNARY(__) then
             <<<unary>
                 <op><%dumpOperator(operator)%></op>
-                <exp>
-                    <%dumpExp(exp)%></exp>
+                <exp><%dumpExp(exp)%></exp>
             </unary>
             >>
         case exp as LBINARY(__) then
             <<<lbinary>
-                <exp>
-                    <%dumpExp(exp1)%></exp>
+                <exp><%dumpExp(exp1)%></exp>
                 <op><%dumpOperator(operator)%></op>
-                <exp>
-                    <%dumpExp(exp2)%></exp>
+                <exp><%dumpExp(exp2)%></exp>
             </lbinary>
             >>
         case exp as LUNARY(__) then
             <<<lunary>
                 <op><%dumpOperator(operator)%></op>
-                <exp>
-                    <%dumpExp(exp)%></exp>
+                <exp><%dumpExp(exp)%></exp>
             </lunary>
             >>
         case exp as RELATION(__) then
             <<<relation>
-                <exp1>
-                    <%dumpExp(exp1)%></exp1>
+                <exp1><%dumpExp(exp1)%></exp1>
                 <op><%dumpOperator(operator)%></op>
-                <exp2>
-                    <%dumpExp(exp2)%></exp2>
+                <exp2><%dumpExp(exp2)%></exp2>
             </relation>
             >>
         case exp as IFEXP(__) then
             <<<ifexp>
-                <cond>
-                    <%dumpExp(expCond)%></cond>
-                <then>
-                    <%dumpExp(expThen)%></then>
-                <else>
-                    <%dumpExp(expElse)%></else>
+                <cond><%dumpExp(expCond)%></cond>
+                <then><%dumpExp(expThen)%></then>
+                <else><%dumpExp(expElse)%></else>
             </ifexp>
             >>
         case exp as CALL(__) then
             let elist = expLst |> e => <<<%dumpExp(e)%>>> ; separator="\n"
             <<<call>
                 <path><%pathString(path)%></path>
-                <expLst>
-                    <%elist%></expLst>
+                <expLst><%elist%></expLst>
             </call>
             >>
         else
             <<
-            <exp><%ExpressionDump.printExpStr(exp)%></exp>
+                <exp><%ExpressionDump.printExpStr(exp)%></exp>
             >>
     end match
 end dumpExp;

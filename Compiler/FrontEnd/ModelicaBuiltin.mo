@@ -2606,9 +2606,14 @@ end readSimulationResultSize;
 function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names."
   input String fileName;
   input Boolean readParameters = true;
+  input Boolean openmodelicaStyle = false;
   output String[:] vars;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+<p>Takes one simulation results file and returns the variables stored in it.</p>
+<p>If readParameters is true, parameter names are returned.</p>
+<p>If openmodelicaStyle is true, the stored variable names are converted to the canonical form used by OpenModelica variables (a.der(b) becomes der(a.b), and so on).</p>
+</html>"),preferredView="text");
 end readSimulationResultVars;
 
 public function filterSimulationResults
@@ -2616,7 +2621,6 @@ public function filterSimulationResults
   input String outFile;
   input String[:] vars = fill("",0);
   output Boolean success;
-  output String[:] resultFiles;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>

@@ -875,6 +875,7 @@ algorithm
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT())) then ();
+    case BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) then ();
   end match;
 end failIfNonState;
 
@@ -999,6 +1000,7 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) :: _)) then true;
     case ((_ :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;
@@ -1396,6 +1398,17 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end isExtObj;
+
+public function isAlgState
+"Return true if variable is alg state"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) then true;
+    else false;
+  end match;
+end isAlgState;
 
 public function isRealParam
 "Return true if variable is a parameter of real-type"
@@ -1966,6 +1979,27 @@ algorithm
            case(BackendDAE.VAR(values = attr)) then DAEUtil.getNominalAttr(attr);
          end match;
 end getVarNominalValue;
+
+public function getVarKind "
+  Get the DAE.VarKind of a variable"
+  input BackendDAE.Var inVar;
+  output BackendDAE.VarKind varKind;
+algorithm
+  varKind := match (inVar)
+    case (BackendDAE.VAR(varKind = varKind)) then  varKind;
+  end match;
+end getVarKind;
+
+public function getVarKindForVar"fetch the varkind for an indexed var inside the variable-array."
+  input Integer idx;
+  input BackendDAE.Variables varsIn;
+  output BackendDAE.VarKind kind;
+protected
+  BackendDAE.Var var;
+algorithm
+  var := getVarAt(varsIn,idx);
+  kind := getVarKind(var);
+end getVarKindForVar;
 
 public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and
@@ -3774,6 +3808,35 @@ algorithm
   end matchcontinue;
 end traversingisStateVarIndexFinder;
 
+public function getAllAlgStateVarIndexFromVariables
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> v_lst;
+  output list<Integer> i_lst;
+algorithm
+  ((v_lst,i_lst,_)) := traverseBackendDAEVars(inVariables,traversingisAlgStateVarIndexFinder,({},{},1));
+end getAllAlgStateVarIndexFromVariables;
+
+protected function traversingisAlgStateVarIndexFinder
+"author: Frenkel TUD 2010-11"
+  input BackendDAE.Var inVar;
+  input tuple<list<BackendDAE.Var>,list<Integer>,Integer> inTpl;
+  output BackendDAE.Var outVar;
+  output tuple<list<BackendDAE.Var>,list<Integer>,Integer> outTpl;
+algorithm
+  (outVar,outTpl) := match (inVar,inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> v_lst;
+      list<Integer> i_lst;
+      Integer i;
+    case (v,(v_lst,i_lst,i))
+      guard isAlgState(v)
+    then (v,(v::v_lst,i::i_lst,i+1));
+    case (v,(v_lst,i_lst,i)) then (v,(v_lst,i_lst,i+1));
+  end match;
+end traversingisAlgStateVarIndexFinder;
+
+
 public function mergeVariableOperations
   input BackendDAE.Var var;
   input list<DAE.SymbolicOperation> iops;
@@ -3791,7 +3854,7 @@ algorithm
       list<DAE.Dimension> g;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> oattr;
-    Option<BackendDAE.TearingSelect> ts;
+      Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
       list<DAE.SymbolicOperation> ops;

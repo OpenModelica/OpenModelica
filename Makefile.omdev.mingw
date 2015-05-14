@@ -198,9 +198,13 @@ fmil_msvc:
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Building CMinpack with MSVC'
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > 3rdParty/FMIL/build_msvc/build.bat
+	echo @echo on > 3rdParty/FMIL/build_msvc/build.bat
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/FMIL/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFMILIB_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles"' >> 3rdParty/FMIL/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFMILIB_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles"' >> 3rdParty/FMIL/build_msvc/build.bat
+	echo @echo on >> 3rdParty/FMIL/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/FMIL/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/FMIL/build_msvc/build.bat
 	echo echo Building FMIL_msvc >> 3rdParty/FMIL/build_msvc/build.bat
 	echo nmake /f Makefile install >> 3rdParty/FMIL/build_msvc/build.bat
 
@@ -225,10 +229,14 @@ CMinpack_msvc:
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Building CMinpack with MSVC'
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > 3rdParty/CMinpack/build_msvc/build.bat
+	echo @echo on > 3rdParty/CMinpack/build_msvc/build.bat
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' >> 3rdParty/CMinpack/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/CMinpack/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles"' >> 3rdParty/CMinpack/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles"' >> 3rdParty/CMinpack/build_msvc/build.bat
 	echo echo Building CMinpack >> 3rdParty/CMinpack/build_msvc/build.bat
+	echo @echo on >> 3rdParty/CMinpack/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/CMinpack/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/CMinpack/build_msvc/build.bat
 	echo nmake /f Makefile install >> 3rdParty/CMinpack/build_msvc/build.bat
 
 	# Change into directory and run batch file
@@ -252,10 +260,14 @@ Umfpack_msvc:
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Building Umfpack with MSVC'
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo @echo on > 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles"' >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles"' >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo echo Building Umfpack >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo @echo on >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/SuiteSparse/build_msvc/build.bat
 	echo nmake /f Makefile install >> 3rdParty/SuiteSparse/build_msvc/build.bat
 
 	# Change into directory and run batch file
@@ -267,22 +279,26 @@ Umfpack_msvc:
 	(cp -puf 3rdParty/SuiteSparse/install_msvc/lib/omc/*.lib $(OMBUILDDIR)/lib/omc/msvc/)
 	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/ $(OMBUILDDIR)/include/omc/msvc/suitesparse)
 
-runtimeCPPmsvcinstall: CMinpack_msvc copycppheader
+runtimeCPPmsvcinstall: mkbuilddirs CMinpack_msvc copycppheader
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	# mkdir -p $(OMBUILDDIR)/lib/omc/msvc/ && cp -p ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100/*.lib $(OMBUILDDIR)/lib/omc/msvc/
 	cp -p ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100/*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH)/lib/*vc*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
 
-simulationruntimecmsvc: Umfpack_msvc CMinpack_msvc fmil_msvc
+simulationruntimecmsvc: mkbuilddirs Umfpack_msvc CMinpack_msvc fmil_msvc
 	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/release
 	echo 'Build the MSVC RELEASE'
 	mkdir -p SimulationRuntime/build_c
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > SimulationRuntime/build_c/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=../../build ../c -G "NMake Makefiles"' >> SimulationRuntime/build_c/build.bat
+	echo @echo on > SimulationRuntime/build_c/build.bat
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' >> SimulationRuntime/build_c/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=../../build ../c -G "NMake Makefiles"' >> SimulationRuntime/build_c/build.bat
+	echo @echo on >> SimulationRuntime/build_c/build.bat
+	echo set MAKE= >> SimulationRuntime/build_c/build.bat
+	echo set MAKEFLAGS= >> SimulationRuntime/build_c/build.bat
 	echo nmake /f Makefile >> SimulationRuntime/build_c/build.bat
 	cd SimulationRuntime/build_c &&	cmd /c build.bat
 	echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
@@ -291,8 +307,12 @@ simulationruntimecmsvc: Umfpack_msvc CMinpack_msvc fmil_msvc
 	rm -rf SimulationRuntime/build_c/
 	echo 'Build the MSVC DEBUG'
 	mkdir -p SimulationRuntime/build_debug_c
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > SimulationRuntime/build_debug_c/build.bat
+	echo @echo on > SimulationRuntime/build_debug_c/build.bat
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' >> SimulationRuntime/build_debug_c/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:String=../../build_debug ../c -G "NMake Makefiles"' >> SimulationRuntime/build_debug_c/build.bat
+	echo @echo on >> SimulationRuntime/build_debug_c/build.bat
+	echo set MAKE= >> SimulationRuntime/build_debug_c/build.bat
+	echo set MAKEFLAGS= >> SimulationRuntime/build_debug_c/build.bat
 	echo nmake /f Makefile >> SimulationRuntime/build_debug_c/build.bat
 	cd SimulationRuntime/build_debug_c &&	cmd /c build.bat
 	echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
@@ -314,8 +334,12 @@ simulationruntimecmsvc: Umfpack_msvc CMinpack_msvc fmil_msvc
 	# build gc as well, as it is needed for the msvc c runtime
 	echo 'Build gc (RelWithDebInfo)'
 	mkdir -p 3rdParty/gc/build_msvc
-	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > 3rdParty/gc/build_msvc/build.bat
+	echo @echo on > 3rdParty/gc/build_msvc/build.bat
+	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' >> 3rdParty/gc/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles"' >> 3rdParty/gc/build_msvc/build.bat
+	echo @echo on >> 3rdParty/gc/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/gc/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/gc/build_msvc/build.bat
 	echo nmake /f Makefile >> 3rdParty/gc/build_msvc/build.bat
 	cd 3rdParty/gc/build_msvc &&	cmd /c build.bat
 	echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'

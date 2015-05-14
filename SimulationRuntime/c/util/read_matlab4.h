@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "omc_msvc.h"
 
 typedef struct {
   char *name,*descr;
@@ -88,6 +89,9 @@ double omc_matlab4_stopTime(ModelicaMatReader *reader);
 void matrix_transpose(double *m, int w, int h);
 void matrix_transpose_uint32(uint32_t *m, int w, int h);
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader);
+
+/* Fix the placement of a.der(b) -> der(a.b) */
+char* openmodelicaStyleVariableName(const char *varName);
 
 #ifdef __cplusplus
 } /* extern "C" */

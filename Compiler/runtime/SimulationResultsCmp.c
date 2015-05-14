@@ -66,56 +66,6 @@ typedef struct {
 static SimulationResult_Globals simresglob_c = {UNKNOWN_PLOT,0};
 static SimulationResult_Globals simresglob_ref = {UNKNOWN_PLOT,0};
 
-/* from an array of string creates flatten 'char*'-array suitable to be */
-/* stored as MAT-file matrix */
-static inline void fixDerInName(char *str, size_t len)
-{
-  size_t i;
-  char* dot;
-  if (len < 6) return;
-
-  /* check if name start with "der(" and includes at least one dot */
-  while (strncmp(str,"der(",4) == 0 && (dot = strrchr(str,'.')) != NULL) {
-    size_t pos = (size_t)(dot-str)+1;
-    /* move prefix to the begining of string :"der(a.b.c.d)" -> "a.b.c.b.c.d)" */
-    for(i = 4; i < pos; ++i)
-      str[i-4] = str[i];
-    /* move "der(" to the end of prefix
-       "a.b.c.b.c.d)" -> "a.b.c.der(d)" */
-    strncpy(&str[pos-4],"der(",4);
-  }
-}
-
-static inline void fixCommaInName(char **str, size_t len)
-{
-  size_t nc;
-  unsigned int j,k;
-  char* newvar;
-  if (len < 2) return;
-
-  nc = 0;
-  for (j=0;j<len;j++)
-    if ((*str)[j] ==',' )
-      nc +=1;
-
-  if (nc > 0) {
-
-    newvar = (char*) malloc(len+nc+10);
-    k = 0;
-    for (j=0;j<len;j++) {
-      newvar[k] = (*str)[j];
-      k +=1;
-      if ((*str)[j] ==',' ) {
-        newvar[k] = ' ';
-        k +=1;
-      }
-    }
-    newvar[k] = 0;
-    free(*str);
-    *str = newvar;
-  }
-}
-
 static char ** getVars(void *vars, unsigned int* nvars)
 {
   char **cmpvars = NULL;
@@ -602,20 +552,20 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
-    char *str = (char*) malloc(25+strlen(filename));
+    char *str = (char*) GC_malloc(25+strlen(filename));
     *str = 0;
     strcat(strcat(str,"Error opening file: "), filename);
     void *res = mmc_mk_scon(str);
-    free(str);
+    GC_free(str);
     return mmc_mk_cons(res,mmc_mk_nil());
   }
   /* fprintf(stderr, "Open File %s\n", reffilename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
-    char *str = (char*) malloc(35+strlen(reffilename));
+    char *str = (char*) GC_malloc(35+strlen(reffilename));
     *str = 0;
     strcat(strcat(str,"Error opening reference file: "), reffilename);
     void *res = mmc_mk_scon(str);
-    free(str);
+    GC_free(str);
     return mmc_mk_cons(res,mmc_mk_nil());
   }
 
@@ -652,7 +602,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   if (timeref.n==0) {
     return mmc_mk_cons(mmc_mk_scon("Error get ref time!"),mmc_mk_nil());
   }
-  cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
+  cmpdiffvars = (char**)GC_malloc(sizeof(char*)*(ncmpvars));
   /* check if time is larger or less reftime */
   res = mmc_mk_nil();
   if (fabs(time.data[time.n-1]-timeref.data[timeref.n-1]) > reltol*fabs(timeref.data[timeref.n-1])) {
@@ -672,8 +622,11 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   for (i=0;i<ncmpvars;i++) {
     var = cmpvars[i];
     len = strlen(var);
-    if (var1) free(var1);
-    var1 = (char*) malloc(len+10);
+    if (var1) {
+      free(var1);
+      var1 = NULL;
+    }
+    var1 = (char*) GC_malloc(len+10);
     k = 0;
     for (j=0;j<len;j++) {
       if (var[j] !='\"' ) {
@@ -686,34 +639,34 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     /* check if in ref_file */
     dataref = getData(var1,reffilename,size_ref,suggestReadAll,&simresglob_ref,runningTestsuite);
     if (dataref.n==0) {
-      if (var2) free(var2);
-      var2 = (char*) malloc(len+10);
-      strncpy(var2,var1,len+1);
-      fixDerInName(var2,len);
-      fixCommaInName(&var2,len);
-      dataref = getData(var2,reffilename,size_ref,suggestReadAll,&simresglob_ref,runningTestsuite);
-      if (dataref.n==0) {
-        msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
-        msg[1] = var;
-        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
-        ngetfailedvars++;
-        continue;
+      if (dataref.data) {
+        free(dataref.data);
       }
+      if (var1) {
+        GC_free(var1);
+        var1 = NULL;
+      }
+      msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
+      msg[1] = var;
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
+      ngetfailedvars++;
+      continue;
     }
     /*  check if in file */
     data = getData(var1,filename,size,suggestReadAll,&simresglob_c,runningTestsuite);
     if (data.n==0)  {
-      fixDerInName(var1,len);
-      fixCommaInName(&var1,len);
-      data = getData(var1,filename,size,suggestReadAll,&simresglob_c,runningTestsuite);
-      if (data.n==0)  {
-        if (data.data) free(data.data);
-        msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
-        msg[1] = var;
-        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
-        ngetfailedvars++;
-        continue;
+      if (data.data) {
+        free(data.data);
       }
+      if (var1) {
+        GC_free(var1);
+        var1 = NULL;
+      }
+      msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
+      msg[1] = var;
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
+      ngetfailedvars++;
+      continue;
     }
     /* compare */
     if (isHtml) {
@@ -724,8 +677,16 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,0,0);
     }
     /* free */
-    if (dataref.data) free(dataref.data);
-    if (data.data) free(data.data);
+    if (dataref.data) {
+      free(dataref.data);
+    }
+    if (data.data) {
+      free(data.data);
+    }
+    if (var1) {
+      GC_free(var1);
+      var1 = NULL;
+    }
   }
 
   if (isResultCmp) {
@@ -757,7 +718,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   if (cmpvars) GC_free(cmpvars);
   if (time.data) free(time.data);
   if (timeref.data) free(timeref.data);
-  if (cmpdiffvars) free(cmpdiffvars);
+  if (cmpdiffvars) GC_free(cmpdiffvars);
   /* close files */
   SimulationResultsImpl__close(&simresglob_c);
   SimulationResultsImpl__close(&simresglob_ref);

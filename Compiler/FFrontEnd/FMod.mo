@@ -199,7 +199,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       list<SCode.SubMod> submods1, submods2;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Option<Absyn.Exp> binding;
       SourceInfo info1, info2;
       SCode.Mod mod1, mod2;
 

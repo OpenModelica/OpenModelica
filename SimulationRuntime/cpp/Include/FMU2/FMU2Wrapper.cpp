@@ -32,14 +32,15 @@
 
 #include "FMU2Wrapper.h"
 
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 /*workarround until cmake file is modified*/
 //#define OMC_BUILD
 #include <Core/Solver/ISolverSettings.h>
 #include <Core/SimulationSettings/ISettingsFactory.h>
 #include <Core/Solver/ISolver.h>
 #include <Core/DataExchange/SimData.h>
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 /*end workarround*/
 #include <System/AlgLoopSolverFactory.h>
 

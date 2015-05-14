@@ -61,9 +61,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual bool& initBoolVar(size_t i);
     virtual double* getStateVector();
     virtual double* getDerStateVector();
-    virtual const double* getRealVarsVector() const;
-    virtual const int* getIntVarsVector() const;
-    virtual const bool* getBoolVarsVector() const;
+    virtual double* getRealVarsVector() const;
+    virtual int* getIntVarsVector() const;
+    virtual bool* getBoolVarsVector() const;
     virtual void setRealVarsVector(const double* vars);
     virtual void setIntVarsVector(const int* vars);
     virtual void setBoolVarsVector(const bool* vars);

@@ -1776,7 +1776,11 @@ protected
   BackendDAE.Variables v;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  if Flags.getConfigBool(Flags.SYM_EULER) then
+    (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+  else
+    (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  end if;
   eqns := List.map1r(statevarindx_lst,arrayGet,ass1);
   eqns := List.select(eqns, Util.intPositive);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
@@ -5268,6 +5272,31 @@ algorithm
   sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
 end replaceAliasVarsInShared;
 
+public function replaceRemovedEqsInShared"replaces the aliasVars in the BackendDAE.Shared
+author:Waurich TUD 2014-11"
+  input BackendDAE.Shared sharedIn;
+  input BackendDAE.EquationArray remEqs;
+  output BackendDAE.Shared sharedOut;
+protected
+    BackendDAE.Variables knownVars,externalObjects,aliasVars;
+    BackendDAE.EquationArray initialEqs,removedEqs;
+    list<DAE.Constraint> constraints;
+    list<DAE.ClassAttributes> classAttrs;
+    FCore.Cache cache;
+    FCore.Graph graph;
+    DAE.FunctionTree functionTree;
+    BackendDAE.EventInfo eventInfo;
+    BackendDAE.ExternalObjectClasses extObjClasses;
+    BackendDAE.BackendDAEType backendDAEType;
+    BackendDAE.SymbolicJacobians symjacs;
+    BackendDAE.ExtraInfo info;
+algorithm
+  BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,
+  constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
+  backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
+  sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,remEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
+end replaceRemovedEqsInShared;
+
 protected function adjacencyRowExpEnhanced
 "author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced, investigates expressions for
@@ -5555,6 +5584,21 @@ algorithm
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_,_,_,true)
+      equation
+        b = intEq(rowmark[i],mark);
+        b1 = intEq(rowmark[i],-mark);
+        b = b or b1;
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
+        res = List.consOnTrue(not b, i, vars);
+        res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_,_,_,_)
+      equation
+        false = intEq(intAbs(rowmark[i]),mark);
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
+        res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_,_,_,true)
       equation
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);

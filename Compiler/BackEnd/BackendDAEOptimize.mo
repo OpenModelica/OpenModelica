@@ -4146,7 +4146,7 @@ algorithm
   BackendDAE.DAE(systlst, shared) := inDAE;
 
   // make dt
-  cref := ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {});
+  cref := ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {});
   tmpv := BackendVariable.makeVar(cref);
   //tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
   tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
@@ -4196,9 +4196,6 @@ algorithm
   end for;
   // states -> vars
   vars := symEulerState(vars, crlst, b);
-  if b then // der(x)
-    oShared := symEulerDerVars(crlst, oShared);
-  end if;
   oSyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(),  BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end symEulerUpdateSyst;
 
@@ -4210,30 +4207,19 @@ protected function symEulerState
 
 protected
   Integer idx;
-  BackendDAE.VarKind kind;
+  BackendDAE.VarKind kind, oldKind;
 algorithm
-  kind := if b then BackendDAE.VARIABLE() else BackendDAE.STATE(0,NONE());
   for cref in crlst loop
     (_, idx) := BackendVariable.getVar2(cref, ovars);
+    oldKind := BackendVariable.getVarKindForVar(idx,ovars);
+    if b then
+      kind := BackendDAE.ALG_STATE(oldKind);
+    else
+     BackendDAE.ALG_STATE(kind) := oldKind;
+    end if;
     ovars :=  BackendVariable.setVarKindForVar(idx, kind, ovars);
   end for;
 end symEulerState;
-
-protected function symEulerDerVars
-  input list<DAE.ComponentRef> crlst;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared outShared = shared;
-protected
-  DAE.ComponentRef cref;
-  BackendDAE.Var v;
-algorithm
-  for cr in crlst loop
-    cref := ComponentReference.crefPrefixDer(cr);
-    v := BackendVariable.makeVar(cref);
-    v := BackendVariable.setBindExp(v, SOME(DAE.RCONST(0.0)));
-    outShared := BackendVariable.addKnVarDAE(v, outShared);
-  end for;
-end symEulerDerVars;
 
 protected function symEulerUpdateEqn
   input DAE.Exp inExp;

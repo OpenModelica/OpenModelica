@@ -2,12 +2,12 @@
 *.cpp text eol=native
 *.h text eol=native
 *.m4 text eol=native
-.gitattributes text eol=LF
-.gitignore text eol=LF
+.gitattributes text eol=lf
+.gitignore text eol=lf
 *.md text eol=native
 LICENSE text eol=native
 configure.ac text eol=native
 Makefile* text eol=native
 *.pro text eol=native
-*.mo eol=LF
-*.g text eol=LF
+*.mo eol=lf
+*.g text eol=lf

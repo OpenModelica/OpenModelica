@@ -319,6 +319,7 @@ algorithm
                         then fail();
                         end matchcontinue;
 
+ outExp := symEuler_helper(outExp, inExp3);
  (outExp,_) := ExpressionSimplify.simplify1(outExp);
 
 end solve2;
@@ -651,6 +652,7 @@ preprocessing for solve1,
 
    // h(x) = k(y)
    (h,_) := ExpressionSimplify.simplify(x);
+
 /*
    if not Expression.expEqual(inExp1,h) then
      print("\nIn: ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
@@ -659,6 +661,32 @@ preprocessing for solve1,
    end if;
 */
 end preprocessingSolve;
+
+protected function symEuler_helper
+"
+ special case for symEuler
+"
+  input DAE.Exp rhs;
+  input DAE.Exp X;
+  output DAE.Exp orhs = rhs;
+protected
+  DAE.Type tp;
+  DAE.Exp dt;
+algorithm
+  if Flags.getConfigBool(Flags.SYM_EULER) then
+    dt := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
+    if expHasCref(rhs, dt) then
+      // x = dt != 0 ? k1(y,dt) : old_x
+      tp := Expression.typeof(X);
+      orhs := DAE.IFEXP(Expression.makeNoEvent(DAE.RELATION(
+                dt,
+                  DAE.EQUAL(tp),
+                DAE.RCONST(0.0),-1,NONE())),
+              Expression.makePureBuiltinCall("$_old", {X}, tp), rhs);
+    end if;
+  end if;
+
+end symEuler_helper;
 
 protected function preprocessingSolve2
 "
@@ -1204,7 +1232,7 @@ protected function unifyFunCallsWork
      guard expHasCref(e1, X)
      equation
       tp = Expression.typeof(e1);
-      e2 = Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+      e2 = Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
       e3 = Expression.makePureBuiltinCall("$_old", {e1}, tp);
       e3 = Expression.expSub(e1,e3);
       e = Expression.expDiv(e3,e2);
@@ -1616,7 +1644,7 @@ algorithm
     true = expHasCref(e1, inExp3);
     false = expHasCref(inExp2, inExp3);
     tp = Expression.typeof(e1);
-    e2 = Expression.crefExp(ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {}));
+    e2 = Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {}));
     lhs = Expression.makePureBuiltinCall("$_old", {e1}, tp);
     lhs = Expression.expAdd(Expression.expMul(inExp2,e2), lhs);
   then(e1, lhs, true, ieqnForNewVars, inewVarsCrefs, idepth + 1);

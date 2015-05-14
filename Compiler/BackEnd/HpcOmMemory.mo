@@ -179,7 +179,7 @@ encapsulated package HpcOmMemory
     array<tuple<Integer,Integer,Integer>> eqCompMapping, varCompMapping;
     BackendDAE.IncidenceMatrix incidenceMatrix;
     array<list<Integer>> nodeSimCodeVarMapping;
-    HpcOmSimCode.MemoryMap tmpMemoryMap;
+    Option<HpcOmSimCode.MemoryMap> tmpMemoryMapOpt;
     Integer varCount;
     Integer VARSIZE_FLOAT, VARSIZE_INTEGER, VARSIZE_BOOLEAN, CACHELINE_SIZE;
     array<tuple<Integer,Integer, Integer>> simCodeVarTypes; //<varDataType, varSize, varType>
@@ -191,6 +191,7 @@ encapsulated package HpcOmMemory
     array<list<tuple<Integer,Integer,Integer>>> sccEqMapping; //maps each scc to a list of <equationIdx, eqSystemIdx, offset>
     array<ScVarInfo> scVarInfos;
     Option<HashTableCrIListArray.HashTable> varArrayIndexMappingHashTableOpt;
+    HashTableCrIListArray.HashTable varArrayIndexMappingHashTable;
   algorithm
     (oMemoryMap, oVarToArrayIndexMapping) := matchcontinue(iModelInfo, iTaskGraph, iTaskGraphMeta, iEqSystems, iFileNamePrefix, iSchedulerInfo, iSchedule, iSccSimEqMapping, iCriticalPaths, iCriticalPathsWoC, iCriticalPathInfo, iNumberOfThreads, iAllComponents)
       case(_,_,HpcOmTaskGraph.TASKGRAPHMETA(eqCompMapping=eqCompMapping,varCompMapping=varCompMapping),_,_,_,_,_,_,_,_,_,_)
@@ -301,7 +302,7 @@ encapsulated package HpcOmMemory
           //printSimCodeVarTypes(simCodeVarTypes);
 
           //print("-------------------------------------\n");
-          BaseHashTable.dumpHashTable(simVarIdxMappingHashTable);
+          //BaseHashTable.dumpHashTable(simVarIdxMappingHashTable);
           //Create CacheMap
           sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
           //printSccNodeMapping(sccNodeMapping);
@@ -362,15 +363,15 @@ encapsulated package HpcOmMemory
           GraphML.dumpGraph(graphInfo, fileName);
           //printCacheMap(cacheMap);
           if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
-            varArrayIndexMappingHashTableOpt = SOME(convertCacheToVarArrayMapping(cacheMap,CACHELINE_SIZE,stateVars,derivativeVars,aliasVars,intAliasVars,boolAliasVars,(VARSIZE_FLOAT,VARSIZE_INTEGER,VARSIZE_BOOLEAN),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool)));
-            tmpMemoryMap = HpcOmSimCode.MEMORYMAP_UNIFORM();
+            (varArrayIndexMappingHashTable, tmpMemoryMapOpt) = convertCacheToVarArrayMapping(cacheMap,CACHELINE_SIZE,stateVars,derivativeVars,aliasVars,intAliasVars,boolAliasVars,(VARSIZE_FLOAT,VARSIZE_INTEGER,VARSIZE_BOOLEAN),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool));
+            varArrayIndexMappingHashTableOpt = SOME(varArrayIndexMappingHashTable);
           else
-            tmpMemoryMap = HpcOmSimCode.MEMORYMAP_UNIFORM();
+            tmpMemoryMapOpt = NONE();
             varArrayIndexMappingHashTableOpt = NONE();
           end if;
 
           //print cache map
-          printCacheMap(cacheMap);
+          //printCacheMap(cacheMap);
           //evaluateCacheBehaviour(cacheMap, iTaskGraphT, nodeSimCodeVarMapping, scVarCLMapping, iNumberOfThreads, numCL, iSchedulerInfo);
 
           //Create bipartite graph
@@ -383,8 +384,7 @@ encapsulated package HpcOmMemory
           graphInfo = appendVariablesToGraph(taskSolvedVarsMapping, taskUnsolvedVarsMapping, arrayLength(scVarSolvedTaskMapping), graphIdx, threadAttIdx, simVarIdxMappingHashTable, allVarsMapping, scVarInfos, graphInfo);
           fileName = ("taskGraph"+iFileNamePrefix+"ODE_schedule_vars.graphml");
           GraphML.dumpGraph(graphInfo, fileName);
-
-        then(SOME(tmpMemoryMap), varArrayIndexMappingHashTableOpt);
+        then(tmpMemoryMapOpt, varArrayIndexMappingHashTableOpt);
       else
         equation
           print("CreateMemoryMap failed!\n");
@@ -746,9 +746,9 @@ encapsulated package HpcOmMemory
     tmpCacheInfo := (cacheMap, cacheMapMeta, oNumCL);
 
     for threadIdx in 1:iNumberOfThreads loop
-      print("======================================================================\n");
-      print("createCacheMapThreadOptimized: Handling thread " + intString(threadIdx) + " with " + intString(oNumCL) + " cache lines\n");
-      print("======================================================================\n");
+      //print("======================================================================\n");
+      //print("createCacheMapThreadOptimized: Handling thread " + intString(threadIdx) + " with " + intString(oNumCL) + " cache lines\n");
+      //print("======================================================================\n");
       ((cacheMap, cacheMapMeta, oNumCL)) := List.fold(arrayGet(iThreadTasks, threadIdx), function createCacheMapOptimizedForTask(
                         iTaskGraph=iTaskGraph, iTaskGraphMeta=iTaskGraphMeta, iSchedulerInfo=iSchedulerInfo, iTaskSolvedVarsMapping=iTaskSolvedVarsMapping,
                         iTaskUnsolvedVarsMapping=iTaskUnsolvedVarsMapping, iHandledVariables=handledVariables, iNumberOfThreads=iNumberOfThreads, iAllCalcTasks=iAllCalcTasks,
@@ -866,18 +866,18 @@ encapsulated package HpcOmMemory
   algorithm
     ((cacheMap, cacheMapMeta, numOfCLs)) := iInfo;
     SCVARINFO(ownerThread,isShared) := arrayGet(iScVarInfos, iScVar);
-    print("createCacheMapThreadOptimizedForTask1: Handling sc-var " + intString(iScVar) + ". Owner thread is " + intString(ownerThread) + " Number of cache lines is " + intString(numOfCLs) + "\n");
+    //print("createCacheMapThreadOptimizedForTask1: Handling sc-var " + intString(iScVar) + ". Owner thread is " + intString(ownerThread) + " Number of cache lines is " + intString(numOfCLs) + "\n");
     if(boolAnd(boolNot(boolAnd(intEq(ownerThread,-1), isShared)), boolNot(arrayGet(iHandledVariables, iScVar)))) then
-      print("Not already handled\n");
+      //print("Variable " + intString(iScVar) + " was not already handled\n");
       if(isShared) then
-        print("--> Handling as shared variable\n");
+        //print("--> Handling as shared variable\n");
         ((cacheMap,cacheMapMeta,numOfCLs)) := addVarsToSharedCL({iScVar}, iSharedClSelectFunction, iFactoryMethod, iThreadIdx, iCompareFuncArgument, iSharedCacheLines, (cacheMap,cacheMapMeta,numOfCLs));
       else
-        print("--> Handling as thread variable\n");
+        //print("--> Handling as thread variable\n");
         ((cacheMap,cacheMapMeta,numOfCLs)) := addVarsToThreadCL({iScVar},iThreadIdx,iThreadCacheLines,(cacheMap,cacheMapMeta,numOfCLs));
       end if;
     else
-      print("createCacheMapOptimizedForTask1: Skipping variable '" + intString(iScVar) + "\n");
+      //print("createCacheMapOptimizedForTask1: Skipping variable '" + intString(iScVar) + "'\n");
     end if;
     _ := arrayUpdate(iHandledVariables, iScVar, true);
     oInfo := (cacheMap,cacheMapMeta,numOfCLs);
@@ -998,7 +998,7 @@ encapsulated package HpcOmMemory
       SOME(cacheVariable as SimCodeVar.SIMVAR(name=cacheVarName)) := arrayGet(allSCVarsMapping, varIdx);
       //print("addVarsToThreadCL: Variable " + ComponentReference.printComponentRefStr(cacheVarName) + " has type " + intString(varDataType) + "\n");
 
-      print("addVarsToThreadCL: adding variable '" + intString(listLength(cacheVariables)) + "' [" + dumpSimCodeVar(cacheVariable) + "] to cache line map '" + intString(lastCLidx) + "'\n");
+      //print("addVarsToThreadCL: adding variable '" + intString(listLength(cacheVariables)) + "' [" + dumpSimCodeVar(cacheVariable) + "] to cache line map '" + intString(lastCLidx) + "'\n");
       //print("\t\t\t\taddVarsToThreadCL: cacheVariable found.\n");
       cacheVariables := cacheVariable::cacheVariables;
       scVarCLMapping := arrayUpdate(scVarCLMapping, varIdx, (lastCLidx,varDataType));
@@ -1168,7 +1168,7 @@ encapsulated package HpcOmMemory
       partlyFilledCacheLineOption := SOME(partlyFilledCacheLine);
       CACHELINEMAP(clMapIdx,clMapNumBytesFree,clMapEntries) := getCacheLineMapOfPartlyFilledCacheLine(partlyFilledCacheLine);
     else
-      print("addVarsToSharedCL0: no advice was given\n");
+      //print("addVarsToSharedCL0: no advice was given\n");
       numOfCLs := numOfCLs + 1;
       partlyFilledCacheLineOption := NONE();
       clMapIdx := numOfCLs;
@@ -1181,7 +1181,7 @@ encapsulated package HpcOmMemory
     cacheVariables := cacheVariable::cacheVariables;
     entry := CACHELINEENTRY(cacheLineSize - clMapNumBytesFree - varSize, varDataType, varSize, listLength(cacheVariables), iThreadIdx);
 
-    print("addVarsToSharedCL0: adding variable '" + intString(listLength(cacheVariables) - 1) + "' [" + dumpSimCodeVar(cacheVariable) + "] to cache line map '" + intString(clMapIdx) + "'\n");
+    //print("addVarsToSharedCL0: adding variable '" + intString(listLength(cacheVariables) - 1) + "' [" + dumpSimCodeVar(cacheVariable) + "] to cache line map '" + intString(clMapIdx) + "'\n");
     cacheLineMap := CACHELINEMAP(clMapIdx,clMapNumBytesFree,entry::clMapEntries);
 
     partlyFilledCacheLine := iFactoryMethod(partlyFilledCacheLineOption, cacheLineMap, iAdditionalArgument);
@@ -1901,6 +1901,7 @@ encapsulated package HpcOmMemory
     input tuple<Integer,Integer,Integer> iVarSizes; //size of float, int and bool variables (in bytes)
     input tuple<list<SimCodeVar.SimVar>, list<SimCodeVar.SimVar>, list<SimCodeVar.SimVar>> iNotOptimizedVars;
     output HashTableCrIListArray.HashTable oVarArrayIndexMappingHashTable;
+    output Option<HpcOmSimCode.MemoryMap> oMemoryMap;
   protected
     Integer cacheLineSize, highestIdx, maxNumElemsFloat, maxNumElemsInt, maxNumElemsBool, stateAndStateDerSize;
     list<SimCodeVar.SimVar> cacheVariables, unusedRealVars;
@@ -1915,7 +1916,7 @@ encapsulated package HpcOmMemory
     list<SimCodeVar.SimVar> notOptimizedVarsFloat, notOptimizedVarsInt, notOptimizedVarsBool;
     tuple<Integer,Integer,Integer> currentVarIndices;
   algorithm
-    oVarArrayIndexMappingHashTable := match(iCacheMap, iCacheLineSize, iStateVars, iDerivativeVars, iAliasVars, iIntAliasVars, iBoolAliasVars, iVarSizes, iNotOptimizedVars)
+    (oVarArrayIndexMappingHashTable,oMemoryMap) := match(iCacheMap, iCacheLineSize, iStateVars, iDerivativeVars, iAliasVars, iIntAliasVars, iBoolAliasVars, iVarSizes, iNotOptimizedVars)
       case(CACHEMAP(cacheLineSize=cacheLineSize, cacheVariables=cacheVariables, cacheLinesFloat=cacheLinesFloat, cacheLinesInt=cacheLinesInt, cacheLinesBool=cacheLinesBool),_,_,_,_,_,_,(varSizeFloat, varSizeInt, varSizeBool),(notOptimizedVarsFloat,notOptimizedVarsInt,notOptimizedVarsBool))
         equation
           maxNumElemsFloat = intDiv(iCacheLineSize, varSizeFloat);
@@ -1926,7 +1927,7 @@ encapsulated package HpcOmMemory
           varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTable();
           varIndexMappingHashTable = HashTableCrILst.emptyHashTable();
 
-          currentVarIndices = (0,0,0);
+          currentVarIndices = (1,1,1);
           //The first array elements are reserved for state and state derivative variables
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iStateVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iDerivativeVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
@@ -1938,35 +1939,37 @@ encapsulated package HpcOmMemory
             currentVarIndices = (stateAndStateDerSize + (maxNumElemsFloat - intMod(stateAndStateDerSize, maxNumElemsFloat)), 0, 0);
           end if;
 
-          print("convertCacheToVarArrayMapping: The first " + intString(Util.tuple31(currentVarIndices)) + " elements are reserved for states and state derivatives\n");
+          //print("convertCacheToVarArrayMapping: The first " + intString(Util.tuple31(currentVarIndices)) + " elements are reserved for states and state derivatives\n");
+          varSizeFloat = Util.tuple31(currentVarIndices);
 
-          varIdxOffsets = arrayCreate(3,0);
-          varIdxOffsets = arrayUpdate(varIdxOffsets, 1, intDiv(intMul(-1, Util.tuple31(currentVarIndices)), maxNumElemsFloat));
+          varIdxOffsets = arrayCreate(3,1);
+          varIdxOffsets = arrayUpdate(varIdxOffsets, 1, Util.tuple31(currentVarIndices) + 1);
           allCacheLines = List.sort(getAllCacheLinesOfCacheMap(iCacheMap), compareCacheLineMapByIdx);
           ((varArrayIndexMappingHashTable,varIndexMappingHashTable)) = List.fold(allCacheLines, function addCacheLineMapToVarArrayMapping(iCacheLineSize=cacheLineSize, iVarIdxOffsets=varIdxOffsets, iCacheVariables=cacheVariablesArray), (varArrayIndexMappingHashTable,varIndexMappingHashTable));
-          ((varArrayIndexMappingHashTable,varIndexMappingHashTable)) = List.fold(cacheLinesInt, function addCacheLineMapToVarArrayMapping(iCacheLineSize=cacheLineSize, iVarIdxOffsets=varIdxOffsets, iCacheVariables=cacheVariablesArray), (varArrayIndexMappingHashTable,varIndexMappingHashTable));
-          ((varArrayIndexMappingHashTable,varIndexMappingHashTable)) = List.fold(cacheLinesBool,function addCacheLineMapToVarArrayMapping(iCacheLineSize=cacheLineSize, iVarIdxOffsets=varIdxOffsets, iCacheVariables=cacheVariablesArray), (varArrayIndexMappingHashTable,varIndexMappingHashTable));
-
 
           currentVarIndices = (Util.tuple31(currentVarIndices) + intMul(listLength(cacheLinesFloat), maxNumElemsFloat), intMul(listLength(cacheLinesInt), maxNumElemsInt), intMul(listLength(cacheLinesBool), maxNumElemsBool));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(notOptimizedVarsFloat, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(notOptimizedVarsInt, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_INTEGER), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          //print("convertCacheToVarArrayMapping: " + intString(Util.tuple33(currentVarIndices)) + " is the start index for bool variables\n");
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(notOptimizedVarsBool, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_BOOLEAN), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
           ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          /*
-          positionMappingArray = arrayCreate(intMax(0, highestIdx),(-1,-1));
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iIntAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_INTEGER), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iBoolAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_BOOLEAN), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
 
-          List.map1_0(positionMappingList, convertCacheMapToMemoryMap3, positionMappingArray);
-          floatArraySize = listLength(cacheLinesFloat)*intDiv(cacheLineSize, varSizeFloat);
-          intArraySize = listLength(cacheLinesInt)*intDiv(cacheLineSize, varSizeInt);
-          boolArraySize = listLength(cacheLinesBool)*intDiv(cacheLineSize, varSizeBool);
-          */
-        then varArrayIndexMappingHashTable;
+          varSizeFloat = varSizeFloat + intMul(listLength(cacheLinesFloat), maxNumElemsFloat) + listLength(notOptimizedVarsFloat);
+          //SimCodeUtil.dumpVarLst(notOptimizedVarsFloat, "convertCacheToVarArrayMapping: Not optimized float vars");
+          //print("\n");
+          //print("convertCacheToVarArrayMapping: " + intString(intMul(listLength(cacheLinesFloat), maxNumElemsFloat)) + " elements are reserved optimized variables. " + intString(varSizeFloat) + " variables at all.\n");
+          varSizeInt = intMul(listLength(cacheLinesInt), maxNumElemsInt) + listLength(notOptimizedVarsInt);
+          //print("convertCacheToVarArrayMapping: " + intString(intMul(listLength(cacheLinesBool), maxNumElemsBool)) + " elements are reserved for optimized variables [bool]\n");
+          varSizeBool = intMul(listLength(cacheLinesBool), maxNumElemsBool) + listLength(notOptimizedVarsBool);
+
+        then (varArrayIndexMappingHashTable, SOME(HpcOmSimCode.MEMORYMAP_ARRAY(varSizeFloat,varSizeInt,varSizeBool)));
       case(UNIFORM_CACHEMAP(),_,_,_,_,_,_,_,_)
         equation
-          varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTable();
-        then varArrayIndexMappingHashTable;
+          Error.addMessage(Error.INTERNAL_ERROR, {"ConvertCacheToVarArrayMapping: Uniform-CacheMap not supported!"});
+        then fail();
       else
         equation
           Error.addMessage(Error.INTERNAL_ERROR, {"ConvertCacheToVarArrayMapping: CacheMap-Type not supported!"});
@@ -1996,8 +1999,9 @@ encapsulated package HpcOmMemory
        case(CACHELINEMAP(idx=idx,entries=entries),_,_,_,(varArrayIndexMappingHashTable, varIndexMappingHashTable))
         equation
           CACHELINEENTRY(dataType=dataType, size=size)::_ = entries;
-          print("addCacheLineMapToVarArrayMapping: Adding cache line '" + intString(idx) + "' with '" + intString(listLength(entries)) + "' entries\n");
+          //print("addCacheLineMapToVarArrayMapping: Adding cache line '" + intString(idx) + "' with '" + intString(listLength(entries)) + "' entries\n");
           (varArrayIndexMappingHashTable, varIndexMappingHashTable) = List.fold(entries, function addCacheLineEntryToVarArrayMapping(iArrayIdx=dataType, iClIdxSize=(idx, iCacheLineSize), iVarIdxOffsets=iVarIdxOffsets, iCacheVariables=iCacheVariables), iPositionMapping);
+          _ = arrayUpdate(iVarIdxOffsets, dataType, intAdd(arrayGet(iVarIdxOffsets, dataType), intDiv(iCacheLineSize, size)));
           //_ = convertCacheToVarArrayMapping2Helper(iVarIdxOffsets, 1, dataType);
         then ((varArrayIndexMappingHashTable, varIndexMappingHashTable));
        else
@@ -2028,11 +2032,12 @@ encapsulated package HpcOmMemory
     oPositionMapping := match(iCacheLineEntry, iArrayIdx, iClIdxSize, iVarIdxOffsets, iCacheVariables, iPositionMapping)
       case(CACHELINEENTRY(scVarIdx=scVarIdx, start=start, size=size),_,(clIdx, clSize),_,_,(varArrayIndexMappingHashTable, varIndexMappingHashTable))
         equation
-          //print("convertCacheMapToMemoryMap2: offset-array-size=" + intString(arrayLength(iVarIdxOffsets)) + " array-index=" + intString(iArrayIdx) + "\n");
           offset = arrayGet(iVarIdxOffsets, iArrayIdx);
-          arrayPosition = intDiv(start, size) + (clIdx - offset - 1)*intDiv(clSize, size);
+          //arrayPosition = intDiv(start, size) + (clIdx - 1)*intDiv(clSize, size) + offset;
+          arrayPosition = intDiv(start, size) + offset;
+          //print("convertCacheMapToMemoryMap2: offset=" + intString(offset) + " array-index=" + intString(iArrayIdx) + " array-position=" + intString(arrayPosition) + "\n");
           currentVarIndices = (arrayPosition, arrayPosition, arrayPosition);
-          print("convertCacheMapToMemoryMap2: number of variables=" + intString(arrayLength(iCacheVariables)) + " arrayPosition=" + intString(arrayPosition) + "\n");
+          //print("convertCacheMapToMemoryMap2: number of variables=" + intString(arrayLength(iCacheVariables)) + " arrayPosition=" + intString(arrayPosition) + "\n");
           (_, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMapping(arrayGet(iCacheVariables, arrayLength(iCacheVariables) - scVarIdx + 1), iArrayIdx, (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
           //iPositionMappingList = (realScVarIdx,arrayPosition,iArrayIdx)::iPositionMappingList;
           //for arridx in listRange(arrayLength(iVarIdxOffsets)) loop
@@ -3265,32 +3270,6 @@ encapsulated package HpcOmMemory
   // -------------------------------------------
   // SUSAN
   // -------------------------------------------
-  public function getPositionMappingByArrayName
-    "author: marcusw
-     Function used by Susan - gets the position informations (arrayIdx, arrayPos) of the given variable (iVarName)."
-    input Option<HpcOmSimCode.MemoryMap> iMemoryMapOpt;
-    input DAE.ComponentRef iVarName;
-    output Option<tuple<Integer,Integer>> oResult;
-  protected
-    List<Integer> idxList;
-    Integer idx, elem1, elem2;
-    array<tuple<Integer,Integer>> positionMapping;
-    HashTableCrILst.HashTable scVarNameIdxMapping;
-  algorithm
-    oResult := matchcontinue(iMemoryMapOpt, iVarName)
-      case(SOME(HpcOmSimCode.MEMORYMAP_ARRAY(positionMapping=positionMapping, scVarNameIdxMapping=scVarNameIdxMapping)),_)
-        equation
-          true = Flags.isSet(Flags.HPCOM_MEMORY_OPT);
-          true = BaseHashTable.hasKey(iVarName, scVarNameIdxMapping);
-          idxList = BaseHashTable.get(iVarName , scVarNameIdxMapping);
-          idx = listGet(idxList, 1) + listGet(idxList, 2);
-          ((elem1,elem2)) = arrayGet(positionMapping, idx);
-          true = intGe(elem1,0);
-          true = intGe(elem2,0);
-        then SOME((elem1,elem2));
-      else NONE();
-    end matchcontinue;
-  end getPositionMappingByArrayName;
 
   public function getSubscriptListOfArrayCref
     input DAE.ComponentRef iCref;

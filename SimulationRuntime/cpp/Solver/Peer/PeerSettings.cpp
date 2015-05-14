@@ -1,5 +1,6 @@
 //#pragma once
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Solver/Peer/PeerSettings.h>
 
 PeerSettings::PeerSettings(IGlobalSettings* globalSettings)

@@ -79,6 +79,7 @@ build/
 .project
 revision.h
 SimulationRuntime/c/Makefile
+SimulationRuntime/c/util/java_interface/Makefile
 SimulationRuntime/c/util/java_interface/modelica_java.jar
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java
@@ -89,7 +90,11 @@ SimulationRuntime/ParModelica/Makefile
 SimulationRuntime/ParModelica/auto/Makefile
 SimulationRuntime/ParModelica/explicit/Makefile
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile
+SimulationRuntime/build_c/
 
+# OpenModelicaSetup
+Compiler/OpenModelicaSetup
+# Compiler files
 Compiler/Makefile
 Compiler/OpenModelicaBootstrappingHeader.h.log
 Compiler/Script/Makefile
@@ -135,6 +140,7 @@ Compiler/runtime/omc_communication.cc
 Compiler/runtime/omc_communication.h
 Compiler/susan_codegen/TplCodegen.mo
 Makefile
+# Parser files
 Parser/Makefile
 Parser/MetaModelica_Lexer.c
 Parser/MetaModelica_Lexer.h
@@ -150,3 +156,4 @@ Parser/ParModelica_Lexer.c
 Parser/ParModelica_Lexer.h
 Parser/ParModelica_Lexer_BaseModelica_Lexer.c
 Parser/ParModelica_Lexer_BaseModelica_Lexer.h
+SimulationRuntime/**/test_files/*.jar

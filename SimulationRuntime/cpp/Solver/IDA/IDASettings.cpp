@@ -1,5 +1,6 @@
 //#pragma once
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Solver/IDA/IDASettings.h>
 
 IDASettings::IDASettings(IGlobalSettings* globalSettings)

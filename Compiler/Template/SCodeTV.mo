@@ -379,7 +379,7 @@ package SCode
       Final finalPrefix;
       Each  eachPrefix;
       list<SubMod> subModLst;
-      Option<tuple<Absyn.Exp,Boolean>> binding;
+      Option<Absyn.Exp> binding;
     end MOD;
 
     record REDECL

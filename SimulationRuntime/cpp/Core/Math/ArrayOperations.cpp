@@ -1,4 +1,5 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
 #include <sstream>

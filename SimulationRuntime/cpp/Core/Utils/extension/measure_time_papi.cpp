@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Core/Utils/extension/measure_time_papi.hpp>
 
 MeasureTimeValuesPAPI::MeasureTimeValuesPAPI(unsigned long long time, long long l2CacheMisses, long long instructions) : MeasureTimeValues(), time(time), l2CacheMisses(l2CacheMisses), instructions(instructions), max_time(time) {}
