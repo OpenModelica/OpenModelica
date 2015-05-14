@@ -22,9 +22,10 @@ val(x, {0.0, 2.5, 5.0, 10.0}); getErrorString();
 //     resultFile = "qssTests.example1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'qss', fileNamePrefix = 'qssTests.example1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "stdout            | warning | This QSS method is under development and should not be used yet.
+// stdout            | warning | All derivatives are zero at time 9.787606!.
 // "
 // end SimulationResult;
 // ""
-// {1.0,0.08208597611379856,0.006738171891467552,0.0}
+// {1.0,0.08203911233500524,0.006688299312076621,0.0}
 // ""
 // endResult
