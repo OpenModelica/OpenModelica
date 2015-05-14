@@ -4052,13 +4052,29 @@ template daeExpSum(Exp exp, Context context, Text &preExp, Text &varDecls, SimCo
 ::=
   match exp case exp as SUM(__) then
     let bodyExp = daeExp(body, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let iteratorExp = daeExp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let iterExp = daeExp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let startItExp = daeExp(startIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let endItExp = daeExp(endIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let &preExp += 'double sum = 0.0;<%\n%>for(int <%iteratorExp%> = <%startItExp%>; <%iteratorExp%> != <%endItExp%>; <%iteratorExp%>++)<%\n%>  sum += <%bodyExp%>[<%iteratorExp%>]<%\n%>'
+    let &preExp += 'double sum = 0.0;<%\n%>for(size_t <%iterExp%> = <%startItExp%>; <%iterExp%> != <%endItExp%>+1; <%iterExp%>++)<%\n%>  sum += <%bodyExp%>[<%iterExp%>]<%\n%>'
     <<
     sum
     >>
+
+  //C-Codegen:
+  //let start = printExpStr(startIt)
+  //let &anotherPre = buffer ""
+  //let stop = printExpStr(endIt)
+  //let bodyStr = daeExpIteratedCref(body)
+  //let summationVar = <<sum>>
+  //let iterVar = printExpStr(iterator)
+  //let &preExp +=<<
+
+  //modelica_integer  $P<%iterVar%> = 0; // the iterator
+  //modelica_real <%summationVar%> = 0.0; //the sum
+  //for($P<%iterVar%> = <%start%>; $P<%iterVar%> < <%stop%>; $P<%iterVar%>++)
+  //{
+  //  <%summationVar%> += <%bodyStr%>($P<%iterVar%>);
+  //}
 end daeExpSum;
 
 
@@ -7697,7 +7713,18 @@ template subscriptsStrForWriteOutput(list<Subscript> subscripts)
     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'//previous multi_array     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
 end subscriptsStrForWriteOutput;
 
+/* record CREF_IDENT
+    Ident ident;
+    Type identType "type of the identifier, without considering the subscripts";
+    list<Subscript> subscriptLst;
+  end CREF_IDENT;
 
+  record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
+    Ident ident;
+    Integer index;
+    Type identType "type of the identifier, without considering the subscripts";
+    list<Subscript> subscriptLst;
+  end CREF_ITER;*/
 
 template crefStr(ComponentRef cr)
 ::=
@@ -9322,7 +9349,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
     case e as SES_FOR_LOOP(__)
       then
-        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
+        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else
       "NOT IMPLEMENTED EQUATION"
   end match
@@ -9336,7 +9363,6 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     void <%lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%><%classnameext%>::<%method%>_<%ix_str%>()
     {
       <%varDeclsLocal%>
-
       <%if(createMeasureTime) then measureTimeStartVar%>
       <%body%>
       <%if(createMeasureTime) then measureTimeEndVar%>
@@ -10524,7 +10550,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
 end equationLinearOrNonLinear;
 
 
-template equationForLoop(SimEqSystem eq, Context context,Text &varDecls, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/)
+template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   match eq
     case SES_FOR_LOOP(__) then
@@ -10533,13 +10559,61 @@ template equationForLoop(SimEqSystem eq, Context context,Text &varDecls, SimCode
       let startExp = daeExp(startIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let endExp = daeExp(endIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let expPart = daeExp(exp, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let crefPart = daeExp(crefExp(cref), context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let crefWithIdx = crefWithIndex(cref, context, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName /*=__zDot*/, useFlatArrayNotation)
+      let lhs = getLHS(cref, startExp, useFlatArrayNotation)
       <<
       <%preExp%>
-      double *result = &<%cref(cref, false)%>[0];
-      for(int <%iterExp%> = <%startExp%>; <%iterExp%> != <%endExp%>; <%iterExp%>++)
+      //double *result = &<%cref(cref, false)%>[0];
+      double *result = &<%lhs%>;
+      for(int <%iterExp%> = <%startExp%>; <%iterExp%> != <%endExp%>+1; <%iterExp%>++)
         result[i] = <%expPart%>;
       >>
 end equationForLoop;
+
+
+template getLHS(ComponentRef cr, Text startExp, Boolean useFlatArrayNotation)
+ "Returns the left hand side of a for loop with the right var index, e.g., _resistor1_P_i.
+  Assumption: lhs = 'cref' + 'startIndex of for loop'."
+::=
+  match cr
+    case CREF_QUAL(__) then
+      //"_" + '<%ident%><%startExp%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr(componentRef,useFlatArrayNotation)%>'
+      "_" + '<%crefAppendedSubs(cr)%>'
+    else "CREF_NOT_QUAL"
+  end match
+end getLHS;
+
+template crefWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                       Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Return cref with index for the lhs of a for loop, i.e., _resistori_P_i."
+::=
+  match cr
+    case CREF_QUAL(__) then
+      "_" + crefToCStrWithIndex(cr, context, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName /*=__zDot*/, useFlatArrayNotation)
+  end match
+end crefWithIndex;
+
+template crefToCStrWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                             Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Helper function to crefWithIndex."
+::=
+  let &preExp = buffer ""
+  let tmp = ""
+  match cr
+    case CREF_QUAL(__) then
+      let identTmp = '<%ident%>'
+      match listHead(subscriptLst)
+        case INDEX(__) then
+          match exp case e as CREF(__) then
+            let tmp = daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+            '<%identTmp%><%tmp%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr(componentRef,useFlatArrayNotation)%>'
+          end match
+      end match
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStrWithIndex;
+
+
 
 template testDaeDimensionExp(Exp exp)
  "Generates code for an expression."

@@ -1567,6 +1567,7 @@ algorithm
         dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE0);
       end if;
 
+
       backendMapping = setUpBackendMapping(inBackendDAE);
       if Flags.isSet(Flags.VISUAL_XML) then
         VisualXML.visualizationInfoXML(inBackendDAE, filenamePrefix);

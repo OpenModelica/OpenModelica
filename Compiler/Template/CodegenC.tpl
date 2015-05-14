@@ -3819,7 +3819,10 @@ case SES_FOR_LOOP(__) then
   <<
   <%modelicaLine(eqInfo(eq))%>
   modelica_integer  $P<%printExpStr(iter)%> = 0; // the iterator
-
+  //BLUB
+  //<%crefStr(cref)%>
+  ///<%printExpStr(crefExp(cref))%>
+  //BLUB2
   // the for-equation
   for($P<%printExpStr(iter)%> = <%start%>; $P<%printExpStr(iter)%> < <%stop%>; $P<%printExpStr(iter)%>++)
   {

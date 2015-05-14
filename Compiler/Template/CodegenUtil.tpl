@@ -437,12 +437,36 @@ template dumpEqs(list<SimEqSystem> eqs)
       <%branches%>
       <%elsebr%>
       >>
+    case e as SES_FOR_LOOP(__) then
+      let &forstatement = buffer ""
+      let &forstatement += 'for(size_t ' + escapeCComments(printExpStr(e.iter)) + ' = ' + escapeCComments(printExpStr(e.startIt)) + ';'
+      let &forstatement += escapeCComments(printExpStr(e.iter)) + ' != ' + escapeCComments(printExpStr(e.endIt)) + ' 1;'
+      <<
+      equation index: <%equationIndex(e)%>
+      type: FOR_LOOP
+      for(size_t <%escapeCComments(printExpStr(e.iter))%> = <%escapeCComments(printExpStr(e.startIt))%>;
+         <%escapeCComments(printExpStr(e.iter))%> != <%escapeCComments(printExpStr(e.endIt)) + 1%>;
+         ++<%escapeCComments(printExpStr(e.iter))%>
+
+      <%forstatement%>
+      >>
+
     else
       <<
       unknown equation
       >>
 end dumpEqs;
-
+//let forstatement1 = equationIndex(e)
+      //for(size_t <%escapeCComments(printExpStr(e.iter))%> = <%escapeCComments(printExpStr(e.startIt))%>; "
+      //let &forstatement += '<%escapeCComments(printExpStr(e.iter))%> != <%escapeCComments(printExpStr(e.endIt)) + 1%>; '
+      //let &forstatement += '++<%escapeCComments(printExpStr(e.iter))%>'
+//<%crefStr(e.cref)%> = <%escapeCComments(printExpStr(e.exp))%>
+//    DAE.Exp iter;
+    //DAE.Exp startIt;
+    //DAE.Exp endIt;
+    //DAE.ComponentRef cref;//lhs
+    //DAE.Exp exp;//rhs
+    //DAE.ElementSource source;
 /************************************************************************************************/
 
 
