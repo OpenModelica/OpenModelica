@@ -50,6 +50,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
+          ("emit_protected", "emits protected variables to the result file")
           ("runtime-library,r", po::value<string>(),"path to cpp runtime libraries")
           ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
           ("results-file,R", po::value<string>(),"name of results file")
@@ -71,6 +72,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      po::variables_map vm;
      po::parsed_options parsed = po::command_line_parser(argc, argv)
          .options(desc)
+         .style((po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing)
          .extra_parser(checkOMEditOption)
          .allow_unregistered()
          .run();
