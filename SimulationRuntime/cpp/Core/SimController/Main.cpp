@@ -1,4 +1,5 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include "Configuration.h"
 #include <boost/program_options.hpp>
 #include "SimController.h"
@@ -22,19 +23,22 @@ int main(int argc, const char* argv[])
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help", "produce help message")
+            ("emit_protected", "emits protected variables to the result file")
             ("runtime-library,r", po::value<string>(),"path to cpp runtime libraries")
             ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
             ("results-file,R", po::value<string>(),"name of results file")
             ("config-path,c", po::value< string >(),  "path to xml files")
-       ("start-time,s", po::value< double >()->default_value(0.0),  "simulation start time")
-        ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
-        ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
-          ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
-       ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
-        ("tollerance,y", po::value< double >()->default_value(1e-6),  "solver tollerance")
+            ("start-time,s", po::value< double >()->default_value(0.0),  "simulation start time")
+            ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
+            ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
+            ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
+            ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
+            ("tollerance,y", po::value< double >()->default_value(1e-6),  "solver tollerance")
            ;
         po::variables_map vm;
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::parse_command_line(argc, argv, desc,
+          (po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing
+          ), vm);
         po::notify(vm);
         if (vm.count("help")) {
             cout << desc << "\n";

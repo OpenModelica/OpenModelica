@@ -1,5 +1,6 @@
-#include <Core/Modelica.h>
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
+
 #include <Core/SimulationSettings/Factory.h>
 #include <Core/SimulationSettings/GlobalSettings.h>
 

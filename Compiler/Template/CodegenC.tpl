@@ -1306,8 +1306,8 @@ template functionSymEuler(ModelInfo modelInfo, String modelNamePrefix)
     int <%symbolName(modelNamePrefix,"symEulerUpdate")%>(DATA *data, modelica_real dt)
     {
       TRACE_PUSH
-      #ifdef $P$TMP$OMC$DT
-        $P$TMP$OMC$DT = dt;
+      #ifdef $P<%BackendDAE.symEulerDT%>
+        $P<%BackendDAE.symEulerDT%> = dt;
       #else
         return -1;
       #endif
@@ -8701,7 +8701,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   // numerical der()
   case CALL(path=IDENT(name="$_DF$DER"), expLst={arg as CREF(__)}) then
     let namestr = cref(arg.componentRef)
-    '(initial() ? 0 : (($P$TMP$OMC$DT == 0.0) ? ($P$DER<%namestr%>) : ($P$DER<%namestr%> = ((<%namestr%> - _<%namestr%>(1))/$P$TMP$OMC$DT))))'
+    '($P<%BackendDAE.symEulerDT%> == 0.0 ? $P$DER<%namestr%> : (<%namestr%> - _<%namestr%>(1))/$P<%BackendDAE.symEulerDT%>)'
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

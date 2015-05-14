@@ -18,7 +18,7 @@
 
 #elif defined(OMC_BUILD)
 
-  #ifdef RUNTIME_STATIC_LINKING
+
   #include <boost/unordered_map.hpp>
   /*Factory includes*/
   #include <Core/Utils/extension/extension.hpp>
@@ -30,13 +30,14 @@
   #include <boost/filesystem/operations.hpp>
   #include <boost/filesystem/path.hpp>
   #include <boost/unordered_map.hpp>
-
+  #include <boost/program_options.hpp>
+  #include <string>
   /*Namespaces*/
   using namespace boost::extensions;
   namespace fs = boost::filesystem;
   using boost::unordered_map;
-  #endif
-
+  namespace po = boost::program_options;
+  using std::string;
   /*Defines*/
   #define PATH fs::path
   #include "LibrariesConfig.h"

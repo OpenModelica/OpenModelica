@@ -2,11 +2,11 @@
 # Makefile for compilation of OMC using OMDev-mingw
 # OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
 
-top_builddir = ../../..
-builddir_build=$(top_builddir)/build
-builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib/omc
-builddir_inc=$(top_builddir)/build/include/omc
+top_builddir = $(OMBUILDDIR)/../
+builddir_build=$(OMBUILDDIR)
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/omc
+builddir_inc=$(OMBUILDDIR)/include/omc
 
 #use this call to use precompiled headers
 BUILDTPYE = Release
@@ -18,11 +18,11 @@ CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 runtimeCpp: clean
 ifeq ("$(RUNTIME_STATIC_LINKING)","true")
 	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DRUNTIME_STATIC_LINKING=ON -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)" MAKE_CXX_COMPILER=g++ ../; \
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DRUNTIME_STATIC_LINKING=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
 else
 	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)" MAKE_CXX_COMPILER=g++ ../; \
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
 endif
 
@@ -70,7 +70,7 @@ endif
 
 
 	# move folder to build dir
-	cp -R build_msvc/tmp/* build_msvc/$(builddir_build)
+	cp -R build_msvc/tmp/* $(builddir_build)
 
 
 install: runtimeCpp

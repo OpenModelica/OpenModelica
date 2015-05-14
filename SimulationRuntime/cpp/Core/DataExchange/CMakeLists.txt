@@ -31,6 +31,7 @@ install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IHistory.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/ISimVar.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimData.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Writer.h
+                ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimDouble.h
   DESTINATION include/omc/cpp/Core/DataExchange)
 
 

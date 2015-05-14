@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "omc_msvc.h"
 
 typedef struct {
   char *name,*descr;

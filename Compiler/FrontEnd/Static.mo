@@ -9770,7 +9770,7 @@ algorithm
       slot := matchcontinue slot
         case SLOT(defaultArg = defarg as DAE.FUNCARG())
           algorithm
-            SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((e, _)))) :=
+            SCode.COMPONENT(modifications = SCode.MOD(binding = SOME(e))) :=
               SCode.getElementNamed(defarg.name, inClass);
 
             (outCache, exp, DAE.PROP(ty, c), _) :=

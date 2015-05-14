@@ -1,5 +1,5 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/Math/Functions.h>
 #include <Core/System/EventHandling.h>
@@ -10,7 +10,7 @@
 #include <Core/System/IContinuous.h>
 #include <Core/SimulationSettings/IGlobalSettings.h>
 #endif
-
+*/
 /*****************************************************************************/
 /**
 

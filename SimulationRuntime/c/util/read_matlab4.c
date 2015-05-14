@@ -55,7 +55,7 @@ static const char *binTrans_char = "binTrans";
 static const char *binNormal_char = "binNormal";
 
 /* strcmp ignore whitespace */
-static inline int strcmp_iws(const char *a, const char *b)
+static OMC_INLINE int strcmp_iws(const char *a, const char *b)
 {
   while (*a && *b) {
     if (isspace(*a)) {
@@ -511,6 +511,8 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
 {
   ModelicaMatVariable_t key;
   ModelicaMatVariable_t *res;
+  char *dymolaName = NULL;
+
   key.name = (char*) varName;
 
   res = (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
@@ -523,7 +525,7 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
       key.name = "time";
       return (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);
     }
-    char *dymolaName = dymolaStyleVariableName(varName);
+    dymolaName = dymolaStyleVariableName(varName);
     if (dymolaName == NULL) {
       dymolaName = openmodelicaStyleVariableName(varName);
     }

@@ -1,33 +1,5 @@
 #pragma once
 
-#ifndef FORCE_INLINE
-  #if defined(_MSC_VER)
-    #define FORCE_INLINE __forceinline
-  #else
-    #define FORCE_INLINE __attribute__((always_inline))
-  #endif
-#endif
-
-#ifndef PREFETCH
-  #if defined(_MSC_VER)
-    #define PREFETCH(add, rw, locality)
-  #else
-    #define PREFETCH(add, rw, locality) __builtin_prefetch(add, rw, locality)
-  #endif
-#endif
-
-#ifndef VAR_ALIGN_PRE
-  #ifdef __GNUC__
-    #define VAR_ALIGN_PRE
-    #define VAR_ALIGN_POST __attribute__((aligned(0x40)))
-  #elif defined _MSC_VER
-    #define VAR_ALIGN_PRE __declspec(align(64))
-    #define VAR_ALIGN_POST
-  #else
-    #define VAR_ALIGN_PRE
-    #define VAR_ALIGN_POST
-  #endif
-#endif
 
 #include <string>
 //#include <vector>
@@ -35,16 +7,6 @@
 #include <map>
 #include <cmath>
 #include <numeric>
-using namespace std;
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#ifndef BOOST_THREAD_USE_DLL
-  #define BOOST_THREAD_USE_DLL
-#endif
-#ifndef BOOST_STATIC_LINKING
-  #ifndef BOOST_ALL_DYN_LINK
-    #define BOOST_ALL_DYN_LINK
-  #endif
-#endif
 
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <boost/assign/list_of.hpp> // for 'list_of()'
@@ -58,15 +20,6 @@ using namespace std;
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
-#if defined (__vxworks) || defined (__TRICORE__)
-#else
-#include "Utils/extension/shared_library.hpp"
-#include "Utils/extension/extension.hpp"
-#include "Utils/extension/factory.hpp"
-#include "Utils/extension/factory_map.hpp"
-#include "Utils/extension/type_map.hpp"
-#include "Utils/extension/convenience.hpp"
-#endif
 #include <boost/any.hpp>
 #include <boost/preprocessor/arithmetic/inc.hpp>
 #include <boost/preprocessor/if.hpp>
@@ -85,60 +38,30 @@ using namespace std;
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
-
-#if defined (__APPLE__) || defined (__APPLE_CC__)
-//see: https://svn.boost.org/trac/boost/ticket/11207
-#else
 #include <boost/numeric/ublas/storage.hpp>
-#endif
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/special_functions/trunc.hpp>
-#if defined (__TRICORE__)
-#else
-#include <Core/Utils/extension/extension.hpp>
-#include <Core/Utils/extension/factory.hpp>
-#include <Core/Utils/extension/type_map.hpp>
-#include <Core/Utils/extension/factory_map.hpp>
-#endif
-#if defined (__vxworks) || defined(__TRICORE__)
-#else
-#include <Core/Utils/extension/shared_library.hpp>
-#include <Core/Utils/extension/convenience.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-#endif
 #include <boost/assert.hpp>
 #include <boost/algorithm/minmax_element.hpp>
 #include <boost/multi_array.hpp>
 #include <functional>
 #include <boost/unordered_map.hpp>
-#if defined (__vxworks)
-#else
-#include <boost/program_options.hpp>
-#endif
 #include <boost/assign/list_inserter.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/array.hpp>
-
 //#include <boost/timer/timer.hpp>
 #include <boost/noncopyable.hpp>
-    /*Namespaces*/
-#if defined(__TRICORE__)
-#else
-using namespace boost::extensions;
-#endif
-#if defined (__vxworks) || defined (__TRICORE__)
-#else
-namespace fs = boost::filesystem;
-#endif
+#include <fstream>
+
+
+ /*Namespaces*/
+using namespace std;
+using std::ios;
 using boost::unordered_map;
-
-
 namespace uBlas = boost::numeric::ublas;
 using namespace boost::numeric;
-
-
+using std::map;
 using namespace boost::assign;
 using boost::multi_array;
 using namespace boost::algorithm;
@@ -156,11 +79,7 @@ using std::max;
 using std::min;
 using std::string;
 using std::vector;
-#if defined (__vxworks) || defined(__TRICORE__)
-#else
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
-#endif
+
 //using boost::timer::cpu_timer;
 //using boost::timer::cpu_times;
 //using boost::timer::nanosecond_type;
@@ -170,6 +89,8 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 typedef boost::function<bool (unsigned int)> getCondition_type;
 typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
 typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+#include <Core/SimulationSettings/ISettingsFactory.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/Utils/Modelica/ModelicaSimulationError.h>
 #include <Core/Math/Array.h>
 #include <Core/System/IStateSelection.h>
@@ -193,35 +114,17 @@ typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_a
 #include <Core/System/IAlgLoopSolverFactory.h>
 #include <Core/System/ISimVars.h>
 #include <Core/System/PreVariables.h>
+#include <Core/DataExchange/ISimVar.h>
 #include <Core/SimController/ISimData.h>
 #include <Core/SimulationSettings/ISimControllerSettings.h>
 #include <Core/Math/Functions.h>
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
 #include <Core/Math/Utility.h>
+#include <Core/DataExchange/Writer.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
 #include <Core/DataExchange/Policies/BufferReaderWriter.h>
 #include <Core/HistoryImpl.h>
-#include <Core/SimulationSettings/ISettingsFactory.h>
-
-#if defined(__vxworks) || defined(__TRICORE__)
 #include <Core/DataExchange/SimDouble.h>
-#endif
- /*
 
- template class StatArrayDim1<double, 3>;
- template class StatArrayDim1<double, 4> ;
- template class StatArrayDim2<double, 3,3> ;
- template class ublas::vector<double>;
- template class vector<string>;
- template class map<unsigned int,string>;
- template class  uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;*/
- /*
- template class boost::unordered_map<int*, int>;
- template class boost::unordered_map<double*, double>;
- template class boost::unordered_map<bool*, bool>;
- template class boost::circular_buffer<double>;
- template class map<unsigned int, boost::circular_buffer<double> >;
- template class map<unsigned int,string>
- */

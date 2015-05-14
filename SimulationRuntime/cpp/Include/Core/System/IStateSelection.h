@@ -1,9 +1,9 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <boost/multi_array.hpp>
 #endif
-
+*/
 class IStateSelection
 {
 public:

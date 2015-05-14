@@ -695,7 +695,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 
 /***************************************    SYM_EULER_IMP     *********************************/
 static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
-  int retVal;
+  int retVal,i,j;
   /*time*/
   solverInfo->currentTime = data->localData[1]->timeValue + solverInfo->currentStepSize;
   data->localData[0]->timeValue = solverInfo->currentTime;
@@ -710,6 +710,9 @@ static int sym_euler_im_step(DATA* data, SOLVER_INFO* solverInfo){
   data->callback->input_function(data);
   /* eval alg equations, note ode is empty */
   data->callback->functionODE(data);
+  /* update der(x)*/
+  for(i=0, j=data->modelData.nStates; i<data->modelData.nStates; ++i, ++j)
+    data->localData[0]->realVars[j] = (data->localData[0]->realVars[i]-data->localData[1]->realVars[i])/solverInfo->currentStepSize;
   return retVal;
 }
 

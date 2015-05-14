@@ -1,4 +1,5 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Solver/Hybrj/Hybrj.h>
 
 #include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack

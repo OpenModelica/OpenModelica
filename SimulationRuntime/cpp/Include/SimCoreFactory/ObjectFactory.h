@@ -1,7 +1,5 @@
 #pragma once
-#if defined(__vxworks)
-#include <SimCoreFactory/Policies/FactoryConfig.h>
-#endif
+
 
 template<class T>
 struct ObjectFactory

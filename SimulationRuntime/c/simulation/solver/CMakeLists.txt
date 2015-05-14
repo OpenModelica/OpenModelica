@@ -3,7 +3,7 @@
 
 ADD_SUBDIRECTORY(initialization)
 
-INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/Compiler/runtime/")
+INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/OMCompiler/Compiler/runtime/" "${OMCTRUNCHOME}/build/include/omc/c" "${OMCTRUNCHOME}/build/include/omc/msvc")
 
 # Quellen und Header
 SET(solver_sources

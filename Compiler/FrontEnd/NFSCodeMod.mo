@@ -76,7 +76,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       list<SCode.SubMod> submods;
-      Option<tuple<Absyn.Exp, Boolean>> binding_exp;
+      Option<Absyn.Exp> binding_exp;
       SourceInfo info;
       list<Modifier> mods;
       Binding binding;
@@ -114,7 +114,7 @@ algorithm
 end translateSubMod;
 
 protected function translateBinding
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input Option<Absyn.Exp> inBinding;
   input SCode.Each inEachPrefix;
   input Integer inDimensions;
   input Prefix inPrefix;
@@ -122,15 +122,15 @@ protected function translateBinding
   input SourceInfo inInfo;
   output Binding outBinding;
 algorithm
-  outBinding := match(inBinding, inEachPrefix, inDimensions, inPrefix, inEnv, inInfo)
+  outBinding := match inBinding
     local
       Absyn.Exp bind_exp;
       Integer pd;
 
-    case (NONE(), _, _, _, _, _) then NFInstTypesOld.UNBOUND();
+    case NONE() then NFInstTypesOld.UNBOUND();
 
     // See propagateMod for how this works.
-    case (SOME((bind_exp, _)), _, _, _, _, _)
+    case SOME(bind_exp)
       equation
         pd = if SCode.eachBool(inEachPrefix) then -1 else inDimensions;
       then
@@ -864,7 +864,7 @@ algorithm
       list<SCode.SubMod> sl;
       SCode.Final fp;
       SCode.Each ep;
-      Option<tuple<Absyn.Exp, Boolean>> b;
+      Option<Absyn.Exp> b;
       SourceInfo i;
 
     case (SCode.MOD(fp, ep, sl, b, i),_)
@@ -895,7 +895,7 @@ algorithm
 
     case ({}, _) then {};
 
-    case (SCode.NAMEMOD(mod = SCode.MOD(binding = SOME((e, _))))::rest, _)
+    case (SCode.NAMEMOD(mod = SCode.MOD(binding = SOME(e)))::rest, _)
       equation
         cl = Absyn.getCrefFromExp(e,true,true);
         true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
@@ -926,14 +926,13 @@ algorithm
       SCode.Each ep;
       SourceInfo i;
       Absyn.Exp e;
-      Boolean b;
 
-    case (SCode.MOD(fp, ep, sl, SOME((e, b)), i),_)
+    case (SCode.MOD(fp, ep, sl, SOME(e), i),_)
       equation
         sl = removeCrefPrefixFromSubModExp(sl, id);
         (e, _) = Absyn.traverseExp(e, removeCrefPrefix, id);
       then
-        SCode.MOD(fp, ep, sl, SOME((e, b)), i);
+        SCode.MOD(fp, ep, sl, SOME(e), i);
 
     case (SCode.MOD(fp, ep, sl, NONE(), i),_)
       equation
@@ -1012,7 +1011,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       SourceInfo i;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Option<Absyn.Exp> binding;
 
     case (SCode.MOD(fp, ep, sl, binding, i))
       equation

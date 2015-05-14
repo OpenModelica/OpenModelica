@@ -3,12 +3,12 @@
 #include "SimManager.h"
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 #include <Core/SimController/ISimController.h>
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <boost/function.hpp>
 #include <Core/SimController/ISimController.h>
 #endif
-
+*/
 class SimController : public ISimController,
                       public SimControllerPolicy
 {

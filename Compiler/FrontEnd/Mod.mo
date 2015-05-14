@@ -159,7 +159,7 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE()));
 
     // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
-    case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)), info=info)),impl,_,_)
+    case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME(e), info=info)),impl,_,_)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
         // print("Mod.elabMod: calling elabExp on mod exp: " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
@@ -173,7 +173,7 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,e,info))));
 
     // Delayed type checking
-    case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)), info = info)),impl,_,_)
+    case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME(e), info = info)),impl,_,_)
       equation
         // print("Mod.elabMod: delayed mod : " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
@@ -473,7 +473,7 @@ algorithm
       equation
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false)),info); // Default type checking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME(e),info);
 
     // use the constant first!
     case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
@@ -483,7 +483,7 @@ algorithm
         subs_1 = unelabSubmods(subs);
         e_1 = Expression.unelabExp(ValuesUtil.valueExp(v));
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME(e_1),info); // default typechecking non-delayed
 
     /* / use the expression second
     case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
@@ -502,7 +502,7 @@ algorithm
         subs_1 = unelabSubmods(subs);
         e_1 = absynExp; //Expression.unelabExp(e);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME(e_1),info);
 
     case ((DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each_,tplSCodeElementModLst = {(elem, _)})))
       then
@@ -748,7 +748,7 @@ algorithm
         subs_1 = elabUntypedSubmods(subs, env, pre, inModScope);
       then
         DAE.MOD(finalPrefix,each_,subs_1,NONE());
-    case ((SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)),info = info)),env,pre,_)
+    case ((SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME(e),info = info)),env,pre,_)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre, inModScope);
       then
@@ -902,7 +902,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       list<SCode.SubMod> submods1, submods2;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Option<Absyn.Exp> binding;
       SourceInfo info1, info2;
       SCode.Mod mod1, mod2;
 
@@ -1166,15 +1166,15 @@ protected function mergeSubMods
   input list<SCode.SubMod> inSMods;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue(inMods, inMod, f, e, inSMods)
+  outMod := matchcontinue inSMods
     local
       DAE.Mod m;
       SCode.Ident id, n;
       list<SCode.SubMod> rest;
 
-    case (_, _, _, _, {}) then inMod;
+    case {} then inMod;
 
-    case (_, _, _, _, SCode.NAMEMOD(n, SCode.MOD(binding = SOME((Absyn.CREF(Absyn.CREF_IDENT(id, _)),_))))::rest)
+    case SCode.NAMEMOD(n, SCode.MOD(binding = SOME(Absyn.CREF(Absyn.CREF_IDENT(id, _)))))::rest
       equation
         m = lookupCompModification(inMods, id);
         m = DAE.MOD(f, e, {DAE.NAMEMOD(n, m)}, NONE());
@@ -1183,7 +1183,7 @@ algorithm
       then
         m;
 
-    case (_, _, _, _, _::rest)
+    case _::rest
       equation
         m = mergeSubMods(inMods, inMod, f, e, rest);
       then

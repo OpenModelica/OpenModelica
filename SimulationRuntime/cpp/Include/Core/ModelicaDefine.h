@@ -26,6 +26,44 @@ typedef double acosRetType;
 typedef double logRetType;
 typedef double coshRetType;
 
+#ifndef FORCE_INLINE
+  #if defined(_MSC_VER)
+    #define FORCE_INLINE __forceinline
+  #else
+    #define FORCE_INLINE __attribute__((always_inline))
+  #endif
+#endif
+
+#ifndef PREFETCH
+  #if defined(_MSC_VER)
+    #define PREFETCH(add, rw, locality)
+  #else
+    #define PREFETCH(add, rw, locality) __builtin_prefetch(add, rw, locality)
+  #endif
+#endif
+
+#ifndef VAR_ALIGN_PRE
+  #ifdef __GNUC__
+    #define VAR_ALIGN_PRE
+    #define VAR_ALIGN_POST __attribute__((aligned(0x40)))
+  #elif defined _MSC_VER
+    #define VAR_ALIGN_PRE __declspec(align(64))
+    #define VAR_ALIGN_POST
+  #else
+    #define VAR_ALIGN_PRE
+    #define VAR_ALIGN_POST
+  #endif
+#endif
+
+
+#ifndef BOOST_THREAD_USE_DLL
+  #define BOOST_THREAD_USE_DLL
+#endif
+#ifndef BOOST_STATIC_LINKING
+  #ifndef BOOST_ALL_DYN_LINK
+    #define BOOST_ALL_DYN_LINK
+  #endif
+#endif
 
 /*
 #if !defined(_MSC_VER) && !defined( __APPLE__)

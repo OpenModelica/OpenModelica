@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Solver/UmfPack/UmfPack.h>
 #include <Core/Math/ILapack.h>
 

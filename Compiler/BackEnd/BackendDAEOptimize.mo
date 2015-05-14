@@ -4146,7 +4146,7 @@ algorithm
   BackendDAE.DAE(systlst, shared) := inDAE;
 
   // make dt
-  cref := ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {});
+  cref := ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {});
   tmpv := BackendVariable.makeVar(cref);
   //tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
   tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
