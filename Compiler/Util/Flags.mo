@@ -756,6 +756,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "countOperations",
     "inputDerivativesUsed",
     "extendDynamicOptimization",
+    "addTimeAsState",
     "calculateStrongComponentJacobians",
     "calculateStateSetsJacobians",
     "detectJacobianSparsePattern",
@@ -763,9 +764,9 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicLinearization",
     "removeUnusedFunctions",
     "removeConstants"
-    //"solveSimpleEquations"
-    // "partitionIndependentBlocks",
-    // "addInitialStmtsToAlgorithms"
+    //"solveSimpleEquations",
+    //"partitionIndependentBlocks",
+    //"addInitialStmtsToAlgorithms",
     }),
   SOME(STRING_DESC_OPTION({
     ("encapsulateWhenConditions", Util.gettext("Replace each condition/relation with a boolean variable.")),
@@ -801,7 +802,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
     ("CSE", Util.gettext("Common Subexpression Elimination")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
-    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state"))
+    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
+    ("addTimeAsState", Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -1054,6 +1056,11 @@ constant ConfigFlag SYM_EULER = CONFIG_FLAG(69, "symEuler",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Rewritte the ode system for inplicit euler."));
 
+constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
+  "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
+
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1127,7 +1134,8 @@ constant list<ConfigFlag> allConfigFlags = {
   CPP_FLAGS,
   REMOVE_SIMPLE_EQUATIONS,
   DYNAMIC_TEARING,
-  SYM_EULER
+  SYM_EULER,
+  ADD_TIME_AS_STATE
 };
 
 public function new

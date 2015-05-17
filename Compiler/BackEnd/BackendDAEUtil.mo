@@ -7768,7 +7768,8 @@ algorithm
                         (ResolveLoops.solveLinearSystem, "solveLinearSystem", false),
                         (CommonSubExpression.CSE, "CSE", false),
                         (BackendDump.dumpDAE, "dumpDAE", false),
-                        (XMLDump.dumpDAEXML, "dumpDAEXML", false)
+                        (XMLDump.dumpDAEXML, "dumpDAEXML", false),
+                        (BackendDAEOptimize.addTimeAsState, "addTimeAsState", false)
                         };
 
   strpostOptModules := getPostOptModulesString();
