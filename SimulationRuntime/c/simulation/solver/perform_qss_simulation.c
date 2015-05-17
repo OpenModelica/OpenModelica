@@ -73,6 +73,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
   TRACE_PUSH
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  MODEL_DATA *mData = &(data->modelData);
   uinteger currStepNo = 0;
   modelica_integer retValIntegrator = 0;
   modelica_integer retValue = 0;
@@ -84,14 +85,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
 
   if (data->callback->initialAnalyticJacobianA(data))
   {
-    if (data->modelData.nStates == 1) /* TODO: is it the dummy state? */
-    {
-      infoStreamPrint(LOG_SOLVER, 0, "No sparse pattern, since there are no states.");
-    }
-    else
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
-    }
+    infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
     return UNKNOWN;
   }
   printSparseStructure(data, LOG_SOLVER);
