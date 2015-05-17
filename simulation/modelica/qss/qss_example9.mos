@@ -1,0 +1,22 @@
+// name: qss_example9
+// status: correct
+
+loadString("
+within ;
+package qssTests
+  model example9
+    Real x1(start=1.0, fixed=true);
+    Real x2(start=1.0, fixed=true);
+  equation
+    der(x1) = sin(time);
+    der(x2) = sin(time);
+  end example9;
+end qssTests;
+"); getErrorString();
+
+simulate(qssTests.example9, method="qss"); getErrorString();
+val(x1, {0.0, 1.0}); getErrorString();
+val(x2, {0.0, 1.0}); getErrorString();
+
+// Result:
+// endResult

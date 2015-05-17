@@ -9,6 +9,7 @@ qss_example5.mos \
 qss_example6.mos \
 qss_example7.mos \
 qss_example8.mos \
+qss_example9.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
