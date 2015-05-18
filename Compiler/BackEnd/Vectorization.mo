@@ -419,7 +419,7 @@ algorithm
     equation
       //get similar equations
       (similarEqs,rest) = List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
-        BackendDump.dumpEquationList(similarEqs,"similarEqs");
+        //BackendDump.dumpEquationList(similarEqs,"similarEqs");
       range = listLength(similarEqs)-1;
         //print("range: "+intString(range)+"\n");
       (iterCrefs,start) = getIterCrefsFromEqs(similarEqs,arrayCrefs);
@@ -427,7 +427,7 @@ algorithm
       loopInfo = BackendDAE.LOOP(idx,DAE.ICONST(start),DAE.ICONST(intAdd(start,range)),listReverse(iterCrefs));
         //print("loopInfo "+BackendDump.printLoopInfoStr(loopInfo)+"\n");
       eq = setLoopInfoInEq(loopInfo,eq);
-        print("eq "+BackendDump.equationString(eq)+"\n");
+        //print("eq "+BackendDump.equationString(eq)+"\n");
       tpl = addLoopInfosForClassEqs(rest, arrayCrefs, (idx+1,eq::foldEqs));
     then
       tpl;
