@@ -33,7 +33,7 @@ OpenModelica.Scripting.compareSimulationResults("Compare.Modell1_res.mat", "Comp
 //     messages = ""
 // end SimulationResult;
 // ""
-// (true,{},{})
+// (true,{})
 // "Error: Could not read variable a in file Compare.Modell2_res.mat.
 // Warning: Get data of variable a from file Compare.Modell2_res.mat failed!
 // "
@@ -42,7 +42,7 @@ OpenModelica.Scripting.compareSimulationResults("Compare.Modell1_res.mat", "Comp
 // Warning: Get data of variable a from file Compare.Modell2_res.mat failed!
 // Warning: Files not Equal
 // "
-// (true,{},{})
+// (true,{})
 // ""
 // {"Files Equal!"}
 // ""
