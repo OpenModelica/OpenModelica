@@ -234,6 +234,8 @@ double
    IMixedSystem* _mixed_system;
    ITime* _time_system;
 
+   int _numberOfOdeEvaluations;
+
    #ifdef RUNTIME_PROFILING
    std::vector<MeasureTimeData> measureTimeFunctionsArray;
    MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues, *solveFunctionStartValues, *solveFunctionEndValues;
