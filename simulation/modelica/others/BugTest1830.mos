@@ -30,14 +30,15 @@ val(x,10);
 // ""
 // record SimulationResult
 //     resultFile = "try_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'try', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'try', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // 1.0
-// 5.999999999199765
-// 6.999999999199764
-// 5.9999999983997085
-// 6.9999999983997085
+// 5.999999999199761
+// 6.99999999919976
+// 5.999999998399694
+// 6.999999998399694
 // endResult

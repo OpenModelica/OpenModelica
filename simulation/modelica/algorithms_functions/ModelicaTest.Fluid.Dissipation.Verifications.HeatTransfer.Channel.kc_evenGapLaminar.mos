@@ -92,7 +92,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //     end if;
 //   end for;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con\"
 //   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
 //   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
@@ -100,7 +100,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
 //   output kc_evenGapLaminar_IN_con res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_1 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_1\"
 //   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
 //   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
@@ -108,7 +108,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
 //   output kc_evenGapLaminar_IN_con$m_flow_IN_con_1 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_1;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_2 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_2\"
 //   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
 //   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
@@ -116,7 +116,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
 //   output kc_evenGapLaminar_IN_con$m_flow_IN_con_2 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_2;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_3 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_3\"
 //   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
 //   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
@@ -124,7 +124,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
 //   output kc_evenGapLaminar_IN_con$m_flow_IN_con_3 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_3;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_4 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_4\"
 //   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
 //   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
@@ -132,7 +132,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
 //   output kc_evenGapLaminar_IN_con$m_flow_IN_con_4 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_4;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var\"
 //   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
 //   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
@@ -141,7 +141,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   output kc_evenGapLaminar_IN_var res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_1 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_1\"
 //   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
 //   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
@@ -150,7 +150,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   output kc_evenGapLaminar_IN_var$m_flow_IN_var_1 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_1;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_2 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_2\"
 //   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
 //   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
@@ -159,7 +159,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   output kc_evenGapLaminar_IN_var$m_flow_IN_var_2 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_2;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_3 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_3\"
 //   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
 //   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
@@ -168,7 +168,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   output kc_evenGapLaminar_IN_var$m_flow_IN_var_3 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_3;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_4 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_4\"
 //   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
 //   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
@@ -177,7 +177,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 //   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
 //   output kc_evenGapLaminar_IN_var$m_flow_IN_var_4 res;
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_4;
-// 
+//
 // function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_KC
 //   input Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con IN_con;
 //   input Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var IN_var;
@@ -195,7 +195,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 // algorithm
 //   kc := Nu * IN_var.lambda / max(MIN, d_hyd);
 // end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_KC;
-// 
+//
 // class ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar
 //   parameter Integer n = 3;
 //   parameter Real d_hyd(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.0 * s;
@@ -380,7 +380,8 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 // record SimulationResult
 //     resultFile = "ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
