@@ -2619,11 +2619,13 @@ end readSimulationResultVars;
 public function filterSimulationResults
   input String inFile;
   input String outFile;
-  input String[:] vars = fill("",0);
+  input String[:] vars;
+  input Integer numberOfIntervals = 0 "0=Do not resample";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>
+<p>If numberOfIntervals<>0, re-sample to that number of intervals, ignoring event points (might be changed in the future).</p>
 </html>"),preferredView="text");
 end filterSimulationResults;
 
@@ -2650,6 +2652,7 @@ public function diffSimulationResults "compares simulation results."
   input Boolean keepEqualResults = false;
   output Boolean success /* On success, resultFiles is empty. But it might be empty on failure anyway (for example if an input file does not exist) */;
   output String[:] resultFiles;
+  output String[:] failVars;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>

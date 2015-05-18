@@ -636,7 +636,7 @@ static double* validate(int n, addTargetEventTimesRes ref, double *low, double *
   return NULL;
 }
 
-static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, double reltolDiffMaxMin, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix, int isHtml, char **htmlOut)
+static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, double reltolDiffMaxMin, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix, void **failVars, int isHtml, char **htmlOut)
 {
   int withTubes = 0 == rangeDelta;
   FILE *fout = NULL;
@@ -676,6 +676,9 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   addRelativeTolerance(high,ref.values,n,reltol,abstol,1);
   addRelativeTolerance(low ,ref.values,n,reltol,abstol,-1);
   double *error = validate(n,ref,low,high,calibrated_values,reltol,abstol,xabstol);
+  if (error) {
+    *failVars = mmc_mk_cons(varname, *failVars);
+  }
   if (isHtml ) {
 #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
     size_t html_size=0;
