@@ -3,7 +3,7 @@
 
 //#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/System/AlgLoopSolverFactory.h>
-
+/*removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
   :ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path)
@@ -20,14 +20,15 @@ AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH
 {
 }
 #else
+*/
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
-  : ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path)
+  : ObjectFactory<BaseFactory>(library_path,modelicasystem_path,library_path)
   , NonLinSolverPolicy(library_path,modelicasystem_path,library_path)
   , LinSolverPolicy(library_path,modelicasystem_path,library_path)
   , _global_settings(global_settings)
 {
 }
-#endif
+/*#endif*/
 
 AlgLoopSolverFactory::~AlgLoopSolverFactory()
 {

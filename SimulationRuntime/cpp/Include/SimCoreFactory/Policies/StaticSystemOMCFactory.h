@@ -1,10 +1,10 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #include <Core/System/IAlgLoopSolverFactory.h>
 #include <SimCoreFactory/Policies/SystemOMCFactory.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 #include <Core/SimController/ISimData.h>
-
+*/
 boost::shared_ptr<IMixedSystem>  createModelicaSystem(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars);
 /*
 Policy class to create a OMC-,  Modelica- system or AlgLoopSolver
@@ -24,8 +24,7 @@ public:
 
   virtual boost::shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
   {
-    boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = boost::shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings, ObjectFactory<CreationPolicy>::_library_path, ObjectFactory<CreationPolicy>::_modelicasystem_path));
-    return algloopsolverfactory;
+    return ObjectFactory<CreationPolicy>::_factory->createAlgLoopSolverFactory(globalSettings);
   }
   
   boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)

@@ -1,10 +1,10 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/SolverSettingsOMCFactory.h>
 #include <Core/Solver/SolverSettings.h>
 #include <boost/shared_ptr.hpp>
 #include <Core/SimulationSettings/IGlobalSettings.h>
-
+*/
 /*
 Policy class to create solver settings object
 */
