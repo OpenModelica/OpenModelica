@@ -47,9 +47,9 @@ SimVars::~SimVars()
   if(_real_vars)
     alignedFree(_real_vars);
   if(_int_vars)
-      alignedFree(_int_vars);
+    alignedFree(_int_vars);
   if(_bool_vars)
-      alignedFree(_bool_vars);
+    alignedFree(_bool_vars);
 }
 /**
 *  \brief Initialize scalar real model variables in simvars memory
