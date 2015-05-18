@@ -2916,13 +2916,11 @@ algorithm
         filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         filename2 = if System.substring(filename2,1,1) == "/" then filename2 else stringAppendList({pwd,pd,filename2});
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        (b,strings,vars_1) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
+        (b,strings) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
         cvars = List.map(strings,ValuesUtil.makeString);
         v1 = ValuesUtil.makeArray(cvars);
-        cvars = List.map(vars_1,ValuesUtil.makeString);
-        v2 = ValuesUtil.makeArray(cvars);
       then
-        (cache,Values.TUPLE({Values.BOOL(b),v1,v2}),st);
+        (cache,Values.TUPLE({Values.BOOL(b),v1}),st);
 
     case (cache,_,"diffSimulationResults",_,st,_)
       equation

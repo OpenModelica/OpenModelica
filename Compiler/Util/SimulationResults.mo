@@ -102,8 +102,7 @@ public function diffSimulationResults
   input Boolean keepEqualResults;
   output Boolean success;
   output list<String> res;
-  output list<String> failVars;
-  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,relTolDiffMaxMin,rangeDelta,vars,keepEqualResults,success,failVars) annotation(Library = "omcruntime");
+  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,relTolDiffMaxMin,rangeDelta,vars,keepEqualResults,success) annotation(Library = "omcruntime");
 end diffSimulationResults;
 
 public function diffSimulationResultsHtml
