@@ -1425,10 +1425,6 @@ algorithm
   (varLst,aliasLst) := enlargeIteratedArrayVars1(varLst,aliasLst,{},{});
   (knownLst,knownLst2) := enlargeIteratedArrayVars1(knownLst,{},{},{});
 
-  //varLst := List.map(varLst,appendSubscriptsInVar);
-  //aliasLst := List.map(aliasLst,appendSubscriptsInVar);
-  //knownLst := List.map(knownLst,appendSubscriptsInVar);
-
     //BackendDump.dumpVarList(varLst,"varLst1");
     //BackendDump.dumpVarList(aliasLst,"aliasVars1");
     //BackendDump.dumpVarList(knownLst,"knownLst1");
@@ -1472,30 +1468,20 @@ algorithm
           //BackendDump.dumpVarList(simVars,"similarVars");
           //BackendDump.dumpVarList(simAlias,"similarAlias");
 
-
       if listLength(simVars)+listLength(simAlias) == dim then
         // everything is correct, set subscripts at end
         varFold := varLstFoldIn;
         for var in simVars loop
-          cref := BackendVariable.varCref(var);
-          {sub} := ComponentReference.crefSubs(cref);
-          cref := replaceSubscriptAtEnd(sub,cref);
-          var := BackendVariable.copyVarNewName(cref,var);
+          var := appendSubscriptsInVar(var);
           varFold := var::varFold;
         end for;
 
         aliasFold := aliasFoldIn;
         for var in simAlias loop
-          cref := BackendVariable.varCref(var);
-          {sub} := ComponentReference.crefSubs(cref);
-          cref := replaceSubscriptAtEnd(sub,cref);
-          var := BackendVariable.copyVarNewName(cref,var);
+          var := appendSubscriptsInVar(var);
           aliasFold := var::aliasFold;
         end for;
 
-
-        //varFold := listAppend(simVars,varLstFoldIn);
-        //aliasFold := aliasFoldIn;
           //print("its fine!\n");
       elseif listLength(simVars) == 1 and intLe(listLength(simAlias),dim-1) then
         // add new alias vars, if the array is mixed simulation and alias var, put everything in the simvar part
@@ -1503,15 +1489,11 @@ algorithm
         {sub} := ComponentReference.crefSubs(name);
         subs := List.map(List.intRange(dim),Expression.intSubscript);
         subs := List.deleteMember(subs,sub);
-        //crefLst := List.map1r(subs,replaceFirstSubInCref,name);
         crefLst := List.map1(subs,replaceSubscriptAtEnd,name);
         varLst := List.map1Reverse(crefLst,BackendVariable.copyVarNewName,listHead(simAlias));
+        varLst := List.map(varLst,appendSubscriptsInVar);
         // put subscript at end for the var
-        cref := BackendVariable.varCref(listHead(varLstIn));
-          {sub} := ComponentReference.crefSubs(name);
-          cref := replaceSubscriptAtEnd(sub,name);
-          var := BackendVariable.copyVarNewName(cref,listHead(varLstIn));
-
+          var := appendSubscriptsInVar(listHead(varLstIn));
         varFold := var::varLstFoldIn;
         aliasFold := listAppend(varLst,aliasFoldIn);
           //print("add new aliase\n");
@@ -1521,6 +1503,7 @@ algorithm
         //crefLst := List.map1r(subs,replaceFirstSubInCref,name);
         crefLst := List.map1(subs,replaceSubscriptAtEnd,name);
         varLst := List.map1Reverse(crefLst,BackendVariable.copyVarNewName,listHead(varLstIn));
+        varLst := List.map(varLst,appendSubscriptsInVar);
         varFold := listAppend(varLst, varLstFoldIn);
         aliasFold := aliasFoldIn;
           //print("increase!\n");
@@ -1537,6 +1520,7 @@ algorithm
       if listLength(simAlias) == dim then
         // everything is correct
         varFold := varLstFoldIn;
+        simAlias := List.map(simAlias,appendSubscriptsInVar);
         aliasFold := listAppend(simAlias,aliasFoldIn);
           //print("its fine alias!\n");
       else
@@ -1545,6 +1529,7 @@ algorithm
         //crefLst := List.map1r(subs,replaceFirstSubInCref,name);
         crefLst := List.map1(subs,replaceSubscriptAtEnd,name);
         varLst := List.map1Reverse(crefLst,BackendVariable.copyVarNewName,listHead(aliasLstIn));
+        varLst := List.map(varLst,appendSubscriptsInVar);
         aliasFold := listAppend(varLst, aliasFoldIn);
         varFold := varLstFoldIn;
           //print("increase alias!\n");
@@ -1556,14 +1541,16 @@ algorithm
     algorithm
       // add this non-array var
       //print("add non arry var: "+BackendDump.varString(listHead(varLstIn))+"\n");
-      (varFold,aliasFold) := enlargeIteratedArrayVars1(rest,aliasLstIn,listHead(varLstIn)::varLstFoldIn,aliasFoldIn);
+      var := appendSubscriptsInVar(listHead(varLstIn));
+      (varFold,aliasFold) := enlargeIteratedArrayVars1(rest,aliasLstIn,var::varLstFoldIn,aliasFoldIn);
     then (varFold,aliasFold);
 
   case({},_::restAlias,_,_)
     algorithm
       // add this non-array alias
-       //print("add non arraz alias var: "+BackendDump.varString(listHead(aliasLstIn))+"\n");
-      (varFold,aliasFold) := enlargeIteratedArrayVars1({},restAlias,varLstFoldIn,listHead(aliasLstIn)::aliasFoldIn);
+       //print("add non array alias var: "+BackendDump.varString(listHead(aliasLstIn))+"\n");
+       var := appendSubscriptsInVar(listHead(aliasLstIn));
+      (varFold,aliasFold) := enlargeIteratedArrayVars1({},restAlias,varLstFoldIn,var::aliasFoldIn);
     then (varFold,aliasFold);
 
   end matchcontinue;
@@ -1581,8 +1568,10 @@ algorithm
       DAE.Subscript sub;
   case(BackendDAE.VAR(varName=name,bindExp=SOME(bindExp)))
     equation
-      {sub} = ComponentReference.crefSubs(name);
-      name = replaceSubscriptAtEnd(sub,name);
+      if ComponentReference.crefHaveSubs(name) then
+        {sub} = ComponentReference.crefSubs(name);
+        name = replaceSubscriptAtEnd(sub,name);
+      end if;
       bindExp = Expression.traverseExpBottomUp(bindExp,appendSubscriptsInExp,"bla");
       var = BackendVariable.setBindExp(varIn,SOME(bindExp));
       var = BackendVariable.copyVarNewName(name,var);
