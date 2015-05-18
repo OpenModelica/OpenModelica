@@ -3546,8 +3546,7 @@ algorithm
         is_function_input = InstUtil.isFunctionInput(ci_state, dir);
         (cache, dims) = InstUtil.elabArraydim(cache, env2, own_cref, t, ad, eq, impl,
           NONE(), true, is_function_input, pre, info, inst_dims);
-
-        dims = InstUtil.elabField(attr, dims);
+        (dims, mod_1) = InstUtil.elabField(attr, dims, mod_1);
 
         // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
         //                    and add it to the cache!

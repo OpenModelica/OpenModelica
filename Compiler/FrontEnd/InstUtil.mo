@@ -4602,24 +4602,64 @@ algorithm
 end elabArraydimType2;
 
 public function elabField
+//For field variables: finds the "domain" modifier,
+//finds domain.N - length of discretized field array
+//and removes "domain" from the modifiers list.
   input SCode.Attributes attr;
   input DAE.Dimensions inDims;
+  input DAE.Mod inMod;
   output DAE.Dimensions outDims;
+  output DAE.Mod outMod;
+  protected DAE.Dimension dim_f;
+  protected SCode.Final finalPrefix;
+  protected SCode.Each  eachPrefix;
+  protected list<DAE.SubMod> subModLst;
+  protected Option<DAE.EqMod> eqModOption;
+  protected Integer N;
 algorithm
-  outDims := match(attr)
-    local
-      DAE.Dimension dim_f;
+  (outDims, outMod) := match(attr)
     case(SCode.ATTR(isField=Absyn.NONFIELD()))
       //TODO: check that the domain attribute (modifier) is not present.
       then
-        inDims;
+        (inDims,inMod);
     case(SCode.ATTR(isField=Absyn.FIELD()))
       equation
-        dim_f = DAE.DIM_INTEGER(4);
+        DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, eqModOption = eqModOption) = inMod;
+        //get N from the domain and remove domain from the subModLst:
+        (N, subModLst) = List.fold20(subModLst,domainSearchFun,-1,{});
+        subModLst = listReverse(subModLst);
+        outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, eqModOption);
+        dim_f = DAE.DIM_INTEGER(N);
       then
-        dim_f::inDims;
+        (dim_f::inDims, outMod);
   end match;
 end elabField;
+
+public function domainSearchFun
+  input DAE.SubMod subMod;
+  input Integer inN;
+  input list<DAE.SubMod> inSubModLst;
+  output Integer outN;
+  output list<DAE.SubMod> outSubModLst;
+  algorithm
+    (outSubModLst,outN) := match subMod
+    local
+      DAE.Mod mod;
+//      SCode.Final finalPrefix;
+//      SCode.Each    eachPrefix;
+      list<DAE.SubMod>  subModLst;
+      Option<DAE.EqMod> eqModOption;
+    case DAE.NAMEMOD(ident="domain", mod=mod)
+      equation
+        DAE.MOD(subModLst=subModLst,eqModOption=eqModOption)=mod;
+
+        //TODO: finish it - find and set domain.N
+
+      then (inSubModLst,44);
+    else (subMod::inSubModLst,inN);
+    end match;
+end domainSearchFun;
+
 
 public function addFunctionsToDAE
 "@author: adrpo
