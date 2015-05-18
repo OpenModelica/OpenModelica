@@ -592,7 +592,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       if (numberOfIntervals) {
         omc_matlab4_read_all_vals(&simresglob.matReader);
         nrows = numberOfIntervals+1;
-        vals = GC_malloc_atomic(nrows);
+        vals = GC_malloc_atomic(sizeof(double)*nrows);
         for (j=0; j<=numberOfIntervals; j++) {
           ModelicaMatVariable_t var = {.name="", .descr="", .isParam=0, .index=indexesToOutput[i]};
           if (omc_matlab4_val(vals+j, &simresglob.matReader, &var, start + (stop-start)*((double)j)/numberOfIntervals)) {
@@ -605,6 +605,9 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       }
       if (1!=fwrite(vals, sizeof(double)*nrows, 1, fout)) {
         return failedToWriteToFile(outFile);
+      }
+      if (numberOfIntervals) {
+        GC_free(vals);
       }
     }
     fclose(fout);
