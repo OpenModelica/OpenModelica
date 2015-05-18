@@ -61,4 +61,7 @@ extern modelica_string modelica_enumeration_to_modelica_string(modelica_integer 
 int omc__escapedStringLength(const char* str, int nl, int *hasEscape);
 extern char* omc__escapedString(const char* str, int nl);
 
+int GC_vasprintf(char **strp, const char *fmt, va_list ap);
+int GC_asprintf(char **strp, const char *fmt, ...);
+
 #endif

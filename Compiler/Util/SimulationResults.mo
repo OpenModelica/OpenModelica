@@ -102,7 +102,8 @@ public function diffSimulationResults
   input Boolean keepEqualResults;
   output Boolean success;
   output list<String> res;
-  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,relTolDiffMaxMin,rangeDelta,vars,keepEqualResults,success) annotation(Library = "omcruntime");
+  output list<String> failVars;
+  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,relTolDiffMaxMin,rangeDelta,vars,keepEqualResults,success,failVars) annotation(Library = "omcruntime");
 end diffSimulationResults;
 
 public function diffSimulationResultsHtml
@@ -121,8 +122,9 @@ public function filterSimulationResults
   input String inFile;
   input String outFile;
   input list<String> vars;
+  input Integer numberOfIntervals=0;
   output Boolean result;
-  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars) annotation(Library = "omcruntime");
+  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals) annotation(Library = "omcruntime");
 end filterSimulationResults;
 
 annotation(__OpenModelica_Interface="frontend");
