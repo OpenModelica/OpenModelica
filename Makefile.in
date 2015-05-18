@@ -49,7 +49,7 @@ utf8-error:
 	rm -f utf8-error.log*
 	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
 	# Also detect some valid UTF-8 that were obviously fracked up by Eclipse on Windows.
-	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v Linköping && (echo '{}: Failed Linköping test')"  ';' 2>&1 >> utf8-error.log
+	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v LinkÃ¶ping && (echo '{}: Failed LinkÃ¶ping test')"  ';' 2>&1 >> utf8-error.log
 	@cat utf8-error.log
 	@test ! -s utf8-error.log
 	rm -f utf8-error.log*
@@ -57,8 +57,8 @@ utf8-error:
 utf8-iconv:
 	rm -f tmp
 	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>tmp || (rm -f tmp && cp '{}' tmp && iconv -f ISO-8859-1 -t UTF-8 tmp -o '{}' && echo Converted {} to UTF-8)" ';'
-	rm -f tmp	
-	
+	rm -f tmp
+
 clean:
 	test ! -d build || rm -r build/
 
