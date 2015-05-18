@@ -1,5 +1,6 @@
 /build
 *.o
+Makefile
 OMShell/bin
 OMShell/generatedfiles
 OMShell/OMShellGUI/Makefile
@@ -9,3 +10,16 @@ OMShell/OMShellGUI/Makefile.unix
 OMShell/OMShellGUI/object_script.*
 OMShell/OMShellGUI/OMShellGUI.pro.*
 OMShell/OMShellGUI/*.qm
+OMShell/OMShellGUI/OMShell.config
+OMShell/OMShellGUI/omc_config.h
+autom4te.cache/
+config.guess
+config.log
+config.status
+config.sub
+configure
+install-sh
+mosh/src/Makefile
+mosh/src/OMShell-terminal
+mosh/src/omc_communication.cc
+mosh/src/omc_communication.h
