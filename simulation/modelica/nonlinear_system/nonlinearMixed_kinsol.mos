@@ -14,12 +14,13 @@ val(z, {0.0,0.5});
 // ""
 // record SimulationResult
 //     resultFile = "nonlinear_system.nonlinearMixed_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'nonlinear_system.nonlinearMixed', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.nonlinearMixed', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
-// {0.0,-0.353553516989959}
-// {0.0,0.35355364625684976}
-// {0.0,0.35355313492969775}
+// {0.0,-0.3535535016544049}
+// {0.0,0.353553390295898}
+// {0.0,0.3535533908906495}
 // endResult
