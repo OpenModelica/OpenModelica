@@ -1,4 +1,4 @@
-all: omc @OMLIBRARY_TARGET@ omc-diff omplot omnotebook omshell omedit omoptim
+all: omc @OMLIBRARY_TARGET@ omc-diff omplot omnotebook omshell omedit omoptim ReferenceFiles
 
 .PRECIOUS: Makefile
 
@@ -20,6 +20,8 @@ omshell: omc
 	$(MAKE) -C OMShell
 omc-diff:
 	$(MAKE) -C testsuite/difftool "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@"
+ReferenceFiles:
+	$(MAKE) -C testsuite/ReferenceFiles
 
 SOURCE_DIRS_UTF8=OMEdit/ OMShell/ OMNotebook/ OMOptim/ OMPlot/ OMCompiler/Compiler/ OMCompiler/SimulationRuntime/ `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
 SOURCE_DIRS=$(SOURCE_DIRS_UTF8) # testsuite/flattening/libraries/3rdParty/HumMod
