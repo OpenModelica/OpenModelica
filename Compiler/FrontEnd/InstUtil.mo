@@ -4601,6 +4601,26 @@ algorithm
   end matchcontinue;
 end elabArraydimType2;
 
+public function elabField
+  input SCode.Attributes attr;
+  input DAE.Dimensions inDims;
+  output DAE.Dimensions outDims;
+algorithm
+  outDims := match(attr)
+    local
+      DAE.Dimension dim_f;
+    case(SCode.ATTR(isField=Absyn.NONFIELD()))
+      //TODO: check that the domain attribute (modifier) is not present.
+      then
+        inDims;
+    case(SCode.ATTR(isField=Absyn.FIELD()))
+      equation
+        dim_f = DAE.DIM_INTEGER(4);
+      then
+        dim_f::inDims;
+  end match;
+end elabField;
+
 public function addFunctionsToDAE
 "@author: adrpo
  we might need to intantiate partial functions, but we should NOT add them to the DAE!"
