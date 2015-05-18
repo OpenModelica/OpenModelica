@@ -296,3 +296,21 @@ extern char* omc__escapedString(const char* str, int nl)
   return res;
 }
 
+int GC_vasprintf(char **strp, const char *fmt, va_list ap) {
+  int len;
+  len = vsnprintf(NULL, 0, fmt, ap);
+  *strp = GC_malloc_atomic(len+1);
+  len = vsnprintf(*strp, len+1, fmt, ap);
+  return len;
+}
+
+int GC_asprintf(char **strp, const char *fmt, ...) {
+  int len;
+  va_list ap;
+  va_start(ap, fmt);
+
+  len = GC_vasprintf(strp, fmt, ap);
+
+  va_end(ap);
+  return len;
+}
