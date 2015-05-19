@@ -4,7 +4,6 @@
 /*includes removed for static linking not needed any more 
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimulationSettings//ISettingsFactory.h>
->>>>>>> Stashed changes
 #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
 class  SettingsFactory : public ISettingsFactory
                        , public StaticSolverSettingsOMCFactory<OMCFactory>

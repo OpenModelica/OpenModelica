@@ -44,12 +44,12 @@ public:
 private:
   boost::unordered_map<T*, T> _start_values;
 };
-
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class SystemDefaultImplementation
-#else
+#else*/
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
-#endif
+/*#endif*/
 {
 public:
   SystemDefaultImplementation(IGlobalSettings* globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);

@@ -269,10 +269,10 @@ AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
 # AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
 
 AC_MSG_CHECKING([for antlr.Tool support])
-mkdir -p $OMBUILDDIR/share/omc/java
+mkdir -p "$OMBUILDDIR/share/omc/java"
 cp "3rdParty/antlr/3.2/tool/antlr-3.2.jar" "3rdParty/antlr/3.2/tool/antlr-2.7.7.jar" $OMBUILDDIR/share/omc/java/
 echo "" > $$grammar.g
-if java -cp $OMBUILDDIR/share/omc/java/antlr-3.2.jar antlr.Tool $$grammar.g ; then
+if java -cp "$OMBUILDDIR/share/omc/java/antlr-3.2.jar" antlr.Tool $$grammar.g ; then
   rm -f $$grammar.g
   AC_MSG_RESULT([yes])
 else

@@ -3,12 +3,13 @@
 #if defined(__vxworks) || defined (__TRICORE__)
 #define BOOST_EXTENSION_MONITOR_DECL
 #endif
-
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class SimulationMonitor
 #else
+*/
 class BOOST_EXTENSION_MONITOR_DECL SimulationMonitor
-#endif
+/*#endif*/
 {
 public:
   SimulationMonitor();

@@ -32,6 +32,7 @@
 #define MODELICA_STRING_H_
 
 #include "openmodelica.h"
+#include <stdarg.h>
 
 #define stringCompare(x,y) mmc_stringCompare(x,y)
 #define stringEqual(x,y) (MMC_STRLEN(x) == MMC_STRLEN(y) && !stringCompare(x,y))

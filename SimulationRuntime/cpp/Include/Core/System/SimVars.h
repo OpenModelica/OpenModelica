@@ -4,11 +4,13 @@ template<typename T>
 /**
  * An array-wrapper that will align the array along full cache lines.
  */
+/* 
 #ifdef RUNTIME_STATIC_LINKING
 class AlignedArray
 #else
+ */
 class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
-#endif
+/*#endif*/
 {
   private:
     T *array;
@@ -46,7 +48,7 @@ class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
       free(p1);
     }
 
-    FORCE_INLINE inline T* get()
+    FORCE_INLINE T* get()
     {
       return array;
     }
@@ -56,11 +58,12 @@ class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
  *  SimVars class, implements ISimVars interface
  *  SimVars stores all model variable in continuous block of memory
  */
+ /*
 #ifdef RUNTIME_STATIC_LINKING
 class SimVars: public ISimVars
-#else
+#else*/
 class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
-#endif
+/*#endif*/
 {
   public:
     SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);

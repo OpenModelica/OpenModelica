@@ -529,7 +529,7 @@ static const char* getTimeVarName(void *vars) {
 #include "SimulationResultsCmpTubes.c"
 
 /* Common, huge function, for both result comparison and result diff */
-void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol, double reltolDiffMaxMin, double rangeDelta, void *vars, int keepEqualResults, int *success, void **failVars, int isHtml, char **htmlOut)
+void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol, double reltolDiffMaxMin, double rangeDelta, void *vars, int keepEqualResults, int *success, int isHtml, char **htmlOut)
 {
   char **cmpvars=NULL;
   char **cmpdiffvars=NULL;
@@ -548,7 +548,6 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   ddf.n=0;
   ddf.n_max=0;
   len = 1;
-  *failVars = mmc_mk_nil();
 
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
@@ -671,11 +670,11 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     }
     /* compare */
     if (isHtml) {
-      vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,failVars,1,htmlOut);
+      vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,1,htmlOut);
     } else if (isResultCmp) {
       vardiffindx = cmpData(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,abstol,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename);
     } else {
-      vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,failVars,0,0);
+      vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,0,0);
     }
     /* free */
     if (dataref.data) {

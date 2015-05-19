@@ -490,7 +490,7 @@ case SIMCODE(modelInfo=MODELINFO()) then
   }
 
   #elif defined (RUNTIME_STATIC_LINKING)
-
+    #include <Core/System/FactoryExport.h>
     #include <Core/DataExchange/SimData.h>
     #include <Core/System/SimVars.h>
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>

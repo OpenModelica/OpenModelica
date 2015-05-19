@@ -2651,7 +2651,6 @@ public function diffSimulationResults "compares simulation results."
   input String[:] vars = fill("",0);
   input Boolean keepEqualResults = false;
   output Boolean success /* On success, resultFiles is empty. But it might be empty on failure anyway (for example if an input file does not exist) */;
-  output String[:] resultFiles;
   output String[:] failVars;
 external "builtin";
 annotation(Documentation(info="<html>
