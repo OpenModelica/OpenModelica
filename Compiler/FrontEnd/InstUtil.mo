@@ -4635,31 +4635,58 @@ algorithm
   end match;
 end elabField;
 
-public function domainSearchFun
+protected function domainSearchFun
+"fold function to find domain modifier in modifiers list"
   input DAE.SubMod subMod;
   input Integer inN;
   input list<DAE.SubMod> inSubModLst;
   output Integer outN;
   output list<DAE.SubMod> outSubModLst;
   algorithm
-    (outSubModLst,outN) := match subMod
+    (outSubModLst,outN) := matchcontinue subMod
     local
       DAE.Mod mod;
-//      SCode.Final finalPrefix;
-//      SCode.Each    eachPrefix;
       list<DAE.SubMod>  subModLst;
       Option<DAE.EqMod> eqModOption;
+      list<Values.Value> values;
+      list<String> names;
+      Integer N;
     case DAE.NAMEMOD(ident="domain", mod=mod)
       equation
-        DAE.MOD(subModLst=subModLst,eqModOption=eqModOption)=mod;
-
-        //TODO: finish it - find and set domain.N
-
-      then (inSubModLst,44);
+        DAE.MOD(eqModOption=SOME(
+          DAE.TYPED(modifierAsValue=SOME(
+            Values.RECORD(
+              record_=Absyn.FULLYQUALIFIED(
+                path=Absyn.IDENT(name="DomainLineSegment1D")
+              ), orderd = values, comp = names
+            )
+          ))
+        ))=mod;
+        N = List.find(List.threadTuple(names,values), findN);
+      then (inSubModLst,N);
+    case DAE.NAMEMOD(ident="domain")
+      equation
+        print("cant find N in the domain");
+      then
+        fail();
     else (subMod::inSubModLst,inN);
-    end match;
+    end matchcontinue;
 end domainSearchFun;
 
+protected function findN
+"a map function to find N in domain class modifiers"
+  //input Tuple<String,Values.Value> inEl;
+  input Tuple<String,Values.Value> inEl;
+  output Integer N;
+  algorithm
+    N := match inEl
+    local
+      Integer NN;
+      case(("N", Values.INTEGER(NN)))
+        then NN;
+      else fail();
+    end match;
+end findN;
 
 public function addFunctionsToDAE
 "@author: adrpo
