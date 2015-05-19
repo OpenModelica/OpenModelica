@@ -440,11 +440,24 @@ template dumpEqs(list<SimEqSystem> eqs)
       <%branches%>
       <%elsebr%>
       >>
+    case e as SES_FOR_LOOP(__) then
+      let &forstatement = buffer ""
+      let &forstatement += 'for(size_t ' + escapeCComments(printExpStr(e.iter)) + ' = ' + escapeCComments(printExpStr(e.startIt)) + '; '
+      let &forstatement += escapeCComments(printExpStr(e.iter)) + ' != ' + escapeCComments(printExpStr(e.endIt)) + '+1; '
+      let &forstatement += escapeCComments(printExpStr(e.iter)) + '++) {<%\n%>'
+      let &forstatement += '  <%crefStr(e.cref)%> = <%escapeCComments(printExpStr(e.exp))%><%\n%>'
+      let &forstatement += '}'
+      <<
+      equation index: <%equationIndex(e)%>
+      type: FOR_LOOP
+      <%forstatement%>
+      >>
     else
       <<
       unknown equation
       >>
 end dumpEqs;
+
 
 /************************************************************************************************/
 

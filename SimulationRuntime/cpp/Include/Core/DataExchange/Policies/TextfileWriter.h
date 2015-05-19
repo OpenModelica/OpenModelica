@@ -1,5 +1,5 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <sstream>
 #include <vector>
@@ -11,10 +11,12 @@
 using std::ios;
 #define SEPERATOR ","
 #define EXTENSION ","
-
+*/
 /**
  Policy class to write simulation results in a text file
  */
+  const char SEPERATOR = ',';
+    const char EXTENSION = ',';
 template<size_t dim_1, size_t dim_2, size_t dim_3, size_t dim_4>
 class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
 {
@@ -140,6 +142,8 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
     }
 
  protected:
+
+
     std::fstream _output_stream;
     unsigned int _curser_position;       ///< Controls current Curser-Position
     std::string _output_path;

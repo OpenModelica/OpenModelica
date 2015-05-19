@@ -1314,8 +1314,8 @@ template functionSymEuler(ModelInfo modelInfo, String modelNamePrefix)
     int <%symbolName(modelNamePrefix,"symEulerUpdate")%>(DATA *data, modelica_real dt)
     {
       TRACE_PUSH
-      #ifdef $P$TMP$OMC$DT
-        $P$TMP$OMC$DT = dt;
+      #ifdef $P<%BackendDAE.symEulerDT%>
+        $P<%BackendDAE.symEulerDT%> = dt;
       #else
         return -1;
       #endif
@@ -3811,8 +3811,7 @@ case SES_SIMPLE_ASSIGN(__) then
   >>
 end equationSimpleAssign;
 
-template equationForLoop(SimEqSystem eq, Context context,
-                              Text &varDecls, Text &auxFunction)
+template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
  "Generates an equation that is a for-loop."
 ::=
 match eq
@@ -3827,9 +3826,8 @@ case SES_FOR_LOOP(__) then
   <<
   <%modelicaLine(eqInfo(eq))%>
   modelica_integer  $P<%printExpStr(iter)%> = 0; // the iterator
-
   // the for-equation
-  for($P<%printExpStr(iter)%> = <%start%>; $P<%printExpStr(iter)%> < <%stop%>; $P<%printExpStr(iter)%>++)
+  for($P<%printExpStr(iter)%> = <%start%>; $P<%printExpStr(iter)%> != <%stop%>+1; $P<%printExpStr(iter)%>++)
   {
     <%crefPart%> += <%expPart%>;
   }
@@ -8706,7 +8704,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   // numerical der()
   case CALL(path=IDENT(name="$_DF$DER"), expLst={arg as CREF(__)}) then
     let namestr = cref(arg.componentRef)
-    '(initial() ? 0 : (($P$TMP$OMC$DT == 0.0) ? ($P$DER<%namestr%>) : ($P$DER<%namestr%> = ((<%namestr%> - _<%namestr%>(1))/$P$TMP$OMC$DT))))'
+    '($P<%BackendDAE.symEulerDT%> == 0.0 ? $P$DER<%namestr%> : (<%namestr%> - _<%namestr%>(1))/$P<%BackendDAE.symEulerDT%>)'
   // round
   case CALL(path=IDENT(name="$_round"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)

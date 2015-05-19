@@ -164,11 +164,6 @@ template ScalarVariableXml(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(__) then
-  if stringEq(crefStrXml(name),"$dummy") then
-  <<>>
-  else if stringEq(crefStrXml(name),"der($dummy)") then
-  <<>>
-  else
   <<
   <%ScalarVariableAttributesXml(simVar)%>
   >>

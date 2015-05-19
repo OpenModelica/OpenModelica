@@ -1,6 +1,4 @@
-srcdir = ..
-top_builddir = ../..
-localedir = $(top_builddir)/build/share/locale/
+localedir = $(OMBUILDDIR)/share/locale/
 locales = de sv es
 
 release:

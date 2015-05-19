@@ -1,5 +1,5 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimController/ISimData.h>
 #include <Core/System/IMixedSystem.h>
@@ -11,7 +11,7 @@
 #include <string.h>
 using std::string;
 #endif
-
+*/
 struct SimSettings
 {
   string solver_name;

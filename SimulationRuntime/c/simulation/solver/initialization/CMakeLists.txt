@@ -6,7 +6,7 @@ SET(initialization_sources  initialization.c)
 
 SET(initialization_headers  initialization.h)
 
-INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/Compiler/runtime/")
+INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/OMCompiler/Compiler/runtime/")
 
 # Library util
 ADD_LIBRARY(initialization ${initialization_sources} ${initialization_headers})

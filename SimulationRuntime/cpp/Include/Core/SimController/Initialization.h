@@ -1,9 +1,9 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/System/ISystemInitialization.h>
 #endif
-
+*/
 class Initialization
 {
 public:

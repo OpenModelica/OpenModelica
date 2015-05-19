@@ -55,6 +55,7 @@ encapsulated package SimCode
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+public import HashTableCrILst;
 public import HashTableCrIListArray;
 public import HpcOmSimCode;
 public import SimCodeVar;
@@ -121,6 +122,7 @@ uniontype SimCode
     //if the variable is not part of an array (if it is a scalar value), then the array has size 1
     HashTableCrIListArray.HashTable varToArrayIndexMapping;
     //*** a protected section *** not exported to SimCodeTV
+    HashTableCrILst.HashTable varToIndexMapping;
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
     Option<BackendMapping> backendMapping;
     //FMI 2.0 data for model structure

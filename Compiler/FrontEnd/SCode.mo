@@ -118,10 +118,7 @@ uniontype Mod "- Modifications"
     Final finalPrefix "final prefix";
     Each  eachPrefix "each prefix";
     list<SubMod> subModLst;
-    Option<tuple<Absyn.Exp,Boolean>> binding "The binding expression of a modification
-    has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
-    should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be
-    type checked -before- a is instantiated, which is the current design in instantiation process.";
+    Option<Absyn.Exp> binding;
     SourceInfo info;
   end MOD;
 
@@ -640,7 +637,7 @@ algorithm
     local
       Final fp;
       Each ep;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Option<Absyn.Exp> binding;
       SourceInfo info;
 
     case MOD(fp, ep, _, binding, info)
@@ -1534,7 +1531,7 @@ algorithm
       Absyn.Exp e1,e2;
       Element elt1,elt2;
 
-    case (MOD(f1,each1,submodlst1,SOME((e1,_)),_),MOD(f2,each2,submodlst2,SOME((e2,_)),_))
+    case (MOD(f1,each1,submodlst1,SOME(e1),_),MOD(f2,each2,submodlst2,SOME(e2),_))
       equation
         true = valueEq(f1,f2);
         true = eachEqual(each1,each2);
@@ -3800,7 +3797,7 @@ protected
   list<SubMod> submods;
 algorithm
   ANNOTATION(modification = MOD(subModLst = submods)) := inAnnotation;
-  NAMEMOD(mod = MOD(info = info, binding = SOME((exp, _)))) := List.selectFirst1(submods, hasNamedAnnotation, inName);
+  NAMEMOD(mod = MOD(info = info, binding = SOME(exp))) := List.selectFirst1(submods, hasNamedAnnotation, inName);
 end getNamedAnnotation;
 
 protected function hasNamedAnnotation
@@ -3885,11 +3882,11 @@ protected function hasBooleanNamedAnnotation2
   input String inName;
   output Boolean outIsMatch;
 algorithm
-  outIsMatch := match(inSubMod, inName)
+  outIsMatch := match inSubMod
     local
       String id;
 
-    case (NAMEMOD(ident = id, mod = MOD(binding = SOME((Absyn.BOOL(value = true), _)))), _)
+    case NAMEMOD(ident = id, mod = MOD(binding = SOME(Absyn.BOOL(value = true))))
       then stringEq(id, inName);
 
     else false;
@@ -3969,7 +3966,7 @@ algorithm
       Final fp;
       Each ep;
       list<SubMod> mods1, mods2;
-      Option<tuple<Absyn.Exp, Boolean>> b;
+      Option<Absyn.Exp> b;
       SourceInfo info;
 
     case (_, COMMENT(NONE(), cmt))
@@ -4008,7 +4005,7 @@ algorithm
     local
       Absyn.Exp binding;
 
-    case MOD(binding = SOME((binding, _))) then SOME(binding);
+    case MOD(binding = SOME(binding)) then SOME(binding);
     else NONE();
   end match;
 end getModifierBinding;
@@ -5171,7 +5168,7 @@ algorithm
       Final f1, f2;
       Each e1, e2;
       list<SubMod> sl1, sl2, sl;
-      Option<tuple<Absyn.Exp, Boolean>> b1, b2, b;
+      Option<Absyn.Exp> b1, b2, b;
       SourceInfo i1, i2;
       Mod m;
 
@@ -5194,9 +5191,9 @@ algorithm
 end mergeModifiers;
 
 protected function mergeBindings
-  input Option<tuple<Absyn.Exp, Boolean>> inNew;
-  input Option<tuple<Absyn.Exp, Boolean>> inOld;
-  output Option<tuple<Absyn.Exp, Boolean>> outBnd;
+  input Option<Absyn.Exp> inNew;
+  input Option<Absyn.Exp> inOld;
+  output Option<Absyn.Exp> outBnd;
 algorithm
   outBnd := match(inNew, inOld)
     case (SOME(_), _) then inNew;

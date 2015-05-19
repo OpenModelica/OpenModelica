@@ -1,11 +1,11 @@
 #pragma once
 
-
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class DiscreteEvents
-#else
+#else*/
 class BOOST_EXTENSION_EVENTHANDLING_DECL DiscreteEvents
-#endif
+/*#endif*/
 {
 public:
   DiscreteEvents(boost::shared_ptr<ISimVars> sim_vars);

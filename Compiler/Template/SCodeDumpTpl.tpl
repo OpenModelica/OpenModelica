@@ -730,8 +730,8 @@ match modifier
     '<%dumpElement(element, each_str, options)%>'
 end dumpRedeclModifier;
 
-template dumpModifierBinding(Option<tuple<Absyn.Exp, Boolean>> binding)
-::= match binding case SOME((exp, _)) then '<%\ %>= <%AbsynDumpTpl.dumpExp(exp)%>'
+template dumpModifierBinding(Option<Absyn.Exp> binding)
+::= match binding case SOME(exp) then '<%\ %>= <%AbsynDumpTpl.dumpExp(exp)%>'
 end dumpModifierBinding;
 
 template dumpSubModifier(SCode.SubMod submod, SCodeDumpOptions options)

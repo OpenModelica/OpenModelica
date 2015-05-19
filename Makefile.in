@@ -57,8 +57,8 @@ ifeq ($(WITH_FMIL),yes)
 BOOTSTRAP_FMIL_DEP=fmil
 endif
 LIB_OMC=lib/@host_short@/omc
-LIBMODELICAEXTERNALC=build/lib/@host_short@/omc/libModelicaExternalC@SHREXT@
-LIBMODELICASTANDARDTABLES=build/lib/@host_short@/omc/libModelicaStandardTables@SHREXT@
+LIBMODELICAEXTERNALC=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaExternalC@SHREXT@
+LIBMODELICASTANDARDTABLES=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaStandardTables@SHREXT@
 
 include Makefile.common
 
@@ -75,8 +75,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
-omc-bootstrapped:
-	$(MAKE) mkbuilddirs
+omc-bootstrapped: mkbuilddirs
 	$(MAKE) bootstrap-dependencies interactive sim-dependencies
 	$(MAKE) -C Compiler/boot
 
@@ -113,7 +112,7 @@ else
 	cp -p 3rdParty/modelica3d/backends/osg-gtk/python/dbus-server.py build/lib/omlibrary-modelica3d/osg-gtk/
 endif
 
-lis: lis-configure mkbuilddirs
+lis: lis-configure
 	@echo Building Lis from sources
 	$(MAKE) -C 3rdParty/lis-1.4.12/src
 	# Copy the library; not headers (as they are not used by the runtime system)

@@ -7,11 +7,11 @@
 # Test if the needed variables are there...
 
 top_builddir = ../..
-builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib/omc
-builddir_inc=$(top_builddir)/build/include/omc
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/omc
+builddir_inc=$(OMBUILDDIR)/include/omc
 
-builddir = ../../build
+builddir = $(OMBUILDDIR)
 
 AR = ar -ru
 CC = gcc
@@ -20,7 +20,7 @@ FC = g77
 CONFIG_CFLAGS = -O2 -falign-functions -msse2 -mfpmath=sse \
 -I$(OMDEV)/lib/3rdParty/Ipopt/include/ \
 -I$(OMDEV)/lib/3rdParty/Sundials/include \
--I$(OMDEV)/include/lis -I$(top_builddir) \
+-I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ \
 -Wall -Wno-unused-variable
 
 # Not needed since we already set fpmath

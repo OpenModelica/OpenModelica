@@ -1,4 +1,5 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Core/System/FactoryExport.h>
 #include <Core/System/AlgLoopDefaultImplementation.h>
 

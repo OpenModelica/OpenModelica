@@ -1722,7 +1722,7 @@ algorithm
     case (SCode.MOD(subModLst = {}, binding = NONE())) then ({}, {});
 
     // mods with binding
-    case (SCode.MOD(subModLst = subs, binding = SOME((e, _))))
+    case (SCode.MOD(subModLst = subs, binding = SOME(e)))
       equation
         se = getExpsFromSubMods(subs);
       then
@@ -2854,7 +2854,7 @@ algorithm
       SCode.Element cls;
       String name, nInner, nDerivedInner;
       list<SCode.SubMod> rest, subs;
-      Option<tuple<Absyn.Exp, Boolean>> b;
+      Option<Absyn.Exp> b;
       SCode.Mod m,m2;
       SCode.SubMod sm;
       SourceInfo info;
@@ -2944,105 +2944,6 @@ algorithm
 
   end matchcontinue;
 end addRecordConstructorsToTheCache;
-
-protected function removeSelfModReference
-"Help function to elabMod, removes self-references in modifiers.
- For instance, A a(x = a.y) the modifier references the component itself.
- This is removed to avoid a circular dependency, resulting in A a(x=y);"
-  input FCore.Cache inCache;
-  input String preId;
-  input SCode.Mod inMod;
-  output FCore.Cache outCache;
-  output SCode.Mod outMod;
-algorithm
-  (outCache,outMod) := matchcontinue(inCache,preId,inMod)
-    local
-      Absyn.Exp e,e1; String id;
-      SCode.Each ea;
-      SCode.Final fi;
-      list<SCode.SubMod> subs;
-      FCore.Cache cache;
-      Integer cnt;
-      Boolean delayTpCheck;
-      SourceInfo info;
-
-    // true to delay type checking/elabExp
-    case(cache,id,SCode.MOD(fi,ea,subs,SOME((e,_)), info))
-      equation
-        (e1,(_,cnt)) = Absyn.traverseExp(e,removeSelfModReferenceExp,(id,0));
-        (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-        delayTpCheck = cnt > 0;
-      then
-        (cache,SCode.MOD(fi,ea,subs,SOME((e1,delayTpCheck)), info));
-
-    case(cache,id,SCode.MOD(fi,ea,subs,NONE(), info))
-      equation
-        (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-      then
-        (cache,SCode.MOD(fi,ea,subs,NONE(), info));
-
-    case (cache,_,_) then (cache,inMod);
-
-  end matchcontinue;
-end removeSelfModReference;
-
-protected function removeSelfModReferenceSubs
-"Help function to removeSelfModeReference"
-  input FCore.Cache inCache;
-  input String id;
-  input list<SCode.SubMod> inSubs;
-  output FCore.Cache outCache;
-  output list<SCode.SubMod> outSubs;
-algorithm
- (outCache,outSubs) := matchcontinue(inCache,id,inSubs)
-   local
-     FCore.Cache cache;
-     list<SCode.Subscript> idxs;
-     list<SCode.SubMod> subs;
-     SCode.Mod mod;
-     String ident;
-
-   case (cache,_,{}) then (cache,{});
-
-   case(cache,_,SCode.NAMEMOD(_,mod)::subs)
-     equation
-       (cache,SCode.NOMOD()) = removeSelfModReference(cache,id,mod);
-       (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-     then (cache,subs);
-
-   case(cache,_,SCode.NAMEMOD(ident,mod)::subs)
-     equation
-       (cache,mod) = removeSelfModReference(cache,id,mod);
-       (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-     then (cache,SCode.NAMEMOD(ident,mod)::subs);
-
-  end matchcontinue;
-end removeSelfModReferenceSubs;
-
-protected function removeSelfModReferenceExp
-"Help function to removeSelfModReference."
-  input Absyn.Exp inExp;
-  input tuple<String,Integer> inTpl;
-  output Absyn.Exp outExp;
-  output tuple<String,Integer> outTpl;
-algorithm
-  (outExp,outTpl) := matchcontinue(inExp,inTpl)
-  local
-    Absyn.ComponentRef cr,cr1;
-    Absyn.Exp e,e1;
-    String id,id2;
-    Integer cnt;
-    case( Absyn.CREF(cr),(id,cnt))
-      equation
-        id2 = Absyn.crefFirstIdent(cr);
-        // prefix == first part of cref
-        0 = stringCompare(id2,id);
-        cr1 = Absyn.crefStripFirst(cr);
-      then (Absyn.CREF(cr1),(id,cnt+1));
-    // other expressions falltrough
-    else (inExp,inTpl);
-  end matchcontinue;
-end removeSelfModReferenceExp;
 
 public function checkMultiplyDeclared
 "Check if variable is multiply declared and
@@ -4982,53 +4883,53 @@ Author: bjozac
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
-algorithm element := matchcontinue(inSubs,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
-  local
-    Absyn.Exp ae;
-    Absyn.ComponentRef acr;
-    Absyn.Path deriveFunc;
-    Option<Absyn.Path> defaultDerivative;
-    SCode.Mod m;
-    list<SCode.SubMod> subs2;
-    Integer order;
-    list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
-    DAE.FunctionDefinition mapper;
-    list<SCode.SubMod> subs;
+algorithm
+  element := matchcontinue inSubs
+    local
+      Absyn.Exp ae;
+      Absyn.ComponentRef acr;
+      Absyn.Path deriveFunc;
+      Option<Absyn.Path> defaultDerivative;
+      SCode.Mod m;
+      list<SCode.SubMod> subs2;
+      Integer order;
+      list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
+      DAE.FunctionDefinition mapper;
+      list<SCode.SubMod> subs;
 
-  case({},_,_,_,_,_,_,_) then fail();
+    case {} then fail();
 
-  case(SCode.NAMEMOD("derivative",(SCode.MOD(subModLst = subs2,binding=SOME(((Absyn.CREF(acr)),_)))))::subs,
-       _,_,_,_,_,_,_)
-    equation
-      deriveFunc = Absyn.crefToPath(acr);
-      (_,deriveFunc) = Inst.makeFullyQualified(inCache,inEnv,deriveFunc);
-      order = getDerivativeOrder(subs2);
+    case SCode.NAMEMOD("derivative",(SCode.MOD(subModLst = subs2,binding=SOME(Absyn.CREF(acr))))) :: subs
+      equation
+        deriveFunc = Absyn.crefToPath(acr);
+        (_,deriveFunc) = Inst.makeFullyQualified(inCache,inEnv,deriveFunc);
+        order = getDerivativeOrder(subs2);
 
-      ErrorExt.setCheckpoint("getDeriveAnnotation3") "don't report errors on modifers in functions";
-      conditionRefs = getDeriveCondition(subs2,elemDecl,inCache,inEnv,inIH,inPrefix,info);
-      ErrorExt.rollBack("getDeriveAnnotation3");
+        ErrorExt.setCheckpoint("getDeriveAnnotation3") "don't report errors on modifers in functions";
+        conditionRefs = getDeriveCondition(subs2,elemDecl,inCache,inEnv,inIH,inPrefix,info);
+        ErrorExt.rollBack("getDeriveAnnotation3");
 
-      conditionRefs = List.sort(conditionRefs,DAEUtil.derivativeOrder);
-      defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
-
-
-      /*print("\n adding conditions on derivative count: " + intString(listLength(conditionRefs)) + "\n");
-      dbgString = Absyn.optPathString(defaultDerivative);
-      dbgString = if_(stringEq(dbgString,""),"", "**** Default Derivative: " + dbgString + "\n");
-      print("**** Function derived: " + Absyn.pathString(baseFunc) + " \n");
-      print("**** Deriving function: " + Absyn.pathString(deriveFunc) + "\n");
-      print("**** Conditions: " + stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") + "\n");
-      print("**** Order: " + intString(order) + "\n");
-      print(dbgString);*/
+        conditionRefs = List.sort(conditionRefs,DAEUtil.derivativeOrder);
+        defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
 
 
-      mapper = DAE.FUNCTION_DER_MAPPER(baseFunc,deriveFunc,order,conditionRefs,defaultDerivative,{});
-    then
-      {mapper};
+        /*print("\n adding conditions on derivative count: " + intString(listLength(conditionRefs)) + "\n");
+        dbgString = Absyn.optPathString(defaultDerivative);
+        dbgString = if_(stringEq(dbgString,""),"", "**** Default Derivative: " + dbgString + "\n");
+        print("**** Function derived: " + Absyn.pathString(baseFunc) + " \n");
+        print("**** Deriving function: " + Absyn.pathString(deriveFunc) + "\n");
+        print("**** Conditions: " + stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") + "\n");
+        print("**** Order: " + intString(order) + "\n");
+        print(dbgString);*/
 
-  case(_ :: subs,_,_,_,_,_,_,_)
-  then getDeriveAnnotation3(subs,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
-end matchcontinue;
+
+        mapper = DAE.FUNCTION_DER_MAPPER(baseFunc,deriveFunc,order,conditionRefs,defaultDerivative,{});
+      then
+        {mapper};
+
+    case _ :: subs
+      then getDeriveAnnotation3(subs,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
+  end matchcontinue;
 end getDeriveAnnotation3;
 
 protected function getDeriveCondition "
@@ -5057,7 +4958,7 @@ algorithm
 
     case({},_,_,_,_,_,_) then {};
 
-    case(SCode.NAMEMOD("noDerivative",(SCode.MOD(binding = SOME(((Absyn.CREF(acr)),_)))))::subs,_,_,_,_,_,_)
+    case(SCode.NAMEMOD("noDerivative",(SCode.MOD(binding = SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
     equation
       name = Absyn.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
@@ -5065,7 +4966,7 @@ algorithm
     then
       (varPos,DAE.NO_DERIVATIVE(DAE.ICONST(99)))::outconds;
 
-    case(SCode.NAMEMOD("zeroDerivative",(SCode.MOD(binding =  SOME(((Absyn.CREF(acr)),_)) )))::subs,_,_,_,_,_,_)
+    case(SCode.NAMEMOD("zeroDerivative",(SCode.MOD(binding =  SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
     equation
       name = Absyn.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
@@ -5161,7 +5062,7 @@ algorithm defaultDerivative := matchcontinue(inSubs,inCache,inEnv,inPrefix)
     list<SCode.SubMod> subs;
 
   case({},_,_,_) then NONE();
-  case(SCode.NAMEMOD("derivative",(SCode.MOD(binding =SOME(((Absyn.CREF(acr)),_)))))::_,_,_,_)
+  case(SCode.NAMEMOD("derivative",(SCode.MOD(binding =SOME(Absyn.CREF(acr)))))::_,_,_,_)
     equation
       p = Absyn.crefToPath(acr);
       (_,p) = Inst.makeFullyQualified(inCache,inEnv, p);
@@ -5182,7 +5083,7 @@ algorithm order := matchcontinue(inSubs)
     SCode.Mod m;
     list<SCode.SubMod> subs;
   case({}) then 1;
-  case(SCode.NAMEMOD("order",(SCode.MOD(binding= SOME(((Absyn.INTEGER(order)),_)))))::_)
+  case(SCode.NAMEMOD("order",(SCode.MOD(binding= SOME((Absyn.INTEGER(order))))))::_)
   then order;
   case(_::subs) then getDerivativeOrder(subs);
   end matchcontinue;
@@ -5238,24 +5139,24 @@ algorithm
       list<SCode.SubMod> cdr;
     case ({}) then DAE.NO_INLINE();
 
-    case (SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: cdr)
+    case (SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: cdr)
       equation
         failure(DAE.AFTER_INDEX_RED_INLINE() = isInlineFunc2(cdr));
       then DAE.NORM_INLINE();
 
-    case(SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
+    case(SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
 
-    case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
+    case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
 
-    case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
+    case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
 
-    case (SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
+    case (SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
 
-    case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
+    case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true)))) :: _)
       then DAE.EARLY_INLINE();
 
     case(_ :: cdr) then isInlineFunc2(cdr);
@@ -7126,7 +7027,7 @@ algorithm
       SCode.Element element;
       SCode.Each each_;
       list<SCode.SubMod> subs;
-      Option<tuple<Absyn.Exp,Boolean>> eq;
+      Option<Absyn.Exp> eq;
       SourceInfo info;
 
     case(SCode.NOMOD()) then SCode.NOMOD();
@@ -7286,19 +7187,19 @@ algorithm
     SCode.Mod mod;
     SCode.Final f;
     list<SCode.SubMod> submods,submods2;
-    Option<tuple<Absyn.Exp,Boolean>> tup,tup2;
+    Option<Absyn.Exp> binding;
     list<list<Absyn.Exp>> exps;
     list<Option<Absyn.Exp>> expOpts;
     SourceInfo info;
 
     case (_,_,_,SCode.NOMOD(),_,_,_) then SCode.NOMOD();
     case (_,_,_,mod as SCode.REDECL(),_,_,_) then mod;  // Though redeclarations may need some processing as well
-    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods,tup, info),exps,expOpts,_)
+    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods, binding, info),exps,expOpts,_)
       equation
         submods2 = traverseModAddDims5(cache,env,pre,submods,exps,expOpts);
-        tup2 = insertSubsInTuple2(tup,exps);
+        binding = insertSubsInBinding(binding, exps);
       then
-        SCode.MOD(f, SCode.NOT_EACH(),submods2,tup2, info);
+        SCode.MOD(f, SCode.NOT_EACH(),submods2, binding, info);
   end match;
 end traverseModAddDims4;
 
@@ -7330,31 +7231,29 @@ algorithm
   end match;
 end traverseModAddDims5;
 
-protected function insertSubsInTuple2
-input Option<tuple<Absyn.Exp,Boolean>> inOpt;
+protected function insertSubsInBinding
+input Option<Absyn.Exp> inOpt;
 input list<list<Absyn.Exp>> inExps;
-output Option<tuple<Absyn.Exp,Boolean>> outOpt;
+output Option<Absyn.Exp> outOpt;
 algorithm
   outOpt := match(inOpt,inExps)
   local
     list<list<Absyn.Exp>> exps;
     Absyn.Exp e,e2;
-    Boolean b;
     list<list<Absyn.Subscript>> subs;
     list<list<Absyn.Ident>> vars;
-    tuple<Absyn.Exp,Boolean> tp;
 
     case (NONE(),_) then NONE();
-    case (SOME((e,b)), exps)
+    case (SOME(e), exps)
       equation
         vars = generateUnusedNamesLstCall(e,exps);
         subs = List.mapList(vars,stringSub);
         (e2,_) = Absyn.traverseExp(e,Absyn.crefInsertSubscriptLstLst, subs);
         e2 = wrapIntoForLst(e2,vars,exps);
       then
-        SOME((e2,b));
+        SOME(e2);
   end match;
-end insertSubsInTuple2;
+end insertSubsInBinding;
 
 protected function generateUnusedNames
 "Generates a list of variable names which are not used in any of expressions.

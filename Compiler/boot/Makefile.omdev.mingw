@@ -2,7 +2,7 @@ CC=gcc
 CXX=g++
 CFLAGS=-g -falign-functions
 TOP_DIR=../../
-OMHOME=../../build
+OMHOME=$(OMBUILDDIR)
 LDFLAGS=-L./ -lomparse -lomcruntime -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lModelicaExternalC -lm \
@@ -20,7 +20,7 @@ SHREXT=.dll
 OMC=$(OMHOME)/bin/omc.exe
 RPATH=
 #STATIC=static
-BOOTSTRAP_OMC=../../build/bin/omc.exe
+BOOTSTRAP_OMC=$(OMBUILDDIR)/bin/omc.exe
 defaultMakefileTarget=Makefile.omdev.mingw
 LIB_OMC=lib/omc
 

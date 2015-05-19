@@ -309,11 +309,13 @@ IF(USE_SUNDIALS)
   GET_FILENAME_COMPONENT(SUNDIALS_LIBS "${SUNDIALS_NVECSERIAL_LIB}" PATH)
 
   FIND_LIBRARY(SUNDIALS_CVODES_LIB "sundials_cvodes" PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME}  $ENV{SUNDIALS_ROOT}/lib)
+  include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
   IF(NOT SUNDIALS_CVODES_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_cvodes!")
   ENDIF()
 
   FIND_LIBRARY(SUNDIALS_IDA_LIB "sundials_idas" PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME}  $ENV{SUNDIALS_ROOT}/lib)
+  include_directories(${SUNDIALS_INCLUDE_DIR}/ida ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
   IF(NOT SUNDIALS_IDA_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_ida!")
   ENDIF()
@@ -377,7 +379,6 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 #build of simulation.core
 include_directories ("Include")
 include_directories ("Solver")
-
 add_subdirectory (Core/Modelica)
 add_subdirectory (Core/Math)
 add_subdirectory (SimCoreFactory/OMCFactory)

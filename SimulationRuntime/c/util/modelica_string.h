@@ -32,6 +32,7 @@
 #define MODELICA_STRING_H_
 
 #include "openmodelica.h"
+#include <stdarg.h>
 
 #define stringCompare(x,y) mmc_stringCompare(x,y)
 #define stringEqual(x,y) (MMC_STRLEN(x) == MMC_STRLEN(y) && !stringCompare(x,y))
@@ -60,5 +61,8 @@ extern modelica_string modelica_enumeration_to_modelica_string(modelica_integer 
 /* Escape string */
 int omc__escapedStringLength(const char* str, int nl, int *hasEscape);
 extern char* omc__escapedString(const char* str, int nl);
+
+int GC_vasprintf(char **strp, const char *fmt, va_list ap);
+int GC_asprintf(char **strp, const char *fmt, ...);
 
 #endif

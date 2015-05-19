@@ -4,7 +4,13 @@ template<typename T>
 /**
  * An array-wrapper that will align the array along full cache lines.
  */
+/*
+#ifdef RUNTIME_STATIC_LINKING
+class AlignedArray
+#else
+ */
 class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
+/*#endif*/
 {
   private:
     T *array;
@@ -42,16 +48,22 @@ class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
       free(p1);
     }
 
-    FORCE_INLINE inline T* get()
+    FORCE_INLINE T* get()
     {
       return array;
     }
 };
+
 /**
  *  SimVars class, implements ISimVars interface
  *  SimVars stores all model variable in continuous block of memory
  */
+ /*
+#ifdef RUNTIME_STATIC_LINKING
+class SimVars: public ISimVars
+#else*/
 class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
+/*#endif*/
 {
   public:
     SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
@@ -61,9 +73,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual bool& initBoolVar(size_t i);
     virtual double* getStateVector();
     virtual double* getDerStateVector();
-    virtual const double* getRealVarsVector() const;
-    virtual const int* getIntVarsVector() const;
-    virtual const bool* getBoolVarsVector() const;
+    virtual double* getRealVarsVector() const;
+    virtual int* getIntVarsVector() const;
+    virtual bool* getBoolVarsVector() const;
     virtual void setRealVarsVector(const double* vars);
     virtual void setIntVarsVector(const int* vars);
     virtual void setBoolVarsVector(const bool* vars);
@@ -85,6 +97,25 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual void setPreVar(double& var);
     virtual void setPreVar(int& var);
     virtual void setPreVar(bool& var);
+
+  protected:
+    //see: http://stackoverflow.com/questions/12504776/aligned-malloc-in-c
+    void *alignedMalloc(size_t required_bytes, size_t alignment) {
+        void *p1;
+        void **p2;
+
+        int offset = alignment - 1 + sizeof(void*);
+        p1 = malloc(required_bytes + offset);               // the line you are missing
+        p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));  //line 5
+        p2[-1]=p1; //line 6
+        return p2;
+    }
+
+    void alignedFree( void* p ) {
+        void* p1 = ((void**)p)[-1];         // get the pointer to the buffer we allocated
+        free( p1 );
+    }
+
   private:
     double* getRealVar(size_t i);
     int* getIntVar(size_t i);
@@ -95,9 +126,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     size_t _dim_pre_vars;  //number of all pre variables (real algebraic vars,discrete algebraic vars, boolean algebraic vars, integer algebraic vars, state vars, der state vars)
     size_t _dim_z;  // number of all state variables
     size_t _z_i;  //start index of state vector in real_vars list
-    boost::shared_ptr<AlignedArray<double> > _real_vars;  //array for all model real variables of size dim_real
-    boost::shared_ptr<AlignedArray<int> > _int_vars;    //array for all model int variables of size dim_int
-    boost::shared_ptr<AlignedArray<bool> > _bool_vars;  //array for all model bool variables of size dim_bool
+    double *_real_vars;  //array for all model real variables of size dim_real
+    int* _int_vars;    //array for all model int variables of size dim_int
+    bool* _bool_vars;  //array for all model bool variables of size dim_bool
     //Stores all variables indices (maps a model variable address to an index in the simvars memory)
     boost::unordered_map<const double*, unsigned int> _pre_real_vars_idx;
     boost::unordered_map<const int*, unsigned int> _pre_int_vars_idx;

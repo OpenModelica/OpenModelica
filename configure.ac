@@ -228,12 +228,12 @@ if test "$OMC" = "no" ; then
     AC_MSG_ERROR([cross-compilation attempt detected, but no omc executable was given])
   fi
   AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
-  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
+  OMC="$OMBUILDDIR/bin/omc"
 elif "$OMC" +version > /dev/null 2>&1; then
   AC_MSG_RESULT([$OMC])
 else
   AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
-  OMC="$ac_pwd$ac_dir_suffix/$OMBUILDDIR/bin/omc"
+  OMC="$OMBUILDDIR/bin/omc"
 fi
 
 dnl Checks for libraries.
@@ -269,10 +269,10 @@ AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
 # AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
 
 AC_MSG_CHECKING([for antlr.Tool support])
-mkdir -p $OMBUILDDIR/share/omc/java
+mkdir -p "$OMBUILDDIR/share/omc/java"
 cp "3rdParty/antlr/3.2/tool/antlr-3.2.jar" "3rdParty/antlr/3.2/tool/antlr-2.7.7.jar" $OMBUILDDIR/share/omc/java/
 echo "" > $$grammar.g
-if java -cp $OMBUILDDIR/share/omc/java/antlr-3.2.jar antlr.Tool $$grammar.g ; then
+if java -cp "$OMBUILDDIR/share/omc/java/antlr-3.2.jar" antlr.Tool $$grammar.g ; then
   rm -f $$grammar.g
   AC_MSG_RESULT([yes])
 else
@@ -757,8 +757,8 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
 
 AC_MSG_CHECKING([for revision])
 SOURCE_REVISION=""
-test -f REVISION && SOURCE_REVISION=`head -n1 REVISION`
-test -z "$SOURCE_REVISION" && test -d .git && SOURCE_REVISION=`git describe`
+test -f REVISION && SOURCE_REVISION=`test -f REVISION && head -n1 REVISION`
+test -z "$SOURCE_REVISION" && test -e .git && SOURCE_REVISION=`git describe --dirty --match "v*.*" --always`
 test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
 AC_MSG_RESULT([$SOURCE_REVISION])

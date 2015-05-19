@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/SimController/ISimController.h>
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 
 class ISimController;
 

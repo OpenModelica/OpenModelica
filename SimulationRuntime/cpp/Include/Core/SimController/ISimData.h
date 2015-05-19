@@ -1,11 +1,11 @@
 #pragma once
-#include <Core/DataExchange/ISimVar.h>
 
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <string.h>
 #include <boost/numeric/ublas/fwd.hpp>
 #endif
-
+*/
 namespace uBlas = boost::numeric::ublas;
 
 class ISimData

@@ -1,12 +1,13 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 
 #elif defined(OMC_BUILD)
 
 
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/Solver/FactoryExport.h>
 

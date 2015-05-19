@@ -378,15 +378,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   {
     if (data->callback->initialAnalyticJacobianA(data))
     {
-      /* TODO: check that the one states is dummy */
-      if(data->modelData.nStates == 1)
-      {
-        infoStreamPrint(LOG_SOLVER, 0, "No SparsePattern, since there are no states! Switch back to normal.");
-      }
-      else
-      {
-        infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
-      }
+      infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       dasslData->dasslJacobian = DASSL_INTERNALNUMJAC;
     }
     else

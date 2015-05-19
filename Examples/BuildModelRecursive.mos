@@ -26,7 +26,7 @@ else
 end if;
 
 // May be overridde by CustomCommands.mos
-referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/libraries/msl32/ReferenceFiles";
+referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/ReferenceFiles/msl32";
 referenceFileExtension:="mat";
 referenceFileNameDelimiter:=".";
 
@@ -178,13 +178,17 @@ if regularFileExists(compareVarsFile) then
   vars := compareVars;
   variableFilter := sum(stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\") + \"|\" for s in vars) + \"time\";
   numCompared := size(vars,1);
+  emit_protected := \" -emit_protected\";
 elseif referenceExists then
-  vars := readSimulationResultVars(reference,readParameters=false);
-  variableFilter := sum(stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\") + \"|\" for s in vars);
+  vars := readSimulationResultVars(reference, readParameters=true, openmodelicaStyle=true);
+  variableFilter := sum(stringReplace(stringReplace(stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\"),\"(\",\".\"),\")\",\".\") + \"|\" for s in vars);
   numCompared := size(vars,1);
+  emit_protected := \" -emit_protected\";
+  print(variableFilter + \"\n\");
 else
   variableFilter := \"\";
   outputFormat := \"empty\";
+  emit_protected := \"\";
 end if;
 
 writeFile(\"files/" + s + ".uses\", sum(typeNameString(c) + \"\n\" for c in OpenModelica.Scripting.getUsedClassNames("+s+")));getErrorString();
@@ -223,7 +227,7 @@ timeDiff := -1.0;
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
-simRes  := if not buildRes then false else 0 == system(\"./"+s+" \"+simFlags+\" > \"+simFile+\" 2>&1\");
+simRes  := if not buildRes then false else 0 == system(\"./"+s+" \"+simFlags+emit_protected+\" > \"+simFile+\" 2>&1\");
 if buildRes and javascript then
   system(\"cp " + s + ".js " + s + "_info.xml " + s + "_init.xml " + s + ".md files/\");
 end if;
@@ -270,7 +274,13 @@ if simRes then
   prefix := \"files/"+s+".diff\";
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
+    getErrorString();
     (referenceOK,diffVars) := diffSimulationResults(resFile,reference,prefix,relTol=reference_reltol,relTolDiffMinMax=reference_reltolDiffMinMax,rangeDelta=reference_rangeDelta);
+    errVerify := getErrorString();
+    if errVerify <> \"\" then
+      writeFile(errFile, \"\\nVariables in the reference:\"+sum(var+\",\" for var in OpenModelica.Scripting.readSimulationResultVars(reference, openmodelicaStyle=true)), append=true);
+      writeFile(errFile, \"\\nVariables in the result:\"+sum(var+\",\" for var in OpenModelica.Scripting.readSimulationResultVars(resFile))+\"\\n\" + errVerify, append=true);
+    end if;
     if referenceOK then
       system(\"touch "+s+".verifysuccess\");
     end if;

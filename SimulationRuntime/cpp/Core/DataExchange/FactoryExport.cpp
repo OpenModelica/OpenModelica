@@ -1,5 +1,6 @@
 #pragma once
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #if defined(__TRICORE__) || defined(__vxworks)
 
 
@@ -25,7 +26,8 @@
 
 #elif defined(SIMSTER_BUILD)
 
-  #include <Core/Modelica.h>
+  #include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
   #include <Core/DataExchange/SimData.h>
 
   /*Simster factory*/

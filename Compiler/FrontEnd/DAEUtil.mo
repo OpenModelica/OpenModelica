@@ -7008,6 +7008,8 @@ algorithm
   oIndex := match(iSubscript)
     case(DAE.INDEX(DAE.ICONST(integer=index)))
       then index;
+    case(DAE.INDEX(DAE.ENUM_LITERAL(index=index)))
+      then index;
     else
       then -1;
   end match;

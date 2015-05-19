@@ -39,9 +39,9 @@
 #include "SimulationResults.c"
 #include "SimulationResultsCmp.c"
 
-void* SimulationResults_readVariables(const char *filename, int readParameters)
+void* SimulationResults_readVariables(const char *filename, int readParameters, int omcStyle)
 {
-  return SimulationResultsImpl__readVars(filename,readParameters,&simresglob);
+  return SimulationResultsImpl__readVars(filename, readParameters, omcStyle, &simresglob);
 }
 
 extern void* _ValuesUtil_reverseMatrix(void*);

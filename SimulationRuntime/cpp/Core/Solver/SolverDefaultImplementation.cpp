@@ -1,4 +1,5 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Core/Solver/FactoryExport.h>
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <Core/Solver/SolverSettings.h>

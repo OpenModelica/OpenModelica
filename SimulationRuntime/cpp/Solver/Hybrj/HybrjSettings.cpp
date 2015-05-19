@@ -1,4 +1,5 @@
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
  
 
 #include <Solver/Hybrj/HybrjSettings.h>

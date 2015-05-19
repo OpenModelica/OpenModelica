@@ -1,10 +1,10 @@
 #pragma once
-
+/*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
 #include <Solver/UmfPack/UmfPack.h>
 #include <Solver/UmfPack/UmfPackSettings.h>
 #include <Core/Solver/IAlgLoopSolver.h>
-
+*/
 template<class T>
 struct ObjectFactory;
 

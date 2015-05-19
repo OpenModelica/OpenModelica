@@ -7041,7 +7041,9 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
         (cache,e,prop,st) = BackendInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, st, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
-        ErrorExt.rollBack("elabCall_InteractiveFunction");
+        if impl==true then
+          ErrorExt.rollBack("elabCall_InteractiveFunction");
+        end if;
       then
         (cache,e,prop,st);
     else
@@ -9768,7 +9770,7 @@ algorithm
       slot := matchcontinue slot
         case SLOT(defaultArg = defarg as DAE.FUNCARG())
           algorithm
-            SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((e, _)))) :=
+            SCode.COMPONENT(modifications = SCode.MOD(binding = SOME(e))) :=
               SCode.getElementNamed(defarg.name, inClass);
 
             (outCache, exp, DAE.PROP(ty, c), _) :=
