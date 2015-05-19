@@ -154,7 +154,7 @@ package drumBoiler
       model Band
         parameter Real MaxValue(start = 1e120);
         parameter Real MinValue(start = -1e120);
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
       protected
         Real con(min = MinValue, max = MaxValue) = gain * u annotation(isConstraint = true);
@@ -164,7 +164,7 @@ package drumBoiler
       model BandFinal
         parameter Real MaxValue(start = 1e120);
         parameter Real MinValue(start = -1e120);
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
       protected
         Real con(min = MinValue, max = MaxValue) = gain * u annotation(isFinalConstraint = true);
@@ -172,7 +172,7 @@ package drumBoiler
       end BandFinal;
 
       model GreaterEqual
-        parameter Real gain(start = 1, min = 0);
+        parameter Real gain(min = 0)=1;
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 180), iconTransformation(origin = {116, 0}, extent = {{10, -10}, {-10, 10}}, rotation = 0)));
       protected
@@ -181,7 +181,7 @@ package drumBoiler
       end GreaterEqual;
 
       model LessEqual
-        parameter Real gain(start = 1, min = 0);
+        parameter Real gain(min = 0)=1;
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 180), iconTransformation(origin = {112, 0}, extent = {{10, -10}, {-10, 10}}, rotation = 0)));
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
       protected
@@ -190,7 +190,7 @@ package drumBoiler
       end LessEqual;
 
       model Equal
-        parameter Real gain(start = 1, min = 0);
+        parameter Real gain(min = 0) = 1;
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 180), iconTransformation(origin = {116, 0}, extent = {{10, -10}, {-10, 10}}, rotation = 0)));
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
       protected
@@ -199,7 +199,7 @@ package drumBoiler
       end Equal;
 
       model GreaterEqualFinal
-        parameter Real gain(start = 1, min = 0);
+        parameter Real gain(min = 0) = 1;
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 180), iconTransformation(origin = {112, 0}, extent = {{10, -10}, {-10, 10}}, rotation = 0)));
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
       protected
@@ -208,7 +208,7 @@ package drumBoiler
       end GreaterEqualFinal;
 
       model LessEqualFinal
-        parameter Real gain(start = 1, min = 0);
+        parameter Real gain(min = 0) = 1;
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 180), iconTransformation(origin = {112, 0}, extent = {{10, -10}, {-10, 10}}, rotation = 0)));
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
       protected
@@ -217,7 +217,7 @@ package drumBoiler
       end LessEqualFinal;
 
       model EqualFinal
-        parameter Real gain(start = 1, min = 0);
+        parameter Real gain(min = 0)=1;
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 180), iconTransformation(origin = {112, -2}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-110, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-114, 4}, extent = {{-14, -18}, {14, 10}}, rotation = 0)));
       protected
@@ -230,7 +230,7 @@ package drumBoiler
     package ObjectFunction
       model MinimizeFinal
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-117, 1}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-118, -6}, extent = {{-18, -12}, {18, 24}}, rotation = 0)));
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
       protected
         Real signal = gain * u annotation(isMayer = true);
         annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2}), graphics = {Text(origin = {-25, 38}, extent = {{-35, 18}, {105, -70}}, textString = "minimize signal"), Text(origin = {-23, 14}, extent = {{-35, 18}, {105, -70}}, textString = "at the end time point")}));
@@ -238,7 +238,7 @@ package drumBoiler
 
       model MaximizeFinal
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-117, 1}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-118, -6}, extent = {{-18, -12}, {18, 24}}, rotation = 0)));
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
       protected
         Real signal = -gain * u annotation(isMayer = true);
         annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2}), graphics = {Text(origin = {-43, 38}, extent = {{-35, 18}, {105, -70}}, textString = "maximize signal"), Text(origin = {-43, 18}, extent = {{-35, 18}, {105, -70}}, textString = "at the end time point")}));
@@ -246,7 +246,7 @@ package drumBoiler
 
       model Maximize
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-117, 1}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-118, -6}, extent = {{-18, -12}, {18, 24}}, rotation = 0)));
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
       protected
         Real signal = -gain * u annotation(isLagrange = true);
         annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2}), graphics = {Text(origin = {-29, 38}, extent = {{-35, 18}, {105, -70}}, textString = "maximize signal"), Text(origin = {-29, 14}, extent = {{-35, 18}, {105, -70}}, textString = "over the time")}));
@@ -254,14 +254,14 @@ package drumBoiler
 
       model Minimize
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-117, 1}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-118, -6}, extent = {{-18, -12}, {18, 24}}, rotation = 0)));
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
       protected
         Real signal = gain * u annotation(isLagrange = true);
         annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2}), graphics = {Text(origin = {-35, 38}, extent = {{-35, 18}, {105, -70}}, textString = "minimize signal"), Text(origin = {-35, 12}, extent = {{-35, 18}, {105, -70}}, textString = "over the time")}));
       end Minimize;
 
       model MinimizeDifferenc
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-117, 81}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-118, -6}, extent = {{-18, -72}, {18, -36}}, rotation = 0)));
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {-118, -60}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-116, 80}, extent = {{-17, -17}, {17, 17}}, rotation = 0)));
       protected
@@ -270,7 +270,7 @@ package drumBoiler
       end MinimizeDifferenc;
 
       model MinimizeDifferencFinal
-        parameter Real gain(start = 1);
+        parameter Real gain=1;
         Modelica.Blocks.Interfaces.RealInput u annotation(Placement(visible = true, transformation(origin = {-117, 81}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-118, -6}, extent = {{-18, -72}, {18, -36}}, rotation = 0)));
         Modelica.Blocks.Interfaces.RealInput u1 annotation(Placement(visible = true, transformation(origin = {-118, -60}, extent = {{-17, -17}, {17, 17}}, rotation = 0), iconTransformation(origin = {-116, 80}, extent = {{-17, -17}, {17, 17}}, rotation = 0)));
       protected
