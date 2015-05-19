@@ -27,7 +27,7 @@ if not b then
   exit(1);
 end if;
 
-debug := false;
+debug := true;
 startRun := true;
 alarm(timeout);
 print(if debug then "Start script ModelTesting.mos\n" else "");
