@@ -1268,9 +1268,6 @@ algorithm
     print("There are simCode-equations multiple times in the graph structure.\n");
   end if;
   targetSize := listLength(List.flatten(iOdeEqs));
-  if (intEq(targetSize,1) and SimCodeUtil.isDummyEq(listHead(listHead(iOdeEqs)))) then
-    targetSize := 0;
-  end if;
   oIsCorrect := intEq(targetSize,actualSize);
   if(oIsCorrect) then
     print("the ODE-system size is correct("+intString(actualSize)+")\n");

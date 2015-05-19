@@ -317,10 +317,6 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   std::string varfilter(MMC_STRINGDATA(variableFilter));
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
-  if (modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name, "$dummy")) {
-    modelData->realVarsData[0].filterOutput = 1;
-    modelData->realVarsData[modelData->nStates].filterOutput = 1;
-  }
 
   if(0 == strcmp(filter, ".*")) { // This matches all variables, so we don't need to do anything
     return;

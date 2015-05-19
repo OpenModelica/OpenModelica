@@ -149,7 +149,6 @@ algorithm
 
   // prepare a DAE
   DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-  DAE := BackendDAEUtil.addDummyStateIfNeeded(DAE);
   DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
   DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
