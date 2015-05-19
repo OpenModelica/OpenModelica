@@ -3460,15 +3460,6 @@ int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void
 >>
 case _ then
   match sparsepattern
-  case {(_,{})} then
-    <<
-    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
-    {
-      TRACE_PUSH
-      TRACE_POP
-      return 1;
-    }
-    >>
   case _ then
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
