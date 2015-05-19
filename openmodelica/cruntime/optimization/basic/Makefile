@@ -47,6 +47,8 @@ TFC7.mos \
 TFC8.mos \
 TFCtestFlag.mos \
 TT.mos \
+TT2.mos \
+TT3.mos \
 
 
 # test that currently fail. Move up when fixed. 
