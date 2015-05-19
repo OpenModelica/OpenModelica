@@ -499,6 +499,34 @@ void Component::hideResizerItems()
   mpBottomRightResizerItem->setPassive();
 }
 
+void Component::getScale(qreal *sx, qreal *sy)
+{
+  qreal angle = mpTransformation->getRotateAngle();
+  if (transform().type() == QTransform::TxScale) {
+    *sx = transform().m11() / (cos(angle * (M_PI / 180)));
+    *sy = transform().m22() / (cos(angle * (M_PI / 180)));
+  } else {
+    *sx = transform().m12() / sin(angle * (M_PI / 180));
+    *sy = -transform().m21() / sin(angle * (M_PI / 180));
+  }
+}
+
+void Component::setOriginAndExtents()
+{
+  if (!mpTransformation->hasOrigin()) {
+    QPointF extent1, extent2;
+    qreal sx, sy;
+    getScale(&sx, &sy);
+    extent1.setX(sx * boundingRect().left());
+    extent1.setY(sy * boundingRect().top());
+    extent2.setX(sx * boundingRect().right());
+    extent2.setY(sy * boundingRect().bottom());
+    mpTransformation->setOrigin(scenePos());
+    mpTransformation->setExtent1(extent1);
+    mpTransformation->setExtent2(extent2);
+  }
+}
+
 QRectF Component::boundingRect() const
 {
   qreal left = mpCoOrdinateSystem->getExtent().at(0).x();
@@ -706,11 +734,7 @@ QString Component::getTransformationExtent()
 
 void Component::applyRotation(qreal angle)
 {
-  if (!mpTransformation->hasOrigin()) {
-    mpTransformation->setOrigin(scenePos());
-    mpTransformation->setExtent1(sceneBoundingRect().topLeft() - scenePos());
-    mpTransformation->setExtent2(sceneBoundingRect().bottomRight() - scenePos());
-  }
+  setOriginAndExtents();
   mpTransformation->setRotateAngle(angle);
   setTransform(mpTransformation->getTransformationMatrix());
   showResizerItems();
@@ -974,9 +998,16 @@ void Component::resizeComponent(QPointF newPosition)
   mpResizerRectangle->setTransform(mTransform * tmpTransform); //Multiplies the previous transform * the temporary
   setTransform(mTransform * tmpTransform);
   // set the final resize on component.
+  QPointF extent1, extent2;
+  qreal sx, sy;
+  getScale(&sx, &sy);
+  extent1.setX(sx * boundingRect().left());
+  extent1.setY(sy * boundingRect().top());
+  extent2.setX(sx * boundingRect().right());
+  extent2.setY(sy * boundingRect().bottom());
   mpTransformation->setOrigin(scenePos());
-  mpTransformation->setExtent1(sceneBoundingRect().topLeft() - scenePos());
-  mpTransformation->setExtent2(sceneBoundingRect().bottomRight() - scenePos());
+  mpTransformation->setExtent1(extent1);
+  mpTransformation->setExtent2(extent2);
   setTransform(mpTransformation->getTransformationMatrix());
   // let connections know that component has changed.
   emit componentTransformChange();
@@ -1043,30 +1074,48 @@ void Component::rotateAntiClockwise()
   emit componentRotationChange();
 }
 
+/*!
+ * \brief Component::flipHorizontal
+ * Flips the component horizontally.
+ */
 void Component::flipHorizontal()
 {
-  QPointF extent1, extent2;
-  extent1 = mpTransformation->getExtent1();
-  extent1.setX(extent1.x() * -1);
-  mpTransformation->setExtent1(extent1);
-  extent2 = mpTransformation->getExtent2();
-  extent2.setX(extent2.x() * -1);
-  mpTransformation->setExtent2(extent2);
+  setOriginAndExtents();
+  QPointF extent1 = mpTransformation->getExtent1();
+  QPointF extent2 = mpTransformation->getExtent2();
+  // do the flipping based on the component angle.
+  qreal angle = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
+  if ((angle >= 0 && angle < 90) || (angle >= 180 && angle < 270)) {
+    mpTransformation->setExtent1(QPointF(extent2.x(), extent1.y()));
+    mpTransformation->setExtent2(QPointF(extent1.x(), extent2.y()));
+  } else if ((angle >= 90 && angle < 180) || (angle >= 270 && angle < 360)) {
+    mpTransformation->setExtent1(QPointF(extent1.x(), extent2.y()));
+    mpTransformation->setExtent2(QPointF(extent2.x(), extent1.y()));
+  }
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentRotationChange();
   emit componentTransformHasChanged();
   showResizerItems();
 }
 
+/*!
+ * \brief Component::flipVertical
+ * Flips the component vertically.
+ */
 void Component::flipVertical()
 {
-  QPointF extent1, extent2;
-  extent1 = mpTransformation->getExtent1();
-  extent1.setY(extent1.y() * -1);
-  mpTransformation->setExtent1(extent1);
-  extent2 = mpTransformation->getExtent2();
-  extent2.setY(extent2.y() * -1);
-  mpTransformation->setExtent2(extent2);
+  setOriginAndExtents();
+  QPointF extent1 = mpTransformation->getExtent1();
+  QPointF extent2 = mpTransformation->getExtent2();
+  // do the flipping based on the component angle.
+  qreal angle = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
+  if ((angle >= 0 && angle < 90) || (angle >= 180 && angle < 270)) {
+    mpTransformation->setExtent1(QPointF(extent1.x(), extent2.y()));
+    mpTransformation->setExtent2(QPointF(extent2.x(), extent1.y()));
+  } else if ((angle >= 90 && angle < 180) || (angle >= 270 && angle < 360)) {
+    mpTransformation->setExtent1(QPointF(extent2.x(), extent1.y()));
+    mpTransformation->setExtent2(QPointF(extent1.x(), extent2.y()));
+  }
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentRotationChange();
   emit componentTransformHasChanged();
