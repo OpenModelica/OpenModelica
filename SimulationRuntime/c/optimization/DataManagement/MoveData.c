@@ -92,7 +92,7 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
   optData->data = data;
 
   optData->v0 = (modelica_real*)malloc(nReal*sizeof(modelica_real));
-  memcpy(optData->v0, data->localData[1]->realVars, nReal*sizeof(modelica_real));
+  memcpy(optData->v0, data->localData[0]->realVars, nReal*sizeof(modelica_real));
 
   pickUpStates(optData);
 
