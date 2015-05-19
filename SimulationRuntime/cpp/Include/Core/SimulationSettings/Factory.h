@@ -1,14 +1,14 @@
 #pragma once
 
 
-/*includes removed for static linking not needed any more 
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimulationSettings//ISettingsFactory.h>
 #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
 class  SettingsFactory : public ISettingsFactory
                        , public StaticSolverSettingsOMCFactory<OMCFactory>
 #else
- */                  
+ */
 
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 class  SettingsFactory : public ISettingsFactory

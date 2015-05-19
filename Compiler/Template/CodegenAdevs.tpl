@@ -443,10 +443,10 @@ template declareExtraResiduals(list<SimEqSystem> allEquations)
 ::=
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then declareExtraResiduals(fill(eq.cont,1))
-     case eq as SES_NONLINEAR(__) then
+     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
      <<
-     void residualFunc<%index%>_cpp(double* y, double* res);
-     void solve_residualFunc<%index%>_cpp();
+     void residualFunc<%nls.index%>_cpp(double* y, double* res);
+     void solve_residualFunc<%nls.index%>_cpp();
      >>
    )
    ;separator="\n")
@@ -457,36 +457,36 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
 ::=
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then makeExtraResiduals(fill(eq.cont,1),name)
-     case eq as SES_NONLINEAR(__) then
-     let size = listLength(crefs)
+     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+     let size = listLength(nls.crefs)
      let &varDecls = buffer "" /*BUFD*/
-     let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
+     let algs = (nls.eqs |> eq2 as SES_ALGORITHM(__) =>
          equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/)
        ;separator="\n")
-     let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
+     let prebody = (nls.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
          equation_(eq2, contextOther, &varDecls /*BUFD*/)
        ;separator="\n")
-     let arrayprebody = (eq.eqs |> eq2 as SES_ARRAY_CALL_ASSIGN(__) =>
+     let arrayprebody = (nls.eqs |> eq2 as SES_ARRAY_CALL_ASSIGN(__) =>
          equation_(eq2, contextOther, &varDecls /*BUFD*/)
        ;separator="\n")
-     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+     let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
                             &preExp /*BUFC*/, &varDecls /*BUFD*/)
          '<%preExp%>res[<%i0%>] = <%expPart%>;'
        ;separator="\n")
      <<
-     static int residualFunc<%index%>(N_Vector y, N_Vector f, void*)
+     static int residualFunc<%nls.index%>(N_Vector y, N_Vector f, void*)
      {
        double* yd = NV_DATA_S(y);
        double* fd = NV_DATA_S(f);
-       active_model->residualFunc<%index%>_cpp(yd,fd);
+       active_model->residualFunc<%nls.index%>_cpp(yd,fd);
        return 0;
      }
 
-     void <%name%>::residualFunc<%index%>_cpp(double* y, double* res)
+     void <%name%>::residualFunc<%nls.index%>_cpp(double* y, double* res)
      {
-       <%crefs |> name hasindex i0 =>
+       <%nls.crefs |> name hasindex i0 =>
        <<
        <%cref(name)%> = y[<%i0%>];
        >>
@@ -498,7 +498,7 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
        <%body%>
      }
 
-     void <%name%>::solve_residualFunc<%index%>_cpp()
+     void <%name%>::solve_residualFunc<%nls.index%>_cpp()
      {
          int flag;
          int NEQ = <%size%>;
@@ -507,19 +507,19 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
          void* kmem = KINCreate();
          active_model = this;
          assert(kmem != NULL);
-         flag = KINInit(kmem, residualFunc<%index%>, y);
+         flag = KINInit(kmem, residualFunc<%nls.index%>, y);
          assert(flag == KIN_SUCCESS);
          flag = KINDense(kmem, NEQ);
          assert(flag == KIN_SUCCESS);
          N_VConst_Serial(1.0,scale);
-         <%crefs |> name hasindex i0 =>
+         <%nls.crefs |> name hasindex i0 =>
          <<
          NV_Ith_S(y,<%i0%>) = <%cref(name)%>;
          >>
          ;separator="\n"%>
          flag = KINSol(kmem,y,KIN_LINESEARCH,scale,scale);
          // Save the outcome and calculate any dependent variables
-         residualFunc<%index%>(y,scale,NULL);
+         residualFunc<%nls.index%>(y,scale,NULL);
          N_VDestroy_Serial(y);
          N_VDestroy_Serial(scale);
          KINFree(&kmem);
@@ -1401,15 +1401,15 @@ template equationLinear(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/
  "Generates a linear equation system."
 ::=
 match eq
-case SES_LINEAR(__) then
+case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
   let uid = System.tmpTick()
-  let size = listLength(vars)
+  let size = listLength(ls.vars)
   let aname = 'A<%uid%>'
   let bname = 'b<%uid%>'
   let pname = 'p<%uid%>'
-  let mixedPostfix = if partOfMixed then "_mixed" //else ""
+  let mixedPostfix = if ls.partOfMixed then "_mixed" //else ""
   <<
-  <% if not partOfMixed then
+  <% if not ls.partOfMixed then
     <<
     >> %>
   double* <%aname%> = new double[<%size%>*<%size%>];
@@ -1424,25 +1424,25 @@ case SES_LINEAR(__) then
     <%pname%>[i] = i;
     <%bname%>[i] = 0.0;
   }
-  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+  <%ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
      '<%preExp%><%aname%>[<%row%>+<%col%>*<%size%>] = <%expPart%>;'
   ;separator="\n"%>
-  <%beqs |> exp hasindex i0 =>
+  <%ls.beqs |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
   ;separator="\n"%>
-  <%residual |> exp hasindex i0 =>
+  <%ls.residual |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = equation_(exp, context, &varDecls /*BUFD*/)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
   ;separator="\n"%>
   GETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>);
   GETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
-  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%>
-  <% if not partOfMixed then
+  <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%>
+  <% if not ls.partOfMixed then
   <<
   delete [] <%aname%>;
   delete [] <%bname%>;
@@ -1476,9 +1476,9 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
  "Generates a non linear equation system."
 ::=
 match eq
-case SES_NONLINEAR(__) then
+case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
   <<
-  solve_residualFunc<%index%>_cpp();
+  solve_residualFunc<%nls.index%>_cpp();
   >>
 end equationNonlinear;
 

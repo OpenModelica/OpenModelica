@@ -1181,8 +1181,8 @@ algorithm
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then index;
     case(SimCode.SES_IFEQUATION(index=index)) then index;
     case(SimCode.SES_ALGORITHM(index=index)) then index;
-    case(SimCode.SES_LINEAR(index=index)) then index;
-    case(SimCode.SES_NONLINEAR(index=index)) then index;
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index))) then index;
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index))) then index;
     case(SimCode.SES_MIXED(index=index)) then index;
     case(SimCode.SES_WHEN(index=index)) then index;
     else fail();

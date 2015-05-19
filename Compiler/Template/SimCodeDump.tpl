@@ -155,9 +155,9 @@ match eq
     case SES_RESIDUAL(__)
     case SES_SIMPLE_ASSIGN(__)
     case SES_ARRAY_CALL_ASSIGN(__)
-    case SES_ALGORITHM(__)
-    case SES_LINEAR(__)
-    case SES_NONLINEAR(__)
+    case SES_ALGORITHM(__) then index
+    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then ls.index
+    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then nls.index
     case SES_MIXED(__)
     case SES_WHEN(__)
     case SES_IFEQUATION(__) then index
@@ -211,43 +211,43 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
         <%dumpElementSource(getStatementSource(first),withOperations)%>
       </equation><%\n%>
       >>
-    case e as SES_LINEAR(__) then
+    case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
       <<
-      <%dumpEqs(SimCodeUtil.sortEqSystems(e.residual),e.index,withOperations)%>
-      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
+      <%dumpEqs(SimCodeUtil.sortEqSystems(ls.residual),ls.index,withOperations)%>
+      <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),ls.index,withOperations) else ''%>
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
-        <linear size="<%listLength(e.vars)%>" nnz="<%listLength(simJac)%>">
-          <%e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+        <linear size="<%listLength(ls.vars)%>" nnz="<%listLength(ls.simJac)%>">
+          <%ls.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
           <row>
-            <%beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
+            <%ls.beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
           </row>
           <matrix>
-            <%simJac |> (i1,i2,eq) =>
+            <%ls.simJac |> (i1,i2,eq) =>
             <<
             <cell row="<%i1%>" col="<%i2%>">
-              <%match eq case e as SES_RESIDUAL(__) then '<residual><%printExpStrEscaped(e.exp)%></residual>' %>
+              <%match eq case e as SES_RESIDUAL(__) then '<residual><%printExpStrEscaped(exp)%></residual>' %>
             </cell>
             >>
             %>
           </matrix>
           <residuals>
-          <%e.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+          <%ls.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
           </residuals>
           <jacobian>
-          <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
+          <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
           </jacobian>
-          <%e.sources |> source => dumpElementSource(source,withOperations) %>
+          <%ls.sources |> source => dumpElementSource(source,withOperations) %>
         </linear>
       </equation><%\n%>
       >>
-    case e as SES_NONLINEAR(__) then
+    case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
       <<
-      <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs),e.index,withOperations)%>
-      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
+      <%dumpEqs(SimCodeUtil.sortEqSystems(nls.eqs),nls.index,withOperations)%>
+      <%match nls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),nls.index,withOperations) else ''%>
       <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
-        <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
-          <%e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
-          <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+        <nonlinear indexNonlinear="<%nls.indexNonLinearSystem%>">
+          <%nls.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <%nls.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
         </nonlinear>
       </equation><%\n%>
       >>

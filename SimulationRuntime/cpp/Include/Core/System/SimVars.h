@@ -4,7 +4,7 @@ template<typename T>
 /**
  * An array-wrapper that will align the array along full cache lines.
  */
-/* 
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class AlignedArray
 #else
