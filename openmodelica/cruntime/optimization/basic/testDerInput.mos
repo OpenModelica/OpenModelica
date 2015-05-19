@@ -44,7 +44,6 @@ val(cost,1.0);
 // --------------------------------------------------------
 // number of nonlinear constraints: 4
 // ========================================================
-// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
 //
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
@@ -53,12 +52,12 @@ val(cost,1.0);
 // ******************************************************************************
 //
 // LOG_IPOPT_ERROR   | info    | max error is 0.00499703 for the approximation of the state x1(time = 3.2)
-// LOG_IPOPT_ERROR   | info    | max error is 3.10841e-16 for the approximation of the state x1(time = 2.2)
+// LOG_IPOPT_ERROR   | info    | max error is 2.88615e-16 for the approximation of the state x1(time = 2.2)
+// LOG_IPOPT_ERROR   | info    | max error is 3.33067e-16 for the approximation of the state x1(time = 4.2)
+// LOG_IPOPT_ERROR   | info    | max error is 4.44089e-16 for the approximation of the state x1(time = 1.9)
 // LOG_IPOPT_ERROR   | info    | max error is 3.55185e-16 for the approximation of the state x1(time = 2.1)
-// LOG_IPOPT_ERROR   | info    | max error is 3.33067e-16 for the approximation of the state x1(time = 4.1)
-// LOG_IPOPT_ERROR   | info    | max error is 3.55185e-16 for the approximation of the state x1(time = 2.3)
-// LOG_IPOPT_ERROR   | info    | max error is 4.69243e-16 for the approximation of the state x1(time = 3.1)
-// LOG_IPOPT_ERROR   | info    | max error is 4.44089e-16 for the approximation of the state x1(time = 3.9)
+// LOG_IPOPT_ERROR   | info    | max error is 5.43836e-16 for the approximation of the state x1(time = 3.4)
+// LOG_IPOPT_ERROR   | info    | max error is 3.10949e-16 for the approximation of the state x1(time = 1.9)
 // LOG_IPOPT_ERROR   | info    | max error is 3.44343e-16 for the approximation of the state x1(time = 3.3)
 // LOG_IPOPT_ERROR   | info    | max error is 6.38378e-16 for the approximation of the state x1(time = 3)
 // "

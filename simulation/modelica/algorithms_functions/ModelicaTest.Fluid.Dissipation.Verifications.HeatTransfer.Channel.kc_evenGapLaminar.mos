@@ -380,8 +380,7 @@ simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_ev
 // record SimulationResult
 //     resultFile = "ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
-// "
+//     messages = ""
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "

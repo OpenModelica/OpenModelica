@@ -29,8 +29,6 @@ runScript(modelTesting);getErrorString();
 // {"SaturatingInductance1.Psi"}
 // Simulation options: startTime = 0.0, stopTime = 6.2832, numberOfIntervals = 628, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowSaturatingInductor', options = '', outputFormat = 'mat', variableFilter = 'time|SaturatingInductance1.Psi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat
-// Messages: stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
-//
 // Files Equal!
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
