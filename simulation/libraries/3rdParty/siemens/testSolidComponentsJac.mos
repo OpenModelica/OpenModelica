@@ -6,17 +6,17 @@
 //  Test SiemensPower component SolidComponents
 //
 
-loadModel(Modelica);
-loadFile("SiemensPower/package.mo");getErrorString();
+loadModel(SiemensPower, {"2.1 beta"});getErrorString();
 
 // test jacobians
 setCommandLineOptions("+generateSymbolicJacobian");
 simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl", simflags="-dasslJacobian=symbolical");
+getErrorString();
 
-res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat","ReferenceFiles/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",getEnvironmentVar("REFERENCEFILES")+"/SiemensPower/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,
   { "heatInput.C1signal.y",
     "wall.layer[1].T[1]",
-    "wall.layer[1].T[2]",    
+    "wall.layer[1].T[2]",
     "wall.layer[1].T[3]",
     "wall.layer[1].T[4]",
     "wall.layer[1].T[5]",
