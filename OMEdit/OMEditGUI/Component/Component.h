@@ -96,6 +96,8 @@ public:
   void getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2);
   void showResizerItems();
   void hideResizerItems();
+  void getScale(qreal *sx, qreal *sy);
+  void setOriginAndExtents();
   QRectF boundingRect() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   QString getName();

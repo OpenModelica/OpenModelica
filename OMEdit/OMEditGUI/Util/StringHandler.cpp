@@ -1220,7 +1220,7 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
   <B>Find an angle between 0° and 360° that corresponds to –3742°</B>\n\n
   This works somewhat similarly to the previous examples. First we will find how often 360° fits inside 3742°,\n
   3742 ÷ 360 = 10.394\n
-  But since this angle was negative, so we actually need one extra "once around" to carry us into the positive angle values,
+  But since this angle was negative, so we actually need one extra round to carry us into the positive angle values,
   so we will use 11 instead of 10,\n
   –3742 + 11 × 360 = –3742 + 3960 = 218.
   \param angle - the angle to be normalized.
