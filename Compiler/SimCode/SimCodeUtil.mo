@@ -12599,7 +12599,7 @@ algorithm
   end match;
 end createVarToArrayIndexMapping;
 
-protected function createVarToArrayIndexMapping1 "author: marcusw
+public function addVarToArrayIndexMapping "author: marcusw
   Adds the given variable to the array-mapping and to the var-mapping."
   input SimCodeVar.SimVar iVar;
   input Integer iVarType; //1 = real ; 2 = int ; 3 = bool
@@ -12654,10 +12654,10 @@ algorithm
       then ((tmpCurrentVarIndices, tmpVarToArrayIndexMapping, tmpVarToIndexMapping));
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Unknown case for createVarToArrayIndexMapping1.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Unknown case for addVarToArrayIndexMapping.\n"});
       then iCurrentVarIndicesHashTable;
   end match;
-end createVarToArrayIndexMapping1;
+end addVarToArrayIndexMapping;
 
 protected function checkIfSubscriptsContainsUnhandlableIndices "author: marcusw
   Returns false if at least one subscript can not be handled as constant index."
