@@ -28,26 +28,29 @@ val(i,0.751);
 // true
 // record SimulationResult
 //     resultFile = "M1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'M1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// "
 // end SimulationResult;
 // 0.0
-// 0.5000000001000081
-// 0.5000000001000081
+// 0.5000000001500057
+// 0.5000000001500057
 // record SimulationResult
 //     resultFile = "M2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'M2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// "
 // end SimulationResult;
 // 0.0
-// 0.5000000001000081
-// 0.7500000001000083
+// 0.5000000001500057
+// 0.7500000001750062
 // record SimulationResult
 //     resultFile = "M3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'M3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// "
 // end SimulationResult;
 // 0.0
-// 0.5000000001000081
-// 0.7500000001000083
+// 0.5000000001500057
+// 0.7500000001750062
 // endResult

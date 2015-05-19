@@ -13,7 +13,7 @@ simulate(Modelica.StateGraph.Examples.ControlledTanks, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.StateGraph.Examples.ControlledTanks_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.StateGraph.Examples.ControlledTanks.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.StateGraph.Examples.ControlledTanks.mat",
   "Modelica.StateGraph.Examples.ControlledTanks_diff.csv",0.01,0.0001,
   {"tank1.level",
    "tank2.level"});

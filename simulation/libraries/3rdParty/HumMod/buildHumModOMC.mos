@@ -1,0 +1,30 @@
+// name:     HumModOMCTotal [buildModel]
+// keywords:
+// status:   correct
+//
+//
+//
+
+/*
+ * The HumModOMCTotal.mo model is GPL v2 (http://www.gnu.org/licenses/gpl-2.0.html).
+ * contact Pavol at: Pavol.Privitzer@lf1.cuni.cz if you have questions about the model
+ */
+
+loadFile("HumModTest_OMC_total.mo"); getErrorString();
+buildModel(HumModTest); getErrorString();
+
+// Result:
+// true
+// ""
+// {"HumModTest","HumModTest_init.xml"}
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// Warning: Alias set with several free start values
+//  * candidate: gases.acidBase.veinsPH._cTHox(start = -0.0)
+//  * candidate: gases.acidBase.artysPH._BEox(start = -0.177)
+// => select value from gases.acidBase.artysPH._BEox(start = -0.177) for variable: cardioVascularSystem.busConnector.Blood_BEox
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+// Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// endResult

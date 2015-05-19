@@ -15,7 +15,7 @@ setCommandLineOptions("+n=4 +hpcomScheduler=list"); getErrorString();
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_res.mat",
-  "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat",
   "Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_diff.csv",0.13,0.0005,
 {  "body1.frame_a.r_0[1]",
    "body1.frame_a.r_0[2]",

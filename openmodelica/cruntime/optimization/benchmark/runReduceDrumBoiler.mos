@@ -107,7 +107,6 @@ getErrorString();
 //  * candidate: evaporator.T(nominal = 500.0)
 //  * candidate: evaporator.T_D(nominal = 500.0)
 // => select value from evaporator.T_D(nominal = 500.0) for variable: evaporator.T_D
-// [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:157:9-157:39:writable] Warning: Parameter conSigma.gain has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // {"Files Equal!"}
 // ""

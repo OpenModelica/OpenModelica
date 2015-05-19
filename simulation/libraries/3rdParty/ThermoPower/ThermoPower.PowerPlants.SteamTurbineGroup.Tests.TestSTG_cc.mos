@@ -3,14 +3,14 @@
 // status: correct
 
 // Test4
-loadFile("TestOverdeterminedInitializationTotal.mo"); getErrorString();
+loadModel(ThermoPower); getErrorString();
 translateModel(ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc); getErrorString();
 
 // Result:
 // true
 // ""
 // true
-// "[simulation/libraries/3rdParty/ThermoPower/TestOverdeterminedInitializationTotal.mo:19567:23-19567:71:writable] Error: Cyclically dependent constants or parameters found in scope : {q_nom}, {head_nom}.
+// "[ThermoPower 3.1/PowerPlants.mo:3960:21-3960:69:writable] Error: Cyclically dependent constants or parameters found in scope : {q_nom}, {head_nom}.
 // Warning: Alias set with several free start values
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.h(start = sTG_3LRh.steamTurbines.mixLP.hstart)
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.out.h_outflow(start = sTG_3LRh.steamTurbines.mixLP.hstart)
@@ -43,6 +43,18 @@ translateModel(ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc); getE
 //  * candidate: sTG_3LRh.steamTurbines.valveIP.outlet.p(start = sTG_3LRh.steamTurbines.valveIP.pout_start)
 //  * candidate: sTG_3LRh.steamTurbines.ST_IP.steamState_in.p(start = 5000000.0)
 // => select value from sTG_3LRh.steamTurbines.ST_IP.pin(start = sTG_3LRh.steamTurbines.ST_IP.pnom) for variable: sTG_3LRh.steamTurbines.ST_IP.pin
+// Warning: Alias set with different nominal values
+//  * candidate: sTG_3LRh.steamTurbines.valveLP.fluidState.d(nominal = 500.0)
+//  * candidate: sTG_3LRh.steamTurbines.valveLP.rho(nominal = 1000.0)
+// => select value from sTG_3LRh.steamTurbines.valveLP.rho(nominal = 1000.0) for variable: sTG_3LRh.steamTurbines.valveLP.rho
+// Warning: Alias set with different nominal values
+//  * candidate: sTG_3LRh.steamTurbines.valveIP.fluidState.d(nominal = 500.0)
+//  * candidate: sTG_3LRh.steamTurbines.valveIP.rho(nominal = 1000.0)
+// => select value from sTG_3LRh.steamTurbines.valveIP.rho(nominal = 1000.0) for variable: sTG_3LRh.steamTurbines.valveIP.rho
+// Warning: Alias set with different nominal values
+//  * candidate: sTG_3LRh.steamTurbines.valveHP.fluidState.d(nominal = 500.0)
+//  * candidate: sTG_3LRh.steamTurbines.valveHP.rho(nominal = 1000.0)
+// => select value from sTG_3LRh.steamTurbines.valveHP.rho(nominal = 1000.0) for variable: sTG_3LRh.steamTurbines.valveHP.rho
 // Warning: Alias set with several free start values
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.T(start = 500.0)
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.Tm(start = sTG_3LRh.steamTurbines.mixLP.Tmstart)
@@ -54,6 +66,10 @@ translateModel(ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc); getE
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.thermalPort.T(nominal = 300.0)
 //  * candidate: sTG_3LRh.steamTurbines.mixLP.T(nominal = 500.0)
 // => select value from sTG_3LRh.steamTurbines.mixLP.T(nominal = 500.0) for variable: sTG_3LRh.steamTurbines.mixLP.T
+// Warning: Alias set with different nominal values
+//  * candidate: sTG_3LRh.totalFeedPump.feedWaterPump.inletFluidState.d(nominal = 500.0)
+//  * candidate: sTG_3LRh.totalFeedPump.feedWaterPump.rho(nominal = 1000.0)
+// => select value from sTG_3LRh.totalFeedPump.feedWaterPump.rho(nominal = 1000.0) for variable: sTG_3LRh.totalFeedPump.feedWaterPump.rho
 // Notification: The given system is mixed-determined.   [index > 0]
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.

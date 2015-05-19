@@ -1,0 +1,96 @@
+// name: dumpdaelow.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=dumpdaelow
+// 
+
+// TODO: change this model to test the dump +d=dumpdaelow
+loadString("
+model test_dumpdaelow
+end test_dumpdaelow;
+"); getErrorString();
+
+setDebugFlags("dumpdaelow"); getErrorString();
+buildModel(test_dumpdaelow); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// dumpdaelow
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (0)
+// ========================================
+//
+//
+// Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// {"test_dumpdaelow","test_dumpdaelow_init.xml"}
+// ""
+// endResult

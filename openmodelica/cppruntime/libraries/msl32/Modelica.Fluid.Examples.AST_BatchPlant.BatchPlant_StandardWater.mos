@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater.mat";
 compareVars :=
 {
    "B5.level",

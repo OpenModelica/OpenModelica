@@ -14,7 +14,7 @@ simulate(Modelica.Thermal.HeatTransfer.Examples.TwoMasses, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Thermal.HeatTransfer.Examples.TwoMasses_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Thermal.HeatTransfer.Examples.TwoMasses.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Thermal.HeatTransfer.Examples.TwoMasses.mat",
   "Modelica.Thermal.HeatTransfer.Examples.TwoMasses_diff.csv",0.01,0.0001,
   {"mass1.T",
    "mass2.T"});

@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.PistonEngine); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.PistonEngine_res.mat",
-  "ReferenceFiles/PistonEngine.mat","PlanarMechanicsForTesting.Examples.PistonEngine_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//PistonEngine.mat","PlanarMechanicsForTesting.Examples.PistonEngine_diff.csv",0.01,0.001,
   {"prismatic.s", "prismatic.v", "revoluteDrive.w"});
 getErrorString();
 

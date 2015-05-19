@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_Inverter);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_Inverter.mat";
 compareVars :=
 {
   "smpm.idq_sr[1]",

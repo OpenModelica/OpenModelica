@@ -55,18 +55,18 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (4)
 // ========================================
-// 1: u3:DISCRETE() .test_subSample, .Real type: Real 
-// 2: u2:DISCRETE() .test_subSample, .Real type: Real 
-// 3: u:DISCRETE(start = 0.0 ) .test_subSample, .Real type: Real 
-// 4: vd:DISCRETE() .test_subSample, .Real type: Real 
+// 1: u3:DISCRETE() .test_subSample, .Real type: Real []
+// 2: u2:DISCRETE() .test_subSample, .Real type: Real []
+// 3: u:DISCRETE(start = 0.0 ) .test_subSample, .Real type: Real []
+// 4: vd:DISCRETE() .test_subSample, .Real type: Real []
 //
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): vd = sample(1, v, Clock(0.01))   [dynamic, sub-partition index: 3]
-// 2/2 (1): u = K * (vref - vd)   [dynamic, sub-partition index: 3]
-// 3/3 (1): u2 = subSample(u, 2)   [dynamic, sub-partition index: 2]
-// 4/4 (1): u3 = subSample(u2, 3)   [dynamic, sub-partition index: 1]
+// 1/1 (1): vd = sample(1, v, Clock(0.01))    [dynamic, sub-partition index: 3]
+// 2/2 (1): u = K * (vref - vd)    [dynamic, sub-partition index: 3]
+// 3/3 (1): u2 = subSample(u, 2)    [dynamic, sub-partition index: 2]
+// 4/4 (1): u3 = subSample(u2, 3)    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets
@@ -81,16 +81,16 @@ translateModel(test_subSample); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE() .test_subSample, .Real type: Real 
-// 2: v:VARIABLE(start = 0.0 fixed = true ) .test_subSample, .Real type: Real 
-// 3: x:VARIABLE(start = 1.0 fixed = true ) .test_subSample, .Real type: Real 
+// 1: f:VARIABLE() .test_subSample, .Real type: Real []
+// 2: v:VARIABLE(start = 0.0 fixed = true ) .test_subSample, .Real type: Real []
+// 3: x:VARIABLE(start = 1.0 fixed = true ) .test_subSample, .Real type: Real []
 //
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = hold(u)   [dynamic, sub-partition index: 1]
-// 2/2 (1): der(x) = v   [dynamic, sub-partition index: 1]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic, sub-partition index: 1]
+// 1/1 (1): f = hold(u)    [dynamic, sub-partition index: 1]
+// 2/2 (1): der(x) = v    [dynamic, sub-partition index: 1]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic, sub-partition index: 1]
 //
 //
 // State Sets

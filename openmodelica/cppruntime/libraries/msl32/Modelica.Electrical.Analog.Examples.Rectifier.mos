@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.Rectifier);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.Rectifier.mat";
 compareVars :=
 {
   "Inductor1.i",

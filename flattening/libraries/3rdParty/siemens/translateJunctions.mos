@@ -6,8 +6,8 @@
 //  Test SiemensPower component Junctions
 //
 
-loadModel(Modelica);
-loadFile("SiemensPower/package.mo");
+loadModel(SiemensPower,{"2.1 beta"});
+getErrorString();
 
 // test simple model
 translateModel(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/splitterMixer_testTubeOwnMedia_simpleInput.mat");
@@ -18,7 +18,7 @@ translateModel(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwn
 
 // Result:
 // true
-// true
+// ""
 // true
 // true
 // endResult

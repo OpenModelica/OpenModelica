@@ -2,31 +2,41 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint,stopTime=5.0);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_diff.csv",0.01,0.00001,
-  {"gearConstraint.actuatedRevolute_b.phi",
-  "gearConstraint.actuatedRevolute_b.w",
-  "inertia1.phi",
-  "inertia1.w",
-  "der(gearConstraint.actuatedRevolute_b.phi)",
-  "der(gearConstraint.actuatedRevolute_b.w)",
-  "der(inertia1.phi)",
-  "der(inertia1.w)"});
-  
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint);
+compareVars :=
+{
+   "gearConstraint.actuatedRevolute_b.phi",
+   "gearConstraint.actuatedRevolute_b.w",
+   "inertia1.phi",
+   "inertia1.w",
+   "gearConstraint.actuatedRevolute_b.a",
+   "inertia1.a"
+};
+
+runScript(modelTesting);getErrorString();
 
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint
+// {"gearConstraint.actuatedRevolute_b.phi","gearConstraint.actuatedRevolute_b.w","inertia1.phi","inertia1.w","gearConstraint.actuatedRevolute_b.a","inertia1.a"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint', options = '', outputFormat = 'mat', variableFilter = 'time|gearConstraint.actuatedRevolute_b.phi|gearConstraint.actuatedRevolute_b.w|inertia1.phi|inertia1.w|gearConstraint.actuatedRevolute_b.a|inertia1.a', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_res.mat
+// Files Equal!
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+//
+// "true
+// "
+// ""
 // endResult

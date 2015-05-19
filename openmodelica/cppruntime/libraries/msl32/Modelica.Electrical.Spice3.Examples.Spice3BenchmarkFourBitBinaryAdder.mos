@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder, 
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.mat",
   "Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder_diff.csv",0.01,0.0001,
   {"X1.X1.X1.X1.Q1.vbe",
    "X1.X1.X1.X1.Q2.vbc",

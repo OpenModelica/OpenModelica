@@ -2,38 +2,48 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-simulate(Modelica.Mechanics.Translational.Examples.InitialConditions,stopTime=5.0);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.InitialConditions_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.InitialConditions.mat","Modelica.Mechanics.Translational.Examples.InitialConditions_diff.csv",0.01,0.0001,
-  {"m3.s",
-  "m3.v",
-  "sd2.s_rel",
-  "m4.v",
-  "m1.s",
-  "m1.v",
-  "sd1.s_rel",
-  "m2.v",
-  "der(m3.s)",
-  "der(sd2.s_rel)",
-  "der(m4.v)",
-  "der(m1.s)",
-  "der(m1.v)",
-  "der(sd1.s_rel)",
-  "der(m2.v)"});
+packageVersion := "3.1";
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.Translational.Examples.InitialConditions);
+compareVars :=
+{
+   "m1.s",
+   "m1.v",
+   "m1.a",
+   "m2.s",
+   "m2.v",
+   "m2.a",
+   "m3.s",
+   "m3.v",
+   "m3.a",
+   "m4.s",
+   "m4.v",
+   "m4.a",
+   "sd1.s_rel",
+   "sd1.v_rel",
+   "sd2.s_rel",
+   "sd2.v_rel"
+};
 
-  
+runScript(modelTesting);getErrorString();
+
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Mechanics.Translational.Examples.InitialConditions_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.InitialConditions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.Translational.Examples.InitialConditions
+// {"m1.s","m1.v","m1.a","m2.s","m2.v","m2.a","m3.s","m3.v","m3.a","m4.s","m4.v","m4.a","sd1.s_rel","sd1.v_rel","sd2.s_rel","sd2.v_rel"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.InitialConditions', options = '', outputFormat = 'mat', variableFilter = 'time|m1.s|m1.v|m1.a|m2.s|m2.v|m2.a|m3.s|m3.v|m3.a|m4.s|m4.v|m4.a|sd1.s_rel|sd1.v_rel|sd2.s_rel|sd2.v_rel', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.Translational.Examples.InitialConditions_res.mat
+// "true
+// "
+// ""
 // endResult

@@ -10,7 +10,7 @@ setDebugFlags("backenddaeinfo,stateselection,resolveLoops"); getErrorString();
 simulate(ElectricalCircuit1); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.mat",
-  "ReferenceFiles/ElectricalCircuit1.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/resolveLoops/ElectricalCircuit1.mat",
   "ElectricalCircuit1_diff.csv",0.01,0.0001,
   {"C1.i",
   "C1.v",

@@ -3,7 +3,7 @@
 // status: correct
 
 // Test1
-loadFile("TestOverdeterminedInitializationTotal.mo"); getErrorString();
+loadModel(ThermoPower); getErrorString();
 simulate(ThermoPower.Examples.CISE.CISESim2States120501); getErrorString();
 
 // Result:
@@ -15,6 +15,66 @@ simulate(ThermoPower.Examples.CISE.CISESim2States120501); getErrorString();
 //     messages = ""
 // end SimulationResult;
 // "Warning: Alias set with several free start values
+//  * candidate: Plant.Pipe2Valve.heatTransfer.Tw[1](start = 500.0)
+//  * candidate: Plant.Pipe2ValveWall.int.T[1](start = Plant.Pipe2ValveWall.Tvolstart[1])
+// => select value from Plant.Pipe2Valve.heatTransfer.Tw[1](start = 500.0) for variable: Plant.Pipe2Valve.heatTransfer.Tw[1]
+// Warning: Alias set with different nominal values
+//  * candidate: Plant.Pipe2ValveWall.int.T[1](nominal = 300.0)
+//  * candidate: Plant.Pipe2Valve.wall.T[1](nominal = 300.0)
+//  * candidate: Plant.Pipe2Valve.heatTransfer.wall.T[1](nominal = 300.0)
+//  * candidate: Plant.Pipe2Valve.heatTransfer.Tw[1](nominal = 500.0)
+// => select value from Plant.Pipe2Valve.heatTransfer.Tw[1](nominal = 500.0) for variable: Plant.Pipe2Valve.heatTransfer.Tw[1]
+// Warning: Alias set with several free start values
+//  * candidate: Plant.SH.heatTransfer.Tw[4](start = 500.0)
+//  * candidate: Plant.SHWall.int.T[4](start = Plant.SHWall.Tvolstart[4])
+// => select value from Plant.SH.heatTransfer.Tw[4](start = 500.0) for variable: Plant.SH.heatTransfer.Tw[4]
+// Warning: Alias set with different nominal values
+//  * candidate: Plant.SHWall.int.T[4](nominal = 300.0)
+//  * candidate: Plant.SH.wall.T[4](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.wall.T[4](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.Tw[4](nominal = 500.0)
+// => select value from Plant.SH.heatTransfer.Tw[4](nominal = 500.0) for variable: Plant.SH.heatTransfer.Tw[4]
+// Warning: Alias set with several free start values
+//  * candidate: Plant.SH.heatTransfer.Tw[3](start = 500.0)
+//  * candidate: Plant.SHWall.int.T[3](start = Plant.SHWall.Tvolstart[3])
+// => select value from Plant.SH.heatTransfer.Tw[3](start = 500.0) for variable: Plant.SH.heatTransfer.Tw[3]
+// Warning: Alias set with different nominal values
+//  * candidate: Plant.SHWall.int.T[3](nominal = 300.0)
+//  * candidate: Plant.SH.wall.T[3](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.wall.T[3](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.Tw[3](nominal = 500.0)
+// => select value from Plant.SH.heatTransfer.Tw[3](nominal = 500.0) for variable: Plant.SH.heatTransfer.Tw[3]
+// Warning: Alias set with several free start values
+//  * candidate: Plant.SH.heatTransfer.Tw[2](start = 500.0)
+//  * candidate: Plant.SHWall.int.T[2](start = Plant.SHWall.Tvolstart[2])
+// => select value from Plant.SH.heatTransfer.Tw[2](start = 500.0) for variable: Plant.SH.heatTransfer.Tw[2]
+// Warning: Alias set with different nominal values
+//  * candidate: Plant.SHWall.int.T[2](nominal = 300.0)
+//  * candidate: Plant.SH.wall.T[2](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.wall.T[2](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.Tw[2](nominal = 500.0)
+// => select value from Plant.SH.heatTransfer.Tw[2](nominal = 500.0) for variable: Plant.SH.heatTransfer.Tw[2]
+// Warning: Alias set with several free start values
+//  * candidate: Plant.SH.heatTransfer.Tw[1](start = 500.0)
+//  * candidate: Plant.SHWall.int.T[1](start = Plant.SHWall.Tvolstart[1])
+// => select value from Plant.SH.heatTransfer.Tw[1](start = 500.0) for variable: Plant.SH.heatTransfer.Tw[1]
+// Warning: Alias set with different nominal values
+//  * candidate: Plant.SHWall.int.T[1](nominal = 300.0)
+//  * candidate: Plant.SH.wall.T[1](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.wall.T[1](nominal = 300.0)
+//  * candidate: Plant.SH.heatTransfer.Tw[1](nominal = 500.0)
+// => select value from Plant.SH.heatTransfer.Tw[1](nominal = 500.0) for variable: Plant.SH.heatTransfer.Tw[1]
+// Warning: Alias set with several free start values
+//  * candidate: Plant.Pipe2SH.heatTransfer.Tw[1](start = 500.0)
+//  * candidate: Plant.Pipe2SHWall.int.T[1](start = Plant.Pipe2SHWall.Tvolstart[1])
+// => select value from Plant.Pipe2SH.heatTransfer.Tw[1](start = 500.0) for variable: Plant.Pipe2SH.heatTransfer.Tw[1]
+// Warning: Alias set with different nominal values
+//  * candidate: Plant.Pipe2SHWall.int.T[1](nominal = 300.0)
+//  * candidate: Plant.Pipe2SH.wall.T[1](nominal = 300.0)
+//  * candidate: Plant.Pipe2SH.heatTransfer.wall.T[1](nominal = 300.0)
+//  * candidate: Plant.Pipe2SH.heatTransfer.Tw[1](nominal = 500.0)
+// => select value from Plant.Pipe2SH.heatTransfer.Tw[1](nominal = 500.0) for variable: Plant.Pipe2SH.heatTransfer.Tw[1]
+// Warning: Alias set with several free start values
 //  * candidate: Plant.DrumBoiler.p(start = Plant.DrumBoiler.pstart)
 //  * candidate: Plant.DrumBoiler.sat.psat(start = 5000000.0)
 //  * candidate: Plant.DrumBoiler.steam.p(start = 5000000.0)
@@ -85,6 +145,10 @@ simulate(ThermoPower.Examples.CISE.CISESim2States120501); getErrorString();
 //  * candidate: Plant.Valve.fluidState.h(start = 100000.0)
 //  * candidate: Plant.Pipe2Valve.infl.h_outflow(start = Plant.Pipe2Valve.hstartin)
 // => select value from Plant.Pipe2Valve.htilde[1](start = Plant.Pipe2Valve.hstart[2]) for variable: Plant.Pipe2Valve.htilde[1]
+// Warning: Alias set with different nominal values
+//  * candidate: Plant.Valve.fluidState.d(nominal = 500.0)
+//  * candidate: Plant.Valve.rho(nominal = 1000.0)
+// => select value from Plant.Valve.rho(nominal = 1000.0) for variable: Plant.Valve.rho
 // Warning: Alias set with several free start values
 //  * candidate: Plant.SH.htilde[4](start = Plant.SH.hstart[5])
 //  * candidate: Plant.SH.h[5](start = Plant.SH.hstart[5])

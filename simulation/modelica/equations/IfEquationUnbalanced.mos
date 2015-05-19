@@ -19,9 +19,9 @@ simulate(IfEquationUnbalancedMissingElse); getErrorString();
 //     messages = "Failed to build model: IfEquationUnbalanced"
 // end SimulationResult;
 // "[simulation/modelica/equations/IfEquationUnbalanced.mo:15:3-22:9:writable] Error: If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is {1,2,1} for each respective branch:
-// 1 : x = time
-// 1 : y = 2.0
-// 2 : x = 1.0
+// 1 : x = time 
+// 1 : y = 2.0 
+// 2 : x = 1.0 
 // 1 : x = 2.0 * time
 // Error: Too few equations, under-determined system. The model has 1 equation(s) and 2 variable(s).
 // Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!

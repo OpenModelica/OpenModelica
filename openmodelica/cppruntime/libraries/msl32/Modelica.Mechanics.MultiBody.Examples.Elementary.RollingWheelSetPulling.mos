@@ -8,17 +8,11 @@
 // Modelica Standard Library
 //
 
-loadFile("../../../../simulation/libraries/common/ModelTesting.mo");
-loadModel(Modelica,{"3.2.1"});
+runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling.mat";
-stopTime := 0.0; // For reading stopTime from annotation
-relTol := 0.01;
-absTol := 0.0001;
-outputFormat :="mat";
 compareVars := {"wheelSet.x","wheelSet.y","wheelSet.phi","wheelSet.theta1","wheelSet.theta2","wheelSet.der_theta1","wheelSet.der_theta2"};
-runScript("../../../../simulation/libraries/common/ModelTesting.mos");
+runScript(modelTesting);
 getErrorString();
 
 

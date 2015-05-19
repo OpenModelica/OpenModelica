@@ -17,7 +17,7 @@ simulate(Modelica.Electrical.Analog.Examples.OvervoltageProtection);
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.OvervoltageProtection_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Analog.Examples.OvervoltageProtection.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.OvervoltageProtection.mat",
   "Modelica.Electrical.Analog.Examples.OvervoltageProtection_diff.csv",0.01,0.0001,
   {"CL.v"});
 

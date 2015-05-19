@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResona
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance.mat",
   "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance_diff.csv",0.02,0.001,
   {"capacitor.i.im",
    "capacitor.pin_n.reference.gamma",

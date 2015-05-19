@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.Translational.Examples.Friction);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.Translational.Examples.Friction.mat";
 compareVars :=
 { 
   "stop1.s",

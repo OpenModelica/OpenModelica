@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.DifferenceAmplifier);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.DifferenceAmplifier.mat";
 
 compareVars :=
 {  "C1.v",

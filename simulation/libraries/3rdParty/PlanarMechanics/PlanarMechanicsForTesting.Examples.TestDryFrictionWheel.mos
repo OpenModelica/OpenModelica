@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.TestDryFrictionWheel, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_res.mat",
-  "ReferenceFiles/TestDryFrictionWheel.mat","PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_diff.csv",0.01,0.45,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//TestDryFrictionWheel.mat","PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_diff.csv",0.01,0.45,
   {"revolute.w", "prismatic.s", "dryFrictionWheelJoint.f_lat", "dryFrictionWheelJoint.f_long"});
 
 // Result:

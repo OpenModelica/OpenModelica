@@ -8,17 +8,11 @@
 // Modelica Standard Library
 //
 
-loadFile("../../../../simulation/libraries/common/ModelTesting.mo");
-loadModel(Modelica,{"3.2.1"});
+runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat";
-stopTime := 0.0; // For reading stopTime from annotation
-relTol := 0.01;
-absTol := 0.0001;
-outputFormat :="mat";
 compareVars := {"body1.frame_a.r_0[1]","body1.frame_a.r_0[2]","body1.frame_a.r_0[3]","body1.v_0[1]","body1.v_0[2]","body1.v_0[3]","body1.w_a[1]","body1.w_a[2]","body1.w_a[3]"};
-runScript("../../../../simulation/libraries/common/ModelTesting.mos");
+runScript(modelTesting);
 getErrorString();
 
 

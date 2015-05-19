@@ -16,7 +16,7 @@ simulate(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen, outp
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen.mat",
   "Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_diff.csv",0.01,0.0001,
   {"volume.U",
    "volume.m"});

@@ -13,7 +13,7 @@ loadModel(Modelica,{"3.2.1"});
 simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_diff.csv",0.02,0.06,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_diff.csv",0.02,0.06,
   {"bodyCylinder2.body.frame_a.R.T[1,1]",
    "bodyCylinder2.body.frame_a.R.T[1,2]",
    "bodyCylinder2.body.frame_a.R.T[1,3]",

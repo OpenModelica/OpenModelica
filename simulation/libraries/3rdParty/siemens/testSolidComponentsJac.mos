@@ -6,17 +6,17 @@
 //  Test SiemensPower component SolidComponents
 //
 
-loadModel(Modelica);
-loadFile("SiemensPower/package.mo");getErrorString();
+loadModel(SiemensPower, {"2.1 beta"});getErrorString();
 
 // test jacobians
 setCommandLineOptions("+generateSymbolicJacobian");
 simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl", simflags="-dasslJacobian=symbolical");
+getErrorString();
 
-res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat","ReferenceFiles/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",getEnvironmentVar("REFERENCEFILES")+"/SiemensPower/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,
   { "heatInput.C1signal.y",
     "wall.layer[1].T[1]",
-    "wall.layer[1].T[2]",    
+    "wall.layer[1].T[2]",
     "wall.layer[1].T[3]",
     "wall.layer[1].T[4]",
     "wall.layer[1].T[5]",
@@ -36,14 +36,13 @@ res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.
 
 // Result:
 // true
-// true
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
-// "
+// ""
 // true
 // record SimulationResult
 //     resultFile = "SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.SolidComponents.Tests.wall_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-dasslJacobian=symbolical'",
 //     messages = ""
 // end SimulationResult;
+// ""
 // {"Files Equal!"}
 // endResult

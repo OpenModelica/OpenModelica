@@ -13,7 +13,7 @@ loadModel(Modelica,{"3.2.1"});
 simulate(Modelica.Mechanics.Rotational.Examples.CoupledClutches, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Rotational.Examples.CoupledClutches_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.Rotational.Examples.CoupledClutches.mat","Modelica.Mechanics.Rotational.Examples.CoupledClutches_diff.csv",0.01,0.0001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Rotational.Examples.CoupledClutches.mat","Modelica.Mechanics.Rotational.Examples.CoupledClutches_diff.csv",0.01,0.0001,
   {"J1.phi",
   "J1.w",
   "clutch1.phi_rel",

@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Fluid.Examples.Tanks.TanksWithOverflow);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.Tanks.TanksWithOverflow.mat";
 compareVars :=
 {
    "upperTank.level",

@@ -13,7 +13,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mat";
 compareVars :=
 {
    "opAmp.v_in",

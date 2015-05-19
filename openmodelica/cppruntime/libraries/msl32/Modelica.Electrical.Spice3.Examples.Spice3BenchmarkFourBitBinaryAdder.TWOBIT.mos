@@ -16,7 +16,6 @@ setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT.mat";
 compareVars :=
 {
    "X1.X1.Q1.vbc",

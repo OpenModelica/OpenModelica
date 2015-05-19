@@ -19,6 +19,14 @@ compareVars := {"revolute1.phi","revolute1.w","revolute1.a","revolute2.phi","rev
 */
 
 echo(false);
+
+b:=loadModel(packageName,{packageVersion});
+if not b then
+  print("loadModel("+typeNameString(packageName)+","+packageVersion+")\n");
+  print(OpenModelica.Scripting.cd() + "\n");
+  exit(1);
+end if;
+
 debug := false;
 startRun := true;
 alarm(timeout);
@@ -142,7 +150,7 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
   end if;
   /* We can only compare to a reference file if we have one */
   modelNameStr := typeNameString(modelName);
-  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/msl32/" + modelNameStr + ".mat" else referenceFile;
+  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/"+referenceFileDir+"/" + modelNameStr + ".mat" else referenceFile;
   if regularFileExists(referenceFile+".xz") then
     system("if test ! -f "+referenceFile+" || test "+referenceFile+".xz -nt "+referenceFile+"; then xz --keep --decompress --force "+referenceFile+".xz ; fi");
     referenceExists := true;
@@ -169,15 +177,35 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
     // support for csv result files
     resultFile:= if regularFileExists(resultFile) then resultFile else modelNameStr+"_res.csv";
     csvFile := modelNameStr + ".csv";
-    print(if debug then "try to compare results " + resultFile + " " + referenceFile + " " + csvFile + " " + String(relTol) + " " + String(absTol) + sum(" " + v + "," for v in compareVars) + "\n" else "");
-    res := OpenModelica.Scripting.compareSimulationResults(resultFile,referenceFile,csvFile,relTol,absTol,compareVars);
-    print(if debug then "compareSimulationResults finished: "+sum(r for r in res)+"\n" else "");
-    if size(res,1) == 1 and res[1] == "Files Equal!" and modelTestingType <> OpenModelicaModelTesting.Kind.VerifiedSimulation and modelTestingType <> OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
+
+    if diffAlgorithm == OpenModelicaModelTesting.DiffAlgorithm.compareSimulationResults then
+      print(if debug then "try to compare results " + resultFile + " " + referenceFile + " " + csvFile + " " + String(relTol) + " " + String(absTol) + sum(" " + v + "," for v in compareVars) + "\n" else "");
+      res := OpenModelica.Scripting.compareSimulationResults(resultFile,referenceFile,csvFile,relTol,absTol,compareVars);
+      print(if debug then "compareSimulationResults finished: "+sum(r for r in res)+"\n" else "");
+      if size(res,1)==1 and res[1] == "Files Equal!" then
+        res := true;
+      else
+        failVars := res[2:size(res,1)];
+        res := false;
+      end if;
+    elseif diffAlgorithm == OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults then
+      print(if debug then "Trying diffSimulationResults.\n" else "");
+      (res,failVars) := OpenModelica.Scripting.diffSimulationResults(resultFile,referenceFile,csvFile+"diff.",relTol,vars=compareVars);
+      print(if debug then "diffSimulationResults returns "+String(res)+".\n" else "");
+    else
+      print("Unknown diff algorithm!\n");
+      exit(1);
+    end if;
+
+    if res and modelTestingType <> OpenModelicaModelTesting.Kind.VerifiedSimulation and modelTestingType <> OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
       print("Note: Result files are now equal. Please update the test to do verified simulation!\n");
       exit(1);
     elseif modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation or modelTestingType == OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
-      print(sum(r + "\n" for r in res));
-      if size(res,1) <> 1 then
+      if res then
+        print("Files Equal!\n");
+      end if;
+      if not res then
+        print("Failed variables: " + sum(var for var in failVars));
         print(error);
         print(getErrorString());
         info:=checkSettings();
@@ -185,7 +213,7 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
         dateCmd := if os=="Windows_NT" then "date /T" else "date";
         system(dateCmd); // In case people somehow try to fool their tests, add some non-determinism
         system("cp \"" + getInstallationDirectoryPath() + "/share/doc/omc/testmodels/dygraph-combined.js\" .");
-        for v in res[2:size(res,1)] loop
+        for v in failVars[2:size(failVars,1)] loop
           // Write some html files with the diffs
           curFile := modelNameStr + "." + v + ".html";
           writeFile(curFile, diffSimulationResultsHtml(v,resultFile,referenceFile));

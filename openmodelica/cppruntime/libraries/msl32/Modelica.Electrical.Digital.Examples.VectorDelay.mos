@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Digital.Examples.VectorDelay, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.VectorDelay_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Digital.Examples.VectorDelay.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.VectorDelay.mat",
   "Modelica.Electrical.Digital.Examples.VectorDelay_diff.csv",0.01,0.0001,
   {"delay.y[1]",
    "delay.y[2]",

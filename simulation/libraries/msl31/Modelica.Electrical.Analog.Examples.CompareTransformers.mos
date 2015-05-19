@@ -2,29 +2,34 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-simulate(Modelica.Electrical.Analog.Examples.CompareTransformers);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CompareTransformers.mat","Modelica.Electrical.Analog.Examples.CompareTransformers_diff.csv",0.01,0.00001,
-  {"inductor21.i",
-  "basicTransformer.i1",
-  "basicTransformer.i2",
-  "der(inductor21.i)",
-  "der(basicTransformer.i1)",
-  "der(basicTransformer.i2)",
-  "der(inductor22.i)"});
-  
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.CompareTransformers);
+compareVars :=
+{
+   "basicTransformer.i1",
+   "basicTransformer.i2",
+   "inductor21.i"
+};
+
+runScript(modelTesting);getErrorString();
+
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 50.0, numberOfIntervals = 50000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CompareTransformers', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.CompareTransformers
+// {"basicTransformer.i1","basicTransformer.i2","inductor21.i"}
+// Simulation options: startTime = 0.0, stopTime = 50.0, numberOfIntervals = 50000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CompareTransformers', options = '', outputFormat = 'mat', variableFilter = 'time|basicTransformer.i1|basicTransformer.i2|inductor21.i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat
+// Files Equal!
+// "true
+// "
+// ""
 // endResult

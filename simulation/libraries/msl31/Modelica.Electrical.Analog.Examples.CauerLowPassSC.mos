@@ -2,51 +2,52 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC,stopTime=60.0);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat","Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff.csv",0.01,0.001,
-  {"C3.v",
-  "C5.v",
-  "C7.v",
-  "C8.v",
-  "C9.v",
-  "R4.Capacitor1.v",
-  "R5.Capacitor1.v",
-  "R8.Capacitor1.v",
-  "R9.Capacitor1.v",
-  "R1.Capacitor1.v",
-  "R2.Capacitor1.v",
-  "R3.Capacitor1.v",
-  "Rp1.Capacitor1.v",
-  "R7.Capacitor1.v",
-  "R10.Capacitor1.v",
-  "R11.Capacitor1.v",
-  "der(C3.v)",
-  "der(C7.v)",
-  "der(R4.Capacitor1.v)",
-  "der(R5.Capacitor1.v)",
-  "der(R8.Capacitor1.v)",
-  "der(R9.Capacitor1.v)",
-  "der(R1.Capacitor1.v)",
-  "der(R2.Capacitor1.v)",
-  "der(R3.Capacitor1.v)",
-  "der(Rp1.Capacitor1.v)",
-  "der(R7.Capacitor1.v)",
-  "der(R10.Capacitor1.v)",
-  "der(R11.Capacitor1.v)"});
-  
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
+compareVars :=
+{
+   "R4.Capacitor1.v",
+   "R5.Capacitor1.v",
+   "R8.Capacitor1.v",
+   "R9.Capacitor1.v",
+   "R1.Capacitor1.v",
+   "R2.Capacitor1.v",
+   "R3.Capacitor1.v",
+   "Rp1.Capacitor1.v",
+   "R7.Capacitor1.v",
+   "R10.Capacitor1.v",
+   "R11.Capacitor1.v",
+   "C3.v",
+   "C7.v",
+   "C1.v",
+   "C4.v",
+   "C8.v"
+};
+
+runScript(modelTesting);getErrorString();
+
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.CauerLowPassSC
+// {"R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v","R7.Capacitor1.v","R10.Capacitor1.v","R11.Capacitor1.v","C3.v","C7.v","C1.v","C4.v","C8.v"}
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = 'time|R4.Capacitor1.v|R5.Capacitor1.v|R8.Capacitor1.v|R9.Capacitor1.v|R1.Capacitor1.v|R2.Capacitor1.v|R3.Capacitor1.v|Rp1.Capacitor1.v|R7.Capacitor1.v|R10.Capacitor1.v|R11.Capacitor1.v|C3.v|C7.v|C1.v|C4.v|C8.v', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat
+// Files Equal!
+// [Modelica 3.1/Electrical/Analog/Sources.mo:138:5-138:53:writable] Warning: Parameter V.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+//
+// "true
+// "
+// ""
 // endResult

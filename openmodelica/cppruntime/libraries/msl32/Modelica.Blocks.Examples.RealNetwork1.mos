@@ -14,7 +14,7 @@ simulate(Modelica.Blocks.Examples.RealNetwork1, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.RealNetwork1_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Blocks.Examples.RealNetwork1.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.RealNetwork1.mat",
   "Modelica.Blocks.Examples.RealNetwork1_diff.csv",0.01,0.0001,
   {"showValue.showNumber","showValue1.showNumber","showValue3.showNumber","multiSwitch.y"});
 

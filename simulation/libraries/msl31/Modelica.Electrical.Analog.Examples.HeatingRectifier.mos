@@ -2,29 +2,37 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Electrical.Analog.Examples.HeatingRectifier,stopTime=5.0);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.HeatingRectifier_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.HeatingRectifier.mat","Modelica.Electrical.Analog.Examples.HeatingRectifier_diff.csv",0.01,0.00001,
-  {"Capacitor1.v",
-  "HeatCapacitor1.T",
-  "der(Capacitor1.v)",
-  "der(HeatCapacitor1.T)"});
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.HeatingRectifier);
+compareVars :=
+{
+   "Capacitor1.v",
+   "HeatCapacitor1.T"
+};
+
+runScript(modelTesting);getErrorString();
 
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Electrical.Analog.Examples.HeatingRectifier_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.HeatingRectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "assert            | warning | The following assertion has been violated at time 0.010000
-// |                 | |       | HeatingDiode1.vt_t >= 1.0 and HeatingDiode1.vt_t <= 6000.0
-// assert            | warning | Variable HeatingDiode1.vt_t out of [min, max] interval: HeatingDiode1.vt_t >= 1.0 and HeatingDiode1.vt_t <= 6000.0 has value: 0.0252618
+// "true
 // "
-// end SimulationResult;
-// {"Files Equal!"}
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation
+// Modelica.Electrical.Analog.Examples.HeatingRectifier
+// {"Capacitor1.v","HeatCapacitor1.T"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.HeatingRectifier', options = '', outputFormat = 'mat', variableFilter = 'time|Capacitor1.v|HeatCapacitor1.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.HeatingRectifier_res.mat
+// Files Equal!
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+//
+// "true
+// "
+// ""
 // endResult

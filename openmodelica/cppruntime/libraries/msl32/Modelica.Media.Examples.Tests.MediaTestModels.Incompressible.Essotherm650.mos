@@ -14,7 +14,7 @@ simulate(Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Essotherm6
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Essotherm650_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Essotherm650.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Essotherm650.mat",
   "Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Essotherm650_diff.csv",0.01,0.0001,
   {"volume.medium.T"});
 

@@ -36,8 +36,5 @@ getErrorString();
 // end SimulationResult;
 // {"Files Equal!"}
 // "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// Warning: Resultfile and Reference have different end time points!
-// Reffile[598]=1.600000
-// File[494]=1.498132
 // "
 // endResult

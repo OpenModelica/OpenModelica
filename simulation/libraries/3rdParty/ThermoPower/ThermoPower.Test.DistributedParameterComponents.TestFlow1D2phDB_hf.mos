@@ -3,7 +3,7 @@
 // status: correct
 
 // Test2
-loadFile("TestOverdeterminedInitializationTotal.mo"); getErrorString();
+loadModel(ThermoPower); getErrorString();
 simulate(ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phDB_hf); getErrorString();
 
 // Result:
@@ -34,6 +34,66 @@ simulate(ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phDB_hf); ge
 //  * candidate: hex.fluidState[2].p(start = 5000000.0)
 //  * candidate: hex.fluidState[1].p(start = 5000000.0)
 // => select value from hex.p(start = hex.pstart) for variable: hex.p
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[10].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[10](nominal = 300.0)
+//  * candidate: hex.wall.T[10](nominal = 300.0)
+//  * candidate: hex.T[10](nominal = 500.0)
+// => select value from hex.T[10](nominal = 500.0) for variable: hex.T[10]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[9].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[9](nominal = 300.0)
+//  * candidate: hex.wall.T[9](nominal = 300.0)
+//  * candidate: hex.T[9](nominal = 500.0)
+// => select value from hex.T[9](nominal = 500.0) for variable: hex.T[9]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[8].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[8](nominal = 300.0)
+//  * candidate: hex.wall.T[8](nominal = 300.0)
+//  * candidate: hex.T[8](nominal = 500.0)
+// => select value from hex.T[8](nominal = 500.0) for variable: hex.T[8]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[7].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[7](nominal = 300.0)
+//  * candidate: hex.wall.T[7](nominal = 300.0)
+//  * candidate: hex.T[7](nominal = 500.0)
+// => select value from hex.T[7](nominal = 500.0) for variable: hex.T[7]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[6].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[6](nominal = 300.0)
+//  * candidate: hex.wall.T[6](nominal = 300.0)
+//  * candidate: hex.T[6](nominal = 500.0)
+// => select value from hex.T[6](nominal = 500.0) for variable: hex.T[6]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[5].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[5](nominal = 300.0)
+//  * candidate: hex.wall.T[5](nominal = 300.0)
+//  * candidate: hex.T[5](nominal = 500.0)
+// => select value from hex.T[5](nominal = 500.0) for variable: hex.T[5]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[4].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[4](nominal = 300.0)
+//  * candidate: hex.wall.T[4](nominal = 300.0)
+//  * candidate: hex.T[4](nominal = 500.0)
+// => select value from hex.T[4](nominal = 500.0) for variable: hex.T[4]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[3].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[3](nominal = 300.0)
+//  * candidate: hex.wall.T[3](nominal = 300.0)
+//  * candidate: hex.T[3](nominal = 500.0)
+// => select value from hex.T[3](nominal = 500.0) for variable: hex.T[3]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[2].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[2](nominal = 300.0)
+//  * candidate: hex.wall.T[2](nominal = 300.0)
+//  * candidate: hex.T[2](nominal = 500.0)
+// => select value from hex.T[2](nominal = 500.0) for variable: hex.T[2]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.fluidState[1].T(nominal = 500.0)
+//  * candidate: heatSource.wall.T[1](nominal = 300.0)
+//  * candidate: hex.wall.T[1](nominal = 300.0)
+//  * candidate: hex.T[1](nominal = 500.0)
+// => select value from hex.T[1](nominal = 500.0) for variable: hex.T[1]
 // Warning: Alias set with several free start values
 //  * candidate: hex.htilde[9](start = hex.hstart[10])
 //  * candidate: hex.h[10](start = hex.hstart[10])
@@ -82,6 +142,14 @@ simulate(ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phDB_hf); ge
 //  * candidate: hex.fluidState[2].h(start = 100000.0)
 //  * candidate: hex.infl.h_outflow(start = hex.hstartin)
 // => select value from hex.htilde[1](start = hex.hstart[2]) for variable: hex.htilde[1]
+// Warning: Alias set with different nominal values
+//  * candidate: hex.dew.d(nominal = 500.0)
+//  * candidate: hex.rhov(nominal = 5.0)
+// => select value from hex.rhov(nominal = 5.0) for variable: hex.rhov
+// Warning: Alias set with different nominal values
+//  * candidate: hex.bubble.d(nominal = 500.0)
+//  * candidate: hex.rhol(nominal = 1000.0)
+// => select value from hex.rhol(nominal = 1000.0) for variable: hex.rhol
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.hex.p = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.hex.htilde[1] = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.hex.htilde[2] = 0.0

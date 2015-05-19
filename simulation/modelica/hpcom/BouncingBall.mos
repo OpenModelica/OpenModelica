@@ -11,7 +11,7 @@ simulate(BouncingBall, stopTime=3.0); getErrorString();
 
 //res := OpenModelica.Scripting.checkTaskGraph("taskGraphBouncingBallODE.graphml","ReferenceGraphs/BouncingBall_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
-  "ReferenceFiles/BouncingBall.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/hpcom/BouncingBall.mat",
   "BouncingBall_diff.csv", 0.01, 0.0001,
   {"h"});
 getErrorString();

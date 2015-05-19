@@ -14,7 +14,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.CraneCrab, tolerance=0.0001); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.CraneCrab_res.mat",
-  "ReferenceFiles/CraneCrab.mat","PlanarMechanicsForTesting.Examples.CraneCrab_diff.csv",0.01,0.002,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//CraneCrab.mat","PlanarMechanicsForTesting.Examples.CraneCrab_diff.csv",0.01,0.002,
   {"prismatic.s", "revolute.phi", "revolute.w"});
 
 // Result:

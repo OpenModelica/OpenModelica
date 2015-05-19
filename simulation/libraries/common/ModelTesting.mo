@@ -11,4 +11,6 @@ type Kind = enumeration(Instantiation "Like instantiateModel()",
 type SimulationRuntime = enumeration(C "C Runtime",
                                      Cpp "Cpp Runtime");
 
+type DiffAlgorithm = enumeration(compareSimulationResults, diffSimulationResults);
+
 end OpenModelicaModelTesting;

@@ -17,7 +17,7 @@ simulate(Modelica.Fluid.Examples.BranchingDynamicPipes, stopTime=1.0); getErrorS
 
 //res := OpenModelica.Scripting.checkTaskGraph("taskGraphModelica.Fluid.Examples.BranchingDynamicPipesODE.graphml","ReferenceGraphs/Fluid.BranchingDynamicPipes_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.BranchingDynamicPipes_res.mat",
-  "ReferenceFiles/Modelica.Fluid.Examples.BranchingDynamicPipes.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.BranchingDynamicPipes.mat",
   "Modelica.Fluid.Examples.BranchingDynamicPipes_diff.csv",0.13,0.0005,
   {   "pipe1.mediums[1].p",
    "pipe1.mediums[1].Xi[1]",

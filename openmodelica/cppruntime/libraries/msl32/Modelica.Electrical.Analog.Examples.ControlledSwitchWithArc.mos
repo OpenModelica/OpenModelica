@@ -14,7 +14,7 @@ setDebugFlags("initialization"); getErrorString();
 simulate(Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc.mat",
   "Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc_diff.csv",0.01,0.0001,
   {"inductor1.i",
    "inductor2.i"});

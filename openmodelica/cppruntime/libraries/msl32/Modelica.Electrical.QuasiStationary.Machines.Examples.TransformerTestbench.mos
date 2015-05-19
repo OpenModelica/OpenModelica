@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbe
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mat",
   "Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_diff.csv",0.01,0.0001,
   {"source.plug_p.reference.gamma",
    "source.voltageSource[2].pin_p.reference.gamma",

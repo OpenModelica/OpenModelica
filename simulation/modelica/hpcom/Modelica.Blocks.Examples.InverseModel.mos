@@ -17,7 +17,7 @@ simulate(Modelica.Blocks.Examples.InverseModel);
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.InverseModel_res.mat",
-  "ReferenceFiles/Modelica.Blocks.Examples.InverseModel.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.InverseModel.mat",
   "Modelica.Blocks.Examples.InverseModel_diff.csv",0.01,0.0001,
 {
    "firstOrder1.y",

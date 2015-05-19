@@ -18,7 +18,6 @@ setComponentComment(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.mat";
 compareVars :=
 {
   "tank1.level", 

@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad, ou
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad.mat",
   "Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad_diff.csv",0.01,0.0001,
   {"transformer.l2sigma.inductor[1].i"});
 

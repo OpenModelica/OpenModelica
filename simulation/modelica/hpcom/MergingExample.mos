@@ -13,7 +13,7 @@ simulate(MergingExample, stopTime = 1.0); getErrorString();
 
 res := OpenModelica.Scripting.checkTaskGraph("taskGraphMergingExampleODE.graphml","ReferenceGraphs/MergingExample_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("MergingExample_res.mat",
-  "ReferenceFiles/MergingExample.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/hpcom/MergingExample.mat",
   "MergingExample_diff.csv",0.01,0.0001,
   {"a",
    "b",
@@ -46,7 +46,8 @@ res := OpenModelica.Scripting.compareSimulationResults("MergingExample_res.mat",
 // record SimulationResult
 //     resultFile = "MergingExample_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MergingExample', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// "
 // end SimulationResult;
 // "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.

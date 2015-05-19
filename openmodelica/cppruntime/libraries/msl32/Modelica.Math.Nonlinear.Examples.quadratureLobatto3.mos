@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.Translation;
 modelName := $TypeName(Modelica.Math.Nonlinear.Examples.quadratureLobatto3);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Math.Nonlinear.Examples.quadratureLobatto3.mat";
 // compareVars := {"q","qd"};
 
 runScript(modelTesting);getErrorString();

@@ -13,7 +13,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Oscillator);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.Oscillator.mat";
 compareVars :=
 {
    "c.p.v",

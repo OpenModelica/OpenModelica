@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.InverseParameterization);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.InverseParameterization.mat";
 compareVars :=
 {
    "source.ports[1].m_flow",

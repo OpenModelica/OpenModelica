@@ -14,7 +14,7 @@ simulate(Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling, outputFormat="
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling.mat",
   "Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling_diff.csv",0.01,0.0001,
   {"pipe1.T",
    "pipe2.T",

@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Inverter.mat";
 compareVars :=
 {
   "aimc.i_0_s",

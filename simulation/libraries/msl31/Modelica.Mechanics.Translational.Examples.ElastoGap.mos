@@ -2,59 +2,60 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Mechanics.Translational.Examples.ElastoGap,stopTime=10.0,simflags="-emit_protected");
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.ElastoGap_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.ElastoGap.mat","Modelica.Mechanics.Translational.Examples.ElastoGap_diff.csv",0.01,0.001,
-  {"springDamper1.s_rel",
-  "mass1.v",
-  "elastoGap1.s_rel",
-  "mass2.v",
-  "der(springDamper1.s_rel)",
-  "der(mass1.v)",
-  "der(elastoGap1.s_rel)",
-  "der(mass2.v)",
-  "fixed.flange.f",
-  "rod1.flange_b.f",
-  "rod2.flange_b.f",
-  "springDamper1.flange_b.s",
-  "springDamper2.s_rel",
-  "springDamper2.f",
-  "springDamper2.flange_a.s",
-  "mass1.s",
-  "mass1.flange_a.f",
-  "mass1.a",
-  "elastoGap1.f_c",
-  "elastoGap1.f_d2",
-  "elastoGap1.f_d",
-  "elastoGap2.s_rel",
-  "elastoGap2.f",
-  "elastoGap2.f_c",
-  "elastoGap2.f_d2",
-  "elastoGap2.f_d",
-  "mass2.s",
-  "mass2.flange_a.s",
-  "mass2.flange_a.f",
-  "mass2.flange_b.s",
-  "mass2.a",
-  "elastoGap2.flange_b.s",
-  "rod2.s",
-  "elastoGap1.flange_a.s",
-  "rod1.s",
-  "elastoGap2.contact",
-  "elastoGap1.contact"});
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.Translational.Examples.ElastoGap);
+compareVars :=
+{
+   "fixed.flange.f",
+   "rod1.flange_b.f",
+   "rod2.flange_b.f",
+   "springDamper1.s_rel",
+   "springDamper1.f",
+   "springDamper2.s_rel",
+   "springDamper2.f",
+   "mass1.s",
+   "mass1.v",
+   "mass1.a",
+   "mass1.flange_a.f",
+   "elastoGap1.s_rel",
+   "mass2.s",
+   "mass2.v",
+   "mass2.a",
+   "mass2.flange_a.f",
+   "elastoGap1.f_c",
+   "elastoGap1.f_d2",
+   "elastoGap1.f_d",
+   "elastoGap2.s_rel",
+   "elastoGap2.f",
+   "elastoGap2.f_c",
+   "elastoGap2.f_d2",
+   "elastoGap2.f_d",
+   "elastoGap2.flange_b.s",
+   "elastoGap1.flange_a.s",
+   "elastoGap2.contact",
+   "elastoGap1.contact"
+};
+
+runScript(modelTesting);getErrorString();
 
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Mechanics.Translational.Examples.ElastoGap_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.ElastoGap', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.Translational.Examples.ElastoGap
+// {"fixed.flange.f","rod1.flange_b.f","rod2.flange_b.f","springDamper1.s_rel","springDamper1.f","springDamper2.s_rel","springDamper2.f","mass1.s","mass1.v","mass1.a","mass1.flange_a.f","elastoGap1.s_rel","mass2.s","mass2.v","mass2.a","mass2.flange_a.f","elastoGap1.f_c","elastoGap1.f_d2","elastoGap1.f_d","elastoGap2.s_rel","elastoGap2.f","elastoGap2.f_c","elastoGap2.f_d2","elastoGap2.f_d","elastoGap2.flange_b.s","elastoGap1.flange_a.s","elastoGap2.contact","elastoGap1.contact"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.ElastoGap', options = '', outputFormat = 'mat', variableFilter = 'time|fixed.flange.f|rod1.flange_b.f|rod2.flange_b.f|springDamper1.s_rel|springDamper1.f|springDamper2.s_rel|springDamper2.f|mass1.s|mass1.v|mass1.a|mass1.flange_a.f|elastoGap1.s_rel|mass2.s|mass2.v|mass2.a|mass2.flange_a.f|elastoGap1.f_c|elastoGap1.f_d2|elastoGap1.f_d|elastoGap2.s_rel|elastoGap2.f|elastoGap2.f_c|elastoGap2.f_d2|elastoGap2.f_d|elastoGap2.flange_b.s|elastoGap1.flange_a.s|elastoGap2.contact|elastoGap1.contact', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.Translational.Examples.ElastoGap_res.mat
+// "true
+// "
+// ""
 // endResult

@@ -15,7 +15,7 @@ simulate(Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2, outp
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2.mat",
   "Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2_diff.csv",0.01,0.0001,
   {"tank1.level",
    "tank1.medium.T"});

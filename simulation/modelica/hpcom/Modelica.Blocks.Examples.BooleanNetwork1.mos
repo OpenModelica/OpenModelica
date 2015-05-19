@@ -15,7 +15,7 @@ setDebugFlags("hpcom"); getErrorString();
 simulate(Modelica.Blocks.Examples.BooleanNetwork1, stopTime=1.0); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.BooleanNetwork1_res.mat",
-  "ReferenceFiles/Modelica.Blocks.Examples.BooleanNetwork1.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.BooleanNetwork1.mat",
   "Modelica.Blocks.Examples.BooleanNetwork1_diff.csv",0.13,0.0005,
   {"showValue4.showActive",
    "showValue5.showActive",

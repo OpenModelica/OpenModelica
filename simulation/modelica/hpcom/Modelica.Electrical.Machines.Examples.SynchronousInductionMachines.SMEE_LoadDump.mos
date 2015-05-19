@@ -17,7 +17,7 @@ simulate(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE
 
 //res := OpenModelica.Scripting.checkTaskGraph("taskGraphModelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDumpODE.graphml","ReferenceGraphs/Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_TaskGraphODE.graphml");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_res.mat",
-  "ReferenceFiles/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump.mat",
   "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_diff.csv",0.01,0.0001,
   {
    "speed.phi",

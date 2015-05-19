@@ -23,8 +23,8 @@ getErrorString();
 //     messages = "Failed to build model: PantelidesSingular"
 // end SimulationResult;
 // "[simulation/modelica/indexreduction/PantelidesSingular.mo:12:3-12:22:writable] Error: Model is structurally singular, error found sorting equations 
-//  3: 0.0 = 40.0 * x + x ^ 2.0 - y2;
-// 2: 0.0 = der(x) * y1 + x;
+//  3: 0.0 = 40.0 * x + x ^ 2.0 - y2 ;
+// 2: 0.0 = der(x) * y1 + x ;
 //  for variables 
 //  x(3), u2(1), u1(2)
 // Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!

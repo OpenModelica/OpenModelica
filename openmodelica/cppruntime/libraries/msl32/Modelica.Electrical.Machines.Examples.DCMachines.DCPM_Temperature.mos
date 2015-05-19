@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature, outp
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature.mat",
   "Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature_diff.csv",0.01,0.0001,
   {"dcpm.la.i",
    "loadInertia.phi",

@@ -14,7 +14,7 @@ simulate(Modelica.Blocks.Examples.PID_Controller, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.PID_Controller_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Blocks.Examples.PID_Controller.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.PID_Controller.mat",
   "Modelica.Blocks.Examples.PID_Controller_diff.csv",0.01,0.0001,
   {"PI.I.y",
    "inertia1.phi",

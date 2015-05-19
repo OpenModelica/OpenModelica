@@ -16,7 +16,7 @@ setIndexReductionMethod("dynamicStateSelection");
 simulate(PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection,stopTime=0.000001,steps=2); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_res.mat",
-  "ReferenceFiles/PistonEngine.mat","PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_diff.csv",0.01,0.001,
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//PistonEngine.mat","PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_diff.csv",0.01,0.001,
   {"prismatic.s", "prismatic.v", "revoluteDrive.w"});
 
 // Result:

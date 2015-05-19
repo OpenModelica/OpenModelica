@@ -12,7 +12,7 @@ loadModel(Modelica,{"3.2.1"});
 simulate(Modelica.Mechanics.Translational.Examples.PreLoad, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.PreLoad_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.Translational.Examples.PreLoad.mat","Modelica.Mechanics.Translational.Examples.PreLoad_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.PreLoad.mat","Modelica.Mechanics.Translational.Examples.PreLoad_diff.csv",0.01,0.00001,
   {"friction.v_rel",
    "innerContactA.s_rel",
    "innerContactB.s_rel",

@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator.mat";
 compareVars :=
 {
   "constantSpeedE.phi",

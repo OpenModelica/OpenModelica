@@ -1,18 +1,16 @@
 // name:     Modelica.Electrical.Spice3.Examples.CoupledInductors_HPCOM_Level_OMP
 // keywords: simulation MSL Examples
 // status: correct
-// 
+//
 // Simulation Results
 // Modelica Standard Library
 //
 
 runScript("ModelTestingDefaults.mos");getErrorString();
-simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.CoupledInductors);
 timeout := 60;
 
-referenceFile := "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.CoupledInductors.mat";
 compareVars :=
 {
    "L1.iinternal",
@@ -36,9 +34,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.CoupledInductors
-
 // 60
-// "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Spice3.Examples.CoupledInductors.mat"
 // {"L1.iinternal","L2.iinternal","C1.v","L3.iinternal","C2.v"}
 // true
 // ""

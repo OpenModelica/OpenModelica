@@ -5,9 +5,14 @@
 // omc debug dump: +d=dumpConstrepl
 // 
 
-loadModel(Modelica, {"3.2"}); getErrorString();
+// TODO: change this model to test the dump +d=dumpConstrepl
+loadString("
+model test_dumpConstrepl
+end test_dumpConstrepl;
+"); getErrorString();
+
 setDebugFlags("dumpConstrepl"); getErrorString();
-buildModel(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot); getErrorString();
+buildModel(test_dumpConstrepl); getErrorString();
 
 // Result:
 // true
@@ -18,139 +23,6 @@ buildModel(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot); get
 // Replacements: (0)
 // ========================================
 //
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (61)
-// ========================================
-// axis6.gear.bearingFriction.unitTorque -> 1.0
-// axis6.gear.bearingFriction.unitAngularAcceleration -> 1.0
-// axis6.gear.bearingFriction.Backward -> -1
-// axis6.gear.bearingFriction.Stuck -> 0
-// axis6.gear.bearingFriction.Forward -> 1
-// axis6.gear.bearingFriction.Free -> 2
-// axis6.gear.bearingFriction.Unknown -> 3
-// axis6.gear.unitTorque -> 1.0
-// axis6.gear.unitAngularVelocity -> 1.0
-// axis5.gear.bearingFriction.unitTorque -> 1.0
-// axis5.gear.bearingFriction.unitAngularAcceleration -> 1.0
-// axis5.gear.bearingFriction.Backward -> -1
-// axis5.gear.bearingFriction.Stuck -> 0
-// axis5.gear.bearingFriction.Forward -> 1
-// axis5.gear.bearingFriction.Free -> 2
-// axis5.gear.bearingFriction.Unknown -> 3
-// axis5.gear.unitTorque -> 1.0
-// axis5.gear.unitAngularVelocity -> 1.0
-// axis4.gear.bearingFriction.unitTorque -> 1.0
-// axis4.gear.bearingFriction.unitAngularAcceleration -> 1.0
-// axis4.gear.bearingFriction.Backward -> -1
-// axis4.gear.bearingFriction.Stuck -> 0
-// axis4.gear.bearingFriction.Forward -> 1
-// axis4.gear.bearingFriction.Free -> 2
-// axis4.gear.bearingFriction.Unknown -> 3
-// axis4.gear.unitTorque -> 1.0
-// axis4.gear.unitAngularVelocity -> 1.0
-// axis3.gear.bearingFriction.unitTorque -> 1.0
-// axis3.gear.bearingFriction.unitAngularAcceleration -> 1.0
-// axis3.gear.bearingFriction.Backward -> -1
-// axis3.gear.bearingFriction.Stuck -> 0
-// axis3.gear.bearingFriction.Forward -> 1
-// axis3.gear.bearingFriction.Free -> 2
-// axis3.gear.bearingFriction.Unknown -> 3
-// axis3.gear.unitTorque -> 1.0
-// axis3.gear.unitAngularVelocity -> 1.0
-// axis2.gear.bearingFriction.unitTorque -> 1.0
-// axis2.gear.bearingFriction.unitAngularAcceleration -> 1.0
-// axis2.gear.bearingFriction.Backward -> -1
-// axis2.gear.bearingFriction.Stuck -> 0
-// axis2.gear.bearingFriction.Forward -> 1
-// axis2.gear.bearingFriction.Free -> 2
-// axis2.gear.bearingFriction.Unknown -> 3
-// axis2.gear.unitTorque -> 1.0
-// axis2.gear.unitAngularVelocity -> 1.0
-// axis1.gear.bearingFriction.unitTorque -> 1.0
-// axis1.gear.bearingFriction.unitAngularAcceleration -> 1.0
-// axis1.gear.bearingFriction.Backward -> -1
-// axis1.gear.bearingFriction.Stuck -> 0
-// axis1.gear.bearingFriction.Forward -> 1
-// axis1.gear.bearingFriction.Free -> 2
-// axis1.gear.bearingFriction.Unknown -> 3
-// axis1.gear.unitTorque -> 1.0
-// axis1.gear.unitAngularVelocity -> 1.0
-// pathPlanning.path.eps -> 1e-14
-// mechanics.r6.phi_offset -> 0.0
-// mechanics.r5.phi_offset -> 0.0
-// mechanics.r4.phi_offset -> 0.0
-// mechanics.r3.phi_offset -> 0.0
-// mechanics.r2.phi_offset -> 0.0
-// mechanics.r1.phi_offset -> 0.0
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-//
-// Replacements: (0)
-// ========================================
-//
-// {"Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot","Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_init.xml"}
-// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// "
+// {"test_dumpConstrepl","test_dumpConstrepl_init.xml"}
+// ""
 // endResult

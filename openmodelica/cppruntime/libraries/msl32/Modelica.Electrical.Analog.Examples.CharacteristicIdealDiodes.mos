@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes, outputFo
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes.mat",
   "Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_diff.csv",0.01,0.0001,
   {"R1.i",
    "R1.v",

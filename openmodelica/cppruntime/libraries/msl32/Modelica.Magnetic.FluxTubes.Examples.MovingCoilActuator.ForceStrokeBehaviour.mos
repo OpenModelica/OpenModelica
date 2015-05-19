@@ -17,7 +17,7 @@ setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 simulate(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour.mat",
   "Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour_diff.csv",0.01,0.0001,
   {""});
 

@@ -16,7 +16,6 @@ setDebugFlags("nogen");
 
 modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
 modelName := $TypeName(Modelica.Fluid.Examples.HeatingSystem);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.HeatingSystem.mat";
 compareVars :=
 {
    "heater.mediums[1].h",

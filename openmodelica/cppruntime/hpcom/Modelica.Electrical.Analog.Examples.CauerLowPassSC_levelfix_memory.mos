@@ -2,17 +2,15 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 runScript("ModelTestingDefaults.mos");getErrorString();
-simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
 timeout := 600;
 outputFormat := "mat";
-referenceFile := "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat";
 compareVars :=
 {
    "R4.Capacitor1.v",
@@ -36,7 +34,7 @@ compareVars :=
 setDebugFlags("hpcom,hpcomMemoryOpt"); getErrorString();
 setCommandLineOptions("+n=1 +hpcomCode=pthreads +hpcomScheduler=levelfix"); getErrorString();
 
-runScript(modelTesting);getErrorString();
+runScript(modelTesting);print(getErrorString());
 
 // Result:
 // "true

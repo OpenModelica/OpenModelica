@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses.mat";
 compareVars :=
 {
   "converter_e.singlePhaseElectroMagneticConverter[3].Phi.re",

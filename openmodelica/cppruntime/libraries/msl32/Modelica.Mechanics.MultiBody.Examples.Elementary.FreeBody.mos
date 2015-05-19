@@ -8,18 +8,11 @@
 // Modelica Standard Library
 //
 
-loadFile("../../../../simulation/libraries/common/ModelTesting.mo");
-loadModel(Modelica,{"3.2.1"});
-simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+runScript("ModelTestingDefaults.mos");
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody.mat";
-stopTime := 0.0; // For reading stopTime from annotation
-relTol := 0.01;
-absTol := 0.0001;
-outputFormat :="mat";
 compareVars := {"body.v_0[1]","body.v_0[2]","body.v_0[3]","body.body.frame_a.r_0[1]","body.body.frame_a.r_0[2]","body.body.frame_a.r_0[3]","body.body.w_a[1]","body.body.w_a[2]","body.body.w_a[3]"};
-runScript("../../../../simulation/libraries/common/ModelTesting.mos");
+runScript(modelTesting);
 getErrorString();
 
 

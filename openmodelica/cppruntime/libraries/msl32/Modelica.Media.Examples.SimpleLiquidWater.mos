@@ -14,7 +14,7 @@ simulate(Modelica.Media.Examples.SimpleLiquidWater, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.SimpleLiquidWater_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.SimpleLiquidWater.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.SimpleLiquidWater.mat",
   "Modelica.Media.Examples.SimpleLiquidWater_diff.csv",0.01,0.0001,
   {"U"});
 

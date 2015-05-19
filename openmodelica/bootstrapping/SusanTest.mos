@@ -7,7 +7,7 @@
 
 setCommandLineOptions({"+g=MetaModelica","+d=rml,noevalfunc"});
 echo(false);
-prefixPath := "../../../OMCompiler/Compiler/";
+prefixPath := getEnvironmentVar("OMCOMPILERSOURCES") + "/";
 echo(true);
 loadFile(prefixPath + "FrontEnd/Absyn.mo");
 getErrorString();

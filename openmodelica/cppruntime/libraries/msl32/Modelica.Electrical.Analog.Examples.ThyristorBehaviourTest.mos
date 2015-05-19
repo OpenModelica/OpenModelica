@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest, outputForma
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest.mat",
   "Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest_diff.csv",0.01,0.0001,
   {"thyristor_v4_1.vControl",
    "inductor.i"});

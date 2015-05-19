@@ -14,7 +14,7 @@ simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathTo
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathToAxisControlBus_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathToAxisControlBus.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathToAxisControlBus.mat",
   "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathToAxisControlBus_diff.csv",0.01,0.0001,
   {"moving[1]",
    "moving[2]",

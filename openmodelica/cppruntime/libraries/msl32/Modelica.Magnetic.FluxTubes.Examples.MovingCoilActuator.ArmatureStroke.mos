@@ -13,7 +13,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke.mat";
 compareVars :=
 {
   "cActuator.l.i",

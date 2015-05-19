@@ -2,26 +2,44 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Electrical.MultiPhase.Examples.TransformerYY,stopTime=0.1);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.MultiPhase.Examples.TransformerYY_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.MultiPhase.Examples.TransformerYY.mat","Modelica.Electrical.MultiPhase.Examples.TransformerYY_diff.csv",0.01,0.0003,
-  {"transformerL.inductor[1].i",
-  "transformerL.inductor[2].i",
-  "der(transformerL.inductor[1].i)",
-  "der(transformerL.inductor[2].i)"});
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.MultiPhase.Examples.TransformerYY);
+compareVars :=
+{
+   "transformerL.inductor[1].i",
+   "transformerL.inductor[2].i",
+   "transformerL.inductor[3].i"
+};
+
+runScript(modelTesting);getErrorString();
 
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Electrical.MultiPhase.Examples.TransformerYY_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.TransformerYY', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.MultiPhase.Examples.TransformerYY
+// {"transformerL.inductor[1].i","transformerL.inductor[2].i","transformerL.inductor[3].i"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.TransformerYY', options = '', outputFormat = 'mat', variableFilter = 'time|transformerL.inductor.1..i|transformerL.inductor.2..i|transformerL.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.MultiPhase.Examples.TransformerYY_res.mat
+// Files Equal!
+// [Modelica 3.1/Electrical/MultiPhase.mo:1425:7-1425:58:writable] Warning: Parameter idealTransformer.n[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1425:7-1425:58:writable] Warning: Parameter idealTransformer.n[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1425:7-1425:58:writable] Warning: Parameter idealTransformer.n[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+//
+// "true
+// "
+// ""
 // endResult

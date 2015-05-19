@@ -15,7 +15,6 @@ setMatchingAlgorithm("PRExt"); getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.HeatLosses);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.Rotational.Examples.HeatLosses.mat";
 compareVars :=
 {
   "inertia1.w",

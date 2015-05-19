@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCEE_Start);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.DCMachines.DCEE_Start.mat";
 compareVars :=
 {
   "dcee.la.i",

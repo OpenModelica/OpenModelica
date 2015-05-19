@@ -15,7 +15,7 @@ simulate(Modelica.Fluid.Examples.Tanks.ThreeTanks, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.Tanks.ThreeTanks_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.Tanks.ThreeTanks.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.Tanks.ThreeTanks.mat",
   "Modelica.Fluid.Examples.Tanks.ThreeTanks_diff.csv",0.01,0.0001,
   {"tank1.level",
    "tank1.medium.T",

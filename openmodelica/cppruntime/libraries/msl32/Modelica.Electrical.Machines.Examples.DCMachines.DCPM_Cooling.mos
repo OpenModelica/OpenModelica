@@ -12,7 +12,6 @@ runScript("ModelTestingDefaults.mos");getErrorString();
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling);
-referenceFile := "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling.mat";
 compareVars :=
 {
   "dcpm.la.i",

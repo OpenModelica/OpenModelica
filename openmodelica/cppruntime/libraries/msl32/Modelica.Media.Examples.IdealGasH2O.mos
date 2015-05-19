@@ -14,7 +14,7 @@ simulate(Modelica.Media.Examples.IdealGasH2O, outputFormat="mat");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.IdealGasH2O_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.IdealGasH2O.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.IdealGasH2O.mat",
   "Modelica.Media.Examples.IdealGasH2O_diff.csv",0.01,0.0001,
   {"state.p",
    "state.T",

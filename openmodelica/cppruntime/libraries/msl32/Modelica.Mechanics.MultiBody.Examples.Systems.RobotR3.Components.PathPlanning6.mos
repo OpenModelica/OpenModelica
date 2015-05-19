@@ -14,7 +14,7 @@ simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPl
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning6_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning6.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning6.mat",
   "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning6_diff.csv",0.01,0.0001,
   {"controlBus.axisControlBus1.angle_ref",
    "controlBus.axisControlBus1.speed_ref",

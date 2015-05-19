@@ -13,7 +13,7 @@ loadModel(Modelica,{"3.2.1"});
 simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint,outputFormat="mat",stopTime=5.0); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_diff.csv",0.01,0.00001,
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_diff.csv",0.01,0.00001,
   {"gearConstraint.actuatedRevolute_b.phi",
   "gearConstraint.actuatedRevolute_b.w",
   "inertia1.phi",

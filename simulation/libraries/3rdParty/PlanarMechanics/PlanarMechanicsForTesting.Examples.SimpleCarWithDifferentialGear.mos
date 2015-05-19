@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.* PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear_* PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.exe PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.cpp PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.makefile PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.libs PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.log PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.c PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -14,10 +14,8 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 simulate(PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear_res.mat",
-  "ReferenceFiles/SimpleCarWithDifferentialGear.mat","PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear_diff.csv",0.01,0.025,
-  {"body1.frame_a.phi", "actuatedRevolute.phi", "actuatedRevolute.w", "WheelJoint3.f_lat", "WheelJoint3.f_long", "body.v[1]",
-   "body1.r[1]", "body1.r[2]", "body1.w", "body2.v[2]", "inertia.phi", "inertia.w", "inertia1.phi", "inertia1.w", "inertia2.phi",
-   "inertia2.w", "inertia3.phi", "inertia3.w"});
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//SimpleCarWithDifferentialGear.mat","PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear_diff.csv",0.01,0.025,
+  {"body1.frame_a.phi", "actuatedRevolute.phi", "actuatedRevolute.w", "WheelJoint3.f_lat", "WheelJoint3.f_long", "body.v[1]", "body1.r[1]", "body1.r[2]", "body1.w", "body2.v[2]", "inertia.phi", "inertia.w", "inertia1.phi", "inertia1.w", "inertia2.phi", "inertia2.w", "inertia3.phi", "inertia3.w"});
 
 // Result:
 // true

@@ -14,7 +14,7 @@ simulate(Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine, outputF
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine.mat",
   "Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine_diff.csv",0.01,0.0001,
   {"x_zero"});
 

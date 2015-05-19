@@ -14,7 +14,7 @@ simulate(Modelica.Electrical.Analog.Examples.HeatingMOSInverter, outputFormat="m
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.HeatingMOSInverter_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Analog.Examples.HeatingMOSInverter.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.HeatingMOSInverter.mat",
   "Modelica.Electrical.Analog.Examples.HeatingMOSInverter_diff.csv",0.01,0.0001,
   {"Capacitor1.v",
    "HeatCapacitor1.T"});

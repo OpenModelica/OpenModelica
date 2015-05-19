@@ -14,7 +14,7 @@ setDebugFlags({"pedantic"}); getErrorString();
 simulate(Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier.mat",
   "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_diff.csv",0.01,0.0001,
   {"voltageQS.pin_p.reference.gamma",
    "iAC.mean1.x",

@@ -27,21 +27,18 @@ buildModel(testDumpSparsePattern); getErrorString();
 // ""
 // true
 // ""
-// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 4 maxNodeDegree: 2 time : 0.35
-// Print sparse pattern: 2
-// Row[1] = {1;2}
-// Row[2] = {1;2}
+// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 1 maxNodeDegree: 1 time : 0.0
+// Print sparse pattern: 1
+// Row[1] = {1}
 //
-// Print sparse pattern: 2
-// Row[1] = {2;1}
-// Row[2] = {2;1}
+// Print sparse pattern: 1
+// Row[1] = {1}
 //
 // Print Coloring Cols: 
-// Print sparse pattern: 2
+// Print sparse pattern: 1
 // Row[1] = {1}
-// Row[2] = {2}
 //
-// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 0 maxNodeDegree: 1 time : 0.38
+// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 0 maxNodeDegree: 1 time : 0.7973072568439999
 // Print sparse pattern: 1
 // Row[1] = {}
 //
@@ -52,19 +49,16 @@ buildModel(testDumpSparsePattern); getErrorString();
 // Print sparse pattern: 1
 // Row[1] = {1}
 //
-// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 4 maxNodeDegree: 2 time : 0.53
-// Print sparse pattern: 2
-// Row[1] = {1;2}
-// Row[2] = {1;2}
+// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 1 maxNodeDegree: 1 time : 1.137616256844
+// Print sparse pattern: 1
+// Row[1] = {1}
 //
-// Print sparse pattern: 2
-// Row[1] = {2;1}
-// Row[2] = {2;1}
+// Print sparse pattern: 1
+// Row[1] = {1}
 //
 // Print Coloring Cols: 
-// Print sparse pattern: 2
+// Print sparse pattern: 1
 // Row[1] = {1}
-// Row[2] = {2}
 //
 // {"testDumpSparsePattern","testDumpSparsePattern_init.xml"}
 // ""

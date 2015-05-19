@@ -2,49 +2,36 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"});
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
 
-simulate(Modelica.Blocks.Examples.InverseModel,stopTime=2);
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.InverseModel_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.InverseModel.mat","Modelica.Blocks.Examples.InverseModel_diff.csv",0.01,0.01,{"firstOrder1.y",
-  "firstOrder2.y",
-  "der(firstOrder2.y)",
-  "sine.y",
-  "inverseBlockConstraints.y2",
-  "feedback.y",
-  "firstOrder1.k",
-  "firstOrder1.T",
-  "firstOrder1.initType",
-  "firstOrder1.y_start",
-  "sine.amplitude",
-  "sine.freqHz",
-  "sine.phase",
-  "sine.offset",
-  "sine.startTime",
-  "firstOrder2.k",
-  "firstOrder2.T",
-  "firstOrder2.initType",
-  "firstOrder2.y_start",
-  "criticalDamping.f",
-  "criticalDamping.initType",
-  "criticalDamping.y_start",
-  "criticalDamping.alpha",
-  "criticalDamping.w",
-  "criticalDamping.x_start[1]",
-  "criticalDamping.n",
-  "criticalDamping.normalized"});
-  
-  
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Blocks.Examples.InverseModel);
+compareVars :=
+{
+   "firstOrder1.y",
+   "firstOrder2.y",
+   "feedback.y"
+};
+
+runScript(modelTesting);getErrorString();
+
 // Result:
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Blocks.Examples.InverseModel_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.InverseModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
-// end SimulationResult;
-// {"Files Equal!"}
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Blocks.Examples.InverseModel
+// {"firstOrder1.y","firstOrder2.y","feedback.y"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.InverseModel', options = '', outputFormat = 'mat', variableFilter = 'time|firstOrder1.y|firstOrder2.y|feedback.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Blocks.Examples.InverseModel_res.mat
+// Files Equal!
+// "true
+// "
+// ""
 // endResult

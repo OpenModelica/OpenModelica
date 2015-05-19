@@ -16,7 +16,7 @@ simulate(Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank, stopTime=100);
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank_res.mat",
-  "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank.mat",
   "Modelica.Fluid.Examples.AST_BatchPlant.Test.OneTank_diff.csv",0.01,0.0001,
   {"tank.level",
    "tank.medium.T"});

@@ -39,5 +39,19 @@ for f in *.mat; do
 done
 ```
 
+```bash
+for f in *.mos; do
+  # MAT=`echo $f | sed "s/[.]mos/.mat/"`
+  MAT=`echo $f | sed "s/[.]mos//" | rev | cut -d. -f1 | rev`.mat
+  VARS=`grep -v "^//" $f | grep -v loadModel | grep "{[^{]*}"`
+  cat > a.mos <<EOL
+filterSimulationResults("$MAT","ReferenceFiles/$MAT",$VARS
+getErrorString();
+EOL
+  omc a.mos
+  rm -f a.mos
+done
+```
+
 If the model uses the model testing scripts, you might be able to
 simply change the common file to produce the filtered outputs directly.
