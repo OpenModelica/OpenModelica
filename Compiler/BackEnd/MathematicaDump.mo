@@ -112,10 +112,6 @@ algorithm
     DAE.Algorithm alg;
     BackendDAE.WhenEquation whenEq;
 
-    case(BackendDAE.EQUATION(
-          exp = DAE.CALL( path = Absyn.IDENT("der"),
-          expLst = {DAE.CREF(DAE.CREF_IDENT("$dummy",_,_),_)})
-          ),_) then "";
     case(BackendDAE.EQUATION(exp=e1,scalar=e2),(vars,knvars)) equation
       s1 = printExpMmaStr(e1,vars,knvars);
       s2 = printExpMmaStr(e2,vars,knvars);

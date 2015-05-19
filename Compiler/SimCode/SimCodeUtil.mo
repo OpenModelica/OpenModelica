@@ -14816,17 +14816,5 @@ algorithm
   end match;
 end codegenPeekTryThrowIndex;
 
-public function isDummyEq
-  input SimCode.SimEqSystem eq;
-  output Boolean isDummy;
-algorithm
-  isDummy := matchcontinue(eq)
-  case(SimCode.SES_SIMPLE_ASSIGN(cref=DAE.CREF_QUAL(ident = "$DER", componentRef = DAE.CREF_IDENT(ident="$dummy"))))
-    then true;
-  else
-    then false;
-  end matchcontinue;
-end isDummyEq;
-
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
