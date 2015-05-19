@@ -4,6 +4,8 @@ OMBUILDDIR=$(REALPATH)/build
 
 .PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim
 
+all: omc omc-diff omlibrary-core
+
 omc:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR)
 
