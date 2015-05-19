@@ -893,12 +893,20 @@ template functionSimProfDef(SimEqSystem eq, Integer value, Text &reverseProf)
   "Generates function in simulation file."
 ::=
   match eq
-  case SES_MIXED(__)
-  case SES_LINEAR(__)
-  case SES_NONLINEAR(__) then
+  case SES_MIXED(__) then
     let &reverseProf += 'data->modelData.equationInfo_reverse_prof_index[<%value%>] = <%index%>;<%\n%>'
     <<
     #define SIM_PROF_EQ_<%index%> <%value%><%\n%>
+    >>
+  case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
+    let &reverseProf += 'data->modelData.equationInfo_reverse_prof_index[<%value%>] = <%ls.index%>;<%\n%>'
+    <<
+    #define SIM_PROF_EQ_<%ls.index%> <%value%><%\n%>
+    >>
+  case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+    let &reverseProf += 'data->modelData.equationInfo_reverse_prof_index[<%value%>] = <%nls.index%>;<%\n%>'
+    <<
+    #define SIM_PROF_EQ_<%nls.index%> <%value%><%\n%>
     >>
   end match
 end functionSimProfDef;
@@ -1446,7 +1454,7 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &hea
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then
        let contEqsIndex = equationIndex(cont)
-       let solvedContinuous = match cont case SES_LINEAR(__) then 'data->simulationInfo.linearSystemData[<%indexLinearSystem%>].solved' case SES_NONLINEAR(__) then 'data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].solved'
+       let solvedContinuous = match cont case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then 'data->simulationInfo.linearSystemData[<%ls.indexLinearSystem%>].solved' case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then 'data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].solved'
        let &preDisc = buffer ""
        let &varDecls = buffer ""
        let &auxFunction = buffer ""
@@ -1508,43 +1516,43 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations, String
 ::=
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix)
-     case eq as SES_LINEAR(__) then
-     match jacobianMatrix
+     case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
+     match ls.jacobianMatrix
        case NONE() then
-         let size = listLength(eq.vars)
-         let nnz = listLength(eq.simJac)
+         let size = listLength(ls.vars)
+         let nnz = listLength(ls.simJac)
          <<
-         assertStreamPrint(NULL, nLinearSystems > <%eq.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
-         linearSystemData[<%eq.indexLinearSystem%>].equationIndex = <%eq.index%>;
-         linearSystemData[<%eq.indexLinearSystem%>].size = <%size%>;
-         linearSystemData[<%eq.indexLinearSystem%>].nnz = <%nnz%>;
-         linearSystemData[<%eq.indexLinearSystem%>].method = 0;
-         linearSystemData[<%eq.indexLinearSystem%>].setA = setLinearMatrixA<%eq.index%>;
-         linearSystemData[<%eq.indexLinearSystem%>].setb = setLinearVectorb<%eq.index%>;
-         linearSystemData[<%eq.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%eq.index%>;
+         assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
+         linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
+         linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
+         linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
+         linearSystemData[<%ls.indexLinearSystem%>].method = 0;
+         linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
+         linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
+         linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
          >>
        case SOME(__) then
-         let size = listLength(eq.vars)
-         let nnz = listLength(eq.simJac)
-         let generatedJac = match eq.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-         let initialJac = match eq.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-         let jacIndex = match eq.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
+         let size = listLength(ls.vars)
+         let nnz = listLength(ls.simJac)
+         let generatedJac = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+         let initialJac = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+         let jacIndex = match ls.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
          <<
-         assertStreamPrint(NULL, nLinearSystems > <%eq.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
-         linearSystemData[<%eq.indexLinearSystem%>].equationIndex = <%eq.index%>;
-         linearSystemData[<%eq.indexLinearSystem%>].size = <%size%>;
-         linearSystemData[<%eq.indexLinearSystem%>].nnz = <%nnz%>;
-         linearSystemData[<%eq.indexLinearSystem%>].method = 1;
-         linearSystemData[<%eq.indexLinearSystem%>].residualFunc = residualFunc<%eq.index%>;
-         linearSystemData[<%eq.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
-         linearSystemData[<%eq.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
-         linearSystemData[<%eq.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
-         linearSystemData[<%eq.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%eq.index%>;
-         linearSystemData[<%eq.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%eq.index%>;
-         linearSystemData[<%eq.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%eq.index%>;
+         assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
+         linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
+         linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
+         linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
+         linearSystemData[<%ls.indexLinearSystem%>].method = 1;
+         linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
+         linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
+         linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
+         linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
+         linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%ls.index%>;
+         linearSystemData[<%ls.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%ls.index%>;
+         linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
          >>
        else
-       error(sourceInfo(), ' No jacobian create for linear system <%eq.index%>.')
+       error(sourceInfo(), ' No jacobian create for linear system <%ls.index%>.')
      end match
    )
    ;separator="\n\n")
@@ -1574,17 +1582,17 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
 ::=
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then functionSetupLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix)
-     case eq as SES_LINEAR(__) then
-     match jacobianMatrix
+     case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
+     match ls.jacobianMatrix
        case SOME(__) then
          let &varDeclsRes = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
          let &tmp = buffer ""
-         let xlocs = (eq.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
-         let prebody = (eq.residual |> eq2 =>
+         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var))%> = xloc[<%i0%>];' ;separator="\n")
+         let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &varDeclsRes /*BUFD*/, &tmp, modelNamePrefix)
           ;separator="\n")
-         let body = (eq.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+         let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDeclsRes, &auxFunction)
@@ -1593,7 +1601,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
            <%preExp%>res[<%i0%>] = <%expPart%>;
            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
            >> ;separator="\n")
-         let body_initializeStaticLSData = (eq.vars |> var hasindex i0 =>
+         let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%cref(varName(var))%> */
            linearSystemData->nominal[i] = $P$ATTRIBUTE<%cref(varName(var))%>.nominal;
@@ -1604,19 +1612,19 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
        <%auxFunction%>
        <%tmp%>
 
-       void residualFunc<%eq.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
+       void residualFunc<%ls.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
        {
          DATA* data = (DATA*) dataIn;
-         const int equationIndexes[2] = {1,<%eq.index%>};
+         const int equationIndexes[2] = {1,<%ls.index%>};
          <%varDeclsRes%>
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq.index%>);' %>
-         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%eq.index%>).profileBlockIndex,1);' %>
+         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
+         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%ls.index%>).profileBlockIndex,1);' %>
          <%xlocs%>
          <%prebody%>
          <%body%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq.index%>);' %>
+         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
        }
-       void initializeStaticLSData<%eq.index%>(void *inData, void *systemData)
+       void initializeStaticLSData<%ls.index%>(void *inData, void *systemData)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -1627,19 +1635,19 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
        else
          let &varDecls = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
-         let MatrixA = (eq.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 =>
+         let MatrixA = (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 =>
            let &preExp = buffer "" /*BUFD*/
            let expPart = daeExp(eq.exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
              '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData);'
           ;separator="\n")
 
          let &varDecls2 = buffer "" /*BUFD*/
-         let vectorb = (eq.beqs |> exp hasindex i0 =>
+         let vectorb = (ls.beqs |> exp hasindex i0 =>
            let &preExp = buffer "" /*BUFD*/
            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
              '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData);'
           ;separator="\n")
-         let body_initializeStaticLSData = (eq.vars |> var hasindex i0 =>
+         let body_initializeStaticLSData = (ls.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%cref(varName(var))%> */
            linearSystemData->nominal[i] = $P$ATTRIBUTE<%cref(varName(var))%>.nominal;
@@ -1648,23 +1656,23 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
            >> ;separator="\n")
        <<
        <%auxFunction%>
-       void setLinearMatrixA<%eq.index%>(void *inData, void *systemData)
+       void setLinearMatrixA<%ls.index%>(void *inData, void *systemData)
        {
-         const int equationIndexes[2] = {1,<%eq.index%>};
+         const int equationIndexes[2] = {1,<%ls.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <%varDecls%>
          <%MatrixA%>
        }
-       void setLinearVectorb<%eq.index%>(void *inData, void *systemData)
+       void setLinearVectorb<%ls.index%>(void *inData, void *systemData)
        {
-         const int equationIndexes[2] = {1,<%eq.index%>};
+         const int equationIndexes[2] = {1,<%ls.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <%varDecls2%>
          <%vectorb%>
        }
-       void initializeStaticLSData<%eq.index%>(void *inData, void *systemData)
+       void initializeStaticLSData<%ls.index%>(void *inData, void *systemData)
        {
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
@@ -1701,25 +1709,25 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
 ::=
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1), modelPrefixName)
-     case eq as SES_NONLINEAR(__) then
-       let size = listLength(eq.crefs)
-       let generatedJac = match eq.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-       let initialJac = match eq.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-       let jacIndex = match eq.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
-       let innerEqs = functionInitialNonLinearSystemsTemp(eq.eqs, modelPrefixName)
+     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+       let size = listLength(nls.crefs)
+       let generatedJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+       let initialJac = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+       let jacIndex = match nls.jacobianMatrix case SOME((_,_,name,_,_,_,jacindex)) then '<%jacindex%>' case NONE() then '-1'
+       let innerEqs = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName)
        <<
-       assertStreamPrint(NULL, nNonLinearSystems > <%eq.indexNonLinearSystem%>, "Internal Error: nNonLinearSystems mismatch!");
+       assertStreamPrint(NULL, nNonLinearSystems > <%nls.indexNonLinearSystem%>, "Internal Error: nNonLinearSystems mismatch!");
        <%innerEqs%>
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].equationIndex = <%eq.index%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].size = <%size%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].method = 0;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].homotopySupport = <%if homotopySupport then '1' else '0'%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].mixedSystem = <%if mixedSystem then '1' else '0'%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].residualFunc = residualFunc<%eq.index%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
-       nonLinearSystemData[<%eq.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticNLSData<%eq.index%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].equationIndex = <%nls.index%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].size = <%size%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].method = 0;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].homotopySupport = <%if nls.homotopySupport then '1' else '0'%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].mixedSystem = <%if nls.mixedSystem then '1' else '0'%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].residualFunc = residualFunc<%nls.index%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].jacobianIndex = <%jacIndex%>;
+       nonLinearSystemData[<%nls.indexNonLinearSystem%>].initializeStaticNLSData = initializeStaticNLSData<%nls.index%>;
        >>
      )
    ;separator="\n\n")
@@ -1741,22 +1749,22 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
 ::=
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
-     case eq as SES_NONLINEAR(__) then
+     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
      let &varDecls = buffer ""
      let &tmp = buffer ""
-     let innerEqs = functionNonLinearResiduals(eqs,modelNamePrefix)
-     let xlocs = (crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
-     let body_initializeStaticNLSData = (crefs |> cr hasindex i0 =>
+     let innerEqs = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
+     let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
+     let body_initializeStaticNLSData = (nls.crefs |> cr hasindex i0 =>
       <<
       /* static nls data for <%cref(cr)%> */
       nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
       nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
       nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
       >> ;separator="\n")
-     let prebody = (eq.eqs |> eq2 =>
+     let prebody = (nls.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
        ;separator="\n")
-     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+     let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer ""
          let expPart = daeExp(eq2.exp, contextSimulationDiscrete, &preExp, &varDecls, &tmp)
          <<
@@ -1768,7 +1776,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
      <<
      <%innerEqs%>
      <%&tmp%>
-     void initializeStaticNLSData<%index%>(void *inData, void *inNlsData)
+     void initializeStaticNLSData<%nls.index%>(void *inData, void *inNlsData)
      {
        DATA* data = (DATA*) inData;
        NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
@@ -1776,17 +1784,17 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
        <%body_initializeStaticNLSData%>
      }
 
-     void residualFunc<%index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
+     void residualFunc<%nls.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
      {
        DATA* data = (DATA*) dataIn;
-       const int equationIndexes[2] = {1,<%index%>};
+       const int equationIndexes[2] = {1,<%nls.index%>};
        <%varDecls%>
-       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
-       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);' %>
+       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
+       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
        <%xlocs%>
        <%prebody%>
        <%body%>
-       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
      }
    >>
    )
@@ -3452,15 +3460,6 @@ int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void
 >>
 case _ then
   match sparsepattern
-  case {(_,{})} then
-    <<
-    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
-    {
-      TRACE_PUSH
-      TRACE_POP
-      return 1;
-    }
-    >>
   case _ then
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
@@ -3625,8 +3624,8 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD)
-  case e as SES_NONLINEAR(__) then
-    let &tempeqns += (e.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+    let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
     equationNonlinear(e, context, &varD, modelNamePrefix)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD, &tempeqns)
@@ -3691,8 +3690,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
     then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD)
-  case e as SES_NONLINEAR(__) then
-    let &tempeqns += (e.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+  case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+    let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
     equationNonlinear(e, context, &varD, modelNamePrefix)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD, &tempeqns)
@@ -3803,8 +3802,7 @@ case SES_SIMPLE_ASSIGN(__) then
   >>
 end equationSimpleAssign;
 
-template equationForLoop(SimEqSystem eq, Context context,
-                              Text &varDecls, Text &auxFunction)
+template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
  "Generates an equation that is a for-loop."
 ::=
 match eq
@@ -3819,9 +3817,8 @@ case SES_FOR_LOOP(__) then
   <<
   <%modelicaLine(eqInfo(eq))%>
   modelica_integer  $P<%printExpStr(iter)%> = 0; // the iterator
-
   // the for-equation
-  for($P<%printExpStr(iter)%> = <%start%>; $P<%printExpStr(iter)%> < <%stop%>; $P<%printExpStr(iter)%>++)
+  for($P<%printExpStr(iter)%> = <%start%>; $P<%printExpStr(iter)%> != <%stop%>+1; $P<%printExpStr(iter)%>++)
   {
     <%crefPart%> += <%expPart%>;
   }
@@ -3884,14 +3881,14 @@ template equationLinear(SimEqSystem eq, Context context, Text &varDecls)
  "Generates a linear equation system."
 ::=
 match eq
-case e as SES_LINEAR(__) then
+case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
   <<
   /* Linear equation system */
-  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
-  <%vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.linearSystemData[<%e.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
-  solve_linear_system(data, <%indexLinearSystem%>);
-  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo.linearSystemData[<%indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
-  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%ls.index%>).profileBlockIndex);' %>
+  <%ls.vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.linearSystemData[<%ls.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
+  solve_linear_system(data, <%ls.indexLinearSystem%>);
+  <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo.linearSystemData[<%ls.indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
+  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%ls.index%>).profileBlockIndex);' %>
   >>
 end equationLinear;
 
@@ -3918,39 +3915,39 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
  "Generates a non linear equation system."
 ::=
   match eq
-    case SES_NONLINEAR(__) then
-      let size = listLength(crefs)
+    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+      let size = listLength(nls.crefs)
       let &tmp = buffer ""
-      let innerBody = (eqs |> eq2 =>
+      let innerBody = (nls.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
        ;separator="\n")
-      let nonlinindx = indexNonLinearSystem
+      let nonlinindx = nls.indexNonLinearSystem
       <<
       int retValue;
       <% if profileSome() then
       <<
-      SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
-      SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,-1);
+      SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);
+      SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex,-1);
       >>
       %>
       /* extrapolate data */
-      <%crefs |> name hasindex i0 =>
+      <%nls.crefs |> name hasindex i0 =>
         let namestr = cref(name)
         <<
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/,$P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/,$P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
         >>
       ;separator="\n"%>
-      retValue = solve_nonlinear_system(data, <%indexNonLinearSystem%>);
+      retValue = solve_nonlinear_system(data, <%nls.indexNonLinearSystem%>);
       /* check if solution process was sucessful */
       if (retValue > 0){
-        const int indexes[2] = {1,<%index%>};
-        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system <%index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
+        const int indexes[2] = {1,<%nls.index%>};
+        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
       }
       /* write solution */
-      <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
-      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+      <%nls.crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex);' %>
       >>
 end equationNonlinear;
 
@@ -10775,18 +10772,18 @@ template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines, Text &re
       '{<%index%>,"SES_ALGORITHM <%index%>", 0, NULL}'
     case SES_WHEN(__) then
       '{<%index%>,"SES_WHEN <%index%>", 0, NULL}'
-    case SES_LINEAR(__) then
+    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
       let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%vars|>var hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-      '{<%index%>,"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, equationInfo_crefs<%index%>}'
-    case SES_NONLINEAR(__) then
-      let residuals = SimCodeUtil.sortEqSystems(eqs) |> e => (equationInfo1(e,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
-      let jac = match jacobianMatrix case SOME(mat) then equationInfoMatrix(mat,preBuf,eqnsDefines,reverseProf)
+      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%ls.index%> = (const VAR_INFO**)malloc(<%listLength(ls.vars)%>*sizeof(VAR_INFO*));<%\n%>'
+      let &preBuf += '<%ls.vars|>var hasindex i0 => 'equationInfo_crefs<%ls.index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
+      '{<%ls.index%>,"linear system <%ls.index%> (size <%listLength(ls.vars)%>)", <%listLength(ls.vars)%>, equationInfo_crefs<%ls.index%>}'
+    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+      let residuals = SimCodeUtil.sortEqSystems(nls.eqs) |> e => (equationInfo1(e,preBuf,eqnsDefines,reverseProf) + ',<%\n%>')
+      let jac = match nls.jacobianMatrix case SOME(mat) then equationInfoMatrix(mat,preBuf,eqnsDefines,reverseProf)
       let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)
-      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
-      let &preBuf += '<%crefs|>cr hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-      '<%residuals%>{<%index%>,"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, equationInfo_crefs<%index%>}<%if jac then ',<%\n%><%jac%>'%>'
+      let &preBuf += 'const VAR_INFO** equationInfo_crefs<%nls.index%> = (const VAR_INFO**)malloc(<%listLength(nls.crefs)%>*sizeof(VAR_INFO*));<%\n%>'
+      let &preBuf += '<%nls.crefs|>cr hasindex i0 => 'equationInfo_crefs<%nls.index%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
+      '<%residuals%>{<%nls.index%>,"residualFunc<%nls.index%> (size <%listLength(nls.crefs)%>)", <%listLength(nls.crefs)%>, equationInfo_crefs<%nls.index%>}<%if jac then ',<%\n%><%jac%>'%>'
     case SES_MIXED(__) then
       let conEqn = equationInfo1(cont,preBuf,eqnsDefines,reverseProf)
       let &eqnsDefines += functionSimProfDef(eq,System.tmpTick(),reverseProf)

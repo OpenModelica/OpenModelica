@@ -5,18 +5,19 @@
 #include <Core/SimulationSettings/GlobalSettings.h>
 
 #define BOOST_NO_WCHAR
-
+/*removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 SettingsFactory::SettingsFactory(PATH libraries_path, PATH config_path, PATH modelicasystem_path)
     : StaticSolverSettingsOMCFactory<OMCFactory>(libraries_path, modelicasystem_path, config_path)
 {
 }
 #else
+*/
 SettingsFactory::SettingsFactory(PATH libraries_path, PATH config_path, PATH modelicasystem_path)
     : SolverSettingsPolicy(libraries_path, modelicasystem_path, config_path)
 {
 }
-#endif
+/*#endif*/
 
 SettingsFactory::~SettingsFactory(void)
 {

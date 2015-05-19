@@ -4,8 +4,6 @@
  #include <Core/Modelica.h>
 
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include <Core/SimController/SimController.h>
-#include <Core/SimulationSettings/ISimControllerSettings.h>
 
 class StaticOMCFactory : public OMCFactory
 {
@@ -13,6 +11,7 @@ class StaticOMCFactory : public OMCFactory
     StaticOMCFactory();
     StaticOMCFactory(PATH library_path, PATH modelicasystem_path);
     virtual ~StaticOMCFactory();
-
+    virtual boost::shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings);
+    virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory();
     virtual std::pair<boost::shared_ptr<ISimController>, SimSettings> createSimulation(int argc, const char* argv[]);
 };

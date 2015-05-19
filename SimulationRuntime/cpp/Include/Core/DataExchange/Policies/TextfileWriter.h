@@ -142,7 +142,7 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
     }
 
  protected:
-   
+
 
     std::fstream _output_stream;
     unsigned int _curser_position;       ///< Controls current Curser-Position

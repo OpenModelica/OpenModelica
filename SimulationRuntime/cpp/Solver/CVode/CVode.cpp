@@ -31,6 +31,7 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
       _event_system(NULL),
       _mixed_system(NULL),
       _time_system(NULL),
+      _numberOfOdeEvaluations(0),
     _delta(NULL),
   _deltaInv(NULL),
     _ysave(NULL),
@@ -275,7 +276,7 @@ void Cvode::initialize()
 
   // Use own jacobian matrix
   // Check if Colored Jacobians are worth to use
-   #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+   #if SUNDIALS_MAJOR_VERSION >= 2 || (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION >= 4)
     _maxColors = _system->getAMaxColors();
     if(_maxColors < _dimSys && _continuous_system->getDimContinuousStates() > 0)
     {
@@ -717,6 +718,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
     _continuous_system->setContinuousStates(y);
     _continuous_system->evaluateODE(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
+    _numberOfOdeEvaluations++;
   }      //workaround until exception can be catch from c- libraries
   catch (std::exception & ex )
   {
@@ -968,6 +970,7 @@ void Cvode::writeSimulationInfo()
   BOOST_LOG_SEV(slg, cvode_normal)<< " Linear solver setups " << "nsetups: " << nsetups;
   BOOST_LOG_SEV(slg, cvode_normal)<< " Nonlinear iterations " << "nni: " << nni;
   BOOST_LOG_SEV(slg, cvode_normal)<< " Convergence failures " << "ncfn: " << ncfn;
+  BOOST_LOG_SEV(slg, cvode_normal)<< " Number of evaluateODE calls " << "eODE: " << _numberOfOdeEvaluations;
 
 #endif
   //// Solver

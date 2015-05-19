@@ -456,29 +456,13 @@ package SimCode
     end SES_ALGORITHM;
 
     record SES_LINEAR
-      Integer index;
-      Boolean partOfMixed;
-
-      list<SimCodeVar.SimVar> vars;
-      list<DAE.Exp> beqs;
-      list<tuple<Integer, Integer, SimEqSystem>> simJac;
-      /* solver linear tearing system */
-      list<SimEqSystem> residual;
-      Option<JacobianMatrix> jacobianMatrix;
-
-      list<DAE.ElementSource> sources;
-      Integer indexLinearSystem;
+      LinearSystem lSystem;
+      Option<LinearSystem> alternativeTearing;
     end SES_LINEAR;
 
     record SES_NONLINEAR
-      Integer index;
-      list<SimEqSystem> eqs;
-      list<DAE.ComponentRef> crefs;
-      Integer indexNonLinearSystem;
-      Option<JacobianMatrix> jacobianMatrix;
-      Boolean linearTearing;
-      Boolean homotopySupport;
-      Boolean mixedSystem;
+      NonlinearSystem nlSystem;
+      Option<NonlinearSystem> alternativeTearing;
     end SES_NONLINEAR;
 
     record SES_MIXED
@@ -509,6 +493,34 @@ package SimCode
       DAE.ElementSource source;
     end SES_FOR_LOOP;
   end SimEqSystem;
+
+  uniontype LinearSystem
+    record LINEARSYSTEM
+      Integer index;
+      Boolean partOfMixed;
+      list<SimCodeVar.SimVar> vars;
+      list<DAE.Exp> beqs;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      /* solver linear tearing system */
+      list<SimEqSystem> residual;
+      Option<JacobianMatrix> jacobianMatrix;
+      list<DAE.ElementSource> sources;
+      Integer indexLinearSystem;
+    end LINEARSYSTEM;
+  end LinearSystem;
+
+  uniontype NonlinearSystem
+    record NONLINEARSYSTEM
+      Integer index;
+      list<SimEqSystem> eqs;
+      list<DAE.ComponentRef> crefs;
+      Integer indexNonLinearSystem;
+      Option<JacobianMatrix> jacobianMatrix;
+      Boolean linearTearing;
+      Boolean homotopySupport;
+      Boolean mixedSystem;
+    end NONLINEARSYSTEM;
+  end NonlinearSystem;
 
   uniontype StateSet
     record SES_STATESET
@@ -1512,6 +1524,12 @@ package DAE
       Type identType;
       list<Subscript> subscriptLst;
     end CREF_IDENT;
+    record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
+      Ident ident;
+      Integer index;
+      Type identType "type of the identifier, without considering the subscripts";
+      list<Subscript> subscriptLst;
+    end CREF_ITER;
     record OPTIMICA_ATTR_INST_CREF
       ComponentRef componentRef;
       String instant;
@@ -2785,6 +2803,11 @@ package List
 end List;
 
 package ComponentReference
+
+  function crefAppendedSubs
+    input DAE.ComponentRef cref;
+    output String s;
+  end crefAppendedSubs;
 
   function makeUntypedCrefIdent
     input String ident;

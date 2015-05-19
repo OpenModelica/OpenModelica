@@ -4883,7 +4883,7 @@ Author: bjozac
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
-algorithm 
+algorithm
   element := matchcontinue inSubs
     local
       Absyn.Exp ae;

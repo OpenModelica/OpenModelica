@@ -512,7 +512,7 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
   ModelicaMatVariable_t key;
   ModelicaMatVariable_t *res;
   char *dymolaName = NULL;
-  
+
   key.name = (char*) varName;
 
   res = (ModelicaMatVariable_t*)bsearch(&key,reader->allInfo,reader->nall,sizeof(ModelicaMatVariable_t),omc_matlab4_comp_var);

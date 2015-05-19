@@ -12,7 +12,7 @@ Encapsulation of global simulation settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-/*includes removed for static linking not needed any more 
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <string.h>
 using std::string;

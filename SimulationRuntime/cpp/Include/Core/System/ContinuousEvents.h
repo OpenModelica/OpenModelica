@@ -1,11 +1,11 @@
 #pragma once
 
-
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class ContinuousEvents
-#else
+#else*/
 class BOOST_EXTENSION_EVENTHANDLING_DECL ContinuousEvents
-#endif
+/*#endif*/
 {
 public:
   ContinuousEvents();

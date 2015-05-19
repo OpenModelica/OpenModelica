@@ -403,9 +403,9 @@ static inline int intMax(int a, int b)
   return a>b ? a : b;
 }
 
-int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars)
+int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals)
 {
-  const char *msg[2] = {"",""};
+  const char *msg[5] = {"","","","",""};
   void *tmp;
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(inFile, &simresglob)) {
     return 0;
@@ -542,6 +542,8 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       return failedToWriteToFile(outFile);
     }
     double start_stop[2] = {omc_matlab4_startTime(&simresglob.matReader), omc_matlab4_stopTime(&simresglob.matReader)};
+    double start = start_stop[0];
+    double stop = start_stop[1];
 
     if (1 != fwrite(start_stop, sizeof(double)*2, 1, fout)) {
       return failedToWriteToFile(outFile);
@@ -556,13 +558,61 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       }
     }
 
-    if (writeMatVer4MatrixHeader(fout, "data_2", simresglob.matReader.nrows, numUnique, sizeof(double))) {
+    if (numberOfIntervals) {
+      double *timevals = omc_matlab4_read_vals(&simresglob.matReader, 1);
+      int last_found=0;
+      int nevents=0, neventpoints=0;
+      for (i=1; i<numberOfIntervals; i++) {
+        double t = start + (stop-start)*((double)i)/numberOfIntervals;
+        while (timevals[j]<=t) {
+          if (timevals[j]==timevals[j+1]) {
+            while (timevals[j]==timevals[j+1]) {
+              j++;
+              neventpoints++;
+            }
+            nevents++;
+          }
+          j++;
+        }
+      }
+      msg[4] = inFile;
+      GC_asprintf((char**)msg+3, "%d", simresglob.matReader.nrows);
+      GC_asprintf((char**)msg+2, "%d", numberOfIntervals);
+      GC_asprintf((char**)msg+1, "%d", nevents);
+      GC_asprintf((char**)msg+0, "%d", neventpoints);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_notification, gettext("Resampling %s from %s points to %s points, removing %s events stored in %s points.\n"), msg, 5);
+    }
+
+    if (writeMatVer4MatrixHeader(fout, "data_2", numberOfIntervals ? numberOfIntervals+1 : simresglob.matReader.nrows, numUnique, sizeof(double))) {
       return failedToWriteToFile(outFile);
     }
     for (i=0; i<numUnique; i++) {
-      double *vals = omc_matlab4_read_vals(&simresglob.matReader, indexesToOutput[i]);
-      if (1!=fwrite(vals, sizeof(double)*simresglob.matReader.nrows, 1, fout)) {
+      double *vals = NULL;
+      int nrows;
+      if (numberOfIntervals) {
+        omc_matlab4_read_all_vals(&simresglob.matReader);
+        nrows = numberOfIntervals+1;
+        vals = GC_malloc_atomic(sizeof(double)*nrows);
+        for (j=0; j<=numberOfIntervals; j++) {
+          double t = j==numberOfIntervals ? stop : start + (stop-start)*((double)j)/numberOfIntervals;
+          ModelicaMatVariable_t var = {.name="", .descr="", .isParam=0, .index=indexesToOutput[i]};
+          if (omc_matlab4_val(vals+j, &simresglob.matReader, &var, t)) {
+            msg[2] = inFile;
+            GC_asprintf((char**)msg+1, "%d", indexesToOutput[i]);
+            GC_asprintf((char**)msg+0, "%.15g", t);
+            c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Resampling %s failed to get variable %s at time %s.\n"), msg, 3);
+            return 0;
+          }
+        }
+      } else {
+        vals = omc_matlab4_read_vals(&simresglob.matReader, indexesToOutput[i]);
+        nrows = simresglob.matReader.nrows;
+      }
+      if (1!=fwrite(vals, sizeof(double)*nrows, 1, fout)) {
         return failedToWriteToFile(outFile);
+      }
+      if (numberOfIntervals) {
+        GC_free(vals);
       }
     }
     fclose(fout);

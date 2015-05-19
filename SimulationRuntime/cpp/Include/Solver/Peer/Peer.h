@@ -6,63 +6,7 @@
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <Core/Utils/extension/measure_time.hpp>
 
-//#include <mpi.h>
 
-#ifdef USE_BOOST_LOG
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sources/basic_logger.hpp>
-#include <boost/log/sources/severity_feature.hpp>
-#include <boost/log/sources/exception_handler_feature.hpp>
-#include <boost/log/sources/features.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/sources/global_logger_storage.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/attributes/scoped_attribute.hpp>
-#include <boost/log/utility/exception_handler.hpp>
-#include <boost/log/sources/channel_logger.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/common.hpp>
-#include <boost/log/attributes.hpp>
-#include <boost/log/sinks.hpp>
-namespace logging = boost::log;
-namespace src = boost::log::sources;
-namespace expr = boost::log::expressions;
-namespace sinks = boost::log::sinks;
-namespace attrs = boost::log::attributes;
-namespace keywords = boost::log::keywords;
-
-
-enum cvodeseverity_level
-{
-  cvode_info,
-  cvode_normal,
-  cvode_notification,
-  cvode_warning,
-  cvode_error,
-  cvode_critical
-};
-
-typedef src::severity_channel_logger_mt<
-    cvodeseverity_level,     // the type of the severity level
-    std::string         // the type of the channel name
-> my_logger_mt;
-
-
-BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(cvode_lg, my_logger_mt)
-{
-    // Specify the channel name on construction, similarly as with the channel_logger
-    return my_logger_mt(keywords::channel = "solver.CVode");
-}
-#endif
-
-
-/*BOOST_LOG_INLINE_GLOBAL_LOGGER_CTOR_ARGS(
-  cvode_lg,
-  src::channel_logger_mt< >,
-  (keywords::severity = cvode_normal)(keywords::channel = "solver.CVode"))
-*/
 /*****************************************************************************/
 // Peer
 // BDF-Verfahren für steife und nicht-steife ODEs

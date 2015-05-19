@@ -2897,10 +2897,10 @@ algorithm
     case (cache,_,"compareSimulationResults",_,st,_)
       then (cache,Values.STRING("Error in compareSimulationResults"),st);
 
-    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars)},st,_)
+    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars),Values.INTEGER(numberOfIntervals)},st,_)
       equation
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1);
+        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals);
       then
         (cache,Values.BOOL(b),st);
 
@@ -2918,9 +2918,9 @@ algorithm
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         (b,strings) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
         cvars = List.map(strings,ValuesUtil.makeString);
-        v = ValuesUtil.makeArray(cvars);
+        v1 = ValuesUtil.makeArray(cvars);
       then
-        (cache,Values.TUPLE({Values.BOOL(b),v}),st);
+        (cache,Values.TUPLE({Values.BOOL(b),v1}),st);
 
     case (cache,_,"diffSimulationResults",_,st,_)
       equation

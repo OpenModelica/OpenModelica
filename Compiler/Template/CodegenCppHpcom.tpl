@@ -31,11 +31,11 @@ template translateModel(SimCode simCode)
 
       let() = textFile(simulationMainFile(target, simCode, &extraFuncs, &extraFuncsDecl, "",
                                           (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""),
-                                          (if Flags.isSet(USEMPI) then MPIInit() else ""),
-                                          (if Flags.isSet(USEMPI) then MPIFinalize() else ""),
+                                          (if Flags.isSet(USEMPI) then mpiInit() else ""),
+                                          (if Flags.isSet(USEMPI) then mpiFinalize() else ""),
                                           numRealVars, numIntVars, numBoolVars, numPreVars),
                                           'OMCpp<%fileNamePrefix%>Main.cpp')
-      let() = textFile(simulationCppFile(simCode, contextOther, Update(simCode, extraFuncs, extraFuncsDecl, className, stateDerVectorName, false),
+      let() = textFile(simulationCppFile(simCode, contextOther, update(allEquations, whenClauses, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
                                          '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, className,
                                          generateAdditionalConstructorDefinitions(hpcomData.odeSchedule),
                                          generateAdditionalConstructorBodyStatements(hpcomData.odeSchedule, className, dotPath(modelInfo.name)),
@@ -46,8 +46,8 @@ template translateModel(SimCode simCode)
                       generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
                       "",
                       generateAdditionalProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", false),
-                      MemberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', false),
-                      MemberVariablePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', false), false),
+                      memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', false),
+                      memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', false), false),
                       //CodegenCpp.MemberVariablePreVariables(modelInfo,false), false),
                       'OMCpp<%fileNamePrefix%>.h')
 
@@ -94,16 +94,6 @@ template translateModel(SimCode simCode)
       // empty result of the top-level template .., only side effects
   end match
 end translateModel;
-
-template Update(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
-::=
-  match simCode
-    case SIMCODE(__) then
-      <<
-      <%update(allEquations, whenClauses, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>
-      >>
-  end match
-end Update;
 
 // HEADER
 template generateAdditionalIncludes(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
@@ -1318,16 +1308,16 @@ template releaseLockByLockName(String lockName, String lockPrefix, String iType)
 end releaseLockByLockName;
 
 
-template MPIFinalize()
+template mpiFinalize()
  "Finalize the MPI environment in main function."
 ::=
   <<
   } // End sequential
   MPI_Finalize();
   >>
-end MPIFinalize;
+end mpiFinalize;
 
-template MPIInit()
+template mpiInit()
  "Initialize the MPI environment in main function."
 ::=
   <<
@@ -1343,9 +1333,9 @@ template MPIInit()
   if (0 == world_rank) {
     std::cout << "Remark: Simulation is not (yet) MPI parallel!\n";
   >>
-end MPIInit;
+end mpiInit;
 
-template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &execCommandLinux)
+template mpiRunCommandInRunScript(String type, Text &getNumOfProcs, Text &execCommandLinux)
  "If MPI is used:
     - Add the run execution command 'mpirun -np $NPROCESSORS',
     - number of MPI processors can be passed as command line argument to simulation
@@ -1360,7 +1350,7 @@ template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &execCo
       let &execCommandLinux += "exec"
       ""
   end match
-end MPIRunCommandInRunScript;
+end mpiRunCommandInRunScript;
 
 template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
@@ -1368,7 +1358,7 @@ template simulationMainRunScript(SimCode simCode, Text& extraFuncs, Text& extraF
   let type = if Flags.isSet(Flags.USEMPI) then "mpi" else ''
   let &preRunCommandLinux = buffer ""
   let &execCommandLinux = buffer ""
-  let _ = MPIRunCommandInRunScript(type, &preRunCommandLinux, &execCommandLinux)
+  let _ = mpiRunCommandInRunScript(type, &preRunCommandLinux, &execCommandLinux)
   let preRunCommandWindows = ""
 
   CodegenCpp.simulationMainRunScript(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, preRunCommandLinux, preRunCommandWindows, execCommandLinux)

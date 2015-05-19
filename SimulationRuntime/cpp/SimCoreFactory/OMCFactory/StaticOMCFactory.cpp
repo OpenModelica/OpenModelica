@@ -1,5 +1,7 @@
 #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
-
+#include <Core/SimController/SimController.h>
+#include <Core/System/AlgLoopSolverFactory.h>
+#include <Core/SimulationSettings/Factory.h>
 StaticOMCFactory::StaticOMCFactory() : OMCFactory()
 {
 }
@@ -10,6 +12,18 @@ StaticOMCFactory::StaticOMCFactory(PATH library_path, PATH modelicasystem_path) 
 
 StaticOMCFactory::~StaticOMCFactory()
 {
+
+}
+boost::shared_ptr<IAlgLoopSolverFactory> StaticOMCFactory::createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
+{
+    boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = boost::shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings, _library_path, _modelicasystem_path));
+    return algloopsolverfactory;
+}
+boost::shared_ptr<ISettingsFactory> StaticOMCFactory::createSettingsFactory()
+{
+
+    boost::shared_ptr<ISettingsFactory>  settings_factory = boost::shared_ptr<ISettingsFactory>(new SettingsFactory(_library_path,_modelicasystem_path,PATH("")));
+    return settings_factory;
 
 }
 

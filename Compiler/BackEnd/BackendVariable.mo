@@ -1699,18 +1699,6 @@ algorithm
   outVar := makeVar(cr);
 end createVar;
 
-public function createDummyVar
-"Creates variable with $dummy."
-  output BackendDAE.Var outVar;
-  output DAE.ComponentRef outCr;
-algorithm
-  outCr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
-  outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1,NONE()),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
-                            DAE.emptyElementSource,
-                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-                            NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false);
-end createDummyVar;
-
 public function createCSEVar "Creates a cse variable with the name of inCref.
   TODO: discrete real varaibales are not treated correctly"
   input DAE.ComponentRef inCref;
