@@ -1,3 +1,4 @@
+cp common/install-sh common/config.guess common/config.sub ./
 AC_CANONICAL_TARGET
 AC_SUBST(host_short)
 build_short=$build_cpu-$build_os
