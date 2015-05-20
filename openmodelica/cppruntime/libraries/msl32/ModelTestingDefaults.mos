@@ -1,2 +1,3 @@
 runScript(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTestingDefaults.mos");
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+setCXXCompiler("g++");

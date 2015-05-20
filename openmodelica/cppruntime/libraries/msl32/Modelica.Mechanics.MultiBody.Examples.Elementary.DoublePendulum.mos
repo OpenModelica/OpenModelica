@@ -20,6 +20,7 @@ getErrorString();
 // "\"true
 // \"
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
+// true
 // "
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum
