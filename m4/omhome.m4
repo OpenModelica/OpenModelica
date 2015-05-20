@@ -1,3 +1,10 @@
+AC_CANONICAL_TARGET
+AC_SUBST(host_short)
+build_short=$build_cpu-$build_os
+host_short=$host_cpu-$host_os
+echo "build_short: $build_short"
+echo "host_short: $host_short"
+
 AC_SUBST(OPENMODELICAHOME)
 AC_ARG_WITH(openmodelicahome,  [  --with-openmodelicahome=[OPENMODELICAHOME|PREFIX]    (Find OPENMODELICAHOME - the directory where all OpenModelica dependencies are installed.)],[OMHOME="$withval"],[OMHOME=no])
 
