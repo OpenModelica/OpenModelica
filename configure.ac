@@ -8,6 +8,9 @@ AC_PROG_CC
 
 m4_include([common/m4/pre-commit.m4])
 m4_include([common/m4/ombuilddir.m4])
+m4_include([common/m4/omhome.m4])
+AC_SUBST(RPATH_QMAKE)
+AC_SUBST(SHREXT)
 cp common/install-sh common/config.guess common/config.sub ./
 
 AC_SUBST(OMC_TARGET)
@@ -44,6 +47,16 @@ case "$OMLIBRARY_TARGET" in
   ;;
 esac
 
+AC_SUBST(MODELICA3D_TARGET)
+AC_MSG_CHECKING([if the user wants Modelica3D])
+MODELICA3D_TARGET="yes"
+AC_ARG_ENABLE(modelica3d, [  --disable-modelica3d          Modelica3D library (dependencies checked by cmake later on; enabled by default)],[test "xno" = x"$enableval" && MODELICA3D_TARGET=""],[])
+if test -z "$MODELICA3D_TARGET" ; then
+AC_MSG_RESULT([no])
+else
+AC_MSG_RESULT([yes])
+MODELICA3D_TARGET="omlibrary-modelica3d"
+fi
 
 for dir in OMCompiler OMPlot OMEdit OMNotebook OMOptim OMShell; do
   if test ! -d "$dir"; then

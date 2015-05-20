@@ -5,9 +5,9 @@ all: omc @OMLIBRARY_TARGET@ omc-diff omplot omnotebook omshell omedit omoptim Re
 omc:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
 omlibrary-core:
-	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary core
+	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@" "SHREXT=@SHREXT@" "MODELICA3D_TARGET=@MODELICA3D_TARGET@" core
 omlibrary-all:
-	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary all
+	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@" "SHREXT=@SHREXT@" "MODELICA3D_TARGET=@MODELICA3D_TARGET@" all
 omplot: omc
 	$(MAKE) -C OMPlot
 omedit: omc omplot
