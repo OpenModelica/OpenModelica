@@ -1639,7 +1639,6 @@ algorithm
       (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow, {}, uniqueEqIndex, tempvars);
 
       // create model info
-
       if Flags.isSet(Flags.VECTORIZE) then
         // prepare the variables
         //dlow = BackendDAEUtil.mapEqSystem(dlow, Vectorization.prepareVectorizedDAE1);
@@ -1772,6 +1771,12 @@ algorithm
                                 modelStruct);
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
+
+      if Flags.isSet(Flags.VECTORIZE) then
+        // update simCode equations
+        simCode = Vectorization.updateSimCode(simCode);
+      end if;
+
 
       //dumpCrefToSimVarHashTable(crefToSimVarHT);
       // print("*** SimCode -> collect all files started: " + realString(clock()) + "\n");
@@ -12493,6 +12498,8 @@ algorithm
                            delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping, varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct);
   end match;
 end setSimCodeLiterals;
+
+
 
 protected function eqSystemWCET
   "Calculate the estimated worst-case execution time of the system for partitioning"

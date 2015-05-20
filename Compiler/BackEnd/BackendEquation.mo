@@ -685,7 +685,7 @@ public function traverseExpsOfEquation<T> "author: Frenkel TUD 2010-11
 algorithm
   (outEquation, outTypeA) := match(inEquation)
     local
-      DAE.Exp e1, e2, e_1, e_2, cond;
+      DAE.Exp e1, e2, e_1, e_2, cond, start, stop, iter;
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr, cr1;
@@ -764,6 +764,11 @@ algorithm
       (eqnslst, extArg) = List.map1Fold(eqnslst, traverseExpsOfEquationList, inFunc, extArg);
       (eqns, extArg) = List.map1Fold(eqns, traverseExpsOfEquation, inFunc, extArg);
     then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, attr), extArg);
+
+    case BackendDAE.FOR_EQUATION(iter=iter,start=start,stop=stop,left=e1, right=e2, source=source, attr=attr) equation
+      (e_1, extArg) = inFunc(e1, inTypeA);
+      (e_2, extArg) = inFunc(e2, extArg);
+    then (BackendDAE.FOR_EQUATION(iter,start,stop,e_1,e_2,source,attr), extArg);
   end match;
 end traverseExpsOfEquation;
 
@@ -1840,7 +1845,7 @@ algorithm
   osize := match eq
     local
       list<Integer> ds;
-      Integer size;
+      Integer size, start, stop;
       list<BackendDAE.Equation> eqnsfalse;
 
     case BackendDAE.EQUATION()
@@ -1867,6 +1872,10 @@ algorithm
 
     case BackendDAE.IF_EQUATION(eqnsfalse=eqnsfalse) equation
       size = equationLstSize(eqnsfalse);
+    then size;
+
+    case BackendDAE.FOR_EQUATION(start=DAE.ICONST(start), stop=DAE.ICONST(stop)) equation
+      size = stop-start+1;
     then size;
 
     else equation
@@ -2039,6 +2048,7 @@ algorithm
     case BackendDAE.WHEN_EQUATION(attr=attr) then attr;
     case BackendDAE.COMPLEX_EQUATION(attr=attr) then attr;
     case BackendDAE.IF_EQUATION(attr=attr) then attr;
+    case BackendDAE.FOR_EQUATION(attr=attr) then attr;
 
     else equation
       Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function getEquationAttributes failed", sourceInfo());

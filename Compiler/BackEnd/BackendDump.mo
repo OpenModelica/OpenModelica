@@ -1417,7 +1417,7 @@ algorithm
   outString := matchcontinue (inEquation)
     local
       String s1,s2,s3,s4,res;
-      DAE.Exp e1,e2,e,cond;
+      DAE.Exp e1,e2,e,cond, start, stop, iter;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
@@ -1489,6 +1489,13 @@ algorithm
         s2 = stringDelimitList(List.map(eqns,equationString),"\n  ");
         s3 = stringAppendList({"if ",s1," then\n  ",s2});
         res = ifequationString(expl,eqnstrue,eqnsfalse,s3);
+      then
+        res;
+    case (BackendDAE.FOR_EQUATION(iter=iter, start=start, stop=stop, left=e1, right=e2))
+      equation
+        s1 = ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop); 
+        s2 = ExpressionDump.printExpStr(e1) + "=" + ExpressionDump.printExpStr(e2);
+        res = stringAppendList({"for ",s1," loop \n    ",s2, "; end for; "});
       then
         res;
   end matchcontinue;
