@@ -1570,7 +1570,7 @@ algorithm
 
       backendMapping = setUpBackendMapping(inBackendDAE);
       if Flags.isSet(Flags.VISUAL_XML) then
-        VisualXML.visualizationInfoXML(inBackendDAE, filenamePrefix);
+        VisualXML.visualizationInfoXML(dlow, filenamePrefix);
       end if;
 
       // fcall(Flags.FAILTRACE, print, "is that Cpp? : " + Dump.printBoolStr(ifcpp) + "\n");

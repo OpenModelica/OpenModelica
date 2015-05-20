@@ -32,21 +32,25 @@
 encapsulated package VisualXML
 " file:        VisualXML
   package:     VisualXML
-  description: VisualXML
+  description: This package gathers alle information about visualization objects from the MultiBody lib and outputs them as an XML file.
+               This can be used additionally to the result file to visualize the system.
 
 
   RCS: $Id: VisualXML 2014-02-04 waurich $
+  
 "
 
 protected import Absyn;
 protected import Array;
 protected import BackendDAE;
 protected import BackendDAEUtil;
+protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAE;
 protected import DAEUtil;
 protected import ExpressionDump;
+protected import ExpressionSolve;
 protected import List;
 protected import Util;
 protected import Tpl;
@@ -92,6 +96,9 @@ protected
 algorithm
   BackendDAE.DAE(eqs=eqs, shared=shared) := daeIn;
   BackendDAE.SHARED(knownVars=knownVars,aliasVars=aliasVars) := shared;
+  //in case we have a time dependent, protected variable, set the solved equation as binding
+  eqs := List.map(eqs,setBindingForProtectedVars);
+  
   //get all variables that contain visualization vars
   knownVarLst := BackendVariable.varList(knownVars);
   aliasVarLst := BackendVariable.varList(aliasVars);
@@ -101,16 +108,64 @@ algorithm
   (knownVarLst,allVisuals) := List.fold(knownVarLst,isVisualizationVar,({},{}));
   (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVar,({},allVisuals));
   (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVar,({},allVisuals));
-  print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
+    //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
   allVarLst := listAppend(listAppend(knownVarLst,allVarLst),aliasVarLst);
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
-    print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
+    //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
 
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
 end visualizationInfoXML;
+
+protected function setBindingForProtectedVars"searches for protected vars and sets the binding exp with their equation.
+This is needed since protected, time-dependent variables are not stored in result files (in OMC and Dymola)"
+  input BackendDAE.EqSystem eqSysIn;
+  output BackendDAE.EqSystem eqSysOut;
+protected
+  array<Integer> ass1;
+  BackendDAE.Variables vars;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EquationArray eqs;
+  list<BackendDAE.Var> varLst;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := eqSysIn;
+  BackendDAE.MATCHING(ass1=ass1) := matching;
+  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setBindingForProtectedVars1,(1,ass1,eqs));
+  eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
+end setBindingForProtectedVars;
+
+protected function setBindingForProtectedVars1"checks if the var is protected and sets the binding (i.e. the solved equation)"
+  input BackendDAE.Var varIn;
+  input tuple<Integer,array<Integer>,BackendDAE.EquationArray> tplIn;
+  output BackendDAE.Var varOut;
+  output tuple<Integer,array<Integer>,BackendDAE.EquationArray> tplOut;
+algorithm
+  (varOut,tplOut) := matchcontinue(varIn,tplIn)
+    local
+      Integer idx, eqIdx;
+      array<Integer> ass1;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.Equation eq;
+      BackendDAE.Var var;
+      DAE.Exp exp1, exp2;
+  case(BackendDAE.VAR(bindExp=NONE(), values=SOME(_)),(idx,ass1,eqs))
+    equation
+      true = BackendVariable.isProtectedVar(varIn);
+      eq = BackendEquation.equationNth1(eqs,arrayGet(ass1,idx));
+      BackendDAE.EQUATION(exp=exp1, scalar=exp2) = eq;
+      (exp1,_) =  ExpressionSolve.solve(exp1,exp2,BackendVariable.varExp(varIn));
+      var = BackendVariable.setBindExp(varIn,SOME(exp1));
+    then (var,(idx+1,ass1,eqs));
+  case(_,(idx,ass1,eqs))
+    then (varIn,(idx+1,ass1,eqs));
+  end matchcontinue;
+end setBindingForProtectedVars1;
 
 protected function fillVisualizationObjects"gets the identifier of a visualization object as an input and collects all information from allVars.
 author:Waurich TUD 2015-04"
