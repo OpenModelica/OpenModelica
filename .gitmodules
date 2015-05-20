@@ -28,3 +28,6 @@
 [submodule "OMShell"]
 	path = OMShell
 	url = ../OMShell.git
+[submodule "OMPython"]
+	path = OMPython
+	url = ../OMPython.git
