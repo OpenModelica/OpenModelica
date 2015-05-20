@@ -18,7 +18,6 @@ AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
 AC_SUBST(NO_LPLIB)
 AC_SUBST(LPSOLVEINC)
-AC_SUBST(MODELICA3D)
 AC_SUBST(OPENCL)
 AC_SUBST(USE_GRAPH)
 AC_SUBST(USE_METIS)
@@ -612,15 +611,6 @@ AS_IF([test "x$with_UMFPACK" = xyes],
 ])
 
 m4_include([common/m4/corba.m4])
-
-AC_MSG_CHECKING([if the user wants Modelica3D])
-MODELICA3D="yes"
-AC_ARG_ENABLE(modelica3d, [  --disable-modelica3d          Modelica3D library (dependencies checked by cmake later on; enabled by default)],[test "xno" = x"$enableval" && MODELICA3D=""],[])
-if test -z "$MODELICA3D" ; then
-AC_MSG_RESULT([no])
-else
-AC_MSG_RESULT([yes])
-fi
 
 AC_MSG_CHECKING([for OpenCL])
 AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[

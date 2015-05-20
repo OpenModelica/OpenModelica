@@ -1,4 +1,4 @@
-inclu.PHONY : all omc release clean .testvariables mkbuilddirs modelica3d
+inclu.PHONY : all omc release clean .testvariables mkbuilddirs
 
 unexport PREFIX
 
@@ -295,13 +295,11 @@ clean: fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-cl
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
-	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean OMBUILDDIR=$(OMBUILDDIR); fi
 	# remove ModelicaExternalC stuff
 	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
 	# remove Ipopt/Makefile if there is no Ipopt/Ipopt/Makefile to run configure again!
 	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
 	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
-	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
 	build/bin/omc build/bin/omc.exe build/bin/omc-diff build/bin/omc-diff.exe \
