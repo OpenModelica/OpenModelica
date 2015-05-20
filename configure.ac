@@ -209,7 +209,7 @@ for flag in $CXXFLAGS; do
   (echo $flag | grep -q "^-std=") && HAVE_CXX_STD=1
 done
 if test "$HAVE_CXX_STD" = 0; then
-  AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
+  AX_CXX_COMPILE_STDCXX_11([noext],[optional])
 fi
 
 if test "`getconf LONG_BIT`" = "32"; then
