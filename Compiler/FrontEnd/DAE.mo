@@ -1751,7 +1751,8 @@ uniontype ComponentRef "- Component references
 
 end ComponentRef;
 
-public constant ComponentRef crefTime = CREF_IDENT("time",T_REAL_DEFAULT,{});
+public constant ComponentRef crefTime = CREF_IDENT("time", T_REAL_DEFAULT, {});
+public constant ComponentRef crefTimeState = CREF_IDENT("$time", T_REAL_DEFAULT, {});
 
 public
 uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
