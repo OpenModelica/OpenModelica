@@ -4628,12 +4628,33 @@ algorithm
         //get N from the domain and remove domain from the subModLst:
         (N, subModLst) = List.fold20(subModLst,domainSearchFun,-1,{});
         subModLst = listReverse(subModLst);
+        subModLst = List.map(subModLst,addEach);
         outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, eqModOption);
         dim_f = DAE.DIM_INTEGER(N);
+        //TODO: add check wheter the field is realy present (N>-1) and give error if not!
       then
         (dim_f::inDims, outMod);
   end match;
 end elabField;
+
+protected function addEach
+"map function that adds each prefix to given modifier"
+  input DAE.SubMod inSubMod;
+  output DAE.SubMod outSubMod;
+  protected DAE.Ident ident;
+  protected SCode.Final finalPrefix;
+  protected SCode.Each eachPrefix;
+  protected list<DAE.SubMod> subModLst;
+  protected Option<DAE.EqMod> eqModOption;
+/*  equation
+    DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption)) = inSubMod;
+    outSubMod = DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));*/
+  algorithm
+    outSubMod := match inSubMod
+      case DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption))
+      then DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, SCode.EACH(), subModLst, eqModOption));
+    end match;
+end addEach;
 
 protected function domainSearchFun
 "fold function to find domain modifier in modifiers list"
@@ -4675,7 +4696,6 @@ end domainSearchFun;
 
 protected function findN
 "a map function to find N in domain class modifiers"
-  //input Tuple<String,Values.Value> inEl;
   input Tuple<String,Values.Value> inEl;
   output Integer N;
   algorithm
