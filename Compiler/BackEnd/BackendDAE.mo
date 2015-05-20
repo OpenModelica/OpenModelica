@@ -349,6 +349,17 @@ uniontype Equation
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
   end IF_EQUATION;
+
+  record FOR_EQUATION "a for-equation"
+    .DAE.Exp iter "the iterator variable";
+    .DAE.Exp start "start of iteration";
+    .DAE.Exp stop "end of iteration";
+    .DAE.Exp left;
+    .DAE.Exp right;
+    .DAE.ElementSource source "origin of equation";
+    EquationAttributes attr;
+  end FOR_EQUATION;
+  
 end Equation;
 
 public
