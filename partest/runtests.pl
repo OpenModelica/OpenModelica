@@ -93,7 +93,7 @@ for(@ARGV){
     print("  -failing      Run failing tests instead of working.\n");
     print("  -veryfew      Run only a very small number of tests to see if runtests.pl is working.\n");
     print("  -gitlibs      If you have installed omc using GITLIBRARIES=Yes, you can test some of those libraries.\n");
-    exit 0;
+    exit 1;
   }
   if(/^-f$/) {
     $fast = 1;
@@ -141,7 +141,7 @@ for(@ARGV){
   }
   else {
     print("Unknown flag " . $_ . "!\n");
-    exit -1;
+    exit 1;
   }
 }
 
@@ -410,7 +410,7 @@ if (@dirs) {
   rmtree(@dirs);
 }
 
-if(@failed_tests && !$withxml) {
+if(@failed_tests) {
   exit 7;
 }
 
