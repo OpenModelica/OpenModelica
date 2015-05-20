@@ -194,13 +194,22 @@ fi
 
 else # Is Darwin
 
-AC_LANG([C++])
+AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
 for flag in -stdlib=libstdc++; do
   AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
 done
-AC_LANG([C])
+AC_LANG_POP([C++])
 
+fi
+
+m4_include([common/m4/ax_cxx_compile_stdcxx_11.m4])
+HAVE_CXX_STD=0
+for flag in $CXXFLAGS; do
+  (echo $flag | grep -q "^-std=") && HAVE_CXX_STD=1
+done
+if test "$HAVE_CXX_STD" = 0; then
+  AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
 fi
 
 if test "`getconf LONG_BIT`" = "32"; then
