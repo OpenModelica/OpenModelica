@@ -1,12 +1,10 @@
 #pragma once
-/** @defgroup simcorefactoryBodas SimCoreFactroy.BodasFactory
+/** @defgroup simcorefactoryBodas SimCoreFactory.BodasFactory
  *  Object factories for the Bodas target
  *  @{
  */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-
-//#include <memory>
 
 class ISimController;
 class ISettingsFactory;

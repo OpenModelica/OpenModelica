@@ -20,6 +20,10 @@ ifeq ("$(RUNTIME_STATIC_LINKING)","true")
 	cd ./Build; echo "change to Build";	\
 	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DRUNTIME_STATIC_LINKING=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
+else ifeq ("$(BUILD_DOCUMENTATION)","true")
+	cd ./Build; echo "change to Build";	\
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_DOCUMENTATION=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	make;
 else
 	cd ./Build; echo "change to Build";	\
 	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
