@@ -87,16 +87,17 @@ author:Waurich TUD 2015-04"
   input BackendDAE.BackendDAE daeIn;
   input String fileName;
 protected
-  BackendDAE.EqSystems eqs;
+  BackendDAE.EqSystems eqs, eqs0;
   BackendDAE.Shared shared;
   BackendDAE.Variables knownVars, aliasVars;
   list<BackendDAE.Var> knownVarLst, allVarLst, aliasVarLst;
   list<Visualization> visuals;
   list<DAE.ComponentRef> allVisuals;
 algorithm
-  BackendDAE.DAE(eqs=eqs, shared=shared) := daeIn;
+  BackendDAE.DAE(eqs=eqs0, shared=shared) := daeIn;
   BackendDAE.SHARED(knownVars=knownVars,aliasVars=aliasVars) := shared;
   //in case we have a time dependent, protected variable, set the solved equation as binding
+  eqs := List.map(eqs0,BackendDAEUtil.copyEqSystem);
   eqs := List.map(eqs,setBindingForProtectedVars);
   
   //get all variables that contain visualization vars
@@ -114,7 +115,7 @@ algorithm
   allVarLst := listAppend(listAppend(knownVarLst,allVarLst),aliasVarLst);
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
-
+ 
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
 end visualizationInfoXML;
@@ -136,7 +137,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := eqSysIn;
   BackendDAE.MATCHING(ass1=ass1) := matching;
-  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setBindingForProtectedVars1,(1,ass1,eqs));
+  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setBindingForProtectedVars1,(1,ass1,eqs)); 
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
 end setBindingForProtectedVars;
 
@@ -406,7 +407,7 @@ algorithm
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height))
-  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+shapeType + "' r{"+stringDelimitList(List.map(arrayList(r),ExpressionDump.printExpStr),",")+"}" +
+  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+shapeType + "'\n r{"+stringDelimitList(List.map1(arrayList(r),ExpressionDump.dumpExpStr,0),",")+"}" +
         "\nlD{"+stringDelimitList(List.map(arrayList(lengthDir),ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.map(arrayList(widthDir),ExpressionDump.printExpStr),",")+"}"+
         "\ncolor("+stringDelimitList(List.map(arrayList(color),ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
         "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}");
