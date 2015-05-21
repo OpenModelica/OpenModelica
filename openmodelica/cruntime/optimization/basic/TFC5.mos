@@ -12,7 +12,7 @@ model testFinalCon5
   Real y2;
   Real y3(start = -1);
   input Real u;
-  
+
   Real final_con1(min = 0, max = 0) annotation(isFinalConstraint = true);
   Real final_con2(min = 0, max = 0) annotation(isFinalConstraint = true);
   Real cost annotation(isLagrange = true);
@@ -37,7 +37,17 @@ getErrorString();
 
 setCommandLineOptions("+maxSizeSolveLinearSystem=0");
 getErrorString();
-optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP 1");
+echo(false);
+res:=optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP 1");
+messages:=res.messages;
+echo(true);
+res.resultFile;
+if regexBool(messages, "No optimal solution found") then
+  print("No optimal solution found");
+else
+  print("Optimal solution found? Weird...\n");
+  exit(1);
+end if;
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001); // Files not equal!!! Testing other convergence with solveLinearSystem
@@ -57,29 +67,9 @@ getErrorString();
 // ""
 // true
 // ""
-// record SimulationResult
-//     resultFile = "testFinalCon5__res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5_', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1'",
-//     messages = "
-// Optimizer Variables
-// ========================================================
-// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
-// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
-// Input[2]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
-// --------------------------------------------------------
-// number of nonlinear constraints: 0
-// ========================================================
-//
-// ******************************************************************************
-// This program contains Ipopt, a library for large-scale nonlinear optimization.
-//  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
-// ******************************************************************************
-//
-// stdout            | warning | No optimal solution found!
-// |                 | |       | Use -lv=LOG_IPOPT for more information.
-// "
-// end SimulationResult;
+// true
+// "testFinalCon5__res.mat"
+// No optimal solution found
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // {"Files not Equal!","y2","y1","x2","x1","u","final_con2","final_con1","der(x2)","der(x1)","cost"}
@@ -159,35 +149,35 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 0.00117418 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.000226267 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.00519079 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000680889 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000680888 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.0254465 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.00178654 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.112826 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000871317 for the approximation of the state x2(time = 1.62143)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000871319 for the approximation of the state x2(time = 1.62143)
 // LOG_IPOPT_ERROR   | info    | max error is 0.149317 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 10.5399 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 2.71878 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.158984 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 2.3919 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.712657 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 5.27759 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 4.20358 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 10.5397 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 2.71868 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 0.159005 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 2.39191 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 0.712649 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 5.27761 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 4.20359 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 1.53825 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.11331 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 4.55291 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 17755.1 for the approximation of the state x2(time = 2.62143)
+// LOG_IPOPT_ERROR   | info    | max error is 17754.6 for the approximation of the state x2(time = 2.62143)
 // LOG_IPOPT_ERROR   | info    | max error is 1.1024 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.335883 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.160613 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.78813 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 0.788129 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 2.2839 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.270616 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.167229 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 1.21769 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 1.50796 for the approximation of the state x2(time = 1.62857)
 // LOG_IPOPT_ERROR   | info    | max error is 0.035271 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 1.28969e-05 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 2.29608e-13 for the approximation of the state x1(time = 2.39286)
+// LOG_IPOPT_ERROR   | info    | max error is 1.2897e-05 for the approximation of the state x2(time = 1.62857)
+// LOG_IPOPT_ERROR   | info    | max error is 2.30774e-13 for the approximation of the state x1(time = 2.34286)
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
