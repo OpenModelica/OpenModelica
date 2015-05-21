@@ -178,6 +178,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     list<Function> functions;
     list<String> labels;
     //Files files "all the files from SourceInfo and DAE.ELementSource";
+    Integer maxDer "the highest derivative in the model";
   end MODELINFO;
 end ModelInfo;
 
