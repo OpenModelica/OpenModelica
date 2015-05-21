@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 /*
 Policy class to create nonlin solver object
 */
@@ -57,3 +61,4 @@ public:
 
     string _last_selected_solver;
 };
+/** @} */ // end of simcorefactoriesPolicies

@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup simcorefactoryOMCFactory SimCoreFactory.OMCFactory
+ *  Object factories for  gcc/msvc build and linux and windows targets
+ *  @{
+ */
 #define LOADER_SUCCESS                      ( 0  )
 #define LOADER_ERROR                        ( -1 )
 #define LOADER_ERROR_UNDEFINED_REFERENCES   ( -2 )
@@ -37,3 +40,4 @@ protected:
   PATH _library_path;
   PATH _modelicasystem_path;
 };
+/** @} */ // end of simcorefactoryOMCFactory

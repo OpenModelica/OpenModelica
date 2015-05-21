@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 
 /*
 Policy class to create a OMC-,  Modelica- system or AlgLoopSolver
@@ -132,3 +136,4 @@ protected:
   bool _use_modelica_compiler;
   type_map* _system_type_map;
 };
+/** @} */ // end of simcorefactoriesPolicies

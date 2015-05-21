@@ -1,3 +1,7 @@
+/** @addtogroup simcorefactoryVxworks
+ *  
+ *  @{
+ */
 #include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 
 extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path);
@@ -130,4 +134,4 @@ boost::shared_ptr<ISimVars> VxWorksFactory::LoadSimVars(size_t dim_real,size_t d
     ISimVars* simVars = createSimVars(dim_real,dim_int,dim_bool,dim_pre_vars,dim_z,z_i);
     return boost::shared_ptr<ISimVars>(simVars);
 }
-
+/** @} */ // end of simcorefactoryVxworks

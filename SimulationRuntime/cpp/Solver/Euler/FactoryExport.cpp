@@ -1,4 +1,7 @@
-
+/** @addtogroup solverEuler
+ *  
+ *  @{
+ */
 #pragma once
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
@@ -52,5 +55,5 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
 error "operating system not supported"
 #endif
 
-
+/** @} */ // end of solverEuler
 

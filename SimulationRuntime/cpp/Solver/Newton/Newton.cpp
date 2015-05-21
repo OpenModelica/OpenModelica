@@ -1,5 +1,9 @@
+/** @addtogroup solverNewton
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Solver/Newton/Newton.h>
 
 #include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
@@ -211,4 +215,5 @@ void Newton::calcJacobian()
     }
 }
 
+/** @} */ // end of solverNewton
 

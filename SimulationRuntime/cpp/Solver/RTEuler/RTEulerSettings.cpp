@@ -1,5 +1,9 @@
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 
 #include <Solver/RTEuler/RTEulerSettings.h>
 
@@ -22,3 +26,4 @@ void RTEulerSettings::load(std::string xml_file)
     boost::archive::xml_oarchive xml(ofs);
     xml << boost::serialization::make_nvp("EulerSettings", *this);
     ofs.close();*/
+/** @} */ // end of solverRteuler

@@ -1,3 +1,7 @@
+/** @defgroup simcorefactoriesPolicies SimCoreFactory.Policies
+ *  Object factory policy classes for all targets
+ *  @{
+ */
 #if defined(__vxworks)
 
   /*Defines*/
@@ -97,3 +101,4 @@
 #else
   #error "operating system not supported"
 #endif
+/** @} */ // end of simcorefactoriesPolicies

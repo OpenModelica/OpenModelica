@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 /*
 Policy class to create solver settings object
 */
@@ -57,3 +61,4 @@ public:
         return solver_settings;
     }
 };
+/** @} */ // end of simcorefactoriesPolicies

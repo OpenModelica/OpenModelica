@@ -1,6 +1,11 @@
 #pragma once
+/** @addtogroup dataexchange
+ *  
+ *  @{
+ */
+     
 #include <Core/SimController/ISimData.h>
-namespace uBlas = boost::numeric::ublas;
+
 
 class SimData : public ISimData
 {
@@ -25,3 +30,4 @@ private:
   OutputResults_type _result_vars;
   vector<double> _time_entries;
 };
+/** @} */ // end of dataexchange

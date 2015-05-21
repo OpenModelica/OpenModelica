@@ -1,5 +1,10 @@
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
 
@@ -42,4 +47,4 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_solver(boost::exten
 error "operating system not supported"
 #endif
 
-
+ /** @} */ // end of coreSolver

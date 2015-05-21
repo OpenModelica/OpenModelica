@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 /*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/NonLinSolverOMCFactory.h>
 #include <Solver/Newton/Newton.h>
@@ -59,3 +63,4 @@ public:
 
    }
 };
+/** @} */ // end of simcorefactoriesPolicies

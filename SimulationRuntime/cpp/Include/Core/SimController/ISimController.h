@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
 /*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimController/ISimData.h>
@@ -73,3 +77,4 @@ public:
   /// Stops the simulation
   virtual void Stop() = 0;
 };
+/** @} */ // end of coreSimcontroller

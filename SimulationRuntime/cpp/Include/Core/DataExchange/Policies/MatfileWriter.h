@@ -1,3 +1,8 @@
+/** @addtogroup dataexchangePolicies
+ *  
+ *  @{
+ */
+
 /*=={info}======================================================================================*/
 /*!
  * \title      MatfileWriter
@@ -658,3 +663,4 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
     int *_intMatrix;
     vector<string> _var_outputs;
 };
+/** @} */ // end of dataexchangePolicies

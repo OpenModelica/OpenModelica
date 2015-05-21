@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 
 #include <SimCoreFactory/ObjectFactory.h>
 #include <Core/Solver/ISolver.h>
@@ -172,3 +176,4 @@ protected:
     type_map* _solver_type_map;
     type_map* _settings_type_map;
 };
+/** @} */ // end of simcorefactoriesPolicies

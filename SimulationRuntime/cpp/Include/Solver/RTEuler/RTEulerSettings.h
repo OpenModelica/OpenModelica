@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
 #include "FactoryExport.h"
 #include <Core/Solver/SolverSettings.h>
 
@@ -27,3 +31,4 @@ private:
 
 
 };
+/** @} */ // end of solverRteuler

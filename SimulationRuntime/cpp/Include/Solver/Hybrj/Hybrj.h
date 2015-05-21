@@ -1,6 +1,8 @@
-
 #pragma once
-
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
 #include "FactoryExport.h"
 #include "HybrjSettings.h"
 
@@ -100,4 +102,4 @@ private:
     const double _initial_factor;
 
 };
-
+/** @} */ // end of solverHybrj

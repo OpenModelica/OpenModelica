@@ -1,3 +1,7 @@
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 #pragma once
 #include <ObjectFactory.h>
 /*
@@ -32,3 +36,4 @@ public:
 protected:
     string _last_selected_solver;
 };
+/** @} */ // end of simcorefactoriesPolicies

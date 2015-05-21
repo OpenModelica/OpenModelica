@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /*****************************************************************************/
 /**
@@ -37,3 +41,4 @@ public:
     virtual  bool getCondition(unsigned int index) = 0;
     //virtual void initPreVariables(unordered_map<double* const,unsigned int>&,unordered_map<int* const,unsigned int>&,unordered_map<bool* const,unsigned int>&)= 0;
 };
+/** @} */ // end of coreSystem

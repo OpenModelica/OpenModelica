@@ -1,5 +1,10 @@
+/** @addtogroup simcorefactoryOMCFactory
+ *  
+ *  @{
+ */
+
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/ISimController.h>
@@ -293,3 +298,4 @@ LOADERRESULT OMCFactory::UnloadLibrary(shared_library lib)
     }
     return LOADER_SUCCESS;
 }
+/** @} */ // end of simcorefactoryOMCFactory

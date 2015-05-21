@@ -1,3 +1,7 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
 #include <Core/System/FactoryExport.h>
@@ -218,40 +222,4 @@ void AlgLoopDefaultImplementation::getRHS(double* res)
     *res_iter++ = /**init_iter++ - */*constr_iter;
 
 }
-/*
-//in algloop default verschieben
-void AlgLoopDefaultImplementation::getRHS(int* res)
-{
-
-std::vector<int>::iterator
-constr_iter = __xi.begin(),
-constr_iter_end = __xi.end();
-std::vector<int>::iterator
-init_iter = _xi_init.begin();
-
-int* res_iter = res;
-
-// resiudum zurückgeben: res = InitialValue - ResultValue
-for (; constr_iter != constr_iter_end; ++constr_iter)
-*res_iter++ = *init_iter++ - *constr_iter;
-
-}
-
-//in algloop default verschieben
-void AlgLoopDefaultImplementation::giveRHS(bool* res)
-{
-
-std::vector<bool>::iterator
-constr_iter = __xb.begin(),
-constr_iter_end = __xb.end();
-std::vector<bool>::iterator
-init_iter = _xb_init.begin();
-
-bool* res_iter = res;
-
-// resiudum zurückgeben: res = InitialValue XNOR ResultValue
-for (; constr_iter != constr_iter_end; ++constr_iter)
-*res_iter++ = !(*init_iter++ ^ *constr_iter);
-
-}
-*/
+/** @} */ // end of coreSystem

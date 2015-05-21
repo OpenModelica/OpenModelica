@@ -1,5 +1,9 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/System/FactoryExport.h>
 #include <Core/System/ContinuousEvents.h>
 #include <Core/Math/Functions.h>
@@ -65,7 +69,7 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
 
   return((drestart||crestart)); //returns true if new events occured
 }
-
+/** @} */ // end of coreSystem
 /*
 bool ContinuousEvents::checkConditions(const bool* events, bool all)
 {

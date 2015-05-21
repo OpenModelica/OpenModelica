@@ -1,5 +1,8 @@
-
 #pragma once
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
 #if defined(__vxworks)
@@ -64,7 +67,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
 #else
 error "operating system not supported"
 #endif
-
+/** @} */ // end of solverRteuler
 
 
 

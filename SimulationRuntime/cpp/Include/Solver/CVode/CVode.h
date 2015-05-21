@@ -1,4 +1,7 @@
-
+/** @defgroup solverCvode Solver.CVode
+ *  CVode class wrapper from sundials package
+ *  @{
+ */
 #pragma once
 
 #include "FactoryExport.h"
@@ -242,4 +245,4 @@ double
    MeasureTimeValuesSolver *solverValues;
    #endif
 };
-
+/** @} */ // end of solverCvode

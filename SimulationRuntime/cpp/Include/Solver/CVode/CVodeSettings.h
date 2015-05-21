@@ -1,4 +1,9 @@
 #pragma once
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
+
 #include "FactoryExport.h"
 #include <Core/Solver/SolverSettings.h>
 
@@ -17,3 +22,4 @@ public:
 private:
    bool _denseOutput;      ///< Equidistant output(by interpolation polynominal) ([true,false]; default: false)
 };
+/** @} */ // end of solverCvode

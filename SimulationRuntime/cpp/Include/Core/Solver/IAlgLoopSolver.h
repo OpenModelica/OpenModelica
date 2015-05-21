@@ -1,5 +1,9 @@
 #pragma once
-
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 class IAlgLoop;
 class IContinuous;
 
@@ -40,3 +44,4 @@ public:
   virtual ITERATIONSTATUS getIterationStatus() = 0;
   virtual void stepCompleted(double time) = 0;
 };
+ /** @} */ // end of coreSolver

@@ -9,6 +9,11 @@
 using std::map;
 #endif
 */
+ /** @defgroup core Core
+ *  Core module of cpp runtime
+ *  
+ *  @{
+ */   
 template< template <size_t,size_t,size_t,size_t>  class ResultsPolicy,size_t dim_1, size_t dim_2,size_t dim_3,size_t dim_4>
 class HistoryImpl : public IHistory,
   public ResultsPolicy<dim_1,dim_2,dim_3,dim_4>
@@ -103,3 +108,4 @@ private:
 
   IGlobalSettings& _globalSettings;
 };
+/** @} */ // end of core

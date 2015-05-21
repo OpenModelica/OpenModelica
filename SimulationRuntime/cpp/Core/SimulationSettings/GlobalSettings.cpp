@@ -1,5 +1,10 @@
+/** @addtogroup coreSimulationSettings
+ *  
+ *  @{
+ */
+     
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include <Core/SimulationSettings/GlobalSettings.h>
 
@@ -196,3 +201,4 @@ unsigned int GlobalSettings::getAlarmTime()
 {
   return _alarm_time;
 }
+/** @} */ // end of coreSimulationSettings

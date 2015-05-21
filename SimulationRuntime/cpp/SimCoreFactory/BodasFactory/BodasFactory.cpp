@@ -1,3 +1,7 @@
+/** @addtogroup simcorefactoryBodas
+ *  
+ *  @{
+ */
 #include <Core/SimController/ISimController.h>
 #include <SimCoreFactory/BodasFactory/BodasFactory.h>
 
@@ -118,3 +122,4 @@ boost::shared_ptr<INonLinSolverSettings> BodasFactory::LoadAlgLoopSolverSettings
     }
     return boost::shared_ptr<INonLinSolverSettings>(solver_settings);
 }
+/** @} */ // end of simcorefactoryBodas

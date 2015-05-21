@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup math
+ *   @{
+*/
+
 
 /********************************
 *  DGESV computes the solution to a real system of linear equations
@@ -186,3 +190,4 @@ extern "C" void SGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, doubl
 ********************************/
 
 extern "C" void DGGEV(char *JOBVL, char *JOBVR,  long int *N, double* A, long int* LDA, double *B, long int *LDB, double *ALPHAR, double *ALPHAI, double *BETA, double* VL, long int* LDVL, double *VR, long int* LDVR, double* WORK, long int* LWORK, long int *INFO);
+/** @} */ // end of math

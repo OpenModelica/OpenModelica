@@ -1,5 +1,9 @@
+/** @addtogroup math
+ *  @{
+ */
+
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/Math/Functions.h>
 #include <stdexcept>
 
@@ -143,3 +147,4 @@ int pivot(double *A, int n_rows, int n_cols, int *rowInd, int *colInd)
   /* all fine */
   return 0;
 }
+/** @} */ // end of math

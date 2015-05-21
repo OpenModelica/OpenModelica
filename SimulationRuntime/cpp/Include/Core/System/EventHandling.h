@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 /**
 Auxiliary  class to handle system events
 Implements the Modelica pre,edge,change operators
@@ -30,3 +33,4 @@ private:
 boost::shared_ptr<ContinuousEvents> _continuousEvents;
 
 };
+/** @} */ // end of coreSystem

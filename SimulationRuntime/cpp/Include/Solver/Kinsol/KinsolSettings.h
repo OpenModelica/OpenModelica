@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup solverKinsol
+ *  
+ *  @{
+ */
 #include <Core/Solver/INonLinSolverSettings.h>
 
 class KinsolSettings :public INonLinSolverSettings
@@ -26,3 +29,4 @@ private:
   double    dAtol;            ///< Absolute Toleranz für die Newtoniteration (default: 1e-6)
   double      dDelta;            ///< Dämpfungsfaktor (default: 0.9)
 };
+/** @} */ // end of solverKinsol

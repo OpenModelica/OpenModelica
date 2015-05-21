@@ -1,5 +1,9 @@
 #pragma once
-
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 /*****************************************************************************/
 /**
 Allgemeine Klasse zur Kapselung der Parameter (Einstellungen) für einen nicht linearen Solver
@@ -23,3 +27,4 @@ public:
   virtual void setDelta(double) = 0;
   virtual void load(string) = 0;
 };
+ /** @} */ // end of coreSolver
