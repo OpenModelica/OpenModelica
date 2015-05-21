@@ -4,26 +4,26 @@
 
 Note: $ means run this command as *non-root*. If you must run the command as super-user (you don't), do it under sudo and hope omc did not detect it or your build might fail.
 ```bash
-$ echo deb http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
-$ echo deb-src http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
-$ sudo apt-get update
-$ sudo apt-get build-dep openmodelica
-$ svn co https://openmodelica.org/svn/OpenModelica/trunk OpenModelica
-$ cd OpenModelica
-$ autoconf
-$ ./configure --with-omniORB
-$ make -j4 # or make -j4 omc if you only want the omc core and not the qtclients
+echo deb http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
+echo deb-src http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
+sudo apt-get update
+sudo apt-get build-dep openmodelica
+git clone --recursive https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica
+cd OpenModelica
+autoconf
+./configure --with-omniORB
+make -j4 # or make -j4 omc if you only want the omc core and not the qtclients
 ```
 
 ## How to compile on Linux/BSD (all from source)
 
 ```bash
-$ autoconf
+autoconf
 # Skip some pieces of software to ease installation and only compile the base omc executable
 # If you have a working and compatible omc that is not on the PATH, you can use --with-omc=path/to/omc to speed up compilation
-$ ./configure --prefix=/usr/local --disable-modelica3d
-$ make
-$ sudo make install
+./configure --prefix=/usr/local --disable-modelica3d
+make
+sudo make install
 ```
 
 But first you need to install dependencies:
@@ -44,28 +44,31 @@ But first you need to install dependencies:
 If you plan to use mico corba with OMC you need to:
 - set the PATH to path/to/mico/bin (for the idl compiler and mico-cpp)
 - set the LD_LIBRARY_PATH to path/to/installed/mico/lib (for mico libs)
-- set the PATH: `$ export PATH=${PATH}:/path/to/installed/mico/bin` (this is for executables: idl, mico-cpp and mico-config)
+- set the PATH (for executables: idl, mico-cpp and mico-config):
+```bash
+export PATH=${PATH}:/path/to/installed/mico/bin
+```
 
 ## To Compile OpenModelica
 Run:
 ```bash
-$ autoconf
+autoconf
 # One of the following configure lines
-$ ./configure --with-omniORB=/path/to/omniORB (if you want omc to use omniORB corba)
-$ ./configure --with-CORBA=/path/to/mico (if you want omc to use mico corba)
-$ ./configure --without-CORBA            (if you want omc to use sockets)
+./configure --with-omniORB=/path/to/omniORB (if you want omc to use omniORB corba)
+./configure --with-CORBA=/path/to/mico (if you want omc to use mico corba)
+./configure --without-CORBA            (if you want omc to use sockets)
 ```
 in the source directory.
 Make sure that all makefiles are created.
 Check carefully for error messages.
 ```bash
-$ make
+make
 ```
 After the compilation the results are in the path/to/trunk/build.
 To run the testsuite, you need to use the superproject [OpenModelica.git](https://github.com/OpenModelica/OpenModelica), or clone [OpenModelica-testsuite.git](https://github.com/OpenModelica/OpenModelica-testsuite) into the root directory under the name `testsuite`.
 ```
-$ make -C testsuite omc-diff ReferenceFiles
-$ cd testsuite/runtests && ./runtests.pl
+make -C testsuite omc-diff ReferenceFiles
+cd testsuite/runtests && ./runtests.pl
 ```
 
 If you run into problems read the GENERAL NOTES below and if that does not help, subscribe to the [OpenModelicaInterest list](https://www.openmodelica.org/index.php/home/mailing-list) and then sent us an email at [OpenModelicaInterest@ida.liu.se](mailto:OpenModelicaInterest@ida.liu.se).
@@ -75,7 +78,7 @@ If you run into problems read the GENERAL NOTES below and if that does not help,
 Here is a short example session.
 This example uses [OMShell-terminal](https://github.com/OpenModelica/OMShell), but OMShell, mos-scripts, or OMNotebook work the same way.
 
-```bash
+```
 $ cd trunk/build/bin
 $ ./OMShell-terminal
 OMShell Copyright 1997-2015, Open Source Modelica Consortium (OSMC)
@@ -132,10 +135,11 @@ end Modelica.Electrical.Analog.Basic.Resistor;
 >>> listVariables()
 {b, a}
 >>
+```
 
 ## CentOS 6 Hints (RPM, command-line only; for clients, add CORBA, readline)
 ```bash
-$ yum install tar gcc-c++ autoconf sqlite-devel java expat-devel lpsolve-devel lapack-devel make patch gettext
+yum install tar gcc-c++ autoconf sqlite-devel java expat-devel lpsolve-devel lapack-devel make patch gettext
 ```
 also needs cmake > 2.8; not in default repos; try to install an [rpm manually if needed](http://dl.atrpms.net/el6-x86_64/atrpms/testing/cmake-2.8.8-4.el6.x86_64.rpm)
 ```bash
