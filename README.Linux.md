@@ -2,7 +2,6 @@
 
 ## Debian/Ubuntu Compile Cheat Sheet (or read on for the full guide)
 
-Note: $ means run this command as *non-root*. If you must run the command as super-user (you don't), do it under sudo and hope omc did not detect it or your build might fail.
 ```bash
 echo deb http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
 echo deb-src http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
@@ -12,7 +11,7 @@ git clone --recursive https://openmodelica.org/git-readonly/OpenModelica.git Ope
 cd OpenModelica
 autoconf
 ./configure --with-omniORB
-make -j4 # or make -j4 omc if you only want the omc core and not the qtclients
+make -j4
 ```
 
 ## How to compile on Linux/BSD (all from source)
