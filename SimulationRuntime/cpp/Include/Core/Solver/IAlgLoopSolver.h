@@ -1,7 +1,6 @@
 #pragma once
 /** @addtogroup coreSolver
  *  
- *  More documentation for the first group.
  *  @{
  */
 class IAlgLoop;

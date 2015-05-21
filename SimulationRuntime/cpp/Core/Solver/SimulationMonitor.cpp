@@ -1,6 +1,5 @@
 /** @addtogroup coreSolver
  *  
- *  More documentation for the first group.
  *  @{
  */
 #include <Core/ModelicaDefine.h>
