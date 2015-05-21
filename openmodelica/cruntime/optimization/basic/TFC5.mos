@@ -49,12 +49,29 @@ else
   exit(1);
 end if;
 getErrorString();
-
 res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001); // Files not equal!!! Testing other convergence with solveLinearSystem
 getErrorString();
 
+
+
 setCommandLineOptions("+maxSizeSolveLinearSystem=20"); getErrorString();
-optimize(testFinalCon5, numberOfIntervals=700, tolerance = 1e-08, stopTime = 5, simflags=/*-lv LOG_IPOPT_ERROR gives different results depending on */ "-optimizerNP 1");
+echo(false);
+res := optimize(testFinalCon5, numberOfIntervals=700, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT -optimizerNP 1");
+messages:=res.messages;
+echo(true);
+res.resultFile;
+if regexBool(messages, "EXIT: Optimal Solution Found.") then
+  if regexBool(messages, "Number of Iterations....: 40") then
+    print("Number of Iterations....: 40\nEXIT: Optimal Solution Found.");
+  else
+    print("Number of Iterations changed.\tUpdate test\n");
+    exit(1);
+  end if;
+else
+  print("No optimal solution found");
+  exit(1);
+end if;
+getErrorString();
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5_res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
@@ -77,29 +94,13 @@ getErrorString();
 // "
 // true
 // ""
-// record SimulationResult
-//     resultFile = "testFinalCon5_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 700, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1'",
-//     messages = "
-// Optimizer Variables
-// ========================================================
-// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
-// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
-// Input[2]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
-// --------------------------------------------------------
-// number of nonlinear constraints: 0
-// ========================================================
-//
-// ******************************************************************************
-// This program contains Ipopt, a library for large-scale nonlinear optimization.
-//  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
-// ******************************************************************************
-//
-// "
-// end SimulationResult;
+// true
+// "testFinalCon5_res.mat"
+// Number of Iterations....: 40
+// EXIT: Optimal Solution Found.
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
+// ""
 // {"Files Equal!"}
 // ""
 // endResult
