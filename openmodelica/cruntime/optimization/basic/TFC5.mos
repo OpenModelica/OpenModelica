@@ -54,7 +54,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat",
 getErrorString();
 
 setCommandLineOptions("+maxSizeSolveLinearSystem=20"); getErrorString();
-optimize(testFinalCon5, numberOfIntervals=700, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1");
+optimize(testFinalCon5, numberOfIntervals=700, tolerance = 1e-08, stopTime = 5, simflags=/*-lv LOG_IPOPT_ERROR gives different results depending on */ "-optimizerNP 1");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5_res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
@@ -79,7 +79,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testFinalCon5_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 700, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1'",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 700, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1'",
 //     messages = "
 // Optimizer Variables
 // ========================================================
@@ -96,88 +96,6 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
-// LOG_IPOPT_ERROR   | info    | max violation is 26.2917 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.642963 for the approximation of the state x1(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 3.49876 for the approximation of the state x2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 13.1459 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 2.53665 for the approximation of the state x2(time = 4.97143)
-// LOG_IPOPT_ERROR   | info    | max error is 2.24696e+06 for the approximation of the state x2(time = 4.97143)
-// LOG_IPOPT_ERROR   | info    | max violation is 6.57293 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 9.8594 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 15.0807 for the approximation of the state x2(time = 4.68571)
-// LOG_IPOPT_ERROR   | info    | max error is 2.32314e+34 for the approximation of the state x2(time = 4.70714)
-// LOG_IPOPT_ERROR   | info    | max violation is 4.9297 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 7.39455 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 155937 for the approximation of the state x2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 1.13104e+204 for the approximation of the state x2(time = 2.50714)
-// LOG_IPOPT_ERROR   | info    | max error is 62.5222 for the approximation of the state x2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 5.54591 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 6.47023 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 2.6381e+32 for the approximation of the state x2(time = 3.52857)
-// LOG_IPOPT_ERROR   | info    | max error is 6.78355e+65 for the approximation of the state x1(time = 2.4)
-// LOG_IPOPT_ERROR   | info    | max error is 9.38378e+13 for the approximation of the state x2(time = 3.52857)
-// LOG_IPOPT_ERROR   | info    | max error is 56102.4 for the approximation of the state x2(time = 3.53571)
-// LOG_IPOPT_ERROR   | info    | max violation is 5.66145 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 6.06584 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 6.26803 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 6.36913 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 8.60535 for the approximation of the state x2(time = 4.85)
-// LOG_IPOPT_ERROR   | info    | max error is 1.72343e+08 for the approximation of the state x2(time = 4.85)
-// LOG_IPOPT_ERROR   | info    | max violation is 3.18457 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 31581.2 for the approximation of the state x2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 2.05838e+304 for the approximation of the state x2(time = 2.18571)
-// LOG_IPOPT_ERROR   | info    | max error is 7.38121 for the approximation of the state x2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 2.38842 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 6.29322e+19 for the approximation of the state x2(time = 3.52143)
-// LOG_IPOPT_ERROR   | info    | max error is 1.42862e+39 for the approximation of the state x1(time = 3.55714)
-// LOG_IPOPT_ERROR   | info    | max error is 5.93399e+07 for the approximation of the state x2(time = 3.52857)
-// LOG_IPOPT_ERROR   | info    | max error is 66.5349 for the approximation of the state x2(time = 3.55)
-// LOG_IPOPT_ERROR   | info    | max violation is 2.08987 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 2.23915 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.602285 for the approximation of the state x1(time = 4.41429)
-// LOG_IPOPT_ERROR   | info    | max error is 13.6833 for the approximation of the state x2(time = 4.21429)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.11957 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.67936 for the final constraint $OMC$finalConstarintTerm2(time = 5)
-// LOG_IPOPT_ERROR   | info    | max error is 0.297101 for the approximation of the state x2(time = 4.85)
-// LOG_IPOPT_ERROR   | info    | max error is 0.0542145 for the approximation of the state x1(time = 4.48571)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00173125 for the approximation of the state x1(time = 4.70714)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00565382 for the approximation of the state x1(time = 3.17857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000790064 for the approximation of the state x1(time = 3.19286)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00403079 for the approximation of the state x1(time = 3.17143)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00039824 for the approximation of the state x1(time = 3.17857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00530217 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00117418 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000226267 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00519079 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000680888 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.0254465 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.00178654 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.112826 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.000871319 for the approximation of the state x2(time = 1.62143)
-// LOG_IPOPT_ERROR   | info    | max error is 0.149317 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 10.5397 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 2.71868 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.159005 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 2.39191 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.712649 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 5.27761 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 4.20359 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 1.53825 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.11331 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 4.55291 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 17754.6 for the approximation of the state x2(time = 2.62143)
-// LOG_IPOPT_ERROR   | info    | max error is 1.1024 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.335883 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.160613 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.788129 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 2.2839 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.270616 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.167229 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 1.21769 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 1.50796 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 0.035271 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 1.2897e-05 for the approximation of the state x2(time = 1.62857)
-// LOG_IPOPT_ERROR   | info    | max error is 2.30774e-13 for the approximation of the state x1(time = 2.34286)
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
