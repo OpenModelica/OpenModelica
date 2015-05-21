@@ -1,3 +1,7 @@
+/** @addtogroup fmu2
+ *  
+ *  @{
+ */
 /*
  * Implement FMU2Wrapper.
  *
@@ -333,4 +337,4 @@ fmi2Status FMU2Wrapper::getNominalsOfContinuousStates(fmi2Real x_nominal[], size
     x_nominal[i] = 1.0;  // TODO
   return fmi2OK;
 }
-
+/** @} */ // end of fmu2

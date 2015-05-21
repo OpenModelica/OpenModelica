@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup solverNewton
+ *  
+ *  @{
+ */
 
 #include <Core/Solver/INonLinSolverSettings.h>
 class NewtonSettings :public INonLinSolverSettings
@@ -28,3 +31,4 @@ private:
     double        dAtol;                        ///< Absolute Toleranz für die Newtoniteration (default: 1e-6)
     double        dDelta;                        ///< Dämpfungsfaktor (default: 0.9)
 };
+/** @} */ // end of solverNewton

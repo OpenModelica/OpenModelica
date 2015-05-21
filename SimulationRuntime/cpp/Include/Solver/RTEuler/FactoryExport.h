@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup solverRteuler Solver.RTEuler
+ *  Module for Euler integration methods for real-time simulation
+ *  @{
+ */
 #if defined(__vxworks) || defined(__TRICORE__)
 
 #define BOOST_EXTENSION_SOLVER_DECL
@@ -21,3 +24,4 @@
 #else
     error "operating system not supported"
 #endif
+/** @} */ // end of solverRteuler

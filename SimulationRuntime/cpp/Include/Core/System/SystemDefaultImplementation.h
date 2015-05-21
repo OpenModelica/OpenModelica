@@ -1,4 +1,8 @@
 #pragma once
+/** @defgroup coreSystem Core.System
+ *  Core module for all algebraic and ode systems
+ *  @{
+ */
 /*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/Math/Functions.h>
@@ -182,5 +186,4 @@ protected:
     boost::shared_ptr<ISimVars> _sim_vars;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
 };
-
-
+/** @} */ // end of coreSystem

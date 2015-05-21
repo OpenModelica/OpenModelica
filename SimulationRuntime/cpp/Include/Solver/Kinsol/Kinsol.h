@@ -1,6 +1,8 @@
-
 #pragma once
-
+/** @addtogroup solverKinsol
+ *  
+ *  @{
+ */
 #include "FactoryExport.h"
 #include <nvector/nvector_serial.h>
 #include <kinsol/kinsol.h>
@@ -96,3 +98,4 @@ private:
 
    int _counter;
 };
+/** @} */ // end of solverKinsol

@@ -1,3 +1,7 @@
+/** @addtogroup fmu2
+ *  
+ *  @{
+ */
 #ifndef fmi2FunctionTypes_h
 #define fmi2FunctionTypes_h
 
@@ -241,3 +245,4 @@ Types for Functions for FMI2 for Co-Simulation
 #endif
 
 #endif /* fmi2FunctionTypes_h */
+/** @} */ // end of fmu2

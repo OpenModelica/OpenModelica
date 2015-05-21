@@ -1,5 +1,9 @@
- #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+/** @addtogroup coreUtils
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 
  #include  <Core/Utils/Modelica/ModelicaSimulationError.h>
  string error_id_string(SIMULATION_ERROR id)
@@ -31,3 +35,4 @@
 
 
  }
+ /** @} */ // end of coreUtils

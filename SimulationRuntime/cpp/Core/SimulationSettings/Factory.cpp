@@ -1,5 +1,10 @@
+/** @addtogroup coreSimulationSettings
+ *  
+ *  @{
+ */
+     
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 
 #include <Core/SimulationSettings/Factory.h>
 #include <Core/SimulationSettings/GlobalSettings.h>
@@ -36,3 +41,4 @@ boost::shared_ptr<ISolverSettings> SettingsFactory::createSelectedSolverSettings
   _solver_settings = createSolverSettings(solver_name,_global_settings);
   return _solver_settings;
 }
+/** @} */ // end of coreSimulationSettings

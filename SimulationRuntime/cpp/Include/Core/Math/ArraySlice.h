@@ -1,5 +1,5 @@
 #pragma once
-/*
+/* 
  * Implement Modelica array slices.
  *
  * This file is part of OpenModelica.
@@ -32,7 +32,10 @@
  */
 
 #include "Array.h"
-
+/** @addtogroup math
+ *   @{
+*/
+    
 /**
  * Modelica slice.
  * Defined by start:stop or start:step:stop, start = 0 or stop = 0 meaning end,
@@ -344,3 +347,4 @@ class ArraySlice: public ArraySliceConst<T> {
     return processed;
   }
 };
+/** @} */ // end of math

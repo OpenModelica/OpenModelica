@@ -1,5 +1,9 @@
 #pragma once
-
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 #if defined(__TRICORE__) || defined(__vxworks)
 #define BOOST_EXTENSION_STATESELECT_DECL
 #endif
@@ -35,3 +39,4 @@ private:
   std::vector<unsigned int> _dimStateCanditates;
   bool _initialized;
 };
+ /** @} */ // end of coreSolver

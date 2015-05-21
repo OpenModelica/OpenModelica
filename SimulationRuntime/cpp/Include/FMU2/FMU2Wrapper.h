@@ -1,3 +1,7 @@
+/** @addtogroup fmu2
+ *  
+ *  @{
+ */
 #pragma once
 /*
  * Wrap a Modelica System of the Cpp runtime for FMI 2.0.
@@ -150,3 +154,4 @@ class FMU2Wrapper
   fmi2CallbackFunctions _functions;
   ModelState _state;
 };
+/** @} */ // end of fmu2

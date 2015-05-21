@@ -1,4 +1,9 @@
 #pragma once
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 /*****************************************************************************/
 /**
 
@@ -71,3 +76,4 @@ public:
   /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
   /*virtual int reportErrorMessage(ostream& messageStream) = 0;*/
 };
+ /** @} */ // end of coreSolver

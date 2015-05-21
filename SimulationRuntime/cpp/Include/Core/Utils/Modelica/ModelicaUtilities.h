@@ -1,3 +1,7 @@
+/** @addtogroup coreUtils
+ *  
+ *  @{
+ */
 /** \file ModelicaUtilities.h
  *  \brief Utility functions which can be called by external Modelica functions.
  **/
@@ -90,3 +94,4 @@ BOOST_EXTENSION_EXPORT_DECL char* ModelicaAllocateStringWithErrorReturn(size_t l
 }
 #endif
 #endif
+/** @} */ // end of coreUtils

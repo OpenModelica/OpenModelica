@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup dataexchangePolicies Core.DataExchange.Policy
+ *  Module for storing different file output formats ( csv- ,mat- files  and buffer storage)
+ *  @{
+ */
 #include "TextfileWriter.h"
 
 
@@ -267,3 +270,4 @@ protected:
     vector<string> _var_outputs;
 
 };
+/** @} */ // end of dataexchangePolicies

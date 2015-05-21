@@ -1,3 +1,7 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
 
@@ -72,4 +76,4 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
     throw ModelicaSimulationError(MODEL_FACTORY,"AlgLoop solver is not available");
   }
 }
-
+/** @} */ // end of coreSystem

@@ -1,5 +1,10 @@
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/Solver/FactoryExport.h>
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <Core/Solver/SolverSettings.h>
@@ -218,3 +223,4 @@ void SolverDefaultImplementation::updateEventState()
     setZeroState();                     // Upate status of events vector
   }
 }
+ /** @} */ // end of coreSolver

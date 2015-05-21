@@ -1,4 +1,10 @@
 #pragma once
+/** @addtogroup dataexchangePolicies
+ *  
+ *  @{
+ */
+
+
 /*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <sstream>
@@ -150,3 +156,4 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
     std::string _file_name;
     vector<string> _var_outputs;
 };
+/** @} */ // end of dataexchangePolicies

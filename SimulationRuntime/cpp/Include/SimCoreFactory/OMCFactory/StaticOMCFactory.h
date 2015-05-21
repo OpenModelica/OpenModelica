@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoryOMCFactory
+ *  
+ *  @{
+ */
 
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
@@ -15,3 +19,4 @@ class StaticOMCFactory : public OMCFactory
     virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory();
     virtual std::pair<boost::shared_ptr<ISimController>, SimSettings> createSimulation(int argc, const char* argv[]);
 };
+/** @} */ // end of simcorefactoryOMCFactory

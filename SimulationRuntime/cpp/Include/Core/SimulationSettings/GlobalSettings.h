@@ -1,4 +1,10 @@
 #pragma once
+
+/** @addtogroup coreSimulationSettings
+ *  
+ *  @{
+ */
+     
 #include <fstream>
 
 class GlobalSettings : public IGlobalSettings
@@ -70,3 +76,4 @@ private:
   LogType _log_type;
   unsigned int _alarm_time;
 };
+/** @} */ // end of coreSimulationSettings

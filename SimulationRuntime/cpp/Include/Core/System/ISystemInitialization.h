@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 /*****************************************************************************/
 /**
 
@@ -24,3 +27,4 @@ public:
   //returns the intial status
   virtual bool initial() = 0;
 };
+/** @} */ // end of coreSystem

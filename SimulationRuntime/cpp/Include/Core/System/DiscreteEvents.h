@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 /*
 #ifdef RUNTIME_STATIC_LINKING
 class DiscreteEvents
@@ -61,3 +64,4 @@ class PreRefArray2CArray
     return _discrete_events->pre(*val);
   }
 };
+/** @} */ // end of coreSystem

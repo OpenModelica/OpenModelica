@@ -1,5 +1,10 @@
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/Solver/FactoryExport.h>
 #include <Core/Solver/SystemStateSelection.h>
 #include <Core/Math/ArrayOperations.h>
@@ -210,3 +215,4 @@ int SystemStateSelection::comparePivot(int *oldPivot, int *newPivot,int switchSt
 
   return ret;
 }
+ /** @} */ // end of coreSolver

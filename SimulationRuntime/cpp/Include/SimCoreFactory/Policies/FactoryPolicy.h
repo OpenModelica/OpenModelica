@@ -1,3 +1,7 @@
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 #include <SimCoreFactory/ObjectFactory.h>
 
 #if defined(__vxworks)
@@ -100,3 +104,4 @@
 //#else
 //    #error "operating system not supported"
 #endif
+/** @} */ // end of simcorefactoriesPolicies

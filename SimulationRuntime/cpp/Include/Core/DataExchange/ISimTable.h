@@ -1,6 +1,9 @@
 #pragma once
 
-
+/** @addtogroup dataexchange
+ *  
+ *  @{
+ */
 
 class ISimTable
 {
@@ -17,3 +20,4 @@ public:
   virtual  multi_array_ref<double,2> getValue() = 0;
 
 };
+/** @} */ // end of dataexchange

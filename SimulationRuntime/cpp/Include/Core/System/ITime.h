@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 typedef std::vector<std::pair<double,double> > time_event_type;
 
 class ITime
@@ -13,3 +17,4 @@ public:
   /// Set current integration time
   virtual void setTime(const double& time) = 0;
 };
+/** @} */ // end of coreSystem

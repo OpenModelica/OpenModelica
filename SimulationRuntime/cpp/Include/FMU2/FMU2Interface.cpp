@@ -1,3 +1,7 @@
+/** @addtogroup fmu2
+ *  
+ *  @{
+ */
 /*
  * Implement the FMI 2.0 calling interface to FMU2Wrapper.
  *
@@ -456,3 +460,4 @@ extern "C"
     CATCH_EXCEPTION(w);
   }
 }
+/** @} */ // end of fmu2

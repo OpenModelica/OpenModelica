@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 class IStepEvent
 {
 public:
@@ -9,3 +13,4 @@ public:
   //returns the intial status
   virtual bool terminal() = 0;
 };
+/** @} */ // end of coreSystem

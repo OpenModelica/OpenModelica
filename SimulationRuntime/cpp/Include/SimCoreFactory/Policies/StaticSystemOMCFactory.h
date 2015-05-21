@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 /*includes removed for static linking not needed any more
 #include <Core/System/IAlgLoopSolverFactory.h>
 #include <SimCoreFactory/Policies/SystemOMCFactory.h>
@@ -37,3 +41,4 @@ protected:
   {
   }
 }; 
+/** @} */ // end of simcorefactoriesPolicies

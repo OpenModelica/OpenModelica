@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /*****************************************************************************/
 /**
@@ -94,3 +97,4 @@ protected:
         _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
 
 };
+/** @} */ // end of coreSystem

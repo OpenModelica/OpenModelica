@@ -1,17 +1,11 @@
 #pragma once
-
-#include <Core/System/IMixedSystem.h>
-#include <Core/System/IContinuous.h>
-#include <Core/System/IEvent.h>
-#include <Core/System/ITime.h>
-#include <Core/System/IWriteOutput.h>
-#include <Core/System/ISystemInitialization.h>
-#include <Core/System/ISystemProperties.h>
-#include <Core/Solver/ISolver.h>        // Solver interface
-#include <Core/Solver/ISolverSettings.h>      // SolverSettings interface
+/** @addtogroup coreSolver
+ *  
+ *  More documentation for the first group.
+ *  @{
+ */
 #include <Core/Solver/SystemStateSelection.h>
 #include <Core/Solver/SimulationMonitor.h>
-
 #ifdef RUNTIME_PROFILING
 #include <Core/Utils/extension/measure_time.hpp>
 #endif
@@ -136,3 +130,4 @@ private:
   MeasureTimeValues *writeFunctionStartValues, *writeFunctionEndValues;
   #endif
 };
+ /** @} */ // end of coreSolver

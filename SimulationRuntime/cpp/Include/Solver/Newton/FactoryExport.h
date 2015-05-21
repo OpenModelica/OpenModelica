@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup solverNewton Solver.Newton
+ *  Nonlineaar solver class for Newton methods
+ *  @{
+ */
 #if defined(__vxworks)
 
 #define BOOST_EXTENSION_SOLVER_DECL
@@ -11,6 +14,6 @@
 #else
     error "operating system not supported"
 #endif
-
+/** @} */ // end of solverNewton
 
 

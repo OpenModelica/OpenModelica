@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 #if defined(__vxworks) || defined(__TRICORE__) || defined(RUNTIME_STATIC_LINKING) 
 
@@ -15,5 +19,5 @@
     error "operating system not supported"
 #endif
 
-
+/** @} */ // end of coreSystem
 

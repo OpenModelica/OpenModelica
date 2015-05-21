@@ -1,6 +1,9 @@
 #pragma once
 
-
+/** @defgroup dataexchange Core.DataExchange
+ *  Data storage module for simulation variables
+ *  @{
+ */
 
 /*****************************************************************************/
 /**
@@ -62,3 +65,4 @@ public:
   virtual void clear()=0;
   virtual ~IHistory()  {};
 };
+/** @} */ // end of dataexchange

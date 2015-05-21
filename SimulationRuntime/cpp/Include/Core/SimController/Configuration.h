@@ -1,4 +1,10 @@
 #pragma once
+/** @defgroup coreSimcontroller Core.SimController
+ *  Configuration and control of simulation 
+ *  
+ *  @{
+ */ 
+
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 
 class Configuration : public ConfigurationPolicy
@@ -18,3 +24,4 @@ private:
    boost::shared_ptr<ISimControllerSettings> _simcontroller_settings;
    boost::shared_ptr<ISolver> _solver;
 };
+/** @} */ // end of coreSimcontroller

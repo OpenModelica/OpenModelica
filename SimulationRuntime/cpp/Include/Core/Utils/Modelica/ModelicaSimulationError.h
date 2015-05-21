@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreUtils
+ *  
+ *  @{
+ */
 
 
 //Enum for error types that can occur
@@ -50,3 +53,4 @@ BOOST_EXTENSION_EXPORT_DECL string error_id_string(SIMULATION_ERROR id);
 BOOST_EXTENSION_EXPORT_DECL string add_error_info(string new_info,string info,SIMULATION_ERROR id,double& time);
 //Helper functions to extend an error information for new additional string
 BOOST_EXTENSION_EXPORT_DECL string add_error_info(string new_info,string info,SIMULATION_ERROR id);
+/** @} */ // end of coreUtils

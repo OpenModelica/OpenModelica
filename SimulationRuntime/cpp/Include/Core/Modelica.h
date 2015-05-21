@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup core
+ *  
+ *  @{
+ */
 
 
 #include <string>
@@ -127,4 +131,4 @@ typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_a
 #include <Core/DataExchange/Policies/BufferReaderWriter.h>
 #include <Core/HistoryImpl.h>
 #include <Core/DataExchange/SimDouble.h>
-
+/** @} */ // end of group1
