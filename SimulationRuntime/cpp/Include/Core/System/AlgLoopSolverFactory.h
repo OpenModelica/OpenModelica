@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 /*****************************************************************************/
 /**
 Factory used by the system to create a solver for the solution of a (possibly
@@ -31,3 +34,4 @@ private:
   std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
   IGlobalSettings* _global_settings;
 };
+/** @} */ // end of coreSystem

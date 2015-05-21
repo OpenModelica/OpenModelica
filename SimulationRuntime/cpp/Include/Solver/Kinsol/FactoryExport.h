@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup solverKinsol Solver.Kinsol
+ *  Kinsol class wrapper from sundials package
+ *  @{
+ */
 #if defined(__vxworks) || defined(__TRICORE__)
 
 #define BOOST_EXTENSION_SOLVER_DECL
@@ -13,3 +16,4 @@
 #else
     error "operating system not supported"
 #endif
+/** @} */ // end of solverKinsol

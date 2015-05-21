@@ -1,5 +1,9 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
+     
 /*****************************************************************************/
 /**
 
@@ -70,3 +74,4 @@ public:
   void addConstraint(double& constr_value);
   */
 };
+/** @} */ // end of coreSystem

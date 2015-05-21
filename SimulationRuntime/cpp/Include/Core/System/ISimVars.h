@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /**
 * Class for SimVars, stores all model variable in continuous block of memory
@@ -46,3 +50,4 @@ public:
      virtual void setPreVar(int& var)=0;
      virtual void setPreVar(bool& var)=0;
 };
+/** @} */ // end of coreSystem

@@ -1,5 +1,9 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 
 #include <Core/System/FactoryExport.h>
 #include <Core/System/SimVars.h>
@@ -389,3 +393,4 @@ bool* SimVars::getBoolVar(size_t i)
   else
     throw std::runtime_error("Wrong variable index");
 }
+/** @} */ // end of coreSystem

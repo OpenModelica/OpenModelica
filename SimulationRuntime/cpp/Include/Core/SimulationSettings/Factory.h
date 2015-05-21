@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup coreSimulationSettings Core.SimulationSettings
+ *  Module for simulation settings
+ *  @{
+ */
 
 /*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
@@ -27,3 +30,4 @@ private:
   boost::shared_ptr<IGlobalSettings> _global_settings;
   boost::shared_ptr<ISolverSettings> _solver_settings;
 };
+/** @} */ // end of coreSimulationSettings

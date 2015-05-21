@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
 #include "SimManager.h"
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 #include <Core/SimController/ISimController.h>
@@ -47,3 +50,4 @@ private:
     //removed, has to be released after simulation run, see SimController.Start
     boost::shared_ptr<SimManager> _simMgr;
 };
+/** @} */ // end of coreSimcontroller

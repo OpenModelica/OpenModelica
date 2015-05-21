@@ -9,9 +9,9 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
 #use this call to use precompiled headers
-BUILDTPYE = Release
+#BUILDTPYE = Release
 #use this call if you want to debug the cpp runtime
-#BUILDTPYE = Debug
+BUILDTPYE = Debug
 
 CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 
@@ -19,6 +19,10 @@ runtimeCpp: clean
 ifeq ("$(RUNTIME_STATIC_LINKING)","true")
 	cd ./Build; echo "change to Build";	\
 	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DRUNTIME_STATIC_LINKING=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	make;
+else ifeq ("$(BUILD_DOCUMENTATION)","true")
+	cd ./Build; echo "change to Build";	\
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_DOCUMENTATION=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
 else
 	cd ./Build; echo "change to Build";	\

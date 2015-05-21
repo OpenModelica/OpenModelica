@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup solverEuler Solver.Euler
+ *  Module for Euler integration methods
+ *  @{
+ */
 #include "FactoryExport.h"
 #include <Core/Solver/SolverDefaultImplementation.h>
 
@@ -188,3 +191,4 @@ private:
     IMixedSystem* _mixed_system;
     ITime* _time_system;
 };
+/** @} */ // end of solverEuler

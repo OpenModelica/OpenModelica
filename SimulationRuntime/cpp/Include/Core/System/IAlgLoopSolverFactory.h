@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /*****************************************************************************/
 /**
@@ -20,3 +24,4 @@ public:
   virtual ~IAlgLoopSolverFactory() {};
   virtual  boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop) = 0;
 };
+/** @} */ // end of coreSystem

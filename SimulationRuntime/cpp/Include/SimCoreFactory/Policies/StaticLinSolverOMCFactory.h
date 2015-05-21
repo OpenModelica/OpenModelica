@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 /*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
 #include <Solver/UmfPack/UmfPack.h>
@@ -50,3 +54,4 @@ protected:
 private:
     type_map _linsolver_type_map;
 };
+/** @} */ // end of simcorefactoriesPolicies

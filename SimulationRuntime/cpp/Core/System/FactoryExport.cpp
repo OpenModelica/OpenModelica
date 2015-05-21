@@ -1,6 +1,10 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)
 
 
@@ -47,6 +51,6 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 error "operating system not supported"
 #endif
 
-
+/** @} */ // end of coreSystem
 
 

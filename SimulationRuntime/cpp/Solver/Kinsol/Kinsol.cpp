@@ -1,5 +1,9 @@
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
+/** @addtogroup solverKinsol
+ *  
+ *  @{
+ */
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 
@@ -641,3 +645,4 @@ void Kinsol::check4EventRetry(double* y)
         _eventRetry = true;
     }
 }
+/** @} */ // end of solverKinsol

@@ -1,5 +1,8 @@
 #pragma once
-
+/** @defgroup solverHybrj Solver.Hybrj
+ *  Hybrj class wrapper from Minpack package
+ *  @{
+ */
 #if defined(__vxworks)
 
 #define BOOST_EXTENSION_SOLVER_DECL
@@ -12,5 +15,5 @@
     error "operating system not supported"
 #endif
 
-
+/** @} */ // end of solverHybrj
 

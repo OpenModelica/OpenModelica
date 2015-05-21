@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 /*****************************************************************************/
 /**
 
@@ -27,3 +30,4 @@ public:
   /// System is able to provide the Jacobian symbolically
   virtual bool provideSymbolicJacobian() /*const*/ = 0;
 };
+/** @} */ // end of coreSystem

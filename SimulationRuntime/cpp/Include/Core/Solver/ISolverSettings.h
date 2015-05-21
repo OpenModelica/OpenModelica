@@ -1,6 +1,10 @@
 #pragma once
-#include <Core/SimulationSettings/IGlobalSettings.h>
-//#include "Math/Implementation/Constants.h"
+/** @addtogroup coreSolver
+ *  
+ *  @{
+ */
+
+
 /*****************************************************************************/
 /**
 
@@ -43,3 +47,4 @@ public:
   virtual IGlobalSettings* getGlobalSettings() = 0;
   virtual void load(string) = 0;
 };
+ /** @} */ // end of coreSolver

@@ -1,5 +1,9 @@
+/** @addtogroup coreUtils
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/Utils/Modelica/ModelicaUtilities.h>
 #include <stdexcept>
 #include <exception>
@@ -65,3 +69,4 @@ char* ModelicaAllocateStringWithErrorReturn(size_t len)
 #ifdef __cplusplus
 }
 #endif
+/** @} */ // end of coreUtils

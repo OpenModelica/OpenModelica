@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 class IHistory;
 class IWriteOutput
 {
@@ -22,3 +25,4 @@ public:
   virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT) = 0;
   virtual IHistory* getHistory() = 0;
 };
+/** @} */ // end of coreSystem

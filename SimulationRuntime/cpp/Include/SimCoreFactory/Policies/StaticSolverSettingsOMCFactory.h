@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 /*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/SolverSettingsOMCFactory.h>
 #include <Core/Solver/SolverSettings.h>
@@ -33,3 +37,4 @@ public:
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
     }
 };
+/** @} */ // end of simcorefactoriesPolicies

@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /*****************************************************************************/
 /**
@@ -94,7 +98,7 @@ public:
     virtual bool stepCompleted(double time) = 0;
     virtual bool stepStarted(double time) = 0;
 };
-
+/** @} */ // end of coreSystem
 /*
 /// Enumeration with variable- and differentiation-index to sort state vector and vector of right hand side
     /// (see: Simeon, B.: "Numerische Integration mechanischer Mehrkörpersysteme", PhD-Thesis, Düsseldorf, 1994)

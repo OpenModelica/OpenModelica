@@ -1,5 +1,9 @@
+/** @addtogroup solverEuler
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Solver/Euler/Euler.h>
@@ -1316,3 +1320,4 @@ void Euler::calcJac(double* yHelp, double* _fHelp, const double* _f, double* jac
         }
     }
 }
+/** @} */ // end of solverEuler

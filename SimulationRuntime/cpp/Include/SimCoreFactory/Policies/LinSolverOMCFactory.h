@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 #include <SimCoreFactory/ObjectFactory.h>
 
 /*
@@ -78,3 +81,4 @@ protected:
 private:
     type_map* _linsolver_type_map;
 };
+/** @} */ // end of simcorefactoriesPolicies

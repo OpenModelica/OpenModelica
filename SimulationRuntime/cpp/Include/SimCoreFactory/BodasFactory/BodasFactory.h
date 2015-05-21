@@ -1,8 +1,10 @@
 #pragma once
+/** @defgroup simcorefactoryBodas SimCoreFactory.BodasFactory
+ *  Object factories for the Bodas target
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
-
-//#include <memory>
+#include <Core/Modelica.h>
 
 class ISimController;
 class ISettingsFactory;
@@ -25,3 +27,4 @@ private:
     string _library_path;
     string _modelicasystem_path;
 };
+/** @} */ // end of simcorefactoryBodas

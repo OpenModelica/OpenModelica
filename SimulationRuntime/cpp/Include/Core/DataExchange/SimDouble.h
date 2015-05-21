@@ -1,7 +1,11 @@
 #pragma once
+/** @addtogroup dataexchange
+ *  
+ *  @{
+ */
+     
 #include "ISimVar.h"
-#include <string>
-using std::string;
+
 /**
 SimVar Klasse zum verwalten einer Double Variable
 */
@@ -18,3 +22,4 @@ private:
   string _name;
   double _value;
 };
+/** @} */ // end of dataexchange

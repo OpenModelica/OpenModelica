@@ -1,6 +1,9 @@
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
-
+#include <Core/Modelica.h>
 #include <Core/SimController/SimManager.h>
 /*
  #include <boost/log/common.hpp>
@@ -717,3 +720,4 @@ void SimManager::runSingleProcess()
         delete[] zeroVal_new;
 
 }  // end singleprocess
+/** @} */ // end of coreSimcontroller

@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /*****************************************************************************/
 /**
@@ -34,3 +38,4 @@ public:
   virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size) = 0;
   virtual int getAMaxColors() = 0;
 };
+/** @} */ // end of coreSystem

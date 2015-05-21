@@ -1,6 +1,10 @@
-#include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
 
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Core/SimController/Configuration.h>
 #if defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #include "LibrariesConfig.h"
@@ -40,3 +44,4 @@ boost::shared_ptr<ISolver> Configuration::createSelectedSolver(IMixedSystem* sys
   _solver = createSolver(system, solver_name, _solver_settings);
   return _solver;
 }
+/** @} */ // end of coreSimcontroller

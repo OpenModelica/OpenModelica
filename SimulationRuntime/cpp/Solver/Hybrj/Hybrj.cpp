@@ -1,5 +1,9 @@
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
+#include <Core/Modelica.h>
 #include <Solver/Hybrj/Hybrj.h>
 
 #include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
@@ -440,3 +444,4 @@ void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const
     }
 
 }
+/** @} */ // end of solverHybrj

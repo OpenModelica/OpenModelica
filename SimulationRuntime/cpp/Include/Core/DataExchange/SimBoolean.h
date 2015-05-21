@@ -1,7 +1,9 @@
 #pragma once
+/** @addtogroup dataexchange
+ *  
+ *  @{
+ */
 #include "ISimVar.h"
-#include <string>
-using std::string;
 
 /**
 SimVar Klasse zum verwalten einer Boolean Variable
@@ -19,3 +21,4 @@ private:
   string _name;
   bool _value;
 };
+/** @} */ // end of dataexchange

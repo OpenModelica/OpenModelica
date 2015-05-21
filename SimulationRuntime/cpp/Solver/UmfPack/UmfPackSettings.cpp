@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Solver/UmfPack/UmfPackSettings.h>
 
 UmfPackSettings::UmfPackSettings() : ILinSolverSettings(), useSparse(true) {

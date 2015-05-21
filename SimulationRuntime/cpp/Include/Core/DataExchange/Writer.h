@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup dataexchange
+ *  
+ *  @{
+ */
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
 #include <boost/lockfree/queue.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -149,3 +152,4 @@ protected:
 #endif
 
 };
+/** @} */ // end of dataexchange

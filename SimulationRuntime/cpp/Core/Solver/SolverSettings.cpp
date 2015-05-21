@@ -1,5 +1,9 @@
+/** @addtogroup coreSolver
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/Solver/FactoryExport.h>
 #include <Core/Solver/SolverSettings.h>
 #include <Core/SimulationSettings/IGlobalSettings.h>
@@ -100,6 +104,6 @@ IGlobalSettings* SolverSettings::getGlobalSettings()
 void SolverSettings::load(string)
 {
 }
-
+ /** @} */ // end of coreSolver
 
 

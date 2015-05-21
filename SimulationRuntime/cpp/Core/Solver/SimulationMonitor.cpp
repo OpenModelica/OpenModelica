@@ -1,5 +1,9 @@
+/** @addtogroup coreSolver
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/Solver/FactoryExport.h>
 #include <Core/Solver/SimulationMonitor.h>
 
@@ -37,4 +41,4 @@ void SimulationMonitor::checkTimeout()
   }
   */
 }
-
+ /** @} */ // end of coreSolver

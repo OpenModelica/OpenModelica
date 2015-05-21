@@ -1,5 +1,9 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 
 #include <Core/System/FactoryExport.h>
 #include <Core/System/EventHandling.h>
@@ -499,7 +503,7 @@ void SystemDefaultImplementation::setStringStartValue(string& var,string val)
   var=val;
   _string_start_values.setStartValue(var,val);
 }
-
+/** @} */ // end of coreSystem
 
 /*
 template int SystemDefaultImplementation::getStartValue(int variable,string key);

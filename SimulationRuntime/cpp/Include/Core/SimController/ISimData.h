@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
 /*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <string.h>
@@ -29,3 +32,4 @@ public:
   virtual void getTimeEntries(std::vector<double>& time_entries) = 0;
   virtual void addTimeEntries(std::vector<double> time_entries) = 0;
 };
+/** @} */ // end of coreSimcontroller

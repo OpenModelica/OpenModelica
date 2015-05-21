@@ -1,3 +1,8 @@
+/** @addtogroup dataexchange
+ *  
+ *  @{
+ */
+
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
 #include <Core/DataExchange/SimData.h>
@@ -80,3 +85,4 @@ extern "C" ISimData* createSimDataAnalyzation()
 {
   return new SimData();
 }
+/** @} */ // end of dataexchange

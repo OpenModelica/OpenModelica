@@ -1,5 +1,9 @@
 #pragma once
-#include <string>
+/** @addtogroup coreSolver
+ *  
+ *  @{
+ */
+
 
 /*****************************************************************************/
 /**
@@ -18,3 +22,4 @@ public:
   virtual void setUseSparseFormat(bool value) = 0;
   virtual void load(std::string) = 0;
 };
+ /** @} */ // end of coreSolver

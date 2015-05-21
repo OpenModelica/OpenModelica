@@ -1,5 +1,9 @@
 #pragma once
-
+/** @addtogroup coreSimulationSettings
+ *  
+ *  @{
+ */
+     
 /*****************************************************************************/
 /**
 
@@ -65,3 +69,4 @@ public:
   virtual void setRuntimeLibrarypath(string) = 0;
   virtual string getRuntimeLibrarypath() = 0;
 };
+/** @} */ // end of coreSimulationSettings

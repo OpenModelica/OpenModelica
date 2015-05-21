@@ -1,6 +1,9 @@
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
-
+#include <Core/Modelica.h>
 #include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>
 #include <Core/SimController/Configuration.h>
@@ -262,3 +265,4 @@ void SimController::Stop()
     if(_simMgr)
     _simMgr->stopSimulation();
 }
+/** @} */ // end of coreSimcontroller

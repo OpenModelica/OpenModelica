@@ -1,5 +1,9 @@
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Solver/CVode/CVode.h>
 #include <Core/Math/Functions.h>
 
@@ -1050,5 +1054,5 @@ int Cvode::check_flag(void *flagvalue, const char *funcname, int opt)
 
   return (0);
 }
-
+/** @} */ // end of solverCvode
 
