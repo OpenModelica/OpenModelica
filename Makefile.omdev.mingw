@@ -60,7 +60,7 @@ FMILIB_SHARED = OFF
 # For Windows build static CMinpack lib!
 CMINPACKLIB_SHARED = OFF
 
-CONFIG_REVISION = $(shell git rev-parse --short HEAD)
+CONFIG_REVISION = $(shell git describe --match "v*.*" --always)
 
 revision:
 	@echo Current revision: $(CONFIG_REVISION)
