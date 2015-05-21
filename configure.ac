@@ -18,7 +18,6 @@ AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
 AC_SUBST(NO_LPLIB)
 AC_SUBST(LPSOLVEINC)
-AC_SUBST(MODELICA3D)
 AC_SUBST(OPENCL)
 AC_SUBST(USE_GRAPH)
 AC_SUBST(USE_METIS)
@@ -194,13 +193,22 @@ fi
 
 else # Is Darwin
 
-AC_LANG([C++])
+AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
 for flag in -stdlib=libstdc++; do
   AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
 done
-AC_LANG([C])
+AC_LANG_POP([C++])
 
+fi
+
+m4_include([common/m4/ax_cxx_compile_stdcxx_11.m4])
+HAVE_CXX_STD=0
+for flag in $CXXFLAGS; do
+  (echo $flag | grep -q "^-std=") && HAVE_CXX_STD=1
+done
+if test "$HAVE_CXX_STD" = 0; then
+  AX_CXX_COMPILE_STDCXX_11([noext],[optional])
 fi
 
 if test "`getconf LONG_BIT`" = "32"; then
@@ -603,15 +611,6 @@ AS_IF([test "x$with_UMFPACK" = xyes],
 ])
 
 m4_include([common/m4/corba.m4])
-
-AC_MSG_CHECKING([if the user wants Modelica3D])
-MODELICA3D="yes"
-AC_ARG_ENABLE(modelica3d, [  --disable-modelica3d          Modelica3D library (dependencies checked by cmake later on; enabled by default)],[test "xno" = x"$enableval" && MODELICA3D=""],[])
-if test -z "$MODELICA3D" ; then
-AC_MSG_RESULT([no])
-else
-AC_MSG_RESULT([yes])
-fi
 
 AC_MSG_CHECKING([for OpenCL])
 AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[

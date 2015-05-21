@@ -38,7 +38,7 @@ ifneq ("$(RUNTIME_PROFILING)","true")
 	$(eval RUNTIME_PROFILING_COMMAND=)
 endif
 ifneq ("$(USE_SCOREP)","true") #If ScoreP ist used, the analyzation mode is automatically turned on
-	$(eval CMAKE_COMMANDS=)
+	$(eval CMAKE_COMMANDS=CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CXXFLAGS="@CXXFLAGS@")
 	$(eval SCOREP_COMMAND=)
 else
 	$(eval RUNTIME_STATIC_LINKING_COMMAND="-DRUNTIME_STATIC_LINKING=ON")
@@ -55,3 +55,6 @@ install: runtimeCpp
 clean:
 	rm -R -f Build
 	mkdir Build
+
+Makefile: Makefile.in
+	cd @top_builddir@ && ./config.status

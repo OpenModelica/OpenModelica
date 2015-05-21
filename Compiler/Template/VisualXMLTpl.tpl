@@ -69,58 +69,58 @@ let vecDump = vector |> vec => <<<%dumpExp(vec)%>>> ; separator="\t\n"
     <%vecDump%>>>
 end dumpVecExp;
 
-template dumpExp (DAE.Exp exp)
+template dumpExp (DAE.Exp expIn)
 ::=
-    match exp
-        case exp as BCONST(__) then
+    match expIn
+        case expIn as BCONST(__) then
             <<
-                <bexp><%ExpressionDump.printExpStr(exp)%></bexp>
+                <bexp><%ExpressionDump.printExpStr(expIn)%></bexp>
             >>
-        case exp as CREF(__) then
+        case expIn as CREF(__) then
             <<
-                <cref><%ExpressionDump.printExpStr(exp)%></cref>
+                <cref><%ExpressionDump.printExpStr(expIn)%></cref>
             >>
-        case exp as BINARY(__) then
+        case expIn as BINARY(__) then
             <<<binary>
+            <%dumpExp(exp1)%>
+                <op><%dumpOperator(operator)%></op>
+            <%dumpExp(exp2)%>
+            </binary>
+            >>
+        case expIn as UNARY(__) then
+            <<<unary>
+                <op><%dumpOperator(operator)%></op>
+            <%dumpExp(exp)%>
+            </unary>
+            >>
+        case expIn as LBINARY(__) then
+            <<<lbinary>
                 <%dumpExp(exp1)%>
                 <op><%dumpOperator(operator)%></op>
                 <%dumpExp(exp2)%>
-            </binary>
-            >>
-        case exp as UNARY(__) then
-            <<<unary>
-                <op><%dumpOperator(operator)%></op>
-                <exp><%dumpExp(exp)%></exp>
-            </unary>
-            >>
-        case exp as LBINARY(__) then
-            <<<lbinary>
-                <exp><%dumpExp(exp1)%></exp>
-                <op><%dumpOperator(operator)%></op>
-                <exp><%dumpExp(exp2)%></exp>
             </lbinary>
             >>
-        case exp as LUNARY(__) then
+        case expIn as LUNARY(__) then
             <<<lunary>
                 <op><%dumpOperator(operator)%></op>
-                <exp><%dumpExp(exp)%></exp>
+            <%dumpExp(exp)%>
             </lunary>
             >>
-        case exp as RELATION(__) then
+        case expIn as RELATION(__) then
             <<<relation>
                 <exp1><%dumpExp(exp1)%></exp1>
                 <op><%dumpOperator(operator)%></op>
                 <exp2><%dumpExp(exp2)%></exp2>
             </relation>
             >>
-        case exp as IFEXP(__) then
+        case expIn as IFEXP(__) then
             <<<ifexp>
                 <cond><%dumpExp(expCond)%></cond>
                 <then><%dumpExp(expThen)%></then>
                 <else><%dumpExp(expElse)%></else>
             </ifexp>
             >>
-        case exp as CALL(__) then
+        case expIn as CALL(__) then
             let elist = expLst |> e => <<<%dumpExp(e)%>>> ; separator="\n"
             <<<call>
                 <path><%pathString(path)%></path>
@@ -129,7 +129,7 @@ template dumpExp (DAE.Exp exp)
             >>
         else
             <<
-                <exp><%ExpressionDump.printExpStr(exp)%></exp>
+                <exp><%ExpressionDump.printExpStr(expIn)%></exp>
             >>
     end match
 end dumpExp;

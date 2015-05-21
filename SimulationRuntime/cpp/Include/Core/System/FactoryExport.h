@@ -4,7 +4,7 @@
  *  @{
  */
 
-#if defined(__vxworks) || defined(__TRICORE__) || defined(RUNTIME_STATIC_LINKING) 
+#if defined(__vxworks) || defined(__TRICORE__) || defined(RUNTIME_STATIC_LINKING)
 
 #define BOOST_EXTENSION_SYSTEM_DECL
 #define BOOST_EXTENSION_EVENTHANDLING_DECL

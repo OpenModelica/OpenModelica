@@ -1,4 +1,4 @@
-inclu.PHONY : all omc release clean .testvariables mkbuilddirs modelica3d
+inclu.PHONY : all omc release clean .testvariables mkbuilddirs
 
 unexport PREFIX
 
@@ -112,7 +112,7 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 	(cd 3rdParty/gc && autoreconf -vif && automake --add-missing && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt/Makefile: $(LAPACK_TARGET)
-	(cd 3rdParty/Ipopt && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L$(OMBUILDDIR)/$(LIB_OMC) $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
+	(cd 3rdParty/Ipopt && ./configure --with-pic "CC=$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" F77="$(FC)" LDFLAGS="-L$(OMBUILDDIR)/$(LIB_OMC) $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
 
 $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 	$(MAKE) -C 3rdParty/Ipopt
@@ -295,13 +295,11 @@ clean: fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-cl
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
-	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean OMBUILDDIR=$(OMBUILDDIR); fi
 	# remove ModelicaExternalC stuff
 	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
 	# remove Ipopt/Makefile if there is no Ipopt/Ipopt/Makefile to run configure again!
 	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
 	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
-	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
 	build/bin/omc build/bin/omc.exe build/bin/omc-diff build/bin/omc-diff.exe \

@@ -850,9 +850,9 @@ template EquationGraph(SimEqSystem eq)
     then "IF EQUATIONS"
   case e as SES_ALGORITHM(__)
     then "ALG"
-  case e as SES_LINEAR(__)
+  case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))
     then
-    let output_vars = (vars |> var => (
+    let output_vars = (ls.vars |> var => (
                  match var
                    case SIMVAR(__)
                    then
@@ -860,7 +860,7 @@ template EquationGraph(SimEqSystem eq)
                    data->link(eqFunction_<%ix%>,&<%cref(name)%>);
                    >>
              ) ;separator="\n")
-    let input_vars = (beqs |> eq => EquationGraphHelper(eq,"Function",ix)
+    let input_vars = (ls.beqs |> eq => EquationGraphHelper(eq,"Function",ix)
              ;separator="\n")
     <<
     <%output_vars%>
@@ -1135,15 +1135,15 @@ template equationLinear(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/
  "Generates a linear equation system."
 ::=
 match eq
-case SES_LINEAR(__) then
+case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
   let uid = System.tmpTick()
-  let size = listLength(vars)
+  let size = listLength(ls.vars)
   let aname = 'A<%uid%>'
   let bname = 'b<%uid%>'
   let pname = 'p<%uid%>'
-  let mixedPostfix = if partOfMixed then "_mixed" //else ""
+  let mixedPostfix = if ls.partOfMixed then "_mixed" //else ""
   <<
-  <% if not partOfMixed then
+  <% if not ls.partOfMixed then
     <<
     >> %>
   double* <%aname%> = new double[<%size%>*<%size%>];
@@ -1158,17 +1158,17 @@ case SES_LINEAR(__) then
     <%pname%>[i] = i;
     <%bname%>[i] = 0.0;
   }
-  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+  <%ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
      '<%preExp%><%aname%>[<%row%>+<%col%>*<%size%>] = <%expPart%>;'
   ;separator="\n"%>
-  <%beqs |> exp hasindex i0 =>
+  <%ls.beqs |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
   ;separator="\n"%>
-  <%residual |> exp =>
+  <%ls.residual |> exp =>
      let &preExp = buffer "" /*BUFD*/
      match exp
      case SES_RESIDUAL(__) then
@@ -1180,8 +1180,8 @@ case SES_LINEAR(__) then
   ;separator="\n"%>
   GETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>);
   GETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
-  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%>
-  <% if not partOfMixed then
+  <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%>
+  <% if not ls.partOfMixed then
   <<
   delete [] <%aname%>;
   delete [] <%bname%>;
@@ -1215,9 +1215,9 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
  "Generates a non linear equation system."
 ::=
 match eq
-case SES_NONLINEAR(__) then
+case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
   <<
-  solve_residualFunc<%index%>_cpp();
+  solve_residualFunc<%nls.index%>_cpp();
   >>
 end equationNonlinear;
 

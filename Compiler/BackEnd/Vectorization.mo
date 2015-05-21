@@ -52,6 +52,8 @@ protected import ExpressionSimplify;
 protected import List;
 protected import SCode;
 protected import SCodeDump;
+protected import SimCode;
+protected import SimCodeVar;
 protected import Util;
 
 //--------------------------------
@@ -89,10 +91,11 @@ algorithm
   // dispatch the equations in classequations, mixedequations, non-array equations
   ((classEqs,mixEqs,nonArrEqs)) := List.fold1(eqsIn, dispatchLoopEquations,List.map(arrayCrefs,Util.tuple31),({},{},{}));
 
-  //classEqs := List.map1({6,13},List.getIndexFirst,classEqs);
     //BackendDump.dumpEquationList(classEqs,"classEqs");
     //BackendDump.dumpEquationList(mixEqs,"mixEqs");
     //BackendDump.dumpEquationList(nonArrEqs,"nonArrEqs");
+
+  if true then
 
   //add loopinfos
   (idx,classEqs) := addLoopInfosForClassEqs(classEqs, List.map(arrayCrefs,Util.tuple31), (1,{}));
@@ -115,7 +118,151 @@ algorithm
   varLst := listAppend(varLst,arrVars);
     //BackendDump.dumpVarList(varLst,"varsOut");
   varsOut := BackendVariable.listVar1(varLst);
+
+  else
+    classEqs := buildBackendDAEForEquations(classEqs,{});
+    //BackendDump.dumpEquationList(classEqs,"classEqs2");
+    varsOut := varsIn;
+    eqsOut := eqsIn;
+  end if;
 end buildForLoops;
+
+//-----------------------------------------------
+// the implementation for BackendDAE.FOR_EQUATION
+//-----------------------------------------------
+
+protected function buildBackendDAEForEquations"creates BackendDAE.FOR_EQUATION for similar equations"
+  input list<BackendDAE.Equation> classEqs;
+  input list<BackendDAE.Equation> foldIn;
+  output list<BackendDAE.Equation> foldOut;
+algorithm
+  foldOut := matchcontinue(classEqs, foldIn)
+    local
+      Integer min, max, numCrefs;
+      BackendDAE.Equation eq;
+      DAE.Exp lhs,rhs, iterator;
+      DAE.ElementSource source;
+      BackendDAE.EquationAttributes attr;
+      list<BackendDAE.Equation> similarEqs, rest, foldEqs;
+      list<DAE.ComponentRef> crefs;
+      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax;
+  case({},_)
+    algorithm
+      then foldIn;
+  case(eq::rest,_)
+    algorithm
+      BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr) := eq;
+      //get similar equations
+      (similarEqs,rest) := List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
+      crefs := BackendEquation.equationCrefs(eq);
+      numCrefs := listLength(crefs);
+      // all crefs and their minimum as well as their max iterator
+      crefMinMax := List.thread3Map(listReverse(crefs),List.fill(10,numCrefs),List.fill(0,numCrefs),Util.make3Tuple);
+      crefMinMax :=  List.fold(similarEqs,getCrefIdcsForEquation,crefMinMax);
+
+      min := List.fold(List.map(crefMinMax,Util.tuple32),intMin,10);
+      max := List.fold(List.map(crefMinMax,Util.tuple33),intMax,0);
+      // update crefs in equation
+      iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
+      (BackendDAE.EQUATION(exp=lhs,scalar=rhs),_) := BackendEquation.traverseExpsOfEquation(eq,setIteratorSubscriptCrefinEquation,(crefMinMax,iterator));
+      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(min),DAE.ICONST(max),lhs,rhs,source,attr);
+      foldEqs := buildBackendDAEForEquations(rest,(eq::foldIn));
+    then
+      foldEqs;
+  else
+    then foldIn;
+  end matchcontinue;
+end buildBackendDAEForEquations;
+
+protected function setIteratorSubscriptCrefinEquation"traverse function that replaces crefs in the exp according to the iterated crefMinMax"
+  input DAE.Exp inExp;
+  input tuple<list<tuple<DAE.ComponentRef,Integer,Integer>>,DAE.Exp> tplIn; //creMinMax,iterator
+  output DAE.Exp outExp;
+  output tuple<list<tuple<DAE.ComponentRef,Integer,Integer>>,DAE.Exp> tplOut;
+algorithm
+  (outExp,tplOut) := matchcontinue(inExp,tplIn)
+    local
+      Integer min, max;
+      DAE.ComponentRef cref, refCref;
+      DAE.Exp exp1, exp2,iterator, iterator1;
+      DAE.Operator op;
+      DAE.Type ty;
+      tuple<DAE.ComponentRef,Integer,Integer> refCrefMinMax;
+      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax0, crefMinMax1;
+
+  case(DAE.CREF(componentRef=cref,ty=ty),(crefMinMax0,iterator))
+    algorithm
+      crefMinMax1 := {};
+      for refCrefMinMax in crefMinMax0 loop
+        (refCref,min,max) := refCrefMinMax;
+         // if the cref fits the refCref, update the iterator
+        if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
+          iterator1 := ExpressionSimplify.simplify(DAE.BINARY(iterator,DAE.ADD(DAE.T_INTEGER_DEFAULT),DAE.ICONST(min-1)));
+          cref := replaceFirstSubInCref(cref,DAE.INDEX(iterator1));
+        else
+          // add the non used crefs to the fold list
+          crefMinMax1 := refCrefMinMax::crefMinMax1;
+        end if;
+      end for;
+    then (DAE.CREF(cref,ty),(crefMinMax1,iterator));
+
+  case(DAE.BINARY(exp1=exp1,operator=op,exp2=exp2),(crefMinMax0,iterator))
+    algorithm
+      // continue traversing
+      (exp1,(crefMinMax0,iterator))  := setIteratorSubscriptCrefinEquation(exp1,tplIn);
+      (exp2,(crefMinMax0,iterator))  := setIteratorSubscriptCrefinEquation(exp2,(crefMinMax0,iterator));
+    then (DAE.BINARY(exp1,op,exp2),(crefMinMax0,iterator));
+
+  case(DAE.UNARY(operator=op,exp=exp1),(crefMinMax0,iterator))
+    algorithm
+      // continue traversing
+      (exp1,(crefMinMax0,iterator))  := setIteratorSubscriptCrefinEquation(exp1,tplIn);
+    then (DAE.UNARY(op,exp1),(crefMinMax0,iterator));
+
+  else
+    then (inExp,tplIn);
+  end matchcontinue;
+end setIteratorSubscriptCrefinEquation;
+
+
+protected function getCrefIdcsForEquation"gets all crefs of the equation and dispatches the information about min and max subscript to crefMinMax"
+  input BackendDAE.Equation eq;
+  input list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMaxIn;
+  output list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMaxOut;
+algorithm
+  crefMinMaxOut := matchcontinue(eq,crefMinMaxIn)
+    local
+      Integer pos,max,min,sub;
+      DAE.ComponentRef cref, refCref;
+      tuple<DAE.ComponentRef,Integer,Integer> refCrefMinMax;
+      list<tuple<DAE.ComponentRef,Integer,Integer>> crefMinMax;
+      list<DAE.ComponentRef> eqCrefs, crefs;
+  case(BackendDAE.EQUATION(_),crefMinMax)
+    algorithm
+      eqCrefs := BackendEquation.equationCrefs(eq);
+      //traverse all crefs of the equation
+      for cref in eqCrefs loop
+        {DAE.INDEX(DAE.ICONST(sub))} := ComponentReference.crefSubs(cref);
+        pos := 1;
+        for refCrefMinMax in crefMinMax loop
+          (refCref,min,max) := refCrefMinMax;
+          // if the cref fits the refCref, update min max
+          if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
+            max := intMax(max,sub);
+            min := intMin(min,sub);
+            crefMinMax := List.replaceAt((refCref,min,max),pos,crefMinMax);
+          end if;
+          pos := pos+1;
+        end for;
+      end for;
+    then crefMinMax;
+  else
+    then crefMinMaxIn;
+  end matchcontinue;
+end getCrefIdcsForEquation;
+
+//-----------------------------------------------
+//-----------------------------------------------
 
 protected function shortenArrayVars
   input tuple<DAE.ComponentRef,Integer,list<DAE.ComponentRef>> arrayCref;
@@ -1275,6 +1422,7 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := sysIn;
   BackendDAE.SHARED(aliasVars=aliasVars, knownVars=knownVars) := sharedIn;
 
+
   eqLst := BackendEquation.equationList(eqs);
     //BackendDump.dumpEquationList(eqLst,"eqsIn");
   //remove partly unrolled for-equations
@@ -1300,7 +1448,6 @@ algorithm
     //BackendDump.dumpEquationList(eqLst,"eqsOut");
     //BackendDump.dumpVariables(vars,"VARSOUT");
 
-      //BackendDump.printShared(sharedIn);
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
   shared := BackendDAEUtil.replaceRemovedEqsInShared(sharedIn,BackendEquation.listEquation({}));
   shared := BackendDAEUtil.replaceAliasVarsInShared(shared,aliasVars);
@@ -1446,6 +1593,7 @@ algorithm
   aliasLst := BackendVariable.varList(aliasVars);
   knownLst := BackendVariable.varList(knownVars);
     //BackendDump.dumpVarList(varLst,"varLst0");
+    //BackendDump.dumpVarList(aliasLst,"aliasVars0");
     //BackendDump.dumpVarList(knownLst,"knownLst0");
     //BackendDump.dumpVarList(aliasLst,"aliasVars0");
 
@@ -1645,6 +1793,152 @@ algorithm
   cref := ComponentReference.crefStripSubs(crefIn);
   crefOut := ComponentReference.crefSetLastSubs(cref,{sub});
 end replaceSubscriptAtEnd;
+
+public function updateSimCode"updates some things in the simCode"
+  input SimCode.SimCode simCodeIn;
+  output SimCode.SimCode simCodeOut;
+protected
+  list<SimCode.SimEqSystem> initialEquations;
+  list<SimCodeVar.SimVar> aliasVars;
+algorithm
+  SimCode.SIMCODE(modelInfo=SimCode.MODELINFO(vars=SimCodeVar.SIMVARS(aliasVars=aliasVars)),initialEquations=initialEquations) := simCodeIn;
+  initialEquations := List.map1(initialEquations,updateAliasInSimEqSystem, aliasVars);
+  simCodeOut := setSimCodeInitialEquations(simCodeIn,initialEquations);
+end updateSimCode;
+
+protected function updateAliasInSimEqSystem
+  input SimCode.SimEqSystem eqIn;
+  input list<SimCodeVar.SimVar> aliasVars;
+  output SimCode.SimEqSystem eqOut;
+algorithm
+  eqOut := matchcontinue(eqIn,aliasVars)
+    local
+      Integer idx;
+      DAE.ComponentRef cref;
+      DAE.Exp exp;
+      DAE.ElementSource source;
+  case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp,source=source),_)
+    equation
+      (exp,_) = Expression.traverseExpBottomUp(exp,updateAliasInSimEqSystem1,aliasVars);
+    then SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
+  else
+    then eqIn;
+  end matchcontinue;
+end updateAliasInSimEqSystem;
+
+protected function updateAliasInSimEqSystem1"replaces crefs with its alias"
+  input DAE.Exp expIn;
+  input list<SimCodeVar.SimVar> aliasVarsIn;
+  output DAE.Exp expOut;
+  output list<SimCodeVar.SimVar> aliasVarsOut;
+algorithm
+  (expOut,aliasVarsOut) := matchcontinue(expIn,aliasVarsIn)
+    local
+      Boolean isNegated;
+      DAE.ComponentRef cref;
+      DAE.Exp exp;
+      DAE.Type ty;
+  case(DAE.CREF(componentRef=cref,ty=ty),_)
+    equation
+      (cref,isNegated) = getSimCodeVarAlias(aliasVarsIn,cref);
+      if isNegated then
+        exp = DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(cref,ty));
+      else
+        exp = DAE.CREF(cref,ty);
+      end if;
+  then (exp,aliasVarsIn);
+  else
+    then(expIn,aliasVarsIn);
+  end matchcontinue;
+end updateAliasInSimEqSystem1;
+
+protected function getSimCodeVarAlias
+  input list<SimCodeVar.SimVar> simVar;
+  input DAE.ComponentRef crefIn;
+  output DAE.ComponentRef crefOut;
+  output Boolean isNegated;
+algorithm
+  (crefOut,isNegated) := matchcontinue(simVar,crefIn)
+    local
+      DAE.ComponentRef name, varName;
+      list<SimCodeVar.SimVar> rest;
+  case({},_)
+    then (crefIn,false);
+  case(SimCodeVar.SIMVAR(name=name,aliasvar=SimCodeVar.ALIAS(varName=varName))::_,_)
+    equation
+      true = ComponentReference.crefEqual(crefIn,name);
+  then (varName,false);
+  case(SimCodeVar.SIMVAR(name=name,aliasvar=SimCodeVar.NEGATEDALIAS(varName=varName))::_,_)
+    equation
+      true = ComponentReference.crefEqual(crefIn,name);
+  then (varName,true);
+  case(_::rest,_)
+    then getSimCodeVarAlias(rest,crefIn);
+  end matchcontinue;
+end getSimCodeVarAlias;
+
+protected function setSimCodeInitialEquations
+  input SimCode.SimCode simCode;
+  input list<SimCode.SimEqSystem> initEqs;
+  output SimCode.SimCode outSimCode;
+algorithm
+  outSimCode := match (simCode, initEqs)
+    local
+      SimCode.ModelInfo modelInfo;
+      list<DAE.Exp> literals;
+      list<SimCode.RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<SimCode.SimEqSystem> allEquations;
+      list<list<SimCode.SimEqSystem>> odeEquations;
+      list<list<SimCode.SimEqSystem>> algebraicEquations;
+      Boolean useSymbolicInitialization, useHomotopy;
+      list<SimCode.SimEqSystem> initialEquations, removedInitialEquations;
+      list<SimCode.SimEqSystem> startValueEquations;
+      list<SimCode.SimEqSystem> nominalValueEquations;
+      list<SimCode.SimEqSystem> minValueEquations;
+      list<SimCode.SimEqSystem> maxValueEquations;
+      list<SimCode.SimEqSystem> parameterEquations;
+      list<SimCode.SimEqSystem> removedEquations;
+      list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
+      list<SimCode.SimEqSystem> jacobianEquations;
+      list<SimCode.SimEqSystem> equationsForZeroCrossings;
+      list<SimCode.StateSet> stateSets;
+      list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
+      list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
+      list<BackendDAE.TimeEvent> timeEvents;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      SimCode.DelayedExpression delayedExps;
+      list<SimCode.JacobianMatrix> jacobianMatrixes;
+      Option<SimCode.SimulationSettings> simulationSettingsOpt;
+      String fileNamePrefix;
+      // *** a protected section *** not exported to SimCodeTV
+      SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
+      HpcOmSimCode.HpcOmData hpcomData;
+      HashTableCrIListArray.HashTable varToArrayIndexMapping;
+      HashTableCrILst.HashTable varToIndexMapping;
+      Option<SimCode.FmiModelStructure> modelStruct;
+      Option<SimCode.BackendMapping> backendMapping;
+
+    case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
+                          allEquations, odeEquations, algebraicEquations,
+                          useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                          parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
+                          jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
+                          relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping, varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct), _)
+      then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
+                           allEquations, odeEquations, algebraicEquations,
+                           useSymbolicInitialization, useHomotopy, initEqs, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                           parameterEquations, removedEquations, algorithmAndEquationAsserts,equationsForZeroCrossings,
+                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
+                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
+                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping, varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct);
+  end match;
+end setSimCodeInitialEquations;
 
 /*
 public function prepareVectorizedDAE1

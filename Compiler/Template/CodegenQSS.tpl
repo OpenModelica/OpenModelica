@@ -249,23 +249,24 @@ case SES_SIMPLE_ASSIGN(__) then
 <<
   <%System.stringReplace(crefStr(cref),".", "_")%> = <%  ExpressionDump.printExpStr(BackendQSS.replaceVars(exp,states,disc,algs)) %>;
 >>
-case e as SES_LINEAR(vars=vars,index=index) then
-  let out_vars = (vars |> v => match v case SIMVAR(name=name) then BackendQSS.replaceCref(name,states,disc,algs);separator=",")
-  let in_vars =  (BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> cref =>
+
+case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
+  let out_vars = (ls.vars |> v => match v case SIMVAR(name=name) then BackendQSS.replaceCref(name,states,disc,algs);separator=",")
+  let in_vars =  (BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs) |> cref =>
        BackendQSS.replaceCref(cref,states,disc,algs);separator="," )
   let &externalFuncs += generateLinear(e,states,disc,algs)
   let &funDecls +=
 <<
 
-  function fsolve<%index%>
-    <% BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'input Real i<%i0%>;' ;separator="\n" %>
-    <% vars |> v hasindex i0 => 'output Real o<%i0%>;' ;separator="\n" %>
+  function fsolve<%ls.index%>
+    <% BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs) |> v hasindex i0 => 'input Real i<%i0%>;' ;separator="\n" %>
+    <% ls.vars |> v hasindex i0 => 'output Real o<%i0%>;' ;separator="\n" %>
   external "C" ;
-  end fsolve<%index%>;
+  end fsolve<%ls.index%>;
 
 >>
 <<
-  (<% out_vars %>)=fsolve<%index%>(<% in_vars %>);
+  (<% out_vars %>)=fsolve<%ls.index%>(<% in_vars %>);
 >>
 
 case SES_RESIDUAL(__) then
@@ -396,74 +397,74 @@ end generateDiscont;
 template generateLinear(SimEqSystem eq,list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
 ::=
 match eq
-case SES_LINEAR(__) then
+case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
 let &preExp = buffer "" /*BUFD*/
 let &varDecls = buffer "" /*BUFD*/
 let &auxFunctionIgnore = buffer ""
 <<
 
-gsl_matrix *A<%index%>,*invA<%index%>;
-gsl_vector *b<%index%>,*x<%index%>;
-gsl_permutation *p<%index%>;
-int init<%index%> = 0;
-<% (BackendQSS.getDiscRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 =>
-  let i=List.position(v,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs))
-  'double old_i<%i%>_<%index%>=-1;';separator="\n") %>
+gsl_matrix *A<%ls.index%>,*invA<%ls.index%>;
+gsl_vector *b<%ls.index%>,*x<%ls.index%>;
+gsl_permutation *p<%ls.index%>;
+int init<%ls.index%> = 0;
+<% (BackendQSS.getDiscRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs) |> v hasindex i0 =>
+  let i=List.position(v,BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs))
+  'double old_i<%i%>_<%ls.index%>=-1;';separator="\n") %>
 
-void fsolve<%index%>(<%
-(BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'double i<%i0%>';separator=",")
-%>,<%vars |> SIMVAR(__) hasindex i0 => 'double *o<%i0%>' ;separator=","%>)
+void fsolve<%ls.index%>(<%
+(BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs) |> v hasindex i0 => 'double i<%i0%>';separator=",")
+%>,<%ls.vars |> SIMVAR(__) hasindex i0 => 'double *o<%i0%>' ;separator=","%>)
 {
-  const int DIM = <% listLength(beqs) %>;
+  const int DIM = <% listLength(ls.beqs) %>;
   int invert_matrix = 0;
   int signum;
 
   invert_matrix = 0;
 
   <%
-  (BackendQSS.getDiscRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 =>
-  let i=List.position(v,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs))
-  'if (old_i<%i%>_<%index%>!=i<%i%>) {
+  (BackendQSS.getDiscRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs) |> v hasindex i0 =>
+  let i=List.position(v,BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs))
+  'if (old_i<%i%>_<%ls.index%>!=i<%i%>) {
     invert_matrix=1;
-    old_i<%i%>_<%index%>=i<%i%>;
+    old_i<%i%>_<%ls.index%>=i<%i%>;
 }';separator="\n") %>
 
-  if (!init<%index%>) {
+  if (!init<%ls.index%>) {
     /* Alloc space */
-    A<%index%> = gsl_matrix_alloc(DIM, DIM);
-    invA<%index%> = gsl_matrix_alloc(DIM, DIM);
-    b<%index%> = gsl_vector_alloc(DIM);
-    x<%index%> = gsl_vector_alloc(DIM);
-    p<%index%> = gsl_permutation_alloc(DIM);
-    init<%index%>=1;
+    A<%ls.index%> = gsl_matrix_alloc(DIM, DIM);
+    invA<%ls.index%> = gsl_matrix_alloc(DIM, DIM);
+    b<%ls.index%> = gsl_vector_alloc(DIM);
+    x<%ls.index%> = gsl_vector_alloc(DIM);
+    p<%ls.index%> = gsl_permutation_alloc(DIM);
+    init<%ls.index%>=1;
     invert_matrix=1;
   }
 
   /* Fill B */
-  <%beqs |> exp hasindex i0 =>
-    'gsl_vector_set(b<%index%>,<%i0%>,<%
+  <%ls.beqs |> exp hasindex i0 =>
+    'gsl_vector_set(b<%ls.index%>,<%i0%>,<%
       System.stringReplace(CodegenC.daeExp(
-        BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
+        BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs)),
         contextOther,&preExp,&varDecls,&auxFunctionIgnore),"$P","") %>);';separator=\n%>
 
   /* Invert matrix if necesary */
   if (invert_matrix)
   {
     /* Fill A */
-    gsl_matrix_set_zero(A<%index%>);
-    <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-     'gsl_matrix_set(A<%index%>, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
-        BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
+    gsl_matrix_set_zero(A<%ls.index%>);
+    <%ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+     'gsl_matrix_set(A<%ls.index%>, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
+        BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs)),
         contextOther,&preExp,&varDecls,&auxFunctionIgnore),"$P","") %>);'
     ;separator="\n"%>
-    gsl_linalg_LU_decomp(A<%index%>, p<%index%>, &signum);
-    gsl_linalg_LU_invert(A<%index%>, p<%index%> ,invA<%index%>);
+    gsl_linalg_LU_decomp(A<%ls.index%>, p<%ls.index%>, &signum);
+    gsl_linalg_LU_invert(A<%ls.index%>, p<%ls.index%> ,invA<%ls.index%>);
   }
 
   /* Copmute x=inv(A)*b */
-  gsl_blas_dgemv(CblasNoTrans,1.0,invA<%index%>,b<%index%>,0.0,x<%index%>);
+  gsl_blas_dgemv(CblasNoTrans,1.0,invA<%ls.index%>,b<%ls.index%>,0.0,x<%ls.index%>);
   /* Get x values out */
-  <%vars |> v hasindex i0 => '*o<%i0%> = gsl_vector_get(x<%index%>, <%i0%>);' ;separator="\n"%>
+  <%ls.vars |> v hasindex i0 => '*o<%i0%> = gsl_vector_get(x<%ls.index%>, <%i0%>);' ;separator="\n"%>
 }
 
 >>

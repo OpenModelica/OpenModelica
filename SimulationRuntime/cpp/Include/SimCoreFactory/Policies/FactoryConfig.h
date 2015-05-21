@@ -70,7 +70,7 @@
   /*Defines*/
   #define PATH fs::path
   #include "LibrariesConfig.h"
-  /*interface includes*/      
+  /*interface includes*/
   #include <Core/System/ISystemProperties.h>
   #include <Core/System/ISystemInitialization.h>
   #include <Core/System/IWriteOutput.h>
@@ -96,8 +96,8 @@
   #include <Core/SimController/ISimController.h>
   #include <SimCoreFactory/OMCFactory/OMCFactory.h>
   #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
-  
-  
+
+
 #else
   #error "operating system not supported"
 #endif

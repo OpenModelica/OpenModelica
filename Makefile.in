@@ -84,34 +84,6 @@ omc-no-sim:
 	$(MAKE) -C Compiler/boot
 	$(MAKE) omlibrary
 
-fake_modelica3d:
-	# create fake files for debian package
-	mkdir -p $(DESTDIR)/usr/$(LIB_OMC) $(DESTDIR)/usr/lib/omlibrary-modelica3d
-	echo "void fake(void){}" | $(CC) -c -x c - -fPIC -o fake.o
-	$(CC) -shared fake.o -o $(DESTDIR)/usr/lib/libhuhu.so
-	ar r $(DESTDIR)/usr/$(LIB_OMC)/libmodbus.a fake.o
-	ar r $(DESTDIR)/usr/$(LIB_OMC)/libmodcount.a fake.o
-	touch $(DESTDIR)/usr/lib/omlibrary-modelica3d/.empty-dir
-	rm fake.o
-
-modelica3d:
-ifeq (@MODELICA3D@,)
-	@echo Skipping Modelica3D
-else
-	cd 3rdParty/modelica3d && mkdir -p build
-	cd 3rdParty/modelica3d/build && $(CMAKE_RPATH) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 $(BOOST_INCLUDE) ..
-	$(MAKE) -C 3rdParty/modelica3d/build
-	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk$(SHREXT) 3rdParty/modelica3d/build/lib/proc3d/libproc3d$(SHREXT) build/lib/@host_short@
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libproc3d.dylib build/lib/@host_short@/libproc3d.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libm3d-osg-gtk.dylib build/lib/@host_short@/libm3d-osg-gtk.dylib
-	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/modelica3d/build/lib/proc3d/libproc3d.dylib" "@rpath/libproc3d.dylib" build/lib/@host_short@/libm3d-osg-gtk.dylib
-	cp -p 3rdParty/modelica3d/build/lib/modcount/libmodcount.a 3rdParty/modelica3d/build/lib/modbus/libmodbus.a build/$(LIB_OMC)/
-	mkdir -p build/lib/omlibrary-modelica3d/blender2.59 build/lib/omlibrary-modelica3d/osg-gtk/
-	cp -p 3rdParty/modelica3d/examples/multibody/src/modelica/*.mo build/lib/omlibrary-modelica3d/
-	cp -p 3rdParty/modelica3d/backends/blender2.59/dbus-server.py build/lib/omlibrary-modelica3d/blender2.59/
-	cp -p 3rdParty/modelica3d/backends/osg-gtk/python/dbus-server.py build/lib/omlibrary-modelica3d/osg-gtk/
-endif
-
 lis: lis-configure
 	@echo Building Lis from sources
 	$(MAKE) -C 3rdParty/lis-1.4.12/src
@@ -126,49 +98,6 @@ lis-configure:
 lis-clean:
 	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
 	rm -f 3rdParty/lis-1.4.12/Makefile
-
-fix-svn-props:
-	tools/apply_autoprops.py --config .svnprops .
-fix-bom:
-	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done
-
-SOURCE_DIRS=$(SOURCE_DIRS_UTF8) "libraries/Modelica 2.2.2" testsuite/flattening/libraries/3rdParty/HumMod
-SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ `bash -c echo libraries/{BioChem 1.0,ModelicaAdditions,Modelica_LinearSystems2 2.3,Modelica 1.6,ModelicaServices 1.0,ModelicaServices 1.0 modelica3d,Modelica 3.1,SimpleFluid,Modelica 3.2.1,SimpleVisual.mo}` `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
-
-bom-error:
-	rm -f bom-error.log bom-error.sh
-	echo "#!/bin/sh\ntest \"\`head -c3 \\\"\$$1\\\"\`\" = \"\`/bin/echo -ne \"\\xef\\xbb\\xbf\"\`\" && (echo \$$1 contains BOM >> bom-error.log)" > bom-error.sh
-	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
-	@if test -e bom-error.log; then cat bom-error.log; fi
-	@test ! -e bom-error.log
-	rm -f bom-error.log bom-error.sh
-
-tab-error:
-	! find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
-          grep -v " 0\$$" | egrep -v '/GenTest/|/antlr-3.2/|Parser/MetaModelica_|Parser/ParModelica_|Parser/Modelica_3_|Parser/ModelicaParser'
-# Trims trailing whitespace and replaces tabs with spaces
-fix-whitespace:
-	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
-
-spellcheck:
-	grep -oE 'gettext[(]["]([^"]|([\\]["]))*["]' `ls Compiler/*/*.mo | grep -v Flags.mo` | sed "s/[\\%]./ /g" | aspell -p ./.openmodelica.aspell --mode=ccpp --lang=en_US list | sort -u | sed 's/^/aspell: /' | tee aspell.log
-	@test ! -s aspell.log
-thumbsdb-error:
-	! find . -name "Thumbs.db" | grep Thumbs.db
-
-utf8-error:
-	rm -f utf8-error.log*
-	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
-	# Also detect some valid UTF-8 that were obviously fracked up by Eclipse on Windows.
-	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v Linköping && (echo '{}: Failed Linköping test')"  ';' 2>&1 >> utf8-error.log
-	@cat utf8-error.log
-	@test ! -s utf8-error.log
-	rm -f utf8-error.log*
-
-utf8-iconv:
-	rm -f tmp
-	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>tmp || (rm -f tmp && cp '{}' tmp && iconv -f ISO-8859-1 -t UTF-8 tmp -o '{}' && echo Converted {} to UTF-8)" ';'
-	rm -f tmp
 
 .PRECIOUS: Makefile
 
