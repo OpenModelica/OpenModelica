@@ -19,6 +19,7 @@ compareVars := {"revolute1.phi","revolute1.w","revolute1.a","revolute2.phi","rev
 */
 
 echo(false);
+// setCommandLineOptions("+d=failtrace,showStatement +showErrorMessages"); getErrorString();
 
 b:=loadModel(packageName,{packageVersion});
 if not b then
