@@ -1751,5 +1751,20 @@ public function anyReturnTrue<T>
   output Boolean b = true;
 end anyReturnTrue;
 
+public function absoluteOrRelative
+"@author: adrpo
+ returns the given path if it exists if not it considers it relative and returns that"
+ input String inFileName;
+ output String outFileName;
+protected
+ String pwd, pd;
+algorithm
+ pwd := System.pwd();
+ pd := System.pathDelimiter();
+ outFileName := if System.regularFileExists(inFileName)
+                then inFileName
+                else stringAppendList({pwd,pd,inFileName});
+end absoluteOrRelative;
+
 annotation(__OpenModelica_Interface="util");
 end Util;
