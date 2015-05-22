@@ -4042,6 +4042,8 @@ algorithm
       BackendDAE.Jacobian jacobian;
       SimCode.BackendMapping tmpBackendMapping;
       Boolean mixedSystem;
+      BackendDAE.TearingSet strictTearingSet;
+      Option<BackendDAE.TearingSet> casualTearingSet;
 
     // EQUATIONSYSTEM: continuous system of equations
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),
@@ -4069,9 +4071,10 @@ algorithm
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
 
     // TORNSYSTEM
-    case (_, _, BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=tf, residualequations=rf, otherEqnVarTpl=eqnvartpllst, jac = jacobian), linear=b, mixedSystem=mixedSystem))
+
+    case (_, _, BackendDAE.TORNSYSTEM(strictTearingSet, casualTearingSet, linear=b, mixedSystem=mixedSystem))
       equation
-        (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, tf, rf, eqnvartpllst, jacobian, isyst, ishared, iuniqueEqIndex, mixedSystem, itempvars);
+        (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, strictTearingSet, casualTearingSet, isyst, ishared, iuniqueEqIndex, mixedSystem, itempvars);
         tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
         tmpBackendMapping = iBackendMapping;
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
@@ -4259,10 +4262,8 @@ end generateSolvedEquation;
 protected function createTornSystem
   input Boolean linear;
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
-  input list<Integer> tearingVars;
-  input list<Integer> residualEqns;
-  input list<tuple<Integer, list<Integer>>> otherEqns;
-  input BackendDAE.Jacobian inJacobian;
+  input BackendDAE.TearingSet strictTearingSet;
+  input Option<BackendDAE.TearingSet> casualTearingSet;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Integer iuniqueEqIndex;
@@ -4284,9 +4285,16 @@ algorithm
        list<DAE.ComponentRef> tcrs;
        DAE.FunctionTree functree;
        Option<SimCode.JacobianMatrix> jacobianMatrix;
-       list<Integer> otherEqnsInts, otherVarsInts;
+       list<Integer> otherEqnsInts, otherVarsInts, tearingVars, residualEqns;
        list<list<Integer>> otherVarsIntsLst;
        Boolean homotopySupport;
+       list<tuple<Integer, list<Integer>>> otherEqns;
+       BackendDAE.Jacobian inJacobian;
+       SimCode.LinearSystem lSystem;
+       SimCode.NonlinearSystem nlSystem;
+       Option<SimCode.LinearSystem> alternativeTearingL;
+       Option<SimCode.NonlinearSystem> alternativeTearingNl;
+
 
 /*
        BackendDAE.EquationArray eqns1;
@@ -4339,9 +4347,9 @@ algorithm
        then
          (simequations, uniqueEqIndex, tempvars);
 */
+     // CASE: linear
      case(true, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv)) equation
-       // TODO: Remove when cpp runtime ready for doLinearTearing
-       //false = stringEqual(Config.simCodeTarget(), "Cpp");
+       BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian) = strictTearingSet;
        // get tearing vars
        tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
        tvars = List.map(tvars, BackendVariable.transformXToXd);
@@ -4352,14 +4360,52 @@ algorithm
        reqns = BackendEquation.getEqns(residualEqns, eqns);
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate other equations
+       // hier
+       print("\n\nStrict Set (l):\niuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
        (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+       print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-     then ({SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(uniqueEqIndex, false, simVars, {}, {}, simequations, jacobianMatrix, {}, 0), NONE())}, uniqueEqIndex+1, tempvars);
+       print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+       lSystem = SimCode.LINEARSYSTEM(uniqueEqIndex, false, simVars, {}, {}, simequations, jacobianMatrix, {}, 0);
 
+       // Do if dynamic tearing is activated
+       if Util.isSome(casualTearingSet) then
+         SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian)) = casualTearingSet;
+         // get tearing vars
+         tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
+         tvars = List.map(tvars, BackendVariable.transformXToXd);
+         ((simVars, _)) = List.fold(tvars, traversingdlowvarToSimvarFold, ({}, kv));
+         simVars = listReverse(simVars);
+
+         // get residual eqns
+         reqns = BackendEquation.getEqns(residualEqns, eqns);
+         reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+         // generate other equations
+         // hier
+         print("\n\nCasual Set (l):\niuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
+         (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, tempvars, {});
+         print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+         print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+         simequations = listAppend(simequations, resEqs);
+
+         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
+         print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+         alternativeTearingL = SOME(SimCode.LINEARSYSTEM(uniqueEqIndex, false, simVars, {}, {}, simequations, jacobianMatrix, {}, 0));
+
+       else
+         alternativeTearingL = NONE();
+       end if;
+       print("\n\nIndex insgesamt:\nuniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+     then ({SimCode.SES_LINEAR(lSystem, alternativeTearingL)}, uniqueEqIndex+1, tempvars);
+
+     // CASE: nonlinear
      case(false, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _) equation
+       BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian) = strictTearingSet;
        // get tearing vars
        tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
        tvars = List.map(tvars, BackendVariable.transformXToXd);
@@ -4370,13 +4416,51 @@ algorithm
        // generate residual replacements
        tcrs = List.map(tvars, BackendVariable.varCref);
        // generate other equations
+       // hier
+       print("\n\nStrict Set (nl):\niuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
        (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+       print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
+       print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquationList(reqns, containsHomotopyCall, false);
-     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix, linear, homotopySupport, mixedSystem), NONE())}, uniqueEqIndex+1, tempvars);
+
+       nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix, linear, homotopySupport, mixedSystem);
+
+       // Do if dynamic tearing is activated
+       if Util.isSome(casualTearingSet) then
+         SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian)) = casualTearingSet;
+         // get tearing vars
+         tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
+         tvars = List.map(tvars, BackendVariable.transformXToXd);
+
+         // get residual eqns
+         reqns = BackendEquation.getEqns(residualEqns, eqns);
+         reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+         // generate residual replacements
+         tcrs = List.map(tvars, BackendVariable.varCref);
+         // generate other equations
+         // hier
+         print("\n\nCasual Set (nl):\niuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
+         (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, tempvars, {});
+         print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+         print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+         simequations = listAppend(simequations, resEqs);
+
+         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
+         print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+         (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquationList(reqns, containsHomotopyCall, false);
+
+         alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix, linear, homotopySupport, mixedSystem));
+       else
+         alternativeTearingNl = NONE();
+       end if;
+       print("\n\nIndex insgesamt:\nuniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
+     then ({SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl)}, uniqueEqIndex+1, tempvars);
    end match;
 end createTornSystem;
 
