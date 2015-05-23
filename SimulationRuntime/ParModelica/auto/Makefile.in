@@ -1,10 +1,12 @@
 BOOST_HOME = @BOOSTHOME@
-INCDIRS = -I"../../c" -I$(BOOST_HOME) -I"../pugixml-1.2/src/" 
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I"../pugixml-1.2/src/"
 
 CC=@CC@
 CXX=@CXX@
 CFLAGS=@CFLAGS@ $(INCDIRS)
-CPPFLAGS= -O3 -Wall -fPIC 
+CPPFLAGS=@CPPFLAGS@
+OMBUILDDIR=@OMBUILDDIR@
+OPENMODELICA_LIB=$(OMBUILDDIR)/lib/@host_short@/omc/
 
 OS_SRCS = pm_posix_timer.cpp
 
