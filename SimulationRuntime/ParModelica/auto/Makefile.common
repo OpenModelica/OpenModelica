@@ -1,9 +1,8 @@
 TOP_BUILDDIR = ../../../build/
 
-OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
+OPENMODELICA_INC=$(OMBUILDDIR)/include/omc/c/
 PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
-OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
-OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
+OPENMODELICA_BIN=$(OMBUILDDIR)/bin/
 
 # cp -u is a GNU extension. Do not rely on it.
 COPY=cp -rp
@@ -13,7 +12,7 @@ SRCS = $(OS_SRCS) \
 om_pm_equation.cpp \
 pm_utility.cpp \
 om_pm_interface.cpp \
-om_pm_model.cpp 
+om_pm_model.cpp
 # ParModelicaTaskGrapExt_rml.cpp
 # ParModelicaTaskGrapExt_omc.cpp \
 
@@ -28,18 +27,18 @@ DPFLAGS = -MM
 libom_pm_autort.a: $(OBJS)
 	@rm -f $@
 	$(AR_) $@ $(OBJS)
-    
+
 .cpp.o: $(DPFILE)
-	$(CC) $(CPPFLAGS) $(INCDIRS) -c $<    
-    
+	$(CC) $(CPPFLAGS) $(INCDIRS) -c $<
+
 test: test_task_graph.cpp transfer
-	$(CXX) $(CPPFLAGS) -I. $(INCDIRS) test_task_graph.cpp -o gen_graph$(EXEEXT) libom_pm_autort.a -L$(TBB_LIB) -ltbb 
+	$(CXX) $(CPPFLAGS) -I. $(INCDIRS) test_task_graph.cpp -o gen_graph$(EXEEXT) libom_pm_autort.a -L$(TBB_LIB) -ltbb
 
 clean :
 	rm -f *.o *.a
 	touch $(DPFILE)
-    
+
 $(DPFILE) depend : $(HDRS) $(SRCS)
-	$(CC) $(DPFLAGS) $(CPPFLAGS) $(SRCS) > $(DPFILE)    
-    
+	$(CC) $(DPFLAGS) $(CPPFLAGS) $(SRCS) > $(DPFILE)
+
 include $(DPFILE)

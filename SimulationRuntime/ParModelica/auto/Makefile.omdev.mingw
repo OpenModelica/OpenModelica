@@ -2,12 +2,13 @@ BOOST_HOME = $(OMDEV)/lib/3rdParty/boost-1_49
 
 TBB_INC = $(OMC_TBB_INC)
 TBB_LIB = $(OMC_TBB_LIB)
-INCDIRS = -I"../../c" -I$(TBB_INC) -I$(BOOST_HOME) -I"../pugixml-1.2/src/" 
+INCDIRS = -I"../../c" -I$(TBB_INC) -I$(BOOST_HOME) -I"../pugixml-1.2/src/"
 
 CC=gcc
 CXX=g++
-CFLAGS= -O3 -Wall 
+CFLAGS= -O3 -Wall
 CPPFLAGS= -O3 -Wall
+OPENMODELICA_LIB=$(OMBUILDDIR)/lib/omc/
 
 OS_SRCS = pm_win_timer.cpp
 
@@ -21,7 +22,7 @@ transfer: libom_pm_autort.a
 	mkdir -p $(PARMODELICAAUTO_INC)
 	$(COPY) om_pm_interface.hpp $(PARMODELICAAUTO_INC)
 	$(COPY) om_pm_model.hpp $(PARMODELICAAUTO_INC)
-    
+
 include Makefile.common
 
 
