@@ -7,7 +7,7 @@ add_library(${ModelicaExternalName}    ${MODELICAEXTERNALCDIR}/ModelicaStandardT
 # Note: usertab.c cannot be gotten from OMLibraries, since they are not included in OMCompiler.git
 #   usertab.c is not a part of ModelicaStandardTables, etc anyway
 #   usertab.c is also a dummy implementation that the user is supposed to provide in some cases. It is not supposed to be compiled.
-add_library(${ModelicaTablesName}    ${MODELICAEXTERNALCDIR}/ModelicaStandardTables.c  ${MODELICAEXTERNALCDIR}/ModelicaMatIO.c   ${USERTABDIR}/usertab.c)
+add_library(${ModelicaTablesName}    ${MODELICAEXTERNALCDIR}/ModelicaStandardTables.c  ${MODELICAEXTERNALCDIR}/ModelicaMatIO.c )
 if (UNIX)
 set_target_properties(${ModelicaExternalName} PROPERTIES COMPILE_FLAGS -fPIC)
 set_target_properties(${ModelicaTablesName} PROPERTIES COMPILE_FLAGS -fPIC)
