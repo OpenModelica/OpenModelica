@@ -50,13 +50,13 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum2_res.m
 //  * Linear torn systems: 1 {1 6}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 684
+//  * Number of independent subsystems: 695
 //  * Number of states: 0 ('+d=stateselection' for list of states)
 //  * Number of discrete variables: 27 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (745):
-//  * Single equations (assignments): 744
+// Notification: Strong component statistics for initialization (756):
+//  * Single equations (assignments): 755
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

@@ -1315,11 +1315,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -1409,11 +1409,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -1503,11 +1503,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -1597,11 +1597,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -1715,11 +1715,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -1832,11 +1832,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -1949,11 +1949,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -2066,11 +2066,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -2183,11 +2183,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -2300,11 +2300,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -2417,11 +2417,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -2534,11 +2534,11 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (5)
 // ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
 // 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 5: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
 //
 //
 // External Objects (0)
@@ -4097,15 +4097,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 1: input i1SeedNLSJac0:STATE_DER()  type: Real []
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real []
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real []
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
-// 9: input i1SeedNLSJac0:STATE_DER()  type: Real []
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 9: input $res1:VARIABLE()  type: Real []
 //
 //
 // External Objects (0)
@@ -4192,15 +4192,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 1: input i1SeedNLSJac0:STATE_DER()  type: Real []
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real []
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real []
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
-// 9: input i1SeedNLSJac0:STATE_DER()  type: Real []
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 9: input $res1:VARIABLE()  type: Real []
 //
 //
 // External Objects (0)
@@ -4286,15 +4286,15 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (9)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
-// 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 1: input i1SeedNLSJac0:STATE_DER()  type: Real []
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
+// 3: input iL:STATE(1)() .testOptdaedump, .Real type: Real []
+// 4: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
 // 5: input R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-// 6: input R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 7: input iL:STATE(1)() .testOptdaedump, .Real type: Real []
-// 8: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
-// 9: input i1SeedNLSJac0:STATE_DER()  type: Real []
+// 6: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 7: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 8: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 9: input $res1:VARIABLE()  type: Real []
 //
 //
 // External Objects (0)
@@ -6425,13 +6425,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 1: input i1SeedNLSJac1:STATE_DER()  type: Real []
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real []
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
-// 7: input i1SeedNLSJac1:STATE_DER()  type: Real []
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 7: input $res1:VARIABLE()  type: Real []
 //
 //
 // External Objects (0)
@@ -6518,13 +6518,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 1: input i1SeedNLSJac1:STATE_DER()  type: Real []
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real []
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
-// 7: input i1SeedNLSJac1:STATE_DER()  type: Real []
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 7: input $res1:VARIABLE()  type: Real []
 //
 //
 // External Objects (0)
@@ -6610,13 +6610,13 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known Variables (constants) (7)
 // ========================================
-// 1: input $res1:VARIABLE()  type: Real []
-// 2: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 3: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 1: input i1SeedNLSJac1:STATE_DER()  type: Real []
+// 2: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
+// 3: input iL:VARIABLE() .testOptdaedump, .Real type: Real []
 // 4: input uL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 5: input iL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 6: input uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
-// 7: input i1SeedNLSJac1:STATE_DER()  type: Real []
+// 5: input u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 6: input i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 7: input $res1:VARIABLE()  type: Real []
 //
 //
 // External Objects (0)

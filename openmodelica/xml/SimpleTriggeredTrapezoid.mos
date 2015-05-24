@@ -134,56 +134,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </orderedVariables>
 // <knownVariables dimension=\"4\">
 // <variablesList>
-// <variable id=\"1\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
-// <bindValueExpression>
-// <bindExpression string=\"0.5\">
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 0.5 
-// </cn>
-// </math>
-// </MathML>
-// </bindExpression>
-// </bindValueExpression>
-// <classesNames>
-// <element>
-// SimpleTriggeredTrapezoid
-// </element>
-// <element>
-// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
-// </element>
-// <element>
-// Modelica.SIunits.Time$tt$falling
-// </element>
-// </classesNames>
-// <attributesValues>
-// <quantity string=\"&quot;Time&quot;\">
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> Time 
-// </cn>
-// </math>
-// </MathML>
-// </quantity>
-// <unit string=\"&quot;s&quot;\">
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"constant\"> s 
-// </cn>
-// </math>
-// </MathML>
-// </unit>
-// <minValue string=\"0.0\">
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\"> 0.0 
-// </cn>
-// </math>
-// </MathML>
-// </minValue>
-// </attributesValues>
-// </variable>
-// <variable id=\"2\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
+// <variable id=\"1\" name=\"tt.amplitude\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Amplitude of trapezoid\">
 // <bindValueExpression>
 // <bindExpression string=\"1.0\">
 // <MathML>
@@ -206,7 +157,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </element>
 // </classesNames>
 // </variable>
-// <variable id=\"3\" name=\"tt.rising\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Rising duration of trapezoid\">
+// <variable id=\"2\" name=\"tt.rising\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Rising duration of trapezoid\">
 // <bindValueExpression>
 // <bindExpression string=\"0.5\">
 // <MathML>
@@ -255,7 +206,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </minValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"4\" name=\"tt.amplitude\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Amplitude of trapezoid\">
+// <variable id=\"3\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
 // <bindValueExpression>
 // <bindExpression string=\"1.0\">
 // <MathML>
@@ -277,6 +228,55 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // Real
 // </element>
 // </classesNames>
+// </variable>
+// <variable id=\"4\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
+// <bindValueExpression>
+// <bindExpression string=\"0.5\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.5 
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
+// </bindValueExpression>
+// <classesNames>
+// <element>
+// SimpleTriggeredTrapezoid
+// </element>
+// <element>
+// Modelica.Blocks.Logical.TriggeredTrapezoid$tt
+// </element>
+// <element>
+// Modelica.SIunits.Time$tt$falling
+// </element>
+// </classesNames>
+// <attributesValues>
+// <quantity string=\"&quot;Time&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> Time 
+// </cn>
+// </math>
+// </MathML>
+// </quantity>
+// <unit string=\"&quot;s&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> s 
+// </cn>
+// </math>
+// </MathML>
+// </unit>
+// <minValue string=\"0.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </math>
+// </MathML>
+// </minValue>
+// </attributesValues>
 // </variable>
 // </variablesList>
 // </knownVariables>
