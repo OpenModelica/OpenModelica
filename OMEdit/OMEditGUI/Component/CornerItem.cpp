@@ -180,7 +180,7 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
   \brief Represents a red rectangle box around the Component.
   */
 /*!
-  \param pParent - pointer to QGraphicsItem.
+  \param pComponent - pointer to Component.
   */
 ResizerItem::ResizerItem(Component *pComponent)
   : QGraphicsItem(pComponent), mIsPressed(false)
@@ -312,4 +312,40 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
       emit resizerItemPositionChanged();
     }
   }
+}
+
+/*!
+  \class OriginItem
+  \brief Represents a cross at the origin of the Component.
+  */
+/*!
+  \param pComponent - pointer to Component.
+  */
+OriginItem::OriginItem()
+{
+  setZValue(3000);
+  mActivePen = QPen(Qt::red, 2);
+  mActivePen.setCosmetic(true);
+  mPassivePen = QPen(Qt::transparent);
+  mRectangle = QRectF (-5, -5, 10, 10);
+  mPen = mPassivePen;
+}
+
+/*!
+  Reimplementation of paint.\n
+  Draws the cross shape for the OriginItem.
+  \param painter - pointer to QPainter
+  \param option - pointer to QStyleOptionGraphicsItem
+  \param widget - pointer to QWidget
+  */
+void OriginItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+  Q_UNUSED(option);
+  Q_UNUSED(widget);
+  painter->setRenderHint(QPainter::Antialiasing);
+  painter->setPen(mPen);
+  // draw horizontal Line
+  painter->drawLine(-2, 0, 2, 0);
+  // draw vertical Line
+  painter->drawLine(0, -2, 0, 2);
 }

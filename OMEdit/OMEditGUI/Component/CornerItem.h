@@ -105,4 +105,19 @@ protected:
   virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 };
 
+class OriginItem : public QGraphicsItem
+{
+public:
+  OriginItem();
+  void setActive() {mPen = mActivePen;}
+  void setPassive() {mPen = mPassivePen;}
+  QRectF boundingRect() const {return mRectangle;}
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+private:
+  QRectF mRectangle;
+  QPen mPen;
+  QPen mActivePen;
+  QPen mPassivePen;
+};
+
 #endif // CORNERITEM_H
