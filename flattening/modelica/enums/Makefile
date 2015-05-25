@@ -20,6 +20,7 @@ EnumConnectArray.mo \
 EnumDimSum.mo \
 EnumFor.mo \
 EnumFor2.mo \
+EnumInnerOuterDim.mo \
 EnumInvalidLiteral.mo \
 EnumMatrixProduct.mo \
 EnumRange.mo \
