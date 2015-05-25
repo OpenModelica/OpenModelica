@@ -162,6 +162,7 @@ private:
   ResizerItem *mpTopRightResizerItem;
   ResizerItem *mpBottomRightResizerItem;
   ResizerItem *mpSelectedResizerItem;
+  OriginItem *mpOriginItem;
   QTransform mTransform;
   QRectF mSceneBoundingRect;
   QPointF mTransformationStartPosition;
@@ -182,6 +183,7 @@ signals:
   void componentRotationChange();
 public slots:
   void updatePlacementAnnotation();
+  void updateOriginItem();
   void prepareResizeComponent(ResizerItem *pResizerItem);
   void resizeComponent(QPointF newPosition);
   void finishResizeComponent();

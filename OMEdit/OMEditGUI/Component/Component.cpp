@@ -76,11 +76,14 @@ Component::Component(QString annotation, QString name, QString className, Compon
   }
   setTransform(mpTransformation->getTransformationMatrix());
   createActions();
+  mpOriginItem = new OriginItem();
   createResizerItems();
   setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
   // if everything is fine with icon then add it to scene
   mpGraphicsView->scene()->addItem(this);
+  mpGraphicsView->scene()->addItem(mpOriginItem);
   connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
+  connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updateOriginItem()));
 }
 
 /* Called for inheritance annotation instance */
@@ -173,7 +176,7 @@ void Component::initialize()
   mpCoOrdinateSystem->setGrid(QPointF(2, 2));
   //Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
-  mpResizerRectangle->setZValue(3000);  // set to a very high value
+  mpResizerRectangle->setZValue(4000);  // set to a very high value
   if (mpGraphicsView) mpGraphicsView->scene()->addItem(mpResizerRectangle);
   QPen pen;
   pen.setStyle(Qt::DotLine);
@@ -475,6 +478,11 @@ void Component::getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal 
 
 void Component::showResizerItems()
 {
+  // show the origin item
+  if (mpTransformation->hasOrigin()) {
+    mpOriginItem->setPos(mpTransformation->getOrigin());
+    mpOriginItem->setActive();
+  }
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -493,6 +501,7 @@ void Component::showResizerItems()
 
 void Component::hideResizerItems()
 {
+  mpOriginItem->setPassive();
   mpBottomLeftResizerItem->setPassive();
   mpTopLeftResizerItem->setPassive();
   mpTopRightResizerItem->setPassive();
@@ -927,6 +936,17 @@ void Component::updatePlacementAnnotation()
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
     pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
+  }
+}
+
+/*!
+ * \brief Component::updateOriginItem
+ * Slot that updates the position of the component OriginItem.
+ */
+void Component::updateOriginItem()
+{
+  if (mpTransformation->hasOrigin()) {
+    mpOriginItem->setPos(mpTransformation->getOrigin());
   }
 }
 
