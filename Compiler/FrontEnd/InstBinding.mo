@@ -215,7 +215,7 @@ algorithm
       Option<Values.Value> optVal;
     case (mod,etype,(index :: {}),_,_) /* Only one element in the index-list */
       equation
-        mod2 = Mod.lookupIdxModification(mod, index);
+        mod2 = Mod.lookupIdxModification(mod, DAE.ICONST(index));
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
         (e_1,_) = Types.matchType(e, ty2, etype, true);
         e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
@@ -226,7 +226,7 @@ algorithm
         result = matchcontinue()
           case ()
             equation
-              mod2 = Mod.lookupIdxModification(mod, index);
+              mod2 = Mod.lookupIdxModification(mod, DAE.ICONST(index));
               result = instBinding2(mod2, etype, res, bind_name,useConstValue);
             then result;
           else NONE();

@@ -1503,8 +1503,9 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,_,dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
         false = Expression.dimensionKnown(inDimension);
-        s = DAE.INDEX(DAE.ICONST(i));
-        mod = Mod.lookupIdxModification(mod, i);
+        e = DAE.ICONST(i);
+        s = DAE.INDEX(e);
+        mod = Mod.lookupIdxModification(mod, e);
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
           instVar2(cache, env, ih, store, ci_state, mod, pre, n, cl, attr, pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
       then
@@ -1540,9 +1541,10 @@ algorithm
         i, DAE.DIM_ENUM(enumTypeName = enum_type, literals = lit :: l), dims,
         idxs, inst_dims, impl, comment, _, graph, csets)
       equation
-        mod_1 = Mod.lookupIdxModification(mod, i);
         enum_lit = Absyn.joinPaths(enum_type, Absyn.IDENT(lit));
-        s = DAE.INDEX(DAE.ENUM_LITERAL(enum_lit, i));
+        e = DAE.ENUM_LITERAL(enum_lit, i);
+        s = DAE.INDEX(e);
+        mod_1 = Mod.lookupIdxModification(mod, e);
         enum_size = listLength(l);
         (cache, env_1, ih, store, dae1, csets, ty, graph) =
           instVar2(cache, env, ih, store, ci_state, mod_1, pre, n, cl,
@@ -1564,8 +1566,8 @@ algorithm
 
     case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf, i, DAE.DIM_BOOLEAN(), dims, idxs, inst_dims, impl, comment, _, graph, csets)
       equation
-        mod_1 = Mod.lookupIdxModification(mod, i);
-        mod_2 = Mod.lookupIdxModification(mod, i+1);
+        mod_1 = Mod.lookupIdxModification(mod, DAE.BCONST(false));
+        mod_2 = Mod.lookupIdxModification(mod, DAE.BCONST(true));
         (cache, env_1, ih, store, dae1, csets, ty, graph) =
           instVar2(cache, env, ih, store, ci_state, mod_1, pre, n, cl, attr, pf, dims, (DAE.INDEX(DAE.BCONST(false)) :: idxs), inst_dims, impl, comment, info, graph, csets);
         (cache, _, ih, store, dae2, csets, ty, graph) =
@@ -1576,7 +1578,7 @@ algorithm
 
     case (_,_,_,_,ci_state,mod,pre,n,(_,_),_,i,_,_,idxs,_,_,_,_,_,_)
       equation
-        failure(_ = Mod.lookupIdxModification(mod, i));
+        failure(_ = Mod.lookupIdxModification(mod, DAE.ICONST(i)));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state));
         str2 = "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
         str3 = Mod.prettyPrintMod(mod, 1);
@@ -1692,8 +1694,9 @@ algorithm
 
         (_,mod2) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl, Mod.DERIVED(path), info);
         mod3 = Mod.merge(mod, mod2, env, pre);
-        mod_1 = Mod.lookupIdxModification(mod3, i);
-        s = DAE.INDEX(DAE.ICONST(i));
+        e = DAE.ICONST(i);
+        mod_1 = Mod.lookupIdxModification(mod3, e);
+        s = DAE.INDEX(e);
         (cache,env_1,ih,store,dae1,csets,ty,graph) = instVar2(cache,env,ih, store,ci_state, mod_1, pre, n, clBase, attr, pf, dims, (s :: idxs), {} /* inst_dims */, impl, comment, info, graph, inSets);
         (cache,_,ih,store,daeLst,csets,_,graph) = instArrayDimInteger(cache, env, ih, store, ci_state, mod, pre, n, (cl,attr), pf, i - 1, dims, idxs, {} /* inst_dims */, impl, comment,info,graph, csets, DAEUtil.joinDaes(dae1, accDae));
       then
@@ -1702,8 +1705,9 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         true = i > 0;
-        mod_1 = Mod.lookupIdxModification(mod, i);
-        s = DAE.INDEX(DAE.ICONST(i));
+        e = DAE.ICONST(i);
+        mod_1 = Mod.lookupIdxModification(mod, e);
+        s = DAE.INDEX(e);
         (cache,env_1,ih,store,dae1,csets,ty,graph) = instVar2(cache,env,ih, store,ci_state, mod_1, pre, n, cl, attr, pf,dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
         (cache,_,ih,store,daeLst,csets,_,graph) = instArrayDimInteger(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, i - 1, dims, idxs, inst_dims, impl, comment,info,graph, csets, DAEUtil.joinDaes(dae1, accDae));
       then

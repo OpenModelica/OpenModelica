@@ -2813,7 +2813,7 @@ algorithm
 
     case (DAE.CREF_QUAL(_, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.EQBOUND(e, _, c, s), _)
       equation
-        true = Types.isArray(inParentType, {});
+        true = Types.isArray(inParentType);
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);
 
@@ -2831,7 +2831,7 @@ algorithm
     /*
     case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.EQBOUND(e, ov, c, s), _)
       equation
-        true = Types.isArray(inParentType, {});
+        true = Types.isArray(inParentType);
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);
         // e = Expression.makeCrefExp(inCref, Expression.typeof(e));
@@ -2841,7 +2841,7 @@ algorithm
 
     case (DAE.CREF_QUAL(_, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.VALBOUND(v, s), _)
       equation
-        true = Types.isArray(inParentType, {});
+        true = Types.isArray(inParentType);
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);
         // print("CREF VB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
@@ -2858,7 +2858,7 @@ algorithm
     /*
     case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.VALBOUND(v, s), _)
       equation
-        true = Types.isArray(inParentType, {});
+        true = Types.isArray(inParentType);
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);
         //e = Expression.makeCrefExp(inCref, inChildType);
@@ -2903,7 +2903,7 @@ algorithm
       DAE.Dimensions dims;
     case(_, _)
       equation
-        true = Types.isArray(tySub, {});
+        true = Types.isArray(tySub);
         dims = Types.getDimensions(tySub);
         subs = List.map(dims, makeDimensionSubscript);
         subs = expandWholeDimSubScript(ss,subs);
