@@ -339,7 +339,7 @@ algorithm
    // we can take the lastN from the propagated dims!
    case (_, _, pdims)
      equation
-       false = Types.isArray(inTy, {});
+       false = Types.isArray(inTy);
        ts = Types.getTypeSource(inTy);
        dims = List.lastN(inParentDimensions, pdims);
        ty = DAE.T_ARRAY(inTy, dims, ts);
@@ -348,7 +348,7 @@ algorithm
    // we can take the lastN from the propagated dims!
    case (_, _, pdims)
      equation
-       true = Types.isArray(inTy, {});
+       true = Types.isArray(inTy);
        ty = Types.unliftArray(inTy);
        ts = Types.getTypeSource(inTy);
        dims = listAppend(inParentDimensions, Types.getDimensions(inTy));
