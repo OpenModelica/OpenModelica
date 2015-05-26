@@ -1434,196 +1434,168 @@ algorithm
   end matchcontinue;
 end lookupCompModification2;
 
-public function lookupIdxModification "This function extracts modifications to an array element, using an
-  integer to index the modification."
+public function lookupIdxModification
+  "This function extracts modifications to an array element, using a subscript
+   expression to index the modification."
   input DAE.Mod inMod;
-  input Integer inInteger;
+  input DAE.Exp inIndex;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue (inMod,inInteger)
+  outMod := matchcontinue inMod
     local
-      DAE.Mod mod_1,mod_2,mod_3,inmod,mod;
-      list<DAE.SubMod> subs_1,subs;
-      Option<DAE.EqMod> eq_1,eq;
-      SCode.Final f;
-      SCode.Each each_;
-      Integer idx;
-      String str,s;
+      DAE.Mod mod1, mod2;
+      list<DAE.SubMod> subs;
+      Option<DAE.EqMod> eq;
 
-    case (DAE.NOMOD(),_) then DAE.NOMOD();
-    case (DAE.REDECL(),_) then DAE.NOMOD();
-    case ((DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = eq)),idx)
-      equation
-        (mod_1,subs_1) = lookupIdxModification2(subs,idx);
-        mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE()), mod_1, FGraph.empty(), Prefix.NOPRE());
-        eq_1 = indexEqmod(eq, {idx});
-        mod_3 = merge(mod_2, DAE.MOD(SCode.NOT_FINAL(),each_,{},eq_1), FGraph.empty(), Prefix.NOPRE());
+    case DAE.NOMOD() then DAE.NOMOD();
+    case DAE.REDECL() then DAE.NOMOD();
+    case DAE.MOD()
+      algorithm
+        (mod1, subs) := lookupIdxModification2(inMod.subModLst, inIndex);
+        mod2 := DAE.MOD(inMod.finalPrefix, inMod.eachPrefix, subs, NONE());
+        mod2 := merge(mod2, mod1, FGraph.empty(), Prefix.NOPRE());
+
+        eq := indexEqmod(inMod.eqModOption, {inIndex});
+        mod1 := DAE.MOD(SCode.NOT_FINAL(), inMod.eachPrefix, {}, eq);
+        mod2 := merge(mod2, mod1, FGraph.empty(), Prefix.NOPRE());
       then
-        mod_3;
-    case (mod,idx)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+        mod2;
+
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Mod.lookupIdxModification(");
-        str = printModStr(mod);
-        Debug.trace(str);
-        Debug.trace(", ");
-        s = intString(idx);
-        Debug.trace(s);
-        Debug.trace(") failed\n");
+        Debug.trace(printModStr(inMod));
+        Debug.traceln(", " + ExpressionDump.printExpStr(inIndex) + ") failed");
       then
         fail();
+
   end matchcontinue;
 end lookupIdxModification;
 
-protected function lookupIdxModification2 "This function does part of the job for lookupIdxModification."
-  input list<DAE.SubMod> inTypesSubModLst;
-  input Integer inInteger;
-  output DAE.Mod outMod;
-  output list<DAE.SubMod> outTypesSubModLst;
+protected function lookupIdxModification2
+  "This function does part of the job for lookupIdxModification."
+  input list<DAE.SubMod> inSubMods;
+  input DAE.Exp inIndex;
+  output DAE.Mod outMod = DAE.NOMOD();
+  output list<DAE.SubMod> outSubMods = {};
+protected
+  DAE.Mod mod;
+  String name;
 algorithm
-  (outMod,outTypesSubModLst) := matchcontinue (inTypesSubModLst,inInteger)
-    local
-      list<DAE.SubMod> subs_1,subs,xs_1;
-      Integer x,y,idx;
-      DAE.Mod mod,mod_1,nmod_1,nmod;
-      list<Integer> xs;
-      String name;
-      DAE.SubMod sm;
-      list<DAE.SubMod> sms;
+  for submod in inSubMods loop
+    DAE.NAMEMOD(name, mod) := submod;
+    mod := lookupIdxModification3(mod, inIndex);
 
-    case ({},_) then (DAE.NOMOD(),{});
+    // isEmptyMod should be used instead, but the Modification13 test case
+    // breaks if empty submods are filtered out...
+    if not isNoMod(mod) then
+      outSubMods := DAE.NAMEMOD(name, mod) :: outSubMods;
+    end if;
+  end for;
 
-    case ((DAE.NAMEMOD(mod = nmod) :: subs),y)
-      equation
-        DAE.NOMOD() = lookupIdxModification3(nmod, y);
-        (mod_1,subs_1) = lookupIdxModification2(subs,y);
-      then
-        (mod_1,subs_1);
-
-    case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),y)
-      equation
-        nmod_1 = lookupIdxModification3(nmod, y);
-        (mod_1,subs_1) = lookupIdxModification2(subs,y);
-      then
-        (mod_1,(DAE.NAMEMOD(name,nmod_1) :: subs_1));
-
-    case ((sm :: sms),idx)
-      equation
-        (mod,xs_1) = lookupIdxModification2(sms,idx);
-      then
-        (mod,(sm :: xs_1));
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Mod.lookupIdxModification2 failed\n");
-      then
-        fail();
-  end matchcontinue;
+  outSubMods := listReverse(outSubMods);
 end lookupIdxModification2;
 
-protected function lookupIdxModification3 "Helper function to lookup_idx_modification2.
-  when looking up index of a named mod, e.g. y={1,2,3}, it should
-  subscript the expression {1,2,3} to corresponding index."
+protected function lookupIdxModification3
+  "Helper function to lookupIdxModification2.
+   When lookup up the index of a named mod, e.g. y = {1, 2, 3}, it should
+   subscript the expression {1, 2, 3} to the corresponding index."
   input DAE.Mod inMod;
-  input Integer inInteger;
+  input DAE.Exp inIndex;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue (inMod,inInteger)
+  outMod := match inMod
     local
-      Option<DAE.EqMod> eq_1,eq;
-      SCode.Final f;
-      list<DAE.SubMod> subs,subs_1;
-      Integer idx;
+      list<DAE.SubMod> subs;
+      Option<DAE.EqMod> eq;
 
-    case (DAE.NOMOD(),_) then DAE.NOMOD();  /* indx */
-    case (DAE.REDECL(),_) then inMod;
-    case (DAE.MOD(finalPrefix = f,eachPrefix = SCode.NOT_EACH(),subModLst = subs,eqModOption = eq),idx)
-      equation
-        (_,subs_1) = lookupIdxModification2(subs,idx);
-        eq_1 = indexEqmod(eq, {idx});
+    case DAE.NOMOD() then DAE.NOMOD();
+    case DAE.REDECL() then inMod;
+
+    case DAE.MOD(eachPrefix = SCode.NOT_EACH())
+      algorithm
+        (_, subs) := lookupIdxModification2(inMod.subModLst, inIndex);
+        eq := indexEqmod(inMod.eqModOption, {inIndex});
       then
-        DAE.MOD(f,SCode.NOT_EACH(),subs_1,eq_1);
-    case (DAE.MOD(finalPrefix = f,eachPrefix = SCode.EACH(),subModLst = subs,eqModOption = eq),_)
-      then DAE.MOD(f,SCode.EACH(),subs,eq);
-    case (_,idx)
-      equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- Mod.lookupIdxModification3 failed for mod: \n" +
-                     printModStr(inMod) + "\n for index:" + intString(idx));
-    then fail();
-  end matchcontinue;
+        DAE.MOD(inMod.finalPrefix, inMod.eachPrefix, subs, eq);
+
+    case DAE.MOD(eachPrefix = SCode.EACH())
+      then inMod;
+
+  end match;
 end lookupIdxModification3;
 
-protected function indexEqmod "If there is an equation modification, this function can subscript
-  it using the provided indexing expressions.  This is used when a
-  modification equates an array variable with an array expression.
-  This expression will be expanded to produce one equation
-  expression per array component."
-  input Option<DAE.EqMod> inTypesEqModOption;
-  input list<Integer> inIntegerLst;
-  output Option<DAE.EqMod> outTypesEqModOption;
+protected function indexEqmod
+  "If there is an equation modification, this function can subscript it using
+   the provided indexing expressions. This is used when a modification equates
+   an array variable with an array expression. This expression will be expanded
+   to produce one equation expression per array component."
+  input Option<DAE.EqMod> inBinding;
+  input list<DAE.Exp> inIndices;
+  output Option<DAE.EqMod> outBinding = inBinding;
+protected
+  DAE.Exp exp;
+  Option<Values.Value> oval;
+  Values.Value val;
+  DAE.Type ty;
+  DAE.Const c;
+  Absyn.Exp aexp;
+  DAE.EqMod eq;
+  SourceInfo info;
 algorithm
-  outTypesEqModOption := matchcontinue (inTypesEqModOption,inIntegerLst)
-    local
-      Option<DAE.EqMod> emod;
-      DAE.Type t_1,t;
-      DAE.Exp e,exp,exp2;
-      Values.Value e_val_1,e_val;
-      DAE.Const c;
-      Integer x;
-      list<Integer> xs;
-      DAE.EqMod eq;
-      SourceInfo info;
-      String exp_str;
-      Absyn.Exp ae;
+  if isNone(inBinding) or listEmpty(inIndices) then
+    return;
+  end if;
 
-    case (NONE(),_) then NONE();
-    case (emod,{}) then emod;
+  SOME(eq) := inBinding;
 
-    // Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2)
-    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_,_)),_) then NONE();
+  outBinding := matchcontinue eq
+    // Subscripting empty array gives no value. This is needed in e.g. fill(1.0, 0, 2).
+    case DAE.TYPED(modifierAsValue = SOME(Values.ARRAY(valueLst = {}))) then NONE();
 
-    // For modifiers with value, retrieve nth element
-    case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c),ae,info)),(x :: xs))
-      equation
-        t_1 = Types.unliftArray(t);
-        exp2 = DAE.ICONST(x);
-        (exp,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{exp2}));
-        e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
-        emod = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),ae,info)), xs);
+    // A normal typed binding.
+    case DAE.TYPED(exp, oval, DAE.PROP(ty, c), aexp, info)
+      algorithm
+        // Subscript the expression with the indices.
+        for i in inIndices loop
+          if not Types.isArray(ty) then
+            // Check that we're not trying to apply a non-array modifier to an
+            // array, which isn't really allowed but working anyway. Some
+            // standard Modelica libraries are missing the 'each' keyword
+            // though (e.g. the DoublePendulum example), and therefore relying
+            // on this behaviour, so just print a warning here.
+            Error.addSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING,
+              {ExpressionDump.printExpStr(exp)}, info);
+            return;
+          end if;
+
+          ty := Types.unliftArray(ty);
+          exp := ExpressionSimplify.simplify1(Expression.makeASUB(exp, {i}));
+        end for;
+
+        // If the modifier has a value, retrieve the indexed elements.
+        if isSome(oval) then
+          SOME(val) := oval;
+
+          for i in inIndices loop
+            val := ValuesUtil.nthArrayelt(val, Expression.expArrayIndex(i));
+          end for;
+
+          oval := SOME(val);
+        end if;
       then
-        emod;
+        SOME(DAE.TYPED(exp, oval, DAE.PROP(ty, c), aexp, info));
 
-    // For modifiers without value, apply subscript operator
-    case (SOME(DAE.TYPED(e,NONE(),DAE.PROP(t,c),ae,info)),(x :: xs))
-      equation
-        t_1 = Types.unliftArray(t);
-        exp2 = DAE.ICONST(x);
-        (exp,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{exp2}));
-        emod = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),ae,info)), xs);
-      then
-        emod;
-
-    case (SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t), info = info)), _)
-      equation
-        // Trying to apply a non-array modifier to an array, which isn't really
-        // allowed but working anyway. Some standard Modelica libraries are
-        // missing the 'each' keyword though (e.g. the DoublePendulum example),
-        // and therefore relying on this behaviour, so just print a warning here.
-        failure(_ = Types.unliftArray(t));
-        exp_str = ExpressionDump.printExpStr(exp);
-        Error.addSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str}, info);
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Mod.indexEqmod failed for mod:\n " +
+          Types.unparseEqMod(eq) + "\n indices: " +
+          ExpressionDump.printExpListStr(inIndices));
       then
         fail();
 
-    case (SOME(eq),_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Mod.indexEqmod failed for mod:\n " +
-               Types.unparseEqMod(eq) + "\n indexes:" +
-               stringDelimitList(List.map(inIntegerLst, intString), ", "));
-      then fail();
   end matchcontinue;
 end indexEqmod;
 
@@ -3301,13 +3273,23 @@ public function isEmptyMod
   input DAE.Mod inMod;
   output Boolean isEmpty;
 algorithm
-  isEmpty := match(inMod)
-    case (DAE.NOMOD()) then true;
+  isEmpty := match inMod
+    case DAE.NOMOD() then true;
     // That's a NOMOD() if I ever saw one...
-    case (DAE.MOD(subModLst={},eqModOption=NONE())) then true;
+    case DAE.MOD(subModLst = {}, eqModOption = NONE()) then true;
     else false;
   end match;
 end isEmptyMod;
+
+public function isNoMod
+  input DAE.Mod inMod;
+  output Boolean outIsNoMod;
+algorithm
+  outIsNoMod := match inMod
+    case DAE.NOMOD() then true;
+    else false;
+  end match;
+end isNoMod;
 
 public function getModInfo
   input DAE.Mod inMod;

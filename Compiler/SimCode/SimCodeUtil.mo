@@ -1009,7 +1009,7 @@ algorithm
         isInput = Types.isInputAttr(attributes);
         isOutput = Types.isOutputAttr(attributes);
         outputIndex = if isOutput then -1 else 0; // correct output index is added later by fixOutputIndex
-        isArray = Types.isArray(type_, {});
+        isArray = Types.isArray(type_);
         type_ = Types.simplifyType(type_);
       then SimCode.SIMEXTARG(componentRef, isInput, outputIndex, isArray, false /*fixed later*/, type_);
 
