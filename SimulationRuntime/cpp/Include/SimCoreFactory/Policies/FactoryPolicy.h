@@ -104,4 +104,6 @@
 //#else
 //    #error "operating system not supported"
 #endif
+
 /** @} */ // end of simcorefactoriesPolicies
+

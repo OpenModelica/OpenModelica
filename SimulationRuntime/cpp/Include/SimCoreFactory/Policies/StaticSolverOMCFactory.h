@@ -61,4 +61,6 @@ protected:
 
   }
 };
+
 /** @} */ // end of simcorefactoriesPolicies
+

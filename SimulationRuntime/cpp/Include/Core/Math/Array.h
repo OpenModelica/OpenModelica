@@ -2039,3 +2039,4 @@ public:
   boost::multi_array<T, 3> &_multi_array; // refers to base class
 };
 /** @} */ // end of math
+
