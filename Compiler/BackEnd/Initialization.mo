@@ -502,29 +502,19 @@ protected function generateInactiveWhenEquationForInitialization "author: lochel
   input list<DAE.ComponentRef> inCrLst;
   input DAE.ElementSource inSource;
   input list<BackendDAE.Equation> inEqns;
-  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outEqns = inEqns;
+protected
+  DAE.Type identType;
+  DAE.Exp crefExp, crefPreExp;
+  BackendDAE.Equation eqn;
 algorithm
-  outEqns := match (inCrLst)
-    local
-      DAE.Type identType;
-      DAE.Exp crefExp, crefPreExp;
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> rest;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqns;
-      BackendDAE.Variables vars;
-
-    case {}
-    then inEqns;
-
-    case cr::rest equation
-      identType = ComponentReference.crefTypeConsiderSubs(cr);
-      crefExp = DAE.CREF(cr, identType);
-      crefPreExp = Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
-      eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-      eqns = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns);
-    then eqns;
- end match;
+  for cr in inCrLst loop
+    identType := ComponentReference.crefTypeConsiderSubs(cr);
+    crefExp := DAE.CREF(cr, identType);
+    crefPreExp := Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
+    eqn := BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+    outEqns := eqn::outEqns;
+  end for;
 end generateInactiveWhenEquationForInitialization;
 
 // =============================================================================
@@ -1074,14 +1064,14 @@ protected function preBalanceInitialSystem1 "author: lochel"
   input BackendDAE.IncidenceMatrix mt;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
-  input Boolean iB;
+  input Boolean inB;
   input list<BackendDAE.Var> inDumpVars;
   output BackendDAE.Variables outVars;
   output BackendDAE.EquationArray outEqs;
-  output Boolean oB;
+  output Boolean outB;
   output list<BackendDAE.Var> outDumpVars;
 algorithm
-  (outVars, outEqs, oB, outDumpVars) := match (n, mt, inVars, inEqs, iB, inDumpVars)
+  (outVars, outEqs, outB, outDumpVars) := match (n, inB)
     local
       list<Integer> row;
       Boolean b, useHomotopy;
@@ -1092,16 +1082,16 @@ algorithm
       DAE.ComponentRef cref;
       list<BackendDAE.Var> dumpVars;
 
-    case (0, _, _, _, false, _)
+    case (0, false)
     then (inVars, inEqs, false, inDumpVars);
 
-    case (0, _, _, _, true, _) equation
+    case (0, true) equation
       vars = BackendVariable.listVar1(BackendVariable.varList(inVars));
     then (vars, inEqs, true, inDumpVars);
 
-    case (_, _, _, _, _, _) equation
+    else equation
       true = n > 0;
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem2(n, mt, inVars, inEqs, iB, inDumpVars);
+      (vars, eqs, b, dumpVars) = preBalanceInitialSystem2(n, mt, inVars, inEqs, inB, inDumpVars);
       (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, vars, eqs, b, dumpVars);
     then (vars, eqs, b, dumpVars);
 
@@ -1113,14 +1103,14 @@ protected function preBalanceInitialSystem2 "author: lochel"
   input BackendDAE.IncidenceMatrix mt;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
-  input Boolean iB;
+  input Boolean inB;
   input list<BackendDAE.Var> inDumpVars;
   output BackendDAE.Variables outVars;
   output BackendDAE.EquationArray outEqs;
-  output Boolean oB;
+  output Boolean outB;
   output list<BackendDAE.Var> outDumpVars;
 algorithm
-  (outVars, outEqs, oB, outDumpVars) := matchcontinue(n, mt, inVars, inEqs, iB, inDumpVars)
+  (outVars, outEqs, outB, outDumpVars) := matchcontinue(n, mt, inVars, inEqs, inB, inDumpVars)
     local
       list<Integer> row;
       Boolean b, useHomotopy;
@@ -1156,7 +1146,7 @@ algorithm
     case (_, _, _, _, _, _) equation
       row = mt[n];
       false = listEmpty(row);
-    then (inVars, inEqs, iB, inDumpVars);
+    then (inVars, inEqs, inB, inDumpVars);
 
     else equation
       Error.addInternalError("function preBalanceInitialSystem1 failed", sourceInfo());
@@ -1466,66 +1456,46 @@ protected function addStartValueEquations "author: lochel"
   input list<BackendDAE.Var> inVarLst;
   input BackendDAE.EquationArray inEqns;
   input list<BackendDAE.Var> inDumpVars;
-  output BackendDAE.EquationArray outEqns;
-  output list<BackendDAE.Var> outDumpVars "this are the variables that get fixed (not the same as inVarLst!)";
+  output BackendDAE.EquationArray outEqns = inEqns;
+  output list<BackendDAE.Var> outDumpVars = inDumpVars "this are the variables that get fixed (not the same as inVarLst!)";
+protected
+  BackendDAE.Var dumpVar;
+  BackendDAE.Equation eqn;
+  DAE.Exp e, crefExp, startExp;
+  DAE.ComponentRef cref;
+  DAE.Type tp;
+  Boolean isPreCref;
 algorithm
-  (outEqns, outDumpVars) := matchcontinue(inVarLst, inEqns, inDumpVars)
-    local
-      BackendDAE.Var var, dumpVar;
-      list<BackendDAE.Var> vars, dumpVars;
-      BackendDAE.Equation eqn;
-      BackendDAE.EquationArray eqns;
-      DAE.Exp e, crefExp, startExp;
-      DAE.ComponentRef cref, preCref;
-      DAE.Type tp;
+  for var in inVarLst loop
+    cref := BackendVariable.varCref(var);
+    tp := BackendVariable.varType(var);
+    crefExp := DAE.CREF(cref, tp);
+    isPreCref := ComponentReference.isPreCref(cref);
 
-    case ({}, _, _) then (inEqns, inDumpVars);
+    if isPreCref then
+      cref := ComponentReference.popPreCref(cref);
+    end if;
 
-    case (var::vars, _, _) equation
-      preCref = BackendVariable.varCref(var);
-      true = ComponentReference.isPreCref(preCref);
-      cref = ComponentReference.popPreCref(preCref);
-      tp = BackendVariable.varType(var);
+    e := Expression.crefExp(cref);
+    tp := Expression.typeof(e);
+    startExp := Expression.makePureBuiltinCall("$_start", {e}, tp);
 
-      crefExp = DAE.CREF(preCref, tp);
+    eqn := BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+    outEqns := BackendEquation.addEquation(eqn, outEqns);
 
-      e = Expression.crefExp(cref);
-      tp = Expression.typeof(e);
-      startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
-
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = BackendEquation.addEquation(eqn, inEqns);
-
-      dumpVar = BackendVariable.copyVarNewName(cref, var);
+    if isPreCref then
+      dumpVar := BackendVariable.copyVarNewName(cref, var);
       // crStr = BackendDump.varString(dumpVar);
       // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
 
-      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
-    then (eqns, dumpVar::dumpVars);
-
-    case (var::vars, _, _) equation
-      cref = BackendVariable.varCref(var);
-      tp = BackendVariable.varType(var);
-
-      crefExp = DAE.CREF(cref, tp);
-
-      e = Expression.crefExp(cref);
-      tp = Expression.typeof(e);
-      startExp = Expression.makePureBuiltinCall("$_start", {e}, tp);
-
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = BackendEquation.addEquation(eqn, inEqns);
-
+      outDumpVars := dumpVar::outDumpVars;
+    else
       // crStr = BackendDump.varString(var);
       // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
 
-      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
-    then (eqns, var::dumpVars);
-
-    else equation
-      Error.addInternalError("function addStartValueEquations failed", sourceInfo());
-    then fail();
-  end matchcontinue;
+      outDumpVars := var::outDumpVars;
+    end if;
+  end for;
 end addStartValueEquations;
 
 // =============================================================================
