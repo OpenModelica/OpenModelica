@@ -235,7 +235,12 @@ bool* SimVars::initBoolArrayVar(size_t size, size_t start_index)
  */
 void SimVars::initRealAliasArray(int indices[], size_t n, double* ref_data[])
 {
-   std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getRealVar,this,boost::lambda::_1));
+  for(int i = 0; i < n; i++)
+  {
+    int index = indices[i];
+    double* refToVar =  SimVars::getRealVar(index);
+    ref_data[i] = refToVar;
+  }
 }
 
 void SimVars::initRealAliasArray(std::vector<int> indices, double* ref_data[])

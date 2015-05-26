@@ -717,7 +717,7 @@ algorithm
           inST, inDoVect, inPrefix, inInfo);
         (expl, DAE.PROP(ty, c)) := elabArray(expl, props, inPrefix, inInfo); // type-checking the array
         arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(listLength(expl))}, DAE.emptyTypeSource);
-        exp := DAE.ARRAY(Types.simplifyType(arr_ty), not Types.isArray(ty), expl);
+        exp := DAE.ARRAY(Types.simplifyType(arr_ty), not Types.isArray(ty, {}), expl);
         (exp, arr_ty) := MetaUtil.tryToConvertArrayToList(exp, arr_ty) "converts types that cannot be arrays in ot lists.";
         exp := elabMatrixToMatrixExp(exp);
       then
@@ -2273,7 +2273,7 @@ algorithm
         (cache,es_1,DAE.PROP(t,const)) = elabGraphicsArray(cache,env, es, impl,pre,info);
         l = listLength(es_1);
         at = Types.simplifyType(t);
-        a = Types.isArray(t);
+        a = Types.isArray(t,{});
       then
         (cache,DAE.ARRAY(at,a,es_1),DAE.PROP(DAE.T_ARRAY(t, {DAE.DIM_INTEGER(l)},DAE.emptyTypeSource),const));
 
@@ -3522,7 +3522,7 @@ algorithm
         arraylist = List.fill(s, v);
         sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
+        a = Types.isArray(sty2, {});
       then
         (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
 
@@ -3531,7 +3531,7 @@ algorithm
         arraylist = List.fill(s, v);
         sty2 = DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
+        a = Types.isArray(sty2, {});
       then
         (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
 
@@ -3541,7 +3541,7 @@ algorithm
         arraylist = List.fill(exp, v);
         sty2 = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)}, DAE.emptyTypeSource);
         at = Types.simplifyType(sty2);
-        a = Types.isArray(sty2);
+        a = Types.isArray(sty2, {});
       then
         (cache,DAE.ARRAY(at,a,arraylist),DAE.PROP(sty2,c1));
 
@@ -3850,7 +3850,7 @@ algorithm
         (cache,exp_1,DAE.PROP(t,c),_) = elabExpInExpression(cache,env,arrexp, impl,NONE(),true,pre,info);
         tp = Types.arrayElementType(t);
         etp = Types.simplifyType(tp);
-        b = Types.isArray(t);
+        b = Types.isArray(t,{});
         b = b and Types.isSimpleType(tp);
         estr = Dump.printExpStr(arrexp);
         tstr = Types.unparseType(t);
@@ -3972,7 +3972,7 @@ algorithm
     outExp := Expression.makePureBuiltinCall("pre", {exp}, Types.simplifyType(ty2));
     outExp := elabBuiltinPreMatrix(outExp, ty2);
   // An array?
-  elseif Types.isArray(ty) then
+  elseif Types.isArray(ty, {}) then
     ty2 := Types.unliftArray(ty);
     outExp := Expression.makePureBuiltinCall("pre", {exp}, Types.simplifyType(ty2));
     (expl, sc) := elabBuiltinPre2(outExp, ty2);
@@ -4204,7 +4204,7 @@ algorithm
   arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)}, DAE.emptyTypeSource);
   outProperties := DAE.PROP(arr_ty, c);
   arr_ty := Types.simplifyType(arr_ty);
-  outExp := DAE.ARRAY(arr_ty, Types.isArray(ty), expl);
+  outExp := DAE.ARRAY(arr_ty, Types.isArray(ty, {}), expl);
 end elabBuiltinArray;
 
 protected function elabBuiltinArray2
@@ -4432,7 +4432,7 @@ algorithm
       equation
         (cache, arrexp_1, DAE.PROP(ty, c), _) =
           elabExpInExpression(cache, env, arrexp, impl,NONE(), true, pre, info);
-        true = Types.isArray(ty);
+        true = Types.isArray(ty,{});
         arrexp_1 = Expression.matrixToArray(arrexp_1);
         elt_ty = Types.arrayElementType(ty);
         tp = Types.simplifyType(elt_ty);
@@ -10585,7 +10585,7 @@ algorithm
     case (true,DAE.ASUB(sub=sub),_,_)
       equation
         // TODO: Use a DAE.ERROR() or something if this has subscripts?
-        a = Types.isArray(ty);
+        a = Types.isArray(ty,{});
         sc = boolNot(a);
         et = Types.simplifyType(ty);
         exp = DAE.ARRAY(et,sc,{});
@@ -10594,7 +10594,7 @@ algorithm
 
     case (true,DAE.CREF(componentRef=cr),_,_)
       equation
-        a = Types.isArray(ty);
+        a = Types.isArray(ty,{});
         sc = boolNot(a);
         et = Types.simplifyType(ty);
         {} = ComponentReference.crefLastSubs(cr);
@@ -10604,7 +10604,7 @@ algorithm
     case (true,DAE.CREF(componentRef=cr),_,_)
       equation
         // TODO: Use a DAE.ERROR() or something if this has subscripts?
-        a = Types.isArray(ty);
+        a = Types.isArray(ty,{});
         sc = boolNot(a);
         et = Types.simplifyType(ty);
         (ss as _::_) = ComponentReference.crefLastSubs(cr);
@@ -11180,7 +11180,7 @@ algorithm
     case (_, _, DAE.T_ARRAY(dims = {d1}, ty = t),
         SOME(DAE.CREF(componentRef = cr)), _)
       equation
-        false = Types.isArray(t);
+        false = Types.isArray(t,{});
         true = (Expression.dimensionSize(d1) < Config.vectorizationLimit()) or Config.vectorizationLimit() == 0;
         e = elabCrefSlice(cr,crefIdType);
       then
@@ -11205,7 +11205,7 @@ algorithm
          DAE.T_ARRAY(dims = {d1},ty = t),
          _,_)
       equation
-        false = Types.isArray(t);
+        false = Types.isArray(t,{});
         ds = Expression.dimensionSize(d1);
         true = ds < Config.vectorizationLimit() or Config.vectorizationLimit() == 0;
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);

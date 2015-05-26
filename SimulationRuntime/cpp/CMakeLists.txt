@@ -43,7 +43,7 @@ OPTION(BUILD_DOCUMENTATION "Use Doxygen to create the cpp runtime documentation"
 
 #Set Variables
 SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
-SET(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../../libraries/git/MSL/Modelica/Resources/Data/Tables")
+SET(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/Data/Tables")
 
 SET(LIBINSTALLEXT "lib/omc/cpp" CACHE STRING "library directory")
 SET(MODELICA_MODEL "ModelicaSystem")
