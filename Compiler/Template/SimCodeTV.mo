@@ -553,6 +553,7 @@ package SimCode
       SimCodeVar.SimVars vars;
       list<Function> functions;
       list<String> labels;
+      Integer maxDer;
     end MODELINFO;
   end ModelInfo;
 
