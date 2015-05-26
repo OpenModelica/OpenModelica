@@ -11090,13 +11090,13 @@ algorithm
         (cache,e,DAE.C_PARAM(),attr);
 
     // outer parameters without value is ok.
-    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.PARAM(), innerOuter = io),_,_,tt,DAE.UNBOUND(),_,_,_,_,_)
-      equation
-        (_,true) = InnerOuter.innerOuterBooleans(io);
-        expTy = Types.simplifyType(tt);
-        cr_1 = fillCrefSubscripts(cr, tt);
-      then
-        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_PARAM(),attr);
+    //case (cache,_,cr,attr as DAE.ATTR(variability = SCode.PARAM(), innerOuter = io),_,_,tt,DAE.UNBOUND(),_,_,_,_,_)
+    //  equation
+    //    (_,true) = InnerOuter.innerOuterBooleans(io);
+    //    expTy = Types.simplifyType(tt);
+    //    cr_1 = fillCrefSubscripts(cr, tt);
+    //  then
+    //    (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_PARAM(),attr);
 
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)
     case (cache,_,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.UNBOUND(),doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
