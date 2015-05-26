@@ -1472,10 +1472,7 @@ algorithm
       SCode.Attributes absynAttr;
       SCode.Mod scodeMod;
       DAE.Mod mod2, mod3;
-      String lit;
-      list<String> l;
-      Integer enum_size;
-      Absyn.Path enum_type, enum_lit;
+      Absyn.Path enum_lit;
       SCode.Prefixes pf;
       UnitAbsyn.InstStore store;
 
@@ -1503,8 +1500,9 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,_,dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
         false = Expression.dimensionKnown(inDimension);
-        s = DAE.INDEX(DAE.ICONST(i));
-        mod = Mod.lookupIdxModification(mod, i);
+        e = DAE.ICONST(i);
+        s = DAE.INDEX(e);
+        mod = Mod.lookupIdxModification(mod, e);
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
           instVar2(cache, env, ih, store, ci_state, mod, pre, n, cl, attr, pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
       then
@@ -1536,36 +1534,16 @@ algorithm
         (cache,env,ih,store,dae,csets,ty,graph);
 
     // Instantiate an array whose dimension is determined by an enumeration.
-    case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf,
-        i, DAE.DIM_ENUM(enumTypeName = enum_type, literals = lit :: l), dims,
-        idxs, inst_dims, impl, comment, _, graph, csets)
-      equation
-        mod_1 = Mod.lookupIdxModification(mod, i);
-        enum_lit = Absyn.joinPaths(enum_type, Absyn.IDENT(lit));
-        s = DAE.INDEX(DAE.ENUM_LITERAL(enum_lit, i));
-        enum_size = listLength(l);
-        (cache, env_1, ih, store, dae1, csets, ty, graph) =
-          instVar2(cache, env, ih, store, ci_state, mod_1, pre, n, cl,
-          attr, pf, dims, (s :: idxs), inst_dims, impl, comment, info, graph, csets);
-        i_1 = i + 1;
-        (cache, _, ih, store, dae2, csets, _, graph) =
-          instArray(cache, env, ih, store, ci_state, mod, pre, n, (cl,
-          attr), pf, i_1, DAE.DIM_ENUM(enum_type, l, enum_size), dims, idxs,
-          inst_dims, impl, comment, info, graph, csets);
-        daeLst = DAEUtil.joinDaes(dae1, dae2);
-      then
-        (cache, env_1, ih, store, daeLst, csets, ty, graph);
-
-    case (cache,env,ih,store,_,_,_,_,(_,_),_,_,
-      DAE.DIM_ENUM(literals = {}),_,_,_,_,_,
-      _,graph, csets)
-      then
-        (cache,env,ih,store,DAE.emptyDae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
+    case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf, _,
+        DAE.DIM_ENUM(), dims, idxs, inst_dims, impl, comment, _, graph, csets)
+      then instArrayDimEnum(cache, env, ih, store, ci_state, mod, pre, n, cl,
+          attr, pf, inDimension, dims, idxs, inst_dims, impl, comment, info,
+          graph, csets);
 
     case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf, i, DAE.DIM_BOOLEAN(), dims, idxs, inst_dims, impl, comment, _, graph, csets)
       equation
-        mod_1 = Mod.lookupIdxModification(mod, i);
-        mod_2 = Mod.lookupIdxModification(mod, i+1);
+        mod_1 = Mod.lookupIdxModification(mod, DAE.BCONST(false));
+        mod_2 = Mod.lookupIdxModification(mod, DAE.BCONST(true));
         (cache, env_1, ih, store, dae1, csets, ty, graph) =
           instVar2(cache, env, ih, store, ci_state, mod_1, pre, n, cl, attr, pf, dims, (DAE.INDEX(DAE.BCONST(false)) :: idxs), inst_dims, impl, comment, info, graph, csets);
         (cache, _, ih, store, dae2, csets, ty, graph) =
@@ -1576,7 +1554,7 @@ algorithm
 
     case (_,_,_,_,ci_state,mod,pre,n,(_,_),_,i,_,_,idxs,_,_,_,_,_,_)
       equation
-        failure(_ = Mod.lookupIdxModification(mod, i));
+        failure(_ = Mod.lookupIdxModification(mod, DAE.ICONST(i)));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state));
         str2 = "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
         str3 = Mod.prettyPrintMod(mod, 1);
@@ -1692,8 +1670,9 @@ algorithm
 
         (_,mod2) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl, Mod.DERIVED(path), info);
         mod3 = Mod.merge(mod, mod2, env, pre);
-        mod_1 = Mod.lookupIdxModification(mod3, i);
-        s = DAE.INDEX(DAE.ICONST(i));
+        e = DAE.ICONST(i);
+        mod_1 = Mod.lookupIdxModification(mod3, e);
+        s = DAE.INDEX(e);
         (cache,env_1,ih,store,dae1,csets,ty,graph) = instVar2(cache,env,ih, store,ci_state, mod_1, pre, n, clBase, attr, pf, dims, (s :: idxs), {} /* inst_dims */, impl, comment, info, graph, inSets);
         (cache,_,ih,store,daeLst,csets,_,graph) = instArrayDimInteger(cache, env, ih, store, ci_state, mod, pre, n, (cl,attr), pf, i - 1, dims, idxs, {} /* inst_dims */, impl, comment,info,graph, csets, DAEUtil.joinDaes(dae1, accDae));
       then
@@ -1702,8 +1681,9 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         true = i > 0;
-        mod_1 = Mod.lookupIdxModification(mod, i);
-        s = DAE.INDEX(DAE.ICONST(i));
+        e = DAE.ICONST(i);
+        mod_1 = Mod.lookupIdxModification(mod, e);
+        s = DAE.INDEX(e);
         (cache,env_1,ih,store,dae1,csets,ty,graph) = instVar2(cache,env,ih, store,ci_state, mod_1, pre, n, cl, attr, pf,dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
         (cache,_,ih,store,daeLst,csets,_,graph) = instArrayDimInteger(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, i - 1, dims, idxs, inst_dims, impl, comment,info,graph, csets, DAEUtil.joinDaes(dae1, accDae));
       then
@@ -1711,6 +1691,61 @@ algorithm
 
   end match;
 end instArrayDimInteger;
+
+protected function instArrayDimEnum
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input UnitAbsyn.InstStore inStore;
+  input ClassInf.State inState;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input String inName;
+  input SCode.Element inClass;
+  input SCode.Attributes inAttributes;
+  input SCode.Prefixes inPrefixes;
+  input DAE.Dimension inDimension;
+  input DAE.Dimensions inRestDimensions;
+  input list<DAE.Subscript> inSubscripts;
+  input list<list<DAE.Dimension>> inInstDims;
+  input Boolean inImpl;
+  input SCode.Comment inComment;
+  input SourceInfo inInfo;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input Connect.Sets inSets;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output UnitAbsyn.InstStore outStore = inStore;
+  output DAE.DAElist outDae = DAE.emptyDae;
+  output Connect.Sets outSets = inSets;
+  output DAE.Type outType = DAE.T_UNKNOWN_DEFAULT;
+  output ConnectionGraph.ConnectionGraph outGraph = inGraph;
+protected
+  Absyn.Path enum_path, enum_lit_path;
+  list<String> literals;
+  Integer i = 1;
+  DAE.Exp e;
+  DAE.Mod mod;
+  DAE.DAElist dae;
+algorithm
+  DAE.DIM_ENUM(enumTypeName = enum_path, literals = literals) := inDimension;
+
+  for lit in literals loop
+    enum_lit_path := Absyn.joinPaths(enum_path, Absyn.IDENT(lit));
+    e := DAE.ENUM_LITERAL(enum_lit_path, i);
+    mod := Mod.lookupIdxModification(inMod, e);
+    i := i + 1;
+
+    (outCache, outEnv, outIH, outStore, dae, outSets, outType, outGraph) :=
+      instVar2(outCache, outEnv, outIH, outStore, inState, mod, inPrefix,
+        inName, inClass, inAttributes, inPrefixes, inRestDimensions,
+        DAE.INDEX(e) :: inSubscripts, inInstDims, inImpl, inComment, inInfo,
+        outGraph, outSets);
+
+    outDae := DAEUtil.joinDaes(outDae, dae);
+  end for;
+end instArrayDimEnum;
 
 annotation(__OpenModelica_Interface="frontend");
 end InstVar;

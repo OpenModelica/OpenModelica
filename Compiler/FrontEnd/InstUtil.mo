@@ -6184,7 +6184,7 @@ algorithm
 
     case (_,ci,_,SOME(tp),_)
       equation
-        true = Types.isArray(tp, {});
+        true = Types.isArray(tp);
         failure(ClassInf.isConnector(ci));
       then
         tp;
@@ -6377,7 +6377,7 @@ algorithm
 
     else
       equation
-        false = Types.isArray(inType, {});
+        false = Types.isArray(inType);
       then
         (inExp, inValue);
   end matchcontinue;
