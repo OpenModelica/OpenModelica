@@ -11,7 +11,7 @@
 #define BOOST_EXTENSION_MONITOR_DECL
 
 #elif defined(RUNTIME_STATIC_LINKING)
-
+ 
 #define BOOST_EXTENSION_SOLVER_DECL
 #define BOOST_EXTENSION_STATESELECT_DECL
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL
@@ -26,5 +26,6 @@
 #else
     error "operating system not supported"
 #endif
+
  /** @} */ // end of coreSolver
 

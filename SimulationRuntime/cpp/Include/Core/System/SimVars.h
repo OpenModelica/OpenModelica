@@ -13,6 +13,7 @@ template<typename T>
 class AlignedArray
 #else
  */
+     
 class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
 /*#endif*/
 {

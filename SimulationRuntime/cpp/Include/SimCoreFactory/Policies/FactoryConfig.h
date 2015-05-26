@@ -101,6 +101,10 @@
 #else
   #error "operating system not supported"
 #endif
+<<<<<<< HEAD
 
 /** @} */ // end of simcorefactoriesPolicies
 
+=======
+/** @} */ // end of simcorefactoriesPolicies
+>>>>>>> 13d2ab883a13322c1dcc46f5ccf2683d20e49b75

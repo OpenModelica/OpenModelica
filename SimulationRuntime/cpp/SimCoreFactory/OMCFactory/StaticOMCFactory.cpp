@@ -38,6 +38,5 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings> StaticOMCFactory::creat
     boost::shared_ptr<ISimController>  simcontroller = boost::shared_ptr<ISimController>(new SimController(_library_path,_modelicasystem_path));
     return std::make_pair(simcontroller,settings);
 }
-
 /** @} */ // end of simcorefactoryOMCFactory
 
