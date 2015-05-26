@@ -154,6 +154,7 @@ END_PARFOR;
 // ---------
 
 FIELD;
+INDOMAIN;
 
 // ---------
 // Operators
@@ -298,6 +299,7 @@ CONSTRAINT : 'constraint' { if (!optimica_enabled()) $type = IDENT; };
 
 FIELD : 'field';
 NONFIELD : 'nonfield';
+INDOMAIN : 'indomain';
 
 /*------------------------------------------------------------------
  * LEXER RULES

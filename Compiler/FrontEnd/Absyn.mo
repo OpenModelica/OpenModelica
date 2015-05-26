@@ -463,6 +463,7 @@ uniontype Equation "Information on one (kind) of equation, different constructor
   record EQ_EQUALS
     Exp leftSide "leftSide" ;
     Exp rightSide "rightSide Connect stmt" ;
+    Option<ComponentRef> domain "domain for PDEs" ;
   end EQ_EQUALS;
 
   record EQ_CONNECT

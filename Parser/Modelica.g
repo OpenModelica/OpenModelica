@@ -896,12 +896,16 @@ assign_clause_a returns [void* ast]
   ;
 
 equality_or_noretcall_equation returns [void* ast]
-@init { ass = 0; e1 = 0; ass = 0; e2.ast = 0; } :
+@init { ass = 0; e1 = 0; ass = 0; e2.ast = 0; dom = 0;} :
   e1=simple_expression
-    (  (EQUALS | ass=ASSIGN) e2=expression[metamodelica_enabled()]
+    (  (EQUALS | ass=ASSIGN) e2=expression[metamodelica_enabled()] (INDOMAIN dom=component_reference)
       {
         modelicaParserAssert(ass==0,"Equations can not contain assignments (':='), use equality ('=') instead", equality_or_noretcall_equation, $ass->line, $ass->charPosition+1, $ass->line, $ass->charPosition+2);
-        $ast = Absyn__EQ_5fEQUALS(e1,e2.ast);
+        if (dom = 0) {
+            $ast = Absyn__EQ_5fEQUALS(e1,e2.ast,mmc_mk_none());
+        } else {
+            $ast = Absyn__EQ_5fEQUALS(e1,e2.ast,mmc_mk_some(dom));
+        }
       }
     | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */
        {
