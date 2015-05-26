@@ -14861,6 +14861,8 @@ algorithm
     algorithm
       // try to find the derivative in the states
       ({var},_) := BackendVariable.getVar(derCref, allStates);
+      false := BackendVariable.varEqual(stateIn,var);
+      true := false;
     then getHighestDerivation1(var,allStates,derivationIn+1);
   else
     then derivationIn+1;
