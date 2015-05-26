@@ -80,6 +80,7 @@ ArrayMulMatrixSimplifier.mo \
 ArrayMultiplication.mo \
 ArrayMult.mo \
 ArrayOperators.mo \
+ArrayOuterParamExpand.mo \
 ArrayRange.mo \
 ArrayRecursiveDim1.mo \
 ArrayReduce2.mo \
