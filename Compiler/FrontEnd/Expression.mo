@@ -104,7 +104,22 @@ end intSubscripts;
 protected function subscriptInt
   "Tries to convert a subscript to an integer index."
   input DAE.Subscript inSubscript;
-  output Integer outInteger = expArrayIndex(subscriptIndexExp(inSubscript));
+  output Integer outInteger;
+algorithm
+  outInteger := match(inSubscript)
+    local
+      Integer x;
+      Boolean b;
+    case DAE.INDEX(exp = DAE.ICONST(integer = x)) then x;
+    case DAE.INDEX(exp = DAE.ENUM_LITERAL(index = x)) then x;
+    case DAE.INDEX(exp = DAE.BCONST(bool = b)) then if b then 1 else 0;
+/*
+    else
+      equation
+        Error.addInternalError("subscriptInt failed: " + ExpressionDump.printSubscriptStr(inSubscript), sourceInfo());
+      then fail();
+ */
+  end match;
 end subscriptInt;
 
 public function subscriptsInt
@@ -1522,24 +1537,11 @@ public function expInt "returns the int value if expression is constant Integer"
   input DAE.Exp exp;
   output Integer i;
 algorithm
-  i := match exp
-    case DAE.ICONST() then exp.integer;
-    case DAE.ENUM_LITERAL() then exp.index;
-    case DAE.BCONST() then if exp.bool then 1 else 0;
+  i := match(exp) local Integer i2;
+    case (DAE.ICONST(integer = i2)) then i2;
+    case (DAE.ENUM_LITERAL(index = i2)) then i2;
   end match;
 end expInt;
-
-public function expArrayIndex
-  "Returns the array index that an expression represents as an integer."
-  input DAE.Exp inExp;
-  output Integer outIndex;
-algorithm
-  outIndex := match inExp
-    case DAE.ICONST() then inExp.integer;
-    case DAE.ENUM_LITERAL() then inExp.index;
-    case DAE.BCONST() then if inExp.bool then 2 else 1;
-  end match;
-end expArrayIndex;
 
 public function varName "Returns the name of a Var"
   input DAE.Var v;
@@ -1867,7 +1869,7 @@ algorithm
 
     case DAE.BINARY(operator=op, exp1=e1, exp2=e2) equation
       ty = typeofOp(op);
-      true = Types.isArray(ty);
+      true = Types.isArray(ty, {});
       e_1 = nthArrayExp(e1, inInteger);
       e_2 = nthArrayExp(e2, inInteger);
     then DAE.BINARY(e_1, op, e_2);
@@ -10264,7 +10266,7 @@ algorithm
         tys = makePromotedTypes(dims, ty, {});
 
         // Use the constructed types to promote the expression.
-        is_array_ty = Types.isArray(inType);
+        is_array_ty = Types.isArray(inType, {});
         exp = promoteExp2(inExp, is_array_ty, dims_to_add, tys);
       then
         (exp, res_ty);
