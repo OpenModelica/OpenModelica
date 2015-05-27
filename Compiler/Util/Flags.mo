@@ -1060,6 +1060,9 @@ constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
 
+constant ConfigFlag DSIABLE_DSS = CONFIG_FLAG(71,
+  "disableDynamicStateSelection", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Experimental feature: disable dynamic state selection"));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1135,7 +1138,8 @@ constant list<ConfigFlag> allConfigFlags = {
   REMOVE_SIMPLE_EQUATIONS,
   DYNAMIC_TEARING,
   SYM_EULER,
-  ADD_TIME_AS_STATE
+  ADD_TIME_AS_STATE,
+  DSIABLE_DSS
 };
 
 public function new

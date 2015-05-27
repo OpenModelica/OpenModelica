@@ -88,6 +88,7 @@ algorithm
 
    if not inOptimicaFlag then
     Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+    Flags.setConfigBool(Flags.DSIABLE_DSS, true);
    end if;
 
     (mayer,lagrange,startTimeE,finalTimeE) := match(inClassAttr)
