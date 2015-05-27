@@ -3195,6 +3195,7 @@ match simCode
       defineParameterRealVars();
       defineParameterIntVars();
       defineParameterBoolVars();
+      defineMixedArrayVars();
       defineAliasRealVars();
       defineAliasIntVars();
       defineAliasBoolVars();
@@ -6328,6 +6329,7 @@ match modelInfo
       void defineAliasRealVars();
       void defineAliasIntVars();
       void defineAliasBoolVars();
+      void defineMixedArrayVars();
 
       void getJacobian(SparseMatrix& matrix);
       void deleteObjects();
@@ -7077,6 +7079,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       let &additionalAliasRealVarFunctionCalls = buffer ""
       let &additionalAliasIntVarFunctionCalls = buffer ""
       let &additionalAliasBoolVarFunctionCalls = buffer ""
+      let &additionalMixedArrayVarFunctionCalls = buffer ""
       let &returnValue = buffer ""
 
       <<
@@ -7170,6 +7173,15 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       void <%classname%>::defineAliasBoolVars()
       {
         <%additionalAliasBoolVarFunctionCalls%>
+      }
+
+      //MixedArrayVars
+      <%List.partition(vars.mixedArrayVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineMixedArrayVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
+                                          true, additionalMixedArrayVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineMixedArrayVars()
+      {
+        <%additionalMixedArrayVarFunctionCalls%>
       }
       >>
 end memberVariableInitialize;

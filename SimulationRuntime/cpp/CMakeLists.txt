@@ -300,6 +300,7 @@ IF(USE_SUNDIALS)
   IF (NOT SUNDIALS_INCLUDE_DIR)
     MESSAGE(FATAL_ERROR "Could not find Sundials, specify environment variable SUNDIALS_ROOT")
   ELSE(NOT SUNDIALS_INCLUDE_DIR)
+    # Extract the version number from sundials_config.h
     FIND_PATH(SUNDIALS_CONFIG_FILE "sundials_config.h" ${SUNDIALS_INCLUDE_DIR} "${SUNDIALS_INCLUDE_DIR}/sundials")
     SET(SUNDIALS_CONFIG_FILE "${SUNDIALS_CONFIG_FILE}/sundials_config.h")
     FILE(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)

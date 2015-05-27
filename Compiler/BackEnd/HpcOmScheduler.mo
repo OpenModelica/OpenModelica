@@ -49,6 +49,7 @@ protected import BackendVarTransform;
 protected import ComponentReference;
 protected import DAE;
 protected import Debug;
+protected import Error;
 protected import Expression;
 protected import Flags;
 protected import HpcOmSchedulerExt;
@@ -65,13 +66,31 @@ public type TaskAssignment = array<Integer>; //the information which node <idx> 
 //--------------
 public function createEmptySchedule "function createEmptySchedule
   author: marcusw
-  Create a empty-schedule to produce the serial code."
+  Create a empty-schedule to produce serial code. The produces task list represents the computation order of the serial code."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   output HpcOmSimCode.Schedule oSchedule;
+protected
+  list<HpcOmSimCode.Task> sortedTasks;
+  HpcOmTaskGraph.TaskGraph taskGraphT;
+  list<HpcOmSimCode.Task> allTasks = {};
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks; //tasks with ref counter
+  Integer taskIdx;
+
+  Integer weighting, index, threadIdx;
+  Real calcTime, timeFinished;
+  list<Integer> eqIdc;
 algorithm
-  oSchedule := HpcOmSimCode.EMPTYSCHEDULE();
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+  for taskIdx in listReverse(List.intRange(arrayLength(allCalcTasks))) loop
+    ((HpcOmSimCode.CALCTASK(weighting, index, calcTime, timeFinished, threadIdx, eqIdc),_)) := arrayGet(allCalcTasks, taskIdx);
+    eqIdc := List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
+    allTasks := HpcOmSimCode.CALCTASK(weighting, index, calcTime, timeFinished, threadIdx, eqIdc)::allTasks;
+  end for;
+  allTasks := List.sort(allTasks, compareTasksByEqIdc);
+  oSchedule := HpcOmSimCode.EMPTYSCHEDULE(HpcOmSimCode.SERIALTASKLIST(allTasks, true));
 end createEmptySchedule;
 
 //----------------
@@ -1261,7 +1280,8 @@ algorithm
   end matchcontinue;
 end getSuccessorsByTask;
 
-protected function compareTasksByWeighting
+protected function compareTasksByWeighting "author: marcusw
+  Compare the given tasks by their weighting. If task1 has a higher weighting than task 2, true is returned."
   input HpcOmSimCode.Task iTask1;
   input HpcOmSimCode.Task iTask2;
   output Boolean oResult;
@@ -1273,10 +1293,28 @@ algorithm
       then intGt(weightingTask1,weightingTask2);
     else
       equation
-        print("HpcOmScheduler.compareTasksByWeighting can only compare CALCTASKs! Task 1 has type " + getTaskTypeString(iTask1) + " and task 2 has type " + getTaskTypeString(iTask2) + "\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"HpcOmScheduler.compareTasksByWeighting can only compare CALCTASKs! Task 1 has type " + getTaskTypeString(iTask1) + " and task 2 has type " + getTaskTypeString(iTask2)});
       then fail();
   end match;
 end compareTasksByWeighting;
+
+protected function compareTasksByEqIdc "author: marcusw
+  Compare the given tasks by their equation indices. If the first equation of task1 has a higher index than the first equation of task 2, true is returned."
+  input HpcOmSimCode.Task iTask1;
+  input HpcOmSimCode.Task iTask2;
+  output Boolean oResult;
+protected
+  Integer eqIdxTask1, eqIdxTask2;
+algorithm
+  oResult := match(iTask1,iTask2)
+    case(HpcOmSimCode.CALCTASK(eqIdc=eqIdxTask1::_), HpcOmSimCode.CALCTASK(eqIdc=eqIdxTask2::_))
+      then intGt(eqIdxTask1,eqIdxTask2);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"HpcOmScheduler.compareTasksByEqIdc can only compare CALCTASKs with at least one equation index! Task 1 has type " + getTaskTypeString(iTask1) + " and task 2 has type " + getTaskTypeString(iTask2)});
+      then fail();
+  end match;
+end compareTasksByEqIdc;
 
 protected function compareTaskWithThreadIdx
   input Integer iThreadIdx;
@@ -1392,11 +1430,14 @@ protected
   array<tuple<Integer,Integer,Real>> tmpScheduleInfo;
   array<list<HpcOmSimCode.Task>> threadTasks;
   list<HpcOmSimCode.TaskList> tasksOfLevels;
+  list<HpcOmSimCode.Task> allTasks;
 algorithm
   oScheduleInfo := match(iSchedule,iTaskCount)
-    case(HpcOmSimCode.EMPTYSCHEDULE(),_)
+    case(HpcOmSimCode.EMPTYSCHEDULE(tasks=HpcOmSimCode.SERIALTASKLIST(tasks=allTasks)),_)
       equation
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
+        threadTasks=arrayCreate(1, allTasks);
+        tmpScheduleInfo = Array.fold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
       then tmpScheduleInfo;
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks),_)
       equation
@@ -5562,7 +5603,7 @@ public function dumpSchedule
 protected
   String s;
   list<String> sLst;
-  list<HpcOmSimCode.Task> outgoingDepTasks;
+  list<HpcOmSimCode.Task> outgoingDepTasks, allTasks;
   array<list<HpcOmSimCode.Task>> threadTasks;
   list<HpcOmSimCode.TaskList> tasksOfLevels;
   list<tuple<HpcOmSimCode.Task, list<Integer>>> taskDepTasks;
@@ -5586,8 +5627,11 @@ algorithm
         s = stringDelimitList(List.map(taskDepTasks,dumpTaskDepSchedule),"\n")+"\n";
         s = "TASKDEPSCHEDULE\n"+s;
       then s;
-    case(HpcOmSimCode.EMPTYSCHEDULE())
-      then "EMPTYSCHEDULE\n";
+    case(HpcOmSimCode.EMPTYSCHEDULE(tasks=HpcOmSimCode.SERIALTASKLIST(tasks=allTasks)))
+      equation
+        (s,_) = dumpThreadSchedule(allTasks, 1);
+        s = "EMPTYSCHEDULE\n"+s;
+      then s;
     else fail();
   end match;
 end dumpSchedule;
@@ -6325,25 +6369,31 @@ end isEmptyTask;
 public function convertFixedLevelScheduleToTaskLists
   "Convert the given LevelSchedule to an list of task for each level and each thread.
   author:marcusw"
-  input HpcOmSimCode.Schedule iSchedule;
+  input HpcOmSimCode.Schedule iOdeSchedule; //mapping level -> tasks
+  input HpcOmSimCode.Schedule iDaeSchedule;
   input Integer iNumOfThreads;
-  output array<list<list<HpcOmSimCode.Task>>> oThreadLevelTasks; //tasks for each level of each thread
+  output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks; //mapping thread -> (level -> tasks ODE, level -> tasks DAE)
 protected
-  list<HpcOmSimCode.TaskList> tasksOfLevels;
-  list<array<list<HpcOmSimCode.Task>>> tmpThreadLevelTasks;
-  array<list<list<HpcOmSimCode.Task>>> tmpResultLists;
+  list<HpcOmSimCode.TaskList> tasksOfLevelsOde, tasksOfLevelsDae;
+  list<array<list<HpcOmSimCode.Task>>> tmpThreadLevelTasksDae, tmpThreadLevelTasksOde; //level -> thread -> tasklist
+  array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> tmpResultLists;
 algorithm
-  oThreadLevelTasks := match(iSchedule, iNumOfThreads)
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels,useFixedAssignments=true),_)
+  oThreadLevelTasks := match(iOdeSchedule, iDaeSchedule, iNumOfThreads)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsOde,useFixedAssignments=true),HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsDae,useFixedAssignments=true),_)
       equation
-        tmpResultLists = arrayCreate(iNumOfThreads, {});
-        tmpThreadLevelTasks = List.map1(tasksOfLevels, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
-        tmpResultLists = List.fold1(tmpThreadLevelTasks, convertFixedLevelScheduleToTaskLists1, 1, tmpResultLists);
+        tmpResultLists = arrayCreate(iNumOfThreads, ({},{}));
+        tmpThreadLevelTasksOde = List.map1(tasksOfLevelsOde, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
+        tmpThreadLevelTasksDae = List.map1(tasksOfLevelsDae, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
+        print("convertFixedLevelScheduleToTaskLists: len of tmpThreadLevelTasksOde=" + intString(listLength(tmpThreadLevelTasksOde)) + "\n");
+        tmpResultLists = List.fold(tmpThreadLevelTasksOde, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifyOdeSystem=true), tmpResultLists);
+        tmpResultLists = List.fold(tmpThreadLevelTasksDae, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifyOdeSystem=false), tmpResultLists);
+        print("convertFixedLevelScheduleToTaskLists: len of tmpResultLists[0]=" + intString(listLength(Util.tuple21(arrayGet(tmpResultLists, 1)))) + "\n");
         tmpResultLists = revertTaskLists(1, tmpResultLists);
+        print("convertFixedLevelScheduleToTaskLists: len of tmpResultLists[0]=" + intString(listLength(Util.tuple21(arrayGet(tmpResultLists, 1)))) + "\n");
       then tmpResultLists;
     else
       equation
-        tmpResultLists = arrayCreate(iNumOfThreads, {});
+        tmpResultLists = arrayCreate(iNumOfThreads, ({},{}));
       then tmpResultLists;
   end match;
 end convertFixedLevelScheduleToTaskLists;
@@ -6352,22 +6402,26 @@ protected function convertFixedLevelScheduleToTaskLists1
   "Add the task list of the given array-index to the result list.
   author:marcusw"
   input array<list<HpcOmSimCode.Task>> iLevelTasks;
-  input Integer iCurrentArrayIdx;
-  input array<list<list<HpcOmSimCode.Task>>> iResultList;
-  output array<list<list<HpcOmSimCode.Task>>> oResultList;
+  input Integer iCurrentThreadIdx;
+  input Boolean iModifyOdeSystem;
+  input array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> iResultList;
+  output array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> oResultList;
 protected
-  array<list<list<HpcOmSimCode.Task>>> tmpResultList;
-  list<list<HpcOmSimCode.Task>> oldEntry;
-  list<HpcOmSimCode.Task> newEntry;
+  array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> tmpResultList;
+  list<list<HpcOmSimCode.Task>> entryOde, entryDae;
 algorithm
-  oResultList := matchcontinue(iLevelTasks, iCurrentArrayIdx, iResultList)
-    case(_,_,_)
+  oResultList := matchcontinue(iLevelTasks, iCurrentThreadIdx, iModifyOdeSystem, iResultList)
+    case(_,_,_,_)
       equation
-        true = intLe(iCurrentArrayIdx, arrayLength(iLevelTasks));
-        oldEntry = arrayGet(iResultList, iCurrentArrayIdx);
-        newEntry = arrayGet(iLevelTasks, iCurrentArrayIdx);
-        tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, newEntry::oldEntry);
-        tmpResultList = convertFixedLevelScheduleToTaskLists1(iLevelTasks, iCurrentArrayIdx+1, tmpResultList);
+        true = intLe(iCurrentThreadIdx, arrayLength(iLevelTasks));
+        (entryOde, entryDae) = arrayGet(iResultList, iCurrentThreadIdx);
+        if(iModifyOdeSystem) then
+          entryOde = arrayGet(iLevelTasks, iCurrentThreadIdx)::entryOde;
+        else
+          entryDae = arrayGet(iLevelTasks, iCurrentThreadIdx)::entryDae;
+        end if;
+        tmpResultList = arrayUpdate(iResultList, iCurrentThreadIdx, (entryOde, entryDae));
+        tmpResultList = convertFixedLevelScheduleToTaskLists1(iLevelTasks, iCurrentThreadIdx+1, iModifyOdeSystem, tmpResultList);
       then tmpResultList;
     else iResultList;
   end matchcontinue;
@@ -6375,19 +6429,20 @@ end convertFixedLevelScheduleToTaskLists1;
 
 protected function revertTaskLists
   input Integer iCurrentArrayIdx;
-  input array<list<list<HpcOmSimCode.Task>>> iResultList;
-  output array<list<list<HpcOmSimCode.Task>>> oResultList;
+  input array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> iResultList;
+  output array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> oResultList;
 protected
-  list<list<HpcOmSimCode.Task>> entry;
-  array<list<list<HpcOmSimCode.Task>>> tmpResultList;
+  list<list<HpcOmSimCode.Task>> entryOde, entryDae;
+  array<tuple<list<list<HpcOmSimCode.Task>>, list<list<HpcOmSimCode.Task>>>> tmpResultList;
 algorithm
   oResultList := matchcontinue(iCurrentArrayIdx, iResultList)
     case(_,_)
       equation
         true = intLe(iCurrentArrayIdx, arrayLength(iResultList));
-        entry = arrayGet(iResultList, iCurrentArrayIdx);
-        entry = listReverse(entry);
-        tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, entry);
+        ((entryOde,entryDae)) = arrayGet(iResultList, iCurrentArrayIdx);
+        entryOde = listReverse(entryOde);
+        entryDae = listReverse(entryDae);
+        tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, (entryOde,entryDae));
         tmpResultList = revertTaskLists(iCurrentArrayIdx+1, tmpResultList);
       then tmpResultList;
     else iResultList;
@@ -6420,7 +6475,7 @@ protected function convertFixedLevelScheduleToTaskListsForLevel
   author:marcusw"
   input HpcOmSimCode.TaskList iTasksOfLevel;
   input Integer iThreadCount;
-  output array<list<HpcOmSimCode.Task>> oThreadTasks;
+  output array<list<HpcOmSimCode.Task>> oThreadTasks; //mapping thread -> task list
 protected
   array<list<HpcOmSimCode.Task>> tmpTaskLists;
   list<HpcOmSimCode.Task> tasks;

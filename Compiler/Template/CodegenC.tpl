@@ -605,7 +605,7 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionSymEuler(modelInfo, modelNamePrefixStr)%>
 
-    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.odeSchedule, modelNamePrefixStr)%>
+    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
@@ -2173,9 +2173,9 @@ end functionWhenReinitStatementThen;
 // Begin: Modified functions for HpcOm
 //------------------------------------
 
-template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr)
+template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<tuple<Schedule,Schedule>> hpcOmSchedulesOpt, String modelNamePrefixStr)
 ::=
- let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmScheduleOpt, modelNamePrefixStr) ; separator="\n")
+ let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmSchedulesOpt, modelNamePrefixStr) ; separator="\n")
  match listLength(eqs)
      case 0 then //empty case
        let &loop +=
@@ -2220,11 +2220,11 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
        >>
 end functionXXX_systems_HPCOM;
 
-template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr)
+template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<tuple<Schedule,Schedule>> hpcOmSchedulesOpt, String modelNamePrefixStr)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as EMPTYSCHEDULE(__)) then
+  match hpcOmSchedulesOpt
+    case SOME((hpcOmSchedule as EMPTYSCHEDULE(__),_)) then
       <<
       void terminateHpcOmThreads()
       {
@@ -2232,7 +2232,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
 
       <%functionXXX_system(derivativEquations,name,n,modelNamePrefixStr)%>
       >>
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+    case SOME((hpcOmSchedule as TASKDEPSCHEDULE(__),_)) then
       let taskEqs = functionXXX_system0_HPCOM_TaskDep(hpcOmSchedule.tasks, derivativEquations, type, name, modelNamePrefixStr); separator="\n"
       <<
       void terminateHpcOmThreads()
@@ -2245,7 +2245,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
         <%taskEqs%>
       }
       >>
-    case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
+    case SOME((hpcOmSchedule as LEVELSCHEDULE(__),_)) then
       let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => functionXXX_system0_HPCOM_Level(derivativEquations,name,tasks,type,modelNamePrefixStr); separator="\n"
       <<
       void terminateHpcOmThreads()
@@ -2262,7 +2262,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
         }
       }
       >>
-   case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
+   case SOME((hpcOmSchedule as THREADSCHEDULE(__),_)) then
       let locks = hpcOmSchedule.outgoingDepTasks |> task => function_HPCOM_createLockByDepTask(task, "lock", type); separator="\n"
       let initlocks = hpcOmSchedule.outgoingDepTasks |> task => function_HPCOM_initializeLockByDepTask(task, "lock", type); separator="\n"
       let assignLocks = hpcOmSchedule.outgoingDepTasks |> task => function_HPCOM_assignLockByDepTask(task, "lock", type); separator="\n"
@@ -2871,7 +2871,7 @@ match eqlstlst
   error(sourceInfo(), 'TODO more than ODE list in <%name%> systems')
 end functionXXX_systems_arrayFormat;
 
-template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmSimCode.Schedule> hpcOmSchedule, String modelNamePrefix)
+template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<tuple<Schedule,Schedule>> hpcOmSchedules, String modelNamePrefix)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -2880,7 +2880,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   let &varDecls = buffer ""
   let &fncalls = buffer ""
   let systems = if Flags.isSet(Flags.HPCOM) then
-                    (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, hpcOmSchedule, modelNamePrefix))
+                    (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, hpcOmSchedules, modelNamePrefix))
                 else if Flags.isSet(Flags.PARMODAUTO) then
                     (functionXXX_systems_arrayFormat(derivativEquations, "ODE", &fncalls, &nrfuncs, &varDecls, modelNamePrefix))
                 else
