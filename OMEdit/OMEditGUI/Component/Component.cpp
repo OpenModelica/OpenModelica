@@ -256,9 +256,8 @@ void Component::parseAnnotationString(QString annotation)
   if (list.size() < 8)
     return;
   // read aspectratio, scale, grid
-  //! @note Don't get the preserAspectRatio and InitialScale. Use the values defined for the layer.
-  //  mpCoOrdinateSystem->setPreserveAspectRatio(list.at(4).contains("true"));
-  //  mpCoOrdinateSystem->setInitialScale(list.at(5).toFloat());
+  mpCoOrdinateSystem->setPreserveAspectRatio(list.at(4).contains("true"));
+  mpCoOrdinateSystem->setInitialScale(list.at(5).toFloat());
   qreal horizontal = list.at(6).toFloat();
   qreal vertical = list.at(7).toFloat();
   mpCoOrdinateSystem->setGrid(QPointF(horizontal, vertical));
@@ -1004,7 +1003,7 @@ void Component::resizeComponent(QPointF newPosition)
   mXFactor = 1 + mXFactor;
   mYFactor = 1 + mYFactor;
   // if preserveAspectRatio is true then resize equally
-  if (mpGraphicsView->getCoOrdinateSystem()->getPreserveAspectRatio()) {
+  if (mpCoOrdinateSystem->getPreserveAspectRatio()) {
     qreal factor = qMax(fabs(mXFactor), fabs(mYFactor));
     mXFactor = mXFactor < 0 ? mXFactor = factor * -1 : mXFactor = factor;
     mYFactor = mYFactor < 0 ? mYFactor = factor * -1 : mYFactor = factor;
