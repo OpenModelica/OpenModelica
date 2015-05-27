@@ -1772,7 +1772,7 @@ algorithm
         neqns = BackendEquation.equationLstSize(eqnslst);
         nfreeStates = listLength(varlst);
         // reduce state candidates of number neqns
-        if Flags.getConfigBool(Flags.DSIABLE_DSS) then
+        if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
           (varlst, nfreeStates) = reduceStateCandidates(neqns, varlst, vars, NONE());
         end if;
         // do state selection of that level
