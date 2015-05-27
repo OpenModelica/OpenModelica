@@ -54,6 +54,21 @@ TextEditor::TextEditor(MainWindow *pMainWindow)
 }
 
 /*!
+ * \brief ModelicaTextEditor::setPlainText
+ * Reimplementation of QPlainTextEdit::setPlainText method.
+ * Makes sure we dont update if the passed text is same.
+ * \param text the string to set.
+ */
+void TextEditor::setPlainText(const QString &text)
+{
+  if (text != mpPlainTextEdit->toPlainText()) {
+    mForceSetPlainText = true;
+    mpPlainTextEdit->setPlainText(text);
+    mForceSetPlainText = false;
+  }
+}
+
+/*!
  * \brief TextEditor::showContextMenu
  * Create a context menu.
  * \param point
@@ -63,4 +78,26 @@ void TextEditor::showContextMenu(QPoint point)
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->exec(mapToGlobal(point));
   delete pMenu;
+}
+
+/*!
+ * \brief TextEditor::contentsHasChanged
+ * Slot activated when TextEditor's QTextDocument contentsChanged SIGNAL is raised.
+ * Sets the model as modified so that user knows that his current model is not saved.
+ * \param position
+ * \param charsRemoved
+ * \param charsAdded
+ */
+void TextEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+{
+  Q_UNUSED(position);
+  if (mpModelWidget->isVisible()) {
+    if (charsRemoved == 0 && charsAdded == 0) {
+      return;
+    }
+    /* if user is changing the text. */
+    if (!mForceSetPlainText) {
+      mpModelWidget->setModelModified();
+    }
+  }
 }

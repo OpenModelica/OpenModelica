@@ -171,8 +171,7 @@ public:
   bool isLibraryTreeNodeExpanded(QTreeWidgetItem *item);
   static bool sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2);
   LibraryTreeNode* addLibraryTreeNode(QString name, QString parentName = QString(""), bool isSaved = true, int insertIndex = 0);
-  LibraryTreeNode* addLibraryTreeNode(QString name, bool isSaved, int insertIndex = 0);
-  LibraryTreeNode* addTLMLibraryTreeNode(QString name, bool isSaved, int insertIndex = 0);
+  LibraryTreeNode* addLibraryTreeNode(LibraryTreeNode::LibraryType type, QString name, bool isSaved, int insertIndex = 0);
   LibraryTreeNode* getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive);
   QList<LibraryTreeNode*> getLibraryTreeNodesList();
   void addLibraryComponentObject(LibraryComponent *libraryComponent);

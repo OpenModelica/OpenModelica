@@ -764,11 +764,21 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, QString par
   return pNewLibraryTreeNode;
 }
 
-LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, bool isSaved, int insertIndex)
+/*!
+ * \brief LibraryTreeWidget::addLibraryTreeNode
+ * Adds the LibraryTreeNode to the Libraries Browser.
+ * \param type
+ * \param name
+ * \param isSaved
+ * \param insertIndex
+ * \return
+ */
+LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(LibraryTreeNode::LibraryType type, QString name, bool isSaved, int insertIndex)
 {
   mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(name));
   OMCInterface::getClassInformation_res classInformation;
-  LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Text, name, "", name, classInformation, "", isSaved, this);
+  LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(type, name, "", name, classInformation, "", isSaved, this);
+  pNewLibraryTreeNode->setIsDocumentationClass(false);
   if (insertIndex == 0) {
     addTopLevelItem(pNewLibraryTreeNode);
   } else {
@@ -779,31 +789,10 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, bool isSave
   return pNewLibraryTreeNode;
 }
 
-LibraryTreeNode* LibraryTreeWidget::addTLMLibraryTreeNode(QString name, bool isSaved, int insertIndex)
-{
-  mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(name));
-//  QString fileName = "";
-  OMCInterface::getClassInformation_res classInformation;
-  LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::TLM, name, "", name,
-                                                             classInformation, "", isSaved, this);
-  pNewLibraryTreeNode->setIsDocumentationClass(false);
-
-  if (insertIndex == 0)
-    addTopLevelItem(pNewLibraryTreeNode);
-  else
-    insertTopLevelItem(insertIndex, pNewLibraryTreeNode);
-
-  mLibraryTreeNodesList.append(pNewLibraryTreeNode);
-  mpMainWindow->getStatusBar()->clearMessage();
-  return pNewLibraryTreeNode;
-}
-
 LibraryTreeNode* LibraryTreeWidget::getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity)
 {
-  for (int i = 0 ; i < mLibraryTreeNodesList.size() ; i++)
-  {
-    if (mLibraryTreeNodesList[i]->getNameStructure().compare(nameStructure, caseSensitivity) == 0)
-    {
+  for (int i = 0 ; i < mLibraryTreeNodesList.size() ; i++) {
+    if (mLibraryTreeNodesList[i]->getNameStructure().compare(nameStructure, caseSensitivity) == 0) {
       return mLibraryTreeNodesList[i];
     }
   }
@@ -822,20 +811,18 @@ void LibraryTreeWidget::addLibraryComponentObject(LibraryComponent *libraryCompo
 
 Component* LibraryTreeWidget::getComponentObject(QString className)
 {
-  foreach (LibraryComponent *pLibraryComponent, mLibraryComponentsList)
-  {
-    if (pLibraryComponent->mClassName == className)
+  foreach (LibraryComponent *pLibraryComponent, mLibraryComponentsList) {
+    if (pLibraryComponent->mClassName == className) {
       return pLibraryComponent->mpComponent;
+    }
   }
   return 0;
 }
 
 LibraryComponent* LibraryTreeWidget::getLibraryComponentObject(QString className)
 {
-  foreach (LibraryComponent *pLibraryComponent, mLibraryComponentsList)
-  {
-    if (pLibraryComponent->mClassName == className)
-    {
+  foreach (LibraryComponent *pLibraryComponent, mLibraryComponentsList) {
+    if (pLibraryComponent->mClassName == className) {
       return pLibraryComponent;
     }
   }
@@ -1186,16 +1173,14 @@ bool LibraryTreeWidget::saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTre
 bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
 {
   QString fileName;
-  if (pLibraryTreeNode->getFileName().isEmpty())
-  {
+  if (pLibraryTreeNode->getFileName().isEmpty()) {
     QString name = pLibraryTreeNode->getName();
     fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
                                               Helper::txtFileTypes, NULL, "txt", &name);
-    if (fileName.isEmpty())   // if user press ESC
+    if (fileName.isEmpty()) { // if user press ESC
       return false;
-  }
-  else
-  {
+    }
+  } else {
     fileName = pLibraryTreeNode->getFileName();
   }
 
@@ -1209,8 +1194,7 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
     /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);
     pLibraryTreeNode->setFileName(fileName);
-    if (pLibraryTreeNode->getModelWidget())
-    {
+    if (pLibraryTreeNode->getModelWidget()) {
       pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
       pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
     }
@@ -1892,7 +1876,7 @@ void LibraryTreeWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
     }
   }
   // create a LibraryTreeNode for new loaded TLM file.
-  LibraryTreeNode *pLibraryTreeNode = addTLMLibraryTreeNode(fileInfo.completeBaseName(), false);
+  LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(LibraryTreeNode::TLM, fileInfo.completeBaseName(), false);
   pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
   pLibraryTreeNode->setIsSaved(true);
   pLibraryTreeNode->setFileName(fileInfo.absoluteFilePath());
