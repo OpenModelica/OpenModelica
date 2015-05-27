@@ -213,6 +213,7 @@ private:
   // TLM File Actions
   QAction *mpNewTLMFileAction;
   QAction *mpOpenTLMFileAction;
+  QAction *mpLoadExternModelAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
@@ -311,6 +312,7 @@ public slots:
   void showOpenTransformationFileDialog();
   void createNewTLMFile();
   void openTLMFile();
+  void loadExternalModels();
   void loadSystemLibrary();
   void readOutputFile(qint64 bytes);
   void readErrorFile(qint64 bytes);

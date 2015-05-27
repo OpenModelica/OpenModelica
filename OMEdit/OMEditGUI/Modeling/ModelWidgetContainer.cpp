@@ -2195,7 +2195,21 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     mpDiagramGraphicsScene = 0;
     mpDiagramGraphicsView = 0;
     mpEditor = new TextEditor(this);
-    mpEditor->getPlainTextEdit()->setPlainText(text);
+    if (mpLibraryTreeNode->getFileName().isEmpty()) {
+      TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
+      pTextEditor->setPlainText(text);
+    } else {
+      QFile file(mpLibraryTreeNode->getFileName());
+      if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(mpLibraryTreeNode->getFileName())
+                              .arg(file.errorString()), Helper::ok);
+      } else {
+        TextEditor *pTextEditor = dynamic_cast<TextEditor*>(mpEditor);
+        pTextEditor->setPlainText(QString(file.readAll()));
+        file.close();
+      }
+    }
     mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
     mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
     mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);

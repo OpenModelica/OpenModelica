@@ -1205,24 +1205,17 @@ SaveChangesDialog::SaveChangesDialog(MainWindow *pMainWindow)
 bool SaveChangesDialog::getUnsavedClasses()
 {
   bool hasUnsavedClasses = false;
-  foreach (LibraryTreeNode* pLibraryTreeNode, mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList())
-  {
-    if (!pLibraryTreeNode->isSaved())
-    {
-      if (pLibraryTreeNode->getParentName().isEmpty())
-      {
+  foreach (LibraryTreeNode* pLibraryTreeNode, mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList()) {
+    if (!pLibraryTreeNode->isSaved()) {
+      if (pLibraryTreeNode->getParentName().isEmpty()) {
         hasUnsavedClasses = true;
         QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
         pListItem->setText(pLibraryTreeNode->getNameStructure());
-      }
-      else
-      {
+      } else {
         LibraryTreeNode *pParentLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
-        if (pParentLibraryTreeNode)
-        {
+        if (pParentLibraryTreeNode) {
           QFileInfo fileInfo(pParentLibraryTreeNode->getFileName());
-          if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0))
-          {
+          if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0)) {
             hasUnsavedClasses = true;
             QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
             pListItem->setText(pParentLibraryTreeNode->getNameStructure());
@@ -1242,17 +1235,18 @@ bool SaveChangesDialog::getUnsavedClasses()
 void SaveChangesDialog::saveChanges()
 {
   bool saveResult = true;
-  for (int i = 0; i < mpUnsavedClassesListWidget->count(); i++)
-  {
+  for (int i = 0; i < mpUnsavedClassesListWidget->count(); i++) {
     QListWidgetItem *pListItem = mpUnsavedClassesListWidget->item(i);
     LibraryTreeNode *pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(pListItem->text());
-    if (!mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pLibraryTreeNode))
+    if (!mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(pLibraryTreeNode)) {
       saveResult = false;
+    }
   }
-  if (saveResult)
+  if (saveResult) {
     accept();
-  else
+  } else {
     reject();
+  }
 }
 
 /*!

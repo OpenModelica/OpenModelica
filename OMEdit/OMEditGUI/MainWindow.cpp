@@ -1223,7 +1223,7 @@ void MainWindow::showOpenTransformationFileDialog()
 void MainWindow::createNewTLMFile()
 {
   QString metaModelName = mpLibraryTreeWidget->getUniqueMetaModelName();
-  LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addTLMLibraryTreeNode(metaModelName, false);
+  LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(LibraryTreeNode::TLM, metaModelName, false);
   pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
   mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
   mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true);
@@ -1259,6 +1259,48 @@ void MainWindow::openTLMFile()
       pMessageBox->exec();
     } else {
       mpLibraryTreeWidget->openFile(file, Helper::utf8, false);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+}
+
+/*!
+ * \brief MainWindow::loadExternalModels
+ * Loads the external model(s) for TLM meta-modeling.\n
+ * Slot activated when mpLoadExternModelAction triggered signal is raised.
+ */
+void MainWindow::loadExternalModels()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
+                                              NULL, NULL);
+  if (fileNames.isEmpty()) {
+    return;
+  }
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames) {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file)) {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else {
+      QFileInfo fileInfo(file);
+      LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(LibraryTreeNode::Text, fileInfo.completeBaseName(), true);
+      pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+      pLibraryTreeNode->setIsSaved(true);
+      pLibraryTreeNode->setFileName(fileInfo.absoluteFilePath());
+      mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
     }
   }
   mpStatusBar->clearMessage();
@@ -2172,10 +2214,14 @@ void MainWindow::createActions()
   mpNewTLMFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New TLM File"), this);
   mpNewTLMFileAction->setStatusTip(tr("Create New TLM File"));
   connect(mpNewTLMFileAction, SIGNAL(triggered()), SLOT(createNewTLMFile()));
-  // create new TLM file action
-  mpOpenTLMFileAction = new QAction(QIcon(":/Resources/icons/open.png"), tr("Open TLM File"), this);
+  // open TLM file action
+  mpOpenTLMFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open TLM File"), this);
   mpOpenTLMFileAction->setStatusTip(tr("Opens the TLM file(s)"));
   connect(mpOpenTLMFileAction, SIGNAL(triggered()), SLOT(openTLMFile()));
+  // load External Model action
+  mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
+  mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM meta-modeling"));
+  connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), tr("Save"), this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -2492,6 +2538,7 @@ void MainWindow::createMenus()
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpNewTLMFileAction);
   pFileMenu->addAction(mpOpenTLMFileAction);
+  pFileMenu->addAction(mpLoadExternModelAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
