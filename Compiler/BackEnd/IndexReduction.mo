@@ -1817,22 +1817,30 @@ protected function reduceStateCandidates
    input list<BackendDAE.Var> var_lst;
    input BackendDAE.Variables vars;
    input Option<BackendDAE.IncidenceMatrix> m;
-   output list<BackendDAE.Var> o_var_lst = {};
+   output list<BackendDAE.Var> o_var_lst;
    output Integer nn = n;
 protected
    BackendDAE.Variables vars_ = BackendVariable.listVar1(var_lst);
-   Integer num_vars;
    array<Option<BackendDAE.Var>> array_vars;
    BackendDAE.Var var;
 algorithm
    vars_ := sortStateCandidatesVars(vars_, vars, m);
    BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(
-   numberOfElements = num_vars, varOptArr = array_vars)) := vars_;
-   for i in 1:nn loop
-      SOME(var) := arrayGet(array_vars, i);
-      o_var_lst := var :: o_var_lst;
-   end for;
+   varOptArr = array_vars)) := vars_;
+   o_var_lst := list(reduceStateCandidates1(arrayGet(array_vars, i)) for i in 1:nn);
 end reduceStateCandidates;
+
+protected function reduceStateCandidates1
+  input Option<BackendDAE.Var> ovar;
+  output BackendDAE.Var var;
+algorithm
+  if isSome(ovar) then
+    SOME(var) := ovar;
+  else
+    print("reduceStateCandidates fail!\n");
+    fail();
+  end if;
+end reduceStateCandidates1;
 
 protected function removeFirstOrderDerivatives
 "author Frenkel TUD 2013-01
