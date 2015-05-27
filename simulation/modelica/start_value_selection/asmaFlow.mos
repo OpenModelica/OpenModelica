@@ -654,21 +654,21 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 70: aimc.spacePhasorS.v[3]:VARIABLE(unit = "V" )  "Instantaneous phase voltages".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Voltage type: Real [3]
 // 71: aimc.spacePhasorS.v[2]:VARIABLE(unit = "V" )  "Instantaneous phase voltages".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Voltage type: Real [3]
 // 72: aimc.spacePhasorS.v[1]:VARIABLE(unit = "V" )  "Instantaneous phase voltages".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Voltage type: Real [3]
-// 73: $DER.aimc.airGapS.gamma:DUMMY_DER(fixed = false )  "Rotor displacement angle".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.Angle type: Real []
-// 74: $DER.aimc.airGapS.RotationMatrix[2,1]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Real type: Real [2,2]
-// 75: $DER.aimc.airGapS.RotationMatrix[2,2]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Real type: Real [2,2]
-// 76: $DER.aimc.airGapS.i_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.Current type: Real [2]
-// 77: $DER.aimc.airGapS.i_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.Current type: Real [2]
-// 78: $DER.aimc.idq_rs[1]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current type: Real [2]
-// 79: $DER.aimc.idq_rs[2]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current type: Real [2]
-// 80: $DER.sinevoltage1.i[1]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
-// 81: $DER.sinevoltage1.i[2]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
-// 82: $DER.sinevoltage1.i[3]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
-// 83: $DER.aimc.spacePhasorS.i[1]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
-// 84: $DER.aimc.lssigma.i_[1]:DUMMY_DER(fixed = false ) .asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.Inductor$aimc$lssigma, .Modelica.SIunits.Current type: Real [2]
-// 85: $DER.aimc.lssigma.i_[2]:DUMMY_DER(fixed = false ) .asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.Inductor$aimc$lssigma, .Modelica.SIunits.Current type: Real [2]
-// 86: $DER.aimc.spacePhasorS.i[2]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
-// 87: $DER.aimc.spacePhasorS.i[3]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
+// 73: $DER.aimc.spacePhasorS.i[1]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
+// 74: $DER.aimc.spacePhasorS.i[2]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
+// 75: $DER.aimc.spacePhasorS.i[3]:DUMMY_DER(fixed = false )  "Instantaneous phase currents".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.SpacePhasors.Components.SpacePhasor$aimc$spacePhasorS, .Modelica.SIunits.Current type: Real [3]
+// 76: $DER.aimc.lssigma.i_[1]:DUMMY_DER(fixed = false ) .asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.Inductor$aimc$lssigma, .Modelica.SIunits.Current type: Real [2]
+// 77: $DER.aimc.lssigma.i_[2]:DUMMY_DER(fixed = false ) .asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.Inductor$aimc$lssigma, .Modelica.SIunits.Current type: Real [2]
+// 78: $DER.aimc.airGapS.gamma:DUMMY_DER(fixed = false )  "Rotor displacement angle".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.Angle type: Real []
+// 79: $DER.aimc.airGapS.RotationMatrix[2,1]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Real type: Real [2,2]
+// 80: $DER.aimc.airGapS.RotationMatrix[2,2]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Real type: Real [2,2]
+// 81: $DER.aimc.airGapS.i_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.Current type: Real [2]
+// 82: $DER.aimc.airGapS.i_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.BasicMachines.Components.AirGapS$aimc$airGapS, .Modelica.SIunits.Current type: Real [2]
+// 83: $DER.aimc.idq_rs[1]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current type: Real [2]
+// 84: $DER.aimc.idq_rs[2]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current type: Real [2]
+// 85: $DER.sinevoltage1.i[1]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
+// 86: $DER.sinevoltage1.i[2]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
+// 87: $DER.sinevoltage1.i[3]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs".asmaFlow, .Modelica.Electrical.MultiPhase.Sources.SineVoltage$sinevoltage1, .Modelica.SIunits.Current type: Real [3]
 // 88: $DER.aimc.i_0_s:DUMMY_DER(fixed = false )  "Stator zero-sequence current".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current$aimc$i_0_s type: Real []
 //
 //
@@ -843,28 +843,28 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // var 70 is solved in eqn 72
 // var 71 is solved in eqn 56
 // var 72 is solved in eqn 71
-// var 73 is solved in eqn 31
-// var 74 is solved in eqn 33
-// var 75 is solved in eqn 32
-// var 76 is solved in eqn 59
-// var 77 is solved in eqn 66
-// var 78 is solved in eqn 60
-// var 79 is solved in eqn 65
-// var 80 is solved in eqn 50
-// var 81 is solved in eqn 76
-// var 82 is solved in eqn 49
-// var 83 is solved in eqn 53
-// var 84 is solved in eqn 51
-// var 85 is solved in eqn 69
-// var 86 is solved in eqn 52
-// var 87 is solved in eqn 75
+// var 73 is solved in eqn 53
+// var 74 is solved in eqn 52
+// var 75 is solved in eqn 75
+// var 76 is solved in eqn 51
+// var 77 is solved in eqn 69
+// var 78 is solved in eqn 31
+// var 79 is solved in eqn 33
+// var 80 is solved in eqn 32
+// var 81 is solved in eqn 59
+// var 82 is solved in eqn 66
+// var 83 is solved in eqn 60
+// var 84 is solved in eqn 65
+// var 85 is solved in eqn 50
+// var 86 is solved in eqn 76
+// var 87 is solved in eqn 49
 // var 88 is solved in eqn 54
 //
 //
 // StrongComponents
 // ========================================
 // {88:12}
-// {31:73}
+// {31:78}
 // {29:48}
 // {27:7}
 // {26:6}
@@ -908,10 +908,10 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // {84:11}
 // {22:30}
 // {23:31}
-// {32:75}
-// {33:74}
-// {{{67:77}, {70:76}, {63:25}, {62:24}, {64:15}, {61:14}, {65:79}, {60:78}, {66:85}, {59:84}, {69:42}, {58:43}, {68:38}, {57:39}, {74:71}, {72:70}, {71:72}, {55:20}, {54:88}, {52:86}, {75:82}, {76:81}, {53:83}, {49:80}}
-// ,{50, 73, 56, 51:87, 66, 27, 26}} Size: 4 linear
+// {32:80}
+// {33:79}
+// {{{67:82}, {70:81}, {63:25}, {62:24}, {64:15}, {61:14}, {65:84}, {60:83}, {66:77}, {59:76}, {69:42}, {58:43}, {68:38}, {57:39}, {74:71}, {72:70}, {71:72}, {55:20}, {54:88}, {52:74}, {75:87}, {76:86}, {53:73}, {49:85}}
+// ,{50, 73, 56, 51:75, 66, 27, 26}} Size: 4 linear
 // {77:46}
 // {78:45}
 // {79:44}
