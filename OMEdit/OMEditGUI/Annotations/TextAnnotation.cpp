@@ -38,8 +38,17 @@
 
 #include "TextAnnotation.h"
 
-TextAnnotation::TextAnnotation(QString annotation, Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
+/*!
+ * \class TextAnnotation
+ * \brief Draws the text shapes.
+ */
+/*!
+ * \brief TextAnnotation::TextAnnotation
+ * \param annotation - text annotation string.
+ * \param pComponent - pointer to Component
+ */
+TextAnnotation::TextAnnotation(QString annotation, Component *pComponent)
+  : ShapeAnnotation(pComponent), mpComponent(pComponent)
 {
   // set the default values
   GraphicItem::setDefaults();
@@ -50,6 +59,12 @@ TextAnnotation::TextAnnotation(QString annotation, Component *pParent)
   setRotation(mRotation);
 }
 
+/*!
+ * \brief TextAnnotation::TextAnnotation
+ * \param annotation - text annotation string.
+ * \param inheritedShape
+ * \param pGraphicsView - pointer to GraphicsView
+ */
 TextAnnotation::TextAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
@@ -67,6 +82,11 @@ TextAnnotation::TextAnnotation(QString annotation, bool inheritedShape, Graphics
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
 }
 
+/*!
+ * \brief TextAnnotation::parseShapeAnnotation
+ * Parses the text annotation string
+ * \param annotation - text annotation string.
+ */
 void TextAnnotation::parseShapeAnnotation(QString annotation)
 {
   GraphicItem::parseShapeAnnotation(annotation);
@@ -145,11 +165,21 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   }
 }
 
+/*!
+ * \brief TextAnnotation::boundingRect
+ * Defines the bounding rectangle of the shape.
+ * \return bounding rectangle
+ */
 QRectF TextAnnotation::boundingRect() const
 {
   return shape().boundingRect();
 }
 
+/*!
+ * \brief TextAnnotation::shape
+ * Defines the shape path
+ * \return shape path
+ */
 QPainterPath TextAnnotation::shape() const
 {
   QPainterPath path;
@@ -157,14 +187,27 @@ QPainterPath TextAnnotation::shape() const
   return path;
 }
 
+/*!
+ * \brief TextAnnotation::paint
+ * Reimplementation of QGraphicsItem::paint.
+ * \param painter
+ * \param option
+ * \param widget
+ */
 void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible)
+  if (mVisible) {
     drawTextAnnotaion(painter);
+  }
 }
 
+/*!
+ * \brief TextAnnotation::drawTextAnnotaion
+ * Draws the Text annotation
+ * \param painter
+ */
 void TextAnnotation::drawTextAnnotaion(QPainter *painter)
 {
   applyLinePattern(painter);
@@ -176,21 +219,20 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   mTextString = StringHandler::removeFirstLastQuotes(mTextString);
   mTextString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
   QFont font;
-  if (mFontSize > 0)
-  {
+  if (mFontSize > 0) {
     font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
     // set font underline
-    if(StringHandler::getFontUnderline(mTextStyles))
+    if(StringHandler::getFontUnderline(mTextStyles)) {
       font.setUnderline(true);
+    }
     font.setPointSizeF(mFontSize/4);
     painter->setFont(font);
-  }
-  else
-  {
+  } else {
     font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
     // set font underline
-    if(StringHandler::getFontUnderline(mTextStyles))
+    if(StringHandler::getFontUnderline(mTextStyles)) {
       font.setUnderline(true);
+    }
     painter->setFont(font);
     QRect fontBoundRect = painter->fontMetrics().boundingRect(boundingRect().toRect(), Qt::TextDontClip, mTextString);
     float xFactor = boundingRect().width() / fontBoundRect.width();
@@ -198,43 +240,55 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
     float factor = xFactor < yFactor ? xFactor : yFactor;
     QFont f = painter->font();
     qreal fontSizeFactor = f.pointSizeF()*factor;
-    if ((fontSizeFactor < 12) && mpComponent)
+    if ((fontSizeFactor < 12) && mpComponent) {
       f.setPointSizeF(12);
-    else if (fontSizeFactor <= 0)
+    } else if (fontSizeFactor <= 0) {
       f.setPointSizeF(1);
-    else
+    } else {
       f.setPointSizeF(fontSizeFactor);
+    }
     painter->setFont(f);
   }
-  if (mpComponent)
-  {
-    if (sceneTransform().m11() < 0)
-    {
-      painter->scale(-1.0, 1.0);
-      painter->translate(((-boundingRect().left()) - boundingRect().right()), 0);
+  if (mpComponent) {
+    Component *pComponent = mpComponent->getRootParentComponent();
+    if (pComponent && pComponent->getTransformation()) {
+      QPointF extent1 = pComponent->getTransformation()->getExtent1();
+      QPointF extent2 = pComponent->getTransformation()->getExtent2();
+      qreal dy = ((-boundingRect().top()) - boundingRect().bottom());
+      // if horizontal flip
+      if (extent2.x() < extent1.x()) {
+        painter->scale(-1.0, 1.0);
+      }
+      // if vertical flip
+      if (extent2.y() < extent1.y()) {
+        painter->scale(1.0, -1.0);
+        painter->translate(0, dy);
+      }
+      qreal angle = StringHandler::getNormalizedAngle(pComponent->getTransformation()->getRotateAngle());
+      if (angle == 180) {
+        painter->scale(-1.0, -1.0);
+        painter->translate(0, dy);
+      }
     }
-    if (sceneTransform().m22() < 0)
-    {
-      painter->scale(1.0, -1.0);
-      painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
-    }
-  }
-  else
-  {
+  } else {
     qreal angle = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
-    if (angle == 180)
-    {
+    if (angle == 180) {
       painter->scale(-1.0, -1.0);
       painter->translate(((-boundingRect().left()) - boundingRect().right()), ((-boundingRect().top()) - boundingRect().bottom()));
     }
   }
   // draw the font
-  if (mpComponent)
+  if (mpComponent) {
     painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
-  else if (boundingRect().width() > 0 && boundingRect().height() > 0)
+  } else if (boundingRect().width() > 0 && boundingRect().height() > 0) {
     painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
+  }
 }
 
+/*!
+ * \brief TextAnnotation::getShapeAnnotation
+ * \return the shape annotation in Modelica syntax.
+ */
 QString TextAnnotation::getShapeAnnotation()
 {
   QStringList annotationString;
@@ -281,6 +335,11 @@ QString TextAnnotation::getShapeAnnotation()
   return QString("Text(").append(annotationString.join(",")).append(")");
 }
 
+/*!
+ * \brief TextAnnotation::updateTextStringHelper
+ * Helper function for TextAnnotation::updateTextString()
+ * \param regExp
+ */
 void TextAnnotation::updateTextStringHelper(QRegExp regExp)
 {
   int pos = 0;
@@ -313,6 +372,10 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
   }
 }
 
+/*!
+ * \brief TextAnnotation::updateTextString
+ * Updates the text to display.
+ */
 void TextAnnotation::updateTextString()
 {
   /*
@@ -351,6 +414,10 @@ void TextAnnotation::updateTextString()
   }
 }
 
+/*!
+ * \brief TextAnnotation::duplicate
+ * Creates a duplicate of this object.
+ */
 void TextAnnotation::duplicate()
 {
   TextAnnotation *pTextAnnotation = new TextAnnotation("", false, mpGraphicsView);
