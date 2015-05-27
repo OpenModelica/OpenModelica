@@ -48,7 +48,7 @@ class TextAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  TextAnnotation(QString annotation, Component *pParent);
+  TextAnnotation(QString annotation, Component *pComponent);
   TextAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
