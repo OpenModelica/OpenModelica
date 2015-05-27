@@ -2382,6 +2382,30 @@ algorithm
   end matchcontinue;
 end getRelations;
 
+public function getAllCrefs "author: lochel
+  This function extracts all crefs from the input expression, except 'time'."
+  input DAE.Exp inExp;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  (_, outCrefs) := traverseExpBottomUp(inExp, getAllCrefs2, {});
+end getAllCrefs;
+
+protected function getAllCrefs2
+   input DAE.Exp inExp;
+   input list<DAE.ComponentRef> inCrefList;
+   output DAE.Exp outExp = inExp;
+   output list<DAE.ComponentRef> outCrefList = inCrefList;
+protected
+  DAE.ComponentRef cr;
+algorithm
+  if isCref(inExp) then
+    DAE.CREF(componentRef=cr) := inExp;
+    if not ComponentReference.crefEqual(cr, DAE.crefTime) and not listMember(cr, inCrefList) then
+      outCrefList := cr::outCrefList;
+    end if;
+  end if;
+end getAllCrefs2;
+
 public function allTerms
 "simliar to terms, but also perform expansion of
  multiplications to reveal more terms, like for instance:

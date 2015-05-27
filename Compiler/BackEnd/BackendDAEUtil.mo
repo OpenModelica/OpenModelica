@@ -8269,21 +8269,21 @@ algorithm
   comp := BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
 end makeSingleEquationComp;
 
-public function getAliasVars
+public function getAliasVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.Variables outAliasVars;
 algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(aliasVars=outAliasVars)) := inDAE;
 end getAliasVars;
 
-public function getKnownVars
+public function getKnownVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.Variables outKnownVars;
 algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars=outKnownVars)) := inDAE;
 end getKnownVars;
 
-public function setAliasVars
+public function setAliasVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.Variables inAliasVars;
   output BackendDAE.BackendDAE outDAE;
@@ -8296,7 +8296,7 @@ algorithm
   outDAE := BackendDAE.DAE(eqs, shared);
 end setAliasVars;
 
-public function setKnownVars
+public function setKnownVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.Variables inKnownVars;
   output BackendDAE.BackendDAE outDAE;

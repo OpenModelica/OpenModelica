@@ -152,25 +152,37 @@ protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}
 //
 // =============================================================================
 
-public function removeSimpleEquations "author: Frenkel TUD 2012-12
-  This Function remove with a linear scaling with respect to the number of
-  equations in an acausal system as much as possible simple equations."
+public function removeSimpleEquations "
+  This is the main function of 'remove simple equations' for both acausal and
+  causal systems."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-protected
-  Boolean b;
 algorithm
-  b := BackendDAEUtil.hasDAEMatching(inDAE);
-  outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
-    case "default" then if b then causal(inDAE) else fastAcausal(inDAE);
-    case "causal" then causal(inDAE);
-    case "fastAcausal" then fastAcausal(inDAE);
-    case "allAcausal" then allAcausal(inDAE);
-    case "new" then performAliasEliminationBB(inDAE);
-    else inDAE;
-  end match;
+  if BackendDAEUtil.hasDAEMatching(inDAE) then
+    // This case performs "remove simple equations" on a causal system.
+    // Note: It is fine to do some substitutions in order to minimize SCCs, but
+    // alias/known variable vectors may not be touched.
+    outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
+      case "default" then causal(inDAE);
+      case "causal" then causal(inDAE);
+      case "new" then performAliasEliminationBB(inDAE);
+      else inDAE;
+    end match;
 
-  outDAE := fixAliasVars(outDAE) "workaround for #3323";
+    outDAE := fixAliasVars(outDAE) "workaround for #3323";
+    outDAE := fixAliasVarsCausal(inDAE, outDAE);
+  else
+    // This case performs "remove simple equations" on an acausal system.
+    outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
+      case "default" then fastAcausal(inDAE);
+      case "fastAcausal" then fastAcausal(inDAE);
+      case "allAcausal" then allAcausal(inDAE);
+      case "new" then performAliasEliminationBB(inDAE);
+      else inDAE;
+    end match;
+
+    outDAE := fixAliasVars(outDAE) "workaround for #3323";
+  end if;
 end removeSimpleEquations;
 
 protected function fixAliasVars "author: lochel
@@ -188,6 +200,7 @@ protected
 algorithm
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
   knownVarList := BackendVariable.varList(BackendDAEUtil.getKnownVars(inDAE));
+
   for var in BackendVariable.varList(aliasVars) loop
     binding := BackendVariable.varBindExp(var);
     if Expression.isConst(binding) then
@@ -196,10 +209,95 @@ algorithm
       aliasVarList := var::aliasVarList;
     end if;
   end for;
+
   outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
   outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
 end fixAliasVars;
 
+protected function fixAliasVarsCausal "author: lochel
+  TODO: Remove this once removeSimpleEquations is implemented properly.
+
+  This module moves back all newly introduced alias variables to the correct partition."
+  input BackendDAE.BackendDAE inDAE1 "original dae";
+  input BackendDAE.BackendDAE inDAE2 "transformed dae";
+  output BackendDAE.BackendDAE outDAE = inDAE2;
+protected
+  BackendDAE.Variables aliasVars1;
+  BackendDAE.Variables aliasVars2;
+  list<BackendDAE.Var> aliasVarList = {};
+  DAE.ComponentRef cref;
+algorithm
+  aliasVars1 := BackendDAEUtil.getAliasVars(inDAE1);
+  aliasVars2 := BackendDAEUtil.getAliasVars(inDAE2);
+
+  for var in BackendVariable.varList(aliasVars2) loop
+    cref := BackendVariable.varCref(var);
+    if not BackendVariable.existsVar(cref, aliasVars1, false) then
+      // put var back to the correct partition
+      outDAE := fixAliasVarsCausal2(var, outDAE);
+    else
+      aliasVarList := var::aliasVarList;
+    end if;
+  end for;
+
+  outDAE := BackendDAEUtil.setAliasVars(outDAE, BackendVariable.listVar(aliasVarList));
+end fixAliasVarsCausal;
+
+protected function fixAliasVarsCausal2
+  input BackendDAE.Var inVar;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  DAE.Exp binding;
+  DAE.ComponentRef rightCref;
+  BackendDAE.EqSystems eqs, eqs1 = {};
+  BackendDAE.Shared shared;
+  Boolean done=false;
+
+  BackendDAE.Var var;
+  BackendDAE.Equation eqn;
+
+  BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+  BackendDAE.EquationArray orderedEqs "ordered Equations";
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets "the statesets of the system";
+  BackendDAE.BaseClockPartitionKind partitionKind;
+algorithm
+  try
+    binding := BackendVariable.varBindExp(inVar);
+    rightCref::{} := Expression.getAllCrefs(binding);
+    //print("rightCref: " + ComponentReference.printComponentRefStr(rightCref) + "\n");
+    BackendDAE.DAE(eqs, shared) := inDAE;
+    var := BackendVariable.setBindExp(inVar, NONE());
+    var := BackendVariable.setVarFixed(var, false) "??? should we do this ???";
+    eqn := BackendDAE.EQUATION(BackendVariable.varExp(var), binding, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+    for eq in eqs loop
+      BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) := eq;
+      if BackendVariable.existsVar(rightCref, orderedVars, false) then
+        orderedVars := BackendVariable.addVar(var, orderedVars);
+        orderedEqs := BackendEquation.addEquation(eqn, orderedEqs);
+        eqs1 := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind)::eqs1;
+        false := done;
+        done := true;
+      else
+        eqs1 := eq::eqs1;
+      end if;
+    end for;
+
+    // if no partition was selected, create a new one
+    if not done then
+      eqs1 := BackendDAE.EQSYSTEM(BackendVariable.listVar({var}), BackendEquation.listEquation({eqn}), NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNSPECIFIED_PARTITION())::eqs1;
+    end if;
+    outDAE := BackendDAE.DAE(listReverse(eqs1), shared);
+    //BackendDump.dumpVarList({inVar}, "fixAliasVarsCausal2 done for ...");
+  else
+    BackendDump.dumpVarList({inVar}, "fixAliasVarsCausal2 failed for ...");
+    Error.addCompilerError("fixAliasVarsCausal2 failed");
+    fail();
+  end try;
+end fixAliasVarsCausal2;
 
 // =============================================================================
 // section for fastAcausal
@@ -223,6 +321,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
+  unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
@@ -233,6 +332,22 @@ algorithm
   // traverse the shared parts
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
 end fastAcausal;
+
+protected function addUnreplaceable
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input HashSet.HashSet inUnreplaceable;
+  output HashSet.HashSet outUnreplaceable = inUnreplaceable;
+protected
+  BackendDAE.Variables orderedVars;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars) := syst;
+  for var in BackendVariable.varList(orderedVars) loop
+    if BackendVariable.varUnreplaceable(var) then
+      outUnreplaceable := BaseHashSet.add(BackendVariable.varCref(var), outUnreplaceable);
+    end if;
+  end for;
+end addUnreplaceable;
 
 protected function fastAcausal1 "author: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
@@ -363,6 +478,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
+  unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
@@ -428,6 +544,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
   unReplaceable := HashSet.emptyHashSet();
+  unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   // do not replace state sets
@@ -4125,7 +4242,7 @@ protected function traverseCrefUnreplaceable
   input HashSet.HashSet iUnreplaceable;
   output HashSet.HashSet oUnreplaceable;
 algorithm
-  oUnreplaceable := match(inCref, preCref, iUnreplaceable)
+  oUnreplaceable := match(inCref, preCref)
     local
       DAE.Ident name;
       DAE.ComponentRef cr, pcr;
@@ -4133,40 +4250,35 @@ algorithm
       list<DAE.Subscript> subs;
       HashSet.HashSet unReplaceable;
       Boolean b;
-    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), SOME(pcr), _)
-      equation
-        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-        pcr = if b then ComponentReference.crefPrependIdent(pcr, name, {}, ty) else pcr;
-        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
-        pcr = ComponentReference.crefPrependIdent(pcr, name, subs, ty);
-      then
-        traverseCrefUnreplaceable(cr, SOME(pcr), unReplaceable);
-    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), NONE(), _)
-      equation
-        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-        pcr = DAE.CREF_IDENT(name, ty, {});
-        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
-      then
-        traverseCrefUnreplaceable(cr, SOME(DAE.CREF_IDENT(name, ty, subs)), unReplaceable);
 
-    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), SOME(pcr), _)
-      equation
-        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-        pcr = ComponentReference.crefPrependIdent(pcr, name, {}, ty);
-        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
-      then
-        unReplaceable;
-    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), NONE(), _)
-      equation
-        (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-        pcr = DAE.CREF_IDENT(name, ty, {});
-        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
-      then
-        unReplaceable;
+    case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), SOME(pcr)) equation
+      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+      pcr = if b then ComponentReference.crefPrependIdent(pcr, name, {}, ty) else pcr;
+      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+      pcr = ComponentReference.crefPrependIdent(pcr, name, subs, ty);
+    then traverseCrefUnreplaceable(cr, SOME(pcr), unReplaceable);
 
-    case (DAE.CREF_ITER(), _, _) then iUnreplaceable;
-    case (DAE.OPTIMICA_ATTR_INST_CREF(), _, _) then iUnreplaceable;
-    case (DAE.WILD(), _, _) then iUnreplaceable;
+    case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), NONE()) equation
+      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+      pcr = DAE.CREF_IDENT(name, ty, {});
+      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+    then traverseCrefUnreplaceable(cr, SOME(DAE.CREF_IDENT(name, ty, subs)), unReplaceable);
+
+    case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), SOME(pcr)) equation
+      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+      pcr = ComponentReference.crefPrependIdent(pcr, name, {}, ty);
+      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+    then unReplaceable;
+
+    case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), NONE()) equation
+      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
+      pcr = DAE.CREF_IDENT(name, ty, {});
+      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+    then unReplaceable;
+
+    case (DAE.CREF_ITER(), _) then iUnreplaceable;
+    case (DAE.OPTIMICA_ATTR_INST_CREF(), _) then iUnreplaceable;
+    case (DAE.WILD(), _) then iUnreplaceable;
   end match;
 end traverseCrefUnreplaceable;
 
@@ -4920,7 +5032,7 @@ BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr = vars)) := in
 end determineAliasLst;
 
 
-public function getAliasAttributes "BB,
+protected function getAliasAttributes "BB,
 go through all equation systems and set the start and nominal
 values of the alias variables.
 "
