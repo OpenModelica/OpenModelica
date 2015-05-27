@@ -25,6 +25,7 @@ noOCP.mos \
 ocpWithInputs.mos \
 OSP.mos \
 OSP2.mos \
+pendel.mos \
 SC.mos \
 staticOP.mos \
 VDP.mos \
