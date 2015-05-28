@@ -185,7 +185,7 @@ public:
   void unloadClassHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
-  QString getUniqueMetaModelName(QString metaModelName = QString("MetaModel"), int number = 1);
+  QString getUniqueLibraryTreeNodeName(QString name, int number = 1);
   bool isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeNode* getLibraryTreeNodeFromFile(QString fileName, int lineNumber);

@@ -188,7 +188,12 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   QString errorMessage;
   QString message;
   if(messageItem.getMessageItemType()== MessageItem::Modelica) {
-    message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
+    // if message already have tags then just use it.
+    if (Qt::mightBeRichText(messageItem.getMessage())) {
+      message = messageItem.getMessage();
+    } else {
+      message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
+    }
   } else if(messageItem.getMessageItemType()== MessageItem::TLM) {
     message = messageItem.getMessage().remove("<p>");
   }

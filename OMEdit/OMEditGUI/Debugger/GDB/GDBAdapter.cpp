@@ -807,10 +807,14 @@ void GDBAdapter::createFullBacktraceCB(GDBMIResultRecord *pGDBMIResultRecord)
 {
   QString backtrace = QString(pGDBMIResultRecord->consoleStreamOutput.c_str()) + QString(pGDBMIResultRecord->logStreamOutput.c_str());
   LibraryTreeWidget *pLibraryTreeWidget = mpDebuggerMainWindow->getMainWindow()->getLibraryTreeWidget();
-  LibraryTreeNode *pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(LibraryTreeNode::Text, "Backtrace", false);
-  pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
-  pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-  pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, false, false, backtrace);
+  LibraryTreeNode *pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(LibraryTreeNode::Text,
+                                                                             pLibraryTreeWidget->getUniqueLibraryTreeNodeName("Backtrace"),
+                                                                             false);
+  if (pLibraryTreeNode) {
+    pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+    pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+    pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, false, false, backtrace);
+  }
 }
 
 /*!

@@ -775,6 +775,13 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, QString par
  */
 LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(LibraryTreeNode::LibraryType type, QString name, bool isSaved, int insertIndex)
 {
+  LibraryTreeNode *pLibraryTreeNode = getLibraryTreeNode(name);
+  if (pLibraryTreeNode) {
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                                 QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                                                 .arg(name), Helper::scriptingKind, Helper::errorLevel));
+    return 0;
+  }
   mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(name));
   OMCInterface::getClassInformation_res classInformation;
   LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(type, name, "", name, classInformation, "", isSaved, this);
@@ -789,8 +796,26 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(LibraryTreeNode::LibraryT
   return pNewLibraryTreeNode;
 }
 
+/*!
+ * \brief LibraryTreeWidget::getLibraryTreeNode
+ * Search the LibraryTreeNode using the qualified path.
+ * \param nameStructure
+ * \param caseSensitivity
+ * \return
+ */
 LibraryTreeNode* LibraryTreeWidget::getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity)
 {
+  /* In order to make the search a bit quicker we search in toplevel items first.
+   * If no item is found then we search inside the items.
+   */
+  LibraryTreeNode *pLibraryTreeNode;
+  for (int i = 0 ; i < topLevelItemCount(); i++) {
+    pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(topLevelItem(i));
+    if (pLibraryTreeNode->getNameStructure().compare(nameStructure, caseSensitivity) == 0) {
+      return pLibraryTreeNode;
+    }
+  }
+  // search all items
   for (int i = 0 ; i < mLibraryTreeNodesList.size() ; i++) {
     if (mLibraryTreeNodesList[i]->getNameStructure().compare(nameStructure, caseSensitivity) == 0) {
       return mLibraryTreeNodesList[i];
@@ -1014,14 +1039,20 @@ LibraryTreeNode* LibraryTreeWidget::findParentLibraryTreeNodeSavedInSameFile(Lib
   }
 }
 
-QString LibraryTreeWidget::getUniqueMetaModelName(QString metaModelName, int number)
+/*!
+ * \brief LibraryTreeWidget::getUniqueLibraryTreeNodeName
+ * Finds the unique name for a new LibraryTreeNode based on the name suggested.
+ * \param name
+ * \param number
+ * \return
+ */
+QString LibraryTreeWidget::getUniqueLibraryTreeNodeName(QString name, int number)
 {
-  QString newMetaModelName = QString(metaModelName).append(QString::number(number));
-  for (int i = 0; i < topLevelItemCount(); ++i)
-  {
+  QString newMetaModelName = QString(name).append(QString::number(number));
+  for (int i = 0; i < topLevelItemCount(); ++i) {
     LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(topLevelItem(i));
     if (pLibraryTreeNode && pLibraryTreeNode->getName().compare(newMetaModelName, Qt::CaseSensitive) == 0) {
-      newMetaModelName = getUniqueMetaModelName(metaModelName, ++number);
+      newMetaModelName = getUniqueLibraryTreeNodeName(name, ++number);
       break;
     }
   }
@@ -1057,11 +1088,13 @@ void LibraryTreeWidget::loadDependentLibraries(QStringList libraries)
     LibraryTreeNode* pLoadedLibraryTreeNode = getLibraryTreeNode(library);
     if (!pLoadedLibraryTreeNode) {
       LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(library);
-      pLibraryTreeNode->setSystemLibrary(true);
-      /* since LibraryTreeWidget::addLibraryTreeNode clears the status bar message, so we should set it one more time. */
-      mpMainWindow->getStatusBar()->showMessage(tr("Parsing").append(": ").append(library));
-      // create library tree nodes
-      createLibraryTreeNodes(pLibraryTreeNode);
+      if (pLibraryTreeNode) {
+        pLibraryTreeNode->setSystemLibrary(true);
+        /* since LibraryTreeWidget::addLibraryTreeNode clears the status bar message, so we should set it one more time. */
+        mpMainWindow->getStatusBar()->showMessage(tr("Parsing").append(": ").append(library));
+        // create library tree nodes
+        createLibraryTreeNodes(pLibraryTreeNode);
+      }
     }
   }
 }
@@ -1844,7 +1877,9 @@ void LibraryTreeWidget::openModelicaFile(QString fileName, QString encoding, boo
         }
         foreach (QString model, classesList) {
           LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(model);
-          createLibraryTreeNodes(pLibraryTreeNode);
+          if (pLibraryTreeNode) {
+            createLibraryTreeNodes(pLibraryTreeNode);
+          }
           if (showProgress) mpMainWindow->getProgressBar()->setValue(++progressvalue);
         }
         mpMainWindow->addRecentFile(fileName, encoding);
@@ -1877,11 +1912,13 @@ void LibraryTreeWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
   }
   // create a LibraryTreeNode for new loaded TLM file.
   LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(LibraryTreeNode::TLM, fileInfo.completeBaseName(), false);
-  pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
-  pLibraryTreeNode->setIsSaved(true);
-  pLibraryTreeNode->setFileName(fileInfo.absoluteFilePath());
-  addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-  mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  if (pLibraryTreeNode) {
+    pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+    pLibraryTreeNode->setIsSaved(true);
+    pLibraryTreeNode->setFileName(fileInfo.absoluteFilePath());
+    addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+    mpMainWindow->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  }
   if (showProgress) mpMainWindow->getStatusBar()->clearMessage();
 }
 
@@ -1921,7 +1958,9 @@ void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
       }
       LibraryTreeNode *pLibraryTreeNode;
       pLibraryTreeNode = addLibraryTreeNode(modelName, parentName);
-      createLibraryTreeNodes(pLibraryTreeNode);
+      if (pLibraryTreeNode) {
+        createLibraryTreeNodes(pLibraryTreeNode);
+      }
     }
   }
 }

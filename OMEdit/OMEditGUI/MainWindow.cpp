@@ -1222,11 +1222,13 @@ void MainWindow::showOpenTransformationFileDialog()
   */
 void MainWindow::createNewTLMFile()
 {
-  QString metaModelName = mpLibraryTreeWidget->getUniqueMetaModelName();
+  QString metaModelName = mpLibraryTreeWidget->getUniqueLibraryTreeNodeName("MetaModel");
   LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(LibraryTreeNode::TLM, metaModelName, false);
-  pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
-  mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-  mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true);
+  if (pLibraryTreeNode) {
+    pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+    mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+    mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true);
+  }
 }
 
 /*!
@@ -1297,10 +1299,12 @@ void MainWindow::loadExternalModels()
     } else {
       QFileInfo fileInfo(file);
       LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(LibraryTreeNode::Text, fileInfo.completeBaseName(), true);
-      pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
-      pLibraryTreeNode->setIsSaved(true);
-      pLibraryTreeNode->setFileName(fileInfo.absoluteFilePath());
-      mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+      if (pLibraryTreeNode) {
+        pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
+        pLibraryTreeNode->setIsSaved(true);
+        pLibraryTreeNode->setFileName(fileInfo.absoluteFilePath());
+        mpLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+      }
     }
   }
   mpStatusBar->clearMessage();
