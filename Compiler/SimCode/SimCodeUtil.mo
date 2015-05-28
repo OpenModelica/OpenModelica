@@ -14835,13 +14835,15 @@ author: waurich TUD 2015-05"
 protected
   list<BackendDAE.Var> vars, states;
   list<Integer> idcs;
+  array<Boolean> markVars;
 algorithm
   vars := BackendDAEUtil.getAllVarLst(inDAE);
   states := List.filterOnTrue(vars, BackendVariable.isStateVar);
   if listEmpty(states) then
     highestDerivation := 0;
   else
-    idcs := List.map2(states,getHighestDerivation1,BackendVariable.listVar1(states),0);
+    markVars := arrayCreate(listLength(states),false);
+    idcs := List.map3(states,getHighestDerivation1,BackendVariable.listVar1(states),markVars,0);
     highestDerivation := List.fold(idcs,intMax,0);
   end if;
 end getHighestDerivation;
@@ -14850,22 +14852,30 @@ protected function getHighestDerivation1"checks if a state is the derivative of 
 author: waurich TUD 2015-05"
   input BackendDAE.Var stateIn;
   input BackendDAE.Variables allStates;
+  input array<Boolean> markVarsIn;
   input Integer derivationIn;
   output Integer derivationOut;
 algorithm
-  derivationOut := matchcontinue(stateIn,allStates,derivationIn)
+  derivationOut := matchcontinue(stateIn,allStates,markVarsIn,derivationIn)
     local
-      Integer index;
+      Integer index, pos;
+      array<Boolean> markVars;
       BackendDAE.Var var;
       DAE.ComponentRef derCref;
-  case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=index,derName = SOME(derCref))),_,_)
+  case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=index,derName = SOME(derCref))),_,_,_)
     algorithm
       // try to find the derivative in the states
-      ({var},_) := BackendVariable.getVar(derCref, allStates);
+      ({var},{pos}) := BackendVariable.getVar(derCref, allStates);
+      // has this var already been checked or is the derivative the var itself?
+      false := arrayGet(markVarsIn,pos);
       false := BackendVariable.varEqual(stateIn,var);
-      true := false;
-    then getHighestDerivation1(var,allStates,derivationIn+1);
+      markVars := arrayUpdate(markVarsIn,pos,true);
+    then getHighestDerivation1(var,allStates,markVars,derivationIn+1);
   else
+    algorithm    
+      for i in List.intRange(arrayLength(markVarsIn)) loop
+        _ := arrayUpdate(markVarsIn,i,false);
+      end for;
     then derivationIn+1;
   end matchcontinue;
 end getHighestDerivation1;
