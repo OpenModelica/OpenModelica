@@ -3048,7 +3048,9 @@ bool ModelWidget::modelicaEditorTextChanged()
       parentName = "";
     LibraryTreeNode *pLibraryTreeNode;
     pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(modelName, parentName, false);
-    pLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
+    if (pLibraryTreeNode) {
+      pLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
+    }
   }
   return true;
 }
