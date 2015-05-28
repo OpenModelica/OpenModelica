@@ -52,7 +52,6 @@ Component::Component(QString annotation, QString name, QString className, Compon
   mComponentType = Component::Root;
   initialize();
   setComponentFlags(true);
-  setAcceptHoverEvents(true);
   getClassInheritedComponents(true);
   parseAnnotationString(annotation);
   /* if component doesn't exists show it as red cross box. */
@@ -98,7 +97,6 @@ Component::Component(QString annotation, QString className, StringHandler::Model
   mpOMCProxy = pParent->getOMCProxy();
   mpGraphicsView = isLibraryComponent() ? 0 : pParent->getGraphicsView();
   initialize();
-  setAcceptHoverEvents(true);
   getClassInheritedComponents();
   parseAnnotationString(annotation);
 }
@@ -116,7 +114,6 @@ Component::Component(QString annotation, QString transformationString, Component
   mpOMCProxy = pParent->getOMCProxy();
   mpGraphicsView = isLibraryComponent() ? 0 : pParent->getGraphicsView();
   initialize();
-  setAcceptHoverEvents(true);
   getClassInheritedComponents(false, true);
   parseAnnotationString(annotation);
   mpTransformation = new Transformation(StringHandler::Icon);
