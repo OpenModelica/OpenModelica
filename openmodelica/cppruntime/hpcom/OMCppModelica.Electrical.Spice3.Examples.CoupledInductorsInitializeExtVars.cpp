@@ -1,0 +1,3 @@
+  void CoupledInductorsInitialize::initializeExternalVar()
+  {
+  }
