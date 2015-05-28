@@ -18,12 +18,28 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path)
 {
     _config = boost::shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
     _algloopsolverfactory = createAlgLoopSolverFactory(_config->getGlobalSettings());
+
+    #ifdef RUNTIME_PROFILING
+    if(MeasureTime::getInstance() != NULL)
+    {
+        measureTimeFunctionsArray = std::vector<MeasureTimeData>(2); //0 initialize //1 solveInitialSystem
+        measuredFunctionStartValues = MeasureTime::getZeroValues();
+        measuredFunctionEndValues = MeasureTime::getZeroValues();
+
+        measureTimeFunctionsArray[0] = MeasureTimeData("initialize");
+        measureTimeFunctionsArray[1] = MeasureTimeData("solveInitialSystem");
+    }
+    #endif
 }
 
 SimController::~SimController()
 {
-    // _systems.clear();
-    // _sim_vars.clear();
+    #ifdef RUNTIME_PROFILING
+    if(measuredFunctionStartValues)
+      delete measuredFunctionStartValues;
+    if(measuredFunctionEndValues)
+      delete measuredFunctionEndValues;
+    #endif
 }
 
 boost::weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string modelKey)
@@ -199,6 +215,14 @@ void SimController::Start(SimSettings simsettings, string modelKey)
 {
     try
     {
+        #ifdef RUNTIME_PROFILING
+        MEASURETIME_REGION_DEFINE(simControllerInitializeHandler, "SimControllerInitialize");
+        MEASURETIME_REGION_DEFINE(simControllerSolveInitialSystemHandler, "SimControllerSolveInitialSystem");
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_START(measuredFunctionStartValues, simControllerInitializeHandler, "CVodeWriteOutput");
+        }
+        #endif
         boost::shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey).lock();
 
         IGlobalSettings* global_settings = _config->getGlobalSettings();
@@ -223,7 +247,25 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         solver_settings->setUpperLimit(simsettings.upper_limit);
         solver_settings->setRTol(simsettings.tolerance);
         solver_settings->setATol(simsettings.tolerance);
+        #ifdef RUNTIME_PROFILING
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[0], simControllerInitializeHandler);
+            measuredFunctionStartValues = MeasureTime::getZeroValues();
+            measuredFunctionEndValues = MeasureTime::getZeroValues();
+            MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
+        }
+        #endif
+
         _simMgr->initialize();
+
+        #ifdef RUNTIME_PROFILING
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[1], simControllerSolveInitialSystemHandler);
+            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",&measureTimeFunctionsArray);
+        }
+        #endif
 
         _simMgr->runSimulation();
 
