@@ -421,6 +421,7 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
         case ("openmp") then
           let threadFuncs = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
           <<
+          omp_set_dynamic(0);
           <%threadFuncs%>
           <%initlocksOde%>
           <%initlocksDae%>
@@ -458,6 +459,7 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
         case ("tbb") then
           let tbbVars = generateTbbConstructorExtension(odeSchedule.tasks, daeSchedule.tasks, modelNamePrefixStr)
           <<
+          omp_set_dynamic(1);
           <%tbbVars%>
           >>
         else ""
@@ -744,7 +746,6 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
           {
             this->_evaluateODE = evaluateODE;
             this->_command = command;
-            omp_set_dynamic(1);
             <%&varDecls%>
             if(_evaluateODE)
             {
@@ -1028,28 +1029,30 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       let threadReleaseLocksDae = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, iType); separator="\n"
 
       <<
-      if (omp_get_dynamic())
-        omp_set_dynamic(0);
       #pragma omp parallel num_threads(<%arrayLength(threadTasksOde)%>)
       {
          int threadNum = omp_get_thread_num();
 
-         //Assign locks first
-         <%threadAssignLocksOde%>
-         <%threadAssignLocksDae%>
-         #pragma omp barrier
          if(_evaluateODE)
          {
+           //Assign locks first
+           <%threadAssignLocksOde%>
+           #pragma omp barrier
            <%odeEqs%>
+           //Release locks after calculation
+           #pragma omp barrier
+           <%threadReleaseLocksOde%>
          }
          else
          {
+           //Assign locks first
+           <%threadAssignLocksDae%>
+           #pragma omp barrier
            <%daeEqs%>
+           //Release locks after calculation
+           #pragma omp barrier
+           <%threadReleaseLocksDae%>
          }
-         #pragma omp barrier
-         //Release locks after calculation
-         <%threadReleaseLocksOde%>
-         <%threadReleaseLocksDae%>
       }
       >>
     case ("mpi") then
