@@ -1294,50 +1294,46 @@ void GraphicsView::showGraphicsViewProperties()
   pGraphicsViewProperties->show();
 }
 
-//! Defines what happens when moving an object in a GraphicsView.
-//! @param event contains information of the drag operation.
+/*!
+ * \brief GraphicsView::dragMoveEvent
+ * Defines what happens when dragged and moved an object in a GraphicsView.
+ * \param event - contains information of the drag operation.
+ */
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
   // check if the class is system library
-  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
-  {
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
     event->ignore();
     return;
   }
   // read the mime data from the event
-  if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat) || event->mimeData()->hasFormat(Helper::modelicaFileFormat))
-  {
+  if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat) || event->mimeData()->hasFormat(Helper::modelicaFileFormat)) {
     event->setDropAction(Qt::CopyAction);
     event->accept();
-  }
-  else
-  {
+  } else {
     event->ignore();
   }
 }
 
-//! Defines what happens when drop an object in a GraphicsView.
-//! @param event contains information of the drop operation.
+/*!
+ * \brief GraphicsView::dropEvent
+ * Defines what happens when an object is dropped in a GraphicsView.
+ * \param event - contains information of the drop operation.
+ */
 void GraphicsView::dropEvent(QDropEvent *event)
 {
   setFocus();
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   // check mimeData
-  if (!event->mimeData()->hasFormat(Helper::modelicaComponentFormat) && !event->mimeData()->hasFormat(Helper::modelicaFileFormat))
-  {
+  if (!event->mimeData()->hasFormat(Helper::modelicaComponentFormat) && !event->mimeData()->hasFormat(Helper::modelicaFileFormat)) {
     event->ignore();
     return;
-  }
-  else if (event->mimeData()->hasFormat(Helper::modelicaFileFormat))
-  {
+  } else if (event->mimeData()->hasFormat(Helper::modelicaFileFormat)) {
     pMainWindow->openDroppedFile(event);
     event->accept();
-  }
-  else if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat))
-  {
+  } else if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat)) {
     // check if the class is system library
-    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
-    {
+    if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
       event->ignore();
       return;
     }
@@ -1345,13 +1341,12 @@ void GraphicsView::dropEvent(QDropEvent *event)
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
     QString className;
     dataStream >> className;
-    if (addComponent(className, mapToScene(event->pos())))
+    if (addComponent(className, mapToScene(event->pos()))) {
       event->accept();
-    else
+    } else {
       event->ignore();
-  }
-  else
-  {
+    }
+  } else {
     event->ignore();
   }
 }
