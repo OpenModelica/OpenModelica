@@ -590,6 +590,7 @@ algorithm
       attr := inAttributes;
     else
       // Userdefined array type, e.g. type Point = Real[3].
+      type_mods := liftUserTypeMod(type_mods, inDimensions);
       dims := listAppend(inDimensions, dims);
       mod := Mod.merge(inMod, type_mods, inEnv, inPrefix);
       attr := InstUtil.propagateClassPrefix(inAttributes, inPrefix);
@@ -614,6 +615,83 @@ algorithm
     fail();
   end try;
 end instVar_dispatch;
+
+protected function liftUserTypeMod
+  "This function adds dimensions to a modifier. This is a bit of a hack to make
+   modifiers on user-defined types behave as expected, e.g.:
+
+     type T = Real[3](start = {1, 2, 3});
+     T x[2]; // Modifier from T must be lifted to become [2, 3].
+  "
+  input DAE.Mod inMod;
+  input list<DAE.Dimension> inDims;
+  output DAE.Mod outMod = inMod;
+algorithm
+  if listEmpty(inDims) then
+    return;
+  end if;
+
+  outMod := matchcontinue outMod
+    case DAE.MOD()
+      algorithm
+        // Only lift modifiers without 'each'.
+        if not SCode.eachBool(outMod.eachPrefix) then
+          outMod.eqModOption := liftUserTypeEqMod(outMod.eqModOption, inDims);
+          outMod.subModLst := list(liftUserTypeSubMod(s, inDims) for s in outMod.subModLst);
+        end if;
+      then
+        outMod;
+
+    else outMod;
+  end matchcontinue;
+end liftUserTypeMod;
+
+protected function liftUserTypeSubMod
+  input DAE.SubMod inSubMod;
+  input list<DAE.Dimension> inDims;
+  output DAE.SubMod outSubMod = inSubMod;
+algorithm
+  outSubMod := match outSubMod
+    case DAE.NAMEMOD()
+      algorithm
+        outSubMod.mod := liftUserTypeMod(outSubMod.mod, inDims);
+      then
+        outSubMod;
+  end match;
+end liftUserTypeSubMod;
+
+protected function liftUserTypeEqMod
+  input Option<DAE.EqMod> inEqMod;
+  input list<DAE.Dimension> inDims;
+  output Option<DAE.EqMod> outEqMod;
+protected
+  DAE.EqMod eq;
+  DAE.Type ty;
+algorithm
+  if isNone(inEqMod) then
+    outEqMod := inEqMod;
+    return;
+  end if;
+
+  SOME(eq) := inEqMod;
+
+  eq := match eq
+    case DAE.TYPED()
+      algorithm
+        eq.modifierAsExp := Expression.liftExpList(eq.modifierAsExp, inDims);
+        eq.modifierAsValue := Util.applyOption1(eq.modifierAsValue,
+          ValuesUtil.liftValueList, inDims);
+        ty := Types.getPropType(eq.properties);
+        eq.properties := Types.setPropType(eq.properties,
+          Types.liftArrayListDims(ty, inDims));
+      then
+        eq;
+
+    else eq;
+  end match;
+
+  outEqMod := SOME(eq);
+end liftUserTypeEqMod;
 
 protected function addArrayVarEquation
   input FCore.Cache inCache;

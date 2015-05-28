@@ -2582,5 +2582,15 @@ algorithm
   end for;
 end arrayContainsEmpty;
 
+public function liftValueList
+  input Values.Value inValue;
+  input list<DAE.Dimension> inDimensions;
+  output Values.Value outValue = inValue;
+algorithm
+  for dim in listReverse(inDimensions) loop
+    outValue := makeArray(List.fill(outValue, Expression.dimensionSize(dim)));
+  end for;
+end liftValueList;
+
 annotation(__OpenModelica_Interface="frontend");
 end ValuesUtil;

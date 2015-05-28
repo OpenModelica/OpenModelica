@@ -3786,10 +3786,9 @@ public function getPropType "author: LS
   input DAE.Properties inProperties;
   output DAE.Type outType;
 algorithm
-  outType := match (inProperties)
-    local Type ty;
-    case DAE.PROP(type_ = ty) then ty;
-    case DAE.PROP_TUPLE(type_ = ty) then ty;
+  outType := match inProperties
+    case DAE.PROP() then inProperties.type_;
+    case DAE.PROP_TUPLE() then inProperties.type_;
   end match;
 end getPropType;
 
@@ -3798,12 +3797,9 @@ public function setPropType "Set the Type from Properties."
   input DAE.Type ty;
   output DAE.Properties outProperties;
 algorithm
-  outProperties := match (inProperties,ty)
-    local
-      DAE.Const constFlag;
-      DAE.TupleConst tupleConst;
-    case (DAE.PROP(constFlag = constFlag),_) then DAE.PROP(ty,constFlag);
-    case (DAE.PROP_TUPLE(tupleConst = tupleConst),_) then DAE.PROP_TUPLE(ty,tupleConst);
+  outProperties := match inProperties
+    case DAE.PROP() then DAE.PROP(ty, inProperties.constFlag);
+    case DAE.PROP_TUPLE() then DAE.PROP_TUPLE(ty, inProperties.tupleConst);
   end match;
 end setPropType;
 
