@@ -140,13 +140,6 @@ package builtin
     output Real z;
   end realDiv;
 
-  function listGet
-    replaceable type TypeVar subtypeof Any;
-    input list<TypeVar> lst;
-    input Integer index;
-    output TypeVar result;
-  end listGet;
-
   function stringLength
     input String str;
     output Integer length;

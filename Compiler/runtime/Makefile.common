@@ -19,7 +19,7 @@ else
 	configUnix =
 endif
 
-OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
+OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o serializer.o \
   IOStreamExt_omc.o ErrorMessage.o FMI_omc.o systemimplmisc.o \
   UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o matching.o matching_cheap.o \
   Database_omc.o Dynload_omc.o SimulationResults_omc.o TaskGraphResults_omc.o HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o ptolemyio_omc.o \
@@ -58,6 +58,7 @@ ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
 FMI_omc.o : FMIImpl.c ../OpenModelicaBootstrappingHeader.h
 GraphStreamExt_omc.o : ../OpenModelicaBootstrappingHeader.h GraphStreamExt_impl.cpp $(RML_COMPAT)
+serializer.o: serializer.cpp
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*
