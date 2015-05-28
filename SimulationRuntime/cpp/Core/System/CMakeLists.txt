@@ -12,28 +12,21 @@ set(BASE_LIB "" CACHE INTERNAL "" )
 
 # add the system default implementation library
 # add a static library with the system default implementation for generating c++ fmu targets
-add_library(${SystemName}_FMU STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp)
-set_target_properties(${SystemName}_FMU PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp)
+set_target_properties(${SystemName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
-if (UNIX)
-	set_target_properties(${SystemName}_FMU PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
-install (TARGETS ${SystemName}_FMU DESTINATION ${LIBINSTALLEXT})
 
-IF(RUNTIME_STATIC_LINKING)
-	add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
-	set_target_properties(${SystemName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
-	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
-	if (UNIX)
-		set_target_properties(${SystemName}_static PROPERTIES COMPILE_FLAGS -fPIC)
-	endif(UNIX)
-	install (TARGETS ${SystemName}_static DESTINATION ${LIBINSTALLEXT})
-ELSE(RUNTIME_STATIC_LINKING)
-	add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
-	target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
-    add_precompiled_header(${SystemName} Include/Core/Modelica.h )
-	install (TARGETS ${SystemName} DESTINATION ${LIBINSTALLEXT})
-ENDIF(RUNTIME_STATIC_LINKING)
+if (UNIX)
+	set_target_properties(${SystemName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
+install (TARGETS ${SystemName}_static DESTINATION ${LIBINSTALLEXT})
+
+add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimVars.cpp FactoryExport.cpp)
+
+target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName}_static)
+add_precompiled_header(${SystemName} Include/Core/Modelica.h)
+install (TARGETS ${SystemName} DESTINATION ${LIBINSTALLEXT})
 
 #IF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 #install (TARGETS ${BasiLibName} DESTINATION ${LIBINSTALLEXT})
@@ -47,22 +40,20 @@ install (FILES
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ContinuousEvents.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/SimVars.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/FactoryExport.h
-	DESTINATION include/omc/cpp/Core/System)
-install (FILES
 	${CMAKE_SOURCE_DIR}/Include/Core/System/IAlgLoop.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IAlgLoopSolverFactory.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/AlgLoopSolverFactory.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IContinuous.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IMixedSystem.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IEvent.h
-		${CMAKE_SOURCE_DIR}/Include/Core/System/ITime.h
+	${CMAKE_SOURCE_DIR}/Include/Core/System/ITime.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemProperties.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemInitialization.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IStepEvent.h
-		${CMAKE_SOURCE_DIR}/Include/Core/System/IWriteOutput.h
-		${CMAKE_SOURCE_DIR}/Include/Core/System/IStateSelection.h
+	${CMAKE_SOURCE_DIR}/Include/Core/System/IWriteOutput.h
+	${CMAKE_SOURCE_DIR}/Include/Core/System/IStateSelection.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISimVars.h
-      DESTINATION include/omc/cpp/Core/System)
+DESTINATION include/omc/cpp/Core/System)
 
 
 

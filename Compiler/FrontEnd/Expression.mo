@@ -1116,6 +1116,25 @@ algorithm
   end match;
 end unliftExp;
 
+public function liftExp
+  input DAE.Exp inExp;
+  input DAE.Dimension inDimension;
+  output DAE.Exp outExp;
+algorithm
+  outExp := DAE.ARRAY(Types.liftArray(typeof(inExp), inDimension),
+    false, List.fill(inExp, dimensionSize(inDimension)));
+end liftExp;
+
+public function liftExpList
+  input DAE.Exp inExp;
+  input list<DAE.Dimension> inDimensions;
+  output DAE.Exp outExp = inExp;
+algorithm
+  for dim in listReverse(inDimensions) loop
+    outExp := liftExp(outExp, dim);
+  end for;
+end liftExpList;
+
 public function liftArrayRight "
 This function adds an array dimension to a type on the right side, i.e.
 liftArrayRigth(Real[2,3],SOME(4)) => Real[2,3,4].

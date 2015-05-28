@@ -140,13 +140,6 @@ package builtin
     output Real z;
   end realDiv;
 
-  function listGet
-    replaceable type TypeVar subtypeof Any;
-    input list<TypeVar> lst;
-    input Integer index;
-    output TypeVar result;
-  end listGet;
-
   function stringLength
     input String str;
     output Integer length;
@@ -3057,6 +3050,7 @@ package Flags
   constant DebugFlag WRITE_TO_BUFFER;
   constant DebugFlag MODEL_INFO_JSON;
   constant DebugFlag USEMPI;
+  constant DebugFlag RUNTIME_STATIC_LINKING;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;

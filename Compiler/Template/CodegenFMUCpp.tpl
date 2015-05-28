@@ -780,10 +780,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
-  OMCPP_LIBS= -lOMCppSystem_FMU -lOMCppDataExchange_static -lOMCppOMCFactory -lOMCppMath_static
+  OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppModelicaUtilities_static
   OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
-  BOOST_LIBRARIES = -lboost_system -lboost_filesystem -lboost_program_options
+  BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
   LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
 
   CPPFILES=$(CALCHELPERMAINFILE)

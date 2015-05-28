@@ -293,7 +293,8 @@ if true then /* Suppress output */
     "../Util/System.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
-	"../Util/VisualXML.mo"
+    "../Util/VisualXML.mo",
+	"../Util/Serializer.mo"
   };
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then

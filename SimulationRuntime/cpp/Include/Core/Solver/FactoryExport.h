@@ -3,18 +3,11 @@
  *  Base module for all solver
  *  @{
  */
-#if defined(__vxworks) || defined(__TRICORE__)
+#if defined(__vxworks) || defined(__TRICORE__) || defined(RUNTIME_STATIC_LINKING)
 
 #define BOOST_EXTENSION_SOLVER_DECL
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL
 #define BOOST_EXTENSION_STATESELECT_DECL
-#define BOOST_EXTENSION_MONITOR_DECL
-
-#elif defined(RUNTIME_STATIC_LINKING)
- 
-#define BOOST_EXTENSION_SOLVER_DECL
-#define BOOST_EXTENSION_STATESELECT_DECL
-#define BOOST_EXTENSION_SOLVERSETTINGS_DECL
 #define BOOST_EXTENSION_MONITOR_DECL
 
 #elif defined(OMC_BUILD) || defined(SIMSTER_BUILD)
