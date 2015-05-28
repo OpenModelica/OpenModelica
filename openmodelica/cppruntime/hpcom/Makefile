@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+BouncingBall_mcp_omp.mos \
 Modelica.Electrical.Spice3.Examples.CoupledInductors_level.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_memory.mos

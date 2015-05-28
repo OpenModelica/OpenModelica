@@ -7,7 +7,7 @@
 loadFile("BouncingBall.mo"); getErrorString();
 alarm(60);
 setDebugFlags("hpcom"); getErrorString();
-setCommandLineOptions("+n=2 +hpcomScheduler=mcp +simCodeTarget=Cpp"); getErrorString();
+setCommandLineOptions("+n=1 +hpcomScheduler=mcp +simCodeTarget=Cpp"); getErrorString();
 simulate(BouncingBall, stopTime=1.0, outputFormat="csv"); getErrorString();
 
 //res := OpenModelica.Scripting.checkTaskGraph("taskGraphBouncingBallODE.graphml","ReferenceGraphs/BouncingBall_TaskGraphODE.graphml");
