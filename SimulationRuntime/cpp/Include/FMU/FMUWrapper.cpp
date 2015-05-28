@@ -2,7 +2,6 @@
 #include <Core/ModelicaDefine.h>
  #include <Core/Modelica.h>
 /*workarround until cmake file is modified*/
-#define OMC_BUILD
 #include <Core/Solver/ISolverSettings.h>
 #include <Core/SimulationSettings//ISettingsFactory.h>
 #include <Core/Solver/ISolver.h>
@@ -20,8 +19,7 @@ FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
 {
   boost::shared_ptr<IAlgLoopSolverFactory>
       solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
-  _model = boost::shared_ptr<MODEL_CLASS>
-      (new MODEL_CLASS(&_global_settings, solver_factory, boost::shared_ptr<ISimData>(new SimData())));
+  _model = boost::shared_ptr<MODEL_CLASS>(new MODEL_CLASS(&_global_settings, solver_factory, boost::shared_ptr<ISimData>(new SimData()), boost::shared_ptr<ISimVars>(MODEL_SIMVARS_FACTORY())));
   _model->setInitial(true);
   _tmp_real_buffer.resize(_model->getDimReal());
   _tmp_int_buffer.resize(_model->getDimInteger());
