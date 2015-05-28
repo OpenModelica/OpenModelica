@@ -1,3 +1,8 @@
+/** @addtogroup solverNewton
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <Solver/Newton/Newton.h>
 
@@ -210,4 +215,5 @@ void Newton::calcJacobian()
     }
 }
 
+/** @} */ // end of solverNewton
 

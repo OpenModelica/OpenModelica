@@ -39,7 +39,7 @@ OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
-
+OPTION(BUILD_DOCUMENTATION "Use Doxygen to create the cpp runtime documentation" OFF)
 
 #Set Variables
 SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
@@ -297,10 +297,30 @@ MESSAGE(STATUS ${LAPACK_LIBRARIES})
 # Find Sundials solvers
 IF(USE_SUNDIALS)
   FIND_PATH(SUNDIALS_INCLUDE_DIR cvode/cvode.h PATHS ${SUNDIALS_INLCUDE_HOME} $ENV{SUNDIALS_ROOT}/include)
-  if (NOT SUNDIALS_INCLUDE_DIR)
-      MESSAGE(FATAL_ERROR "Could not find Sundials, specify environment variable SUNDIALS_ROOT")
+  IF (NOT SUNDIALS_INCLUDE_DIR)
+    MESSAGE(FATAL_ERROR "Could not find Sundials, specify environment variable SUNDIALS_ROOT")
+  ELSE(NOT SUNDIALS_INCLUDE_DIR)
+    # Extract the version number from sundials_config.h
+    FIND_PATH(SUNDIALS_CONFIG_FILE "sundials_config.h" ${SUNDIALS_INCLUDE_DIR} "${SUNDIALS_INCLUDE_DIR}/sundials")
+    SET(SUNDIALS_CONFIG_FILE "${SUNDIALS_CONFIG_FILE}/sundials_config.h")
+    FILE(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
+    STRING(REGEX MATCH "#define SUNDIALS_PACKAGE_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." SUNDIALS_CONFIG_FILE_CONTENT ${SUNDIALS_CONFIG_FILE_CONTENT})
+    STRING(REGEX REPLACE "#define SUNDIALS_PACKAGE_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." "\\1;\\2;\\3" SUNDIALS_CONFIG_FILE_VERSION ${SUNDIALS_CONFIG_FILE_CONTENT})
+    LIST(GET SUNDIALS_CONFIG_FILE_VERSION 0 SUNDIALS_MAJOR_VERSION)
+    IF(SUNDIALS_MAJOR_VERSION)
+      ADD_DEFINITIONS("-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}")
+    ELSE()
+      MESSAGE(FATAL_ERROR "Could not determine sundials version")
+    ENDIF()
+    LIST(GET SUNDIALS_CONFIG_FILE_VERSION 1 SUNDIALS_MINOR_VERSION)
+    IF(SUNDIALS_MINOR_VERSION)
+      ADD_DEFINITIONS("-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
+    ELSE()
+      MESSAGE(FATAL_ERROR "Could not determine sundials version")
+    ENDIF()
+    LIST(GET SUNDIALS_CONFIG_FILE_VERSION 2 SUNDIALS_PATCH_VERSION)
+    MESSAGE(STATUS "Using sundials ${SUNDIALS_MAJOR_VERSION}.${SUNDIALS_MINOR_VERSION}.${SUNDIALS_PATCH_VERSION}")
   ENDIF()
-  MESSAGE(STATUS ${SUNDIALS_INCLUDE_DIR})
 
   FIND_LIBRARY(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial" PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
   IF(NOT SUNDIALS_NVECSERIAL_LIB)
@@ -309,11 +329,13 @@ IF(USE_SUNDIALS)
   GET_FILENAME_COMPONENT(SUNDIALS_LIBS "${SUNDIALS_NVECSERIAL_LIB}" PATH)
 
   FIND_LIBRARY(SUNDIALS_CVODES_LIB "sundials_cvodes" PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME}  $ENV{SUNDIALS_ROOT}/lib)
+  include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
   IF(NOT SUNDIALS_CVODES_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_cvodes!")
   ENDIF()
 
   FIND_LIBRARY(SUNDIALS_IDA_LIB "sundials_idas" PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME}  $ENV{SUNDIALS_ROOT}/lib)
+  include_directories(${SUNDIALS_INCLUDE_DIR}/ida ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
   IF(NOT SUNDIALS_IDA_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_ida!")
   ENDIF()
@@ -333,6 +355,28 @@ IF(USE_SUNDIALS)
     INSTALL(FILES ${SUNDIALS_LIBRARIES} DESTINATION bin)
   ENDIF(WIN32)
 ENDIF(USE_SUNDIALS)
+
+#-- generate documentation of cpp runtime with doxygen
+if(BUILD_DOCUMENTATION)
+  FIND_PACKAGE(Doxygen)
+  if (NOT DOXYGEN_FOUND)
+    message(FATAL_ERROR
+      "Doxygen is needed to build the documentation. Please install it correctly")
+  endif()
+   MESSAGE(STATUS "Build the documentation with Doxygen")
+  #-- Configure the Template Doxyfile for our specific project
+  configure_file(cppruntimedoc.config.in
+                 ${PROJECT_BINARY_DIR}/cppruntimedoc.config  @ONLY IMMEDIATE)
+  #-- Add a custom target to run Doxygen when ever the project is built
+  add_custom_target (Docs ALL
+                     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/cppruntimedoc.config
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMENT "Generating API documentation with Doxygen" VERBATIM
+                    )
+  # IF you do NOT want the documentation to be generated EVERY time you build the project
+  # then leave out the 'ALL' keyword from the above command.
+endif()
+
 
 
 #Handle umfpack
@@ -377,7 +421,6 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 #build of simulation.core
 include_directories ("Include")
 include_directories ("Solver")
-
 add_subdirectory (Core/Modelica)
 add_subdirectory (Core/Math)
 add_subdirectory (SimCoreFactory/OMCFactory)

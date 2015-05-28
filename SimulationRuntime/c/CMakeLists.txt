@@ -9,7 +9,7 @@ PROJECT(SimulationRuntimeC)
 
 # Global Variables
 IF(NOT OMCTRUNCHOME)
-  SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR}/../../)
+  SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR}/../../../)
 ENDIF (NOT OMCTRUNCHOME)
 
 # OMDEV PATH
@@ -73,8 +73,8 @@ if(MSVC)
 endif(MSVC)
 
 # includes
-INCLUDE_DIRECTORIES(${OMCTRUNCHOME})
-INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/3rdParty/gc/include)
+INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/)
+INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/3rdParty/gc/include)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linearization)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/math-support)
@@ -124,16 +124,16 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
 
 
   # includes
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/math-support)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta/gc)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/results)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -200,17 +200,17 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
    SUNDIALS_KINSOL)
 
   # includes
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/math-support)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta/gc)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/ModelicaExternalC)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/results)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
 
   INCLUDE_DIRECTORIES(${dir})
 
@@ -332,18 +332,18 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
    SUNDIALS_KINSOL)
 
   # includes
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/math-support)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta/gc)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/ModelicaExternalC)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/results)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -357,7 +357,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   SET(OMC_MODELNAME ${model})
   SET(OMC_MODELDIR ${dir})
   # generate model.mos
-  FIND_FILE(MOSFILE_IN model_fmu.in PATHS ${OMCTRUNCHOME}/c_runtime)
+  FIND_FILE(MOSFILE_IN model_fmu.in PATHS ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c)
   CONFIGURE_FILE(${MOSFILE_IN} ${dir}/${model}_FMU.mos)
 
   # Variablen fuer openmodelica2sarturis
@@ -377,9 +377,9 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
-                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
-           ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
+                   ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
+           ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta ModelicaExternalC libexpat initialization lapack_win32_MT)
@@ -419,18 +419,18 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
    SUNDIALS_KINSOL)
 
   # includes
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/math-support)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/meta/gc)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/ModelicaExternalC)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/results)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -461,9 +461,9 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
-                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
-           ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
+                   ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
+           ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 
   ADD_DEFINITIONS(/TP ${FMU_MODELNAME}.c)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)

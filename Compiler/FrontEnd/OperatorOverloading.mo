@@ -912,7 +912,7 @@ algorithm
     // arithmetical element wise operators
     case (Absyn.ADD_EW(),t1,e1,t2,e2)
       equation
-        false = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
+        false = Types.isArray(t2) and (not Types.isArray(t1));
         intarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
                     intarrtypes, intarrtypes, intarrtypes);
         realarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
@@ -955,7 +955,7 @@ algorithm
     // arithmetical element wise operators
     case (Absyn.SUB_EW(),t1,e1,t2,e2)
       equation
-        false = Types.isArray(t1,{}) and (not Types.isArray(t2,{}));
+        false = Types.isArray(t1) and (not Types.isArray(t2));
         intarrs = operatorReturn(DAE.SUB_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
                     intarrtypes, intarrtypes, intarrtypes);
         realarrs = operatorReturn(DAE.SUB_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
@@ -975,7 +975,7 @@ algorithm
 
     case (Absyn.MUL(),t1,e1,t2,e2)
       equation
-        false = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
+        false = Types.isArray(t2) and (not Types.isArray(t1));
         int_mul = DAE.MUL(DAE.T_INTEGER_DEFAULT);
         real_mul = DAE.MUL(DAE.T_REAL_DEFAULT);
         int_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.T_INTEGER_DEFAULT);
@@ -1006,7 +1006,7 @@ algorithm
 
     case (Absyn.MUL_EW(),t1,e1,t2,e2) /* Arithmetical operators */
       equation
-        false = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
+        false = Types.isArray(t2) and (not Types.isArray(t1));
         intarrs = operatorReturn(DAE.MUL_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
           intarrtypes, intarrtypes, intarrtypes);
         realarrs = operatorReturn(DAE.MUL_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
@@ -1205,26 +1205,26 @@ algorithm
     // element-wise equivalent operators
     case (Absyn.ADD_EW(),t1,e1,t2,e2)
       equation
-        true = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
+        true = Types.isArray(t2) and (not Types.isArray(t1));
         (types,t1,e1,t2,e2) = operatorsBinary(Absyn.ADD_EW(),t2,e2,t1,e1);
       then (types,t1,e1,t2,e2);
 
     case (Absyn.SUB_EW(),t1,e1,t2,e2)
       equation
-        true = Types.isArray(t1,{}) and (not Types.isArray(t2,{}));
+        true = Types.isArray(t1) and (not Types.isArray(t2));
         e2 = Expression.negate(e2);
         (types,t1,e1,t2,e2) = operatorsBinary(Absyn.ADD_EW(),t1,e1,t2,e2);
       then (types,t1,e1,t2,e2);
 
     case (Absyn.MUL(),t1,e1,t2,e2)
       equation
-        true = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
+        true = Types.isArray(t2) and (not Types.isArray(t1));
         (types,t1,e1,t2,e2) = operatorsBinary(Absyn.MUL(),t2,e2,t1,e1);
       then (types,t1,e1,t2,e2);
 
     case (Absyn.MUL_EW(),t1,e1,t2,e2)
       equation
-        true = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
+        true = Types.isArray(t2) and (not Types.isArray(t1));
         (types,t1,e1,t2,e2) = operatorsBinary(Absyn.MUL_EW(),t2,e2,t1,e1);
       then (types,t1,e1,t2,e2);
 

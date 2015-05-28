@@ -164,11 +164,6 @@ template ScalarVariableXml(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(__) then
-  if stringEq(crefStrXml(name),"$dummy") then
-  <<>>
-  else if stringEq(crefStrXml(name),"der($dummy)") then
-  <<>>
-  else
   <<
   <%ScalarVariableAttributesXml(simVar)%>
   >>
@@ -890,14 +885,14 @@ template equationLinearXml(SimEqSystem eq, Context context, Text &varDecls /*BUF
  "Generates a when equation XML."
 ::=
 match eq
-case SES_LINEAR(__) then
+case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
   <<
-  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+  <%ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExpXml(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
  '<%preExp%>
   <%expPart%>' ;separator="\n"%>
-  <%beqs |> exp hasindex i0 =>
+  <%ls.beqs |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   '<%preExp%>
@@ -909,13 +904,13 @@ template equationNonlinearXml(SimEqSystem eq, Context context, Text &varDecls /*
  "Generates a when equation XML."
 ::=
 match eq
-  case SES_NONLINEAR(__) then
+  case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
    let &varDecls = buffer "" /*BUFD*/
    let &tmp = buffer ""
-   let prebody = (eqs |> eq2 =>
+   let prebody = (nls.eqs |> eq2 =>
        functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
      ;separator="\n")
-   let body = (eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+   let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
        let &preExp = buffer "" /*BUFD*/
        let expPart = daeExpXml(eq2.exp, contextSimulationDiscrete,
                       &preExp /*BUFC*/, &varDecls /*BUFD*/)

@@ -8,11 +8,10 @@ JAVA=java
 JAR=jar
 endif
 
-OPENMODELICAHOME=$(shell pwd)/../../../../build
-antlr = $(OPENMODELICAHOME)/../3rdParty/antlr/3.2/tool/antlr-3.2.jar
-antlr_depends = $(OPENMODELICAHOME)/../3rdParty/antlr/3.2/tool/antlr-2.7.7.jar
+antlr = $(top_builddir)/3rdParty/antlr/3.2/tool/antlr-3.2.jar
+antlr_depends = $(top_builddir)/3rdParty/antlr/3.2/tool/antlr-2.7.7.jar
 licenses = antlr_license.txt
-junit = junit-4.6.jar
+junit = $(top_builddir)/3rdParty/junit-4.6.jar
 
 grammars = src/org/openmodelica/corba/parser/OMCorbaDefinitions.g
 
@@ -117,9 +116,9 @@ clean:
 	$(antlr_compile) $<
 
 install-nomodelica:
-	cp $(antlr) $(antlr_depends) ../../../../build/share/omc/java
+	cp $(antlr) $(antlr_depends) $(OMBUILDDIR)/share/omc/java
 # Don't need these; we put them in the COPYING file instead
 #	cp $(licenses) ../../../../build/share/doc/omc
 install: install-nomodelica
-	cp modelica_java.jar ../../../../build/share/omc/java
+	cp modelica_java.jar $(OMBUILDDIR)/share/omc/java
 

@@ -16,6 +16,7 @@ LIB_OMC=lib/@host_short@/omc
 ANTLR_LIB=libomantlr3@SHREXT@
 include Makefile.common
 LDFLAGS=@RPATH@
+OMBUILDDIR=@OMBUILDDIR@
 
 Makefile: Makefile.in
-	(cd ..; ./config.status)
+	(cd @top_srcdir@; ./config.status)

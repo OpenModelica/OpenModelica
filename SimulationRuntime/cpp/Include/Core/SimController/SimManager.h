@@ -1,7 +1,11 @@
 #pragma once
-
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
 #include "Configuration.h"
 #include "Initialization.h"
+
 
 #ifdef RUNTIME_PROFILING
 #include <Core/Utils/extension/measure_time.hpp>
@@ -86,3 +90,4 @@ private:
     MeasureTimeValues *runSimStartValues, *runSimEndValues, *initSimStartValues, *initSimEndValues;
     #endif
 };
+/** @} */ // end of coreSimcontroller

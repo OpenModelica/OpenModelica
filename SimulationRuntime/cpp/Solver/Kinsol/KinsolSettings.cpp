@@ -1,5 +1,9 @@
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-
+/** @addtogroup solverKinsol
+ *  
+ *  @{
+ */
 
 #include <Solver/Kinsol/KinsolSettings.h>
 
@@ -50,3 +54,4 @@ void       KinsolSettings::setDelta(double t)
 void KinsolSettings::load(string)
 {
 }
+/** @} */ // end of solverKinsol

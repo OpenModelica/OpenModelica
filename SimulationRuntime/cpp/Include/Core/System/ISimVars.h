@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /**
 * Class for SimVars, stores all model variable in continuous block of memory
@@ -12,9 +16,9 @@ public:
       /*Methods for access model variables*/
      virtual double* getStateVector()= 0;
      virtual double* getDerStateVector()= 0;
-     virtual const double* getRealVarsVector() const= 0;
-     virtual const int* getIntVarsVector() const= 0;
-     virtual const bool* getBoolVarsVector() const= 0;
+     virtual double* getRealVarsVector() const= 0;
+     virtual int* getIntVarsVector() const= 0;
+     virtual bool* getBoolVarsVector() const= 0;
      virtual  void setRealVarsVector(const double* vars) = 0;
      virtual  void setIntVarsVector(const int* vars) = 0;
      virtual  void setBoolVarsVector(const bool* vars) = 0;
@@ -46,3 +50,4 @@ public:
      virtual void setPreVar(int& var)=0;
      virtual void setPreVar(bool& var)=0;
 };
+/** @} */ // end of coreSystem

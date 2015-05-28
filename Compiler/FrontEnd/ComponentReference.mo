@@ -3479,6 +3479,17 @@ algorithm
     {sub_str, idx_str, dim_str, cref_str}, inInfo);
 end printSubscriptBoundsError;
 
+public function crefAppendedSubs
+  input DAE.ComponentRef cref;
+  output String s;
+protected
+  String s1,s2;
+algorithm
+  s1 := crefToStr("",cref,"_P");
+  s2 := stringDelimitList(List.map(List.map(crefSubs(cref),Expression.getSubscriptExp),ExpressionDump.printExpStr),",");
+  s := s1+"["+s2+"]";
+end  crefAppendedSubs;
+
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;
 

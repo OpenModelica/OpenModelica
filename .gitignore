@@ -1,3 +1,23 @@
+# Binary objects; compiler output
+*.so
+*.o
+*.class
+*.a
+*.exe
+*.dylib
+*.la
+*.log
+*.stamp
+
+# autoconf
+autom4te.cache/
+config.guess
+config.log
+config.status
+config.sub
+configure
+install-sh
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
@@ -42,27 +62,100 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# ANTLR
+*.tokens
+
+# Vim buffer files
+[._]*.sw?
+*~
+
 # =========================
 # OpenModelica Files
 # =========================
 
 build/
 .externalToolBuilders/OpenModelicaBuilder.launch
+.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+.project
 revision.h
 SimulationRuntime/c/Makefile
-SimulationRuntime/c/**/*.so
-SimulationRuntime/c/**/*.o
-SimulationRuntime/c/**/*.class
+SimulationRuntime/c/util/java_interface/Makefile
 SimulationRuntime/c/util/java_interface/modelica_java.jar
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java
 SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorbaDefinitions.tokens
 SimulationRuntime/cpp/Makefile
 SimulationRuntime/cpp/Build/
-SimulationRuntime/ParModelica/explicit/openclrt/*.a
-SimulationRuntime/ParModelica/explicit/openclrt/*.o
 SimulationRuntime/ParModelica/Makefile
 SimulationRuntime/ParModelica/auto/Makefile
 SimulationRuntime/ParModelica/explicit/Makefile
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile
-tools/debugging/BreakProcess.exe
+SimulationRuntime/build_c/
+
+# OpenModelicaSetup
+Compiler/OpenModelicaSetup
+# Compiler files
+Compiler/Makefile
+Compiler/OpenModelicaBootstrappingHeader.h.log
+Compiler/Script/Makefile
+Compiler/Script/OpenModelicaScriptingAPI.mo
+Compiler/Script/OpenModelicaScriptingAPIQt.cpp
+Compiler/Script/OpenModelicaScriptingAPIQt.h
+Compiler/Template/AbsynDumpTpl.mo
+Compiler/Template/CodegenAdevs.mo
+Compiler/Template/CodegenC.mo
+Compiler/Template/CodegenC.mo.log
+Compiler/Template/CodegenCSharp.mo
+Compiler/Template/CodegenCpp.mo
+Compiler/Template/CodegenCppHpcom.mo
+Compiler/Template/CodegenFMU.mo
+Compiler/Template/CodegenFMUCpp.mo
+Compiler/Template/CodegenJS.mo
+Compiler/Template/CodegenJava.mo
+Compiler/Template/CodegenModelica.mo
+Compiler/Template/CodegenQSS.mo
+Compiler/Template/CodegenSparseFMI.mo
+Compiler/Template/CodegenUtil.mo
+Compiler/Template/CodegenXML.mo
+Compiler/Template/DAEDumpTpl.mo
+Compiler/Template/ExpressionDumpTpl.mo
+Compiler/Template/GenerateAPIFunctionsTpl.mo
+Compiler/Template/GraphMLDumpTpl.mo
+Compiler/Template/GraphvizDump.mo
+Compiler/Template/Makefile
+Compiler/Template/NFInstDumpTpl.mo
+Compiler/Template/SCodeDumpTpl.mo
+Compiler/Template/SimCodeDump.mo
+Compiler/Template/TaskSystemDump.mo
+Compiler/Template/TplCodegen.mo
+Compiler/Template/Unparsing.mo
+Compiler/Template/VisualXMLTpl.mo
+Compiler/boot/LoadCompilerInterface.mos
+Compiler/boot/Makefile
+Compiler/boot/Makefile.depends
+Compiler/boot/Makefile.sources
+Compiler/runtime/Makefile
+Compiler/runtime/config.unix.h
+Compiler/runtime/omc_communication.cc
+Compiler/runtime/omc_communication.h
+Compiler/susan_codegen/TplCodegen.mo
+Makefile
+# Parser files
+Parser/Makefile
+Parser/MetaModelica_Lexer.c
+Parser/MetaModelica_Lexer.h
+Parser/MetaModelica_Lexer_BaseModelica_Lexer.c
+Parser/MetaModelica_Lexer_BaseModelica_Lexer.h
+Parser/ModelicaParser.c
+Parser/ModelicaParser.h
+Parser/Modelica_3_Lexer.c
+Parser/Modelica_3_Lexer.h
+Parser/Modelica_3_Lexer_BaseModelica_Lexer.c
+Parser/Modelica_3_Lexer_BaseModelica_Lexer.h
+Parser/ParModelica_Lexer.c
+Parser/ParModelica_Lexer.h
+Parser/ParModelica_Lexer_BaseModelica_Lexer.c
+Parser/ParModelica_Lexer_BaseModelica_Lexer.h
+
+SimulationRuntime/**/test_files/*.jar
+SimulationRuntime/cpp/build_msvc/

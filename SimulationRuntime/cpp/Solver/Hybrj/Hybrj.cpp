@@ -1,3 +1,8 @@
+#include <Core/ModelicaDefine.h>
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
 #include <Core/Modelica.h>
 #include <Solver/Hybrj/Hybrj.h>
 
@@ -439,3 +444,4 @@ void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const
     }
 
 }
+/** @} */ // end of solverHybrj

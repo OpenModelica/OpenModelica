@@ -1,5 +1,9 @@
 #pragma once
-
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
+/*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/SolverOMCFactory.h>
 #include <Core/SimulationSettings//ISettingsFactory.h>
 #include <Core/Solver/ISolver.h>
@@ -9,6 +13,8 @@
 #include <Core/SimulationSettings/Factory.h>
 #include <Solver/CVode/CVode.h>
 #include <Solver/IDA/IDA.h>
+*/
+
 /*
 Policy class to create solver object
 */
@@ -28,9 +34,7 @@ public:
 
     virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory()
     {
-      SettingsFactory *setFac = new SettingsFactory(ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path,ObjectFactory<CreationPolicy>::_config_path);
-      boost::shared_ptr<ISettingsFactory>  settings_factory = boost::shared_ptr<ISettingsFactory>(setFac);
-        return settings_factory;
+      return ObjectFactory<CreationPolicy>::_factory->createSettingsFactory();
     }
 
     virtual boost::shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, boost::shared_ptr<ISolverSettings> solver_settings)
@@ -57,3 +61,10 @@ protected:
 
   }
 };
+<<<<<<< HEAD
+
+/** @} */ // end of simcorefactoriesPolicies
+
+=======
+/** @} */ // end of simcorefactoriesPolicies
+>>>>>>> 13d2ab883a13322c1dcc46f5ccf2683d20e49b75

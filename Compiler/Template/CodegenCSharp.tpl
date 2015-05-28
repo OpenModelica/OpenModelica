@@ -1113,21 +1113,21 @@ end functionNonlinearResiduals;
 
 template functionNonlinearResidual(SimEqSystem equ, Context context, SimCode simCode) ::=
   match equ
-  case SES_NONLINEAR(__) then
+  case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
     <<
-    int ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
+    int ResidualFun<%nls.index%>(int n, double[] xloc, double[] res, int iflag)
     {
        <% localRepresentationArrayDefines %>
        var rels = Relations; var preRels = PreRelations; var relsHE = RelationsHysteresisEnabled; var relsZC = RelationsZeroCrossing;
-       <%crefs |> cr hasindex i0 => '<%cref(cr,simCode)%> = xloc[<%i0%>];' ;separator="\n"%>
-       <%eqs |> saeq => //as SES_SIMPLE_ASSIGN(__) =>
+       <%nls.crefs |> cr hasindex i0 => '<%cref(cr,simCode)%> = xloc[<%i0%>];' ;separator="\n"%>
+       <%nls.eqs |> saeq => //as SES_SIMPLE_ASSIGN(__) =>
          (match saeq
           case SES_RESIDUAL(__) then ""
           else
            equation_(saeq, context, simCode)
          ) ;separator="\n"
        %>
-       <%eqs |> SES_RESIDUAL(__) hasindex i0 =>
+       <%nls.eqs |> SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer ""
          let expPart = daeExp(exp, context, &preExp, simCode)
          <<
@@ -1165,14 +1165,14 @@ template bodyInitialNonLinearSystem(SimEqSystem eqn, SimCode simCode)
 ::=
   match eqn
   case SES_MIXED(__)     then bodyInitialNonLinearSystem(cont, simCode)
-  case SES_NONLINEAR(__) then
-    let size = listLength(crefs)
+  case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+    let size = listLength(nls.crefs)
     //let newtonStep = if linearTearing then '1' else '0'
     //let generatedJac = match jacobianMatrix case SOME(__) then 'functionJacNLSJac<%eq.index%>_column' case NONE() then 'NULL'
     //let initialJac = match jacobianMatrix case SOME(__) then 'initialAnalyticJacobianNLSJac<%eq.index%>' case NONE() then 'NULL'
     // et jacIndex = match jacobianMatrix case SOME(__) then 'INDEX_JAC_NLSJac<%eq.index%>' case NONE() then '-1'
     let attribs =
-        crefs |> cr hasindex i0 =>
+        nls.crefs |> cr hasindex i0 =>
             (cref2simvar(cr, simCode) |> SIMVAR(__) =>
                let nominalAssign =
                   match nominalValue
@@ -1182,7 +1182,7 @@ template bodyInitialNonLinearSystem(SimEqSystem eqn, SimCode simCode)
                '<%nominalAssign%><%crefStr(cr, simCode)%>'
             ); separator="\n"
     <<
-    nls = nlss[<%indexNonLinearSystem%>] = new NLSystem(this, ResidualFun<%index%>, <%size%>, <%index%>);
+    nls = nlss[<%nls.indexNonLinearSystem%>] = new NLSystem(this, ResidualFun<%nls.index%>, <%size%>, <%nls.index%>);
     <%attribs%>
     >>
 end bodyInitialNonLinearSystem;
@@ -1290,30 +1290,30 @@ case SES_ALGORITHM(__) then
     algStatement(stmt, context, simCode)
   ;separator="\n")
 
-case SES_LINEAR(__) then
+case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
   let uid = System.tmpTick()
-  let size = listLength(vars)
+  let size = listLength(ls.vars)
   let aname = 'A<%uid%>'
   let bname = 'b<%uid%>'
   <<
   var <%aname%> = new double[<%size%>*<%size%>]; //declare_matrix(<%aname%>, <%size%>, <%size%>);
   var <%bname%> = new double[<%size%>]; //declare_vector(<%bname%>, <%size%>);
-  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+  <%ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer ""
      let expPart = daeExpToReal(eq.exp, context, &preExp, simCode)
      '<%preExp%><%aname%>[<%row%>+<%col%>*<%size%>] = <%expPart%>; //set_matrix_elt(<%aname%>, <%row%>, <%col%>, <%size%>, <%expPart%>);'
   ;separator="\n"%>
-  <%beqs|> it hasindex i0 =>
+  <%ls.beqs|> it hasindex i0 =>
      let &preExp = buffer ""
      let expPart = daeExpToReal(it, context, &preExp, simCode)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>; //set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
   ;separator="\n"%>
-  <%if partOfMixed then
+  <%if ls.partOfMixed then
       'if(SolveLinearSystemMixed(<%aname%>, <%bname%>, <%size%>, <%uid%>) != 0) found_solution = -1;'
     else
       'SolveLinearSystem(<%aname%>, <%bname%>, <%size%>, <%uid%>);'
   %>
-  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name, simCode)%> = <%bname%>[<%i0%>]; //get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%>
+  <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref(name, simCode)%> = <%bname%>[<%i0%>]; //get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%>
   >>
 case SES_MIXED(__) then
   let uid = System.tmpTick()
@@ -1423,19 +1423,19 @@ case SES_MIXED(__) then
   } // *** mixed_equation_system_end(<%numDiscVarsStr%>) ***
   >>
 
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
+case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+  let size = listLength(nls.crefs)
   <<
-  //start NLS ResidualFun<%index%>, size=<%size%>);
-  { var nls = NonLinearSystems[<%indexNonLinearSystem%>]; var nls_X = nls.X;
-    <%crefs |> name hasindex i0 =>
+  //start NLS ResidualFun<%nls.index%>, size=<%size%>);
+  { var nls = NonLinearSystems[<%nls.indexNonLinearSystem%>]; var nls_X = nls.X;
+    <%nls.crefs |> name hasindex i0 =>
       <<
       nls_X[<%i0%>] = <%cref(name, simCode)%>;
       >> ;separator="\n"
     %>
     nls.Solve();
     <% //*** maybe this is useless as the last call to the ResidualFun has already set the crefs ****
-       crefs |> name hasindex i0 =>
+       nls.crefs |> name hasindex i0 =>
     '<%cref(name, simCode)%> = <%convertRealExpForCref('nls_X[<%i0%>]', name, simCode)%>;'
       ;separator="\n"
     %>
@@ -1455,7 +1455,7 @@ case SES_NONLINEAR(__) then
       >> ;separator="\n"
     %>
     nls.Solve();
-    <%crefs |> name hasindex i0 =>
+    <%nls.crefs |> name hasindex i0 =>
     '<%cref(name, simCode)%> = <%convertRealExpForCref('nls_x[<%i0%>]', name, simCode)%>;'
       ;separator="\n"
     %>

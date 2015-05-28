@@ -1,3 +1,8 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <Core/System/FactoryExport.h>
 #include <Core/System/PreVariables.h>
@@ -162,5 +167,5 @@ bool DiscreteEvents::changeDiscreteVar(bool& var)
 
 }
 
-
+/** @} */ // end of coreSystem
 

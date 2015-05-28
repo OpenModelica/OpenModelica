@@ -1016,7 +1016,7 @@ algorithm
         t = Types.simplifyType(vt);
         dim = listLength(v::xs);
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        b = Types.isArray(vt,{});
+        b = Types.isArray(vt);
         b = boolNot(b);
       then DAE.ARRAY(t,b,explist);
   end matchcontinue;

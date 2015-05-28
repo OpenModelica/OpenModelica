@@ -983,7 +983,6 @@ algorithm
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         // check equations
         (m_1,(mT_1,_,_,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,{}));
-        _ = not listEmpty(changed);
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE(),changed);
@@ -4129,7 +4128,7 @@ ToDo: remove me
  input BackendDAE.BackendDAE inDAE;
  output BackendDAE.BackendDAE outDAE;
 algorithm
- outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(inDAE, false) else inDAE;
+ outDAE := if Flags.getConfigBool(Flags.SYM_EULER) then symEulerWork(BackendDAEUtil.copyBackendDAE(inDAE), false) else inDAE;
 
 end symEulerInit;
 
@@ -4147,9 +4146,9 @@ algorithm
   BackendDAE.DAE(systlst, shared) := inDAE;
 
   // make dt
-  cref := ComponentReference.makeCrefIdent("$TMP$OMC$DT", DAE.T_REAL_DEFAULT, {});
+  cref := ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {});
   tmpv := BackendVariable.makeVar(cref);
-  tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
+  //tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
   tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
   shared := BackendVariable.addKnVarDAE(tmpv, shared);
 
@@ -4197,9 +4196,6 @@ algorithm
   end for;
   // states -> vars
   vars := symEulerState(vars, crlst, b);
-  if b then // der(x)
-    oShared := symEulerDerVars(crlst, oShared);
-  end if;
   oSyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(),  BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end symEulerUpdateSyst;
 
@@ -4211,29 +4207,19 @@ protected function symEulerState
 
 protected
   Integer idx;
-  BackendDAE.VarKind kind;
+  BackendDAE.VarKind kind, oldKind;
 algorithm
-  kind := if b then BackendDAE.VARIABLE() else BackendDAE.STATE(0,NONE());
   for cref in crlst loop
     (_, idx) := BackendVariable.getVar2(cref, ovars);
+    oldKind := BackendVariable.getVarKindForVar(idx,ovars);
+    if b then
+      kind := BackendDAE.ALG_STATE(oldKind);
+    else
+     BackendDAE.ALG_STATE(kind) := oldKind;
+    end if;
     ovars :=  BackendVariable.setVarKindForVar(idx, kind, ovars);
   end for;
 end symEulerState;
-
-protected function symEulerDerVars
-  input list<DAE.ComponentRef> crlst;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared outShared = shared;
-protected
-  DAE.ComponentRef cref;
-  BackendDAE.Var v;
-algorithm
-  for cr in crlst loop
-    cref := ComponentReference.crefPrefixDer(cr);
-    v := BackendVariable.makeVar(cref);
-    outShared := BackendVariable.addKnVarDAE(v, outShared);
-  end for;
-end symEulerDerVars;
 
 protected function symEulerUpdateEqn
   input DAE.Exp inExp;
@@ -4641,6 +4627,90 @@ algorithm
     then str;
   end match;
 end warnAboutVars;
+
+public function addTimeAsState
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.EqSystem eq;
+  BackendDAE.Shared shared;
+  BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+  BackendDAE.EquationArray orderedEqs "ordered Equations";
+  BackendDAE.Var var;
+algorithm
+  if Flags.getConfigBool(Flags.ADD_TIME_AS_STATE) then
+    (BackendDAE.DAE(eqs, shared), _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, addTimeAsState1, 0);
+    orderedVars := BackendVariable.emptyVars();
+    var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE()), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+    var := BackendVariable.setVarFixed(var, true);
+    var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
+    orderedVars := BackendVariable.addVar(var, orderedVars);
+    orderedEqs := BackendEquation.emptyEqns();
+    orderedEqs := BackendEquation.addEquation(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(DAE.crefTimeState, DAE.T_REAL_DEFAULT)}, DAE.callAttrBuiltinReal), DAE.RCONST(1.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), orderedEqs);
+    eq := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.CONTINUOUS_TIME_PARTITION());
+    outDAE := BackendDAE.DAE(eq::eqs, shared);
+  end if;
+end addTimeAsState;
+
+protected function addTimeAsState1
+  input BackendDAE.EqSystem inSystem;
+  input BackendDAE.Shared inShared;
+  input Integer inFoo;
+  output BackendDAE.EqSystem outSystem;
+  output BackendDAE.Shared outShared = inShared;
+  output Integer outFoo = inFoo;
+algorithm
+  outSystem := matchcontinue(inSystem)
+    local
+      BackendDAE.Variables orderedVars;
+      BackendDAE.EquationArray orderedEqs;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+
+    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind) equation
+      (orderedEqs, _) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, addTimeAsState2, inFoo);
+    then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+
+    else inSystem;
+  end matchcontinue;
+end addTimeAsState1;
+
+protected function addTimeAsState2
+  input BackendDAE.Equation inEq;
+  input Integer inFoo;
+  output BackendDAE.Equation outEq;
+  output Integer outFoo = inFoo;
+algorithm
+  (outEq, _) := BackendEquation.traverseExpsOfEquation(inEq, addTimeAsState3, inFoo);
+end addTimeAsState2;
+
+protected function addTimeAsState3
+  input DAE.Exp inExp;
+  input Integer inTuple;
+  output DAE.Exp outExp;
+  output Integer outTuple;
+algorithm
+  (outExp, outTuple) := Expression.traverseExpTopDown(inExp, addTimeAsState4, inTuple);
+end addTimeAsState3;
+
+protected function addTimeAsState4
+  input DAE.Exp inExp;
+  input Integer inTuple;
+  output DAE.Exp outExp;
+  output Boolean cont = true;
+  output Integer outTuple = inTuple;
+algorithm
+  outExp := match inExp
+    local
+      DAE.Type ty;
+
+    case DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"), ty=ty) equation
+    then DAE.CREF(DAE.crefTimeState, ty);
+
+    else inExp;
+  end match;
+end addTimeAsState4;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEOptimize;

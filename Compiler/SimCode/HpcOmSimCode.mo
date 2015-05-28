@@ -34,24 +34,20 @@ encapsulated package HpcOmSimCode
   public import HashTableCrILst;
   public import SimCodeVar;
 
-  public constant HpcOmData emptyHpcomData = HPCOMDATA(NONE(), NONE(), NONE());
+  public constant HpcOmData emptyHpcomData = HPCOMDATA(NONE(), NONE());
 
   public uniontype HpcOmData
     record HPCOMDATA
-      Option<HpcOmSimCode.Schedule> daeSchedule;
-      Option<HpcOmSimCode.Schedule> odeSchedule;
+      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules; //<ode schedule, dae schedule>
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
     end HPCOMDATA;
   end HpcOmData;
 
   public uniontype MemoryMap //stores information to organize the memory for the parallel code in an efficient way
     record MEMORYMAP_ARRAY
-      array<tuple<Integer,Integer>> positionMapping; //map each simCodeVar to a memory (array) position and to arrayIdx
-      Integer floatArraySize; //arrayIdx: 1
-      Integer intArraySize; //arrayIdx: 2
-      Integer boolArraySize; //arrayIdx: 3
-      HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
-      tuple<list<Integer>, list<Integer>, list<Integer>> otherVars; //a list of not optimized variables (float, int bool)
+      Integer floatArraySize; //array size including state, state der and other float variables that are necessary for code generation
+      Integer intArraySize;
+      Integer boolArraySize;
     end MEMORYMAP_ARRAY;
     record MEMORYMAP_UNIFORM
     end MEMORYMAP_UNIFORM;
@@ -124,6 +120,7 @@ encapsulated package HpcOmSimCode
       list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
     end TASKDEPSCHEDULE;
     record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system or if the serial code should be produced
+      TaskList tasks;
     end EMPTYSCHEDULE;
   end Schedule;
 

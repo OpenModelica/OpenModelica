@@ -231,7 +231,22 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename,
   }
 }
 
-static void* SimulationResultsImpl__readVars(const char *filename, int readParameters, SimulationResult_Globals* simresglob)
+static void* makeOMCStyle(const char *var, int omcStyle)
+{
+  char *res1 = NULL;
+  const char *res2 = NULL;
+  if (!omcStyle) {
+    return mmc_mk_scon(var);
+  }
+  res1 = openmodelicaStyleVariableName(var);
+  res2 = _replace(res1 ? res1 : var, " ", "");
+  if (res1 == NULL) {
+    free(res1);
+  }
+  return mmc_mk_scon(res2);
+}
+
+static void* SimulationResultsImpl__readVars(const char *filename, int readParameters, int omcStyle, SimulationResult_Globals* simresglob)
 {
   const char *msg[2] = {"",""};
   void *res;
@@ -244,13 +259,13 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
     int i;
     for (i=simresglob->matReader.nall-1; i>=0; i--) {
       if (readParameters || !simresglob->matReader.allInfo[i].isParam) {
-        res = mmc_mk_cons(mmc_mk_scon(simresglob->matReader.allInfo[i].name),res);
+        res = mmc_mk_cons(makeOMCStyle(simresglob->matReader.allInfo[i].name, omcStyle),res);
       }
     }
     return res;
   }
   case PLT: {
-    return read_ptolemy_variables(filename);
+    return read_ptolemy_variables(filename /* Assume it is in OMC style */);
   }
   case CSV: {
     if (simresglob->csvReader && simresglob->csvReader->variables) {
@@ -258,7 +273,7 @@ static void* SimulationResultsImpl__readVars(const char *filename, int readParam
       int i;
       for (i=simresglob->csvReader->numvars-1; i>=0; i--) {
         if (variables[i][0] != '\0') {
-          res = mmc_mk_cons(mmc_mk_scon(variables[i]),res);
+          res = mmc_mk_cons(makeOMCStyle(variables[i], omcStyle),res);
         }
       }
     }
@@ -297,7 +312,7 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
     free(vars);
     return res;
   }
-  default: return SimulationResultsImpl__readVars(filename, 0, simresglob);
+  default: return SimulationResultsImpl__readVars(filename, 0, 0, simresglob);
   }
 }
 
@@ -388,9 +403,9 @@ static inline int intMax(int a, int b)
   return a>b ? a : b;
 }
 
-int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars)
+int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals)
 {
-  const char *msg[2] = {"",""};
+  const char *msg[5] = {"","","","",""};
   void *tmp;
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(inFile, &simresglob)) {
     return 0;
@@ -401,11 +416,15 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     int numToFilter = listLength(vars);
     int i, j;
     int numUnique = 0;
+    int numUniqueParam = 1;
     int longestName = 0;
     int longestDesc = 0;
     ModelicaMatVariable_t **mat_var = GC_malloc(numToFilter*sizeof(ModelicaMatVariable_t*));
     int *indexes = (int*) GC_malloc(simresglob.matReader.nvar*sizeof(int)); /* Need it to be zeros; note that the actual number of indexes is smaller */
+    int *parameter_indexes = (int*) GC_malloc(simresglob.matReader.nparam*sizeof(int)); /* Need it to be zeros; note that the actual number of indexes is smaller */
     int *indexesToOutput = NULL;
+    int *parameter_indexesToOutput = NULL;
+    parameter_indexes[0] = 1; /* time */
     omc_matlab4_read_all_vals(&simresglob.matReader);
     for (i=0; i<numToFilter; i++) {
       const char *var = MMC_STRINGDATA(MMC_CAR(vars));
@@ -418,20 +437,22 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
         return 0;
       }
       if (mat_var[i]->isParam) {
-        msg[0] = SystemImpl__basename(inFile);
-        msg[1] = var;
-        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("filterSimulationResults not implemented for parameter variable %s in file %s."), msg, 1);
-        return 0;
-      }
-      /* Store the old index in the array */
-      if (0==indexes[mat_var[i]->index-1]++) {
-        numUnique++;
+        /* Store the old index in the array */
+        if (0==parameter_indexes[abs(mat_var[i]->index)-1]++) {
+          numUniqueParam++;
+        }
+      } else {
+        /* Store the old index in the array */
+        if (0==indexes[abs(mat_var[i]->index)-1]++) {
+          numUnique++;
+        }
       }
       longestName = intMax(longestName, strlen(mat_var[i]->name));
       longestDesc = intMax(longestDesc, strlen(mat_var[i]->descr));
     }
     /* Create the list of variable indexes to output */
     indexesToOutput = GC_malloc_atomic(numUnique * sizeof(int));
+    parameter_indexesToOutput = GC_malloc_atomic(numUniqueParam * sizeof(int));
     j=0;
     for (i=0; i<simresglob.matReader.nvar; i++) {
       if (indexes[i]) {
@@ -439,6 +460,14 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       }
       /* indexes becomes the lookup table from old index to new index */
       indexes[i] = j;
+    }
+    j=0;
+    for (i=0; i<simresglob.matReader.nparam; i++) {
+      if (parameter_indexes[i]) {
+        parameter_indexesToOutput[j++] = i+1;
+      }
+      /* indexes becomes the lookup table from old index to new index */
+      parameter_indexes[i] = j;
     }
     FILE *fout = fopen(outFile, "wb");
     if (fout == NULL) {
@@ -485,13 +514,13 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       return failedToWriteToFile(outFile);
     }
     for (i=0; i<numToFilter; i++) {
-      int32_t x = 2; /* data_2 */
+      int32_t x = mat_var[i]->isParam ? 1 : 2; /* data_1 or data_2 */
       if (1 != fwrite(&x, sizeof(int32_t), 1, fout)) {
         return failedToWriteToFile(outFile);
       }
     }
     for (i=0; i<numToFilter; i++) {
-      int32_t x = indexes[indexesToOutput[i]-1];
+      int32_t x = (mat_var[i]->index < 0 ? -1 : 1) * (mat_var[i]->isParam ? parameter_indexes[abs(mat_var[i]->index)-1] : indexes[abs(mat_var[i]->index)-1]);
       if (1 != fwrite(&x, sizeof(int32_t), 1, fout)) {
         return failedToWriteToFile(outFile);
       }
@@ -509,21 +538,81 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       }
     }
 
-    if (writeMatVer4MatrixHeader(fout, "data_1", 2, 1, sizeof(double))) {
+    if (writeMatVer4MatrixHeader(fout, "data_1", 2, numUniqueParam, sizeof(double))) {
       return failedToWriteToFile(outFile);
     }
     double start_stop[2] = {omc_matlab4_startTime(&simresglob.matReader), omc_matlab4_stopTime(&simresglob.matReader)};
+    double start = start_stop[0];
+    double stop = start_stop[1];
+
     if (1 != fwrite(start_stop, sizeof(double)*2, 1, fout)) {
       return failedToWriteToFile(outFile);
     }
 
-    if (writeMatVer4MatrixHeader(fout, "data_2", simresglob.matReader.nrows, numUnique, sizeof(double))) {
+    for (i=1; i<numUniqueParam; i++) {
+      int paramIndex = parameter_indexesToOutput[i];
+      double d[2] = {simresglob.matReader.params[abs(paramIndex)-1],0};
+      d[1] = d[0];
+      if (1!=fwrite(d, sizeof(double)*2, 1, fout)) {
+        return failedToWriteToFile(outFile);
+      }
+    }
+
+    if (numberOfIntervals) {
+      double *timevals = omc_matlab4_read_vals(&simresglob.matReader, 1);
+      int last_found=0;
+      int nevents=0, neventpoints=0;
+      for (i=1; i<numberOfIntervals; i++) {
+        double t = start + (stop-start)*((double)i)/numberOfIntervals;
+        while (timevals[j]<=t) {
+          if (timevals[j]==timevals[j+1]) {
+            while (timevals[j]==timevals[j+1]) {
+              j++;
+              neventpoints++;
+            }
+            nevents++;
+          }
+          j++;
+        }
+      }
+      msg[4] = inFile;
+      GC_asprintf((char**)msg+3, "%d", simresglob.matReader.nrows);
+      GC_asprintf((char**)msg+2, "%d", numberOfIntervals);
+      GC_asprintf((char**)msg+1, "%d", nevents);
+      GC_asprintf((char**)msg+0, "%d", neventpoints);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_notification, gettext("Resampling %s from %s points to %s points, removing %s events stored in %s points.\n"), msg, 5);
+    }
+
+    if (writeMatVer4MatrixHeader(fout, "data_2", numberOfIntervals ? numberOfIntervals+1 : simresglob.matReader.nrows, numUnique, sizeof(double))) {
       return failedToWriteToFile(outFile);
     }
     for (i=0; i<numUnique; i++) {
-      double *vals = omc_matlab4_read_vals(&simresglob.matReader, indexesToOutput[i]);
-      if (1!=fwrite(vals, sizeof(double)*simresglob.matReader.nrows, 1, fout)) {
+      double *vals = NULL;
+      int nrows;
+      if (numberOfIntervals) {
+        omc_matlab4_read_all_vals(&simresglob.matReader);
+        nrows = numberOfIntervals+1;
+        vals = GC_malloc_atomic(sizeof(double)*nrows);
+        for (j=0; j<=numberOfIntervals; j++) {
+          double t = j==numberOfIntervals ? stop : start + (stop-start)*((double)j)/numberOfIntervals;
+          ModelicaMatVariable_t var = {.name="", .descr="", .isParam=0, .index=indexesToOutput[i]};
+          if (omc_matlab4_val(vals+j, &simresglob.matReader, &var, t)) {
+            msg[2] = inFile;
+            GC_asprintf((char**)msg+1, "%d", indexesToOutput[i]);
+            GC_asprintf((char**)msg+0, "%.15g", t);
+            c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Resampling %s failed to get variable %s at time %s.\n"), msg, 3);
+            return 0;
+          }
+        }
+      } else {
+        vals = omc_matlab4_read_vals(&simresglob.matReader, indexesToOutput[i]);
+        nrows = simresglob.matReader.nrows;
+      }
+      if (1!=fwrite(vals, sizeof(double)*nrows, 1, fout)) {
         return failedToWriteToFile(outFile);
+      }
+      if (numberOfIntervals) {
+        GC_free(vals);
       }
     }
     fclose(fout);

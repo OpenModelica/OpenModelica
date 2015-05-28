@@ -1,3 +1,8 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <Core/System/FactoryExport.h>
 #include <Core/System/ContinuousEvents.h>
@@ -41,5 +46,5 @@ bool EventHandling::startEventIteration(bool& state_vars_reinitialized)
    return _continuousEvents->startEventIteration(state_vars_reinitialized);
 }
 
-
+/** @} */ // end of coreSystem
 

@@ -1,5 +1,5 @@
 
-INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/3rdParty/FMIL/install_msvc/include")
+INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/OMCompiler/3rdParty/FMIL/install_msvc/include")
 
 # Quellen und Header
 SET(fmi_sources  FMI1CoSimulation.c  FMI1Common.c  FMI1ModelExchange.c  FMI2Common.c  FMI2ModelExchange.c  FMICommon.c)

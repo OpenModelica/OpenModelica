@@ -1,6 +1,11 @@
 #pragma once
+/** @defgroup simcorefactoryVxworks SimCoreFactory.VxWorks
+ *  Object factory for the Vxworks target
+ *  @{
+ */
 #include <Core/SimController/ISimController.h>
-#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 
 class ISimController;
 
@@ -25,3 +30,4 @@ private:
     string _library_path;
     string _modelicasystem_path;
 };
+/** @} */ // end of simcorefactoryVxworks

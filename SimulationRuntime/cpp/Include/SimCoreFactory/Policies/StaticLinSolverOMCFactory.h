@@ -1,10 +1,14 @@
 #pragma once
-
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
+/*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
 #include <Solver/UmfPack/UmfPack.h>
 #include <Solver/UmfPack/UmfPackSettings.h>
 #include <Core/Solver/IAlgLoopSolver.h>
-
+*/
 template<class T>
 struct ObjectFactory;
 
@@ -50,3 +54,4 @@ protected:
 private:
     type_map _linsolver_type_map;
 };
+/** @} */ // end of simcorefactoriesPolicies

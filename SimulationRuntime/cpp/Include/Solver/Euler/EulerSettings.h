@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup solverEuler
+ *  
+ *  @{
+ */
 #include "FactoryExport.h"
 #include <Core/Solver/SolverSettings.h>
 #include <Solver/Euler/IEulerSettings.h>
@@ -69,3 +73,4 @@ private:
 
 
 };
+/** @} */ // end of solverEuler

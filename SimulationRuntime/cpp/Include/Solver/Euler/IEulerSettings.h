@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup solverEuler
+ *  
+ *  @{
+ */
 
 
 /*****************************************************************************/
@@ -71,3 +74,4 @@ public:
     virtual void load(std::string xml_file)=0;
 
 };
+/** @} */ // end of solverEuler

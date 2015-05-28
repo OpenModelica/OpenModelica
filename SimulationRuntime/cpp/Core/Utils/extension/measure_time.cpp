@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Core/Utils/extension/measure_time.hpp>
 
 MeasureTime * MeasureTime::instance = 0;

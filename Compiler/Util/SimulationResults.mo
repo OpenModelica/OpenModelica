@@ -50,10 +50,11 @@ end val;
 
 public function readVariables
   input String filename;
-  input Boolean readParameters;
+  input Boolean readParameters = true;
+  input Boolean openmodelicaStyle = false;
   output list<String> vars;
 
-  external "C" vars=SimulationResults_readVariables(filename,readParameters) annotation(Library = "omcruntime");
+  external "C" vars=SimulationResults_readVariables(filename, readParameters, openmodelicaStyle) annotation(Library = "omcruntime");
 end readVariables;
 
 public function readDataset
@@ -120,8 +121,9 @@ public function filterSimulationResults
   input String inFile;
   input String outFile;
   input list<String> vars;
+  input Integer numberOfIntervals=0;
   output Boolean result;
-  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars) annotation(Library = "omcruntime");
+  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals) annotation(Library = "omcruntime");
 end filterSimulationResults;
 
 annotation(__OpenModelica_Interface="frontend");

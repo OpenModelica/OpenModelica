@@ -565,7 +565,7 @@ algorithm
     case (_, Values.ARRAY(valueLst = vals as Values.ARRAY() :: _, dimLst = dim :: _), _)
       equation
         (DAE.T_ARRAY(ty = ty, dims = dims), _) = getVariableTypeAndBinding(inCref, inEnv);
-        false = Types.isArray(ty, dims);
+        false = Types.isNonscalarArray(ty, dims);
         vals = List.map(vals, ValuesUtil.arrayScalar);
       then
         Values.ARRAY(vals, {dim});

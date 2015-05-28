@@ -1,3 +1,8 @@
+/** @addtogroup solverNewton
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
 
@@ -56,3 +61,4 @@ void         NewtonSettings::setDelta(double t)
 void NewtonSettings::load(string)
 {
 }
+/** @} */ // end of solverNewton

@@ -158,7 +158,7 @@ public function removeSimpleEquations "author: Frenkel TUD 2012-12
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
- Boolean b;
+  Boolean b;
 algorithm
   b := BackendDAEUtil.hasDAEMatching(inDAE);
   outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
@@ -169,7 +169,36 @@ algorithm
     case "new" then performAliasEliminationBB(inDAE);
     else inDAE;
   end match;
+
+  outDAE := fixAliasVars(outDAE) "workaround for #3323";
 end removeSimpleEquations;
+
+protected function fixAliasVars "author: lochel
+  This is a workaround for #3323
+  TODO: Remove this once removeSimpleEquations is implemented properly.
+
+  This module traverses all alias variables and double-checks if they are alias or known variables."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Variables aliasVars;
+  list<BackendDAE.Var> aliasVarList = {};
+  list<BackendDAE.Var> knownVarList;
+  DAE.Exp binding;
+algorithm
+  aliasVars := BackendDAEUtil.getAliasVars(inDAE);
+  knownVarList := BackendVariable.varList(BackendDAEUtil.getKnownVars(inDAE));
+  for var in BackendVariable.varList(aliasVars) loop
+    binding := BackendVariable.varBindExp(var);
+    if Expression.isConst(binding) then
+      knownVarList := var::knownVarList;
+    else
+      aliasVarList := var::aliasVarList;
+    end if;
+  end for;
+  outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
+  outDAE := BackendDAEUtil.setKnownVars(outDAE, BackendVariable.listVar(knownVarList));
+end fixAliasVars;
 
 
 // =============================================================================

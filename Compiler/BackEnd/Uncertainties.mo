@@ -628,7 +628,7 @@ protected function isApproximatedEquation3
   output Boolean out;
 algorithm
 out:= match(m)
-  case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))))
+  case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation",SCode.MOD(binding = SOME(Absyn.BOOL(true)))))
      then true;
   case(_)
      then false;

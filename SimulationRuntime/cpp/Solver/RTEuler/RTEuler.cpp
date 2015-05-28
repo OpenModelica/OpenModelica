@@ -1,3 +1,9 @@
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Solver/RTEuler/RTEuler.h>
 #include <Solver/RTEuler/RTEulerSettings.h>
 
@@ -159,3 +165,4 @@ void RTEuler::setTimeOut(unsigned int time_out)
 {}
 void RTEuler::stop()
 {}
+/** @} */ // end of solverRteuler

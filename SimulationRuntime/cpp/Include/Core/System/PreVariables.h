@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 class  PreVariables
 {
 public:
@@ -25,3 +28,4 @@ protected:
         *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
 };
+/** @} */ // end of coreSystem

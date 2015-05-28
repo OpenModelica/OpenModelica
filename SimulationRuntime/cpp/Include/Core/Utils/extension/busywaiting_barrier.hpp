@@ -104,7 +104,7 @@ class busywaiting_barrier
     busywaiting_barrier(int counterValueMax) : counterValue(counterValueMax), counterValueRelease(0), ready(true), counterValueMax(counterValueMax) {}
     ~busywaiting_barrier() {}
 
-    FORCE_INLINE inline void wait()
+    FORCE_INLINE void wait()
     {
         //std::cerr << "entering wait function (counterValueMax: " << counterValueMax << ")" << std::endl;
         while(!ready) {}

@@ -1,11 +1,15 @@
 #pragma once
-
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
+/*includes removed for static linking not needed any more
 #include <SimCoreFactory/Policies/NonLinSolverOMCFactory.h>
 #include <Solver/Newton/Newton.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 #include <Core/Solver/IAlgLoopSolver.h>
-
+*/
 template<class T>
 struct ObjectFactory;
 
@@ -59,3 +63,4 @@ public:
 
    }
 };
+/** @} */ // end of simcorefactoriesPolicies

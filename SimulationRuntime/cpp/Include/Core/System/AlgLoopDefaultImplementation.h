@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 
 /*****************************************************************************/
 /**
@@ -28,12 +31,12 @@ enum OUTPUT
     RESULTS      =  0x00000020,      ///< Write out results
     SIMINFO      =  0x00000040      ///< Write out simulation info (e.g. number of steps)
   };
-
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class AlgLoopDefaultImplementation
-#else
+#else*/
 class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL AlgLoopDefaultImplementation
-#endif
+/*#endif*/
 {
 public:
     AlgLoopDefaultImplementation();
@@ -94,3 +97,4 @@ protected:
         _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
 
 };
+/** @} */ // end of coreSystem

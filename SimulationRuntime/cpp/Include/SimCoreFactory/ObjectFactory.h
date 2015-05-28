@@ -1,7 +1,8 @@
 #pragma once
-#if defined(__vxworks)
-#include <SimCoreFactory/Policies/FactoryConfig.h>
-#endif
+/** @defgroup simcorefactory SimCoreFactory
+ *  Base module for all object factories
+ *  @{
+ */
 
 template<class T>
 struct ObjectFactory
@@ -22,3 +23,4 @@ protected:
     PATH _modelicasystem_path;
     PATH _config_path;
 };
+/** @} */ // end of simcorefactoryBodas

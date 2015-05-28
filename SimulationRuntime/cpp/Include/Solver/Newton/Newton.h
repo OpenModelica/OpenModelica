@@ -1,4 +1,7 @@
-
+/** @addtogroup solverNewton
+ *  
+ *  @{
+ */
 
 #pragma once
 
@@ -92,3 +95,4 @@ private:
 
   long int *_iHelp;
 };
+/** @} */ // end of solverNewton

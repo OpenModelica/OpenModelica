@@ -1,5 +1,8 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
 /**
 Auxiliary  class to handle system events
 Implements the Modelica pre,edge,change operators
@@ -9,12 +12,12 @@ Holds an event queue to handle all events occured at the same time
 
 class ContinuousEvents;
 class DiscreteEvents;
-
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class EventHandling
-#else
+#else*/
 class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
-#endif
+/*#endif*/
 {
 public:
   EventHandling();
@@ -30,3 +33,4 @@ private:
 boost::shared_ptr<ContinuousEvents> _continuousEvents;
 
 };
+/** @} */ // end of coreSystem

@@ -181,9 +181,8 @@ algorithm
       Option<SimCode.FmiModelStructure> modelStruct;
       list<SimCodeVar.SimVar> mixedArrayVars;
       HpcOmSimCode.HpcOmData hpcomData;
-      Option<HashTableCrIListArray.HashTable> optVarToArrayIndexMapping;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
-
+      HashTableCrILst.HashTable varToIndexMapping;
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
       //Initial System
       //--------------
@@ -197,7 +196,7 @@ algorithm
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, varToArrayIndexMapping, crefToSimVarHT, backendMapping) = simCode;
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, varToArrayIndexMapping, varToIndexMapping, crefToSimVarHT, backendMapping) = simCode;
 
       //print("Number of literals pre: " + intString(listLength(simCodeLiterals)) + "\n");
 
@@ -340,7 +339,7 @@ algorithm
 
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
           parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-          discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, varToArrayIndexMapping, crefToSimVarHT, backendMapping, modelStruct) = simCode;
+          discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, varToArrayIndexMapping, varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct) = simCode;
 
       //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraphSimplified,taskGraphDataSimplified,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
@@ -350,7 +349,7 @@ algorithm
 
       fileName = ("taskGraph"+filenamePrefix+"ODE_schedule.graphml");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
-      //HpcOmScheduler.printSchedule(schedule);
+      //HpcOmScheduler.printSchedule(scheduleOde);
 
       SimCodeUtil.execStat("hpcom dump schedule TaskGraph");
 
@@ -368,18 +367,15 @@ algorithm
 
       //Create Memory-Map and Sim-Code
       //------------------------------
-      (optTmpMemoryMap,optVarToArrayIndexMapping) = HpcOmMemory.createMemoryMap(modelInfo, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
-      if(Util.isSome(optVarToArrayIndexMapping)) then
-        SOME(varToArrayIndexMapping) = optVarToArrayIndexMapping;
-        BaseHashTable.dumpHashTable(varToArrayIndexMapping);
-      end if;
+      (optTmpMemoryMap, varToArrayIndexMapping, varToIndexMapping) = HpcOmMemory.createMemoryMap(modelInfo, varToArrayIndexMapping, varToIndexMapping, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
+      //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
 
       SimCodeUtil.execStat("hpcom create memory map");
 
-      hpcomData = HpcOmSimCode.HPCOMDATA(SOME(scheduleDae), SOME(scheduleOde), optTmpMemoryMap);
+      hpcomData = HpcOmSimCode.HPCOMDATA(SOME((scheduleOde, scheduleDae)), optTmpMemoryMap);
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping, crefToSimVarHT, backendMapping, modelStruct);
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping, varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct);
 
       //print("Number of literals post: " + intString(listLength(simCodeLiterals)) + "\n");
 
@@ -1144,7 +1140,7 @@ public function getSimCodeEqByIndex "function getSimCodeEqByIndex
   author: marcusw
   Returns the SimEqSystem which has the given Index. This method is called from susan."
   input list<SimCode.SimEqSystem> iEqs; //All SimEqSystems
-  input Integer iIdx; //The index of the wanted system
+  input Integer iIdx; //The index of the required system
   output SimCode.SimEqSystem oEq;
 
 protected
@@ -1185,8 +1181,8 @@ algorithm
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then index;
     case(SimCode.SES_IFEQUATION(index=index)) then index;
     case(SimCode.SES_ALGORITHM(index=index)) then index;
-    case(SimCode.SES_LINEAR(index=index)) then index;
-    case(SimCode.SES_NONLINEAR(index=index)) then index;
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index))) then index;
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index))) then index;
     case(SimCode.SES_MIXED(index=index)) then index;
     case(SimCode.SES_WHEN(index=index)) then index;
     else fail();
@@ -1272,9 +1268,6 @@ algorithm
     print("There are simCode-equations multiple times in the graph structure.\n");
   end if;
   targetSize := listLength(List.flatten(iOdeEqs));
-  if (intEq(targetSize,1) and SimCodeUtil.isDummyEq(listHead(listHead(iOdeEqs)))) then
-    targetSize := 0;
-  end if;
   oIsCorrect := intEq(targetSize,actualSize);
   if(oIsCorrect) then
     print("the ODE-system size is correct("+intString(actualSize)+")\n");

@@ -2847,9 +2847,7 @@ algorithm
     case (cache,_,"readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)},st,_)
       equation
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
-        pwd = System.pwd();
-        pd = System.pathDelimiter();
-        filename_1 = if System.strncmp("/",filename,1)==0 then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = Util.absoluteOrRelative(filename);
         value = ValuesUtil.readDataset(filename_1, vars_1, size);
       then
         (cache,value,st);
@@ -2863,17 +2861,15 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = if System.strncmp("/",filename,1)==0 then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = Util.absoluteOrRelative(filename);
         i = SimulationResults.readSimulationResultSize(filename_1);
       then
         (cache,Values.INTEGER(i),st);
 
-    case (cache,_,"readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b)},st,_)
+    case (cache,_,"readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b1),Values.BOOL(b2)},st,_)
       equation
-        pwd = System.pwd();
-        pd = System.pathDelimiter();
-        filename_1 = if System.strncmp("/",filename,1)==0 then filename else stringAppendList({pwd,pd,filename});
-        args = SimulationResults.readVariables(filename_1,b);
+        filename_1 = Util.absoluteOrRelative(filename);
+        args = SimulationResults.readVariables(filename_1, b1, b2);
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then
@@ -2881,12 +2877,10 @@ algorithm
 
     case (cache,_,"compareSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(x1),Values.REAL(x2),Values.ARRAY(valueLst=cvars)},st,_)
       equation
-        pwd = System.pwd();
-        pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
+        filename = Util.absoluteOrRelative(filename);
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
-        filename2 = if System.substring(filename2,1,1) == "/" then filename2 else stringAppendList({pwd,pd,filename2});
+        filename_1 = Util.absoluteOrRelative(filename_1);
+        filename2 = Util.absoluteOrRelative(filename2);
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         strings = SimulationResults.cmpSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,x1,x2,vars_1);
         cvars = List.map(strings,ValuesUtil.makeString);
@@ -2897,10 +2891,10 @@ algorithm
     case (cache,_,"compareSimulationResults",_,st,_)
       then (cache,Values.STRING("Error in compareSimulationResults"),st);
 
-    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars)},st,_)
+    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars),Values.INTEGER(numberOfIntervals)},st,_)
       equation
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1);
+        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals);
       then
         (cache,Values.BOOL(b),st);
 
@@ -2911,16 +2905,16 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
+        filename = Util.absoluteOrRelative(filename);
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
-        filename2 = if System.substring(filename2,1,1) == "/" then filename2 else stringAppendList({pwd,pd,filename2});
+        filename_1 = Util.absoluteOrRelative(filename_1);
+        filename2 = Util.absoluteOrRelative(filename2);
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         (b,strings) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
         cvars = List.map(strings,ValuesUtil.makeString);
-        v = ValuesUtil.makeArray(cvars);
+        v1 = ValuesUtil.makeArray(cvars);
       then
-        (cache,Values.TUPLE({Values.BOOL(b),v}),st);
+        (cache,Values.TUPLE({Values.BOOL(b),v1}),st);
 
     case (cache,_,"diffSimulationResults",_,st,_)
       equation
@@ -2929,11 +2923,9 @@ algorithm
 
     case (cache,_,"diffSimulationResultsHtml",{Values.STRING(str),Values.STRING(filename),Values.STRING(filename_1),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta)},st,_)
       equation
-        pwd = System.pwd();
-        pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
+        filename = Util.absoluteOrRelative(filename);
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename_1 = Util.absoluteOrRelative(filename_1);
         str = SimulationResults.diffSimulationResultsHtml(Config.getRunningTestsuite(),filename,filename_1,reltol,reltolDiffMinMax,rangeDelta,str);
       then
         (cache,Values.STRING(str),st);
@@ -7165,7 +7157,7 @@ algorithm
         funcName = SOME(fid),
         annotation_ = SOME(SCode.ANNOTATION(mod)))))))
       equation
-        SCode.MOD(binding = SOME((lib, _))) = Mod.getUnelabedSubMod(mod, "Library");
+        SCode.MOD(binding = SOME(lib)) = Mod.getUnelabedSubMod(mod, "Library");
         true = checkLibraryUsage("Lapack", lib) or checkLibraryUsage("lapack", lib);
         isCevaluableFunction2(fid);
       then

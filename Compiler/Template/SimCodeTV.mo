@@ -456,29 +456,13 @@ package SimCode
     end SES_ALGORITHM;
 
     record SES_LINEAR
-      Integer index;
-      Boolean partOfMixed;
-
-      list<SimCodeVar.SimVar> vars;
-      list<DAE.Exp> beqs;
-      list<tuple<Integer, Integer, SimEqSystem>> simJac;
-      /* solver linear tearing system */
-      list<SimEqSystem> residual;
-      Option<JacobianMatrix> jacobianMatrix;
-
-      list<DAE.ElementSource> sources;
-      Integer indexLinearSystem;
+      LinearSystem lSystem;
+      Option<LinearSystem> alternativeTearing;
     end SES_LINEAR;
 
     record SES_NONLINEAR
-      Integer index;
-      list<SimEqSystem> eqs;
-      list<DAE.ComponentRef> crefs;
-      Integer indexNonLinearSystem;
-      Option<JacobianMatrix> jacobianMatrix;
-      Boolean linearTearing;
-      Boolean homotopySupport;
-      Boolean mixedSystem;
+      NonlinearSystem nlSystem;
+      Option<NonlinearSystem> alternativeTearing;
     end SES_NONLINEAR;
 
     record SES_MIXED
@@ -495,21 +479,48 @@ package SimCode
       Boolean initialCall;                  // true, if top-level branch with initial()
       DAE.ComponentRef left;
       DAE.Exp right;
-    Option<SimEqSystem> elseWhen;
-    DAE.ElementSource source;
-  end SES_WHEN;
+      Option<SimEqSystem> elseWhen;
+      DAE.ElementSource source;
+    end SES_WHEN;
 
-  record SES_FOR_LOOP
-    Integer index;
-    DAE.Exp iter;
-    DAE.Exp startIt;
-    DAE.Exp endIt;
-    DAE.ComponentRef cref;//lhs
-    DAE.Exp exp;//rhs
-    DAE.ElementSource source;
-  end SES_FOR_LOOP;
-
+    record SES_FOR_LOOP
+      Integer index;
+      DAE.Exp iter;
+      DAE.Exp startIt;
+      DAE.Exp endIt;
+      DAE.ComponentRef cref;//lhs
+      DAE.Exp exp;//rhs
+      DAE.ElementSource source;
+    end SES_FOR_LOOP;
   end SimEqSystem;
+
+  uniontype LinearSystem
+    record LINEARSYSTEM
+      Integer index;
+      Boolean partOfMixed;
+      list<SimCodeVar.SimVar> vars;
+      list<DAE.Exp> beqs;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      /* solver linear tearing system */
+      list<SimEqSystem> residual;
+      Option<JacobianMatrix> jacobianMatrix;
+      list<DAE.ElementSource> sources;
+      Integer indexLinearSystem;
+    end LINEARSYSTEM;
+  end LinearSystem;
+
+  uniontype NonlinearSystem
+    record NONLINEARSYSTEM
+      Integer index;
+      list<SimEqSystem> eqs;
+      list<DAE.ComponentRef> crefs;
+      Integer indexNonLinearSystem;
+      Option<JacobianMatrix> jacobianMatrix;
+      Boolean linearTearing;
+      Boolean homotopySupport;
+      Boolean mixedSystem;
+    end NONLINEARSYSTEM;
+  end NonlinearSystem;
 
   uniontype StateSet
     record SES_STATESET
@@ -542,6 +553,7 @@ package SimCode
       SimCodeVar.SimVars vars;
       list<Function> functions;
       list<String> labels;
+      Integer maxDer;
     end MODELINFO;
   end ModelInfo;
 
@@ -940,10 +952,15 @@ package SimCodeUtil
   function getVarIndexListByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;
-    input Integer iIndexForUndefinedReferences;
-    output list<Integer> oVarIndexList;
+    input String iIndexForUndefinedReferences;
+    output list<String> oVarIndexList;
   end getVarIndexListByMapping;
 
+  function isVarIndexListConsecutive
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    output Boolean oIsConsecutive;
+  end isVarIndexListConsecutive;
 end SimCodeUtil;
 
 
@@ -972,6 +989,9 @@ package BackendDAE
     record OPT_LOOP_INPUT
       DAE.ComponentRef replaceExp;
     end OPT_LOOP_INPUT;
+    record ALG_STATE "algebraic state"
+      VarKind oldKind;
+    end ALG_STATE;
   end VarKind;
 
   uniontype ZeroCrossing
@@ -1034,6 +1054,7 @@ package BackendDAE
 
   constant String optimizationMayerTermName;
   constant String optimizationLagrangeTermName;
+  constant String symEulerDT;
 
 end BackendDAE;
 
@@ -1504,6 +1525,12 @@ package DAE
       Type identType;
       list<Subscript> subscriptLst;
     end CREF_IDENT;
+    record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
+      Ident ident;
+      Integer index;
+      Type identType "type of the identifier, without considering the subscripts";
+      list<Subscript> subscriptLst;
+    end CREF_ITER;
     record OPTIMICA_ATTR_INST_CREF
       ComponentRef componentRef;
       String instant;
@@ -2778,6 +2805,11 @@ end List;
 
 package ComponentReference
 
+  function crefAppendedSubs
+    input DAE.ComponentRef cref;
+    output String s;
+  end crefAppendedSubs;
+
   function makeUntypedCrefIdent
     input String ident;
     output DAE.ComponentRef outCrefIdent;
@@ -3490,8 +3522,7 @@ end HpcOmSimCodeMain;
 package HpcOmSimCode
   uniontype HpcOmData
     record HPCOMDATA
-      Option<Schedule> daeSchedule;
-      Option<Schedule> odeSchedule;
+      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules;
       Option<MemoryMap> hpcOmMemory;
     end HPCOMDATA;
   end HpcOmData;
@@ -3548,53 +3579,62 @@ package HpcOmSimCode
       list<tuple<Task,list<Integer>>> tasks;
     end TASKDEPSCHEDULE;
     record EMPTYSCHEDULE
+      TaskList tasks;
     end EMPTYSCHEDULE;
   end Schedule;
 
   uniontype MemoryMap
     record MEMORYMAP_ARRAY
-      array<tuple<Integer,Integer>> positionMapping;
       Integer floatArraySize;
       Integer intArraySize;
       Integer boolArraySize;
-      HashTableCrILst.HashTable scVarNameIdxMapping;
-      tuple<list<Integer>, list<Integer>, list<Integer>> otherVars;
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 end HpcOmSimCode;
 
-package HpcOmMemory
-  function getPositionMappingByArrayName
-    input Option<HpcOmSimCode.MemoryMap> iMemoryMapOpt;
-    input DAE.ComponentRef iVarName;
-    output Option<tuple<Integer,Integer>> oResult;
-  end getPositionMappingByArrayName;
-
-  function expandCref
-    input DAE.ComponentRef iCref;
-    input list<String> iNumArrayElems;
-    output list<DAE.ComponentRef> oCrefs;
-  end expandCref;
-
-  function expandCrefWithDims
-    input DAE.ComponentRef iCref;
-    input DAE.Dimensions iDims;
-    output list<DAE.ComponentRef> oCrefs;
-  end expandCrefWithDims;
-
-  function getSubscriptListOfArrayCref
-    input DAE.ComponentRef iCref;
-    input list<String> iNumArrayElems;
-    output list<list<DAE.Subscript>> oSubscriptList;
-  end getSubscriptListOfArrayCref;
-end HpcOmMemory;
-
 package HpcOmScheduler
   function convertFixedLevelScheduleToTaskLists
-    input HpcOmSimCode.Schedule iSchedule;
+    input HpcOmSimCode.Schedule iOdeSchedule;
+    input HpcOmSimCode.Schedule iDaeSchedule;
     input Integer iNumOfThreads;
-    output array<list<list<HpcOmSimCode.Task>>> oThreadLevelTasks;
+    output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks;
   end convertFixedLevelScheduleToTaskLists;
 end HpcOmScheduler;
+
+package HashTableCrIListArray
+  type Key = DAE.ComponentRef;
+  type Value = tuple<list<Integer>, array<Integer>>;
+
+  type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
+  type HashTable = tuple<
+    array<list<tuple<Key,Integer>>>,
+    tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
+    Integer,
+    Integer,
+    HashTableCrefFunctionsType
+  >;
+
+  function FuncHashCref
+    input Key cr;
+    input Integer mod;
+    output Integer res;
+  end FuncHashCref;
+
+  function FuncCrefEqual
+    input Key cr1;
+    input Key cr2;
+    output Boolean res;
+  end FuncCrefEqual;
+
+  function FuncCrefStr
+    input Key cr;
+    output String res;
+  end FuncCrefStr;
+
+  function FuncExpStr
+    input Value exp;
+    output String res;
+  end FuncExpStr;
+end HashTableCrIListArray;
 
 end SimCodeTV;

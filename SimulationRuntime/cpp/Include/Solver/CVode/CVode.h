@@ -1,4 +1,7 @@
-
+/** @defgroup solverCvode Solver.CVode
+ *  CVode class wrapper from sundials package
+ *  @{
+ */
 #pragma once
 
 #include "FactoryExport.h"
@@ -234,10 +237,12 @@ double
    IMixedSystem* _mixed_system;
    ITime* _time_system;
 
+   int _numberOfOdeEvaluations;
+
    #ifdef RUNTIME_PROFILING
    std::vector<MeasureTimeData> measureTimeFunctionsArray;
    MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues, *solveFunctionStartValues, *solveFunctionEndValues;
    MeasureTimeValuesSolver *solverValues;
    #endif
 };
-
+/** @} */ // end of solverCvode

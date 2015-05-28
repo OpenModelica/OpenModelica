@@ -88,6 +88,7 @@ algorithm
 
    if not inOptimicaFlag then
     Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+    Flags.setConfigBool(Flags.DSIABLE_DSS, true);
    end if;
 
     (mayer,lagrange,startTimeE,finalTimeE) := match(inClassAttr)
@@ -497,7 +498,7 @@ public function removeLoops
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  if Flags.isSet(Flags.EXTENDS_DYN_OPT) and Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+  if Flags.isSet(Flags.EXTENDS_DYN_OPT) then
     //BackendDump.bltdump("***", inDAE);
     (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findLoops, false);
     //BackendDump.bltdump("###", outDAE);
@@ -642,6 +643,7 @@ algorithm
     var := BackendVariable.makeVar(cr);
     var := BackendVariable.setVarMinMax(var, SOME(DAE.RCONST(0.0)), SOME(DAE.RCONST(0.0)));
     var := BackendVariable.setVarKind(var, BackendDAE.OPT_CONSTR());
+    var := BackendVariable.setVarDirection(var, DAE.OUTPUT());
 
     ovars := BackendVariable.addNewVar(var, ovars);
     res := BackendDAEOptimize.makeEquationToResidualExp(eqn);
@@ -690,7 +692,7 @@ protected
   BackendDAE.Variables v;
   BackendDAE.Shared shared;
 algorithm
-  if Flags.isSet(Flags.REDUCE_DYN_OPT) and Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+  if Flags.isSet(Flags.REDUCE_DYN_OPT) then
 
     //BackendDump.bltdump("START:reduceDynamicOptimization", inDAE);
     BackendDAE.DAE(systlst, shared) := inDAE;

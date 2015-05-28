@@ -1,5 +1,9 @@
 #pragma once
-#include <Core/Modelica.h>
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
+     
 /*****************************************************************************/
 /**
 
@@ -70,3 +74,4 @@ public:
   void addConstraint(double& constr_value);
   */
 };
+/** @} */ // end of coreSystem

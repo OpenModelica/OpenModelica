@@ -1,9 +1,13 @@
 #pragma once
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <boost/multi_array.hpp>
 #endif
-
+*/
 class IStateSelection
 {
 public:
@@ -20,3 +24,4 @@ public:
   virtual bool getAMatrix(unsigned int index, DynArrayDim1<int> & A) = 0 ;
   virtual void setAMatrix(unsigned int index, DynArrayDim1<int>& A) = 0;
 };
+/** @} */ // end of coreSystem

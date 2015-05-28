@@ -1,11 +1,14 @@
 #pragma once
-
-
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class ContinuousEvents
-#else
+#else*/
 class BOOST_EXTENSION_EVENTHANDLING_DECL ContinuousEvents
-#endif
+/*#endif*/
 {
 public:
   ContinuousEvents();
@@ -22,3 +25,4 @@ private:
   bool* _conditions0;
   bool* _conditions1;
 };
+/** @} */ // end of coreSystem

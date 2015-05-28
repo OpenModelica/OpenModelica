@@ -1,5 +1,10 @@
+/** @addtogroup coreSystem
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-#include <SimCoreFactory/Policies/FactoryConfig.h>
+
 #include <Core/System/FactoryExport.h>
 #include <Core/System/SimVars.h>
 #include <boost/lambda/bind.hpp>
@@ -17,32 +22,38 @@
 */
 SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index):
     _dim_real(dim_real), _dim_int(dim_int), _dim_bool(dim_bool), _dim_pre_vars(dim_pre_vars), _dim_z(dim_state_vars), _z_i(state_index)
- ,_pre_vars(NULL)
+    ,_pre_vars(NULL)
 {
   if (_dim_real + _dim_int + _dim_bool > _dim_pre_vars)
     throw std::runtime_error("Wrong pre variable size");
   //allocate memory for all model variables
   if(dim_bool>0)
-  _bool_vars = boost::shared_ptr<AlignedArray<bool> >(new AlignedArray<bool>(dim_bool));
+    _bool_vars = (bool*)alignedMalloc(sizeof(bool) * dim_bool, 64);
   if(dim_int>0)
-  _int_vars = boost::shared_ptr<AlignedArray<int> >(new AlignedArray<int>(dim_int));
+    _int_vars = (int*)alignedMalloc(sizeof(int) * dim_int, 64);
   if(dim_real>0)
-  _real_vars = boost::shared_ptr<AlignedArray<double> >(new AlignedArray<double>(dim_real));
+    _real_vars = (double*)alignedMalloc(sizeof(double) * dim_real, 64);
   if (dim_pre_vars > 0)
     _pre_vars =  new double[dim_pre_vars];
   //initialize all model variables
   if (dim_bool > 0)
-    std::fill(_bool_vars.get()->get(), _bool_vars.get()->get() + dim_bool, false);
+    std::fill(_bool_vars, _bool_vars + dim_bool, false);
   if (dim_int > 0)
-    std::fill(_int_vars.get()->get(), _int_vars.get()->get() + dim_int, 0);
+    std::fill(_int_vars, _int_vars + dim_int, 0);
   if (dim_real > 0)
-    std::fill(_real_vars.get()->get(), _real_vars.get()->get() + dim_real, 0.0);
+    std::fill(_real_vars, _real_vars + dim_real, 0.0);
 }
 
 SimVars::~SimVars()
 {
-  if (_pre_vars)
-      delete [] _pre_vars;
+  if(_pre_vars)
+    delete [] _pre_vars;
+  if(_real_vars)
+    alignedFree(_real_vars);
+  if(_int_vars)
+    alignedFree(_int_vars);
+  if(_bool_vars)
+    alignedFree(_bool_vars);
 }
 /**
 *  \brief Initialize scalar real model variables in simvars memory
@@ -52,7 +63,7 @@ SimVars::~SimVars()
 double& SimVars::initRealVar(size_t i)
 {
   if (i < _dim_real)
-    return _real_vars.get()->get()[i];
+    return _real_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
 }
@@ -64,7 +75,7 @@ double& SimVars::initRealVar(size_t i)
 int& SimVars::initIntVar(size_t i)
 {
   if (i < _dim_int)
-    return _int_vars.get()->get()[i];
+    return _int_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
 }
@@ -76,7 +87,7 @@ int& SimVars::initIntVar(size_t i)
 bool& SimVars::initBoolVar(size_t i)
 {
   if (i < _dim_bool)
-    return _bool_vars.get()->get()[i];
+    return _bool_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
 }
@@ -88,7 +99,7 @@ bool& SimVars::initBoolVar(size_t i)
 double* SimVars::getStateVector()
 {
   if (_z_i + _dim_z <= _dim_real)
-    return _dim_real > 0 ? &_real_vars.get()->get()[_z_i] : NULL;
+    return _dim_real > 0 ? &_real_vars[_z_i] : NULL;
   else
     throw std::runtime_error("Wrong state vars start index");
 }
@@ -100,7 +111,7 @@ double* SimVars::getStateVector()
 double* SimVars::getDerStateVector()
 {
   if (_z_i + 2*_dim_z <= _dim_real)
-    return _dim_real > 0 ? &_real_vars.get()->get()[_z_i + _dim_z] : NULL;
+    return _dim_real > 0 ? &_real_vars[_z_i + _dim_z] : NULL;
   else
     throw std::runtime_error("Wrong der state vars start index");
 }
@@ -109,27 +120,33 @@ double* SimVars::getDerStateVector()
 *  \return pointer to the real variable vector
 *  \details Details
 */
-const double* SimVars::getRealVarsVector() const
+double* SimVars::getRealVarsVector() const
 {
-  return _real_vars.get()->get();
+  if(!_real_vars)
+    return NULL;
+  return _real_vars;
 }
 /**
 *  \brief returns int vars vector of size dim_int
 *  \return pointer to the integer variable vector
 *  \details Details
 */
-const int* SimVars::getIntVarsVector() const
+int* SimVars::getIntVarsVector() const
 {
-  return _int_vars.get()->get();
+  if(!_int_vars)
+    return NULL;
+  return _int_vars;
 }
 /**
 *  \brief  returns bool vars vector of size dim_bool
 *  \return pointer to the bool variable vector
 *  \details Details
 */
-const bool* SimVars::getBoolVarsVector() const
+bool* SimVars::getBoolVarsVector() const
 {
-  return _bool_vars.get()->get();
+  if(!_bool_vars)
+    return NULL;
+  return _bool_vars;
 }
 /**
 *  \brief set real vars vector of size dim_real
@@ -138,7 +155,7 @@ const bool* SimVars::getBoolVarsVector() const
 */
 void SimVars::setRealVarsVector(const double* vars)
 {
-  std::copy(vars, vars + _dim_real, _real_vars.get()->get());
+  std::copy(vars, vars + _dim_real, _real_vars);
 }
 /**
 *  \brief  set int vars vector of size dim_int
@@ -147,7 +164,7 @@ void SimVars::setRealVarsVector(const double* vars)
 */
 void SimVars::setIntVarsVector(const int* vars)
 {
-  std::copy(vars, vars + _dim_int, _int_vars.get()->get());
+  std::copy(vars, vars + _dim_int, _int_vars);
 }
 /**
 *  \brief  set bool vars vector of size dim_bool
@@ -156,7 +173,7 @@ void SimVars::setIntVarsVector(const int* vars)
 */
 void SimVars::setBoolVarsVector(const bool* vars)
 {
-  std::copy(vars, vars + _dim_real, _bool_vars.get()->get());
+  std::copy(vars, vars + _dim_real, _bool_vars);
 }
 /**\brief initialize real model array variable in simvars memory
 *  \param [in] size size of real array
@@ -169,7 +186,7 @@ double* SimVars::initRealArrayVar(size_t size, size_t start_index)
   size_t length = start_index + (size - 1);
   if (length <= _dim_real)
   {
-    double* data = &_real_vars.get()->get()[start_index];
+    double* data = &_real_vars[start_index];
     return data;
   }
   else
@@ -186,7 +203,7 @@ int* SimVars::initIntArrayVar(size_t size, size_t start_index)
   size_t length = start_index + (size - 1);
   if (length <= _dim_int)
   {
-    int* data = &_int_vars.get()->get()[start_index];
+    int* data = &_int_vars[start_index];
     return data;
   }
   else
@@ -204,7 +221,7 @@ bool* SimVars::initBoolArrayVar(size_t size, size_t start_index)
   size_t length = start_index + (size - 1);
   if (length <= _dim_bool)
   {
-    bool* data = &_bool_vars.get()->get()[start_index];
+    bool* data = &_bool_vars[start_index];
     return data;
   }
   else
@@ -270,11 +287,11 @@ void SimVars::initBoolAliasArray(std::vector<int> indices, bool* ref_data[])
 void SimVars::savePreVariables()
 {
   if(_dim_real>0)
-    std::copy(_real_vars.get()->get(), _real_vars.get()->get() + _dim_real, _pre_vars);
+    std::copy(_real_vars, _real_vars + _dim_real, _pre_vars);
   if(_dim_int>0)
-    std::copy(_int_vars.get()->get(), _int_vars.get()->get() + _dim_int, _pre_vars + _dim_real);
+    std::copy(_int_vars, _int_vars + _dim_int, _pre_vars + _dim_real);
   if (_dim_bool > 0)
-    std::copy(_bool_vars.get()->get(), _bool_vars.get()->get() + _dim_bool, _pre_vars + _dim_real + _dim_int);
+    std::copy(_bool_vars, _bool_vars + _dim_bool, _pre_vars + _dim_real + _dim_int);
 }
 /**
 *  \brief Maps a model variable address to an index in the simvars memory
@@ -285,19 +302,19 @@ void SimVars::initPreVariables()
   size_t index = 0;
   for (size_t i = 0; i < _dim_real; i++)
   {
-    const double& var(_real_vars.get()->get()[i]);
+    const double& var(_real_vars[i]);
     _pre_real_vars_idx[&var] = index;
     index++;
   }
   for (size_t i = 0; i < _dim_int; i++)
   {
-    const int& var(_int_vars.get()->get()[i]);
+    const int& var(_int_vars[i]);
     _pre_int_vars_idx[&var] = index;
     index++;
   }
   for (size_t i = 0; i < _dim_bool; i++)
   {
-    const bool& var(_bool_vars.get()->get()[i]);
+    const bool& var(_bool_vars[i]);
     _pre_bool_vars_idx[&var] = index;
     index++;
   }
@@ -348,7 +365,7 @@ void SimVars::setPreVar(bool& var)
 double* SimVars::getRealVar(size_t i)
 {
    if(i<_dim_real)
-    return &_real_vars.get()->get()[i];
+    return &_real_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
 }
@@ -360,7 +377,7 @@ double* SimVars::getRealVar(size_t i)
 int* SimVars::getIntVar(size_t i)
 {
   if(i<_dim_int)
-    return &_int_vars.get()->get()[i];
+    return &_int_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
 }
@@ -372,7 +389,8 @@ int* SimVars::getIntVar(size_t i)
 bool* SimVars::getBoolVar(size_t i)
 {
   if(i<_dim_bool)
-    return &_bool_vars.get()->get()[i];
+    return &_bool_vars[i];
   else
     throw std::runtime_error("Wrong variable index");
 }
+/** @} */ // end of coreSystem

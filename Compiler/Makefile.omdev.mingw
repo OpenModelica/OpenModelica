@@ -17,11 +17,9 @@ ifndef OMDEV
 	ABORT
 endif
 
-srcdir= .
-top_builddir= ..
-builddir_bin=$(top_builddir)/build/bin
-builddir_scripts=$(top_builddir)/build/share/omc/scripts
-builddir_lib=$(top_builddir)/build/lib/omc
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_scripts=$(OMBUILDDIR)/share/omc/scripts
+builddir_lib=$(OMBUILDDIR)/lib/omc
 
 # adrpo, libsocket should be -lwsock32 but is not needed!
 LIBSOCKET = -lwsock32
@@ -48,10 +46,10 @@ include Makefile.common
 release: .testvariables install
 
 install_scripts:
-	cd scripts; cp -puf $(SCRIPT_FILES) ../$(builddir_scripts)
+	cd scripts; cp -puf $(SCRIPT_FILES) $(builddir_scripts)
 
 install: install_scripts # install_doc
-	cp OpenModelicaBootstrappingHeader.h $(top_builddir)/build/include/omc/
+	cp OpenModelicaBootstrappingHeader.h $(OMBUILDDIR)/include/omc/c/
 
 clean:
 	@for d in $(SUBDIRS); do \
@@ -82,7 +80,3 @@ $(SUSANMO): simcode
 builtin:
 	cp FrontEnd/ModelicaBuiltin.mo FrontEnd/MetaModelicaBuiltin.mo $(builddir_lib)
 
-#.PRECIOUS: Makefile.omdev.mingw
-#
-#Makefile.omdev.mingw: Makefile.omdev.mingw.in
-#	$(top_builddir)/config.status Makefile.omdev.mingw

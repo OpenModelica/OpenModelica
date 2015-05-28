@@ -1,6 +1,10 @@
 #ifndef fmi2Functions_h
 #define fmi2Functions_h
-
+/** @defgroup fmu2 FMU 2.0
+ *  Module for fmu 2.0 import/export
+ *  @{
+ */
+     
 /* This header file must be utilized when compiling a FMU.
    It defines all functions of the
          FMI 2.0 Model Exchange and Co-Simulation Interface.
@@ -331,3 +335,4 @@ Functions for FMI2 for Co-Simulation
 #endif
 
 #endif /* fmi2Functions_h */
+/** @} */ // end of coreUtils

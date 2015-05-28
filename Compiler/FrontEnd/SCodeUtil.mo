@@ -1517,7 +1517,7 @@ algorithm
       String fileName;
       Integer line;
     case ({},_) then default;
-    case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",mod=SCode.MOD(binding=SOME((Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}),_))))::_,_)
+    case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",mod=SCode.MOD(binding=SOME(Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}))))::_,_)
       then SOURCEINFO(fileName,false,line,0,line,0,0.0);
     case (_::rest,_) then getInfoAnnotationOrDefault2(rest,default);
   end match;
@@ -1772,14 +1772,14 @@ algorithm
       then SCode.MOD(inFinalPrefix, inEachPrefix, {}, NONE(), inInfo);
     case (NONE(),_,_,_) then SCode.NOMOD();
     case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix,_)
-      then SCode.MOD(finalPrefix,eachPrefix,{},SOME((e,false)), inInfo);
+      then SCode.MOD(finalPrefix,eachPrefix,{},SOME(e), inInfo);
     case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix,_)
       then SCode.MOD(finalPrefix,eachPrefix,{},NONE(), inInfo);
     case (SOME(Absyn.CLASSMOD(l,Absyn.EQMOD(exp=e))),finalPrefix,eachPrefix,_)
       equation
         subs = translateArgs(l);
       then
-        SCode.MOD(finalPrefix, eachPrefix, subs, SOME((e, false)), inInfo);
+        SCode.MOD(finalPrefix, eachPrefix, subs, SOME(e), inInfo);
 
     case (SOME(Absyn.CLASSMOD(l,Absyn.NOMOD())),finalPrefix,eachPrefix,_)
       equation
@@ -1917,7 +1917,7 @@ algorithm
     // deal with the empty list
     case (_, {}) then {};
     // deal with named modifiers
-    case (_, SCode.NAMEMOD(ident, SCode.MOD(binding = SOME((exp,_))))::subModLst)
+    case (_, SCode.NAMEMOD(ident, SCode.MOD(binding = SOME(exp)))::subModLst)
       equation
         nArgs = translateSubModToNArgs(prefix, subModLst);
         exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
@@ -2269,7 +2269,7 @@ algorithm
       SCode.Final f1, f2;
       SCode.Each e1, e2;
       list<SCode.SubMod> subMods1, subMods2;
-      Option<tuple<Absyn.Exp, Boolean>> b1, b2;
+      Option<Absyn.Exp> b1, b2;
       SourceInfo info;
 
     // inner is NOMOD
@@ -2387,15 +2387,15 @@ end makeElementsIntoSubMods;
 public function constantBindingOrNone
 "@author: adrpo
  keeps the constant binding and if not returns none"
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
-  output Option<tuple<Absyn.Exp, Boolean>> outBinding;
+  input Option<Absyn.Exp> inBinding;
+  output Option<Absyn.Exp> outBinding;
 algorithm
   outBinding := matchcontinue(inBinding)
     local
       Absyn.Exp e;
 
     // keep it
-    case (SOME((e, _)))
+    case SOME(e)
       equation
         {} = Absyn.getCrefFromExp(e, true, true);
       then
@@ -2419,7 +2419,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       SourceInfo i;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Option<Absyn.Exp> binding;
 
     case (SCode.MOD(fp, ep, sl, binding, i), _)
       equation
@@ -2464,17 +2464,17 @@ end removeNonConstantBindingsKeepRedeclaresFromSubMod;
 public function removeReferenceInBinding
 "@author: adrpo
  remove the binding that contains a cref"
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input Option<Absyn.Exp> inBinding;
   input Absyn.ComponentRef inCref;
-  output Option<tuple<Absyn.Exp, Boolean>> outBinding;
+  output Option<Absyn.Exp> outBinding;
 algorithm
-  outBinding := matchcontinue(inBinding, inCref)
+  outBinding := matchcontinue inBinding
     local
       Absyn.Exp e;
       list<Absyn.ComponentRef> crlst1, crlst2;
 
     // if cref is not present keep the binding!
-    case (SOME((e, _)),_)
+    case SOME(e)
       equation
         crlst1 = Absyn.getCrefFromExp(e, true, true);
         crlst2 = Absyn.removeCrefFromCrefs(crlst1, inCref);
@@ -2499,7 +2499,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       SourceInfo i;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Option<Absyn.Exp> binding;
 
     case (SCode.MOD(fp, ep, sl, binding, i), _)
       equation

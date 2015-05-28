@@ -1,5 +1,10 @@
-//#pragma once
-#include <Core/Modelica.h>
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
+
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 #include <Solver/CVode/CVodeSettings.h>
 
 CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)
@@ -19,3 +24,4 @@ void CVodeSettings::setDenseOutput(bool dense)
 {
   _denseOutput = dense;
 }
+/** @} */ // end of solverCvode

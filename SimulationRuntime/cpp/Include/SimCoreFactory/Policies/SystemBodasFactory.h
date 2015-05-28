@@ -1,4 +1,8 @@
 #pragma once
+/** @addtogroup simcorefactoriesPolicies
+ *  
+ *  @{
+ */
 /*
 Policy class to create a Simster-,  Modelica- system or AlgLoopSolver
 */
@@ -42,3 +46,4 @@ public:
 
     bool _use_modelica_compiler;
 };
+/** @} */ // end of simcorefactoriesPolicies

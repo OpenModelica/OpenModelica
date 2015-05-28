@@ -1,6 +1,9 @@
 #pragma once
+/** @addtogroup coreSolver
+ *  
+ *  @{
+ */
 
-#include "ISolverSettings.h"
 /*****************************************************************************/
 /**
 
@@ -64,3 +67,4 @@ private:
   bool
     _denseOutput;
 };
+ /** @} */ // end of coreSolver

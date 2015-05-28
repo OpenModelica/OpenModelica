@@ -1,4 +1,4 @@
-all: OpenModelicaScriptingAPI.mo OpenModelicaScriptingAPIQt.cpp OpenModelicaScriptingAPIQt.h
+all: OpenModelicaScriptingAPI.mo $(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp $(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
 
 OpenModelicaScriptingAPI.mo: OpenModelicaScriptingAPI.mos ../FrontEnd/ModelicaBuiltin.mo
 	$(OMC) $<
@@ -7,6 +7,11 @@ OpenModelicaScriptingAPI.mo: OpenModelicaScriptingAPI.mos ../FrontEnd/ModelicaBu
 	test -f OpenModelicaScriptingAPIQt.h
 OpenModelicaScriptingAPIQt.cpp: OpenModelicaScriptingAPI.mo
 OpenModelicaScriptingAPIQt.h: OpenModelicaScriptingAPIQt.cpp
+
+$(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp: OpenModelicaScriptingAPIQt.cpp
+	cp "$<" "$@"
+$(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h: OpenModelicaScriptingAPIQt.h
+	cp "$<" "$@"
 
 clean:
 	rm -f OpenModelicaScriptingAPIQt.cpp OpenModelicaScriptingAPIQt.h OpenModelicaScriptingAPI.mo

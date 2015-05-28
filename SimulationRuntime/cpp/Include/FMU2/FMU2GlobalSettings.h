@@ -1,3 +1,7 @@
+/** @addtogroup fmu2
+ *  
+ *  @{
+ */
 #pragma once
 /*
  * Define default global settings for FMI 2.0.
@@ -76,3 +80,4 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual void            setAlarmTime(unsigned int) {}
   virtual unsigned int    getAlarmTime() { return 0; }
 };
+/** @} */ // end of fmu2

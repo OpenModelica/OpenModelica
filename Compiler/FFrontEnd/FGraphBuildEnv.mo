@@ -198,7 +198,7 @@ algorithm
       Ref nr;
       SCode.Element e;
       list<SCode.SubMod> sm;
-      Option<tuple<Absyn.Exp, Boolean>> b;
+      Option<Absyn.Exp> b;
 
     // no mods
     case (_, SCode.NOMOD(), _, _, g) then g;
@@ -279,7 +279,7 @@ algorithm
 end mkSubMods;
 
 public function mkBindingNode
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input Option<Absyn.Exp> inBinding;
   input Ref inParentRef;
   input Kind inKind;
   input Graph inGraph;
@@ -297,7 +297,7 @@ algorithm
     case (NONE(), _, _, g) then g;
 
     // some binding
-    case (SOME((e, _)), _, _, g)
+    case (SOME(e), _, _, g)
       equation
         g = mkExpressionNode(FNode.bndNodeName, e, inParentRef, inKind, g);
       then

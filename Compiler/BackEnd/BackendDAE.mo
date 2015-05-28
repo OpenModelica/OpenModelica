@@ -231,6 +231,9 @@ uniontype VarKind "variable kind"
   record OPT_LOOP_INPUT
     .DAE.ComponentRef replaceExp;
   end OPT_LOOP_INPUT;
+  record ALG_STATE "algebraic state"
+    VarKind oldKind;
+  end ALG_STATE;
 end VarKind;
 
 public uniontype TearingSelect
@@ -346,6 +349,17 @@ uniontype Equation
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
   end IF_EQUATION;
+
+  record FOR_EQUATION "a for-equation"
+    .DAE.Exp iter "the iterator variable";
+    .DAE.Exp start "start of iteration";
+    .DAE.Exp stop "end of iteration";
+    .DAE.Exp left;
+    .DAE.Exp right;
+    .DAE.ElementSource source "origin of equation";
+    EquationAttributes attr;
+  end FOR_EQUATION;
+  
 end Equation;
 
 public
@@ -667,6 +681,7 @@ public constant String functionDerivativeNamePrefix = "$funDER";
 
 public constant String optimizationMayerTermName = "$OMC$objectMayerTerm";
 public constant String optimizationLagrangeTermName = "$OMC$objectLagrangeTerm";
+public constant String symEulerDT = "__OMC_DT";
 
 type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
 

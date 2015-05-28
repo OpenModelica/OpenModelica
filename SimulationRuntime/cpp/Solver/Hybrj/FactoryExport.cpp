@@ -1,5 +1,9 @@
-
 #pragma once
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(__vxworks)
 
@@ -36,6 +40,6 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #else
 error "operating system not supported"
 #endif
-
+/** @} */ // end of solverHybrj
 
 

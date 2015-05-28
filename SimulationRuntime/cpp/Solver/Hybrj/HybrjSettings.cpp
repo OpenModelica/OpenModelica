@@ -1,3 +1,8 @@
+/** @addtogroup solverCvode
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
  
 
@@ -50,3 +55,4 @@ void         HybrjSettings::setDelta(double t)
 void HybrjSettings::load(string)
 {
 }
+/** @} */ // end of solverHybrj

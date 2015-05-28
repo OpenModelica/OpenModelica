@@ -1,3 +1,8 @@
+/** @addtogroup math
+ *  @{
+ */
+
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
@@ -578,3 +583,4 @@ template void BOOST_EXTENSION_EXPORT_DECL
 assignRowMajorData(const bool *data, BaseArray<bool> &d);
 template void BOOST_EXTENSION_EXPORT_DECL
 assignRowMajorData(const string *data, BaseArray<string> &d);
+/** @} */ // end of math

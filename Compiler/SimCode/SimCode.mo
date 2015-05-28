@@ -34,7 +34,7 @@ encapsulated package SimCode
   package:     SimCode
   description: Code generation using Susan templates
 
-  RCS: $Id$
+  RCS: $Id: SimCode.mo 25853 2015-04-30 14:04:02Z vwaurich $
 
   The entry points to this module are the translateModel function and the
   translateFunctions fuction.
@@ -55,6 +55,7 @@ encapsulated package SimCode
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+public import HashTableCrILst;
 public import HashTableCrIListArray;
 public import HpcOmSimCode;
 public import SimCodeVar;
@@ -121,6 +122,7 @@ uniontype SimCode
     //if the variable is not part of an array (if it is a scalar value), then the array has size 1
     HashTableCrIListArray.HashTable varToArrayIndexMapping;
     //*** a protected section *** not exported to SimCodeTV
+    HashTableCrILst.HashTable varToIndexMapping;
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
     Option<BackendMapping> backendMapping;
     //FMI 2.0 data for model structure
@@ -176,6 +178,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     list<Function> functions;
     list<String> labels;
     //Files files "all the files from SourceInfo and DAE.ELementSource";
+    Integer maxDer "the highest derivative in the model";
   end MODELINFO;
 end ModelInfo;
 
@@ -386,31 +389,14 @@ uniontype SimEqSystem
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
 
-    record SES_LINEAR
-      Integer index;
-      Boolean partOfMixed;
-
-      list<SimCodeVar.SimVar> vars;
-      list<DAE.Exp> beqs;
-      list<tuple<Integer, Integer, SimEqSystem>> simJac;
-      /* solver linear tearing system */
-      list<SimEqSystem> residual;
-      Option<JacobianMatrix> jacobianMatrix;
-
-
-      list<DAE.ElementSource> sources;
-      Integer indexLinearSystem;
-    end SES_LINEAR;
+  record SES_LINEAR
+    LinearSystem lSystem;
+    Option<LinearSystem> alternativeTearing;
+  end SES_LINEAR;
 
   record SES_NONLINEAR
-    Integer index;
-    list<SimEqSystem> eqs;
-    list<DAE.ComponentRef> crefs;
-    Integer indexNonLinearSystem;
-    Option<JacobianMatrix> jacobianMatrix;
-    Boolean linearTearing;
-    Boolean homotopySupport;
-    Boolean mixedSystem;
+    NonlinearSystem nlSystem;
+    Option<NonlinearSystem> alternativeTearing;
   end SES_NONLINEAR;
 
   record SES_MIXED
@@ -442,6 +428,36 @@ uniontype SimEqSystem
   end SES_FOR_LOOP;
 
 end SimEqSystem;
+
+public
+uniontype LinearSystem
+  record LINEARSYSTEM
+    Integer index;
+    Boolean partOfMixed;
+    list<SimCodeVar.SimVar> vars;
+    list<DAE.Exp> beqs;
+    list<tuple<Integer, Integer, SimEqSystem>> simJac;
+    /* solver linear tearing system */
+    list<SimEqSystem> residual;
+    Option<JacobianMatrix> jacobianMatrix;
+    list<DAE.ElementSource> sources;
+    Integer indexLinearSystem;
+  end LINEARSYSTEM;
+end LinearSystem;
+
+public
+uniontype NonlinearSystem
+  record NONLINEARSYSTEM
+    Integer index;
+    list<SimEqSystem> eqs;
+    list<DAE.ComponentRef> crefs;
+    Integer indexNonLinearSystem;
+    Option<JacobianMatrix> jacobianMatrix;
+    Boolean linearTearing;
+    Boolean homotopySupport;
+    Boolean mixedSystem;
+  end NONLINEARSYSTEM;
+end NonlinearSystem;
 
 uniontype StateSet
   record SES_STATESET

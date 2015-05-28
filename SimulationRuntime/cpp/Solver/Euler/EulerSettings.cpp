@@ -1,3 +1,8 @@
+/** @addtogroup solverEuler
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
 #include <Solver/Euler/EulerSettings.h>
@@ -78,4 +83,4 @@ void EulerSettings::load(std::string xml_file)
 
 }
 
-
+/** @} */ // end of solverEuler

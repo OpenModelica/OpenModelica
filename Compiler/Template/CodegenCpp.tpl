@@ -16,13 +16,19 @@ template translateModel(SimCode simCode)
         let &extraFuncs = buffer "" /*BUFD*/
         let &extraFuncsDecl = buffer "" /*BUFD*/
 
+        let className = lastIdentOfPath(modelInfo.name)
         let numRealVars = numRealvars(modelInfo)
         let numIntVars = numIntvars(modelInfo)
         let numBoolVars = numBoolvars(modelInfo)
 
         let()= textFile(simulationMainFile(target, simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "", numRealVars, numIntVars, numBoolVars, getPreVarsCount(modelInfo)), 'OMCpp<%fileNamePrefix%>Main.cpp')
-        let()= textFile(simulationCppFile(simCode, contextOther, stringInt(numRealVars), stringInt(numIntVars), stringInt(numBoolVars), &extraFuncs, &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
-        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", MemberVariable(modelInfo, false), MemberVariablePreVariables(modelInfo,false), false), 'OMCpp<%fileNamePrefix%>.h')
+        let()= textFile(simulationCppFile(simCode, contextOther, update(simCode , &extraFuncs , &extraFuncsDecl,  className, stateDerVectorName, false),
+                        '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', &extraFuncs, &extraFuncsDecl, className, "", "", "",
+                        stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
+        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, className, "", "", "",
+                                             memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', false),
+                                             memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%> - 1', '<%numIntVars%> - 1', '<%numBoolVars%> - 1', false),
+                                             false), 'OMCpp<%fileNamePrefix%>.h')
         let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
         let()= textFile(simulationMakefile(target,simCode , &extraFuncs , &extraFuncsDecl, "","","","","",false), '<%fileNamePrefix%>.makefile')
 
@@ -33,12 +39,12 @@ template translateModel(SimCode simCode)
 
         let &extraFuncsInit = buffer "" /*BUFD*/
         let &extraFuncsDeclInit = buffer "" /*BUFD*/
-        let()= textFile(simulationInitCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
-        let()= textFile(simulationInitParameterCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-        let()= textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
-        let()= textFile(simulationInitAlgVarsCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
-        let()= textFile(simulationInitExtVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
-        let()= textFile(simulationInitHeaderFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
+        let()= textFile(simulationInitCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+        let()= textFile(simulationInitParameterCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+        let()= textFile(simulationInitAliasVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+        let()= textFile(simulationInitAlgVarsCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+        let()= textFile(simulationInitExtVarsCppFile(simCode, &extraFuncsInit, &extraFuncsDeclInit, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+        let()= textFile(simulationInitHeaderFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%className%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
 
         let()= textFile(simulationJacobianHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
         let()= textFile(simulationJacobianCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
@@ -158,6 +164,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
     void initializeStringParameterVars();
     void initializeStateVars();
     void initializeDerVars();
+
     /*extraFuncs*/
     <%extraFuncsDecl%>
   };
@@ -404,7 +411,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
   * Simulation code
   *
   *****************************************************************************/
-  VAR_ALIGN_PRE class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
+  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
@@ -447,7 +454,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual int  getAMaxColors();
 
     virtual string getModelName();
-  } VAR_ALIGN_POST;
+  };
   >>
 end simulationExtensionHeaderFile;
 
@@ -459,10 +466,6 @@ template simulationFactoryFile(SimCode simCode ,Text& extraFuncs,Text& extraFunc
 match simCode
 case SIMCODE(modelInfo=MODELINFO()) then
   <<
-  /* #include <Core/Modelica.h>
-  #include <Core/ModelicaDefine.h>
-  #include "OMCpp<%fileNamePrefix%>Extension.h" */
-
   #if defined(__TRICORE__) || defined(__vxworks)
   #include <Core/System/FactoryExport.h>
   #include <Core/DataExchange/SimData.h>
@@ -483,7 +486,7 @@ case SIMCODE(modelInfo=MODELINFO()) then
   }
 
   #elif defined (RUNTIME_STATIC_LINKING)
-
+    #include <Core/System/FactoryExport.h>
     #include <Core/DataExchange/SimData.h>
     #include <Core/System/SimVars.h>
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
@@ -495,15 +498,15 @@ case SIMCODE(modelInfo=MODELINFO()) then
         return data;
     }
 
-    boost::shared_ptr<ISimData> createSimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_z, size_t z_i)
+    boost::shared_ptr<ISimVars> createSimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_pre_vars, size_t dim_z, size_t z_i)
     {
         boost::shared_ptr<ISimVars> var( new SimVars(dim_real, dim_int, dim_bool, dim_pre_vars, dim_z, z_i) );
         return var;
     }
 
-    boost::shared_ptr<IMixedSystem> createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData)
+    boost::shared_ptr<IMixedSystem> createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)
     {
-        boost::shared_ptr<IMixedSystem> system( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData) );
+        boost::shared_ptr<IMixedSystem> system( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData,simVars) );
         return system;
     }
 
@@ -527,9 +530,6 @@ template simulationInitCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFunc
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   /* #include <Core/Modelica.h>
-   #include <Core/ModelicaDefine.h>
-   #include "OMCpp<%fileNamePrefix%>Initialize.h" */
    #include <Core/System/EventHandling.h>
    #include <Core/System/DiscreteEvents.h>
    <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -543,8 +543,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
    }
 
-   <%GetIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
-   <%SetIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+   <%getIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
+   <%setIntialStatus(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
 
    <%init(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
   >>
@@ -672,9 +672,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
     ;separator="";empty)
    <<
-   /* #include <Core/Modelica.h>
-   #include <Core/ModelicaDefine.h>
-   #include "OMCpp<%fileNamePrefix%>Jacobian.h" */
+   
    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  algloopfilesInclude(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="")
      ;separator="")
@@ -713,9 +711,7 @@ template simulationStateSelectionCppFile(SimCode simCode, Text& extraFuncs, Text
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   /* #include <Core/Modelica.h>
-   #include <Core/ModelicaDefine.h>
-   #include "OMCpp<%fileNamePrefix%>StateSelection.h" */
+   
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
@@ -737,9 +733,7 @@ template simulationWriteOutputCppFile(SimCode simCode ,Text& extraFuncs,Text& ex
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   /* #include <Core/Modelica.h>
-   #include <Core/ModelicaDefine.h>
-   #include "OMCpp<%fileNamePrefix%>WriteOutput.h" */
+  
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
@@ -982,9 +976,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(__))) then
   let classname = lastIdentOfPath(modelInfo.name)
    <<
-   /* #include <Core/Modelica.h>
-   #include <Core/ModelicaDefine.h>
-   #include "OMCpp<%fileNamePrefix%>Extension.h" */
+   
    <%classname%>Extension::<%classname%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%classname%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
        , <%classname%>WriteOutput(globalSettings,nonlinsolverfactory, sim_data,sim_vars)
@@ -1248,24 +1240,7 @@ template createAssignArray(DAE.ComponentRef sourceOrTargetArrayCref, String sour
 ::=
   match SimCodeUtil.cref2simvar(sourceOrTargetArrayCref, simCode)
     case v as SIMVAR(numArrayElement=num) then
-      if boolOr(useFlatArrayNotationSource,useFlatArrayNotationTarget) then (
-        <<
-        <%if boolNot(useFlatArrayNotationSource) then
-            '//<%targetArrayName%>.resize(<%sourceArrayName%>.getDims());'
-        %>
-        <%if boolNot(useFlatArrayNotationTarget) then
-            <<
-            <%dimsArrayName%> = std::vector<size_t>(<%listLength(num)%>,0);
-            <%(num |> n hasindex i0 fromindex 0 => '<%dimsArrayName%>.at(<%i0%>) = <%n%>;'; separator="\n")%>
-            <%targetArrayName%>.resize(<%dimsArrayName%>);
-            >>
-        %>
-        <%HpcOmMemory.getSubscriptListOfArrayCref(sourceOrTargetArrayCref, num) |> ai => '<%targetArrayName%><%subscriptsToCStr(ai,useFlatArrayNotationTarget)%> = <%sourceArrayName%><%subscriptsToCStr(ai,useFlatArrayNotationSource)%>;';separator="\n"%>
-        >>
-      )
-      else (
         '<%targetArrayName%>.assign(<%sourceArrayName%>);'
-      )
 end createAssignArray;
 
 template functionStateSets(list<StateSet> stateSets, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -1590,6 +1565,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 
 <<
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <stdio.h>
 #include <string>
@@ -1900,13 +1876,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let moLib     = makefileParams.compileDir
   let home      = makefileParams.omhome
   <<
+
+  #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
-  #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
 
-  #ifdef RUNTIME_STATIC_LINKING
-    #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
-  #endif //RUNTIME_STATIC_LINKING
 
   <%
   match(getConfigString(PROFILING_LEVEL))
@@ -2179,10 +2153,8 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
     *
     *****************************************************************************/
-
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
-
+    #include <Core/Modelica.h>
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%fileNamePrefix%>Extension.cpp"
@@ -2203,9 +2175,9 @@ template calcHelperMainfile2(SimCode simCode ,Text& extraFuncs,Text& extraFuncsD
     * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
     *
     *****************************************************************************/
-
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
+    
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Extension.h"
@@ -2229,9 +2201,9 @@ template calcHelperMainfile3(SimCode simCode ,Text& extraFuncs,Text& extraFuncsD
     * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
     *
     *****************************************************************************/
-
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
+    
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -2253,9 +2225,9 @@ template calcHelperMainfile4(SimCode simCode ,Text& extraFuncs,Text& extraFuncsD
     * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
     *
     *****************************************************************************/
-
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
+    
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -2279,9 +2251,9 @@ template calcHelperMainfile5(SimCode simCode ,Text& extraFuncs,Text& extraFuncsD
     * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
     *
     *****************************************************************************/
-
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
+    
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -2312,9 +2284,7 @@ template simulationFunctionsFile(SimCode simCode, Text& extraFuncs, Text& extraF
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-  /* #include <Core/Modelica.h>
-  #include <Core/ModelicaDefine.h>
-  #include "OMCpp<%fileNamePrefix%>Functions.h" */
+  
 
   <%externalFunctionIncludes(includes)%>
 
@@ -3080,16 +3050,21 @@ end simulationMakefile;
 
 
 
-template simulationCppFile(SimCode simCode, Context context, Integer numRealVars, Integer numIntVars, Integer numBoolVars, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates code for main cpp file for simulation target."
+template simulationCppFile(SimCode simCode, Context context, Text updateFunctionsCode, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt, Text indexForUndefinedReferencesBool,
+                           Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text additionalConstructorVarDefs, Text additionalConstructorBodyStatements,
+                           Text additionalDestructorBodyStatements, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+  /* Generates the c++ code for the model class, containing all equations, the evaluate methods for the time integration algorithm and variable definitions.
+     Some getter and setter functions are generated as well. Additional functions can be passed via the "extraFuncs" variable. */
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let className = lastIdentOfPath(modelInfo.name)
-  let &additionalBodyStatements = buffer ""
+  let &additionalConstructorVarDefsBuffer = buffer additionalConstructorVarDefs
+  let memberVariableInitialize = memberVariableInitialize(modelInfo, varToArrayIndexMapping, indexForUndefinedReferencesReal, indexForUndefinedReferencesInt, indexForUndefinedReferencesBool, useFlatArrayNotation, additionalConstructorVarDefsBuffer, extraFuncsDecl)
+  let constVariableInitialize = simulationInitFile(simCode, &extraFuncsDecl, stateDerVectorName, false)
     <<
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include <Core/System/EventHandling.h>
@@ -3103,17 +3078,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
         : SystemDefaultImplementation(globalSettings,sim_data,sim_vars)
         , _algLoopSolverFactory(nonlinsolverfactory)
-        <%MemberVariableInitialize(modelInfo, varToArrayIndexMapping, intSub(numRealVars,1), intSub(numIntVars,1), intSub(numBoolVars,1), useFlatArrayNotation, additionalBodyStatements)%>
-        <%simulationInitFile(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, false)%>
+        , _pointerToRealVars(sim_vars->getRealVarsVector())
+        , _pointerToIntVars(sim_vars->getIntVarsVector())
+        , _pointerToBoolVars(sim_vars->getBoolVarsVector())
+        <%additionalConstructorVarDefsBuffer%>
     {
-        <%additionalBodyStatements%>
         <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+        <%additionalConstructorBodyStatements%>
     }
 
     <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance.getGlobalSettings(),instance._sim_data,instance._sim_vars)
         , _algLoopSolverFactory(instance.getAlgLoopSolverFactory())
-        <%MemberVariableInitialize(modelInfo, varToArrayIndexMapping, intSub(numRealVars,1), intSub(numIntVars,1), intSub(numBoolVars,1), useFlatArrayNotation, additionalBodyStatements)%>
-        <%simulationInitFile(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, false)%>
+        <%additionalConstructorVarDefsBuffer%>
     {
         <%generateSimulationCppConstructorContent(simCode, context, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
         <%match modelInfo
@@ -3137,12 +3113,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
               delete[] stringVars;
               >>
          %>
+         <%additionalConstructorBodyStatements%>
     }
 
     /* Destructor */
     <%className%>::~<%className%>()
     {
       deleteObjects();
+      <%additionalDestructorBodyStatements%>
     }
 
     void <%className%>::deleteObjects()
@@ -3168,14 +3146,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <%generateDeleteAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,className)%>
 
-    <%Update(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%updateFunctionsCode%>
 
     <%DefaultImplementationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%checkForDiscreteEvents(discreteModelVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
     <%giveZeroFunc1(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
     <%setConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%geConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%getConditions(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%isConsistent(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
     <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -3187,15 +3165,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%generateTimeEvent(timeEvents, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, true)%>
 
     <%isODE(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-    <%DimZeroFunc(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%dimZeroFunc(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
     <%getCondition(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%handleSystemEvents(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
 
 
-    <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%labeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName)%>
+
+    <%memberVariableInitialize%>
+    <%constVariableInitialize%>
     <%extraFuncs%>
     >>
 end simulationCppFile;
@@ -3206,6 +3187,19 @@ match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
     let className = lastIdentOfPath(modelInfo.name)
       <<
+      defineConstVals();
+      defineAlgVars();
+      defineDiscreteAlgVars();
+      defineIntAlgVars();
+      defineBoolAlgVars();
+      defineParameterRealVars();
+      defineParameterIntVars();
+      defineParameterBoolVars();
+      defineMixedArrayVars();
+      defineAliasRealVars();
+      defineAliasIntVars();
+      defineAliasBoolVars();
+
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       _dimZeroFunc = <%zerocrosslength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>;
@@ -3271,23 +3265,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    let modelfilename =  match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%filename%>Jacobian' else '<%filename%>'
    let &varDecls = buffer ""
    let &arrayInit = buffer ""
-   let constructorParams = ConstructorParamAlgloop(modelInfo, useFlatArrayNotation)
-   let iniAlgloopParamas = InitAlgloopParams(modelInfo,arrayInit,useFlatArrayNotation)
+   let constructorParams = constructorParamAlgloop(modelInfo, useFlatArrayNotation)
+   let iniAlgloopParamas = initAlgloopParams(modelInfo,arrayInit,useFlatArrayNotation)
    let systemname = match context case ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%modelname%>Jacobian' else '<%modelname%>'
 match eq
-    case SES_LINEAR(__)
-    case SES_NONLINEAR(__) then
+    case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-   /* #include <Core/Modelica.h>
-   #include <Core/ModelicaDefine.h>
-   #include "OMCpp<%fileNamePrefix%>Extension.h"
-   #include "OMCpp<%filename%>Algloop<%index%>.h"
-   #include "OMCpp<%modelfilename%>.h" */
+   
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 
 
-   <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%systemname%>* system, double* z,double* zDot,bool* conditions, boost::shared_ptr<DiscreteEvents> discrete_events )
+   <%modelname%>Algloop<%ls.index%>::<%modelname%>Algloop<%ls.index%>(<%systemname%>* system, double* z,double* zDot,bool* conditions, boost::shared_ptr<DiscreteEvents> discrete_events )
        : AlgLoopDefaultImplementation()
        , _system(system)
        , __z(z)
@@ -3309,7 +3298,7 @@ match eq
      <%initAlgloopDimension(eq,varDecls)%>
    }
 
-   <%modelname%>Algloop<%index%>::~<%modelname%>Algloop<%index%>()
+   <%modelname%>Algloop<%ls.index%>::~<%modelname%>Algloop<%ls.index%>()
    {
      <% match eq
       case SES_LINEAR(__) then
@@ -3318,12 +3307,12 @@ match eq
      %>
    }
 
-   bool <%modelname%>Algloop<%index%>::getUseSparseFormat()
+   bool <%modelname%>Algloop<%ls.index%>::getUseSparseFormat()
    {
      return _useSparseFormat;
    }
 
-   void <%modelname%>Algloop<%index%>::setUseSparseFormat(bool value)
+   void <%modelname%>Algloop<%ls.index%>::setUseSparseFormat(bool value)
    {
      _useSparseFormat = value;
    }
@@ -3336,7 +3325,69 @@ match eq
    <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context)%>
    <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopLinear(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
-   <%AlgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
+   <%isLinearCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
+   <%isLinearTearingCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
+   >>
+
+    case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+   <<
+   
+   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
+
+
+
+   <%modelname%>Algloop<%nls.index%>::<%modelname%>Algloop<%nls.index%>(<%systemname%>* system, double* z,double* zDot,bool* conditions, boost::shared_ptr<DiscreteEvents> discrete_events )
+       : AlgLoopDefaultImplementation()
+       , _system(system)
+       , __z(z)
+       , __zDot(zDot)
+   <% match eq
+
+     case SES_LINEAR(__) then
+    <<
+     ,__Asparse()
+    >>
+    %>
+
+   //<%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
+       , _conditions(conditions)
+       , _discrete_events(discrete_events)
+       , _useSparseFormat(false)
+       , _functions(system->_functions)
+   {
+     <%initAlgloopDimension(eq,varDecls)%>
+   }
+
+   <%modelname%>Algloop<%nls.index%>::~<%modelname%>Algloop<%nls.index%>()
+   {
+     <% match eq
+      case SES_LINEAR(__) then
+      <<
+      >>
+     %>
+   }
+
+   bool <%modelname%>Algloop<%nls.index%>::getUseSparseFormat()
+   {
+     return _useSparseFormat;
+   }
+
+   void <%modelname%>Algloop<%nls.index%>::setUseSparseFormat(bool value)
+   {
+     _useSparseFormat = value;
+   }
+
+   <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
+   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
+   <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%initAlgloopTemplate(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
+   <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context)%>
+   <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
+   <%upateAlgloopLinear(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
+   <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%isLinearCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
    <%isLinearTearingCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -3349,17 +3400,17 @@ match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
     let modelname = lastIdentOfPath(modelInfo.name)
     match eqn
-      case eq as SES_NONLINEAR(__) then
+      case eq as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
        <<
-       float <%modelname%>Algloop<%index%>::queryDensity()
+       float <%modelname%>Algloop<%nls.index%>::queryDensity()
        {
          return -1.;
        }
        >>
-      case eq as SES_LINEAR(__) then
-      let size=listLength(simJac)
+      case eq as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+      let size=listLength(ls.simJac)
       <<
-      float <%modelname%>Algloop<%index%>::queryDensity()
+      float <%modelname%>Algloop<%ls.index%>::queryDensity()
       {
         return 100.*<%size%>./_dimAEq/_dimAEq;
       }
@@ -3384,9 +3435,9 @@ match simCode
         }
         >>
       */
-      case eq as SES_LINEAR(__) then
+      case eq as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
         <<
-        void <%modelname%>Algloop<%index%>::evaluate()
+        void <%modelname%>Algloop<%ls.index%>::evaluate()
         {
            if(_useSparseFormat)
            {
@@ -3415,18 +3466,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
   match eqn
      //case eq as SES_MIXED(__) then functionExtraResiduals(fill(eq.cont,1),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
-     case eq as SES_NONLINEAR(__) then
+     case eq as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
      let &varDecls = buffer "" /*BUFD*/
-     /*let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
+     /*let algs = (nls.eqs |> eq2 as SES_ALGORITHM(__) =>
          equation_(eq2, context, &varDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)
        ;separator="\n")
-     let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
+     let prebody = (nls.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
          equation_(eq2, context, &varDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)
        ;separator="\n")*/
-     let prebody = (eq.eqs |> eq2 =>
+     let prebody = (nls.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      ;separator="\n")
-     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+     let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
          '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
@@ -3436,14 +3487,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <<
    <% match eq
-   case SES_LINEAR(__) then
+   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
    template <typename T>
-   void <%modelname%>Algloop<%index%>::evaluate(T *__A)
+   void <%modelname%>Algloop<%ls.index%>::evaluate(T *__A)
    >>
-   case SES_NONLINEAR(__) then
+   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    <<
-   void <%modelname%>Algloop<%index%>::evaluate()
+   void <%modelname%>Algloop<%nls.index%>::evaluate()
    >>
    %>
    {
@@ -3479,21 +3530,21 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   //let () = System.tmpTickReset(0)
   let modelname = lastIdentOfPath(modelInfo.name)
  match eqn
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
   let uid = System.tmpTick()
-  let size = listLength(vars)
+  let size = listLength(ls.vars)
   let aname = 'A<%uid%>'
   let bname = 'b<%uid%>'
     let &varDecls = buffer "" /*BUFD*/
 
  let Amatrix=
-    (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
   ;separator="\n")
 
- let bvector =  (beqs |> exp hasindex i0 fromindex 1=>
+ let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      '<%preExp%>__b(<%i0%>)=<%expPart%>;'
@@ -3501,7 +3552,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   <<
   template <typename T>
-  void <%modelname%>Algloop<%index%>::evaluate(T* __A)
+  void <%modelname%>Algloop<%ls.index%>::evaluate(T* __A)
   {
       <%varDecls%>
       <%Amatrix%>
@@ -4026,12 +4077,44 @@ end functionBodyRecordConstructor;
 template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, Boolean useFlatArrayNotation)
  "Generates code for a match expression."
 ::=
-match exp case exp as SHARED_LITERAL(__) then
- match context case FUNCTION_CONTEXT(__) then
- ' _OMC_LIT<%exp.index%>'
- else
-'_functions->_OMC_LIT<%exp.index%>'
+  match exp case exp as SHARED_LITERAL(__) then
+    match context case FUNCTION_CONTEXT(__) then
+      ' _OMC_LIT<%exp.index%>'
+    else
+      '_functions->_OMC_LIT<%exp.index%>'
 end daeExpSharedLiteral;
+
+
+template daeExpSum(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                   Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates code for a match expression."
+::=
+  match exp case exp as SUM(__) then
+    let bodyExp = daeExp(body, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let iterExp = daeExp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let startItExp = daeExp(startIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let endItExp = daeExp(endIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let &preExp += 'double sum = 0.0;<%\n%>for(size_t <%iterExp%> = <%startItExp%>; <%iterExp%> != <%endItExp%>+1; <%iterExp%>++)<%\n%>  sum += <%bodyExp%>[<%iterExp%>]<%\n%>'
+    <<
+    sum
+    >>
+
+  //C-Codegen:
+  //let start = printExpStr(startIt)
+  //let &anotherPre = buffer ""
+  //let stop = printExpStr(endIt)
+  //let bodyStr = daeExpIteratedCref(body)
+  //let summationVar = <<sum>>
+  //let iterVar = printExpStr(iterator)
+  //let &preExp +=<<
+
+  //modelica_integer  $P<%iterVar%> = 0; // the iterator
+  //modelica_real <%summationVar%> = 0.0; //the sum
+  //for($P<%iterVar%> = <%start%>; $P<%iterVar%> < <%stop%>; $P<%iterVar%>++)
+  //{
+  //  <%summationVar%> += <%bodyStr%>($P<%iterVar%>);
+  //}
+end daeExpSum;
 
 
 template functionHeaderRegularFunction2(Function fn,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -5318,11 +5401,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
 
   match eq
-  case SES_NONLINEAR(__) then
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    let &varDecls = buffer ""
    let &preExp = buffer ""
    <<
-     void <%modelname%>Algloop<%index%>::initialize()
+     void <%modelname%>Algloop<%nls.index%>::initialize()
      {
 
          <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -5332,17 +5415,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         evaluate();
      }
    >>
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-     void <%modelname%>Algloop<%index%>::initialize()
+     void <%modelname%>Algloop<%ls.index%>::initialize()
      {
         <%alocateLinearSystem(eq)%>
         if(_useSparseFormat)
-          <%modelname%>Algloop<%index%>::initialize(__Asparse.get());
+          <%modelname%>Algloop<%ls.index%>::initialize(__Asparse.get());
         else
         {
           fill_array(*__A,0.0);
-          <%modelname%>Algloop<%index%>::initialize(__A.get());
+          <%modelname%>Algloop<%ls.index%>::initialize(__A.get());
         }
      }
    >>
@@ -5372,10 +5455,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
   >>
   */
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)
+) then
    <<
      template <typename T>
-     void <%modelname%>Algloop<%index%>::initialize(T *__A)
+     void <%modelname%>Algloop<%ls.index%>::initialize(T *__A)
      {
         <%initAlgloopEquation(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
         // Update the equations once before start of simulation
@@ -5395,27 +5479,28 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   match eq
-  case SES_NONLINEAR(__) then
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
-  void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
+  void <%modelname%>Algloop<%nls.index%>::getSystemMatrix(double* A_matrix)
   {
 
    }
-  void <%modelname%>Algloop<%index%>::getSystemMatrix(SparseMatrix* A_matrix)
+  void <%modelname%>Algloop<%nls.index%>::getSystemMatrix(SparseMatrix* A_matrix)
   {
 
    }
   >>
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)
+) then
    <<
-     void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
+     void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(double* A_matrix)
      {
           <% match eq
            case SES_LINEAR(__) then
            "memcpy(A_matrix,__A->getData(),_dimAEq*_dimAEq*sizeof(double));"
           %>
      }
-     void <%modelname%>Algloop<%index%>::getSystemMatrix(SparseMatrix* A_matrix)
+     void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix* A_matrix)
      {
           <% match eq
           case SES_LINEAR(__) then
@@ -5437,10 +5522,27 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   match eq
-  case SES_NONLINEAR(__)
-  case SES_LINEAR(__) then
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
-  void <%modelname%>Algloop<%index%>::getRHS(double* residuals)
+  void <%modelname%>Algloop<%nls.index%>::getRHS(double* residuals)
+    {
+
+        <% match eq
+        case SES_LINEAR(__) then
+        <<
+           memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);
+        >>
+        else
+        <<
+          AlgLoopDefaultImplementation::getRHS(residuals);
+        >>
+        %>
+    }
+  >>
+
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  <<
+  void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals)
     {
 
         <% match eq
@@ -5466,14 +5568,14 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
 match eq
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-    int <%modelname%>Algloop<%index%>::getDimRHS()
+    int <%modelname%>Algloop<%ls.index%>::getDimRHS()
     {
       return _dimAEq;
     }
 
-    void <%modelname%>Algloop<%index%>::getRHS(double* vars)
+    void <%modelname%>Algloop<%ls.index%>::getRHS(double* vars)
     {
         ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A->data());
         double* doubleUnknowns = new double[_dimAEq];
@@ -5484,15 +5586,15 @@ match eq
         if(vars) std::copy(b.data().begin(), b.data().end(), vars);
     }
    >>
- case SES_NONLINEAR(__) then
+ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
     <<
-    int <%modelname%>Algloop<%index%>::giveDimRHS()
+    int <%modelname%>Algloop<%nls.index%>::giveDimRHS()
     {
       return _dimAEq;
 
     }
 
-    void <%modelname%>Algloop<%index%>::getRHS(double* vars)
+    void <%modelname%>Algloop<%nls.index%>::getRHS(double* vars)
     {
           AlgLoopDefaultImplementation:::getRHS(vars)
     }
@@ -5510,17 +5612,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   match eq
-  case SES_NONLINEAR(__) then
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
-  bool <%modelname%>Algloop<%index%>::isLinear()
+  bool <%modelname%>Algloop<%nls.index%>::isLinear()
   {
          return false;
    }
   >>
 
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-     bool <%modelname%>Algloop<%index%>::isLinear()
+     bool <%modelname%>Algloop<%ls.index%>::isLinear()
      {
           return true;
      }
@@ -5539,17 +5641,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   match eq
-  case SES_NONLINEAR(__) then
-  let lineartearing = if linearTearing then 'true' else 'false'
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  let lineartearing = if nls.linearTearing then 'true' else 'false'
   <<
-  bool <%modelname%>Algloop<%index%>::isLinearTearing()
+  bool <%modelname%>Algloop<%nls.index%>::isLinearTearing()
   {
         return <%lineartearing%>;
    }
   >>
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-     bool <%modelname%>Algloop<%index%>::isLinearTearing()
+     bool <%modelname%>Algloop<%ls.index%>::isLinearTearing()
      {
           return false;
      }
@@ -5563,29 +5665,29 @@ template initAlgloopEquation(SimEqSystem eq, SimCode simCode, Text& extraFuncs, 
 ::=
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
+case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  let size = listLength(nls.crefs)
   <<
 
-   <%crefs |> name hasindex i0 =>
+   <%nls.crefs |> name hasindex i0 =>
     let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     __xd[<%i0%>] = <%namestr%>;
      >>
   ;separator="\n"%>
    >>
- case SES_LINEAR(__)then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))then
      let &varDecls = buffer "" /*BUFD*/
 
  let Amatrix=
-    (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       '<%preExp%>(*__A)(<%row%>+1,<%col%>+1)=<%expPart%>;'
   ;separator="\n")
 
 
-let bvector =  (beqs |> exp hasindex i0 fromindex 1=>
+let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      '<%preExp%>__b(<%i0%>)=<%expPart%>;'
@@ -5604,11 +5706,11 @@ template giveAlgloopvars(SimEqSystem eq, SimCode simCode, Text& extraFuncs, Text
 ::=
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
+case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  let size = listLength(nls.crefs)
   <<
 
-   <%crefs |> name hasindex i0 =>
+   <%nls.crefs |> name hasindex i0 =>
      let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      <<
        vars[<%i0%>] = <%namestr%>;
@@ -5616,9 +5718,9 @@ case SES_NONLINEAR(__) then
      ;separator="\n"
    %>
   >>
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-      <%vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>;' ;separator="\n"%>
+      <%ls.vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>;' ;separator="\n"%>
    >>
 
 end giveAlgloopvars;
@@ -5628,11 +5730,11 @@ template giveAlgloopNominalvars(SimEqSystem eq, SimCode simCode, Text& extraFunc
  "Generates a non linear equation system."
 ::=
 match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
+case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  let size = listLength(nls.crefs)
   let &preExp = buffer "" //dummy ... the value is always a constant
   let &varDecls = buffer "" /*BUFD*/
-  let nominalVars = (crefs |> name hasindex i0 =>
+  let nominalVars = (nls.crefs |> name hasindex i0 =>
        let namestr = giveAlgloopNominalvars2(name, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
        'vars[<%i0%>] = <%namestr%>;'
     ;separator="\n")
@@ -5641,10 +5743,10 @@ case SES_NONLINEAR(__) then
    <%preExp%>
    <%nominalVars%>
      >>
- case SES_LINEAR(__) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    let &varDecls = buffer "" /*BUFD*/
    <<
-      <%vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls, stateDerVectorName,useFlatArrayNotation)%>;' ;separator="\n"%>
+      <%ls.vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDecls, stateDerVectorName,useFlatArrayNotation)%>;' ;separator="\n"%>
    >>
 
 end giveAlgloopNominalvars;
@@ -5687,28 +5789,28 @@ template writeAlgloopvars2(SimEqSystem eq, Context context, Text &varDecls, SimC
   Residual equations are handled differently."
 ::=
   match eq
-  case e as SES_NONLINEAR(__) then
-    let size = listLength(crefs)
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+    let size = listLength(nls.crefs)
   <<
-   double algloopvars<%index%>[<%size%>];
-   _algLoop<%index%>->getReal(algloopvars<%index%>);
-   <%crefs |> name hasindex i0 =>
+   double algloopvars<%nls.index%>[<%size%>];
+   _algLoop<%nls.index%>->getReal(algloopvars<%nls.index%>);
+   <%nls.crefs |> name hasindex i0 =>
     let namestr = cref(name, useFlatArrayNotation)
     <<
-     <%namestr%> = algloopvars<%index%>[<%i0%>];
+     <%namestr%> = algloopvars<%nls.index%>[<%i0%>];
     >>
     ;separator="\n"%>
 
    >>
-  case e as SES_LINEAR(__) then
-    let size = listLength(vars)
-    let algloopid = index
+  case e as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+    let size = listLength(ls.vars)
+    let algloopid = ls.index
     let &varDeclsCref = buffer "" /*BUFD*/
   <<
    double algloopvars<%algloopid%>[<%size%>];
-   _algLoop<%index%>->getReal(algloopvars<%algloopid%>,NULL,NULL);
+   _algLoop<%ls.index%>->getReal(algloopvars<%algloopid%>,NULL,NULL);
 
-    <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%> = algloopvars<%algloopid%>[<%i0%>];' ;separator="\n"%>
+    <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%> = algloopvars<%algloopid%>[<%i0%>];' ;separator="\n"%>
 
 
    >>
@@ -5720,11 +5822,11 @@ template setAlgloopvars(SimEqSystem eq,SimCode simCode ,Text& extraFuncs,Text& e
 ::=
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
+case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  let size = listLength(nls.crefs)
   <<
 
-   <%crefs |> name hasindex i0 =>
+   <%nls.crefs |> name hasindex i0 =>
     let namestr = cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)
     match name
     case CREF_QUAL(ident = "$PRE") then
@@ -5739,10 +5841,10 @@ case SES_NONLINEAR(__) then
       >>
    ;separator="\n"%>
   >>
-  case SES_LINEAR(__) then
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
   <<
 
-   <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>=vars[<%i0%>];' ;separator="\n"%>
+   <%ls.vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>=vars[<%i0%>];' ;separator="\n"%>
 
   >>
 end setAlgloopvars;
@@ -5751,8 +5853,8 @@ template initAlgloopDimension(SimEqSystem eq, Text &varDecls /*BUFP*/)
  "Generates a non linear equation system."
 ::=
 match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
+case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  let size = listLength(nls.crefs)
   <<
     // Number of unknowns equations
     _dimAEq = <%size%>;
@@ -5760,8 +5862,8 @@ case SES_NONLINEAR(__) then
     __xd.resize(<%size%>);
    _xd_init.resize(<%size%>);
   >>
-  case SES_LINEAR(__) then
-  let size = listLength(vars)
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  let size = listLength(ls.vars)
   <<
     // Number of unknowns/equations according to type (0: double, 1: int, 2: bool)
     _dimAEq = <%size%>;
@@ -5774,8 +5876,8 @@ template alocateLinearSystem(SimEqSystem eq)
  "Generates a non linear equation system."
 ::=
 match eq
-case SES_LINEAR(__) then
-   let size = listLength(vars)
+case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+   let size = listLength(ls.vars)
    <<
     if(_useSparseFormat)
       __Asparse = boost::shared_ptr<SparseMatrix> (new SparseMatrix);
@@ -5788,14 +5890,14 @@ template alocateLinearSystemConstructor(SimEqSystem eq, Boolean useFlatArrayNota
  "Generates a non linear equation system."
 ::=
 match eq
-case SES_LINEAR(__) then
-   let size = listLength(vars)
+case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+   let size = listLength(ls.vars)
   <<
    ,__b(boost::extents[<%size%>])
   >>
 end alocateLinearSystemConstructor;
 
-template Update(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template update(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
 case SIMCODE(__) then
@@ -5810,7 +5912,7 @@ case SIMCODE(__) then
 
   <%createEvaluateConditions(allEquations,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation)%>
   >>
-end Update;
+end update;
 
 
 template InitializeEquationsArray(list<SimEqSystem> allEquations, String className)
@@ -5950,20 +6052,42 @@ end writeoutput;
 template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match eq
-  case SES_LINEAR(__)
-  case SES_NONLINEAR(__)
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+    then
+      let num = ls.index
+      match simCode
+        case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
+        _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
+
+        >>
+      end match
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let num = nls.index
+      match simCode
+        case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
+        _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
+
+        >>
+      end match
   case SES_MIXED(__)
     then
-    let num = index
-    match simCode
-    case SIMCODE(modelInfo = MODELINFO(__)) then
-    <<
-    double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
-    _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
+      let num = index
+      match simCode
+        case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
+        _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
-    >>
+        >>
+      end match
   else
     " "
+  end match
  end writeoutputAlgloopsolvers;
 
 template writeoutput3(SimEqSystem eqn, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -5983,13 +6107,13 @@ template writeoutput3(SimEqSystem eqn, SimCode simCode ,Text& extraFuncs,Text& e
   case SES_ALGORITHM(__) then
   <<
   >>
-  case e as SES_LINEAR(__) then
+  case e as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
   <<
-  <%(vars |> var hasindex myindex2 => writeoutput4(e.index,myindex2));separator=",";empty%>
+  <%(ls.vars |> var hasindex myindex2 => writeoutput4(ls.index,myindex2));separator=",";empty%>
   >>
-  case e as SES_NONLINEAR(__) then
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   <<
-  <%(eqs |> eq hasindex myindex2 => writeoutput4(e.index,myindex2));separator=",";empty%>
+  <%(nls.eqs |> eq hasindex myindex2 => writeoutput4(nls.index,myindex2));separator=",";empty%>
   >>
   case SES_MIXED(__) then writeoutput3(cont,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case SES_WHEN(__) then
@@ -6038,7 +6162,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   %>
 
   #include "System/SystemDefaultImplementation.h"
-
+   /*includes removed for static linking not needed any more
   #ifdef RUNTIME_STATIC_LINKING
     #include <boost/shared_ptr.hpp>
     #include <boost/weak_ptr.hpp>
@@ -6059,7 +6183,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
     #include <boost/numeric/ublas/matrix_sparse.hpp>
     typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
   #endif //RUNTIME_STATIC_LINKING
-
+  */
   //Forward declaration to speed-up the compilation process
   class Functions;
   class EventHandling;
@@ -6195,13 +6319,29 @@ match modelInfo
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
 
-
+      void defineAlgVars();
+      void defineDiscreteAlgVars();
+      void defineIntAlgVars();
+      void defineBoolAlgVars();
+      void defineParameterRealVars();
+      void defineParameterIntVars();
+      void defineParameterBoolVars();
+      void defineAliasRealVars();
+      void defineAliasIntVars();
+      void defineAliasBoolVars();
+      void defineMixedArrayVars();
 
       void getJacobian(SparseMatrix& matrix);
       void deleteObjects();
+
       //Variables:
-       boost::shared_ptr<EventHandling> _event_handling;
+      boost::shared_ptr<EventHandling> _event_handling;
       boost::shared_ptr<DiscreteEvents> _discrete_events;
+
+      //pointer to simVars-array to speedup simulation and compile time
+      double* _pointerToRealVars;
+      int* _pointerToIntVars;
+      bool* _pointerToBoolVars;
 
       <%memberVariableDefinitions%>
       <%memberPreVariableDefinitions%>
@@ -6271,7 +6411,7 @@ template generateEquationMemberFuncDecls2(SimEqSystem eq,Text method)
      else
      <<
      /*! Equations*/
-     FORCE_INLINE inline void <%method%>_<%equationIndex(eq)%>();
+     FORCE_INLINE void <%method%>_<%equationIndex(eq)%>();
      >>
   end match
 end generateEquationMemberFuncDecls2;
@@ -6293,28 +6433,27 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   let systemname = match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%modelname%>Jacobian' else '<%modelname%>'
 
-  let algvars = MemberVariableAlgloop(modelInfo, useFlatArrayNotation)
-  let constructorParams = ConstructorParamAlgloop(modelInfo, useFlatArrayNotation)
+  let algvars = memberVariableAlgloop(modelInfo, useFlatArrayNotation)
+  let constructorParams = constructorParamAlgloop(modelInfo, useFlatArrayNotation)
   match eq
-      case SES_LINEAR(__)
-    case SES_NONLINEAR(__) then
+    case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
   <<
-  class <%modelname%>Algloop<%index%>: public IAlgLoop, public AlgLoopDefaultImplementation
+  class <%modelname%>Algloop<%ls.index%>: public IAlgLoop, public AlgLoopDefaultImplementation
   {
   public:
      //typedef for A- Matrix
     <%match eq case SES_LINEAR(__) then
-        let size = listLength(vars)
+        let size = listLength(ls.vars)
         <<
         typedef StatArrayDim2<double,<%size%>,<%size%>> AMATRIX;
         >>
     %>
 
-      <%modelname%>Algloop<%index%>( <%systemname%>* system
+      <%modelname%>Algloop<%ls.index%>( <%systemname%>* system
                                         ,double* z,double* zDot, bool* conditions
                                        ,boost::shared_ptr<DiscreteEvents> discrete_events
                                       );
-      virtual ~<%modelname%>Algloop<%index%>();
+      virtual ~<%modelname%>Algloop<%ls.index%>();
 
        <%generateAlgloopMethodDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
@@ -6340,7 +6479,72 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     // A matrix
     //boost::multi_array<double,2> *__A; //dense
     <%match eq case SES_LINEAR(__) then
-    let size = listLength(vars)
+    let size = listLength(ls.vars)
+    <<
+
+      boost::shared_ptr<AMATRIX> __A; //dense
+     //b vector
+     StatArrayDim1<double,<%size%>> __b;
+    >>
+    %>
+
+
+    boost::shared_ptr<SparseMatrix> __Asparse; //sparse
+
+
+    bool* _conditions;
+
+     boost::shared_ptr<DiscreteEvents> _discrete_events;
+     <%systemname%>* _system;
+
+     bool _useSparseFormat;
+   };
+  >>
+
+    case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+  <<
+  class <%modelname%>Algloop<%nls.index%>: public IAlgLoop, public AlgLoopDefaultImplementation
+  {
+  public:
+     //typedef for A- Matrix
+    <%match eq case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+        let size = listLength(ls.vars)
+        <<
+        typedef StatArrayDim2<double,<%size%>,<%size%>> AMATRIX;
+        >>
+    %>
+
+      <%modelname%>Algloop<%nls.index%>( <%systemname%>* system
+                                        ,double* z,double* zDot, bool* conditions
+                                       ,boost::shared_ptr<DiscreteEvents> discrete_events
+                                      );
+      virtual ~<%modelname%>Algloop<%nls.index%>();
+
+       <%generateAlgloopMethodDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+
+      bool getUseSparseFormat();
+      void setUseSparseFormat(bool value);
+    float queryDensity();
+
+  protected:
+   <% match eq
+    case SES_LINEAR(__) then
+    <<
+    template <typename T>
+    void evaluate(T* __A);
+    >>
+   %>
+  private:
+    Functions* _functions;
+
+    //states
+    double* __z;
+    //state derivatives
+    double* __zDot;
+    // A matrix
+    //boost::multi_array<double,2> *__A; //dense
+    <%match eq case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+    let size = listLength(ls.vars)
     <<
 
       boost::shared_ptr<AMATRIX> __A; //dense
@@ -6517,36 +6721,34 @@ template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& ext
 end getNominalStateValues;
 
 
-
-template AlgloopDefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template algloopDefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eq, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = lastIdentOfPath(modelInfo.name)
 match eq
-case SES_LINEAR(__)
-case SES_NONLINEAR(__) then
+case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
 <<
 /// Provide number (dimension) of variables according to data type
-int  <%modelname%>Algloop<%index%>::getDimReal() const
+int  <%modelname%>Algloop<%ls.index%>::getDimReal() const
 {
     return(AlgLoopDefaultImplementation::getDimReal());
 };
 
 /// Provide number (dimension) of residuals according to data type
-int  <%modelname%>Algloop<%index%>::getDimRHS() const
+int  <%modelname%>Algloop<%ls.index%>::getDimRHS() const
 {
     return(AlgLoopDefaultImplementation::getDimRHS());
 };
 
-bool  <%modelname%>Algloop<%index%>::isConsistent()
+bool  <%modelname%>Algloop<%ls.index%>::isConsistent()
 {
     return _system->isConsistent();
 };
 
 /// Provide variables with given index to the system
-void  <%modelname%>Algloop<%index%>::getReal(double* vars)
+void  <%modelname%>Algloop<%ls.index%>::getReal(double* vars)
 {
     AlgLoopDefaultImplementation::getReal(vars);
     //workaroud until names of algloop vars are replaced in simcode
@@ -6554,13 +6756,13 @@ void  <%modelname%>Algloop<%index%>::getReal(double* vars)
 };
 
 /// Provide nominal variables with given index to the system
-void  <%modelname%>Algloop<%index%>::getNominalReal(double* vars)
+void  <%modelname%>Algloop<%ls.index%>::getNominalReal(double* vars)
 {
     <%giveAlgloopNominalvars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
 };
 
 /// Set variables with given index to the system
-void  <%modelname%>Algloop<%index%>::setReal(const double* vars)
+void  <%modelname%>Algloop<%ls.index%>::setReal(const double* vars)
 {
     //workaround until names of algloop vars are replaced in simcode
 
@@ -6570,7 +6772,51 @@ void  <%modelname%>Algloop<%index%>::setReal(const double* vars)
 
 
 >>
-end AlgloopDefaultImplementationCode;
+case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+<<
+/// Provide number (dimension) of variables according to data type
+int  <%modelname%>Algloop<%nls.index%>::getDimReal() const
+{
+    return(AlgLoopDefaultImplementation::getDimReal());
+};
+
+/// Provide number (dimension) of residuals according to data type
+int  <%modelname%>Algloop<%nls.index%>::getDimRHS() const
+{
+    return(AlgLoopDefaultImplementation::getDimRHS());
+};
+
+bool  <%modelname%>Algloop<%nls.index%>::isConsistent()
+{
+    return _system->isConsistent();
+};
+
+/// Provide variables with given index to the system
+void  <%modelname%>Algloop<%nls.index%>::getReal(double* vars)
+{
+    AlgLoopDefaultImplementation::getReal(vars);
+    //workaroud until names of algloop vars are replaced in simcode
+    <%giveAlgloopvars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+};
+
+/// Provide nominal variables with given index to the system
+void  <%modelname%>Algloop<%nls.index%>::getNominalReal(double* vars)
+{
+    <%giveAlgloopNominalvars(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+};
+
+/// Set variables with given index to the system
+void  <%modelname%>Algloop<%nls.index%>::setReal(const double* vars)
+{
+    //workaround until names of algloop vars are replaced in simcode
+
+    <%setAlgloopvars(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+    AlgLoopDefaultImplementation::setReal(vars);
+};
+
+
+>>
+end algloopDefaultImplementationCode;
 
 
 template generateMethodDeclarationCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
@@ -6736,56 +6982,58 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 //void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);
 end generateAlgloopMethodDeclarationCode;
 
-template MemberVariable(ModelInfo modelInfo, Boolean useFlatArrayNotation)
- "Define membervariable in simulation file."
+template memberVariableDefine(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt,
+                        Text indexForUndefinedReferencesBool, Boolean useFlatArrayNotation)
+ /*Define membervariable in simulation file.*/
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
    /*parameter real vars*/
    <%vars.paramVars |> var =>
-    MemberVariableDefine2(var, "parameters", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
    ;separator="\n"%>
    /*parameter int vars*/
    <%vars.intParamVars |> var =>
-    MemberVariableDefine2( var, "intVariables.parameters", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int", true)
   ;separator="\n"%>
    /*parameter bool vars*/
    <%vars.boolParamVars |> var =>
-    MemberVariableDefine2(var, "boolVariables.parameters", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool", true)
   ;separator="\n"%>
   /*string parameter variables*/
    <%vars.stringParamVars |> var =>
-    MemberVariableDefine2(var, "stringVariables.parameters", useFlatArrayNotation, false)
+    memberVariableDefine2(var, varToArrayIndexMapping, "0", useFlatArrayNotation, "String", false)
   ;separator="\n"%>
    /*string alias variables*/
    <%vars.stringAliasVars |> var =>
-    MemberVariableDefine2(var, "stringVariables.AliasVars", useFlatArrayNotation, false)
+    memberVariableDefine2(var, varToArrayIndexMapping, "0", useFlatArrayNotation, "String", false)
    ;separator="\n"%>
    /*external variables*/
    <%vars.extObjVars |> var =>
-    MemberVariableDefine2(var, "extObjVars", useFlatArrayNotation, false)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",  false)
    ;separator="\n"%>
    /*alias real vars*/
    <%vars.aliasVars |> var =>
-    MemberVariableDefine2(var, "aliasVars", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
    ;separator="\n"%>
    /*alias int vars*/
    <%vars.intAliasVars |> var =>
-    MemberVariableDefine2( var, "intVariables.AliasVars", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int", true)
    ;separator="\n"%>
     /*alias bool vars*/
    <%vars.boolAliasVars |> var =>
-    MemberVariableDefine2(var, "boolVariables.AliasVars", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool", true)
    ;separator="\n"%>
    /*string algvars*/
    <%vars.stringAlgVars |> var =>
-    MemberVariableDefine2(var, "stringVariables.AliasVars", useFlatArrayNotation, false)
+    memberVariableDefine2(var, varToArrayIndexMapping, "0", useFlatArrayNotation, "String", true)
   ;separator="\n"%>
  >>
-end MemberVariable;
+end memberVariableDefine;
 
-template MemberVariablePreVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+template memberVariableDefinePreVariables(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt,
+                                    Text indexForUndefinedReferencesBool, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
@@ -6794,87 +7042,176 @@ case MODELINFO(vars=SIMVARS(__)) then
   //Variables saved for pre, edge and change operator
    /*real algvars*/
   <%vars.algVars |> var =>
-    MemberVariableDefine(var, "algebraics", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
   ;separator="\n"%>
   /*discrete algvars*/
   <%vars.discreteAlgVars |> var =>
-    MemberVariableDefine(var, "algebraics", useFlatArrayNotation, true)
-  ;separator="\n"%>
-  /*bool algvars*/
-  <%vars.boolAlgVars |> var =>
-    MemberVariableDefine(var, "boolVariables.algebraics", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
   ;separator="\n"%>
    /*int algvars*/
    <%vars.intAlgVars |> var =>
-    MemberVariableDefine(var, "intVariables.algebraics", useFlatArrayNotation, true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int", true)
   ;separator="\n"%>
-
+  /*bool algvars*/
+  <%vars.boolAlgVars |> var =>
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool", true)
+  ;separator="\n"%>
    /*mixed array variables*/
-   <%vars.mixedArrayVars |> arrVar =>
-    MemberVariableDefine2(arrVar, "mixed", useFlatArrayNotation, true)
+   <%vars.mixedArrayVars |> var =>
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real", true)
    ;separator="\n"%>
   >>
-end MemberVariablePreVariables;
+end memberVariableDefinePreVariables;
 
-template MemberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Integer numRealVars, Integer numIntVars, Integer numBoolVars, Boolean useFlatArrayNotation, Text& additionalBodyStatements)
- "Define membervariable in simulation file."
+template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt,
+                                  Text indexForUndefinedReferencesBool, Boolean useFlatArrayNotation, Text& additionalConstructorVariables, Text& additionalFunctionDefinitions)
 ::=
-match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numOptimizeConstraints=numOptimizeConstraints, numOptimizeFinalConstraints=numOptimizeFinalConstraints), vars=SIMVARS(__)) then
-  <<
-   /*real algvars*/
-  <%vars.algVars |> var hasindex idx =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numRealVars, useFlatArrayNotation,"Real",additionalBodyStatements)
-    ;separator="\n"%>
-  /*discrete algvars*/
-  <%vars.discreteAlgVars |> var hasindex idx =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numRealVars, useFlatArrayNotation,"Real",additionalBodyStatements)
-  ;separator="\n"%>
-   /*int algvars*/
-   <%vars.intAlgVars |> var hasindex idx =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numIntVars, useFlatArrayNotation,"Int",additionalBodyStatements)
-  ;separator="\n"%>
-    /*bool algvars*/
-   <%vars.boolAlgVars |> var hasindex idx =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numBoolVars, useFlatArrayNotation,"Bool",additionalBodyStatements)
-  ;separator="\n"%>
-   /*parameter real vars*/
-   <%vars.paramVars |> var =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numRealVars, useFlatArrayNotation,"Real",additionalBodyStatements)
-   ;separator="\n"%>
-   /*parameter int vars*/
-   <%vars.intParamVars |> var =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numIntVars, useFlatArrayNotation,"Int",additionalBodyStatements)
-  ;separator="\n"%>
-   /*parameter bool vars*/
-   <%vars.boolParamVars |> var =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numBoolVars, useFlatArrayNotation,"Bool",additionalBodyStatements)
-  ;separator="\n"%>
-   /*alias real vars*/
-   <%vars.aliasVars |> var =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numRealVars, useFlatArrayNotation,"Real",additionalBodyStatements)
-   ;separator="\n"%>
-   /*alias int vars*/
-   <%vars.intAliasVars |> var =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numIntVars, useFlatArrayNotation,"Int",additionalBodyStatements)
-   ;separator="\n"%>
-    /*alias bool vars*/
-   <%vars.boolAliasVars |> var =>
-    MemberVariableInitialize2(var, varToArrayIndexMapping, numBoolVars, useFlatArrayNotation,"Bool",additionalBodyStatements)
-   ;separator="\n"%>
-  >>
-end MemberVariableInitialize;
+  match modelInfo
+    case MODELINFO(vars=SIMVARS(__),name=name) then
+      let classname = lastIdentOfPath(name)
+      let &additionalAlgVarFunctionCalls = buffer ""
+      let &additionalDiscreteAlgVarFunctionCalls = buffer ""
+      let &additionalIntAlgVarFunctionCalls = buffer ""
+      let &additionalBoolAlgVarFunctionCalls = buffer ""
+      let &additionalParameterRealVarFunctionCalls = buffer ""
+      let &additionalParameterIntVarFunctionCalls = buffer ""
+      let &additionalParameterBoolVarFunctionCalls = buffer ""
+      let &additionalAliasRealVarFunctionCalls = buffer ""
+      let &additionalAliasIntVarFunctionCalls = buffer ""
+      let &additionalAliasBoolVarFunctionCalls = buffer ""
+      let &additionalMixedArrayVarFunctionCalls = buffer ""
+      let &returnValue = buffer ""
 
-template MemberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Integer indexForUndefinedReferences, Boolean useFlatArrayNotation, String type, Text& additionalBodyStatements)
+      <<
+      //AlgVars
+      <%List.partition(vars.algVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
+                                          true, additionalAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+
+      void <%classname%>::defineAlgVars()
+      {
+        <%additionalAlgVarFunctionCalls%>
+      }
+
+      //DiscreteAlgVars
+      <%List.partition(vars.discreteAlgVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineDiscreteAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
+                                          true, additionalDiscreteAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+
+      void <%classname%>::defineDiscreteAlgVars()
+      {
+        <%additionalDiscreteAlgVarFunctionCalls%>
+      }
+
+      //IntAlgVars
+      <%List.partition(vars.intAlgVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineIntAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int",
+                                          true, additionalIntAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineIntAlgVars()
+      {
+        <%additionalIntAlgVarFunctionCalls%>
+      }
+
+      //BoolAlgVars
+      <%List.partition(vars.boolAlgVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineBoolAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool",
+                                          true, additionalBoolAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineBoolAlgVars()
+      {
+        <%additionalBoolAlgVarFunctionCalls%>
+      }
+
+      //ParameterRealVars
+      <%List.partition(vars.paramVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineParameterRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
+                                          true, additionalParameterRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineParameterRealVars()
+      {
+        <%additionalParameterRealVarFunctionCalls%>
+      }
+
+      //ParameterIntVars
+      <%List.partition(vars.intParamVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineParameterIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int",
+                                          true, additionalParameterIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineParameterIntVars()
+      {
+        <%additionalParameterIntVarFunctionCalls%>
+      }
+
+      //ParameterBoolVars
+      <%List.partition(vars.boolParamVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineParameterBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool",
+                                          true, additionalParameterBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineParameterBoolVars()
+      {
+        <%additionalParameterBoolVarFunctionCalls%>
+      }
+
+      //AliasRealVars
+      <%List.partition(vars.aliasVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineAliasRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
+                                          true, additionalAliasRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineAliasRealVars()
+      {
+        <%additionalAliasRealVarFunctionCalls%>
+      }
+
+      //AliasIntVars
+      <%List.partition(vars.intAliasVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineAliasIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, "Int",
+                                          true, additionalAliasIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineAliasIntVars()
+      {
+        <%additionalAliasIntVarFunctionCalls%>
+      }
+
+      //AliasBoolVars
+      <%List.partition(vars.boolAliasVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineAliasBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, "Bool",
+                                          true, additionalAliasBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineAliasBoolVars()
+      {
+        <%additionalAliasBoolVarFunctionCalls%>
+      }
+
+      //MixedArrayVars
+      <%List.partition(vars.mixedArrayVars, 100) |> varPartition hasindex i0 =>
+        memberVariableInitializeWithSplit(varPartition, i0, "defineMixedArrayVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, "Real",
+                                          true, additionalMixedArrayVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+      void <%classname%>::defineMixedArrayVars()
+      {
+        <%additionalMixedArrayVarFunctionCalls%>
+      }
+      >>
+end memberVariableInitialize;
+
+template memberVariableInitializeWithSplit(list<SimVar> simVars, Text idx, Text functionPrefix, Text className, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences, Boolean useFlatArrayNotation,
+                                   String type, Boolean createRefVar, Text& additionalFunctionCalls, Text& additionalConstructorVariables, Text& additionalFunctionDefinitions)
+::=
+  let &additionalFunctionCalls += '  <%functionPrefix%>_<%idx%>();<%\n%>'
+  let &additionalFunctionDefinitions += 'void <%functionPrefix%>_<%idx%>();<%\n%>'
+  <<
+  void <%className%>::<%functionPrefix%>_<%idx%>()
+  {
+    <%simVars |> var =>
+        memberVariableInitialize2(var, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, type, createRefVar, additionalConstructorVariables)
+        ;separator="\n"%>
+  }
+  >>
+end memberVariableInitializeWithSplit;
+
+template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences, Boolean useFlatArrayNotation,
+                                   String type, Boolean createRefVar, Text& additionalConstructorVariables)
 ::=
 
 match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
 
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-    let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
-    let var_init = ',<%cref(name,useFlatArrayNotation)%>(_sim_vars->init<%type%>Var(<%index%>))'
-     var_init
+      //let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+      //let &additionalConstructorVariables += ',<%cref(name,useFlatArrayNotation)%>(_sim_vars->init<%type%>Var(<%index%>))<%\n%>'
+      ""
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -6882,22 +7219,28 @@ match simVar
       let typeString = variableType(type_)
       let array_num_elem =  arrayNumElements(name, v.numArrayElement)
       if(useFlatArrayNotation) then
-        let var_init = "not implemented"//HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableInitializeFlatArray(cref(crefLocal,useFlatArrayNotation),type,HashTableCrILst.HashTable varToArrayIndexMapping); separator="\n"
-        var_init
+        let &additionalConstructorVariables += '"not implemented"<%\n%>'
+        ""
       else
         match dims
           case "0" then
-            let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
-            let var_init = ',<%arrayName%>(_sim_vars->init<%type%>Var(<%index%>))'
-            var_init
+            //let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+            //let& additionalConstructorVariables += ',<%arrayName%>(_sim_vars->init<%type%>Var(<%index%>))'
+            ""
           else
             let size =  Util.mulStringDelimit2Int(array_num_elem,",")
-            let var_init =
-            <<
-            >>
-            let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
-            let &additionalBodyStatements += '<%typeString%>* <%arrayName%>_ref_data[<%size%>];<%\n%>_sim_vars->init<%type%>AliasArray(boost::assign::list_of<%arrayIndices%>,<%arrayName%>_ref_data);<%\n%><%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);<%\n%>'
-            var_init
+            if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+              let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))
+              <<
+              <%arrayName%> = StatRefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
+              >>
+            else
+              let arrayIndices = SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences) |> idx => '(<%idx%>)'; separator=""
+              <<
+              <%typeString%>* <%arrayName%>_ref_data[<%size%>];
+              _sim_vars->init<%type%>AliasArray(boost::assign::list_of<%arrayIndices%>,<%arrayName%>_ref_data);
+              <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
+              >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
 
@@ -6906,171 +7249,113 @@ match simVar
       let varType = variableType(type_)
       match dims
         case "0" then
-        let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
-        let var_init =',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
-        var_init
+          //let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+          //let& additionalConstructorVariables += ',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
+          ""
         else ''
       end match
-end MemberVariableInitialize2;
+end memberVariableInitialize2;
 
-/*
-template MemberVariableInitializeFlatArray(String varName, String type, HashTableCrILst.HashTable varToArrayIndexMapping)
-::=
-  let index = sumStringDelimit2Int(indices,",")
-  let var_init = ',<%varName%>(_sim_vars->init<%type%>Var(<%index%>))'
-  let &indices += ',1'
-  var_init
-end MemberVariableInitializeFlatArray;
-*/
 
-template MemberVariableAlgloop(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+template memberVariableAlgloop(ModelInfo modelInfo, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
 <<  <%vars.algVars |> var =>
-    MemberVariableDefineReference2(var, "algebraics","",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "algebraics","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.algVars then ";" else ""%>
     <%vars.discreteAlgVars |> var =>
-    MemberVariableDefineReference2(var, "algebraics","",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "algebraics","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.discreteAlgVars then ";" else ""%>
    <%vars.paramVars |> var =>
-    MemberVariableDefineReference2(var, "parameters","",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "parameters","",useFlatArrayNotation)
   ;separator=";\n"%> <%if vars.paramVars then ";" else ""%>
    <%vars.aliasVars |> var =>
-    MemberVariableDefineReference2(var, "aliasVars","",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "aliasVars","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.aliasVars then ";" else ""%>
   <%vars.intAlgVars |> var =>
-    MemberVariableDefineReference("int", var, "intVariables.algebraics","",useFlatArrayNotation)
+    memberVariableDefineReference("int", var, "intVariables.algebraics","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.intAlgVars then ";" else ""%>
   <%vars.intParamVars |> var =>
-    MemberVariableDefineReference("int", var, "intVariables.parameters","",useFlatArrayNotation)
+    memberVariableDefineReference("int", var, "intVariables.parameters","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.intParamVars then ";" else " "%>
    <%vars.intAliasVars |> var =>
-   MemberVariableDefineReference("int", var, "intVariables.AliasVars","",useFlatArrayNotation)
+   memberVariableDefineReference("int", var, "intVariables.AliasVars","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.intAliasVars then ";" else " "%>
   <%vars.boolAlgVars |> var =>
-    MemberVariableDefineReference("bool",var, "boolVariables.algebraics","",useFlatArrayNotation)
+    memberVariableDefineReference("bool",var, "boolVariables.algebraics","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.boolAlgVars then ";" else ""%>
   <%vars.boolParamVars |> var =>
-    MemberVariableDefineReference("bool",var, "boolVariables.parameters","",useFlatArrayNotation)
+    memberVariableDefineReference("bool",var, "boolVariables.parameters","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.boolParamVars then ";" else " "%>
    <%vars.boolAliasVars |> var =>
-     MemberVariableDefineReference("bool ",var, "boolVariables.AliasVars","",useFlatArrayNotation)
+     memberVariableDefineReference("bool ",var, "boolVariables.AliasVars","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.boolAliasVars then ";" else ""%>
   <%vars.stringAlgVars |> var =>
-    MemberVariableDefineReference("string",var, "stringVariables.algebraics","",useFlatArrayNotation)
+    memberVariableDefineReference("string",var, "stringVariables.algebraics","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.stringAlgVars then ";" else ""%>
   <%vars.stringParamVars |> var =>
-    MemberVariableDefineReference("string",var, "stringVariables.parameters","",useFlatArrayNotation)
+    memberVariableDefineReference("string",var, "stringVariables.parameters","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.stringParamVars then ";" else " "%>
   <%vars.stringAliasVars |> var =>
-    MemberVariableDefineReference("string",var, "stringVariables.AliasVars","",useFlatArrayNotation)
+    memberVariableDefineReference("string",var, "stringVariables.AliasVars","",useFlatArrayNotation)
   ;separator=";\n"%><%if vars.stringAliasVars then ";" else ""%>
   >>
-end MemberVariableAlgloop;
+end memberVariableAlgloop;
 
 
-
-template ConstructorParamAlgloop(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+template constructorParamAlgloop(ModelInfo modelInfo, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
   <%vars.algVars |> var =>
-    MemberVariableDefineReference2(var, "algebraics","_",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "algebraics","_",useFlatArrayNotation)
   ;separator=","%><%if vars.algVars then "," else ""%>
   <%vars.discreteAlgVars |> var =>
-    MemberVariableDefineReference2(var, "algebraics","_",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "algebraics","_",useFlatArrayNotation)
   ;separator=","%><%if vars.discreteAlgVars then "," else ""%>
   <%vars.paramVars |> var =>
-    MemberVariableDefineReference2(var, "parameters","_",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "parameters","_",useFlatArrayNotation)
   ;separator=","%><%if vars.paramVars then "," else ""%>
   <%vars.aliasVars |> var =>
-    MemberVariableDefineReference2(var, "aliasVars","_",useFlatArrayNotation)
+    memberVariableDefineReference2(var, "aliasVars","_",useFlatArrayNotation)
   ;separator=","%><%if vars.aliasVars then "," else ""%>
    <%vars.intAlgVars |> var =>
-    MemberVariableDefineReference("int", var, "intVariables.algebraics","_",useFlatArrayNotation)
+    memberVariableDefineReference("int", var, "intVariables.algebraics","_",useFlatArrayNotation)
   ;separator=","%> <%if vars.intAlgVars then "," else ""%>
   <%vars.intParamVars |> var =>
-    MemberVariableDefineReference("int", var, "intVariables.parameters","_",useFlatArrayNotation)
+    memberVariableDefineReference("int", var, "intVariables.parameters","_",useFlatArrayNotation)
   ;separator=","%> <%if vars.intParamVars then "," else ""%>
   <%vars.intAliasVars |> var =>
-    MemberVariableDefineReference("int", var, "intVariables.AliasVars","_",useFlatArrayNotation)
+    memberVariableDefineReference("int", var, "intVariables.AliasVars","_",useFlatArrayNotation)
   ;separator=","%><%if vars.intAliasVars then "," else ""%>
   <%vars.boolAlgVars |> var =>
-    MemberVariableDefineReference("bool",var, "boolVariables.algebraics","_",useFlatArrayNotation)
+    memberVariableDefineReference("bool",var, "boolVariables.algebraics","_",useFlatArrayNotation)
   ;separator=","%><%if vars.boolAlgVars then "," else ""%>
   <%vars.boolParamVars |> var =>
-    MemberVariableDefineReference("bool",var, "boolVariables.parameters","_",useFlatArrayNotation)
+    memberVariableDefineReference("bool",var, "boolVariables.parameters","_",useFlatArrayNotation)
   ;separator=","%><%if vars.boolParamVars then "," else ""%>
    <%vars.boolAliasVars |> var =>
-    MemberVariableDefineReference("bool ",var, "boolVariables.AliasVars","_",useFlatArrayNotation)
+    memberVariableDefineReference("bool ",var, "boolVariables.AliasVars","_",useFlatArrayNotation)
   ;separator=","%><%if vars.boolAliasVars then "," else ""%>
   <%vars.stringAlgVars |> var =>
-    MemberVariableDefineReference("string",var, "stringVariables.algebraics","_",useFlatArrayNotation)
+    memberVariableDefineReference("string",var, "stringVariables.algebraics","_",useFlatArrayNotation)
   ;separator=","%><%if vars.stringAlgVars then "," else "" %>
   <%vars.stringParamVars |> var =>
-    MemberVariableDefineReference("string",var, "stringVariables.parameters","_",useFlatArrayNotation)
+    memberVariableDefineReference("string",var, "stringVariables.parameters","_",useFlatArrayNotation)
   ;separator=","%><%if vars.stringParamVars then "," else ""%>
   <%vars.stringAliasVars |> var =>
-    MemberVariableDefineReference("string",var, "stringVariables.AliasVars","_",useFlatArrayNotation)
+    memberVariableDefineReference("string",var, "stringVariables.AliasVars","_",useFlatArrayNotation)
   ;separator=","%><%if vars.stringAliasVars then "," else ""%>
 
   >>
-end ConstructorParamAlgloop;
-
-template CallAlgloopParams(ModelInfo modelInfo, Boolean useFlatArrayNotation)
- "Define membervariable in simulation file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
- << <%vars.algVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%> <%if vars.algVars then "," else ""%>
-  <%vars.discreteAlgVars |> var =>
-    CallAlgloopParam(var,useFlatArrayNotation)
-  ;separator=","%> <%if vars.discreteAlgVars then "," else ""%>
-  <%vars.paramVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%> <%if vars.paramVars then "," else ""%>
-  <%vars.aliasVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.aliasVars then "," else ""%>
-  <%vars.intAlgVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.intAlgVars then "," else ""%>
-  <%vars.intParamVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.intParamVars then "," else ""%>
-  <%vars.intAliasVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.intAliasVars then "," else ""%>
-  <%vars.boolAlgVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.boolAlgVars then "," else ""%>
-  <%vars.boolParamVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.boolParamVars then "," else ""%>
-  <%vars.boolAliasVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%> <%if vars.boolAliasVars then "," else ""%>
-  <%vars.stringAlgVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.stringAlgVars then "," else "" %>
-  <%vars.stringParamVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.stringParamVars then "," else ""%>
-  <%vars.stringAliasVars |> var =>
-    CallAlgloopParam(var, useFlatArrayNotation)
-  ;separator=","%><%if vars.stringAliasVars then "," else ""%>
- >>
-end CallAlgloopParams;
+end constructorParamAlgloop;
 
 
-
-template InitAlgloopParams(ModelInfo modelInfo,Text& arrayInit, Boolean useFlatArrayNotation)
+template initAlgloopParams(ModelInfo modelInfo,Text& arrayInit, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
@@ -7079,97 +7364,62 @@ case MODELINFO(vars=SIMVARS(__)) then
  <<
    /* vars.algVars */
    <%vars.algVars |> var =>
-    InitAlgloopParam(var, "algebraics",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "algebraics",arrayInit, useFlatArrayNotation)
   ;separator=","%> <%if vars.algVars then "," else ""%>
    /* vars.discreteAlgVars */
   <%vars.discreteAlgVars |> var =>
-    InitAlgloopParam( var, "algebraics",arrayInit, useFlatArrayNotation)
+    initAlgloopParam( var, "algebraics",arrayInit, useFlatArrayNotation)
   ;separator=","%> <%if vars.discreteAlgVars then "," else ""%>
    /* vars.paramVars */
   <%vars.paramVars |> var =>
-    InitAlgloopParam(var, "parameters",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "parameters",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.paramVars then "," else ""%>
    /* vars.aliasVars */
    <%vars.aliasVars |> var =>
-    InitAlgloopParam(var, "aliasVars",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "aliasVars",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.aliasVars then "," else ""%>
    /* vars.intAlgVars */
   <%vars.intAlgVars |> var =>
-    InitAlgloopParam( var, "intVariables.algebraics",arrayInit, useFlatArrayNotation)
+    initAlgloopParam( var, "intVariables.algebraics",arrayInit, useFlatArrayNotation)
   ;separator=","%> <%if vars.intAlgVars then "," else ""%>
    /* vars.intParamVars */
   <%vars.intParamVars |> var =>
-    InitAlgloopParam( var, "intVariables.parameters",arrayInit, useFlatArrayNotation)
+    initAlgloopParam( var, "intVariables.parameters",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.intParamVars then "," else ""%>
    /* vars.intAliasVars */
   <%vars.intAliasVars |> var =>
-    InitAlgloopParam( var, "intVariables.AliasVars",arrayInit, useFlatArrayNotation)
+    initAlgloopParam( var, "intVariables.AliasVars",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.intAliasVars then "," else ""%>
    /* vars.boolAlgVars */
   <%vars.boolAlgVars |> var =>
-    InitAlgloopParam(var, "boolVariables.algebraics",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "boolVariables.algebraics",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.boolAlgVars then "," else ""%>
    /* vars.boolParamVars */
   <%vars.boolParamVars |> var =>
-    InitAlgloopParam(var, "boolVariables.parameters",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "boolVariables.parameters",arrayInit, useFlatArrayNotation)
   ;separator=","%> <%if vars.boolParamVars then "," else ""%>
    /* vars.boolAliasVars */
   <%vars.boolAliasVars |> var =>
-    InitAlgloopParam(var, "boolVariables.AliasVars",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "boolVariables.AliasVars",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.boolAliasVars then "," else ""%>
    /* vars.stringAlgVars */
    <%if vars.stringAlgVars then "," else ""%>
   <%vars.stringAlgVars |> var =>
-    InitAlgloopParam(var, "stringVariables.algebraics",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "stringVariables.algebraics",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.stringAlgVars then "," else "" %>
    /* vars.stringParamVars */
    <%vars.stringParamVars |> var =>
-    InitAlgloopParam(var, "stringVariables.parameters",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "stringVariables.parameters",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.stringParamVars then "," else "" %>
    /* vars.stringAliasVars */
   <%vars.stringAliasVars |> var =>
-    InitAlgloopParam(var, "stringVariables.AliasVars",arrayInit, useFlatArrayNotation)
+    initAlgloopParam(var, "stringVariables.AliasVars",arrayInit, useFlatArrayNotation)
   ;separator=","%><%if vars.stringAliasVars then "," else "" %>
  >>
- end InitAlgloopParams;
+end initAlgloopParams;
 
-/*
-template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
-::=
-match simVar
-    case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-      //SimVar is not an array
-      <<
-      <%type%> <%cref(name,useFlatArrayNotation)%>;
-      >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      let &dims = buffer ""
-      let arrayName = arraycref2(name,dims)
-      let arraysize = arrayextentDims(name,v.numArrayElement)
-      let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
-      let varType = variableType(type_)
 
-      match dims
-        case "0" then
-          <<
-          <%varType%> <%arrayName%>;
-          >>
-        else
-          <<
-          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>;
-          >>
-    case SIMVAR(numArrayElement=_::_) then
-      let test = numArrayElement |> index =>  '<%index%>'; separator=","
-      let& dims = buffer ""
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
-      match dims
-        case "0" then  '<%varType%> <%varName%>;'
-        else ''
-end MemberVariableDefine;
-*/
-template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre, Boolean useFlatArrayNotation)
+template memberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre, Boolean useFlatArrayNotation)
 ::=
 match simVar
 
@@ -7192,19 +7442,29 @@ match simVar
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims case "0" then  ''
-end MemberVariableDefineReference;
+end memberVariableDefineReference;
 
 
-template MemberVariableDefine(SimVar simVar, String arrayName, Boolean useFlatArrayNotation, Boolean createRefVar)
+template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences,
+                              Boolean useFlatArrayNotation, String type, Boolean createRefVar)
 ::=
-
-match simVar
+  match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
 
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
+      /*
       <<
       <%variableType(type_)%><%if createRefVar then '&' else ''%> <%cref(name,useFlatArrayNotation)%>;
       >>
+      */
+      if createRefVar then
+        let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+        <<
+        #define <%cref(name,useFlatArrayNotation)%> _pointerTo<%type%>Vars[<%index%>]
+        >>
+      else
+        '<%variableType(type_)%> <%cref(name,useFlatArrayNotation)%>;'
+
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -7213,48 +7473,22 @@ match simVar
       let array_dimensions =  arrayextentDims(name, v.numArrayElement)
       match dims
       case "0" then
+        /*
         <<
         <%typeString%><%if createRefVar then '&' else ''%> <%arrayName%>;
         >>
-      else
-        <<
-        RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
-        >>
-   /*special case for variables that marked as array but are not arrays */
-    case SIMVAR(numArrayElement=_::_) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
-      match dims
-        case "0" then  '<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
-        else ''
-      end match
-
-
-end MemberVariableDefine;
-
-
-
-template MemberVariableDefine2(SimVar simVar, String arrayName, Boolean useFlatArrayNotation, Boolean createRefVar)
-::=
-
-match simVar
-    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
-    case SIMVAR(numArrayElement={},arrayCref=NONE()) then
-      <<
-      <%variableType(type_)%><%if createRefVar then '&' else ''%> <%cref(name,useFlatArrayNotation)%>;
-      >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      let &dims = buffer "" /*BUFD*/
-      let arrayName = arraycref2(name,dims)
-      let typeString = variableType(type_)
-      let array_dimensions =  arrayextentDims(name, v.numArrayElement)
-      match dims
-        case "0" then
+        */
+        if createRefVar then
+          let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
           <<
-          <%typeString%><%if createRefVar then '&' else ''%> <%arrayName%>;
+          #define <%arrayName%> _pointerTo<%type%>Vars[<%index%>]
+          >>
+        else
+          '<%typeString%> <%arrayName%>;'
+      else
+        if SimCodeUtil.isVarIndexListConsecutive(varToArrayIndexMapping,name) then
+          <<
+          StatRefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
           >>
         else
           <<
@@ -7266,15 +7500,19 @@ match simVar
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims
-        case "0" then  '<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
+        case "0" then
+          //'<%varType%><%if createRefVar then '&' else ''%> <%varName%>;'
+          if createRefVar then
+            let index = '<%listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,indexForUndefinedReferences))%>'
+            '#define <%varName%> _pointerTo<%type%>Vars[<%index%>]'
+          else
+            '<%varType%> <%varName%>;'
         else ''
       end match
+end memberVariableDefine2;
 
 
-end MemberVariableDefine2;
-
-
-template InitAlgloopParam(SimVar simVar, String arrayName,Text& arrayInit, Boolean useFlatArrayNotation)
+template initAlgloopParam(SimVar simVar, String arrayName,Text& arrayInit, Boolean useFlatArrayNotation)
 ::=
 match simVar
       case SIMVAR(numArrayElement={}) then
@@ -7292,31 +7530,10 @@ match simVar
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       match dims case "0" then  '<%varName%>(_<%varName%>)'
-end InitAlgloopParam;
-
-template CallAlgloopParam(SimVar simVar, Boolean useFlatArrayNotation)
-::=
-match simVar
-      case SIMVAR(numArrayElement={}) then
-      <<
-      <%cref(name, useFlatArrayNotation)%>
-      >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
-      //let &arrayInit+= ',<%arraycref(name, useFlatArrayNotation)%>=_<%arraycref(name, useFlatArrayNotation)%>'
-      '<%arraycref(name, useFlatArrayNotation)%>'
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
-      //let &arrayInit+= ' ,<%arraycref(name, useFlatArrayNotation)%>= _<%arraycref(name, useFlatArrayNotation)%>'
-      '<%arraycref(name, useFlatArrayNotation)%>'
-    /*special case for varibales that marked as array but are not arrays */
-    case SIMVAR(numArrayElement=_::_) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name,dims)
-      match dims case "0" then  '<%varName%>'
+end initAlgloopParam;
 
 
-end CallAlgloopParam;
-
-template MemberVariableDefineReference2(SimVar simVar, String arrayName,String pre, Boolean useFlatArrayNotation)
+template memberVariableDefineReference2(SimVar simVar, String arrayName,String pre, Boolean useFlatArrayNotation)
 ::=
 match simVar
       case SIMVAR(numArrayElement={}) then
@@ -7337,7 +7554,7 @@ match simVar
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims case "0" then  ''
-end MemberVariableDefineReference2;
+end memberVariableDefineReference2;
 
 
 template arrayConstruct(ModelInfo modelInfo, Boolean useFlatArrayNotation)
@@ -7614,7 +7831,18 @@ template subscriptsStrForWriteOutput(list<Subscript> subscripts)
     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'//previous multi_array     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
 end subscriptsStrForWriteOutput;
 
+/* record CREF_IDENT
+    Ident ident;
+    Type identType "type of the identifier, without considering the subscripts";
+    list<Subscript> subscriptLst;
+  end CREF_IDENT;
 
+  record CREF_ITER "An iterator index; used in local scopes in for-loops and reductions"
+    Ident ident;
+    Integer index;
+    Type identType "type of the identifier, without considering the subscripts";
+    list<Subscript> subscriptLst;
+  end CREF_ITER;*/
 
 template crefStr(ComponentRef cr)
 ::=
@@ -7650,69 +7878,72 @@ template subscriptStr(Subscript subscript)
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 
-template simulationInitFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template simulationInitFile(SimCode simCode, Text& extraFuncsDecl, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)))
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__), name=name))
   then
-  <<
-  <%if (boolNot(useFlatArrayNotation)) then arrayConstruct(modelInfo, useFlatArrayNotation) else ""%>
-  <%initconstVals(vars.stringParamVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-  >>
+    let className = lastIdentOfPath(name)
+    let &additionalConstVarFunctionCalls = buffer ""
+    let &extraFuncsDecl += "void defineConstVals();"
+    <<
+
+    //String parameter <%listLength(vars.stringParamVars)%>
+    <%List.partition(vars.stringParamVars, 100) |> varPartition hasindex i0 =>
+          initConstValsWithSplit(varPartition, simCode, i0, className, additionalConstVarFunctionCalls, extraFuncsDecl, stateDerVectorName, useFlatArrayNotation) ;separator="\n"%>
+
+    void <%className%>::defineConstVals()
+    {
+      <%additionalConstVarFunctionCalls%>
+    }
+    >>
 end simulationInitFile;
 
-template initconstVals(list<SimVar> varsLst, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-  varsLst |> (var as SIMVAR(__)) =>
-  initconstValue(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  ;separator="\n"
-end initconstVals;
-
-template initconstValue(SimVar var,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
- match var
-  case SIMVAR(numArrayElement=_::_) then ''
-  case SIMVAR(type_=type) then ',<%cref(name, useFlatArrayNotation)%>
-    <%match initialValue
-    case SOME(v) then initconstValue2(v, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      else match type
-      case T_STRING(__) then '("")'
-      else '(0)'
-    %>'
-end initconstValue;
-
-template crefToCStrOrig(ComponentRef cr)
- "Helper function to cref."
+template initConstValsWithSplit(list<SimVar> simVars, SimCode simCode, Text idx, Text className, Text& additionalFunctionCalls, Text& additionalFunctionDefinitions, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-  match cr
-  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrOrig(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrOrig(subscriptLst)%>$P<%crefToCStrOrig(componentRef)%>'
-  case WILD(__) then ''
-  else "CREF_NOT_IDENT_OR_QUAL"
-end crefToCStrOrig;
-template subscriptsToCStrOrig(list<Subscript> subscripts)
-::=
-  if subscripts then
-    '$lB<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>$rB'
-end subscriptsToCStrOrig;
+  let &additionalFunctionCalls += '  defineConstVals_<%idx%>();<%\n%>'
+  let &additionalFunctionDefinitions += 'void defineConstVals_<%idx%>();<%\n%>'
+  <<
+  void <%className%>::defineConstVals_<%idx%>()
+  {
+    <%simVars |> var =>
+        initConstValue(var, simCode, stateDerVectorName, useFlatArrayNotation)
+        ;separator="\n"%>
+  }
+  >>
+end initConstValsWithSplit;
 
-template initconstValue2(Exp initialValue, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template initConstValue(SimVar var, SimCode simCode, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+  match var
+    case SIMVAR(numArrayElement=_::_) then ''
+    case SIMVAR(type_=type,name=name) then
+      match initialValue
+        case SOME(v) then '<%cref(name, useFlatArrayNotation)%> = <%initConstValue2(v, simCode, stateDerVectorName, useFlatArrayNotation)%>;'
+        else
+          match type
+            case T_STRING(__) then '<%cref(name, useFlatArrayNotation)%> = "";'
+            else '<%cref(name, useFlatArrayNotation)%> = 0;'
+end initConstValue;
+
+template initConstValue2(Exp initialValue, SimCode simCode, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   match initialValue
     case v then
       let &preExp = buffer "" //dummy ... the value is always a constant
       let &varDecls = buffer ""
-      match daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let &extraFuncs = buffer ""
+      let &extraFuncsDecl = buffer ""
+      let &extraFuncsNamespace = buffer ""
+      match daeExp(v, contextOther, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       case vStr as "0"
       case vStr as "0.0"
-      case vStr as "(0)" then
-       '(<%vStr%>)'
-      case vStr as "" then
-       '(<%vStr%>)'
+      case vStr as "(0)"
+      case vStr as ""
       case vStr then
-       '(<%vStr%>)'
-     end match
-
-end initconstValue2;
-
+       '<%vStr%>'
+  end match
+end initConstValue2;
 
 template initializeArrayElements(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
@@ -7883,13 +8114,13 @@ case SES_ARRAY_CALL_ASSIGN(__) then
 case SES_ALGORITHM(__) then
 <<
 >>
-case lin as SES_LINEAR(__) then
+case lin as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
 <<
-<%(vars |> var => '1');separator="+"%>
+<%(ls.vars |> var => '1');separator="+"%>
 >>
-case SES_NONLINEAR(__) then
+case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
 <<
-<%(eqs |> eq => '1');separator="+"%>
+<%(nls.eqs |> eq => '1');separator="+"%>
 >>
 case SES_MIXED(__) then numResidues2(cont)
 case SES_WHEN(__) then
@@ -9089,91 +9320,167 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     then equationWhen(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-
+  case e as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
-
-    let i = index
-    match context
-    case  ALGLOOP_CONTEXT(genInitialisation=true)
-    then
-    <<
-    try
-    {
-      _algLoopSolver<%index%>->initialize();
-      _algLoop<%index%>->evaluate();
-      for(int i=0; i<_dimZeroFunc; i++)
-      {
-        getCondition(i);
-      }
-      IContinuous::UPDATETYPE calltype = _callType;
-      _callType = IContinuous::CONTINUOUS;
-      _algLoopSolver<%index%>->solve();
-      _callType = calltype;
-    }
-    catch(ModelicaSimulationError& ex)
-    {
-
-         string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
-          throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
-    }
-    >>
-    else
-    <<
-    bool restart<%index%> = true;
-
-    unsigned int iterations<%index%> = 0;
-    _algLoop<%index%>->getReal(_algloop<%index%>Vars);
-    bool restatDiscrete<%index%> = false;
-    try
-      {
-         _algLoop<%index%>->evaluate();
-          if( _callType == IContinuous::DISCRETE )
-          {
-             while(restart<%index%> && !(iterations<%index%>++>500))
-             {
-               getConditions(_conditions0<%index%>);
-               _callType = IContinuous::CONTINUOUS;
-               _algLoopSolver<%index%>->solve();
-               _callType = IContinuous::DISCRETE;
-               for(int i=0;i<_dimZeroFunc;i++)
-               {
-                 getCondition(i);
-               }
-               getConditions(_conditions1<%index%>);
-               restart<%index%> = !std::equal (_conditions1<%index%>, _conditions1<%index%>+_dimZeroFunc,_conditions0<%index%>);
-             }
-          }
-          else
-             _algLoopSolver<%index%>->solve();
-      }
-      catch(ModelicaSimulationError &ex)
-      {
-        restatDiscrete<%index%>=true;
-      }
-
-      if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
-      {
-            try
-             {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+      let i = ls.index
+      match context
+        case  ALGLOOP_CONTEXT(genInitialisation=true)
+          then
+              <<
+              try
+              {
+                _algLoopSolver<%ls.index%>->initialize();
+                _algLoop<%ls.index%>->evaluate();
+                for(int i=0; i<_dimZeroFunc; i++)
+                {
+                  getCondition(i);
+                }
                 IContinuous::UPDATETYPE calltype = _callType;
-               _callType = IContinuous::DISCRETE;
-                 _algLoop<%index%>->setReal(_algloop<%index%>Vars );
-                _algLoopSolver<%index%>->solve();
-               _callType = calltype;
-             }
-             catch(ModelicaSimulationError& ex)
-             {
-                 string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
-                 throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+                _callType = IContinuous::CONTINUOUS;
+                _algLoopSolver<%ls.index%>->solve();
+                _callType = calltype;
+              }
+              catch(ModelicaSimulationError& ex)
+              {
 
-             }
-      }
-     >>
-    end match
+                   string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                    throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+              }
+              >>
+            else
+              <<
+              bool restart<%ls.index%> = true;
 
+              unsigned int iterations<%ls.index%> = 0;
+              _algLoop<%ls.index%>->getReal(_algloop<%ls.index%>Vars);
+              bool restatDiscrete<%ls.index%> = false;
+              try
+                {
+                   _algLoop<%ls.index%>->evaluate();
+                    if( _callType == IContinuous::DISCRETE )
+                    {
+                       while(restart<%ls.index%> && !(iterations<%ls.index%>++>500))
+                       {
+                         getConditions(_conditions0<%ls.index%>);
+                         _callType = IContinuous::CONTINUOUS;
+                         _algLoopSolver<%ls.index%>->solve();
+                         _callType = IContinuous::DISCRETE;
+                         for(int i=0;i<_dimZeroFunc;i++)
+                         {
+                           getCondition(i);
+                         }
+                         getConditions(_conditions1<%ls.index%>);
+                         restart<%ls.index%> = !std::equal (_conditions1<%ls.index%>, _conditions1<%ls.index%>+_dimZeroFunc,_conditions0<%ls.index%>);
+                       }
+                    }
+                    else
+                       _algLoopSolver<%ls.index%>->solve();
+                }
+                catch(ModelicaSimulationError &ex)
+                {
+                  restatDiscrete<%ls.index%>=true;
+                }
 
+                if((restart<%ls.index%>&& iterations<%ls.index%> > 0)|| restatDiscrete<%ls.index%>)
+                {
+                      try
+                       {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                          IContinuous::UPDATETYPE calltype = _callType;
+                         _callType = IContinuous::DISCRETE;
+                           _algLoop<%ls.index%>->setReal(_algloop<%ls.index%>Vars );
+                          _algLoopSolver<%ls.index%>->solve();
+                         _callType = calltype;
+                       }
+                       catch(ModelicaSimulationError& ex)
+                       {
+                           string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                           throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+
+                       }
+                }
+               >>
+         end match
+
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let i = nls.index
+      match context
+        case  ALGLOOP_CONTEXT(genInitialisation=true)
+          then
+              <<
+              try
+              {
+                _algLoopSolver<%nls.index%>->initialize();
+                _algLoop<%nls.index%>->evaluate();
+                for(int i=0; i<_dimZeroFunc; i++)
+                {
+                  getCondition(i);
+                }
+                IContinuous::UPDATETYPE calltype = _callType;
+                _callType = IContinuous::CONTINUOUS;
+                _algLoopSolver<%nls.index%>->solve();
+                _callType = calltype;
+              }
+              catch(ModelicaSimulationError& ex)
+              {
+
+                   string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                    throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+              }
+              >>
+            else
+              <<
+              bool restart<%nls.index%> = true;
+
+              unsigned int iterations<%nls.index%> = 0;
+              _algLoop<%nls.index%>->getReal(_algloop<%nls.index%>Vars);
+              bool restatDiscrete<%nls.index%> = false;
+              try
+                {
+                   _algLoop<%nls.index%>->evaluate();
+                    if( _callType == IContinuous::DISCRETE )
+                    {
+                       while(restart<%nls.index%> && !(iterations<%nls.index%>++>500))
+                       {
+                         getConditions(_conditions0<%nls.index%>);
+                         _callType = IContinuous::CONTINUOUS;
+                         _algLoopSolver<%nls.index%>->solve();
+                         _callType = IContinuous::DISCRETE;
+                         for(int i=0;i<_dimZeroFunc;i++)
+                         {
+                           getCondition(i);
+                         }
+                         getConditions(_conditions1<%nls.index%>);
+                         restart<%nls.index%> = !std::equal (_conditions1<%nls.index%>, _conditions1<%nls.index%>+_dimZeroFunc,_conditions0<%nls.index%>);
+                       }
+                    }
+                    else
+                       _algLoopSolver<%nls.index%>->solve();
+                }
+                catch(ModelicaSimulationError &ex)
+                {
+                  restatDiscrete<%nls.index%>=true;
+                }
+
+                if((restart<%nls.index%>&& iterations<%nls.index%> > 0)|| restatDiscrete<%nls.index%>)
+                {
+                      try
+                       {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                          IContinuous::UPDATETYPE calltype = _callType;
+                         _callType = IContinuous::DISCRETE;
+                           _algLoop<%nls.index%>->setReal(_algloop<%nls.index%>Vars );
+                          _algLoopSolver<%nls.index%>->solve();
+                         _callType = calltype;
+                       }
+                       catch(ModelicaSimulationError& ex)
+                       {
+                           string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                           throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+
+                       }
+                }
+               >>
+         end match
   case e as SES_MIXED(__)
     /*<%equationMixed(e, context, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
     then
@@ -9183,20 +9490,16 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   case e as SES_FOR_LOOP(__)
     then
     <<
-    This is a foor loop, it works!
+    FOR LOOPS ARE NOT IMPLEMENTED
+    >>
+  case e as SES_IFEQUATION(__)
+    then
+    <<
+    IF EQUATIONS ARE NOT IMPLEMENTED
     >>
   else
     "NOT IMPLEMENTED EQUATION"
 end equation_;
-/*ranking: removed from equation_ before try block:
-   if(!(command & IContinuous::RANKING))
-    {
-
-     }
-       else _algLoop<%i%>->initialize();
- */
-
-
 
 template equation_function_call(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text method)
  "Generates an equation.
@@ -9245,7 +9548,10 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
       let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime)
       "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
-      else
+    case e as SES_FOR_LOOP(__)
+      then
+        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    else
       "NOT IMPLEMENTED EQUATION"
   end match
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
@@ -9258,7 +9564,6 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     void <%lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%><%classnameext%>::<%method%>_<%ix_str%>()
     {
       <%varDeclsLocal%>
-
       <%if(createMeasureTime) then measureTimeStartVar%>
       <%body%>
       <%if(createMeasureTime) then measureTimeEndVar%>
@@ -9475,21 +9780,29 @@ template generateStepCompleted3(SimEqSystem eq, Context context, Text &varDecls,
   Residual equations are handled differently."
 ::=
   match eq
-  case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
-    _algLoopSolver<%num%>->stepCompleted(_simTime);
-   >>
-   end match
+      let num = ls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+       <<
+        _algLoopSolver<%num%>->stepCompleted(_simTime);
+       >>
+       end match
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let num = nls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+       <<
+        _algLoopSolver<%num%>->stepCompleted(_simTime);
+       >>
+       end match
   case e as SES_MIXED(cont = eq_sys)
-  then
-   <<
-   <%generateStepCompleted3(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   >>
+      then
+       <<
+       <%generateStepCompleted3(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+       >>
   else
     ""
  end generateStepCompleted3;
@@ -9524,21 +9837,29 @@ template generatefriendAlgloops(list<SimEqSystem> allEquations, SimCode simCode 
  template generatefriendAlgloops2(SimEqSystem eq, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  ::=
   match eq
-  case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-  <<
-  friend class <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>;
-  >>
-  end match
+      let num = ls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+      <<
+      friend class <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>;
+      >>
+      end match
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let num = nls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+      <<
+      friend class <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>;
+      >>
+      end match
   case e as SES_MIXED(cont = eq_sys)
-  then
-  <<
-  <%generatefriendAlgloops2(eq_sys,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-  >>
+    then
+      <<
+      <%generatefriendAlgloops2(eq_sys,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+      >>
   else
     ""
  end generatefriendAlgloops2;
@@ -9551,17 +9872,26 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   Residual equations are handled differently."
 ::=
   match eq
-  case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-  <<
-  _algLoop<%num%> =  boost::shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
-  _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
-  >>
-  end match
+      let num = ls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+      <<
+      _algLoop<%num%> =  boost::shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
+      _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
+      >>
+      end match
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let num = nls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+      <<
+      _algLoop<%num%> =  boost::shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
+      _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
+      >>
+      end match
   case e as SES_MIXED(cont = eq_sys)
   then
    <<
@@ -9597,29 +9927,43 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-    then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
-   boost::shared_ptr<IAlgLoop>  //Algloop  which holds equation system
-        _algLoop<%num%>;
-   boost::shared_ptr<IAlgLoopSolver>
-        _algLoopSolver<%num%>;        ///< Solver for algebraic loop */
-    bool* _conditions0<%num%>;
-    bool* _conditions1<%num%>;
-    double* _algloop<%num%>Vars;
-   >>
-   end match
+   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+     then
+       let num = ls.index
+       match simCode
+       case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        boost::shared_ptr<IAlgLoop>  //Algloop  which holds equation system
+             _algLoop<%num%>;
+        boost::shared_ptr<IAlgLoopSolver>
+             _algLoopSolver<%num%>;        ///< Solver for algebraic loop */
+         bool* _conditions0<%num%>;
+         bool* _conditions1<%num%>;
+         double* _algloop<%num%>Vars;
+        >>
+        end match
+   case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+     then
+       let num = nls.index
+       match simCode
+       case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        boost::shared_ptr<IAlgLoop>  //Algloop  which holds equation system
+             _algLoop<%num%>;
+        boost::shared_ptr<IAlgLoopSolver>
+             _algLoopSolver<%num%>;        ///< Solver for algebraic loop */
+         bool* _conditions0<%num%>;
+         bool* _conditions1<%num%>;
+         double* _algloop<%num%>Vars;
+        >>
+        end match
    case e as SES_MIXED(cont = eq_sys)
-  then
-   <<
-   <%generateAlgloopsolverVariables2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   >>
-  else
-    ""
+     then
+       <<
+       <%generateAlgloopsolverVariables2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+       >>
+    else
+      ""
  end generateAlgloopsolverVariables2;
 
 template generateInitAlgloopsolverVariables(list<JacobianMatrix> jacobianMatrixes,list<SimEqSystem> allEquationsPlusWhen,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text className)
@@ -9677,10 +10021,20 @@ template generateInitAlgloopsolverVariables2(SimEqSystem eq, Context context, Te
   Residual equations are handled differently."
 ::=
   match eq
-    case SES_LINEAR(__)
-    case e as SES_NONLINEAR(__)
+    case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
       then
-        let num = index
+        let num = ls.index
+        match simCode
+          case SIMCODE(modelInfo = MODELINFO(__)) then
+            <<
+            _conditions0<%num%> = NULL;
+            _conditions1<%num%> = NULL;
+            _algloop<%num%>Vars = NULL;
+            >>
+        end match
+    case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+      then
+        let num = nls.index
         match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
             <<
@@ -9741,21 +10095,34 @@ template generateDeleteAlgloopsolverVariables2(SimEqSystem eq, Context context, 
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
+   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
-      if(_conditions0<%num%>)
-        delete [] _conditions0<%num%>;
-      if(_conditions1<%num%>)
-        delete [] _conditions1<%num%>;
-      if(_algloop<%num%>Vars)
-        delete [] _algloop<%num%>Vars;
-   >>
-   end match
+      let num = ls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+       <<
+          if(_conditions0<%num%>)
+            delete [] _conditions0<%num%>;
+          if(_conditions1<%num%>)
+            delete [] _conditions1<%num%>;
+          if(_algloop<%num%>Vars)
+            delete [] _algloop<%num%>Vars;
+       >>
+       end match
+   case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let num = nls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+       <<
+          if(_conditions0<%num%>)
+            delete [] _conditions0<%num%>;
+          if(_conditions1<%num%>)
+            delete [] _conditions1<%num%>;
+          if(_algloop<%num%>Vars)
+            delete [] _algloop<%num%>Vars;
+       >>
+       end match
   else
     ""
  end generateDeleteAlgloopsolverVariables2;
@@ -9795,24 +10162,33 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-    then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
-   if(_algLoopSolver<%num%>)
-       _algLoopSolver<%num%>->initialize();
-   >>
-   end match
+   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+     then
+      let num = ls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+       <<
+       if(_algLoopSolver<%num%>)
+           _algLoopSolver<%num%>->initialize();
+       >>
+       end match
+   case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+     then
+      let num = nls.index
+      match simCode
+      case SIMCODE(modelInfo = MODELINFO(__)) then
+       <<
+       if(_algLoopSolver<%num%>)
+           _algLoopSolver<%num%>->initialize();
+       >>
+       end match
    case e as SES_MIXED(cont = eq_sys)
-  then
-   <<
-   <%initAlgloopsolvers2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   >>
-  else
-    ""
+     then
+       <<
+       <%initAlgloopsolvers2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+       >>
+   else
+     ""
  end initAlgloopsolvers2;
 
 
@@ -9830,45 +10206,56 @@ template initAlgloopVars(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode 
 end initAlgloopVars;
 
 
-
-
-
 template initAlgloopVars2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
-  case  SES_NONLINEAR(__)
-    then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
-     if(_algloop<%index%>Vars)
-       delete [] _algloop<%index%>Vars;
-     if(_conditions0<%index%>)
-       delete [] _conditions0<%index%>;
-     if(_conditions1<%index%>)
-       delete [] _conditions1<%index%>;
-     unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
-     _algloop<%index%>Vars = new double[dim<%index%>];
-     _conditions0<%index%> = new bool[_dimZeroFunc];
-     _conditions1<%index%> = new bool[_dimZeroFunc];
-   >>
-   end match
+   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+     then
+       let num = ls.index
+       match simCode
+         case SIMCODE(modelInfo = MODELINFO(__)) then
+          <<
+            if(_algloop<%ls.index%>Vars)
+              delete [] _algloop<%ls.index%>Vars;
+            if(_conditions0<%ls.index%>)
+              delete [] _conditions0<%ls.index%>;
+            if(_conditions1<%ls.index%>)
+              delete [] _conditions1<%ls.index%>;
+            unsigned int dim<%ls.index%> = _algLoop<%ls.index%>->getDimReal();
+            _algloop<%ls.index%>Vars = new double[dim<%ls.index%>];
+            _conditions0<%ls.index%> = new bool[_dimZeroFunc];
+            _conditions1<%ls.index%> = new bool[_dimZeroFunc];
+          >>
+        end match
+   case  SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+     then
+       let num = nls.index
+       match simCode
+         case SIMCODE(modelInfo = MODELINFO(__)) then
+          <<
+            if(_algloop<%nls.index%>Vars)
+              delete [] _algloop<%nls.index%>Vars;
+            if(_conditions0<%nls.index%>)
+              delete [] _conditions0<%nls.index%>;
+            if(_conditions1<%nls.index%>)
+              delete [] _conditions1<%nls.index%>;
+            unsigned int dim<%nls.index%> = _algLoop<%nls.index%>->getDimReal();
+            _algloop<%nls.index%>Vars = new double[dim<%nls.index%>];
+            _conditions0<%nls.index%> = new bool[_dimZeroFunc];
+            _conditions1<%nls.index%> = new bool[_dimZeroFunc];
+          >>
+        end match
    case e as SES_MIXED(cont = eq_sys)
-  then
-   <<
-   <%initAlgloopsolvers2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   >>
-  else
-    " "
- end initAlgloopVars2;
-
-
-
+     then
+       <<
+       <%initAlgloopsolvers2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+       >>
+   else
+     " "
+end initAlgloopVars2;
 
 
 template algloopForwardDeclaration(list<SimEqSystem> allEquations,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
@@ -9884,21 +10271,29 @@ end algloopForwardDeclaration;
 template algloopForwardDeclaration2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match eq
-   case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-    then
-      let num = index
-      match simCode
-          case SIMCODE(modelInfo = MODELINFO(__)) then
-          <<
-          class <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>;
-          >>
-   end match
+   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+     then
+       let num = ls.index
+       match simCode
+           case SIMCODE(modelInfo = MODELINFO(__)) then
+           <<
+           class <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>;
+           >>
+      end match
+   case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+     then
+       let num = nls.index
+       match simCode
+           case SIMCODE(modelInfo = MODELINFO(__)) then
+           <<
+           class <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>;
+           >>
+      end match
   case e as SES_MIXED(cont = eq_sys)
-  then
-   <<
-   <%algloopForwardDeclaration2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   >>
+    then
+      <<
+      <%algloopForwardDeclaration2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+      >>
   else
        ""
 end algloopForwardDeclaration2;
@@ -9919,19 +10314,25 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
   Residual equations are handled differently."
 ::=
   match eq
-  case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-  then
-    let num = index
-    match simCode
-    case SIMCODE(modelInfo = MODELINFO(__)) then
-      '#include "OMCpp<%fileNamePrefix%>Algloop<%num%>.h"<%\n%>'
-    end match
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+    then
+      let num = ls.index
+      match simCode
+        case SIMCODE(modelInfo = MODELINFO(__)) then
+          '#include "OMCpp<%fileNamePrefix%>Algloop<%num%>.h"<%\n%>'
+      end match
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let num = nls.index
+      match simCode
+        case SIMCODE(modelInfo = MODELINFO(__)) then
+          '#include "OMCpp<%fileNamePrefix%>Algloop<%num%>.h"<%\n%>'
+      end match
   case e as SES_MIXED(cont = eq_sys)
-  then
-   <<
-   <%algloopfilesInclude2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   >>
+    then
+      <<
+      <%algloopfilesInclude2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+      >>
   else
        ""
  end algloopfilesInclude2;
@@ -9957,16 +10358,24 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
   Residual equations are handled differently."
 ::=
   match eq
-  case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
-  let num = index
+      let num = ls.index
       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
               let()= textFile(algloopHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.h')
               let()= textFile(algloopCppFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
             " "
-        end match
+      end match
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+    then
+      let num = nls.index
+      match simCode
+          case SIMCODE(modelInfo = MODELINFO(__)) then
+              let()= textFile(algloopHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.h')
+              let()= textFile(algloopCppFile(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
+            " "
+      end match
   case e as SES_MIXED(cont = eq_sys)
     then
        match simCode
@@ -9998,8 +10407,8 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode ,Text& 
     *
     *****************************************************************************/
 
-    #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include <Core/Modelica.h>
     #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%modelfilename%>.h"
     #include "OMCpp<%modelfilename%>Functions.h"
@@ -10022,12 +10431,17 @@ end algloopMainfile1;
 template algloopMainfile2(SimEqSystem eq, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String filename)
 ::=
   match eq
-  case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__) then
-    let num = index
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+    let num = ls.index
     <<
-    #include "OMCpp<%filename%>Algloop<%index%>.h"
-    #include "OMCpp<%filename%>Algloop<%index%>.cpp"<%\n%>
+    #include "OMCpp<%filename%>Algloop<%ls.index%>.h"
+    #include "OMCpp<%filename%>Algloop<%ls.index%>.cpp"<%\n%>
+    >>
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+    let num = nls.index
+    <<
+    #include "OMCpp<%filename%>Algloop<%nls.index%>.h"
+    #include "OMCpp<%filename%>Algloop<%nls.index%>.cpp"<%\n%>
     >>
   else
     <<
@@ -10039,8 +10453,12 @@ template algloopfilesindex(SimEqSystem eq)
   "
 ::=
   match eq
-  case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+    then
+      <<<%ls.index%>>>
+  case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+  then
+      <<<%nls.index%>>>
   case e as SES_MIXED(__)
     then
       <<<%index%>>>
@@ -10067,23 +10485,31 @@ template algloopcppfilenames2(SimEqSystem eq, Context context, Text &varDecls, S
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-    then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
-   OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp
-   >>
-   end match
+   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
+     then
+       let num = ls.index
+       match simCode
+       case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp
+        >>
+        end match
+   case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
+     then
+       let num = nls.index
+       match simCode
+       case SIMCODE(modelInfo = MODELINFO(__)) then
+        <<
+        OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp
+        >>
+        end match
    case e as SES_MIXED(cont = eq_sys)
-  then
-   <<
-   <%algloopcppfilenames2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   >>
- else
-    ""
+     then
+       <<
+       <%algloopcppfilenames2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+       >>
+   else
+     ""
  end algloopcppfilenames2;
 
 
@@ -10362,88 +10788,232 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
  "Generates an equations for a linear or non linear system."
 ::=
   match eq
-    case SES_LINEAR(__)
-    case SES_NONLINEAR(__) then
-    let i = index
-    match context
-      case  ALGLOOP_CONTEXT(genInitialisation=true) then
-         <<
-         try
-         {
-             _algLoopSolver<%index%>->initialize();
-             _algLoop<%index%>->evaluate();
-             for(int i=0; i<_dimZeroFunc; i++) {
-                 getCondition(i);
-             }
-             IContinuous::UPDATETYPE calltype = _callType;
-             _callType = IContinuous::CONTINUOUS;
-             _algLoopSolver<%index%>->solve();
-             _callType = calltype;
-         }
-         catch(ModelicaSimulationError&  ex)
-         {
-              string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
-              throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
-         }
-         >>
-      else
-        <<
-        bool restart<%index%> = true;
-        unsigned int iterations<%index%> = 0;
-        _algLoop<%index%>->getReal(_algloop<%index%>Vars );
-        bool restatDiscrete<%index%>= false;
-        IContinuous::UPDATETYPE calltype = _callType;
-        try
-        {
-         if( _callType == IContinuous::DISCRETE )
-            {
-                _algLoop<%index%>->evaluate();
-                while(restart<%index%> && !(iterations<%index%>++>500))
-                {
-                    getConditions(_conditions0<%index%>);
-                    _callType = IContinuous::CONTINUOUS;
-                    _algLoopSolver<%index%>->solve();
-                    _callType = IContinuous::DISCRETE;
-                    for(int i=0;i<_dimZeroFunc;i++)
-                    {
-                        getCondition(i);
-                    }
+    case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+      let i = ls.index
+      match context
+        case  ALGLOOP_CONTEXT(genInitialisation=true) then
+           <<
+           try
+           {
+               _algLoopSolver<%ls.index%>->initialize();
+               _algLoop<%ls.index%>->evaluate();
+               for(int i=0; i<_dimZeroFunc; i++) {
+                   getCondition(i);
+               }
+               IContinuous::UPDATETYPE calltype = _callType;
+               _callType = IContinuous::CONTINUOUS;
+               _algLoopSolver<%ls.index%>->solve();
+               _callType = calltype;
+           }
+           catch(ModelicaSimulationError&  ex)
+           {
+                string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+           }
+           >>
+        else
+          <<
+          bool restart<%ls.index%> = true;
+          unsigned int iterations<%ls.index%> = 0;
+          _algLoop<%ls.index%>->getReal(_algloop<%ls.index%>Vars );
+          bool restatDiscrete<%ls.index%>= false;
+          IContinuous::UPDATETYPE calltype = _callType;
+          try
+          {
+           if( _callType == IContinuous::DISCRETE )
+              {
+                  _algLoop<%ls.index%>->evaluate();
+                  while(restart<%ls.index%> && !(iterations<%ls.index%>++>500))
+                  {
+                      getConditions(_conditions0<%ls.index%>);
+                      _callType = IContinuous::CONTINUOUS;
+                      _algLoopSolver<%ls.index%>->solve();
+                      _callType = IContinuous::DISCRETE;
+                      for(int i=0;i<_dimZeroFunc;i++)
+                      {
+                          getCondition(i);
+                      }
 
-                    getConditions(_conditions1<%index%>);
-                    restart<%index%> = !std::equal (_conditions1<%index%>, _conditions1<%index%>+_dimZeroFunc,_conditions0<%index%>);
-                }
-            }
-            else
-            _algLoopSolver<%index%>->solve();
+                      getConditions(_conditions1<%ls.index%>);
+                      restart<%ls.index%> = !std::equal (_conditions1<%ls.index%>, _conditions1<%ls.index%>+_dimZeroFunc,_conditions0<%ls.index%>);
+                  }
+              }
+              else
+              _algLoopSolver<%ls.index%>->solve();
 
-        }
-        catch(ModelicaSimulationError &ex)
-        {
-             restatDiscrete<%index%>=true;
-        }
+          }
+          catch(ModelicaSimulationError &ex)
+          {
+               restatDiscrete<%ls.index%>=true;
+          }
 
-        if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
-        {
-            try
-            {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
-                _callType = IContinuous::DISCRETE;
-                _algLoop<%index%>->setReal(_algloop<%index%>Vars );
-                _algLoopSolver<%index%>->solve();
-                _callType = calltype;
-            }
-            catch(ModelicaSimulationError& ex)
-            {
-              string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
-              throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
-            }
+          if((restart<%ls.index%>&& iterations<%ls.index%> > 0)|| restatDiscrete<%ls.index%>)
+          {
+              try
+              {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                  _callType = IContinuous::DISCRETE;
+                  _algLoop<%ls.index%>->setReal(_algloop<%ls.index%>Vars );
+                  _algLoopSolver<%ls.index%>->solve();
+                  _callType = calltype;
+              }
+              catch(ModelicaSimulationError& ex)
+              {
+                string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+              }
 
-        }
+          }
 
 
-        >>
-      end match
+          >>
+        end match
+
+    case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+      let i = nls.index
+      match context
+        case  ALGLOOP_CONTEXT(genInitialisation=true) then
+           <<
+           try
+           {
+               _algLoopSolver<%nls.index%>->initialize();
+               _algLoop<%nls.index%>->evaluate();
+               for(int i=0; i<_dimZeroFunc; i++) {
+                   getCondition(i);
+               }
+               IContinuous::UPDATETYPE calltype = _callType;
+               _callType = IContinuous::CONTINUOUS;
+               _algLoopSolver<%nls.index%>->solve();
+               _callType = calltype;
+           }
+           catch(ModelicaSimulationError&  ex)
+           {
+                string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+           }
+           >>
+        else
+          <<
+          bool restart<%nls.index%> = true;
+          unsigned int iterations<%nls.index%> = 0;
+          _algLoop<%nls.index%>->getReal(_algloop<%nls.index%>Vars );
+          bool restatDiscrete<%nls.index%>= false;
+          IContinuous::UPDATETYPE calltype = _callType;
+          try
+          {
+           if( _callType == IContinuous::DISCRETE )
+              {
+                  _algLoop<%nls.index%>->evaluate();
+                  while(restart<%nls.index%> && !(iterations<%nls.index%>++>500))
+                  {
+                      getConditions(_conditions0<%nls.index%>);
+                      _callType = IContinuous::CONTINUOUS;
+                      _algLoopSolver<%nls.index%>->solve();
+                      _callType = IContinuous::DISCRETE;
+                      for(int i=0;i<_dimZeroFunc;i++)
+                      {
+                          getCondition(i);
+                      }
+
+                      getConditions(_conditions1<%nls.index%>);
+                      restart<%nls.index%> = !std::equal (_conditions1<%nls.index%>, _conditions1<%nls.index%>+_dimZeroFunc,_conditions0<%nls.index%>);
+                  }
+              }
+              else
+              _algLoopSolver<%nls.index%>->solve();
+
+          }
+          catch(ModelicaSimulationError &ex)
+          {
+               restatDiscrete<%nls.index%>=true;
+          }
+
+          if((restart<%nls.index%>&& iterations<%nls.index%> > 0)|| restatDiscrete<%nls.index%>)
+          {
+              try
+              {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                  _callType = IContinuous::DISCRETE;
+                  _algLoop<%nls.index%>->setReal(_algloop<%nls.index%>Vars );
+                  _algLoopSolver<%nls.index%>->solve();
+                  _callType = calltype;
+              }
+              catch(ModelicaSimulationError& ex)
+              {
+                string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
+                throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
+              }
+
+          }
+
+
+          >>
+        end match
   end match
 end equationLinearOrNonLinear;
+
+
+template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+  match eq
+    case SES_FOR_LOOP(__) then
+      let &preExp = buffer ""
+      let iterExp = daeExp(iter, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let startExp = daeExp(startIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let endExp = daeExp(endIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let expPart = daeExp(exp, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let crefPart = daeExp(crefExp(cref), context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let crefWithIdx = crefWithIndex(cref, context, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName /*=__zDot*/, useFlatArrayNotation)
+      let lhs = getLHS(cref, startExp, useFlatArrayNotation)
+      <<
+      <%preExp%>
+      //double *result = &<%cref(cref, false)%>[0];
+      double *result = &<%lhs%>;
+      for(int <%iterExp%> = <%startExp%>; <%iterExp%> != <%endExp%>+1; <%iterExp%>++)
+        result[i] = <%expPart%>;
+      >>
+end equationForLoop;
+
+
+template getLHS(ComponentRef cr, Text startExp, Boolean useFlatArrayNotation)
+ "Returns the left hand side of a for loop with the right var index, e.g., _resistor1_P_i.
+  Assumption: lhs = 'cref' + 'startIndex of for loop'."
+::=
+  match cr
+    case CREF_QUAL(__) then
+      //"_" + '<%ident%><%startExp%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr(componentRef,useFlatArrayNotation)%>'
+      "_" + '<%crefAppendedSubs(cr)%>'
+    else "CREF_NOT_QUAL"
+  end match
+end getLHS;
+
+template crefWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                       Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Return cref with index for the lhs of a for loop, i.e., _resistori_P_i."
+::=
+  match cr
+    case CREF_QUAL(__) then
+      "_" + crefToCStrWithIndex(cr, context, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName /*=__zDot*/, useFlatArrayNotation)
+  end match
+end crefWithIndex;
+
+template crefToCStrWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                             Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Helper function to crefWithIndex."
+::=
+  let &preExp = buffer ""
+  let tmp = ""
+  match cr
+    case CREF_QUAL(__) then
+      let identTmp = '<%ident%>'
+      match listHead(subscriptLst)
+        case INDEX(__) then
+          match exp case e as CREF(__) then
+            let tmp = daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+            '<%identTmp%><%tmp%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr(componentRef,useFlatArrayNotation)%>'
+          end match
+      end match
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStrWithIndex;
+
 
 
 template testDaeDimensionExp(Exp exp)
@@ -10517,6 +11087,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ARRAY(__)           then     '/*t4*/<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
+  case e as SUM(__)             then     daeExpSum(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   else error(sourceInfo(), 'Unknown exp:<%printExpStr(exp)%>')
 end daeExp;
@@ -12427,7 +12998,7 @@ end timeeventlength;
 
 
 
-template DimZeroFunc(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template dimZeroFunc(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -12437,10 +13008,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     return _dimZeroFunc;
   }
   >>
-end DimZeroFunc;
+end dimZeroFunc;
 
 
-template SetIntialStatus(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template setIntialStatus(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -12454,9 +13025,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        _callType = IContinuous::CONTINUOUS;
    }
    >>
-end SetIntialStatus;
+end setIntialStatus;
 
-template GetIntialStatus(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template getIntialStatus(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -12466,7 +13037,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     return _initial;
   }
   >>
-end GetIntialStatus;
+end getIntialStatus;
 
 template daeExpRelation(Exp exp, Context context, Text &preExp,Text &varDecls,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
@@ -12508,6 +13079,8 @@ match rel.optionExpisASUB
          'getCondition(<%rel.index%>) && (<%e1%> >= <%e2%>)'
             end match
 end daeExpRelation;
+
+
 template daeExpRelation3(Context context,Integer index) ::=
 match context
     case ALGLOOP_CONTEXT(genInitialisation = false)
@@ -12515,6 +13088,8 @@ match context
     else
        <<getCondition(<%index%>)>>
 end daeExpRelation3;
+
+
 template daeExpRelation2(Operator op, Integer index,Exp exp1, Exp exp2, Context context, Text &preExp,Text &varDecls,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
   let e1 = daeExp(exp1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let e2 = daeExp(exp2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -12859,16 +13434,9 @@ case ecr as CREF(componentRef=WILD(__)) then
   ''
 case ecr as CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  if(useFlatArrayNotation) then
-    let expressions = HpcOmMemory.expandCrefWithDims(ecr.componentRef,t.dims) |> crefLocal hasindex i0 fromindex 1 =>
-          '<%contextCref(crefLocal, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> = (<%rhsStr%>)(<%i0%>);'; separator="\n"
-    <<
-    <%expressions%>
-    >>
-  else
-    <<
-    <%lhsStr%>.assign(<%rhsStr%>);
-    >>
+  <<
+  <%lhsStr%>.assign(<%rhsStr%>);
+  >>
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match context
@@ -13304,7 +13872,7 @@ template setConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Te
  >>
 end setConditions;
 
-template geConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template getConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
  match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -13314,7 +13882,7 @@ template geConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Tex
      SystemDefaultImplementation::getConditions(c);
  }
  >>
-end geConditions;
+end getConditions;
 
 template isConsistent(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
@@ -13754,7 +14322,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
   >>
 end functionWhenReinitStatementThen;
 
-template LabeledDAE(list<String> labels, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
+template labeledDAE(list<String> labels, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
 if Flags.isSet(Flags.WRITE_TO_BUFFER) then match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
@@ -13783,7 +14351,7 @@ void <%lastIdentOfPath(modelInfo.name)%>::setVariables(const ublas::vector<doubl
    <%setVariables(modelInfo, useFlatArrayNotation)%>
 }
 >>
-end LabeledDAE;
+end labeledDAE;
 
 template setVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation)
 ::=

@@ -28,10 +28,6 @@
  *
  */
 
-#if defined(__CLANG__) || defined(__GNUC__)
-#define _GNU_SOURCE /* asprintf */
-#endif
-
 #include "openmodelica.h"
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
@@ -830,12 +826,12 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   /* format the anyStringBuf as array to return it */
   if (mt == record_metaType) {
     formatString = "^done,omc_element={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
-    if (-1 == asprintf(&formattedString, formatString, (long)name, displayName, ty)) {
+    if (-1 == GC_asprintf(&formattedString, formatString, (long)name, displayName, ty)) {
       assert(0);
     }
   } else {
     formatString = "^done,omc_element={name=\"%ld\",displayName=\"[%d]\",type=\"%s\"}";
-    if (-1 == asprintf(&formattedString, formatString, (long)name, (int)i, ty)) {
+    if (-1 == GC_asprintf(&formattedString, formatString, (long)name, (int)i, ty)) {
       assert(0);
     }
   }
@@ -847,8 +843,10 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   }
 
   /* free the memory */
-  free(formattedString);
-  if (mt == record_metaType) free(displayName);
+  GC_free(formattedString);
+  if (mt == record_metaType) {
+    free(displayName);
+  }
   free(ty);
 
   return anyStringBuf;

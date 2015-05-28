@@ -1,5 +1,9 @@
 #pragma once
-
+/** @defgroup coreSystem Core.System
+ *  Core module for all algebraic and ode systems
+ *  @{
+ */
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/Math/Functions.h>
 #include <Core/System/EventHandling.h>
@@ -10,7 +14,7 @@
 #include <Core/System/IContinuous.h>
 #include <Core/SimulationSettings/IGlobalSettings.h>
 #endif
-
+*/
 /*****************************************************************************/
 /**
 
@@ -44,12 +48,12 @@ public:
 private:
   boost::unordered_map<T*, T> _start_values;
 };
-
+/*
 #ifdef RUNTIME_STATIC_LINKING
 class SystemDefaultImplementation
-#else
+#else*/
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
-#endif
+/*#endif*/
 {
 public:
   SystemDefaultImplementation(IGlobalSettings* globalSettings,boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars);
@@ -182,5 +186,4 @@ protected:
     boost::shared_ptr<ISimVars> _sim_vars;
     IGlobalSettings* _global_settings; //this should be a reference, but this is not working if the libraries are linked statically
 };
-
-
+/** @} */ // end of coreSystem

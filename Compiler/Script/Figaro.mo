@@ -285,7 +285,7 @@ algorithm
       Absyn.Exp e;
     case SCode.MOD(binding = NONE())
       then "";
-    case SCode.MOD(binding = SOME((e, _)))
+    case SCode.MOD(binding = SOME(e))
       then fcExp(e);
   end match;
 end fcMod2;
@@ -470,7 +470,7 @@ algorithm
       Absyn.Exp e;
     case SCode.MOD(binding = NONE())
       then "";
-    case SCode.MOD(binding = SOME((e, _)))
+    case SCode.MOD(binding = SOME(e))
       then foExp(e);
   end match;
 end foMod2;

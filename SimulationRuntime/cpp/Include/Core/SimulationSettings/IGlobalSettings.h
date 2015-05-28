@@ -1,5 +1,9 @@
 #pragma once
-
+/** @addtogroup coreSimulationSettings
+ *  
+ *  @{
+ */
+     
 /*****************************************************************************/
 /**
 
@@ -12,12 +16,12 @@ Encapsulation of global simulation settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-
+/*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <string.h>
 using std::string;
 #endif
-
+*/
 enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
 enum LogType {OFF, STATS, NLS, ODE};
 enum OutputPointType {ALL, STEP, EMPTY2};
@@ -65,3 +69,4 @@ public:
   virtual void setRuntimeLibrarypath(string) = 0;
   virtual string getRuntimeLibrarypath() = 0;
 };
+/** @} */ // end of coreSimulationSettings

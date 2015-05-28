@@ -1,6 +1,10 @@
 #pragma once
-
-#include <Core/Modelica.h>
+/** @addtogroup solverKinsol
+ *  
+ *  @{
+ */
+#include <Core/ModelicaDefine.h>
+ #include <Core/Modelica.h>
 
 #if defined(__vxworks) || defined(__TRICORE__)
 
@@ -46,3 +50,4 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #else
 error "operating system not supported"
 #endif
+/** @} */ // end of solverKinsol

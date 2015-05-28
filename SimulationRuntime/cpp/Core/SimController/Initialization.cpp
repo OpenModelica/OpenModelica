@@ -1,5 +1,10 @@
+/** @addtogroup coreSimcontroller
+ *  
+ *  @{
+ */
+
+#include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-#include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/SimController/Initialization.h>
 
 Initialization::Initialization(boost::shared_ptr<ISystemInitialization> system_initialization, boost::shared_ptr<ISolver> solver)
@@ -55,3 +60,4 @@ void Initialization::initializeSystem()
   delete[] conditions0;
   delete[] conditions1;
 }
+/** @} */ // end of coreSimcontroller

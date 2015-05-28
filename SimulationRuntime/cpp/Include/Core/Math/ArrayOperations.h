@@ -1,5 +1,8 @@
 #pragma once
-//#define BOOST_ENABLE_ASSERT_HANDLER
+/** @addtogroup math
+ *  @{
+ */
+
 
 /*****************************************************************************/
 /**
@@ -108,3 +111,4 @@ void convertArrayLayout(const BaseArray<S> &s, BaseArray<T> &d);
  */
 template <typename T>
 void assignRowMajorData(const T *data, BaseArray<T>& array);
+/** @} */ // end of math

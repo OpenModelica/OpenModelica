@@ -654,91 +654,6 @@ algorithm
   osyst := BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind);
 end addVarsToEqSystem;
 
-public function addDummyStateIfNeeded
-"author: Frenkel TUD 2012-09
-  adds a dummy state if dae contains no states"
-  input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.BackendDAE outBackendDAE;
-protected
-  BackendDAE.EqSystems systs;
-  BackendDAE.Shared shared;
-  Boolean daeContainsNoStates;
-algorithm
-  BackendDAE.DAE(eqs=systs,shared=shared) := inBackendDAE;
-  // check if the DAE has states
-  daeContainsNoStates := addDummyStateIfNeeded1(systs);
-  // adrpo: add the dummy derivative state ONLY IF the DAE contains no states
-  systs := if daeContainsNoStates then addDummyState(systs) else systs;
-  outBackendDAE := if daeContainsNoStates then BackendDAE.DAE(systs,shared) else inBackendDAE;
-end addDummyStateIfNeeded;
-
-protected function addDummyStateIfNeeded1
-  input BackendDAE.EqSystems iSysts;
-  output Boolean oContainsNoStates;
-algorithm
-  oContainsNoStates := match(iSysts)
-    local
-      BackendDAE.EqSystems systs;
-      BackendDAE.Variables vars;
-      Boolean containsNoStates;
-    case ({}) then true;
-    case (BackendDAE.EQSYSTEM(orderedVars = vars)::systs)
-      equation
-        containsNoStates = BackendVariable.traverseBackendDAEVarsWithStop(vars, traverserVaraddDummyStateIfNeeded, true);
-        containsNoStates = if containsNoStates then addDummyStateIfNeeded1(systs) else containsNoStates;
-      then
-        containsNoStates;
-  end match;
-end addDummyStateIfNeeded1;
-
-protected function traverserVaraddDummyStateIfNeeded
-  input BackendDAE.Var v;
-  input Boolean b;
-  output BackendDAE.Var ov;
-  output Boolean cont;
-  output Boolean ob;
-algorithm
-  (ov,cont,ob) := match (v,b)
-    case (BackendDAE.VAR(varKind=BackendDAE.STATE()),_)
-      then (v,false,false);
-    case (_,_) then (v,b,b);
-  end match;
-end traverserVaraddDummyStateIfNeeded;
-
-protected function addDummyState
-"In order for the solver to work correctly at least one state variable
-  must exist in the equation system. This function therefore adds a
-  dummy state variable and an equation for that variable."
-  input BackendDAE.EqSystems isysts;
-  output BackendDAE.EqSystems osysts;
-protected
-  DAE.ComponentRef cr;
-  BackendDAE.Var v;
-  BackendDAE.Variables vars;
-  DAE.Exp exp;
-  BackendDAE.Equation eqn;
-  BackendDAE.EquationArray eqns;
-  array<Integer> ass;
-  BackendDAE.EqSystem syst;
-algorithm
-  // generate dummy state
-  (v,cr) := BackendVariable.createDummyVar();
-
-  // generate vars
-  vars := BackendVariable.listVar({v});
-  /*
-   * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
-   */
-  exp := Expression.crefExp(cr);
-  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-  eqns := BackendEquation.listEquation({eqn});
-  // generate equationsystem
-  ass := arrayCreate(1, 1);
-  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}),{},BackendDAE.UNSPECIFIED_PARTITION());
-  // add system to list of systems
-  osysts := syst::isysts;
-end addDummyState;
-
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
   output Integer outNumZeroCrossings "number of ordinary zerocrossings" ;
@@ -1776,7 +1691,11 @@ protected
   BackendDAE.Variables v;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
-  (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  if Flags.getConfigBool(Flags.SYM_EULER) then
+    (_,statevarindx_lst) := BackendVariable.getAllAlgStateVarIndexFromVariables(v);
+  else
+    (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  end if;
   eqns := List.map1r(statevarindx_lst,arrayGet,ass1);
   eqns := List.select(eqns, Util.intPositive);
   outIntegerArray := markStateEquationsWork(eqns,m,ass1,arr);
@@ -5224,18 +5143,18 @@ author:Waurich TUD 2014-04"
   input BackendDAE.Variables knVars;
   output BackendDAE.Shared sharedOut;
 protected
-    BackendDAE.Variables knownVars,externalObjects,aliasVars;
-    BackendDAE.EquationArray initialEqs,removedEqs;
-    list<DAE.Constraint> constraints;
-    list<DAE.ClassAttributes> classAttrs;
-    FCore.Cache cache;
-    FCore.Graph graph;
-    DAE.FunctionTree functionTree;
-    BackendDAE.EventInfo eventInfo;
-    BackendDAE.ExternalObjectClasses extObjClasses;
-    BackendDAE.BackendDAEType backendDAEType;
-    BackendDAE.SymbolicJacobians symjacs;
-    BackendDAE.ExtraInfo info;
+  BackendDAE.Variables knownVars,externalObjects,aliasVars;
+  BackendDAE.EquationArray initialEqs,removedEqs;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.EventInfo eventInfo;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
 algorithm
   BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,
   constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
@@ -5267,6 +5186,31 @@ algorithm
   backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
   sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
 end replaceAliasVarsInShared;
+
+public function replaceRemovedEqsInShared"replaces the aliasVars in the BackendDAE.Shared
+author:Waurich TUD 2014-11"
+  input BackendDAE.Shared sharedIn;
+  input BackendDAE.EquationArray remEqs;
+  output BackendDAE.Shared sharedOut;
+protected
+    BackendDAE.Variables knownVars,externalObjects,aliasVars;
+    BackendDAE.EquationArray initialEqs,removedEqs;
+    list<DAE.Constraint> constraints;
+    list<DAE.ClassAttributes> classAttrs;
+    FCore.Cache cache;
+    FCore.Graph graph;
+    DAE.FunctionTree functionTree;
+    BackendDAE.EventInfo eventInfo;
+    BackendDAE.ExternalObjectClasses extObjClasses;
+    BackendDAE.BackendDAEType backendDAEType;
+    BackendDAE.SymbolicJacobians symjacs;
+    BackendDAE.ExtraInfo info;
+algorithm
+  BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,
+  constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
+  backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
+  sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,remEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
+end replaceRemovedEqsInShared;
 
 protected function adjacencyRowExpEnhanced
 "author: Frenkel TUD 2012-05
@@ -5555,6 +5499,21 @@ algorithm
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_,_,_,true)
+      equation
+        b = intEq(rowmark[i],mark);
+        b1 = intEq(rowmark[i],-mark);
+        b = b or b1;
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
+        res = List.consOnTrue(not b, i, vars);
+        res = adjacencyRowExpEnhanced1(rest,irest,res,notinder,mark,rowmark,unsolvable);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_,_,_,_)
+      equation
+        false = intEq(intAbs(rowmark[i]),mark);
+        arrayUpdate(rowmark,i,if unsolvable then -mark else mark);
+        res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())::rest,i::irest,_,_,_,_,true)
       equation
         b = intEq(rowmark[i],mark);
         b1 = intEq(rowmark[i],-mark);
@@ -7724,7 +7683,8 @@ algorithm
                         (ResolveLoops.solveLinearSystem, "solveLinearSystem", false),
                         (CommonSubExpression.CSE, "CSE", false),
                         (BackendDump.dumpDAE, "dumpDAE", false),
-                        (XMLDump.dumpDAEXML, "dumpDAEXML", false)
+                        (XMLDump.dumpDAEXML, "dumpDAEXML", false),
+                        (BackendDAEOptimize.addTimeAsState, "addTimeAsState", false)
                         };
 
   strpostOptModules := getPostOptModulesString();
@@ -8308,6 +8268,45 @@ algorithm
   comp := BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
 end makeSingleEquationComp;
 
+public function getAliasVars
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.Variables outAliasVars;
+algorithm
+  BackendDAE.DAE(shared=BackendDAE.SHARED(aliasVars=outAliasVars)) := inDAE;
+end getAliasVars;
+
+public function getKnownVars
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.Variables outKnownVars;
+algorithm
+  BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars=outKnownVars)) := inDAE;
+end getKnownVars;
+
+public function setAliasVars
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.Variables inAliasVars;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(eqs, shared) := inDAE;
+  shared := replaceAliasVarsInShared(shared, inAliasVars);
+  outDAE := BackendDAE.DAE(eqs, shared);
+end setAliasVars;
+
+public function setKnownVars
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.Variables inKnownVars;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(eqs, shared) := inDAE;
+  shared := replaceKnownVarsInShared(shared, inKnownVars);
+  outDAE := BackendDAE.DAE(eqs, shared);
+end setKnownVars;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;
