@@ -98,7 +98,7 @@ algorithm
     comps := Sorting.TarjanTransposed(mt, ass2);
 
     markarray := arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
-    outComps := analyseStrongComponentsScalar(comps, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray, {});
+    outComps := analyseStrongComponentsScalar(comps, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
     ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
     // noscalass2 = eqnAssignmentNonScalar(1, arrayLength(mapEqnIncRow), mapEqnIncRow, ass2, {});
@@ -154,23 +154,18 @@ protected function analyseStrongComponentsScalar "author: Frenkel TUD 2011-05
   input array<Integer> mapIncRowEqn;
   input Integer imark;
   input array<Integer> markarray;
-  input BackendDAE.StrongComponents iAcc;
-  output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponents outComps = {};
+protected
+  BackendDAE.StrongComponent acomp;
+  Integer mark = imark;
 algorithm
-  outComps := match (inComps)
-    local
-      list<Integer> comp;
-      list<list<Integer>> comps;
-      BackendDAE.StrongComponent acomp;
-      Integer mark;
 
-    case {}
-    then listReverse(iAcc);
+  for comp in inComps loop
+      (acomp, mark) := analyseStrongComponentScalar(comp, syst, shared, inAss1, inAss2, mapEqnIncRow, mapIncRowEqn, mark, markarray);
+      outComps := acomp :: outComps;
+  end for;
+  outComps := listReverse(outComps);
 
-    case comp::comps equation
-      (acomp, mark) = analyseStrongComponentScalar(comp, syst, shared, inAss1, inAss2, mapEqnIncRow, mapIncRowEqn, imark, markarray);
-    then analyseStrongComponentsScalar(comps, syst, shared, inAss1, inAss2, mapEqnIncRow, mapIncRowEqn, mark, markarray, acomp::iAcc);
-  end match;
 end analyseStrongComponentsScalar;
 
 protected function analyseStrongComponentScalar "author: Frenkel TUD 2011-05"
@@ -258,7 +253,7 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<DAE.Exp> expLst;
       list<String> slst;
-      Boolean jacConstant, mixedSystem, b1, b2;
+      Boolean jacConstant, mixedSystem, b1;
 
     case (compelem::{}, BackendDAE.ALGORITHM()::{}, var_varindx_lst) equation
       varindxs = List.map(var_varindx_lst, Util.tuple22);
@@ -272,11 +267,8 @@ algorithm
       b1 =  List.fold(List.map(crlst,ComponentReference.isArrayElement),boolAnd,true);
       if not b1 then
         expLst = List.map(crlst, Expression.crefExp);
-        b2 = List.exist1(inEqnLst,crefsAreArray,expLst);
-      else
-        b2 = true;
+        true = List.exist1(inEqnLst,crefsAreArray,expLst);
       end if;
-      true = b2;
     then BackendDAE.SINGLEARRAY(compelem, varindxs);
 
     case (compelem::{}, BackendDAE.IF_EQUATION()::{}, var_varindx_lst) equation

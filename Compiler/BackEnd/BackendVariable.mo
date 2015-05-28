@@ -959,23 +959,16 @@ end isVarNonDiscrete;
 public function hasDiscreteVar
 "Returns true if var list contains a discrete time variable."
   input list<BackendDAE.Var> inBackendDAEVarLst;
-  output Boolean outBoolean;
+  output Boolean outBoolean = false;
 algorithm
-  outBoolean := matchcontinue (inBackendDAEVarLst)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vs;
 
-    case (v :: _) equation
-      true = isVarDiscrete(v);
-    then true;
+  for v in inBackendDAEVarLst loop
+    outBoolean := isVarDiscrete(v);
+    if outBoolean then
+      break;
+    end if;
+  end for;
 
-    case (_ :: vs)
-    then hasDiscreteVar(vs);
-
-    case ({})
-    then false;
-  end matchcontinue;
 end hasDiscreteVar;
 
 public function hasContinousVar
