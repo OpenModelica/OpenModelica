@@ -9,7 +9,7 @@
 runScript("ModelTestingDefaults.mos");getErrorString();
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.CoupledInductors);
-timeout := 60;
+timeout := 80;
 
 compareVars :=
 {
@@ -35,7 +35,7 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.CoupledInductors
-// 60
+// 80
 // {"L1.iinternal","L2.iinternal","C1.v","L3.iinternal","C2.v"}
 // true
 // ""
