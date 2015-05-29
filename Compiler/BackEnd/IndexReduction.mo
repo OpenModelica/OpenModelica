@@ -1773,7 +1773,11 @@ algorithm
         nfreeStates = listLength(varlst);
         // reduce state candidates of number neqns
         if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
+          //print("BEFORE:\n");
+          //BackendDump.printVarList(varlst);
           (varlst, nfreeStates) = reduceStateCandidates(neqns, varlst, vars, NONE());
+          //print("AFTER:\n");
+          //BackendDump.printVarList(varlst);
         end if;
         // do state selection of that level
         (dummyVars,stateSets) = selectStatesWork1(nfreeStates,varlst,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,hov,{},{});
@@ -2466,7 +2470,7 @@ protected function processComps4New
   output StateSets oStateSets;
 algorithm
   (outDummyVars,outDummyStates,oStateSets) :=
-  matchcontinue(iSets,inVarSize,inEqnsSize,iVars,iEqns,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,level,iShared,inHov,inDummyStates,iStateSets)
+  matchcontinue iSets
     local
       array<list<Integer>> mapEqnIncRow1;
       array<Integer> mapIncRowEqn1,ass1arr;
@@ -2485,18 +2489,17 @@ algorithm
       Integer nstatevars,nassigned,nunassigned,nass1arr,n,nv,ne;
       StateSets stateSets;
 
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       then
         (inHov,inDummyStates,iStateSets);
-    case (assigned::sets,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case assigned::sets
+      guard listEmpty(List.select1r(assigned,Matching.isUnAssigned,vec1))  // ignore sets without unassigned equations, because all assigned states already in dummy states
       equation
-        // ignore sets without unassigned equations, because all assigned states already in dummy states
-        {} = List.select1r(assigned,Matching.isUnAssigned,vec1);
         // next set
         (varlst,dummyStates,stateSets) = processComps4New(sets,inVarSize,inEqnsSize,iVars,iEqns,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,level,iShared,inHov,inDummyStates,iStateSets);
      then
         (varlst,dummyStates,stateSets);
-    case (seteqns::sets,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case seteqns::sets
       equation
         //  print("seteqns: " + intString(listLength(seteqns)) + "\n");
         //  print(stringDelimitList(List.map(seteqns,intString),", ") + "\n");
@@ -2585,18 +2588,17 @@ protected function getSetSystem
   output BackendDAE.EquationArray oEqnsArr;
 algorithm
   (oEqnsLst,oVarsLst,oAss1,oAss2,oEqnsArr) :=
-  matchcontinue(iEqns,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,iEqnsArr,flag,n,iEqnsLst,iVarsLst,iAss1,iAss2)
+  matchcontinue iEqns
     local
       Integer e,e1;
       list<Integer> rest,eqns,vindx,ass,ass1,ass2;
       BackendDAE.Equation eqn;
       list<BackendDAE.Var> varlst;
       BackendDAE.EquationArray eqnarr;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then (iEqnsLst,iVarsLst,iAss1,iAss2,iEqnsArr);
-    case (e::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then (iEqnsLst,iVarsLst,iAss1,iAss2,iEqnsArr);
+    case e::rest
+      guard flag[e] and intGt(vec1[e],0)
       equation
-        true = flag[e];
-        true = intGt(vec1[e],0);
         e1 = inMapIncRowEqn[e];
         // print("BackendEquation.equationNth1 " + intString(e1) + "\n");
         eqn = BackendEquation.equationNth1(iEqnsArr,e1);
@@ -2612,7 +2614,7 @@ algorithm
         (oEqnsLst,oVarsLst,ass1,ass2,eqnarr) = getSetSystem(rest,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqnarr,flag,n-listLength(eqns),eqn::iEqnsLst,varlst,ass1,ass2);
       then
         (oEqnsLst,oVarsLst,ass1,ass2,eqnarr);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       equation
         (oEqnsLst,oVarsLst,ass1,ass2,eqnarr) = getSetSystem(rest,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,iEqnsArr,flag,n,iEqnsLst,iVarsLst,iAss1,iAss2);
       then
@@ -2854,58 +2856,49 @@ protected function sortStateCandidatesVars
 protected
   Integer varsize;
   list<Integer> varIndices;
-  list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
+  list<tuple<Integer,Real>> prioTuples;
+  BackendDAE.Var v;
+  DAE.ComponentRef varCref;
+  Real prio1,prio2;
+  array<Real> prio;
+  array<Integer> index;
+  Integer ii, idx;
   list<BackendDAE.Var> vlst;
+  list<tuple<Real,Integer>> prio_lst;
 algorithm
-  try
-    varsize := BackendVariable.varsSize(inVars);
-    prioTuples := calculateVarPriorities(1,inVars,varsize,allVars,m);
-    prioTuples := List.sort(prioTuples,sortprioTuples);
-    varIndices := List.map(prioTuples,Util.tuple32);
-    vlst := List.map1r(varIndices,BackendVariable.getVarAt,inVars);
-    outStates := BackendVariable.listVar1(vlst);
-  else
-    print("Error, sortStateCandidatesVars failed!\n");
-    fail();
-  end try;
+  varsize := BackendVariable.varsSize(inVars);
+  index := arrayCreate(varsize, -1);
+  prio := arrayCreate(varsize, -1.0);
+
+  for idx in 1:varsize loop
+    v := BackendVariable.getVarAt(inVars,idx);
+    varCref := BackendVariable.varCref(v);
+    (prio1, prio2) := varStateSelectPrio(v,allVars,idx,m);
+    prio[idx] := prio1 + prio2;
+    index[idx] := idx;
+    if Flags.isSet(Flags.DUMMY_SELECT) then
+      BackendDump.debugStrCrefStrRealStrRealStrRealStr("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio[idx],"\n");
+    end if;
+  end for;
+
+  //sort
+  prioTuples := list( (index[idx] ,prio[idx]) for idx in 1:varsize);
+  prioTuples := List.sort(prioTuples,sortprioTuples);
+  varIndices := list(Util.tuple21(elem)  for elem in prioTuples);
+  vlst := list(BackendVariable.getVarAt(inVars,idx) for idx in varIndices);
+  outStates := BackendVariable.listVar1(vlst);
+
 end sortStateCandidatesVars;
 
 protected function sortprioTuples
 "author: Frenkel TUD 2011-05
   helper for sortStateCandidates"
-  input tuple<DAE.ComponentRef,Integer,Real> inTpl1;
-  input tuple<DAE.ComponentRef,Integer,Real> inTpl2;
+  input tuple<Integer,Real> inTpl1;
+  input tuple<Integer,Real> inTpl2;
   output Boolean b;
 algorithm
-  b:= realGt(Util.tuple33(inTpl1),Util.tuple33(inTpl2));
+  b:=  Util.tuple22(inTpl1) > Util.tuple22(inTpl2);
 end sortprioTuples;
-
-protected function calculateVarPriorities
-"author: Frenkel TUD 2012-08"
-  input Integer index;
-  input BackendDAE.Variables vars;
-  input Integer varsSize;
-  input BackendDAE.Variables allVars;
-  input Option<BackendDAE.IncidenceMatrix> m;
-  output list<tuple<DAE.ComponentRef,Integer,Real>> tuples = {};
-protected
-  DAE.ComponentRef varCref;
-  BackendDAE.Var v;
-  Real prio,prio1,prio2;
-
-algorithm
-  for idx in index:varsSize loop
-    v := BackendVariable.getVarAt(vars,idx);
-    varCref := BackendVariable.varCref(v);
-    (prio1, prio2) := varStateSelectPrio(v,allVars,idx,m);
-    prio := prio1 + prio2;
-    if Flags.isSet(Flags.DUMMY_SELECT) then
-      BackendDump.debugStrCrefStrRealStrRealStrRealStr("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio,"\n");
-    end if;
-    tuples := (varCref,idx,prio):: tuples;
-  end for;
-
-end calculateVarPriorities;
 
 protected function varStateSelectPrio
 "
@@ -3055,10 +3048,10 @@ algorithm
   ss := BackendVariable.varStateSelect(v);
   prio := match ss
           case DAE.NEVER() then -2.0;
-          case DAE.AVOID() then -0.5;
+          case DAE.AVOID() then -1.0;
           case DAE.DEFAULT() then 0.0;
-          case DAE.PREFER() then 0.5;
-          case DAE.ALWAYS() then 1.0;
+          case DAE.PREFER() then 1.0;
+          case DAE.ALWAYS() then 2.0;
           end match;
 end varStateSelectPrioAttribute;
 
@@ -3080,15 +3073,15 @@ protected function selectDummyDerivatives2new
   output StateSets oStateSets;
 algorithm
   (outDummyVars,oStateSets) :=
-  matchcontinue(dstates,states,unassignedEqns,assignedEqns,vars,varSize,eqns,eqnsSize,mapIncRowEqn,level,iStateSets)
+  matchcontinue dstates
       local
         list<BackendDAE.Var> varlst,statecandidates,ovarlst;
         Integer unassignedEqnsSize,size,rang;
         list<BackendDAE.Equation> eqnlst,oeqnlst;
         list<Integer> unassignedEqns1,assignedEqns1;
-    case(_,_,_,_,_,_,_,_,_,_,_)
+    case _
+      guard intEq(listLength(dstates),eqnsSize)
       equation
-        true = intEq(listLength(dstates),eqnsSize);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Select as States(1):\n");
           BackendDump.debuglst(states,dumpStates,"\n","\n");
@@ -3097,7 +3090,7 @@ algorithm
         end if;
       then
         ({},iStateSets);
-    case(_,_,_,_,_,_,_,_,_,_,_)
+    case _
       equation
         unassignedEqnsSize = listLength(unassignedEqns);
         size = listLength(states);
@@ -3121,7 +3114,7 @@ algorithm
       then
         (varlst,(level,rang,size,unassignedEqnsSize,statecandidates,eqnlst,ovarlst,oeqnlst)::iStateSets);
    // dummy derivative case - no dynamic state selection
-   case(_,_,_,_,_,_,_,_,_,_,_)
+   case _
       equation
         unassignedEqnsSize = listLength(unassignedEqns);
         size = listLength(states);
