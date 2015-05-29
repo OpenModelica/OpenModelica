@@ -29,6 +29,12 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path)
         measureTimeFunctionsArray[0] = MeasureTimeData("initialize");
         measureTimeFunctionsArray[1] = MeasureTimeData("solveInitialSystem");
     }
+    else
+    {
+      measureTimeFunctionsArray = std::vector<MeasureTimeData>();
+      measuredFunctionStartValues = NULL;
+      measuredFunctionEndValues = NULL;
+    }
     #endif
 }
 
