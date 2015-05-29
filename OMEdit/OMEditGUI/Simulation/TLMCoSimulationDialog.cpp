@@ -311,7 +311,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     monitorArgs.append("-n");
     monitorArgs.append(mpNumberOfStepsTextBox->text());
   }
-  if (!mpTimeStepSizeLabel->text().isEmpty()) {
+  if (!mpTimeStepSizeTextBox->text().isEmpty()) {
     monitorArgs.append("-t");
     monitorArgs.append(mpTimeStepSizeTextBox->text());
   }
