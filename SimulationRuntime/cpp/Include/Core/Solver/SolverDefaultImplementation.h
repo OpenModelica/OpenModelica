@@ -26,10 +26,6 @@ Provision of member variables used by all solvers.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-#if defined(RUNTIME_STATIC_LINKING)
-#undef BOOST_EXTENSION_SOLVER_DECL
-#define BOOST_EXTENSION_SOLVER_DECL
-#endif
 
 class BOOST_EXTENSION_SOLVER_DECL SolverDefaultImplementation : public SimulationMonitor
 {

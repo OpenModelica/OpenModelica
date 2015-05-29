@@ -3,17 +3,6 @@
  *  
  *  @{
  */
-/*includes removed for static linking not needed any more
-#include <SimCoreFactory/Policies/SolverOMCFactory.h>
-#include <Core/SimulationSettings//ISettingsFactory.h>
-#include <Core/Solver/ISolver.h>
-#include <Core/Solver/ISolverSettings.h>
-#include <Core/SimulationSettings//ISimControllerSettings.h>
-#include <Core/System/IMixedSystem.h>
-#include <Core/SimulationSettings/Factory.h>
-#include <Solver/CVode/CVode.h>
-#include <Solver/IDA/IDA.h>
-*/
 
 /*
 Policy class to create solver object
@@ -61,10 +50,3 @@ protected:
 
   }
 };
-<<<<<<< HEAD
-
-/** @} */ // end of simcorefactoriesPolicies
-
-=======
-/** @} */ // end of simcorefactoriesPolicies
->>>>>>> 13d2ab883a13322c1dcc46f5ccf2683d20e49b75

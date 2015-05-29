@@ -17,11 +17,6 @@ Encapsulation of general solver settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-#if defined(RUNTIME_STATIC_LINKING)
-#undef BOOST_EXTENSION_SOLVERSETTINGS_DECL
-#define BOOST_EXTENSION_SOLVERSETTINGS_DECL
-#endif
-
 class BOOST_EXTENSION_SOLVERSETTINGS_DECL SolverSettings : public ISolverSettings
 {
 public:

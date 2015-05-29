@@ -14,14 +14,13 @@
 #     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
 #
 # Some of these options can be controlled by passing arguments to CMAKE
-#     if all runtime libraries should be built and linked statically               -DRUNTIME_STATIC_LINKING=ON
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON
 #     if the lapack functions and data structurs of sundials should be used        -DSUNDIALS_LAPACK=ON
 #     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON
 #
-#     Example: "cmake -DRUNTIME_STATIC_LINKING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
+#     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
@@ -33,7 +32,6 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
 MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
 #Set Options
-OPTION(RUNTIME_STATIC_LINKING "RUNTIME_STATIC_LINKING" OFF)
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
@@ -101,14 +99,6 @@ ELSE(NOT BOOST_STATIC_LINKING)
   SET(Boost_USE_STATIC_RUNTIME ON)
   ADD_DEFINITIONS(-DBOOST_STATIC_LINKING)
 ENDIF(NOT BOOST_STATIC_LINKING)
-
-# Handle static linking
-IF(NOT RUNTIME_STATIC_LINKING)
-  MESSAGE(STATUS "Static build and linking of runtime disabled")
-ELSE(NOT RUNTIME_STATIC_LINKING)
-  MESSAGE(STATUS "Build and linking runtime statically")
-  ADD_DEFINITIONS(-DRUNTIME_STATIC_LINKING)
-ENDIF(NOT RUNTIME_STATIC_LINKING)
 
 # Handle sundials lapack
 IF(NOT SUNDIALS_LAPACK)
