@@ -10,11 +10,6 @@
 #include <Core/System/IStateSelection.h>
 #include <boost/shared_array.hpp>
 
-#if defined(RUNTIME_STATIC_LINKING)
-#undef BOOST_EXTENSION_STATESELECT_DECL
-#define BOOST_EXTENSION_STATESELECT_DECL
-#endif
-
 class BOOST_EXTENSION_STATESELECT_DECL SystemStateSelection
 {
 public:
