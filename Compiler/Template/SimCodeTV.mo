@@ -3057,6 +3057,7 @@ package Flags
   constant DebugFlag WRITE_TO_BUFFER;
   constant DebugFlag MODEL_INFO_JSON;
   constant DebugFlag USEMPI;
+  constant DebugFlag RUNTIME_STATIC_LINKING;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;
