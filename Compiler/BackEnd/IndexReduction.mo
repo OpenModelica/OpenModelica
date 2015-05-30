@@ -2862,7 +2862,7 @@ protected
   Real prio1,prio2;
   array<Real> prio;
   array<Integer> index;
-  Integer ii, idx;
+  Integer idx;
   list<BackendDAE.Var> vlst;
   list<tuple<Real,Integer>> prio_lst;
 algorithm
@@ -2872,17 +2872,17 @@ algorithm
 
   for idx in 1:varsize loop
     v := BackendVariable.getVarAt(inVars,idx);
-    varCref := BackendVariable.varCref(v);
     (prio1, prio2) := varStateSelectPrio(v,allVars,idx,m);
     prio[idx] := prio1 + prio2;
     index[idx] := idx;
     if Flags.isSet(Flags.DUMMY_SELECT) then
+      varCref := BackendVariable.varCref(v);
       BackendDump.debugStrCrefStrRealStrRealStrRealStr("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio[idx],"\n");
     end if;
   end for;
 
   //sort
-  prioTuples := list( (index[idx] ,prio[idx]) for idx in 1:varsize);
+  prioTuples := list( (index[idx] ,prio[idx]) for idx in varsize:-1:1);
   prioTuples := List.sort(prioTuples,sortprioTuples);
   varIndices := list(Util.tuple21(elem)  for elem in prioTuples);
   vlst := list(BackendVariable.getVarAt(inVars,idx) for idx in varIndices);
@@ -2924,15 +2924,32 @@ protected function varStateSelectHeuristicPrio
   output Real prio;
 protected
   Real prio1,prio2,prio3,prio4,prio5;
+  Boolean bstart, bfixed;
 algorithm
-  prio1 := varStateSelectHeuristicPrio1(v);
-  prio2 := varStateSelectHeuristicPrio2(v);
+  // start?
+  bstart := isSome(BackendVariable.varStartValueOption(v));
+  // fixed?
+  bfixed := BackendVariable.varFixed(v);
+  if bstart and bfixed then
+    prio1 := 0.5;
+    prio2 := 0.5;
+  elseif bfixed then
+    prio1 := 0.1;
+    prio2 := 0.5;
+  elseif bstart then
+    prio1 := 0.1;
+    prio2 := 0.0;
+  else
+    prio1 := 0.0;
+    prio2 := 0.0;
+  end if;
+
   prio3 := varStateSelectHeuristicPrio3(v);
   prio4 := varStateSelectHeuristicPrio4(v,vars);
   prio5 := varStateSelectHeuristicPrio5(v,index,m);
   prio := prio1 + prio2 + prio3 + prio4 + prio5;
-  prio := if prio >= 0.4 then 0.5 else prio;
   printVarListtateSelectHeuristicPrio(prio1,prio2,prio3,prio4,prio5);
+
 end varStateSelectHeuristicPrio;
 
 protected function printVarListtateSelectHeuristicPrio
@@ -2960,19 +2977,18 @@ protected function varStateSelectHeuristicPrio5
   input Option<BackendDAE.IncidenceMatrix> om;
   output Real prio;
 algorithm
-  prio := match(v,index,om)
+  prio := match(om)
     local
       list<Integer> row;
       BackendDAE.IncidenceMatrix m;
       Real n;
-    case(_,_,NONE()) then 0.0;
-    case(_,_,SOME(m))
+    case(NONE()) then 0.0;
+    case(SOME(m))
       equation
         row = m[index];
-        n = intReal(arrayLength(m)) + 1;
-        n = 0.05*intReal(listLength(row))/n;
-        n = realMax(n, 0.05);
-      then n;
+        n = intReal(arrayLength(m)) + 1.0;
+        n = intReal(listLength(row))/n;
+      then 0.3*n;
   end match;
 end varStateSelectHeuristicPrio5;
 
@@ -2993,7 +3009,7 @@ algorithm
       equation
         ({v},_) = BackendVariable.getVar(cr, vars);
         b = BackendVariable.isDummyStateVar(v);
-        prio = if b then -0.05 else 0.05;
+        prio = if b then 0.0 else 0.55;
       then prio;
     else 0.0;
   end matchcontinue;
@@ -3012,30 +3028,10 @@ algorithm
       DAE.ComponentRef cr;
     case(BackendDAE.VAR(varName=cr))
       guard stringEq( ComponentReference.crefFirstIdent(cr),"$DER")
-      then -1.0;
+      then -5.0;
     else 0.0;
   end matchcontinue;
 end varStateSelectHeuristicPrio3;
-
-protected function varStateSelectHeuristicPrio2
-"author: Frenkel TUD 2011-05
-  Helper function to varStateSelectHeuristicPrio.
-  added prio for variables with fixed = true "
-  input BackendDAE.Var v;
-  output Real prio;
-algorithm
-  prio := if BackendVariable.varFixed(v) then 0.2 else 0.0;
- end varStateSelectHeuristicPrio2;
-
-protected function varStateSelectHeuristicPrio1
-"author: wbraun
-  Helper function to varStateSelectHeuristicPrio.
-  added prio for variables with a start value "
-  input BackendDAE.Var v;
-  output Real prio;
-algorithm
-  prio := if isSome(BackendVariable.varStartValueOption(v)) then 0.2 else 0.0;
-end varStateSelectHeuristicPrio1;
 
 protected function varStateSelectPrioAttribute
 "Helper function to calculateVarPriorities.
@@ -3047,11 +3043,11 @@ protected function varStateSelectPrioAttribute
 algorithm
   ss := BackendVariable.varStateSelect(v);
   prio := match ss
-          case DAE.NEVER() then -2.0;
-          case DAE.AVOID() then -1.0;
+          case DAE.NEVER() then -20.0;
+          case DAE.AVOID() then -1.5;
           case DAE.DEFAULT() then 0.0;
-          case DAE.PREFER() then 1.0;
-          case DAE.ALWAYS() then 2.0;
+          case DAE.PREFER() then 1.5;
+          case DAE.ALWAYS() then 20.0;
           end match;
 end varStateSelectPrioAttribute;
 
