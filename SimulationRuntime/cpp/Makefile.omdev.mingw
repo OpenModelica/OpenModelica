@@ -9,24 +9,24 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 
 #use this call to use precompiled headers
-#BUILDTPYE = Release
+#BUILDTYPE = Release
 #use this call if you want to debug the cpp runtime
-BUILDTPYE = Debug
+BUILDTYPE = Debug
 
 CMAKE = $(OMDEV)/bin/cmake/bin/cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON
 
 runtimeCpp: clean
 ifeq ("$(RUNTIME_STATIC_LINKING)","true")
 	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DRUNTIME_STATIC_LINKING=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -DRUNTIME_STATIC_LINKING=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
 else ifeq ("$(BUILD_DOCUMENTATION)","true")
 	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_DOCUMENTATION=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -DBUILD_DOCUMENTATION=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
 else
 	cd ./Build; echo "change to Build";	\
-	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
+	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
 endif
 
@@ -37,12 +37,12 @@ runtimeCPPmsvc: clean
 	rm -rf build_msvc
 	mkdir -p build_msvc
 	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > build_msvc/build.bat
-	#echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "Visual Studio 10"' >> build_msvc/build.bat
-ifeq ($(BUILDTPYE),Debug)
+	#echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "Visual Studio 10"' >> build_msvc/build.bat
+ifeq ($(BUILDTYPE),Debug)
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=./tmp ../ -G  "NMake Makefiles"' >> build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G  "NMake Makefiles"' >> build_msvc/build.bat
 else
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./tmp ../ -G  "NMake Makefiles"' >> build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G  "NMake Makefiles"' >> build_msvc/build.bat
 endif
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> build_msvc/build.bat
@@ -58,7 +58,7 @@ endif
 
 
 	# copy pdb files
-ifneq ($(BUILDTPYE),Release)
+ifneq ($(BUILDTYPE),Release)
 	cp -u build_msvc/Solver/Newton/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
 	cp -u build_msvc/Solver/Euler/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
 	cp -u build_msvc/Core/SimController/*.pdb build_msvc/tmp/lib/omc/cpp/msvc
