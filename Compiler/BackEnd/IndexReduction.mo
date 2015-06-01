@@ -1771,16 +1771,11 @@ algorithm
         varlst = list(var for var guard notVarStateSelectAlways(var, level) in hov);
         neqns = BackendEquation.equationLstSize(eqnslst);
         nfreeStates = listLength(varlst);
-        // reduce state candidates of number neqns
-        if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
-          //print("BEFORE:\n");
-          //BackendDump.printVarList(varlst);
-          (varlst, nfreeStates) = reduceStateCandidates(neqns, varlst, vars, NONE());
-          //print("AFTER:\n");
-          //BackendDump.printVarList(varlst);
-        end if;
         // do state selection of that level
         (dummyVars,stateSets) = selectStatesWork1(nfreeStates,varlst,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,hov,{},{});
+        //if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
+        //  nfreeStates = neqns;
+        //end if;
         // get derivatives one order less
         lov = List.fold3(iHov, getlowerOrderDerivatives, level, so, vars, {});
         // remove DummyStates DER.x from States with v_d>1 with unkown derivative dummyVars
@@ -1815,36 +1810,6 @@ algorithm
         (syst,shared,ht,setIndex);
   end match;
 end selectStatesWork;
-
-protected function reduceStateCandidates
-   input Integer n;
-   input list<BackendDAE.Var> var_lst;
-   input BackendDAE.Variables vars;
-   input Option<BackendDAE.IncidenceMatrix> m;
-   output list<BackendDAE.Var> o_var_lst;
-   output Integer nn = n;
-protected
-   BackendDAE.Variables vars_ = BackendVariable.listVar1(var_lst);
-   array<Option<BackendDAE.Var>> array_vars;
-   BackendDAE.Var var;
-algorithm
-   vars_ := sortStateCandidatesVars(vars_, vars, m);
-   BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(
-   varOptArr = array_vars)) := vars_;
-   o_var_lst := list(reduceStateCandidates1(arrayGet(array_vars, i)) for i in 1:nn);
-end reduceStateCandidates;
-
-protected function reduceStateCandidates1
-  input Option<BackendDAE.Var> ovar;
-  output BackendDAE.Var var;
-algorithm
-  if isSome(ovar) then
-    SOME(var) := ovar;
-  else
-    print("reduceStateCandidates fail!\n");
-    fail();
-  end if;
-end reduceStateCandidates1;
 
 protected function removeFirstOrderDerivatives
 "author Frenkel TUD 2013-01
@@ -2052,7 +2017,7 @@ algorithm
         vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         // get advanced incidence Matrix
-        (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
+        (me,meT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpAdjacencyMatrixEnhanced(me);
           BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
@@ -2099,6 +2064,14 @@ algorithm
         (vlst,_,stateSets) = processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,{},{},iStateSets);
         vlst = List.select(vlst, BackendVariable.isStateVar);
         dummyVars = listAppend(dummyVars,vlst);
+        //if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
+          //print("BEFORE:\n");
+          //BackendDump.printVarList(dummyVars);
+          //(dummyVars,_) = List.split(dummyVars, neqns);
+          //(stateSets,_) = List.split(stateSets, neqns);
+          //print("AFTER:\n");
+          //BackendDump.printVarList(dummyVars);
+        //end if;
       then
         (dummyVars,stateSets);
     // to much equations this is an error
@@ -2465,97 +2438,82 @@ protected function processComps4New
   input list<BackendDAE.Var> inHov;
   input list<DAE.ComponentRef> inDummyStates;
   input StateSets iStateSets;
-  output list<BackendDAE.Var> outDummyVars;
-  output list<DAE.ComponentRef> outDummyStates;
-  output StateSets oStateSets;
+  output list<BackendDAE.Var> outDummyVars = inHov;
+  output list<DAE.ComponentRef> outDummyStates = inDummyStates;
+  output StateSets oStateSets = iStateSets;
+protected
+  array<list<Integer>> mapEqnIncRow1;
+  array<Integer> mapIncRowEqn1,ass1arr;
+  list<DAE.ComponentRef> dummyStates;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns,eqns1 = iEqns;
+  BackendDAE.EqSystem syst;
+  list<Integer> seteqns,unassigned,assigned,set,statevars,dstatevars,ass1,ass2,assigend1,range;
+  list<BackendDAE.Var> varlst = inHov;
+  array<Boolean> flag;
+  list<BackendDAE.Equation> eqnlst;
+  BackendDAE.AdjacencyMatrixEnhanced me;
+  BackendDAE.AdjacencyMatrixTEnhanced meT;
+  list<tuple<DAE.ComponentRef, Integer>> states1,dstates1;
+  Integer nstatevars,nassigned,nunassigned,nass1arr,n,nv,ne;
+  StateSets stateSets;
 algorithm
-  (outDummyVars,outDummyStates,oStateSets) :=
-  matchcontinue iSets
-    local
-      array<list<Integer>> mapEqnIncRow1;
-      array<Integer> mapIncRowEqn1,ass1arr;
-      list<DAE.ComponentRef> dummyStates;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns,eqns1;
-      BackendDAE.EqSystem syst;
-      list<Integer> seteqns,unassigned,assigned,set,statevars,dstatevars,ass1,ass2,assigend1,range;
-      list<BackendDAE.Var> varlst;
-      list<list<Integer>> sets;
-      array<Boolean> flag;
-      list<BackendDAE.Equation> eqnlst;
-      BackendDAE.AdjacencyMatrixEnhanced me;
-      BackendDAE.AdjacencyMatrixTEnhanced meT;
-      list<tuple<DAE.ComponentRef, Integer>> states1,dstates1;
-      Integer nstatevars,nassigned,nunassigned,nass1arr,n,nv,ne;
-      StateSets stateSets;
-
-    case {}
-      then
-        (inHov,inDummyStates,iStateSets);
-    case assigned::sets
-      guard listEmpty(List.select1r(assigned,Matching.isUnAssigned,vec1))  // ignore sets without unassigned equations, because all assigned states already in dummy states
-      equation
-        // next set
-        (varlst,dummyStates,stateSets) = processComps4New(sets,inVarSize,inEqnsSize,iVars,iEqns,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,level,iShared,inHov,inDummyStates,iStateSets);
-     then
-        (varlst,dummyStates,stateSets);
-    case seteqns::sets
-      equation
+  for seteqns in iSets loop
+    if not listEmpty(List.select1r(seteqns,Matching.isUnAssigned,vec1)) then  // ignore sets without unassigned equations, because all assigned states already in dummy states
         //  print("seteqns: " + intString(listLength(seteqns)) + "\n");
         //  print(stringDelimitList(List.map(seteqns,intString),", ") + "\n");
-        unassigned = List.select1r(seteqns,Matching.isUnAssigned,vec1);
-        n = arrayLength(inM);
-        set = getEqnsforDynamicStateSelection(unassigned,n,inM,inMT,vec1,vec2,inMapEqnIncRow,inMapIncRowEqn);
-        assigned = List.select1r(set,Matching.isAssigned,vec1);
+        unassigned := List.select1r(seteqns,Matching.isUnAssigned,vec1);
+        n := arrayLength(inM);
+        set := getEqnsforDynamicStateSelection(unassigned,n,inM,inMT,vec1,vec2,inMapEqnIncRow,inMapIncRowEqn);
+        assigned := List.select1r(set,Matching.isAssigned,vec1);
         //  print("Set: " + intString(listLength(set)) + "\n");
         //  print(stringDelimitList(List.map(set,intString),", ") + "\n");
         //  print("assigned: " + intString(listLength(assigned)) + "\n");
         //  print(stringDelimitList(List.map(assigned,intString),", ") + "\n");
-        flag = arrayCreate(inVarSize,true);
-        ((statevars,_)) = List.fold3(set,getSetStates,flag,inM,vec2,({},{}));
+        flag := arrayCreate(inVarSize,true);
+        ((statevars,_)) := List.fold3(set,getSetStates,flag,inM,vec2,({},{}));
         //  print("Statevars: " + intString(listLength(statevars)) + "\n");
         //  print(stringDelimitList(List.map(statevars,intString),", ") + "\n");
         //  print("Select " + intString(listLength(unassigned)) + " from " + intString(listLength(statevars)) + "\n");
-        nstatevars = listLength(statevars);
-        ass1 = List.consN(nstatevars, -1, {});
-        nunassigned = listLength(unassigned);
-        ass2 = List.consN(nunassigned, -1, {});
-        varlst = List.map1r(statevars,BackendVariable.getVarAt,iVars);
-        assigend1 = List.map1r(unassigned,arrayGet,inMapIncRowEqn);
-        n = arrayLength(inMapIncRowEqn);
-        assigend1 = List.uniqueIntN(assigend1,n);
+        nstatevars := listLength(statevars);
+        ass1 := List.consN(nstatevars, -1, {});
+        nunassigned := listLength(unassigned);
+        ass2 := List.consN(nunassigned, -1, {});
+        varlst := List.map1r(statevars,BackendVariable.getVarAt,iVars);
+        assigend1 := List.map1r(unassigned,arrayGet,inMapIncRowEqn);
+        n := arrayLength(inMapIncRowEqn);
+        assigend1 := List.uniqueIntN(assigend1,n);
         //  print("BackendEquation.getEqns " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
-        eqnlst = BackendEquation.getEqns(assigend1,iEqns);
+        eqnlst := BackendEquation.getEqns(assigend1, eqns1);
         //  print("BackendEquation.equationRemove " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
-        eqns1 = List.fold(assigend1,BackendEquation.equationRemove,iEqns);
-        nassigned = listLength(assigned);
-        flag = arrayCreate(inEqnsSize,true);
-        (eqnlst,varlst,ass1,ass2,eqns1) = getSetSystem(assigned,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqns1,flag,nassigned,eqnlst,varlst,ass1,ass2);
-        eqns = BackendEquation.listEquation(eqnlst);
-        vars = BackendVariable.listVar1(varlst);
-        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+        eqns1 := List.fold(assigend1,BackendEquation.equationRemove,eqns1);
+        nassigned := listLength(assigned);
+        flag := arrayCreate(inEqnsSize,true);
+        (eqnlst,varlst,ass1,ass2,eqns1) := getSetSystem(assigned,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqns1,flag,nassigned,eqnlst,varlst,ass1,ass2);
+        eqns := BackendEquation.listEquation(eqnlst);
+        vars := BackendVariable.listVar1(varlst);
+        syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         //  BackendDump.printEqSystem(syst);
         //  BackendDump.dumpMatching(listArray(ass1));
         //  BackendDump.dumpMatching(listArray(ass2));
-        (_,_,_,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,iShared,false);
-        ass1arr = listArray(ass1);
-        nass1arr = arrayLength(ass1arr);
-        (dstates1,states1) = checkAssignment(1,nass1arr,ass1arr,vars);
-        assigend1 = if not listEmpty(assigned) then List.intRange2(1,nassigned) else {};
-        nunassigned = nassigned+nunassigned;
-        nassigned = nassigned+1;
-        range = List.intRange2(nassigned,nunassigned);
-        nv = BackendVariable.varsSize(vars);
-        ne = BackendDAEUtil.equationSize(eqns);
-        (varlst,stateSets) = selectDummyDerivatives2new(dstates1,states1,range,assigend1,vars,nv,eqns,ne,mapIncRowEqn1,level,iStateSets);
-        dummyStates = List.map(varlst,BackendVariable.varCref);
-        dummyStates = listAppend(inDummyStates,dummyStates);
-        varlst = listAppend(varlst,inHov);
-        // next set
-        (varlst,dummyStates,stateSets) = processComps4New(sets,inVarSize,inEqnsSize,iVars,eqns1,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,level,iShared,varlst,dummyStates,stateSets);
-     then
-        (varlst,dummyStates,stateSets);
-  end matchcontinue;
+        (_,_,_,mapIncRowEqn1) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,iShared,false);
+        ass1arr := listArray(ass1);
+        nass1arr := arrayLength(ass1arr);
+        (dstates1,states1) := checkAssignment(1,nass1arr,ass1arr,vars);
+        assigend1 := if not listEmpty(assigned) then List.intRange2(1,nassigned) else {};
+        nunassigned := nassigned+nunassigned;
+        nassigned := nassigned+1;
+        range := List.intRange2(nassigned,nunassigned);
+        nv := BackendVariable.varsSize(vars);
+        ne := BackendDAEUtil.equationSize(eqns);
+        (varlst,oStateSets) := selectDummyDerivatives2new(dstates1,states1,range,assigend1,vars,nv,eqns,ne,mapIncRowEqn1,level,oStateSets);
+        dummyStates := List.map(varlst,BackendVariable.varCref);
+        outDummyStates := listAppend(outDummyStates,dummyStates);
+        outDummyVars := listAppend(varlst, outDummyVars);
+
+    end if;
+  end for;
+
 end processComps4New;
 
 protected function forceInlinEqn
