@@ -1,7 +1,7 @@
 // name: pendel
 // status: correct
 
-setCommandLineOptions("+gDynopt +disableDynamicStateSelection +d=extendsDynOpt,advanceTearing");
+setCommandLineOptions("+gDynopt +indexReductionMethod=dummyDerivatives +d=extendsDynOpt,advanceTearing");
 getErrorString();
 
 loadString("
