@@ -1773,14 +1773,20 @@ algorithm
         nfreeStates = listLength(varlst);
         // do state selection of that level
         (dummyVars,stateSets) = selectStatesWork1(nfreeStates,varlst,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,hov,{},{});
-        //if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
-        //  nfreeStates = neqns;
-        //end if;
         // get derivatives one order less
         lov = List.fold3(iHov, getlowerOrderDerivatives, level, so, vars, {});
         // remove DummyStates DER.x from States with v_d>1 with unkown derivative dummyVars
         repl = HashTable2.emptyHashTable();
         (dummyVars,repl) = removeFirstOrderDerivatives(dummyVars,vars,so,repl);
+        if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
+          stateSets = {};
+          nfreeStates = neqns;
+          //print("BEFORE:\n");
+          //BackendDump.printVarList(dummyVars);
+          (dummyVars,_) = List.split(listReverse(dummyVars), neqns);
+          //print("AFTER:\n");
+          //BackendDump.printVarList(dummyVars);
+        end if;
         nv = BackendVariable.varsSize(vars);
         ne = BackendDAEUtil.systemSize(inSystem);
         // add the original equations to the systems
@@ -2064,14 +2070,6 @@ algorithm
         (vlst,_,stateSets) = processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,{},{},iStateSets);
         vlst = List.select(vlst, BackendVariable.isStateVar);
         dummyVars = listAppend(dummyVars,vlst);
-        //if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
-          //print("BEFORE:\n");
-          //BackendDump.printVarList(dummyVars);
-          //(dummyVars,_) = List.split(dummyVars, neqns);
-          //(stateSets,_) = List.split(stateSets, neqns);
-          //print("AFTER:\n");
-          //BackendDump.printVarList(dummyVars);
-        //end if;
       then
         (dummyVars,stateSets);
     // to much equations this is an error
@@ -2510,7 +2508,6 @@ algorithm
         dummyStates := List.map(varlst,BackendVariable.varCref);
         outDummyStates := listAppend(outDummyStates,dummyStates);
         outDummyVars := listAppend(varlst, outDummyVars);
-
     end if;
   end for;
 
