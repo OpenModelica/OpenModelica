@@ -736,7 +736,9 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
   NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
     ("uode", Util.gettext("Use the underlying ODE without the constraints.")),
-    ("dynamicStateSelection", Util.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system."))})),
+    ("dynamicStateSelection", Util.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system.")),
+    ("dummyDerivatives", Util.gettext("Simple index reduction method, select (static) dummy states based on heuristic."))
+    })),
     Util.gettext("Sets the index reduction method to use. See --help=optmodules for more info."));
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
@@ -1063,10 +1065,6 @@ constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
 
-constant ConfigFlag DSIABLE_DSS = CONFIG_FLAG(71,
-  "disableDynamicStateSelection", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Experimental feature: disable dynamic state selection"));
-
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1141,8 +1139,7 @@ constant list<ConfigFlag> allConfigFlags = {
   REMOVE_SIMPLE_EQUATIONS,
   DYNAMIC_TEARING,
   SYM_EULER,
-  ADD_TIME_AS_STATE,
-  DSIABLE_DSS
+  ADD_TIME_AS_STATE
 };
 
 public function new

@@ -1496,6 +1496,39 @@ end getVar;
 
 protected type StateSets = list<tuple<Integer,Integer,Integer,Integer,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> "Level,nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
 
+protected function reduceStateSets
+  input StateSets iTplLst;
+  input list<BackendDAE.Var> idummyStates;
+  output list<BackendDAE.Var> odummyStates;
+algorithm
+  if not listEmpty(iTplLst) then
+    odummyStates := reduceStateSets2(iTplLst);
+  else
+    odummyStates := idummyStates;
+  end if;
+end reduceStateSets;
+
+protected function reduceStateSets2
+  input StateSets iTplLst;
+  output list<BackendDAE.Var> dummyStates = {};
+protected
+  tuple<Integer,Integer,Integer,Integer,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>> tpl;
+  Integer rang, nStateCandidates, nUnassignedEquations;
+  list<BackendDAE.Var> stateCandidates;
+algorithm
+
+  for tpl in iTplLst loop
+
+    (_,_,nStateCandidates,nUnassignedEquations,stateCandidates,_,_,_) := tpl;
+    rang := nStateCandidates - nUnassignedEquations;
+    (_,stateCandidates) := List.split(stateCandidates, rang);
+    dummyStates := listAppend(stateCandidates, dummyStates);
+
+  end for;
+
+end reduceStateSets2;
+
+
 protected function addStateSets
 "author: Frenkel TUD 2013-01
   add the found state set to the system"
@@ -1552,11 +1585,13 @@ protected
  BackendDAE.StateSets stateSets;
  DAE.ElementSource source;
 
+ Boolean b;
 algorithm
 
   for tpl in iTplLst loop
     (level,_,nStateCandidates,nUnassignedEquations,stateCandidates,cEqnsLst,otherVars,oEqnLst) := tpl;
     rang := nStateCandidates - nUnassignedEquations;
+    b := intGt(rang,1);
     // generate Set Vars
     (_,crset,setVars,crA,aVars,tp,crJ,varJ) := getSetVars(oSetIndex,rang,nStateCandidates,nUnassignedEquations,level);
      // add Equations
@@ -1570,19 +1605,19 @@ algorithm
      expcrdset := List.map(expcrset,makeder);
      expcrA := Expression.crefExp(crA);
      expcrA := DAE.CAST(tp,expcrA);
-     op := if intGt(rang,1) then DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
+     op := if b then DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT) else DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
      mulAstates := DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstates));
      (mulAstates,_) := Expression.extendArrExp(mulAstates,false);
      mulAdstates := DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrdstates));
     (mulAdstates,_) := Expression.extendArrExp(mulAdstates,false);
-    expset := if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listHead(expcrset);
-    expderset := if intGt(rang,1) then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listHead(expcrdset);
+    expset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset) else listHead(expcrset);
+    expderset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset) else listHead(expcrdset);
     source := DAE.SOURCE(SOURCEINFO("stateselection",false,0,0,0,0,0.0),{},NONE(),{},{},{},{});
     // set.x = set.A*set.statecandidates
-    eqn := if intGt(rang,1) then BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
+    eqn := if b then BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
                                 else BackendDAE.EQUATION(expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     // der(set.x) = set.A*der(set.candidates)
-    deqn := if intGt(rang,1) then BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
+    deqn := if b then BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
                                  else BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     // start values for the set
     expsetstart := DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstatesstart));
@@ -1778,19 +1813,20 @@ algorithm
         // remove DummyStates DER.x from States with v_d>1 with unkown derivative dummyVars
         repl = HashTable2.emptyHashTable();
         (dummyVars,repl) = removeFirstOrderDerivatives(dummyVars,vars,so,repl);
-        if Flags.getConfigBool(Flags.DSIABLE_DSS) and neqns < nfreeStates then
-          stateSets = {};
-          nfreeStates = neqns;
-          //print("BEFORE:\n");
-          //BackendDump.printVarList(dummyVars);
-          (dummyVars,_) = List.split(listReverse(dummyVars), neqns);
-          //print("AFTER:\n");
-          //BackendDump.printVarList(dummyVars);
-        end if;
         nv = BackendVariable.varsSize(vars);
         ne = BackendDAEUtil.systemSize(inSystem);
         // add the original equations to the systems
         syst = BackendEquation.equationsAddDAE(eqnslst1, inSystem);
+        // Dummy Derivatives
+        if Flags.getConfigString(Flags.INDEX_REDUCTION_METHOD) == "dummyDerivatives" and neqns < nfreeStates then
+          nfreeStates = neqns;
+          //print("BEFORE:\n");
+          //BackendDump.printVarList(dummyVars);
+          dummyVars = reduceStateSets(stateSets, dummyVars);
+          //print("AFTER:\n");
+          //BackendDump.printVarList(dummyVars);
+          stateSets = {};
+        end if;
         // add the found state sets for dynamic state selection to the system
         (setIndex,syst) = addStateSets(stateSets,iSetIndex,syst);
         // change dummy states, update Assignments
