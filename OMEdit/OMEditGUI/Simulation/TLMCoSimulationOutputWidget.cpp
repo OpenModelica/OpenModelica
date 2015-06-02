@@ -165,7 +165,7 @@ void TLMCoSimulationOutputWidget::stopManager()
 void TLMCoSimulationOutputWidget::openManagerLogFile()
 {
   QFileInfo fileInfo(mTLMCoSimulationOptions.getFileName());
-  QUrl logFilePath (QString("file:///").append(fileInfo.absoluteDir().absolutePath()).append("/Logfile.log"));
+  QUrl logFilePath (QString("file:///").append(fileInfo.absoluteDir().absolutePath()).append("/TLMlogfile.log"));
   QDesktopServices::openUrl(logFilePath);
 }
 
