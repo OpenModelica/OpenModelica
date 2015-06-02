@@ -56,3 +56,10 @@ git submodule foreach --recursive "git checkout master"
 # To update; you will need to merge each submodule, but your changes will remain
 git submodule foreach --recursive "git pull"
 ```
+
+### To checkout a minimal version of OpenModelica
+```bash
+git clone https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica-minimal
+cd OpenModelica-minimal
+git submodule update --init --recursive libraries testsuite OMCompiler common
+```
