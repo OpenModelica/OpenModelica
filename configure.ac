@@ -46,6 +46,15 @@ case "$OMLIBRARY_TARGET" in
   ;;
 esac
 
+if test ! -z "$OMLIBRARY_TARGET"; then
+  AC_MSG_CHECKING([for libraries directory])
+  if test -f libraries/Makefile; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_ERROR([no])
+  fi
+fi
+
 AC_SUBST(MODELICA3D_TARGET)
 AC_MSG_CHECKING([if the user wants Modelica3D])
 MODELICA3D_TARGET="yes"
@@ -57,14 +66,23 @@ AC_MSG_RESULT([yes])
 MODELICA3D_TARGET="omlibrary-modelica3d"
 fi
 
-for dir in OMCompiler OMPlot OMEdit OMNotebook OMOptim OMShell; do
-  if test ! -d "$dir"; then
-    AC_MSG_ERROR("Subproject $dir does not exist")
-  fi
-  if !(cd "$dir" && autoconf); then
-    AC_MSG_ERROR("Failed to autoconf $dir")
+AC_SUBST(ALL_TARGETS)
+for dir_target in OMCompiler-omc OMPlot-omplot OMEdit-omedit OMNotebook-omnotebook OMOptim-omoptim OMShell-omshell; do
+  dir=`echo $dir_target | cut -d- -f1`
+  if test ! -f "$dir/configure.ac"; then
+    AC_MSG_NOTICE("Subproject $dir does not exist")
+  else
+    if !(cd "$dir" && autoconf); then
+      AC_MSG_ERROR("Failed to autoconf $dir")
+    fi
+    ALL_TARGETS="$ALL_TARGETS `echo $dir_target | cut -d- -f2-`"
   fi
 done
+
+AC_SUBST(ALL_TARGETS)
+if test -f testsuite/Makefile; then
+  ALL_TARGETS="$ALL_TARGETS testsuite-depends"
+fi
 
 AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit OMNotebook OMOptim OMShell])
 
