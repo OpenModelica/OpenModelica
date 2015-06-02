@@ -13,3 +13,6 @@ simulation/libraries/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.Doub
 simulation/modelica/solver/externalInput.csv
 # Reference files are stored as .mat.xz
 ReferenceFiles/**/*.mat
+/invalid-files.log
+/invalid-files.sorted
+/.gitvalidfiles.sorted

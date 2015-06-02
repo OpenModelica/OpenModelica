@@ -1,2 +1,0 @@
-#!/bin/sh
-exec ./Modelica.Electrical.Spice3.Examples.CoupledInductors -s 0.0 -e 0.2 -f 0.0004 -v 500 -y 1e-06 -i dassl -r /home/marcus/workspace/openmodelica/openmodelica/OMCompiler/build/lib/x86_64-linux-gnu/omc/cpp/ -m /home/marcus/workspace/openmodelica/openmodelica/OpenModelica-testsuite/openmodelica/cppruntime/hpcom/ -R /home/marcus/workspace/openmodelica/openmodelica/OpenModelica-testsuite/openmodelica/cppruntime/hpcom//Modelica.Electrical.Spice3.Examples.CoupledInductors_res.mat -o mat $*

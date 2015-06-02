@@ -1,2 +1,0 @@
-#!/bin/sh
-exec ./BouncingBall -s 0.0 -e 1.0 -f 0.002 -v 500 -y 1e-06 -i dassl -r /home/marcus/workspace/openmodelica/openmodelica/OMCompiler/build/lib/x86_64-linux-gnu/omc/cpp/ -m /home/marcus/workspace/openmodelica/openmodelica/OpenModelica-testsuite/openmodelica/cppruntime/ -R /home/marcus/workspace/openmodelica/openmodelica/OpenModelica-testsuite/openmodelica/cppruntime//BouncingBall_res.mat -o mat $*
