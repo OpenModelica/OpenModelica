@@ -13,6 +13,11 @@ Contents:
 
   introduction
   chapter2
+  omedit
+  plotting
+  omnotebook
+  fmi
+  optimization
   test
   conclusion
 
