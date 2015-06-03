@@ -41,8 +41,6 @@ Cite the big one :cite:`openmodelica:current`
 
 Here comes an inline image of the |omlogo| logotype.
 
-.. bibliography:: openmodelica.bib extrarefs.bib
-
 .. |omlogo| image:: logo.svg
   :alt: OpenModelica logotype
   :width: 20%

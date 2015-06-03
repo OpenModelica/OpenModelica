@@ -12,6 +12,7 @@ Contents:
   :maxdepth: 2
 
   introduction
+  chapter2
   bibliography
 
 Indices and tables
@@ -20,5 +21,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. bibliography:: openmodelica.bib extrarefs.bib
