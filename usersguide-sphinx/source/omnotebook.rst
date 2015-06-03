@@ -412,8 +412,8 @@ the relation between the cells.
        groupcell is closed the marker is changed and the marker has an
        arrow at the bottom.
 
-   1. .. rubric:: Cursors
-         :name: cursors
+Cursors
+~~~~~~~
 
 An OMNotebook document contains cells which in turn contain text. Thus,
 two kinds of cursors are needed for positioning, text cursor and cell
@@ -436,8 +436,8 @@ cursor:
        *dynamic cellcursor must be made active* by clicking on the main
        cellcursor (the horizontal line).
 
-   1. .. rubric:: Selection of Text or Cells
-         :name: selection-of-text-or-cells
+Selection of Text or Cells
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To perform operations on text or cells we often need to select a range
 of characters or cells.
@@ -456,8 +456,8 @@ of characters or cells.
        selected cell and the cell clicked on. This only works if both
        cells belong to the same groupcell.
 
-   1. .. rubric:: File Menu
-         :name: file-menu
+File Menu
+~~~~~~~~~
 
 The following file related operations are available in the file menu:
 
@@ -510,8 +510,8 @@ The following file related operations are available in the file menu:
        Evaluating the command quit() has the same result as exiting
        OMNotebook.
 
-   1. .. rubric:: Edit Menu
-         :name: edit-menu
+Edit Menu
+~~~~~~~~~
 
 -  *Editing cell text* – Cells have a set of of basic editing functions.
        The key combination for these are: Undo (Ctrl+Z), Redo (Ctrl+Y),
@@ -558,8 +558,8 @@ The following file related operations are available in the file menu:
        representation. Changes made to the HTML code will affect how the
        text is displayed.
 
-   1. .. rubric:: Cell Menu
-         :name: cell-menu
+Cell Menu
+~~~~~~~~~
 
 -  *Add textcell* – A new textcell is added with the menu item Cell->Add
        Cell (previous cell style) or the key combination Alt+Enter. The
@@ -596,8 +596,8 @@ The following file related operations are available in the file menu:
        cursor can also be moved with the key combination Ctrl+Up or
        Ctrl+Down.
 
-   1. .. rubric:: Format Menu
-         :name: format-menu
+Format Menu
+~~~~~~~~~~~
 
 -  *Textcell* – This cell type is used to display ordinary text and
        images. Each textcell has a style that specifies how text is
@@ -658,8 +658,8 @@ Insert Menu
        that belong together easily can be moved from one place to
        another without the links failing.
 
-   1. .. rubric:: Window Menu
-         :name: window-menu
+Window Menu
+~~~~~~~~~~~
 
 -  *Change window* – Each opened document has its own document window.
        To switch between those use the Window menu. The window menu
@@ -667,8 +667,8 @@ Insert Menu
        were opened. To switch to another document, simple click on the
        title of that document.
 
-   1. .. rubric:: Help Menu
-         :name: help-menu
+Help Menu
+~~~~~~~~~
 
 -  *About OMNotebook* – Accessing the about message box for OMNotebook
        is done from the menu Help->About OMNotebook.
@@ -681,8 +681,8 @@ Insert Menu
        is opened or with the menu Help->Help Text. The menu item can
        also be triggered with the key F1.
 
-   1. .. rubric:: Additional Features
-         :name: additional-features
+Additional Features
+~~~~~~~~~~~~~~~~~~~
 
 -  *Links* – By clicking on a link, OMNotebook will open the document
        that is referred to in the link.
@@ -766,8 +766,8 @@ Insert Menu
        so that it indicates the text settings for the text, in the
        current cursor position.
 
-   1. .. rubric:: References
-         :name: references-1
+References
+----------
 
 Eric Allen, Robert Cartwright, Brian Stoler. DrJava: A lightweight
 pedagogic environment for Java. In Proceedings of the 33rd ACM Technical

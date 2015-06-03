@@ -165,7 +165,7 @@ See section 2.9.6 for Messages Browser options.
 Perspectives
 ------------
 
-The perspective tabs are loacted at the bottom right of the MainWindow,
+The perspective tabs are loacted at the bottom right of the MainWindow:
 
 -  Welcome Perspective
 
@@ -173,8 +173,8 @@ The perspective tabs are loacted at the bottom right of the MainWindow,
 
 -  Plotting Perspective
 
-   1. .. rubric:: Welcome Perspective
-         :name: welcome-perspective
+Welcome Perspective
+~~~~~~~~~~~~~~~~~~~
 
 |image7|
 
@@ -214,11 +214,11 @@ two different modes, the tabbed view and subwindow view, see section
 
 Figure 210: **OMEdit Plotting Perspective.**
 
-1. .. rubric:: Modeling a Model
-      :name: modeling-a-model
+Modeling a Model
+----------------
 
-   1. .. rubric:: Creating a New Modelica class
-         :name: creating-a-new-modelica-class
+Creating a New Modelica class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Creating a new Modelica class in OMEdit is rather straightforward.
 Choose any of the following methods,
@@ -232,8 +232,8 @@ Choose any of the following methods,
 
 -  Press Ctrl+N.
 
-   1. .. rubric:: Opening a Modelica File
-         :name: opening-a-modelica-file
+Opening a Modelica File
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Choose any of the following methods to open a Modelica file,
 
@@ -246,8 +246,8 @@ Choose any of the following methods to open a Modelica file,
 
 -  Press Ctrl+O.
 
-   1. .. rubric:: Opening a Modelica File with Encoding
-         :name: opening-a-modelica-file-with-encoding
+Opening a Modelica File with Encoding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Select File > Open/Convert Modelica File(s) With Encoding from the menu.
 It is also possible to convert files to UTF-8.
@@ -294,8 +294,8 @@ The OMEdit Simulation Dialog can be launched by,
 -  Right clicking the model from the Libraries Browser and choosing
        Simulation Setup.
 
-   1. .. rubric:: General Tab
-         :name: general-tab
+General Tab
+~~~~~~~~~~~
 
 -  *Start Time* – the simulation start time.
 
@@ -315,8 +315,8 @@ The OMEdit Simulation Dialog can be launched by,
 
 -  *Launch Algorithmic Debugger* – launches the algorithmic debugger.
 
-   1. .. rubric:: Output Tab
-         :name: output-tab
+Output Tab
+~~~~~~~~~~
 
 -  *Number of Intervals* – the simulation number of intervals.
 
@@ -332,8 +332,8 @@ The OMEdit Simulation Dialog can be launched by,
 
 -  *Show Generated File* – displays the generated files in a dialog box.
 
-   1. .. rubric:: Simulation Flags Tab
-         :name: simulation-flags-tab
+Simulation Flags Tab
+~~~~~~~~~~~~~~~~~~~~
 
 -  *Model Setup File (Optional)* – specifies a new setup XML file to the
        generated simulation code.
@@ -414,8 +414,8 @@ The OMEdit Simulation Dialog can be launched by,
 -  *Additional Simulation Flags (Optional)* – specify any other
        simulation flag.
 
-   1. .. rubric:: Plotting the Simulation Results
-         :name: plotting-the-simulation-results
+Plotting the Simulation Results
+-------------------------------
 
 Successful simulation of model produces the result file which contains
 the instance variables that are candidate for plotting. Variables
@@ -592,8 +592,8 @@ General
 
 -  *Show Latest News –* if true then displays the latest news.
 
-   1. .. rubric:: Libraries
-         :name: libraries
+Libraries
+~~~~~~~~~
 
 -  *System Libraries* – The list of system libraries that should be
        loaded every time OMEdit starts.
@@ -605,8 +605,8 @@ General
 -  *User Libraries* – The list of user libraries/files that should be
        loaded every time OMEdit starts.
 
-   1. .. rubric:: Modelica Text Editor
-         :name: modelica-text-editor
+Modelica Text Editor
+~~~~~~~~~~~~~~~~~~~~
 
 -  General
 
@@ -628,8 +628,8 @@ General
 
 -  *Preview* – Shows the demo of the syntax highlighting.
 
-   1. .. rubric:: Graphical Views
-         :name: graphical-views
+Graphical Views
+~~~~~~~~~~~~~~~
 
 -  Extent
 
@@ -655,8 +655,8 @@ General
 -  *Preserve aspect ratio* – If true then the component’s aspect ratio
    is preserved while scaling.
 
-   1. .. rubric:: Simulation
-         :name: simulation
+Simulation
+~~~~~~~~~~
 
 -  Simulation
 
@@ -678,8 +678,8 @@ General
 -  *Formatted Text –* Shows the simulation output in the form of
    formatted text.
 
-   1. .. rubric:: Messages
-         :name: messages
+Messages
+~~~~~~~~
 
 -  General
 
@@ -702,8 +702,8 @@ General
 
 -  *Error Color* – Sets the text color for error messages.
 
-   1. .. rubric:: Notifications
-         :name: notifications
+Notifications
+~~~~~~~~~~~~~
 
 -  Notifications
 
@@ -725,8 +725,8 @@ General
    message will pop-up when user tries to insert a bitmap from a local
    directory to an unsaved class.
 
-   1. .. rubric:: Line Style
-         :name: line-style
+Line Style
+~~~~~~~~~~
 
 -  Line Style
 
@@ -744,8 +744,8 @@ General
 
 -  *Smooth* – If true then the line is drawn as a Bezier curve.
 
-   1. .. rubric:: Fill Style
-         :name: fill-style
+Fill Style
+~~~~~~~~~~
 
 -  Fill Style
 
@@ -753,8 +753,8 @@ General
 
 -  *Pattern* – Sets the fill pattern.
 
-   1. .. rubric:: Curve Style
-         :name: curve-style
+Curve Style
+~~~~~~~~~~~
 
 -  Curve Style
 
@@ -762,8 +762,8 @@ General
 
 -  *Thickness* – Sets the curve thickness.
 
-   1. .. rubric:: Figaro
-         :name: figaro
+Figaro
+~~~~~~
 
 -  Figaro
 
@@ -775,8 +775,8 @@ General
 
 -  *Figaro Process* – the Figaro process location.
 
-   1. .. rubric:: Debugger
-         :name: debugger
+Debugger
+~~~~~~~~
 
 -  Algorithmic Debugger
 
@@ -804,8 +804,8 @@ General
 -  *Generate operations in the info xml* – if true then adds the
    operations information in the info xml file.
 
-   1. .. rubric:: FMI
-         :name: fmi
+FMI
+~~~
 
 -  Export
 
@@ -813,8 +813,8 @@ General
 
 -  *Version 2.0* – Sets the FMI export version to 2.0
 
-   1. .. rubric:: The Equation-based Debugger
-         :name: the-equation-based-debugger
+The Equation-based Debugger
+---------------------------
 
 This section gives a short description how to get started using the
 equation-based debugger in OMEdit.
@@ -923,8 +923,8 @@ There are four ways to start the debugger,
 -  Open the Algorithmic Debugger window and from menu select
        Debug->Attach to Running Process (see section 2.11.4).
 
-   1. .. rubric:: Debug Configurations
-         :name: debug-configurations
+Debug Configurations
+~~~~~~~~~~~~~~~~~~~~
 
 If you already have a simulation executable with debugging symbols
 outside of OMEdit then you can use the Debug->Debug Configurations
