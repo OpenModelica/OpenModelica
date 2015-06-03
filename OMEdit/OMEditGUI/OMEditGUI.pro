@@ -86,12 +86,12 @@ win32 {
 }
 
 SOURCES += main.cpp \
-  Util/backtrace.c \
   Util/Helper.cpp \
+  Util/Utilities.cpp \
+  Util/StringHandler.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
-  Util/StringHandler.cpp \
   Modeling/MessagesWidget.cpp \
   Modeling/LibraryTreeWidget.cpp \
   Modeling/ModelWidgetContainer.cpp \
@@ -128,9 +128,8 @@ SOURCES += main.cpp \
   Plotting/VariablesWidget.cpp \
   Options/NotificationsDialog.cpp \
   Annotations/ShapePropertiesDialog.cpp \
-  Util/OMDumpXML.cpp \
-  Util/Utilities.cpp \
-  Util/diff_match_patch.cpp \
+  TransformationalDebugger/OMDumpXML.cpp \
+  TransformationalDebugger/diff_match_patch.cpp \
   TransformationalDebugger/TransformationsWidget.cpp \
   Debugger/GDB/CommandFactory.cpp \
   Debugger/GDB/GDBAdapter.cpp \
@@ -143,15 +142,17 @@ SOURCES += main.cpp \
   Debugger/DebuggerMainWindow.cpp \
   Debugger/Attach/AttachToProcessDialog.cpp \
   Debugger/Attach/ProcessListModel.cpp \
+  CrashReport/backtrace.c \
   CrashReport/CrashReportDialog.cpp \
   OMC/Parser/OMCOutputParser.cpp \
   OMC/Parser/OMCOutputLexer.cpp
 
-HEADERS  += Util/backtrace.h \
-  Util/Helper.h \
-  MainWindow.h \
-  OMC/OMCProxy.h \
+HEADERS  += Util/Helper.h \
+  Util/Utilities.h \
   Util/StringHandler.h \
+  MainWindow.h \
+  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
+  OMC/OMCProxy.h \
   Modeling/MessagesWidget.h \
   Modeling/LibraryTreeWidget.h \
   Modeling/ModelWidgetContainer.h \
@@ -190,9 +191,8 @@ HEADERS  += Util/backtrace.h \
   Plotting/VariablesWidget.h \
   Options/NotificationsDialog.h \
   Annotations/ShapePropertiesDialog.h \
-  Util/OMDumpXML.cpp \
-  Util/Utilities.h \
-  Util/diff_match_patch.h \
+  TransformationalDebugger/OMDumpXML.cpp \
+  TransformationalDebugger/diff_match_patch.h \
   TransformationalDebugger/TransformationsWidget.h \
   Debugger/GDB/CommandFactory.h \
   Debugger/GDB/GDBAdapter.h \
@@ -205,10 +205,10 @@ HEADERS  += Util/backtrace.h \
   Debugger/DebuggerMainWindow.h \
   Debugger/Attach/AttachToProcessDialog.h \
   Debugger/Attach/ProcessListModel.h \
+  CrashReport/backtrace.h \
   CrashReport/CrashReportDialog.h \
   OMC/Parser/OMCOutputParser.h \
-  OMC/Parser/OMCOutputLexer.h \
-  $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
+  OMC/Parser/OMCOutputLexer.h
 
 LIBS += -lqjson
 INCLUDEPATH += ../../qjson-0.8.1/build/include
