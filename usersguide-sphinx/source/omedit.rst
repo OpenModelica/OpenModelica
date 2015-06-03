@@ -28,11 +28,11 @@ editing, and simulating models:
 
 -  *Plotting* – Interface to plot variables from simulated models.
 
-   1. .. rubric:: Starting OMEdit
-         :name: starting-omedit
+Starting OMEdit
+---------------
 
-      1. .. rubric:: Microsoft Windows
-            :name: microsoft-windows
+Microsoft Windows
+~~~~~~~~~~~~~~~~~
 
 OMEdit can be launched using the executable placed in
 OpenModelicaInstallationDirectory/bin/OMEdit/OMEdit.exe. Alternately,
@@ -41,13 +41,13 @@ in Windows. A splash screen similar to the one shown in Figure 2 -2 will
 appear indicating that it is starting OMEdit.
 
 Linux
------
+~~~~~
 
 Start OMEdit by either selecting the corresponding menu application item
 or typing “\ **OMEdit**\ ” at the shell or command prompt.
 
 Mac OS X
---------
+~~~~~~~~
 
 ?? fill in
 
