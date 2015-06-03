@@ -16,16 +16,22 @@ Contents:
   plotting
   omnotebook
   fmi
-  profiler
   optimization
   mdt
   mdtdebugger
+  profiler
   modelica3d
   emscripten
   interop_c_python
   ompython
-  test
+  scripting_api
+  faq
   conclusion
+
+.. toctree::
+  :maxdepth: 1
+
+  releases
 
 .. only:: html or epub
   
