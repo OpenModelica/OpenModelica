@@ -59,7 +59,7 @@ IF(MSVC)
 	SET(_compiler_FLAGS ${${_flags_var_name}})
 	SET(_compiler_FLAGS "/EHa /fp:except   /W4  /MP ${_compiler_FLAGS}")
 	#disable optimization
-	STRING(REGEX REPLACE "/O[1-9]*[b,d,g,i,s,t,x]*[1-9]*" "" _compiler_FLAGS ${_compiler_FLAGS} )
+	STRING(REGEX REPLACE "/O[1-9]*[b,d,g,i,s,t,x]*[1-9]* " "" _compiler_FLAGS ${_compiler_FLAGS} )
 	SET(_compiler_FLAGS "/Od ${_compiler_FLAGS}")
 	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_compiler_FLAGS}")
 	#only generate precompiled header in relase mode in debug mode precompiled header can not generated because of different pdb files
