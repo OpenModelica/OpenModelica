@@ -13,11 +13,13 @@ Contents:
 
   introduction
   chapter2
-  bibliography
+  conclusion
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. only:: html epub
+  ##################
+  Indices and tables
+  ##################
+  * :ref:`genindex`
+  .. only:: html
+    * :ref:`search`

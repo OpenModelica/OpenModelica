@@ -52,7 +52,8 @@ clean:
 	rm -rf $(BUILDDIR)/*
 
 html:
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	$(SPHINXBUILD) -b html -D pngmath_dvipng=dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
@@ -190,3 +191,7 @@ pseudoxml:
 	$(SPHINXBUILD) -b pseudoxml $(ALLSPHINXOPTS) $(BUILDDIR)/pseudoxml
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
+pdf: latex
+	sed -i "s/usepackage.utf8..inputenc./usepackage[utf8x]{inputenc}/" build/latex/OpenModelicaUsersGuide.tex
+	sed -i "/DeclareUnicodeCharacter/d" build/latex/OpenModelicaUsersGuide.tex
+	(cd build/latex && latexmk -pdf OpenModelicaUsersGuide.tex)

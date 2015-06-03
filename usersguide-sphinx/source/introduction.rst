@@ -34,13 +34,13 @@ Cite an article :cite:`openmodelica.org:pop:mic:2014`.
 
 Cite the big one :cite:`openmodelica:current`
 
-.. figure:: logo.svg
+.. figure:: logo.*
   :alt: OpenModelica logotype
 
   OpenModelica logotype
 
 Here comes an inline image of the |omlogo| logotype.
 
-.. |omlogo| image:: logo.svg
+.. |omlogo| image:: logo.*
   :alt: OpenModelica logotype
   :width: 20%
