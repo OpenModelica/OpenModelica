@@ -240,4 +240,3 @@ Using the MDT Console for Plotting
 Figure 766. **Activate the MDT Console**
 
 Figure 767. **Simulation from MDT Console**
-

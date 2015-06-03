@@ -19,17 +19,21 @@ Contents:
   profiler
   optimization
   mdt
+  mdtdebugger
+  modelica3d
+  emscripten
+  interop_c_python
+  ompython
   test
   conclusion
 
-.. only:: html epub
+.. only:: html or epub
   
   ##################
   Indices and tables
   ##################
   * :ref:`genindex`
-  .. only:: html
-    * :ref:`search`
+  * :ref:`search`
 
 Copyright by:
 
