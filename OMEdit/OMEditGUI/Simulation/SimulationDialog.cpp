@@ -473,7 +473,7 @@ void SimulationDialog::setUpForm()
   mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpArchivedSimulationsTreeWidget->setColumnCount(4);
   QStringList headers;
-  headers << tr("Class") << tr("DateTime") << tr("Start Time") << tr("Stop Time");
+  headers << tr("Class") << tr("DateTime") << tr("Start Time") << tr("Stop Time") << tr("Status");
   mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
   mpArchivedSimulationsTreeWidget->setIndentation(0);
   connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
@@ -964,9 +964,6 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
     }
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, mpMainWindow);
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-
-    ArchivedSimulationItem *pArchivedSimulationItem = new ArchivedSimulationItem(simulationOptions, pSimulationOutputWidget);
-    mpArchivedSimulationsTreeWidget->addTopLevelItem(pArchivedSimulationItem);
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
     int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
     pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
