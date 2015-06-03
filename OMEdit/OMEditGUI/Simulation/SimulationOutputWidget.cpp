@@ -289,6 +289,9 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   pMainLayout->addWidget(mpCancelButton, 1, 1);
   pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 2);
   setLayout(pMainLayout);
+  // create the ArchivedSimulationItem
+  mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions, this);
+  mpMainWindow->getSimulationDialog()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // create the thread
   mpSimulationProcessThread = new SimulationProcessThread(this);
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationStarted()), SLOT(compilationProcessStarted()));
@@ -426,6 +429,7 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     }
     mpMainWindow->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
   }
+  mpArchivedSimulationItem->setStatus(Helper::finished);
 }
 
 /*!
@@ -444,6 +448,7 @@ void SimulationOutputWidget::simulationProcessStarted()
   if (resultFileInfo.exists()) {
     mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
   }
+  mpArchivedSimulationItem->setStatus(Helper::running);
 }
 
 /*!
@@ -502,6 +507,7 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelButton->setEnabled(false);
   mpMainWindow->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
+  mpArchivedSimulationItem->setStatus(Helper::finished);
 }
 
 /*!
@@ -516,11 +522,13 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
     mpProgressBar->setRange(0, 1);
     mpProgressBar->setValue(1);
     mpCancelButton->setEnabled(false);
+    mpArchivedSimulationItem->setStatus(Helper::finished);
   } else if (mpSimulationProcessThread->isSimulationProcessRunning()) {
     mpSimulationProcessThread->getSimulationProcess()->kill();
     mpProgressLabel->setText(tr("Simulation of <b>%1</b> is cancelled.").arg(mSimulationOptions.getClassName()));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelButton->setEnabled(false);
+    mpArchivedSimulationItem->setStatus(Helper::finished);
   }
 }
 

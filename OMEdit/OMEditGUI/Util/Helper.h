@@ -298,6 +298,8 @@ public:
   static QString simulationOutput;
   static QString cancelSimulation;
   static QString tlmCoSimulation;
+  static QString running;
+  static QString finished;
 };
 
 class GUIMessages : public QObject

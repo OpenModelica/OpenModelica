@@ -296,6 +296,8 @@ QString Helper::unlimited;
 QString Helper::simulationOutput;
 QString Helper::cancelSimulation;
 QString Helper::tlmCoSimulation;
+QString Helper::running;
+QString Helper::finished;
 
 void Helper::initHelperVariables()
 {
@@ -476,6 +478,8 @@ void Helper::initHelperVariables()
   Helper::simulationOutput = tr("Simulation Output");
   Helper::cancelSimulation = tr("Cancel Simulation");
   Helper::tlmCoSimulation = tr("TLM co-simulation");
+  Helper::running = tr("Running");
+  Helper::finished = tr("Finished");
 }
 
 QString GUIMessages::getMessage(int type)

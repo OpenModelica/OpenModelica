@@ -97,6 +97,7 @@ private:
   QTextBrowser *mpSimulationOutputTextBrowser;
   SimulationOutputTree *mpSimulationOutputTree;
   QPlainTextEdit *mpCompilationOutputTextBox;
+  ArchivedSimulationItem *mpArchivedSimulationItem;
   SimulationProcessThread *mpSimulationProcessThread;
   QDateTime mResultFileLastModifiedDateTime;
 public slots:

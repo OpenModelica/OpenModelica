@@ -58,8 +58,13 @@ public:
     setToolTip(2, simulationOptions.getStartTime());
     setText(3, simulationOptions.getStopTime());
     setToolTip(3, simulationOptions.getStopTime());
+    setStatus(Helper::running);
   }
   SimulationOutputWidget* getSimulationOutputWidget() {return mpSimulationOutputWidget;}
+  void setStatus(QString status) {
+    setText(4, status);
+    setToolTip(4, status);
+  }
 private:
   SimulationOutputWidget *mpSimulationOutputWidget;
 };
@@ -71,6 +76,7 @@ class SimulationDialog : public QDialog
 public:
   SimulationDialog(MainWindow *pParent = 0);
   ~SimulationDialog();
+  QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
   void show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate, SimulationOptions simulationOptions);
   void directSimulate(LibraryTreeNode *pLibraryTreeNode, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger);
 private:
