@@ -9,7 +9,7 @@
 // build MODEL_CLASS from MODEL_IDENTIFIER
 #define FMU_PASTER(a, b) a ## b
 #define FMU_CONCAT(a, b) FMU_PASTER(a, b)
-#define MODEL_CLASS FMU_CONCAT(MODEL_IDENTIFIER, Extension)
+#define MODEL_CLASS FMU_CONCAT(MODEL_IDENTIFIER_SHORT, Extension)
 
 class FMUWrapper : public IFMUInterface
 {
