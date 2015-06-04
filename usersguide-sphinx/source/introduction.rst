@@ -182,7 +182,7 @@ OpenModelica notebook UsersGuideExamples.onb in the testmodels
 
 The following commands were run using OpenModelica version:
 
-.. exec-mos::
+.. omc-mos::
 
   getVersion()
 
@@ -197,7 +197,7 @@ We enter an assignment of a vector expression, created by the range
 construction expression 1:12, to be stored in the variable x. The value
 of the expression is returned.
 
-.. exec-mos::
+.. omc-mos::
 
    x := 1:12
 
@@ -215,7 +215,7 @@ Example Session 1
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
 
-.. exec-mos::
+.. omc-mos::
 
   model A Integer t = 1.5; end A; //The type is Integer but 1.5 is of Real Type
   instantiateModel(A)
@@ -346,7 +346,7 @@ Example Session 3
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
 
-.. exec-mos::
+.. omc-mos::
 
   model C Integer a; Real b; equation der(a) = b; der(b) = 12.0; end C;
   instantiateModel(C)
@@ -357,7 +357,7 @@ Trying the Bubblesort Function
 Load the function bubblesort, either by using the pull-down menu
 File->Load Model, or by explicitly giving the command:
 
-.. exec-mos::
+.. omc-mos::
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/bubblesort.mo")
 
@@ -369,13 +369,13 @@ input Integer vector was automatically converted to a Real vector
 according to the Modelica type coercion rules. The function is
 automatically compiled when called if this has not been done before.
 
-.. exec-mos::
+.. omc-mos::
 
   bubblesort(x)
 
 Another call:
 
-.. exec-mos::
+.. omc-mos::
 
   bubblesort({4,6,2,5,8})
 
@@ -388,7 +388,7 @@ example below shows the system utility applied to the UNIX command cat,
 which here outputs the contents of the file bubblesort.mo to the output
 stream when running omc from the command-line.
 
-.. exec-mos::
+.. omc-mos::
 
   system("cat '"+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/bubblesort.mo' > bubblesort.mo")
 
@@ -402,14 +402,14 @@ returned, which is why it is redirected to another file.
 
 A better way to read the content of files would be the readFile command:
 
-.. exec-mos::
+.. omc-mos::
   :parsed:
 
   readFile("bubblesort.mo")
 
 The system command only returns a success code (0 = success).
 
-.. exec-mos::
+.. omc-mos::
 
   system("dir")
   system("Non-existing command")
@@ -417,7 +417,7 @@ The system command only returns a success code (0 = success).
 Another built-in command is cd, the *change current directory* command.
 The resulting current directory is returned as a string.
 
-.. exec-mos::
+.. omc-mos::
 
   dir:=cd()
   cd("source")
@@ -430,19 +430,19 @@ Modelica Library and DCMotor Model
 We load a model, here the whole Modelica standard library, which also
 can be done through the File->Load Modelica Library menu item:
 
-.. exec-mos::
+.. omc-mos::
 
   loadModel(Modelica)
 
 We also load a file containing the dcmotor model:
 
-.. exec-mos::
+.. omc-mos::
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/dcmotor.mo")
 
 It is simulated:
 
-.. exec-mos::
+.. omc-mos::
   :noerror:
 
   simulate(dcmotor, startTime=0.0, stopTime=10.0)
@@ -450,14 +450,14 @@ It is simulated:
 
 We list the source code of the model:
 
-.. exec-mos::
+.. omc-mos::
   :parsed:
 
   list(dcmotor)
 
 We test code instantiation of the model to flat code:
 
-.. exec-mos::
+.. omc-mos::
   :parsed:
 
   instantiateModel(dcmotor)
@@ -484,77 +484,64 @@ We load and simulate the BouncingBall example containing when-equations
 and if-expressions (the Modelica keywords have been bold-faced by hand
 for better readability):
 
->>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/BouncingBall.mo")
-true
->>> list(BouncingBall)
-model BouncingBall
-  parameter Real e=0.7 "coefficient of restitution";
-  parameter Real g=9.81 "gravity acceleration";
-  Real h(start=1) "height of ball";
-  Real v "velocity of ball";
-  Boolean flying(start=true) "true, if ball is flying";
-  Boolean impact;
-  Real v_new;
-equation
-  impact=h <= 0.0;
-  der(v) = if flying then -g else 0;
-  der(h) = v;
-  when {h <= 0.0 and v <= 0.0,impact} then
-    v_new = if edge(impact) then -e*pre(v) else 0;
-    flying = v_new > 0;
-    reinit(v, v_new);
-  end when;
-end BouncingBall;
+.. omc-mos ::
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
+
+.. omc-mos ::
+  :parsed:
+
+  list(BouncingBall)
 
 Instead of just giving a simulate and plot command, we perform a
 runScript command on a .mos (Modelica script) file sim\_BouncingBall.mos
 that contains these commands:
 
-.. code-block :: modelica
+.. omc-mos ::
+  :clear:
 
-  loadFile("BouncingBall.mo");
-  simulate(BouncingBall, stopTime=3.0);
-  plot({h,flying});
+  writeFile("sim_BouncingBall.mos", "loadFile(getInstallationDirectoryPath() + \"/share/doc/omc/testmodels/BouncingBall.mo\"); simulate(BouncingBall, stopTime=3.0); /* plot({h,flying}); */")
+  runScript("sim_BouncingBall.mos")
 
-The runScript command:
 
->>> runScript("sim_BouncingBall.mos")
-"true
-record
-  resultFile = \"BouncingBall_res.plt\"
-end record
-true
-true"
+.. omc-loadstring ::
 
->>> model Switch
-  Real v;
-  Real i;
-  Real i1;
-  Real itot;
-  Boolean open;
-equation
-  itot = i + i1;
-  if open then
-    v = 0;
-  else
-    i = 0;
-  end if;
-  1 - i1 = 0;
-  1 - v - i = 0;
-  open = time >= 0.5;
-end Switch;
->>> simulate(Switch, startTime=0, stopTime=1);
+  model Switch
+    Real v;
+    Real i;
+    Real i1;
+    Real itot;
+    Boolean open;
+  equation
+    itot = i + i1;
+    if open then
+      v = 0;
+    else
+      i = 0;
+    end if;
+    1 - i1 = 0;
+    1 - v - i = 0;
+    open = time >= 0.5;
+  end Switch;
+
+
+.. omc-mos ::
+
+  simulate(Switch, startTime=0, stopTime=1)
 
 Retrieve the value of itot at time=0 using the
 val(variableName, time) function:
 
->>> val(itot,0)
-1
+.. omc-mos ::
+
+  val(itot,0)
 
 Plot itot and open:
 
->>> plot({itot,open})
-true
+.. omc-gnuplot :: switch
+
+  itot
+  open
 
 We note that the variable open switches from false (0) to true (1),
 causing itot to increase from 1.0 to 2.0.
@@ -564,13 +551,15 @@ Clear All Models
 
 Now, first clear all loaded libraries and models:
 
->>> clear()
-true
+.. omc-mos ::
+
+  clear()
 
 List the loaded models – nothing left:
 
->>> list()
-""
+.. omc-mos ::
+
+  list()
 
 VanDerPol Model and Parametric Plot
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -578,31 +567,30 @@ VanDerPol Model and Parametric Plot
 We load another model, the VanDerPol model (or via the menu File->Load
 Model):
 
->>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/VanDerPol.mo"))
-true
+.. omc-mos ::
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/VanDerPol.mo")
 
 It is simulated:
 
->>> simulate(VanDerPol)
-record
-  resultFile = "VanDerPol_res.plt"
-end record
+.. omc-mos ::
+
+  simulate(VanDerPol, stopTime=80)
 
 It is plotted:
 
->>> plotParametric(x,y);
+.. omc-gnuplot :: VanDerPol
+  :parametric:
+
+  x
+  y
 
 Perform code instantiation to flat form of the VanDerPol model:
 
->>> instantiateModel(VanDerPol)
-class VanDerPol
-  Real x(start=1.0);
-  Real y(start=1.0);
-  parameter Real lambda = 0.3;
-equation
-  der(x) = y;
-  der(y) = -x + lambda * (1.0 - x * x) * y;
-end VanDerPol;
+.. omc-mos ::
+  :parsed:
+
+  instantiateModel(VanDerPol)
 
 Using Japanese or Chinese Characters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
