@@ -51,9 +51,8 @@ public:
   TLMCoSimulationOutputWidget(MainWindow *pMainWindow);
   ~TLMCoSimulationOutputWidget();
   TLMCoSimulationOptions getTLMCoSimulationOptions() {return mTLMCoSimulationOptions;}
-  void show(TLMCoSimulationOptions tlmCoSimulationOptions);
+  void showTLMCoSimulationOutputWidget(TLMCoSimulationOptions tlmCoSimulationOptions);
   void clear();
-  void closeEvent(QCloseEvent *event);
 private:
   TLMCoSimulationOptions mTLMCoSimulationOptions;
   MainWindow *mpMainWindow;

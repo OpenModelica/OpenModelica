@@ -585,6 +585,10 @@ void LibraryTreeWidget::createActions()
   mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::exportFigaro, this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
+  // TLM co-simulation action
+  mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
+  mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
+  connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
 }
 
 //! Let the user add the OM Standard Library to library widget.
@@ -1598,6 +1602,8 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
         menu.addAction(mpUnloadTextFileAction);
         break;
       case LibraryTreeNode::TLM:
+        menu.addAction(mpTLMCoSimulationAction);
+        menu.addSeparator();
         menu.addAction(mpUnloadTLMFileAction);
         break;
     }
@@ -1789,6 +1795,18 @@ void LibraryTreeWidget::exportModelFigaro()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     mpMainWindow->exportModelFigaro(pLibraryTreeNode);
+}
+
+void LibraryTreeWidget::TLMSimulate()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty()) {
+    return;
+  }
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode) {
+    mpMainWindow->TLMSimulate(pLibraryTreeNode);
+  }
 }
 
 void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists)

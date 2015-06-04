@@ -61,6 +61,7 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(MainWindow *pMainWindow
   connect(mpStopManagerButton, SIGNAL(clicked()), SLOT(stopManager()));
   // open manager log button
   mpOpenManagerLogFileButton = new QPushButton(tr("Open Manager Log File"));
+  mpOpenManagerLogFileButton->setEnabled(false);
   connect(mpOpenManagerLogFileButton, SIGNAL(clicked()), SLOT(openManagerLogFile()));
   // manager buttons layout
   QHBoxLayout *pManagerButtonsHorizontalLayout = new QHBoxLayout;
@@ -77,6 +78,7 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(MainWindow *pMainWindow
   connect(mpStopMonitorButton, SIGNAL(clicked()), SLOT(stopMonitor()));
   // open monitor log button
   mpOpenMonitorLogFileButton = new QPushButton(tr("Open Monitor Log File"));
+  mpOpenMonitorLogFileButton->setEnabled(false);
   connect(mpOpenMonitorLogFileButton, SIGNAL(clicked()), SLOT(openMonitorLogFile()));
   // monitor buttons layout
   QHBoxLayout *pMonitorButtonsHorizontalLayout = new QHBoxLayout;
@@ -117,7 +119,7 @@ TLMCoSimulationOutputWidget::~TLMCoSimulationOutputWidget()
   clear();
 }
 
-void TLMCoSimulationOutputWidget::show(TLMCoSimulationOptions tlmCoSimulationOptions)
+void TLMCoSimulationOutputWidget::showTLMCoSimulationOutputWidget(TLMCoSimulationOptions tlmCoSimulationOptions)
 {
   mTLMCoSimulationOptions = tlmCoSimulationOptions;
   setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mTLMCoSimulationOptions.getClassName()).arg(Helper::tlmCoSimulation));
@@ -137,12 +139,6 @@ void TLMCoSimulationOutputWidget::clear()
   mpTLMCoSimulationProcessThread->exit();
   mpTLMCoSimulationProcessThread->wait();
   mpMainWindow->getTLMCoSimulationDialog()->setIsTLMCoSimulationRunning(false);
-}
-
-void TLMCoSimulationOutputWidget::closeEvent(QCloseEvent *event)
-{
-  clear();
-  event->accept();
 }
 
 /*!

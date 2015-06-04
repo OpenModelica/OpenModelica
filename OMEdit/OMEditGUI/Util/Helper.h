@@ -297,6 +297,8 @@ public:
   static QString unlimited;
   static QString simulationOutput;
   static QString cancelSimulation;
+  static QString tlmCoSimulationSetup;
+  static QString tlmCoSimulationSetupTip;
   static QString tlmCoSimulation;
   static QString running;
   static QString finished;

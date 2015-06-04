@@ -90,9 +90,6 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   mpMonitorPortLabel = new Label(tr("Monitor Port:"));
   mpMonitorPortLabel->setToolTip(tr("Set the port for monitoring connections"));
   mpMonitorPortTextBox = new QLineEdit("12111");
-  // interface request mode
-  mpInterfaceRequestModeCheckBox = new QCheckBox(tr("Interface Request Mode"));
-  mpInterfaceRequestModeCheckBox->setToolTip(tr("Run manager in interface request mode, get information about interface locations"));
   // tlm manager debug mode
   mpManagerDebugModeCheckBox = new QCheckBox(tr("Debug Mode"));
   // tlm manager layout
@@ -104,8 +101,7 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   pTLMManagerGridLayout->addWidget(mpServerPortTextBox, 1, 1, 1, 2);
   pTLMManagerGridLayout->addWidget(mpMonitorPortLabel, 2, 0);
   pTLMManagerGridLayout->addWidget(mpMonitorPortTextBox, 2, 1, 1, 2);
-  pTLMManagerGridLayout->addWidget(mpInterfaceRequestModeCheckBox, 3, 0, 1, 3);
-  pTLMManagerGridLayout->addWidget(mpManagerDebugModeCheckBox, 4, 0, 1, 3);
+  pTLMManagerGridLayout->addWidget(mpManagerDebugModeCheckBox, 3, 0, 1, 3);
   mpTLMManagerGroupBox->setLayout(pTLMManagerGridLayout);
   // tlm monitor groupBox
   mpTLMMonitorGroupBox = new QGroupBox(tr("TLM Monitor"));
@@ -129,15 +125,21 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   pTLMMonitorGridLayout->addWidget(mpMonitorDebugModeCheckBox, 3, 0, 1, 3);
   mpTLMMonitorGroupBox->setLayout(pTLMMonitorGridLayout);
   // Create the buttons
-  mpSimulateButton = new QPushButton(Helper::simulate);
-  mpSimulateButton->setAutoDefault(true);
-  connect(mpSimulateButton, SIGNAL(clicked()), this, SLOT(simulate()));
+  // show TLM Co-simulation output window button
+  mpShowTLMCoSimulationOutputWindowButton = new QPushButton(tr("Show TLM Co-Simulation Output Window"));
+  mpShowTLMCoSimulationOutputWindowButton->setAutoDefault(false);
+  connect(mpShowTLMCoSimulationOutputWindowButton, SIGNAL(clicked()), this, SLOT(showTLMCoSimulationOutputWindow()));
+  // run TLM co-simulation button.
+  mpRunButton = new QPushButton(Helper::simulate);
+  mpRunButton->setAutoDefault(true);
+  connect(mpRunButton, SIGNAL(clicked()), this, SLOT(runTLMCoSimulation()));
+  // cancel TLM co-simulation dialog button.
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   // adds buttons to the button box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-  mpButtonBox->addButton(mpSimulateButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpRunButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // validators
   QIntValidator *pIntegerValidator = new QIntValidator(this);
@@ -158,7 +160,8 @@ TLMCoSimulationDialog::TLMCoSimulationDialog(MainWindow *pMainWindow)
   pMainLayout->addWidget(mpBrowseTLMPluginPathButton, 2, 2);
   pMainLayout->addWidget(mpTLMManagerGroupBox, 3, 0, 1, 3);
   pMainLayout->addWidget(mpTLMMonitorGroupBox, 4, 0, 1, 3);
-  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpShowTLMCoSimulationOutputWindowButton, 5, 0, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
   // create TLMCoSimulationOutputWidget
   mpTLMCoSimulationOutputWidget = new TLMCoSimulationOutputWidget(mpMainWindow);
@@ -179,8 +182,8 @@ TLMCoSimulationDialog::~TLMCoSimulationDialog()
 void TLMCoSimulationDialog::show(LibraryTreeNode *pLibraryTreeNode)
 {
   mpLibraryTreeNode = pLibraryTreeNode;
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulation).arg(mpLibraryTreeNode->getNameStructure()));
-  mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulation).arg(mpLibraryTreeNode->getNameStructure()));
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName).arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeNode->getNameStructure()));
+  mpHeadingLabel->setText(QString("%1 - %2").arg(Helper::tlmCoSimulationSetup).arg(mpLibraryTreeNode->getNameStructure()));
   // if user has nothing in TLM plugin path then read from OptionsDialog
   if (mpTLMPluginPathTextBox->text().isEmpty()) {
     mpTLMPluginPathTextBox->setText(mpMainWindow->getOptionsDialog()->getTLMPage()->getTLMPluginPathTextBox()->text());
@@ -258,7 +261,6 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   tlmCoSimulationOptions.setManagerProcess(mpManagerProcessTextBox->text());
   tlmCoSimulationOptions.setServerPort(mpServerPortTextBox->text());
   tlmCoSimulationOptions.setMonitorPort(mpMonitorPortTextBox->text());
-  tlmCoSimulationOptions.setInterfaceRequestMode(mpInterfaceRequestModeCheckBox->isChecked());
   tlmCoSimulationOptions.setManagerDebugMode(mpManagerDebugModeCheckBox->isChecked());
   tlmCoSimulationOptions.setMonitorProcess(mpMonitorProcessTextBox->text());
   tlmCoSimulationOptions.setNumberOfSteps(mpNumberOfStepsTextBox->text().toInt());
@@ -300,9 +302,6 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
   if (!mpServerPortTextBox->text().isEmpty()) {
     managerArgs.append("-p");
     managerArgs.append(mpServerPortTextBox->text());
-  }
-  if (mpInterfaceRequestModeCheckBox->isChecked()) {
-    managerArgs.append("-r");
   }
   if (mpMonitorDebugModeCheckBox->isChecked()) {
     monitorArgs.append("-d");
@@ -350,7 +349,7 @@ void TLMCoSimulationDialog::browseTLMPluginPath()
 void TLMCoSimulationDialog::browseManagerProcess()
 {
   mpManagerProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                                      NULL, Helper::exeFileTypes, NULL));
+                                                                  NULL, Helper::exeFileTypes, NULL));
 }
 
 /*!
@@ -360,14 +359,26 @@ void TLMCoSimulationDialog::browseManagerProcess()
 void TLMCoSimulationDialog::browseMonitorProcess()
 {
   mpMonitorProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                                     NULL, Helper::exeFileTypes, NULL));
+                                                                  NULL, Helper::exeFileTypes, NULL));
+}
+
+/*!
+ * \brief TLMCoSimulationDialog::showTLMCoSimulationOutputWindow
+ * Shows the TLM co-simulation output window.
+ */
+void TLMCoSimulationDialog::showTLMCoSimulationOutputWindow()
+{
+  mpTLMCoSimulationOutputWidget->show();
+  mpTLMCoSimulationOutputWidget->raise();
+  mpTLMCoSimulationOutputWidget->activateWindow();
+  mpTLMCoSimulationOutputWidget->setWindowState(mpTLMCoSimulationOutputWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
 }
 
 /*!
  * \brief TLMCoSimulationDialog::simulate
  * Starts the TLM co-simulation
  */
-void TLMCoSimulationDialog::simulate()
+void TLMCoSimulationDialog::runTLMCoSimulation()
 {
   if (isTLMCoSimulationRunning()) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -378,10 +389,8 @@ void TLMCoSimulationDialog::simulate()
     TLMCoSimulationOptions tlmCoSimulationOptions = createTLMCoSimulationOptions();
     if (tlmCoSimulationOptions.isValid()) {
       setIsTLMCoSimulationRunning(true);
-      mpTLMCoSimulationOutputWidget->show(tlmCoSimulationOptions);
-      mpTLMCoSimulationOutputWidget->raise();
-      mpTLMCoSimulationOutputWidget->activateWindow();
-      mpTLMCoSimulationOutputWidget->setWindowState(mpTLMCoSimulationOutputWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
+      mpTLMCoSimulationOutputWidget->showTLMCoSimulationOutputWidget(tlmCoSimulationOptions);
+      showTLMCoSimulationOutputWindow();
       accept();
     }
   }

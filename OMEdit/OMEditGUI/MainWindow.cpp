@@ -908,6 +908,36 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
   pExportFigaroDialog->exec();
 }
 
+/*!
+ * \brief MainWindow::TLMSimulate
+ * \param pLibraryTreeNode
+ * Starts the TLM co-simulation.
+ */
+void MainWindow::TLMSimulate(LibraryTreeNode *pLibraryTreeNode)
+{
+  if (pLibraryTreeNode->isSaved()) {
+    mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+  } else {
+    QMessageBox *pMessageBox = new QMessageBox(this);
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setText(tr("Meta model <b>%1</b> has unsaved changes. Do you want to save?").arg(pLibraryTreeNode->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        if (mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode)) {
+          mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+        }
+        break;
+      case QMessageBox::No:
+      default:
+        break;
+    }
+  }
+}
+
 void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -1897,35 +1927,16 @@ void MainWindow::exportToClipboard()
 
 /*!
   Slot activated when mpTLMSimulateAction triggered signal is raised.\n
-  Starts the TLM simulation.
+  Calls the function that starts the TLM simulation.
   */
 void MainWindow::TLMSimulate()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
+  if (pModelWidget)
+  {
     LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
     if (pLibraryTreeNode) {
-      if (pLibraryTreeNode->isSaved()) {
-        mpTLMCoSimulationDialog->show(pLibraryTreeNode);
-      } else {
-        QMessageBox *pMessageBox = new QMessageBox(this);
-        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-        pMessageBox->setIcon(QMessageBox::Question);
-        pMessageBox->setText(tr("Meta model <b>%1</b> has unsaved changes. Do you want to save?").arg(pLibraryTreeNode->getNameStructure()));
-        pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-        pMessageBox->setDefaultButton(QMessageBox::Yes);
-        int answer = pMessageBox->exec();
-        switch (answer) {
-          case QMessageBox::Yes:
-            if (mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode)) {
-              mpTLMCoSimulationDialog->show(pLibraryTreeNode);
-            }
-            break;
-          case QMessageBox::No:
-          default:
-            break;
-        }
-      }
+      TLMSimulate(pLibraryTreeNode);
     }
   }
 }
@@ -2517,8 +2528,8 @@ void MainWindow::createActions()
   mpExportToClipboardAction->setEnabled(false);
   connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
   // TLM simulate actions
-  mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulation, this);
-  mpTLMCoSimulationAction->setStatusTip(tr("starts the TLM co-simulation"));
+  mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
+  mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
 }

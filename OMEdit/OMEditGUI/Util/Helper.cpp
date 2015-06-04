@@ -295,6 +295,8 @@ QString Helper::version;
 QString Helper::unlimited;
 QString Helper::simulationOutput;
 QString Helper::cancelSimulation;
+QString Helper::tlmCoSimulationSetup;
+QString Helper::tlmCoSimulationSetupTip;
 QString Helper::tlmCoSimulation;
 QString Helper::running;
 QString Helper::finished;
@@ -477,7 +479,9 @@ void Helper::initHelperVariables()
   Helper::unlimited = tr("unlimited");
   Helper::simulationOutput = tr("Simulation Output");
   Helper::cancelSimulation = tr("Cancel Simulation");
-  Helper::tlmCoSimulation = tr("TLM co-simulation");
+  Helper::tlmCoSimulationSetup = tr("TLM Co-Simulation Setup");
+  Helper::tlmCoSimulationSetupTip = tr("Opens the TLM co-simulation setup");
+  Helper::tlmCoSimulation = tr("TLM Co-Simulation");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
 }

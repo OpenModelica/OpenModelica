@@ -157,6 +157,7 @@ public:
   void exportModelFMU(LibraryTreeNode *pLibraryTreeNode);
   void exportModelXML(LibraryTreeNode *pLibraryTreeNode);
   void exportModelFigaro(LibraryTreeNode *pLibraryTreeNode);
+  void TLMSimulate(LibraryTreeNode *pLibraryTreeNode);
   void exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode);
   void createOMNotebookTitleCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
