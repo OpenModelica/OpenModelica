@@ -53,7 +53,8 @@ class ExecMosDirective(directives.CodeBlock):
     'name': rstdirectives.unchanged,
     'noerror': rstdirectives.flag,
     'clear': rstdirectives.flag,
-    'parsed': rstdirectives.flag
+    'parsed': rstdirectives.flag,
+    'combine-lines': rstdirectives.positive_int_list
   }
 
   def run(self):
@@ -62,9 +63,20 @@ class ExecMosDirective(directives.CodeBlock):
       if 'clear' in self.options:
         assert(omc.ask('clear()'))
       res = []
-      for s in self.content:
+      if 'combine-lines' in self.options:
+        old = 0
+        content = []
+        for i in self.options['combine-lines']:
+          assert(i > old)
+          content.append("\n".join([str(s) for s in self.content[old:i]]))
+          old = i
+      else:
+        content = [str(s) for s in self.content]
+      for s in content:
         res.append(">>> %s" % s)
-        if 'parsed' in self.options:
+        if s.strip().endswith(";"):
+          assert("" == omc.ask(str(s), parsed=False).strip())
+        elif 'parsed' in self.options:
           res.append(fixPaths(omc.sendExpression(str(s))))
         else:
           res.append(fixPaths(omc.ask(str(s), parsed=False)))
@@ -77,7 +89,7 @@ class ExecMosDirective(directives.CodeBlock):
       self.arguments.append('modelica')
       return super(ExecMosDirective, self).run()
     except Exception, e:
-      return [nodes.error(None, nodes.paragraph(text = "Unable to execute Modelica code"), nodes.paragraph(text = str(e)))]
+      return [nodes.error(None, nodes.paragraph(text = "Unable to execute Modelica code"), nodes.paragraph(text = str(e) + "\n" + traceback.format_exc()))]
     finally:
       pass # sys.stdout = oldStdout
 
@@ -94,7 +106,7 @@ class OMCLoadStringDirective(Directive):
     for n in self.content:
       vl.append("  " + str(n), "<OMC loadString>")
     node = docutils.nodes.paragraph()
-    omc.sendExpression('\n'.join([str(n) for n in self.content]))
+    omc.ask('\n'.join([str(n) for n in self.content]), parsed=False)
     self.state.nested_parse(vl, 0, node)
     return node.children
 

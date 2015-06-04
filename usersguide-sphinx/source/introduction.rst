@@ -78,15 +78,17 @@ System Overview
 ---------------
 
 The OpenModelica environment consists of several interconnected
-subsystems, as depicted in Figure 1- 1 -1 below.
+subsystems, as depicted in :numref:`systemoverview`.
 
-Figure 111. **The architecture** **of the OpenModelica environment.
-Arrows denote data and control flow. The interactive session handler
-receives commands and shows results from evaluating commands and
-expressions that are translated and executed. Several subsystems provide
-different forms of browsing and textual editing of Modelica code. The
-debugger currently provides debugging of an extended algorithmic subset
-of Modelica**
+.. figure :: media/systemoverview.*
+  :name: systemoverview
+  :width: 100%
+
+  The architecture of the OpenModelica environment.
+  Arrows denote data and control flow.
+  The interactive session handler receives commands and shows results from evaluating commands and expressions that are translated and executed.
+  Several subsystems provide different forms of browsing and textual editing of Modelica code.
+  The debugger currently provides debugging of an extended algorithmic subset of Modelica.
 
 The following subsystems are currently integrated in the OpenModelica
 environment:
@@ -205,9 +207,8 @@ Using the Interactive Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When running OMC in interactive mode (for instance using OMShell) one
-can make use of some of the compiler debug trace flags defined in
-section 2.1.2 in the System Documentation. Here we give a few example
-sessions.
+can make load classes and execute commands.
+Here we give a few example sessions.
 
 Example Session 1
 ^^^^^^^^^^^^^^^^^
@@ -226,129 +227,18 @@ Example Session 2
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
 
->>> setDebugFlags("dump")
-true
+.. omc-loadstring ::
 
----DEBUG(dump)---
+  model C
+    Integer a;
+    Real b;
+  equation
+    der(a) = b;
+    der(b) = 12.0;
+  end C;
 
-IEXP(Absyn.CALL(Absyn.CREF\_IDENT("setDebugFlags", []),
-FUNCTIONARGS(Absyn.STRING("dump"), )))
+.. omc-mos ::
 
----/DEBUG(dump)---
-
-"
-
----DEBUG(dump)---
-
-IEXP(Absyn.CALL(Absyn.CREF\_IDENT("getErrorString", []), FUNCTIONARGS(,
-)))
-
----/DEBUG(dump)—
-
-**>>** model B Integer k = 10; end B;
-
-{B}
-
----DEBUG(dump)---
-
-Absyn.PROGRAM([
-
-Absyn.CLASS("B", false, false, false, Absyn.R\_MODEL,
-Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, \_,
-Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false,
-false, Absyn.VAR, Absyn.BIDIR,
-[]),Integer,[Absyn.COMPONENTITEM(Absyn.COMPONENT("k",[],
-SOME(Absyn.CLASSMOD([], SOME(Absyn.INTEGER(10))))), NONE())]),
-Absyn.INFO("", false, 1, 9, 1, 23)), NONE))])], NONE()), Absyn.INFO("",
-false, 1, 1, 1, 30))
-
-],Absyn.TOP)
-
----/DEBUG(dump)---
-
-"
-
----DEBUG(dump)---
-
-IEXP(Absyn.CALL(Absyn.CREF\_IDENT("getErrorString", []), FUNCTIONARGS(,
-)))
-
----/DEBUG(dump)—
-
-**>>** instantiateModel(B)
-
-"fclass B
-
-Integer k = 10;
-
-end B;
-
-"
-
----DEBUG(dump)---
-
-IEXP(Absyn.CALL(Absyn.CREF\_IDENT("instantiateModel", []),
-FUNCTIONARGS(Absyn.CREF(Absyn.CREF\_IDENT("B", [])), )))
-
----/DEBUG(dump)---
-
-"
-
----DEBUG(dump)---
-
-IEXP(Absyn.CALL(Absyn.CREF\_IDENT("getErrorString", []), FUNCTIONARGS(,
-)))
-
----/DEBUG(dump)—
-
-**>>** simulate(B, startTime=0, stopTime=1, numberOfIntervals=500,
-tolerance=1e-4)
-
-record SimulationResult
-
-resultFile = "B\_res.plt"
-
-end SimulationResult;
-
----DEBUG(dump)---
-
-#ifdef \_\_cplusplus
-
-extern "C" {
-
-#endif
-
-#ifdef \_\_cplusplus
-
-}
-
-#endif
-
-IEXP(Absyn.CALL(Absyn.CREF\_IDENT("simulate", []),
-FUNCTIONARGS(Absyn.CREF(Absyn.CREF\_IDENT("B", [])), startTime =
-Absyn.INTEGER(0), stopTime = Absyn.INTEGER(1), numberOfIntervals =
-Absyn.INTEGER(500), tolerance = Absyn.REAL(0.0001))))
-
----/DEBUG(dump)---
-
-"
-
----DEBUG(dump)---
-
-IEXP(Absyn.CALL(Absyn.CREF\_IDENT("getErrorString", []), FUNCTIONARGS(,
-)))
-
----/DEBUG(dump)--
-
-Example Session 3
-^^^^^^^^^^^^^^^^^
-
-To get help on using OMShell and OpenModelica, type "help()" and press
-enter.
-
-.. omc-mos::
-
-  model C Integer a; Real b; equation der(a) = b; der(b) = 12.0; end C;
   instantiateModel(C)
 
 Trying the Bubblesort Function
@@ -608,121 +498,151 @@ A simple summing integer loop (using multi-line input without evaluation
 at each line into OMShell requires copy-paste as one operation from
 another document):
 
->>> k := 0;
->>> for i in 1:1000 loop k := k + i; end for;
->>> k
-500500
+.. omc-mos ::
+  :combine-lines: 1,4,5
 
-A nested loop summing reals and integers::
-
->>> g := 0.0;
->>> h := 5;
->>> for i in {23.0,77.12,88.23} loop
-  for j in i:0.5:(i+1) loop
-    g := g + j;
-    g := g + h / 2;
+  k := 0;
+  for i in 1:1000 loop
+    k := k + i;
   end for;
-  h := h + g;
-end for;
+  k
+
+A nested loop summing reals and integers:
+
+.. omc-mos ::
+  :combine-lines: 1,2,9
+
+  g := 0.0;
+  h := 5;
+  for i in {23.0,77.12,88.23} loop
+    for j in i:0.5:(i+1) loop
+      g := g + j;
+      g := g + h / 2;
+    end for;
+    h := h + g;
+  end for;
 
 By putting two (or more) variables or assignment statements separated by
 semicolon(s), ending with a variable, one can observe more than one
 variable value:
 
->>> h;g
-1997.45
-1479.09
+.. omc-mos ::
+
+  h; g
 
 A for-loop with vector traversal and concatenation of string elements:
 
->>> i:="";
->>> lst := {"Here ", "are ","some ","strings."};
->>> s := "";
->>> for i in lst loop
-  s := s + i;
-end for;
->>> s
-"Here are some strings."
+.. omc-mos ::
+  :combine-lines: 1,2,3,6,7
+
+  i:="";
+  lst := {"Here ", "are ","some ","strings."};
+  s := "";
+  for i in lst loop
+    s := s + i;
+  end for;
+  s
 
 Normal while-loop with concatenation of 10 "abc " strings:
 
->>> s:="";
->>> i:=1;
->>> while i<=10 loop
-  s:="abc "+s;
-  i:=i+1;
-end while;
->>> s
-"abc abc abc abc abc abc abc abc abc abc "
+.. omc-mos ::
+  :combine-lines: 1,2,6,7
+
+  s:="";
+  i:=1;
+  while i<=10 loop
+    s:="abc "+s;
+    i:=i+1;
+  end while;
+  s
 
 A simple if-statement. By putting the variable last, after the
 semicolon, its value is returned after evaluation:
 
->>> if 5>2 then a := 77; end if; a
-77
+.. omc-mos ::
+
+  if 5>2 then a := 77; end if; a
 
 An if-then-else statement with elseif:
 
->>> if false then
-  a := 5;
-elseif a > 50 then
-  b:= "test"; a:= 100;
-else
-  a:=34;
-end if;
+.. omc-mos ::
+  :combine-lines: 7
+
+  if false then
+    a := 5;
+  elseif a > 50 then
+    b:= "test"; a:= 100;
+  else
+    a:=34;
+  end if;
 
 Take a look at the variables a and b:
 
->>> a;b
-100
-"test"
+.. omc-mos ::
+
+  a;b
 
 Variables, Functions, and Types of Variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Assign a vector to a variable:
 
->>> a:=1:5
-{1,2,3,4,5}
+.. omc-mos ::
+
+  a:=1:5
 
 Type in a function:
 
->>> function MySqr input Real x; output Real y; algorithm y:=x*x; end MySqr;
-Ok
+.. omc-loadstring ::
+
+  function mySqr
+    input Real x;
+    output Real y;
+  algorithm
+    y:=x*x;
+  end MySqr;
 
 Call the function:
->>> b:=MySqr(2)
-4.0
+
+.. omc-mos ::
+
+  b:=mySqr(2)
 
 Look at the value of variable a:
 
->>> a
-{1,2,3,4,5}
+.. omc-mos ::
+
+  a
 
 Look at the type of a:
 
->>> typeOf(a)
-"Integer[]"
+.. omc-mos ::
+
+  typeOf(a)
 
 Retrieve the type of b:
 
->>> typeOf(b)
-"Real"
+.. omc-mos ::
 
-What is the type of MySqr? Cannot currently be handled.
+  typeOf(b)
 
->>> typeOf(MySqr)
-Error evaluating expr.
+What is the type of mySqr? Cannot currently be handled.
+
+.. omc-mos ::
+
+  typeOf(mySqr)
 
 List the available variables:
 
->>> listVariables()
-{currentSimulationResult, a, b}
+.. omc-mos ::
+
+  listVariables()
 
 Clear again:
 
->>> clear()
-true
+.. omc-mos ::
+
+  clear()
 
 Getting Information about Error Cause
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -730,7 +650,9 @@ Getting Information about Error Cause
 Call the function getErrorString() in order to get more information
 about the error cause after a simulation failure:
 
->>> getErrorString()
+.. omc-mos ::
+
+  getErrorString()
 
 Alternative Simulation Output Formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -762,18 +684,18 @@ expression).
 
 // Default, match everything
 
->>> simulate(... , variableFilter=".\*")
+>>> simulate(... , variableFilter=".*")
 
 // match indices of variable myVar that only contain the numbers using
 combinations
 
 // of the letters 1 through 3
 
->>> simulate(... , variableFilter="myVar\\\\[[1-3]\*\\\\]")
+>>> simulate(... , variableFilter="myVar\\\[[1-3]*\\\]")
 
 // match x or y or z
 
->>> simulate(... , variableFilter="x\|y\|z")
+>>> simulate(... , variableFilter="x|y|z")
 
 Using External Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -794,7 +716,7 @@ experimental version without load balancing. The following command, not
 yet available from the OpenModelica GUI, will run a parallel simulation
 on a model:
 
-omc +d=openmp model.mo
+>>> omc +d=openmp model.mo
 
 Loading Specific Library Version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -815,12 +737,32 @@ top-level class after it has been loaded. Given the following package,
 Complex 1.0 and ModelicaServices 1.1 will also be loaded into the AST
 automatically.
 
-.. code-block :: modelica
+.. omc-loadstring ::
 
   package Modelica
     annotation(uses(Complex(version="1.0"),
     ModelicaServices(version="1.1")))
   end Modelica;
+
+Packages will also be loaded if a model has a uses-annotation:
+
+.. omc-loadstring ::
+
+  model M
+    annotation(uses(Modelica(version="3.2.1")));
+  end M;
+
+.. omc-mos ::
+
+  instantiateModel(M)
+
+Packages will also be loaded by looking at the first identifier in the path:
+
+.. omc-mos ::
+  :parsed:
+
+  clear();
+  instantiateModel(Modelica.Electrical.Analog.Basic.Ground)
 
 Calling the Model Query and Manipulation API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -843,62 +785,28 @@ model. The full documentation on this API is available in the system
 documentation. First we load and list the model again to show its
 structure:
 
->>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/BouncingBall.mo")
-true
->>> list(BouncingBall)
-model BouncingBall
-  parameter Real e=0.7 "coefficient of restitution";
-  parameter Real g=9.81 "gravity acceleration";
-  Real h(start=1) "height of ball";
-  Real v "velocity of ball";
-  Boolean flying(start=true) "true, if ball is flying";
-  Boolean impact;
-  Real v_new;
-equation
-  impact=h <= 0.0;
-  der(v)=if flying then -g else 0;
-  der(h)=v;
-  when {h <= 0.0 and v <= 0.0,impact} then
-    v_new = if edge(impact) then -e*pre(v) else 0;
-    flying=v_new > 0;
-    reinit(v, v_new);
-  end when;
-end BouncingBall;
+.. omc-mos ::
+  :clear:
+  :parsed:
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo");
+  list(BouncingBall)
 
 Different kinds of calls with returned results:
 
->>> getClassRestriction(BouncingBall)
-"model"
+.. omc-mos ::
 
->>> getClassInformation(BouncingBall)
-{"model","","",{false,false,false},{"writable",1,1,18,17}}
-
->>> isFunction(BouncingBall)
-false
-
->>> existClass(BouncingBall)
-true
-
->>> getComponents(BouncingBall)
-{{Real,e,"coefficient of restitution", "public", false, false, false, "parameter", "none", "unspecified"}, {Real,g,"gravity acceleration", "public", false, false, false, "parameter", "none", "unspecified"}, {Real,h,"height of ball", "public", false, false, false, "unspecified", "none", "unspecified"}, {Real,v,"velocity of ball", "public", false, false, false, "unspecified", "none", "unspecified"}, {Boolean,flying,"true, if ball is flying", "public", false, false, false, "unspecified", "none", "unspecified"}, {Boolean,impact,"", "public", false, false, false, "unspecified", "none", "unspecified"}, {Real,v_new,"", "public", false, false, false, "unspecified", "none", "unspecified"}}
-
->>> getConnectionCount(BouncingBall)
-0
-
->>> getInheritanceCount(BouncingBall)
-0
-
->>> getComponentModifierValue(BouncingBall,e)
-0.7
-
->>> getComponentModifierNames(BouncingBall,e)
-{}
-
->>> getClassRestriction(BouncingBall)
-"model"
-
->>> getVersion() // Version of the currently running OMC
-"1.9.2"
+  getClassRestriction(BouncingBall)
+  getClassInformation(BouncingBall)
+  isFunction(BouncingBall)
+  existClass(BouncingBall)
+  getComponents(BouncingBall)
+  getConnectionCount(BouncingBall)
+  getInheritanceCount(BouncingBall)
+  getComponentModifierValue(BouncingBall,e)
+  getComponentModifierNames(BouncingBall,e)
+  getClassRestriction(BouncingBall)
+  getVersion() // Version of the currently running OMC
 
 Quit OpenModelica
 ~~~~~~~~~~~~~~~~~
@@ -938,26 +846,13 @@ exportDAEtoMatlab(\ *modelname*);
 This command dumps the mathematical representation of a model using a
 Matlab representation. Example:
 
-.. code-block :: modelica
+.. omc-mos ::
 
-  // daequery.mos
-  loadFile("BouncingBall.mo");
-  exportDAEtoMatlab(BouncingBall);
-  readFile("BouncingBall_imatrix.m");
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
+  exportDAEtoMatlab(BouncingBall)
 
->>> omc daequery.mos
-true
-"The equation system was dumped to Matlab file:BouncingBall_imatrix.m"
-
-.. code-block :: matlab
-
-  % Incidence Matrix
-  % ====================================
-  % number of rows: 6
-  IM={[3,-6],[1,{'if', 'true','==' {3},{},}],[2,{'if', 'edge(impact)' {3},{5},}],[4,2],[5,{'if', 'true','==' {4},{},}],[6,-5]};
-  VL = {'foo','v\_new','impact','flying','v','h'};
-  EqStr = {'impact = h <= 0.0;','foo = if impact then 1 else 2;','when {h <= 0.0 AND v <= 0.0,impact} then v_new = if edge(impact) then (-e) * pre(v) else 0.0; end when;','when {h <= 0.0 AND v <= 0.0,impact} then flying = v\_new > 0.0; end when;','der(v) = if flying then -g else 0.0;','der(h) = v;'};
-  OldEqStr={'fclass BouncingBall','parameter Real e = 0.7 "coefficient of restitution";','parameter Real g = 9.81 "gravity acceleration";','Real h(start = 1.0) "height of ball";','Real v "velocity of ball";','Boolean flying(start = true) "true, if ball is flying";','Boolean impact;','Real v_new;','Integer foo;','equation',' impact = h <= 0.0;',' foo = if impact then 1 else 2;',' der(v) = if flying then -g else 0.0;',' der(h) = v;',' when {h <= 0.0 AND v <= 0.0,impact} then',' v_new = if edge(impact) then (-e) * pre(v) else 0.0;',' flying = v_new > 0.0;',' reinit(v,v_new);',' end when;','end BouncingBall;',''};"
+.. literalinclude :: ../tmp/BouncingBall_imatrix.m
+  :language: matlab
 
 Summary of Commands for the Interactive Session Handler
 -------------------------------------------------------
