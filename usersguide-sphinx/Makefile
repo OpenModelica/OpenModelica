@@ -51,8 +51,9 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
-html:
-	$(SPHINXBUILD) -b html -D pngmath_dvipng=dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
+html: dvisvgm.sh
+	test -f dvisvgm.sh
+	$(SPHINXBUILD) -b html -D pngmath_dvipng="`pwd`"/dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

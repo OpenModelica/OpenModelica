@@ -1,0 +1,5 @@
+/build
+source/*.pyc
+source/logo.pdf
+/tmp
+source/dcmotor.*

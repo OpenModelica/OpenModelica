@@ -392,7 +392,7 @@ stream when running omc from the command-line.
 
   system("cat '"+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/bubblesort.mo' > bubblesort.mo")
 
-.. literalinclude :: ../bubblesort.mo
+.. literalinclude :: ../tmp/bubblesort.mo
   :language: modelica
 
 Note: The output emitted into stdout by system commands is put into
@@ -464,8 +464,10 @@ We test code instantiation of the model to flat code:
 
 We plot part of the simulated result:
 
->>> plot({load.w,load.phi})
-true
+.. omc-gnuplot :: dcmotor
+
+  load.w
+  load.phi
 
 The val() function
 ~~~~~~~~~~~~~~~~~~
