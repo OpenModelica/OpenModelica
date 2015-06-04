@@ -1,6 +1,8 @@
 Introduction
 ============
 
+.. highlight:: modelica
+
 The |omlogo| system described in this document has both short-term
 and long-term goals:
 
@@ -77,8 +79,6 @@ System Overview
 
 The OpenModelica environment consists of several interconnected
 subsystems, as depicted in Figure 1- 1 -1 below.
-
--
 
 Figure 111. **The architecture** **of the OpenModelica environment.
 Arrows denote data and control flow. The interactive session handler
@@ -191,8 +191,7 @@ We enter an assignment of a vector expression, created by the range
 construction expression 1:12, to be stored in the variable x. The value
 of the expression is returned.
 
->> x := 1:12
-
+>>> x := 1:12
 {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 
 Using the Interactive Mode
@@ -212,18 +211,11 @@ Copyright (c) OSMC 2002-2015
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
 
-**>>** model A Integer t = 1.5; end A; //The type is Integer but 1.5 is
-of Real Type
-
+>>> model A Integer t = 1.5; end A; //The type is Integer but 1.5 is of Real Type
 {A}
 
-**>>** instantiateModel(A)
-
-"
-
-Error: Type mismatch in modifier, expected type Integer, got modifier
-=1.5 of type Real
-
+>>> instantiateModel(A)
+Error: Type mismatch in modifier, expected type Integer, got modifier =1.5 of type Real
 Error: Error occured while flattening model A
 
 **Example Session 2**
@@ -235,8 +227,7 @@ Copyright (c) OSMC 2002-2014
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
 
-**>>** setDebugFlags("dump")
-
+>>> setDebugFlags("dump")
 true
 
 ---DEBUG(dump)---
@@ -388,9 +379,7 @@ Trying the Bubblesort Function
 Load the function bubblesort, either by using the pull-down menu
 File->Load Model, or by explicitly giving the command:
 
->>
-loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/bubblesort.mo")
-
+>>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/bubblesort.mo")
 true
 
 The function bubblesort is called below to sort the vector x in
@@ -401,14 +390,12 @@ input Integer vector was automatically converted to a Real vector
 according to the Modelica type coercion rules. The function is
 automatically compiled when called if this has not been done before.
 
->> bubblesort(x)
-
+>>> bubblesort(x)
 {12.0,11.0,10.0,9.0,8.0,7.0,6.0,5.0,4.0,3.0,2.0,1.0}
 
 Another call:
 
->> bubblesort({4,6,2,5,8})
-
+>>> bubblesort({4,6,2,5,8})
 {8.0,6.0,5.0,4.0,2.0}
 
 It is also possible to give operating system commands via the system
@@ -418,43 +405,25 @@ which here outputs the contents of the file bubblesort.mo to the output
 stream. However, the cat command does not boldface Modelica keywords –
 this improvement has been done by hand for readability.
 
->> cd("C:/OpenModelica1.9.2/share/doc/omc/testmodels/")
-
->> system("cat bubblesort.mo")
-
-**function** bubblesort
-
-**input** Real[:] x;
-
-**output** Real[size(x,1)] y;
-
-**protected**
-
-Real t;
-
-**algorithm**
-
-y := x;
-
-**for** i **in** 1:size(x,1) **loop**
-
-**for** j **in** 1:size(x,1) **loop**
-
-**if** y[i] > y[j] **then**
-
-t := y[i];
-
-y[i] := y[j];
-
-y[j] := t;
-
-**end** **if**;
-
-**end** **for**;
-
-**end** **for**;
-
-**end** bubblesort;
+>>> cd("C:/OpenModelica1.9.2/share/doc/omc/testmodels/")
+>>> system("cat bubblesort.mo")
+function bubblesort
+  input Real[:] x;
+  output Real[size(x,1)] y;
+protected
+  Real t;
+algorithm
+  y := x;
+  for i in 1:size(x,1) loop
+    for j in 1:size(x,1) loop
+      if y[i] > y[j] then
+        t := y[i];
+        y[i] := y[j];
+        y[j] := t;
+      end if;
+    end for;
+  end for;
+end bubblesort;
 
 Trying the system and cd Commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -465,28 +434,23 @@ windows. Thus the text emitted by the above cat command would not be
 returned. Only a success code (0 = success, 1 = failure) is returned to
 the winmosh window. For example:
 
->> system("dir")
-
+>>> system("dir")
 0
 
->> system("Non-existing command")
-
+>>> system("Non-existing command")
 1
 
 Another built-in command is cd, the *change current directory* command.
 The resulting current directory is returned as a string.
 
 >> cd()
+"C:/OpenModelica1.9.2/share/doc/omc/testmodels/"
 
-" C:/OpenModelica1.9.2/share/doc/omc/testmodels/"
+>>> cd("..")
+"C:/OpenModelica1.9.2/share/doc/omc/"
 
->> cd("..")
-
-" C:/OpenModelica1.9.2/share/doc/omc/"
-
->> cd("C:/OpenModelica1.9.2/share/doc/omc/testmodels/")
-
-" C:/OpenModelica1.9.2/share/doc/omc/testmodels/"
+>>> cd("C:/OpenModelica1.9.2/share/doc/omc/testmodels/")
+"C:/OpenModelica1.9.2/share/doc/omc/testmodels/"
 
 Modelica Library and DCMotor Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -494,233 +458,128 @@ Modelica Library and DCMotor Model
 We load a model, here the whole Modelica standard library, which also
 can be done through the File->Load Modelica Library menu item:
 
->> loadModel(Modelica)
-
+>>> loadModel(Modelica)
 true
 
 We also load a file containing the dcmotor model:
 
->> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/dcmotor.mo")
-
+>>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/dcmotor.mo")
 true
 
 It is simulated:
 
->> simulate(dcmotor,startTime=0.0,stopTime=10.0)
-
+>>> simulate(dcmotor,startTime=0.0,stopTime=10.0)
 record
-
-resultFile = "dcmotor\_res.plt"
-
+  resultFile = "dcmotor_res.plt"
 end record
 
 We list the source code of the model:
 
->> list(dcmotor)
-
-"model dcmotor
-
-Modelica.Electrical.Analog.Basic.Resistor r1(R=10);
-
-Modelica.Electrical.Analog.Basic.Inductor i1;
-
-Modelica.Electrical.Analog.Basic.EMF emf1;
-
-Modelica.Mechanics.Rotational.Inertia load;
-
-Modelica.Electrical.Analog.Basic.Ground g;
-
-Modelica.Electrical.Analog.Sources.ConstantVoltage v;
-
+>>> list(dcmotor)
+model dcmotor
+  Modelica.Electrical.Analog.Basic.Resistor r1(R=10);
+  Modelica.Electrical.Analog.Basic.Inductor i1;
+  Modelica.Electrical.Analog.Basic.EMF emf1;
+  Modelica.Mechanics.Rotational.Inertia load;
+  Modelica.Electrical.Analog.Basic.Ground g;
+  Modelica.Electrical.Analog.Sources.ConstantVoltage v;
 equation
-
-connect(v.p,r1.p);
-
-connect(v.n,g.p);
-
-connect(r1.n,i1.p);
-
-connect(i1.n,emf1.p);
-
-connect(emf1.n,g.p);
-
-connect(emf1.flange\_b,load.flange\_a);
-
+  connect(v.p,r1.p);
+  connect(v.n,g.p);
+  connect(r1.n,i1.p);
+  connect(i1.n,emf1.p);
+  connect(emf1.n,g.p);
+  connect(emf1.flange_b,load.flange_a);
 end dcmotor;
-
-"
 
 We test code instantiation of the model to flat code:
 
->> instantiateModel(dcmotor)
-
-"fclass dcmotor
-
-Real r1.v "Voltage drop between the two pins (= p.v - n.v)";
-
-Real r1.i "Current flowing from pin p to pin n";
-
-Real r1.p.v "Potential at the pin";
-
-Real r1.p.i "Current flowing into the pin";
-
-Real r1.n.v "Potential at the pin";
-
-Real r1.n.i "Current flowing into the pin";
-
-parameter Real r1.R = 10 "Resistance";
-
-Real i1.v "Voltage drop between the two pins (= p.v - n.v)";
-
-Real i1.i "Current flowing from pin p to pin n";
-
-Real i1.p.v "Potential at the pin";
-
-Real i1.p.i "Current flowing into the pin";
-
-Real i1.n.v "Potential at the pin";
-
-Real i1.n.i "Current flowing into the pin";
-
-parameter Real i1.L = 1 "Inductance";
-
-parameter Real emf1.k = 1 "Transformation coefficient";
-
-Real emf1.v "Voltage drop between the two pins";
-
-Real emf1.i "Current flowing from positive to negative pin";
-
-Real emf1.w "Angular velocity of flange\_b";
-
-Real emf1.p.v "Potential at the pin";
-
-Real emf1.p.i "Current flowing into the pin";
-
-Real emf1.n.v "Potential at the pin";
-
-Real emf1.n.i "Current flowing into the pin";
-
-Real emf1.flange\_b.phi "Absolute rotation angle of flange";
-
-Real emf1.flange\_b.tau "Cut torque in the flange";
-
-Real load.phi "Absolute rotation angle of component (= flange\_a.phi =
-flange\_b.phi)";
-
-Real load.flange\_a.phi "Absolute rotation angle of flange";
-
-Real load.flange\_a.tau "Cut torque in the flange";
-
-Real load.flange\_b.phi "Absolute rotation angle of flange";
-
-Real load.flange\_b.tau "Cut torque in the flange";
-
-parameter Real load.J = 1 "Moment of inertia";
-
-Real load.w "Absolute angular velocity of component";
-
-Real load.a "Absolute angular acceleration of component";
-
-Real g.p.v "Potential at the pin";
-
-Real g.p.i "Current flowing into the pin";
-
-Real v.v "Voltage drop between the two pins (= p.v - n.v)";
-
-Real v.i "Current flowing from pin p to pin n";
-
-Real v.p.v "Potential at the pin";
-
-Real v.p.i "Current flowing into the pin";
-
-Real v.n.v "Potential at the pin";
-
-Real v.n.i "Current flowing into the pin";
-
-parameter Real v.V = 1 "Value of constant voltage";
-
+>>> instantiateModel(dcmotor)
+class dcmotor
+  Real r1.v "Voltage drop between the two pins (= p.v - n.v)";
+  Real r1.i "Current flowing from pin p to pin n";
+  Real r1.p.v "Potential at the pin";
+  Real r1.p.i "Current flowing into the pin";
+  Real r1.n.v "Potential at the pin";
+  Real r1.n.i "Current flowing into the pin";
+  parameter Real r1.R = 10 "Resistance";
+  Real i1.v "Voltage drop between the two pins (= p.v - n.v)";
+  Real i1.i "Current flowing from pin p to pin n";
+  Real i1.p.v "Potential at the pin";
+  Real i1.p.i "Current flowing into the pin";
+  Real i1.n.v "Potential at the pin";
+  Real i1.n.i "Current flowing into the pin";
+  parameter Real i1.L = 1 "Inductance";
+  parameter Real emf1.k = 1 "Transformation coefficient";
+  Real emf1.v "Voltage drop between the two pins";
+  Real emf1.i "Current flowing from positive to negative pin";
+  Real emf1.w "Angular velocity of flange_b";
+  Real emf1.p.v "Potential at the pin";
+  Real emf1.p.i "Current flowing into the pin";
+  Real emf1.n.v "Potential at the pin";
+  Real emf1.n.i "Current flowing into the pin";
+  Real emf1.flange_b.phi "Absolute rotation angle of flange";
+  Real emf1.flange_b.tau "Cut torque in the flange";
+  Real load.phi "Absolute rotation angle of component (= flange_a.phi =
+  flange_b.phi)";
+  Real load.flange_a.phi "Absolute rotation angle of flange";
+  Real load.flange_a.tau "Cut torque in the flange";
+  Real load.flange_b.phi "Absolute rotation angle of flange";
+  Real load.flange_b.tau "Cut torque in the flange";
+  parameter Real load.J = 1 "Moment of inertia";
+  Real load.w "Absolute angular velocity of component";
+  Real load.a "Absolute angular acceleration of component";
+  Real g.p.v "Potential at the pin";
+  Real g.p.i "Current flowing into the pin";
+  Real v.v "Voltage drop between the two pins (= p.v - n.v)";
+  Real v.i "Current flowing from pin p to pin n";
+  Real v.p.v "Potential at the pin";
+  Real v.p.i "Current flowing into the pin";
+  Real v.n.v "Potential at the pin";
+  Real v.n.i "Current flowing into the pin";
+  parameter Real v.V = 1 "Value of constant voltage";
 equation
-
-r1.R \* r1.i = r1.v;
-
-r1.v = r1.p.v - r1.n.v;
-
-0.0 = r1.p.i + r1.n.i;
-
-r1.i = r1.p.i;
-
-i1.L \* der(i1.i) = i1.v;
-
-i1.v = i1.p.v - i1.n.v;
-
-0.0 = i1.p.i + i1.n.i;
-
-i1.i = i1.p.i;
-
-emf1.v = emf1.p.v - emf1.n.v;
-
-0.0 = emf1.p.i + emf1.n.i;
-
-emf1.i = emf1.p.i;
-
-emf1.w = der(emf1.flange\_b.phi);
-
-emf1.k \* emf1.w = emf1.v;
-
-emf1.flange\_b.tau = -(emf1.k \* emf1.i);
-
-load.w = der(load.phi);
-
-load.a = der(load.w);
-
-load.J \* load.a = load.flange\_a.tau + load.flange\_b.tau;
-
-load.flange\_a.phi = load.phi;
-
-load.flange\_b.phi = load.phi;
-
-g.p.v = 0.0;
-
-v.v = v.V;
-
-v.v = v.p.v - v.n.v;
-
-0.0 = v.p.i + v.n.i;
-
-v.i = v.p.i;
-
-emf1.flange\_b.tau + load.flange\_a.tau = 0.0;
-
-emf1.flange\_b.phi = load.flange\_a.phi;
-
-emf1.n.i + v.n.i + g.p.i = 0.0;
-
-emf1.n.v = v.n.v;
-
-v.n.v = g.p.v;
-
-i1.n.i + emf1.p.i = 0.0;
-
-i1.n.v = emf1.p.v;
-
-r1.n.i + i1.p.i = 0.0;
-
-r1.n.v = i1.p.v;
-
-v.p.i + r1.p.i = 0.0;
-
-v.p.v = r1.p.v;
-
-load.flange\_b.tau = 0.0;
-
+  r1.R * r1.i = r1.v;
+  r1.v = r1.p.v - r1.n.v;
+  0.0 = r1.p.i + r1.n.i;
+  r1.i = r1.p.i;
+  i1.L * der(i1.i) = i1.v;
+  i1.v = i1.p.v - i1.n.v;
+  0.0 = i1.p.i + i1.n.i;
+  i1.i = i1.p.i;
+  emf1.v = emf1.p.v - emf1.n.v;
+  0.0 = emf1.p.i + emf1.n.i;
+  emf1.i = emf1.p.i;
+  emf1.w = der(emf1.flange_b.phi);
+  emf1.k * emf1.w = emf1.v;
+  emf1.flange_b.tau = -(emf1.k * emf1.i);
+  load.w = der(load.phi);
+  load.a = der(load.w);
+  load.J * load.a = load.flange_a.tau + load.flange_b.tau;
+  load.flange_a.phi = load.phi;
+  load.flange_b.phi = load.phi;
+  g.p.v = 0.0;
+  v.v = v.V;
+  v.v = v.p.v - v.n.v;
+  0.0 = v.p.i + v.n.i;
+  v.i = v.p.i;
+  emf1.flange_b.tau + load.flange_a.tau = 0.0;
+  emf1.flange_b.phi = load.flange_a.phi;
+  emf1.n.i + v.n.i + g.p.i = 0.0;
+  emf1.n.v = v.n.v;
+  v.n.v = g.p.v;
+  i1.n.i + emf1.p.i = 0.0;
+  i1.n.v = emf1.p.v;
+  r1.n.i + i1.p.i = 0.0;
+  r1.n.v = i1.p.v;
+  v.p.i + r1.p.i = 0.0;
+  v.p.v = r1.p.v;
+  load.flange_b.tau = 0.0;
 end dcmotor;
-
-"
 
 We plot part of the simulated result:
 
->> plot({load.w,load.phi})
-
+>>> plot({load.w,load.phi})
 true
 
 The val() function
@@ -738,109 +597,76 @@ We load and simulate the BouncingBall example containing when-equations
 and if-expressions (the Modelica keywords have been bold-faced by hand
 for better readability):
 
->>
-loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/BouncingBall.mo")
-
+>>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/BouncingBall.mo")
 true
-
->> list(BouncingBall)
-
-.. code-block :: modelica
-
-  model BouncingBall
-    parameter Real e=0.7 "coefficient of restitution";
-    parameter Real g=9.81 "gravity acceleration";
-    Real h(start=1) "height of ball";
-    Real v "velocity of ball";
-    Boolean flying(start=true) "true, if ball is flying";
-    Boolean impact;
-    Real v_new;
-  equation
-    impact=h <= 0.0;
-    der(v) = if flying then -g else 0;
-    der(h) = v;
-    when {h <= 0.0 and v <= 0.0,impact} then
-      v_new = if edge(impact) then -e*pre(v) else 0;
-      flying = v_new > 0;
-      reinit(v, v_new);
-    end when;
-  end BouncingBall;
+>>> list(BouncingBall)
+model BouncingBall
+  parameter Real e=0.7 "coefficient of restitution";
+  parameter Real g=9.81 "gravity acceleration";
+  Real h(start=1) "height of ball";
+  Real v "velocity of ball";
+  Boolean flying(start=true) "true, if ball is flying";
+  Boolean impact;
+  Real v_new;
+equation
+  impact=h <= 0.0;
+  der(v) = if flying then -g else 0;
+  der(h) = v;
+  when {h <= 0.0 and v <= 0.0,impact} then
+    v_new = if edge(impact) then -e*pre(v) else 0;
+    flying = v_new > 0;
+    reinit(v, v_new);
+  end when;
+end BouncingBall;
 
 Instead of just giving a simulate and plot command, we perform a
 runScript command on a .mos (Modelica script) file sim\_BouncingBall.mos
 that contains these commands:
 
-loadFile("BouncingBall.mo");
+.. code-block :: modelica
 
-simulate(BouncingBall, stopTime=3.0);
-
-plot({h,flying});
+  loadFile("BouncingBall.mo");
+  simulate(BouncingBall, stopTime=3.0);
+  plot({h,flying});
 
 The runScript command:
 
->> runScript("sim\_BouncingBall.mos")
-
+>>> runScript("sim_BouncingBall.mos")
 "true
-
 record
-
-resultFile = "BouncingBall\_res.plt"
-
+  resultFile = \"BouncingBall_res.plt\"
 end record
-
 true
-
 true"
 
->> **model** Switch
-
-Real v;
-
-Real i;
-
-Real i1;
-
-Real itot;
-
-Boolean open;
-
-**equation**
-
-itot = i + i1;
-
-**if** open **then**
-
-v = 0;
-
-**else**
-
-i = 0;
-
-**end** **if**;
-
-1 - i1 = 0;
-
-1 - v - i = 0;
-
-open = time >= 0.5;
-
-**end** Switch;
-
-Ok
-
->> simulate(Switch, startTime=0, stopTime=1);
+>>> model Switch
+  Real v;
+  Real i;
+  Real i1;
+  Real itot;
+  Boolean open;
+equation
+  itot = i + i1;
+  if open then
+    v = 0;
+  else
+    i = 0;
+  end if;
+  1 - i1 = 0;
+  1 - v - i = 0;
+  open = time >= 0.5;
+end Switch;
+>>> simulate(Switch, startTime=0, stopTime=1);
 
 Retrieve the value of itot at time=0 using the
-val(\ *variableName*,\ *time*) function:
+val(variableName, time) function:
 
->> val(itot,0)
-
+>>> val(itot,0)
 1
 
 Plot itot and open:
 
->> plot({itot,open})
-
+>>> plot({itot,open})
 true
 
 We note that the variable open switches from false (0) to true (1),
@@ -851,14 +677,12 @@ Clear All Models
 
 Now, first clear all loaded libraries and models:
 
->> clear()
-
+>>> clear()
 true
 
 List the loaded models – nothing left:
 
->> list()
-
+>>> list()
 ""
 
 VanDerPol Model and Parametric Plot
@@ -867,46 +691,31 @@ VanDerPol Model and Parametric Plot
 We load another model, the VanDerPol model (or via the menu File->Load
 Model):
 
->>
-loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/VanDerPol.mo"))
-
+>>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/VanDerPol.mo"))
 true
 
 It is simulated:
 
->> simulate(VanDerPol)
-
+>>> simulate(VanDerPol)
 record
-
-resultFile = "VanDerPol\_res.plt"
-
+  resultFile = "VanDerPol_res.plt"
 end record
 
 It is plotted:
 
-plotParametric(x,y);
+>>> plotParametric(x,y);
 
 Perform code instantiation to flat form of the VanDerPol model:
 
->> instantiateModel(VanDerPol)
-
-"fclass VanDerPol
-
-Real x(start=1.0);
-
-Real y(start=1.0);
-
-parameter Real lambda = 0.3;
-
+>>> instantiateModel(VanDerPol)
+class VanDerPol
+  Real x(start=1.0);
+  Real y(start=1.0);
+  parameter Real lambda = 0.3;
 equation
-
-der(x) = y;
-
-der(y) = -x + lambda \* (1.0 - x \* x) \* y;
-
+  der(x) = y;
+  der(y) = -x + lambda * (1.0 - x * x) * y;
 end VanDerPol;
-
-"
 
 Using Japanese or Chinese Characters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -924,113 +733,73 @@ A simple summing integer loop (using multi-line input without evaluation
 at each line into OMShell requires copy-paste as one operation from
 another document):
 
->> k := 0;
-
-**for** i **in** 1:1000 **loop**
-
-k := k + i;
-
-**end** **for**;
-
->> k
-
+>>> k := 0;
+>>> for i in 1:1000 loop k := k + i; end for;
+>>> k
 500500
 
 A nested loop summing reals and integers::
 
->> g := 0.0;
-
-h := 5;
-
-**for** i **in** {23.0,77.12,88.23} **loop**
-
-**for** j **in** i:0.5:(i+1) **loop**
-
-g := g + j;
-
-g := g + h / 2;
-
-**end** **for**;
-
-h := h + g;
-
-**end** **for**;
+>>> g := 0.0;
+>>> h := 5;
+>>> for i in {23.0,77.12,88.23} loop
+  for j in i:0.5:(i+1) loop
+    g := g + j;
+    g := g + h / 2;
+  end for;
+  h := h + g;
+end for;
 
 By putting two (or more) variables or assignment statements separated by
 semicolon(s), ending with a variable, one can observe more than one
 variable value:
 
->> h;g
-
+>>> h;g
 1997.45
-
 1479.09
 
 A for-loop with vector traversal and concatenation of string elements:
 
->> i:="";
-
-lst := {"Here ", "are ","some ","strings."};
-
-s := "";
-
-**for** i **in** lst **loop**
-
-s := s + i;
-
-**end** **for**;
-
->> s
-
+>>> i:="";
+>>> lst := {"Here ", "are ","some ","strings."};
+>>> s := "";
+>>> for i in lst loop
+  s := s + i;
+end for;
+>>> s
 "Here are some strings."
 
 Normal while-loop with concatenation of 10 "abc " strings:
 
->> s:="";
-
-i:=1;
-
-**while** i<=10 **loop**
-
-s:="abc "+s;
-
-i:=i+1;
-
-**end** **while**;
-
->> s
-
+>>> s:="";
+>>> i:=1;
+>>> while i<=10 loop
+  s:="abc "+s;
+  i:=i+1;
+end while;
+>>> s
 "abc abc abc abc abc abc abc abc abc abc "
 
 A simple if-statement. By putting the variable last, after the
 semicolon, its value is returned after evaluation:
 
->> **if** 5>2 **then** a := 77; **end** **if**; a
-
+>>> if 5>2 then a := 77; end if; a
 77
 
 An if-then-else statement with elseif:
 
->> **if** false **then**
-
-a := 5;
-
-**elseif** a > 50 **then**
-
-b:= "test"; a:= 100;
-
-**else**
-
-a:=34;
-
-**end** **if**;
+>>> if false then
+  a := 5;
+elseif a > 50 then
+  b:= "test"; a:= 100;
+else
+  a:=34;
+end if;
 
 Take a look at the variables a and b:
 
->> a;b
-
+>>> a;b
 100
-
 "test"
 
 Variables, Functions, and Types of Variables
@@ -1038,57 +807,46 @@ Variables, Functions, and Types of Variables
 
 Assign a vector to a variable:
 
->> a:=1:5
-
+>>> a:=1:5
 {1,2,3,4,5}
 
 Type in a function:
 
->> function MySqr input Real x; output Real y; algorithm y:=x\*x; end
-MySqr;
-
+>>> function MySqr input Real x; output Real y; algorithm y:=x*x; end MySqr;
 Ok
 
 Call the function:
-
->> b:=MySqr(2)
-
+>>> b:=MySqr(2)
 4.0
 
 Look at the value of variable a:
 
->> a
-
+>>> a
 {1,2,3,4,5}
 
 Look at the type of a:
 
->> typeOf(a)
-
+>>> typeOf(a)
 "Integer[]"
 
 Retrieve the type of b:
 
->> typeOf(b)
-
+>>> typeOf(b)
 "Real"
 
 What is the type of MySqr? Cannot currently be handled.
 
->> typeOf(MySqr)
-
+>>> typeOf(MySqr)
 Error evaluating expr.
 
 List the available variables:
 
->> listVariables()
-
+>>> listVariables()
 {currentSimulationResult, a, b}
 
 Clear again:
 
->> clear()
-
+>>> clear()
 true
 
 Getting Information about Error Cause
@@ -1097,7 +855,7 @@ Getting Information about Error Cause
 Call the function getErrorString() in order to get more information
 about the error cause after a simulation failure:
 
->> getErrorString()
+>>> getErrorString()
 
 Alternative Simulation Output Formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1116,35 +874,31 @@ scripts or tools like gnuplot to generate plots or process data. The mat
 format can be post-processed in `MATLAB <http://www.mathworks.com/products/matlab>`_
 or `Octave <http://www.gnu.org/software/octave/>`_.
 
-simulate(... , outputFormat="mat")
-
-simulate(... , outputFormat="csv")
-
-simulate(... , outputFormat="plt")
-
-simulate(... , outputFormat="empty")
+>>> simulate(... , outputFormat="mat")
+>>> simulate(... , outputFormat="csv")
+>>> simulate(... , outputFormat="plt")
+>>> simulate(... , outputFormat="empty")
 
 It is also possible to specify which variables should be present in the
-result-file. This is done by using `POSIX Extended Regular
-Expressions <<http://en.wikipedia.org/wiki/Regular_expression>>`_.
+result-file. This is done by using `POSIX Extended Regular Expressions <http://en.wikipedia.org/wiki/Regular_expression>`_.
 The given expression must match the full variable name
 (^ and $ symbols are automatically added to the given regular
 expression).
 
 // Default, match everything
 
-simulate(... , variableFilter=".\*")
+>>> simulate(... , variableFilter=".\*")
 
 // match indices of variable myVar that only contain the numbers using
 combinations
 
 // of the letters 1 through 3
 
-simulate(... , variableFilter="myVar\\\\[[1-3]\*\\\\]")
+>>> simulate(... , variableFilter="myVar\\\\[[1-3]\*\\\\]")
 
 // match x or y or z
 
-simulate(... , variableFilter="x\|y\|z")
+>>> simulate(... , variableFilter="x\|y\|z")
 
 Using External Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1186,12 +940,12 @@ top-level class after it has been loaded. Given the following package,
 Complex 1.0 and ModelicaServices 1.1 will also be loaded into the AST
 automatically.
 
-package Modelica
+.. code-block :: modelica
 
-annotation(uses(Complex(version="1.0"),
-ModelicaServices(version="1.1")))
-
-end Modelica;
+  package Modelica
+    annotation(uses(Complex(version="1.0"),
+    ModelicaServices(version="1.1")))
+  end Modelica;
 
 Calling the Model Query and Manipulation API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1214,120 +968,61 @@ model. The full documentation on this API is available in the system
 documentation. First we load and list the model again to show its
 structure:
 
->>loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/BouncingBall.mo")
-
+>>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/BouncingBall.mo")
 true
-
->>list(BouncingBall)
-
-"model BouncingBall
-
-parameter Real e=0.7 "coefficient of restitution";
-
-parameter Real g=9.81 "gravity acceleration";
-
-Real h(start=1) "height of ball";
-
-Real v "velocity of ball";
-
-Boolean flying(start=true) "true, if ball is flying";
-
-Boolean impact;
-
-Real v\_new;
-
+>>> list(BouncingBall)
+model BouncingBall
+  parameter Real e=0.7 "coefficient of restitution";
+  parameter Real g=9.81 "gravity acceleration";
+  Real h(start=1) "height of ball";
+  Real v "velocity of ball";
+  Boolean flying(start=true) "true, if ball is flying";
+  Boolean impact;
+  Real v_new;
 equation
-
-impact=h <= 0.0;
-
-der(v)=if flying then -g else 0;
-
-der(h)=v;
-
-when {h <= 0.0 and v <= 0.0,impact} then
-
-v\_new=if edge(impact) then -e\*pre(v) else 0;
-
-flying=v\_new > 0;
-
-reinit(v, v\_new);
-
-end when;
-
+  impact=h <= 0.0;
+  der(v)=if flying then -g else 0;
+  der(h)=v;
+  when {h <= 0.0 and v <= 0.0,impact} then
+    v_new = if edge(impact) then -e*pre(v) else 0;
+    flying=v_new > 0;
+    reinit(v, v_new);
+  end when;
 end BouncingBall;
-
-"
 
 Different kinds of calls with returned results:
 
->>getClassRestriction(BouncingBall)
-
+>>> getClassRestriction(BouncingBall)
 "model"
 
->>getClassInformation(BouncingBall)
-
+>>> getClassInformation(BouncingBall)
 {"model","","",{false,false,false},{"writable",1,1,18,17}}
 
->>isFunction(BouncingBall)
-
+>>> isFunction(BouncingBall)
 false
 
->>existClass(BouncingBall)
-
+>>> existClass(BouncingBall)
 true
 
->>getComponents(BouncingBall)
+>>> getComponents(BouncingBall)
+{{Real,e,"coefficient of restitution", "public", false, false, false, "parameter", "none", "unspecified"}, {Real,g,"gravity acceleration", "public", false, false, false, "parameter", "none", "unspecified"}, {Real,h,"height of ball", "public", false, false, false, "unspecified", "none", "unspecified"}, {Real,v,"velocity of ball", "public", false, false, false, "unspecified", "none", "unspecified"}, {Boolean,flying,"true, if ball is flying", "public", false, false, false, "unspecified", "none", "unspecified"}, {Boolean,impact,"", "public", false, false, false, "unspecified", "none", "unspecified"}, {Real,v_new,"", "public", false, false, false, "unspecified", "none", "unspecified"}}
 
-{{Real,e,"coefficient of restitution", "public", false, false, false,
-
-"parameter", "none", "unspecified"},
-
-{Real,g,"gravity acceleration",
-
-"public", false, false, false, "parameter", "none", "unspecified"},
-
-{Real,h,"height of ball", "public", false, false, false,
-
-"unspecified", "none", "unspecified"},
-
-{Real,v,"velocity of ball",
-
-"public", false, false, false, "unspecified", "none", "unspecified"},
-
-{Boolean,flying,"true, if ball is flying", "public", false, false,
-
-false, "unspecified", "none", "unspecified"},
-
-{Boolean,impact,"",
-
-"public", false, false, false, "unspecified", "none", "unspecified"},
-
-{Real,v\_new,"", "public", false, false, false, "unspecified", "none",
-
-"unspecified"}}
-
->>getConnectionCount(BouncingBall)
-
+>>> getConnectionCount(BouncingBall)
 0
 
->>getInheritanceCount(BouncingBall)
-
+>>> getInheritanceCount(BouncingBall)
 0
 
->>getComponentModifierValue(BouncingBall,e)
-
+>>> getComponentModifierValue(BouncingBall,e)
 0.7
 
->>getComponentModifierNames(BouncingBall,e)
-
+>>> getComponentModifierNames(BouncingBall,e)
 {}
 
->>getClassRestriction(BouncingBall)
-
+>>> getClassRestriction(BouncingBall)
 "model"
 
->>getVersion() // Version of the currently running OMC
-
+>>> getVersion() // Version of the currently running OMC
 "1.9.2"
 
 Quit OpenModelica
@@ -1335,7 +1030,7 @@ Quit OpenModelica
 
 Leave and quit OpenModelica:
 
->> quit()
+>>> quit()
 
 Dump XML Representation
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -1368,48 +1063,26 @@ exportDAEtoMatlab(\ *modelname*);
 This command dumps the mathematical representation of a model using a
 Matlab representation. Example:
 
-$ cat daequery.mos
+.. code-block :: modelica
 
-loadFile("BouncingBall.mo");
+  // daequery.mos
+  loadFile("BouncingBall.mo");
+  exportDAEtoMatlab(BouncingBall);
+  readFile("BouncingBall_imatrix.m");
 
-exportDAEtoMatlab(BouncingBall);
-
-readFile("BouncingBall\_imatrix.m");
-
-$ omc daequery.mos
-
+>>> omc daequery.mos
 true
+"The equation system was dumped to Matlab file:BouncingBall_imatrix.m"
 
-"The equation system was dumped to Matlab file:BouncingBall\_imatrix.m"
+.. code-block :: matlab
 
-"
-
-% Incidence Matrix
-
-% ====================================
-
-% number of rows: 6
-
-IM={[3,-6],[1,{'if', 'true','==' {3},{},}],[2,{'if', 'edge(impact)'
-{3},{5},}],[4,2],[5,{'if', 'true','==' {4},{},}],[6,-5]};
-
-VL = {'foo','v\_new','impact','flying','v','h'};
-
-EqStr = {'impact = h <= 0.0;','foo = if impact then 1 else 2;','when {h
-<= 0.0 AND v <= 0.0,impact} then v\_new = if edge(impact) then (-e) \*
-pre(v) else 0.0; end when;','when {h <= 0.0 AND v <= 0.0,impact} then
-flying = v\_new > 0.0; end when;','der(v) = if flying then -g else
-0.0;','der(h) = v;'};
-
-OldEqStr={'fclass BouncingBall','parameter Real e = 0.7 "coefficient of
-restitution";','parameter Real g = 9.81 "gravity acceleration";','Real
-h(start = 1.0) "height of ball";','Real v "velocity of ball";','Boolean
-flying(start = true) "true, if ball is flying";','Boolean impact;','Real
-v\_new;','Integer foo;','equation',' impact = h <= 0.0;',' foo = if
-impact then 1 else 2;',' der(v) = if flying then -g else 0.0;',' der(h)
-= v;',' when {h <= 0.0 AND v <= 0.0,impact} then',' v\_new = if
-edge(impact) then (-e) \* pre(v) else 0.0;',' flying = v\_new > 0.0;','
-reinit(v,v\_new);',' end when;','end BouncingBall;',''};"
+  % Incidence Matrix
+  % ====================================
+  % number of rows: 6
+  IM={[3,-6],[1,{'if', 'true','==' {3},{},}],[2,{'if', 'edge(impact)' {3},{5},}],[4,2],[5,{'if', 'true','==' {4},{},}],[6,-5]};
+  VL = {'foo','v\_new','impact','flying','v','h'};
+  EqStr = {'impact = h <= 0.0;','foo = if impact then 1 else 2;','when {h <= 0.0 AND v <= 0.0,impact} then v_new = if edge(impact) then (-e) * pre(v) else 0.0; end when;','when {h <= 0.0 AND v <= 0.0,impact} then flying = v\_new > 0.0; end when;','der(v) = if flying then -g else 0.0;','der(h) = v;'};
+  OldEqStr={'fclass BouncingBall','parameter Real e = 0.7 "coefficient of restitution";','parameter Real g = 9.81 "gravity acceleration";','Real h(start = 1.0) "height of ball";','Real v "velocity of ball";','Boolean flying(start = true) "true, if ball is flying";','Boolean impact;','Real v_new;','Integer foo;','equation',' impact = h <= 0.0;',' foo = if impact then 1 else 2;',' der(v) = if flying then -g else 0.0;',' der(h) = v;',' when {h <= 0.0 AND v <= 0.0,impact} then',' v_new = if edge(impact) then (-e) * pre(v) else 0.0;',' flying = v_new > 0.0;',' reinit(v,v_new);',' end when;','end BouncingBall;',''};"
 
 Summary of Commands for the Interactive Session Handler
 -------------------------------------------------------
