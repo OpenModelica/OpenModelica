@@ -180,6 +180,12 @@ OpenModelica notebook UsersGuideExamples.onb in the testmodels
 (C:/OpenModelica/share/doc/omc/testmodels/) directory, see also Chapter
 4.
 
+The following commands were run using OpenModelica version:
+
+.. exec-mos::
+
+  getVersion()
+
 Starting the Interactive Session
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -191,8 +197,9 @@ We enter an assignment of a vector expression, created by the range
 construction expression 1:12, to be stored in the variable x. The value
 of the expression is returned.
 
->>> x := 1:12
-{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+.. exec-mos::
+
+   x := 1:12
 
 Using the Interactive Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,27 +209,19 @@ can make use of some of the compiler debug trace flags defined in
 section 2.1.2 in the System Documentation. Here we give a few example
 sessions.
 
-**Example Session 1**
-
-OpenModelica 1.9.2
-
-Copyright (c) OSMC 2002-2015
+Example Session 1
+^^^^^^^^^^^^^^^^^
 
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
 
->>> model A Integer t = 1.5; end A; //The type is Integer but 1.5 is of Real Type
-{A}
+.. exec-mos::
 
->>> instantiateModel(A)
-Error: Type mismatch in modifier, expected type Integer, got modifier =1.5 of type Real
-Error: Error occured while flattening model A
+  model A Integer t = 1.5; end A; //The type is Integer but 1.5 is of Real Type
+  instantiateModel(A)
 
-**Example Session 2**
-
-OpenModelica 1.9.2
-
-Copyright (c) OSMC 2002-2014
+Example Session 2
+^^^^^^^^^^^^^^^^^
 
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
@@ -341,37 +340,16 @@ IEXP(Absyn.CALL(Absyn.CREF\_IDENT("getErrorString", []), FUNCTIONARGS(,
 
 ---/DEBUG(dump)--
 
-**Example Session 3**
-
-OpenModelica 1.9.2
-
-Copyright (c) OSMC 2002-2014
+Example Session 3
+^^^^^^^^^^^^^^^^^
 
 To get help on using OMShell and OpenModelica, type "help()" and press
 enter.
 
-**>>** model C Integer a; Real b; equation der(a) = b; der(b) = 12.0;
-end C;
+.. exec-mos::
 
-{C}
-
-**>>** instantiateModel(C)
-
-"
-
-Error: Illegal derivative. der(a) where a is of type Integer, which is
-not a subtype of Real
-
-Error: Wrong type or wrong number of arguments to der(a)'.
-
-Error: Error occured while flattening model C
-
-Error: Illegal derivative. der(a) where a is of type Integer, which is
-not a subtype of Real
-
-Error: Wrong type or wrong number of arguments to der(a)'.
-
-Error: Error occured while flattening model C
+  model C Integer a; Real b; equation der(a) = b; der(b) = 12.0; end C;
+  instantiateModel(C)
 
 Trying the Bubblesort Function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,8 +357,9 @@ Trying the Bubblesort Function
 Load the function bubblesort, either by using the pull-down menu
 File->Load Model, or by explicitly giving the command:
 
->>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/bubblesort.mo")
-true
+.. exec-mos::
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/bubblesort.mo")
 
 The function bubblesort is called below to sort the vector x in
 descending order. The sorted result is returned together with its type.
@@ -390,67 +369,60 @@ input Integer vector was automatically converted to a Real vector
 according to the Modelica type coercion rules. The function is
 automatically compiled when called if this has not been done before.
 
->>> bubblesort(x)
-{12.0,11.0,10.0,9.0,8.0,7.0,6.0,5.0,4.0,3.0,2.0,1.0}
+.. exec-mos::
+
+  bubblesort(x)
 
 Another call:
 
->>> bubblesort({4,6,2,5,8})
-{8.0,6.0,5.0,4.0,2.0}
+.. exec-mos::
+
+  bubblesort({4,6,2,5,8})
+
+Trying the system and cd Commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 It is also possible to give operating system commands via the system
 utility function. A command is provided as a string argument. The
 example below shows the system utility applied to the UNIX command cat,
 which here outputs the contents of the file bubblesort.mo to the output
-stream. However, the cat command does not boldface Modelica keywords –
-this improvement has been done by hand for readability.
+stream when running omc from the command-line.
 
->>> cd("C:/OpenModelica1.9.2/share/doc/omc/testmodels/")
->>> system("cat bubblesort.mo")
-function bubblesort
-  input Real[:] x;
-  output Real[size(x,1)] y;
-protected
-  Real t;
-algorithm
-  y := x;
-  for i in 1:size(x,1) loop
-    for j in 1:size(x,1) loop
-      if y[i] > y[j] then
-        t := y[i];
-        y[i] := y[j];
-        y[j] := t;
-      end if;
-    end for;
-  end for;
-end bubblesort;
+.. exec-mos::
 
-Trying the system and cd Commands
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  system("cat '"+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/bubblesort.mo' > bubblesort.mo")
 
-Note: Under Windows the output emitted into stdout by system commands is
-put into the winmosh console windows, not into the winmosh interaction
+.. literalinclude :: ../bubblesort.mo
+  :language: modelica
+
+Note: The output emitted into stdout by system commands is put into
+log-files when running the CORBA-based clients, not into the visible GUI
 windows. Thus the text emitted by the above cat command would not be
-returned. Only a success code (0 = success, 1 = failure) is returned to
-the winmosh window. For example:
+returned, which is why it is redirected to another file.
 
->>> system("dir")
-0
+A better way to read the content of files would be the readFile command:
 
->>> system("Non-existing command")
-1
+.. exec-mos::
+  :parsed:
+
+  readFile("bubblesort.mo")
+
+The system command only returns a success code (0 = success).
+
+.. exec-mos::
+
+  system("dir")
+  system("Non-existing command")
 
 Another built-in command is cd, the *change current directory* command.
 The resulting current directory is returned as a string.
 
->> cd()
-"C:/OpenModelica1.9.2/share/doc/omc/testmodels/"
+.. exec-mos::
 
->>> cd("..")
-"C:/OpenModelica1.9.2/share/doc/omc/"
-
->>> cd("C:/OpenModelica1.9.2/share/doc/omc/testmodels/")
-"C:/OpenModelica1.9.2/share/doc/omc/testmodels/"
+  dir:=cd()
+  cd("source")
+  cd(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/")
+  cd(dir)
 
 Modelica Library and DCMotor Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -458,124 +430,37 @@ Modelica Library and DCMotor Model
 We load a model, here the whole Modelica standard library, which also
 can be done through the File->Load Modelica Library menu item:
 
->>> loadModel(Modelica)
-true
+.. exec-mos::
+
+  loadModel(Modelica)
 
 We also load a file containing the dcmotor model:
 
->>> loadFile("C:/OpenModelica1.9.2/share/doc/omc/testmodels/dcmotor.mo")
-true
+.. exec-mos::
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/dcmotor.mo")
 
 It is simulated:
 
->>> simulate(dcmotor,startTime=0.0,stopTime=10.0)
-record
-  resultFile = "dcmotor_res.plt"
-end record
+.. exec-mos::
+  :noerror:
+
+  simulate(dcmotor, startTime=0.0, stopTime=10.0)
+  getErrorString()
 
 We list the source code of the model:
 
->>> list(dcmotor)
-model dcmotor
-  Modelica.Electrical.Analog.Basic.Resistor r1(R=10);
-  Modelica.Electrical.Analog.Basic.Inductor i1;
-  Modelica.Electrical.Analog.Basic.EMF emf1;
-  Modelica.Mechanics.Rotational.Inertia load;
-  Modelica.Electrical.Analog.Basic.Ground g;
-  Modelica.Electrical.Analog.Sources.ConstantVoltage v;
-equation
-  connect(v.p,r1.p);
-  connect(v.n,g.p);
-  connect(r1.n,i1.p);
-  connect(i1.n,emf1.p);
-  connect(emf1.n,g.p);
-  connect(emf1.flange_b,load.flange_a);
-end dcmotor;
+.. exec-mos::
+  :parsed:
+
+  list(dcmotor)
 
 We test code instantiation of the model to flat code:
 
->>> instantiateModel(dcmotor)
-class dcmotor
-  Real r1.v "Voltage drop between the two pins (= p.v - n.v)";
-  Real r1.i "Current flowing from pin p to pin n";
-  Real r1.p.v "Potential at the pin";
-  Real r1.p.i "Current flowing into the pin";
-  Real r1.n.v "Potential at the pin";
-  Real r1.n.i "Current flowing into the pin";
-  parameter Real r1.R = 10 "Resistance";
-  Real i1.v "Voltage drop between the two pins (= p.v - n.v)";
-  Real i1.i "Current flowing from pin p to pin n";
-  Real i1.p.v "Potential at the pin";
-  Real i1.p.i "Current flowing into the pin";
-  Real i1.n.v "Potential at the pin";
-  Real i1.n.i "Current flowing into the pin";
-  parameter Real i1.L = 1 "Inductance";
-  parameter Real emf1.k = 1 "Transformation coefficient";
-  Real emf1.v "Voltage drop between the two pins";
-  Real emf1.i "Current flowing from positive to negative pin";
-  Real emf1.w "Angular velocity of flange_b";
-  Real emf1.p.v "Potential at the pin";
-  Real emf1.p.i "Current flowing into the pin";
-  Real emf1.n.v "Potential at the pin";
-  Real emf1.n.i "Current flowing into the pin";
-  Real emf1.flange_b.phi "Absolute rotation angle of flange";
-  Real emf1.flange_b.tau "Cut torque in the flange";
-  Real load.phi "Absolute rotation angle of component (= flange_a.phi =
-  flange_b.phi)";
-  Real load.flange_a.phi "Absolute rotation angle of flange";
-  Real load.flange_a.tau "Cut torque in the flange";
-  Real load.flange_b.phi "Absolute rotation angle of flange";
-  Real load.flange_b.tau "Cut torque in the flange";
-  parameter Real load.J = 1 "Moment of inertia";
-  Real load.w "Absolute angular velocity of component";
-  Real load.a "Absolute angular acceleration of component";
-  Real g.p.v "Potential at the pin";
-  Real g.p.i "Current flowing into the pin";
-  Real v.v "Voltage drop between the two pins (= p.v - n.v)";
-  Real v.i "Current flowing from pin p to pin n";
-  Real v.p.v "Potential at the pin";
-  Real v.p.i "Current flowing into the pin";
-  Real v.n.v "Potential at the pin";
-  Real v.n.i "Current flowing into the pin";
-  parameter Real v.V = 1 "Value of constant voltage";
-equation
-  r1.R * r1.i = r1.v;
-  r1.v = r1.p.v - r1.n.v;
-  0.0 = r1.p.i + r1.n.i;
-  r1.i = r1.p.i;
-  i1.L * der(i1.i) = i1.v;
-  i1.v = i1.p.v - i1.n.v;
-  0.0 = i1.p.i + i1.n.i;
-  i1.i = i1.p.i;
-  emf1.v = emf1.p.v - emf1.n.v;
-  0.0 = emf1.p.i + emf1.n.i;
-  emf1.i = emf1.p.i;
-  emf1.w = der(emf1.flange_b.phi);
-  emf1.k * emf1.w = emf1.v;
-  emf1.flange_b.tau = -(emf1.k * emf1.i);
-  load.w = der(load.phi);
-  load.a = der(load.w);
-  load.J * load.a = load.flange_a.tau + load.flange_b.tau;
-  load.flange_a.phi = load.phi;
-  load.flange_b.phi = load.phi;
-  g.p.v = 0.0;
-  v.v = v.V;
-  v.v = v.p.v - v.n.v;
-  0.0 = v.p.i + v.n.i;
-  v.i = v.p.i;
-  emf1.flange_b.tau + load.flange_a.tau = 0.0;
-  emf1.flange_b.phi = load.flange_a.phi;
-  emf1.n.i + v.n.i + g.p.i = 0.0;
-  emf1.n.v = v.n.v;
-  v.n.v = g.p.v;
-  i1.n.i + emf1.p.i = 0.0;
-  i1.n.v = emf1.p.v;
-  r1.n.i + i1.p.i = 0.0;
-  r1.n.v = i1.p.v;
-  v.p.i + r1.p.i = 0.0;
-  v.p.v = r1.p.v;
-  load.flange_b.tau = 0.0;
-end dcmotor;
+.. exec-mos::
+  :parsed:
+
+  instantiateModel(dcmotor)
 
 We plot part of the simulated result:
 
