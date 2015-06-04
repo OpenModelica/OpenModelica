@@ -72,7 +72,6 @@ private:
   QLineEdit *mpServerPortTextBox;
   Label *mpMonitorPortLabel;
   QLineEdit *mpMonitorPortTextBox;
-  QCheckBox *mpInterfaceRequestModeCheckBox;
   QCheckBox *mpManagerDebugModeCheckBox;
   QGroupBox *mpTLMMonitorGroupBox;
   Label *mpMonitorProcessLabel;
@@ -83,7 +82,8 @@ private:
   Label *mpTimeStepSizeLabel;
   QLineEdit *mpTimeStepSizeTextBox;
   QCheckBox *mpMonitorDebugModeCheckBox;
-  QPushButton *mpSimulateButton;
+  QPushButton *mpShowTLMCoSimulationOutputWindowButton;
+  QPushButton *mpRunButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
   TLMCoSimulationOutputWidget *mpTLMCoSimulationOutputWidget;
@@ -94,7 +94,8 @@ private slots:
   void browseTLMPluginPath();
   void browseManagerProcess();
   void browseMonitorProcess();
-  void simulate();
+  void showTLMCoSimulationOutputWindow();
+  void runTLMCoSimulation();
 };
 
 #endif // TLMCOSIMULATIONDIALOG_H

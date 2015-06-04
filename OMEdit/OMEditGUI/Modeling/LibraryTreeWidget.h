@@ -213,6 +213,7 @@ private:
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
+  QAction *mpTLMCoSimulationAction;
   bool saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   bool saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   bool saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
@@ -244,6 +245,7 @@ public slots:
   void exportModelFMU();
   void exportModelXML();
   void exportModelFigaro();
+  void TLMSimulate();
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTLMFile(QFileInfo fileInfo, bool showProgress = true);

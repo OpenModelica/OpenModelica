@@ -542,8 +542,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mIsReSimulate = false;
     mClassName = mpLibraryTreeNode->getNameStructure();
     mFileName = mpLibraryTreeNode->getFileName();
-    setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulation).append(" - ").append(mClassName));
-    mpSimulationHeading->setText(QString(Helper::simulation).append(" - ").append(mClassName));
+    setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulationSetup).append(" - ").append(mClassName));
+    mpSimulationHeading->setText(QString(Helper::simulationSetup).append(" - ").append(mClassName));
     // if the class has experiment annotation then read it.
     if (mpMainWindow->getOMCProxy()->isExperiment(mClassName)) {
       // get the simulation options....

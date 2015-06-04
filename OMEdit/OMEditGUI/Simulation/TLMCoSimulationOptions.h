@@ -50,7 +50,6 @@ public:
     setManagerProcess("");
     setServerPort("11111");
     setMonitorPort("");
-    setInterfaceRequestMode(false);
     setManagerDebugMode(false);
     setMonitorProcess("");
     setNumberOfSteps(1000);
@@ -72,8 +71,6 @@ public:
   QString getServerPort() {return mServerPort;}
   void setMonitorPort(QString monitorPort) {mMonitorPort = monitorPort;}
   QString getMonitorPort() {return mMonitorPort;}
-  void setInterfaceRequestMode(bool interfaceRequestMode) {mInterfaceRequestMode = interfaceRequestMode;}
-  bool getInterfaceRequestMode() {return mInterfaceRequestMode;}
   void setManagerDebugMode(bool managerDebugMode) {mManagerDebugMode = managerDebugMode;}
   bool getManagerDebugMode() {return mManagerDebugMode;}
   QString getMonitorProcess() {return mMonitorProcess;}
@@ -97,7 +94,6 @@ private:
   QString mManagerProcess;
   QString mServerPort;
   QString mMonitorPort;
-  bool mInterfaceRequestMode;
   bool mManagerDebugMode;
   QString mMonitorProcess;
   int mNumberOfSteps;
