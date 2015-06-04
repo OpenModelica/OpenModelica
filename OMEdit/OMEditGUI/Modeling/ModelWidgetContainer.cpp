@@ -449,12 +449,6 @@ bool GraphicsView::addComponent(QString className, QPointF position)
           mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
           /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
           pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
-        } else if(mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
-          type = StringHandler::Connector;
-          addComponentToView(name, className, "", position, 0, type, false);
-          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
-          /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
-          pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
         } else {
           addComponentToView(name, className, "", position, new ComponentInfo(""), type);
         }

@@ -52,15 +52,20 @@ Component::Component(QString annotation, QString name, QString className, Compon
   mComponentType = Component::Root;
   initialize();
   setComponentFlags(true);
-  getClassInheritedComponents(true);
-  parseAnnotationString(annotation);
-  /* if component doesn't exists show it as red cross box. */
-  if (!mpOMCProxy->existClass(className)) {
-    parseAnnotationString(Helper::errorComponentAnnotationString);
-  } else if (canUseDefaultAnnotation(this)) { /* if component doesn't have any annotation then assign it a default one. */
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM) {
+    mType = StringHandler::Connector;
     parseAnnotationString(Helper::defaultComponentAnnotationString);
+  } else {
+    getClassInheritedComponents(true);
+    parseAnnotationString(annotation);
+    /* if component doesn't exists show it as red cross box. */
+    if (!mpOMCProxy->existClass(className)) {
+      parseAnnotationString(Helper::errorComponentAnnotationString);
+    } else if (canUseDefaultAnnotation(this)) { /* if component doesn't have any annotation then assign it a default one. */
+      parseAnnotationString(Helper::defaultComponentAnnotationString);
+    }
+    getClassComponents();
   }
-  getClassComponents();
   // transformation
   mpTransformation = new Transformation(mpGraphicsView->getViewType());
   mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
@@ -1043,6 +1048,7 @@ void Component::deleteMe()
   // delete the component from model
   mpGraphicsView->deleteComponentObject(this);
   deleteLater();
+  delete mpOriginItem;
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
   /* When something is deleted from the icon layer then update the LibraryTreeNode in the Library Browser */
