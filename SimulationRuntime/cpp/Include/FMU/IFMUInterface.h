@@ -32,13 +32,14 @@
 /******************************************************************************
  *fmuTemplate.h
  ******************************************************************************/
-#include "FMU/fmiModelFunctions.h"
+#include <FMU/fmiModelFunctions.h>
 
 class IFMUInterface
 {
   public:
     IFMUInterface(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn) :
       instanceName(instanceName), GUID(GUID), functions(functions) {};
+
     virtual ~IFMUInterface() {};
     virtual fmiStatus setDebugLogging  (fmiBoolean loggingOn) = 0;
 
