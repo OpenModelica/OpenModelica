@@ -47,7 +47,7 @@ def onlyNotifications():
 
 def getErrorString(state):
   (nm,ne,nw) = omc.sendExpression("countMessages()")
-  s = fixPaths(omc.sendExpression("getErrorString()"))
+  s = fixPaths(omc.sendExpression("OpenModelica.Scripting.getErrorString()"))
   if nm==0:
     return []
   node = nodes.paragraph()
@@ -119,7 +119,7 @@ class ExecMosDirective(directives.CodeBlock):
       pass # sys.stdout = oldStdout
 
 def escapeString(s):
-  return '"' + s.replace('"', '\\"') + '"'
+  return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
 class OMCLoadStringDirective(Directive):
   """Loads the code into OMC and returns the highlighted version of it"""

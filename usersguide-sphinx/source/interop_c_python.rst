@@ -10,101 +10,64 @@ Calling External C functions
 The following is a small example (ExternalLibraries.mo) to show the use
 of external C functions:
 
-**model** ExternalLibraries
+.. omc-loadstring ::
 
-Real x(start=1.0),y(start=2.0);
+  model ExternalLibraries
 
-**equation**
+    function ExternalFunc1
+      input Real x;
+      output Real y;
+    external y=ExternalFunc1_ext(x) annotation(Library="ExternalFunc1.o", LibraryDirectory="modelica://ExternalLibraries", Include="#include \"ExternalFunc1.h\"");
+    end ExternalFunc1;
 
-**der**\ (x)=-ExternalFunc1(x);
+    function ExternalFunc2
+      input Real x;
+      output Real y;
+    external "C" annotation(Library="ExternalFunc2", LibraryDirectory="modelica://ExternalLibraries");
+    end ExternalFunc2;
 
-**der**\ (y)=-ExternalFunc2(y);
+    Real x(start=1.0, fixed=true), y(start=2.0, fixed=true);
+  equation
+    der(x)=-ExternalFunc1(x);
+    der(y)=-ExternalFunc2(y);
+  end ExternalLibraries;
 
-**end** ExternalLibraries;
+These C (.c) files and header files (.h) are needed (note that the headers are not needed since OpenModelica will generate the correct definition if it is not present; using the headers it is possible to write C-code directly in the Modelica source code or declare non-standard calling conventions):
 
-**function** ExternalFunc1
+.. literalinclude :: ExternalFunc1.c
+  :caption: ExternalFunc1.c
+  :language: c
 
-**input** Real x;
+.. literalinclude :: ExternalFunc1.h
+  :caption: ExternalFunc1.h
+  :language: c
 
-**output** Real y;
-
-**external**
-
-y=ExternalFunc1\_ext(x)
-**annotation**\ (Library="libExternalFunc1\_ext.o",
-
-Include="#include \\"ExternalFunc1\_ext.h\\"");
-
-**end** ExternalFunc1;
-
-**function** ExternalFunc2
-
-**input** Real x;
-
-**output** Real y;
-
-**external** "C" **annotation**\ (Library="libExternalFunc2.a",
-
-Include="#include \\"ExternalFunc2.h\\"");
-
-**end** ExternalFunc2;
-
-These C (.c) files and header files (.h) are needed:
-
-/\* file: ExternalFunc1.c \*/
-
-double ExternalFunc1\_ext(double x)
-
-{
-
-double res;
-
-res = x+2.0\*x\*x;
-
-return res;
-
-}
-
-/\* Header file ExternalFunc1\_ext.h for ExternalFunc1 function \*/
-
-double ExternalFunc1\_ext(double);
-
-/\* file: ExternalFunc2.c \*/
-
-double ExternalFunc2(double x)
-
-{
-
-double res;
-
-res = (x-1.0)\*(x+2.0);
-
-return res;
-
-}
-
-/\* Header file ExternalFunc2.h for ExternalFunc2 \*/
-
-double ExternalFunc2(double);
+.. literalinclude :: ExternalFunc2.c
+  :caption: ExternalFunc2.c
+  :language: c
 
 The following script file ExternalLibraries.mos will perform everything
 that is needed, provided you have gcc installed in your path:
 
-loadFile("ExternalLibraries.mo");
+.. omc-mos ::
+  :hidden:
 
-system("gcc -c -o libExternalFunc1\_ext.o ExternalFunc1.c");
+  system("cp ../source/ExternalFunc1.c ../source/ExternalFunc1.h ../source/ExternalFunc2.c .")
 
-system("gcc -c -o libExternalFunc2.a ExternalFunc2.c");
+.. omc-mos ::
+  :erroratend:
 
-simulate(ExternalLibraries);
+  system(getCompiler() + " -c -o ExternalFunc1.o ExternalFunc1.c")
+  system(getCompiler() + " -c -o ExternalFunc2.o ExternalFunc2.c")
+  system("ar rcs libExternalFunc2.a ExternalFunc2.o")
+  simulate(ExternalLibraries)
 
-We run the script:
+And plot the results:
 
->> runScript("ExternalLibraries.mos");
+.. omc-gnuplot :: externallibraries
 
-and plot the results:
-
->> plot({x,y});
+  x
+  y
 
 Calling Python Code
 -------------------
@@ -115,93 +78,64 @@ OpenModelica, see Chapter 13.
 
 The interaction with Python can be perfomed in four different ways
 whereas one is illustrated below. Assume that we have the following
-Modelica code (CalledbyPython.mo):
+Modelica code:
 
-**model** CalledbyPython
+.. code-block :: modelica
+  :caption: CalledbyPython.mo
 
-Real x(start=1.0),y(start=2.0);
-
-parameter Real b = 2.0;
-
-**equation**
-
-**der**\ (x) = -b\*y;
-
-**der**\ (y) = x;
-
-**end** CalledbyPython;
+  model CalledbyPython
+    Real x(start=1.0), y(start=2.0);
+    parameter Real b = 2.0;
+  equation
+    der(x) = -b*y;
+    der(y) = x;
+  end CalledbyPython;
 
 In the following Python (.py) files the above Modelica model is
-simulated via the OpenModelica scripting interface.
+simulated via the OpenModelica scripting interface:
 
-# file: PythonCaller.py
+.. code-block :: python
+  :caption: PythonCaller.py
 
-#!/usr/bin/python
+  #!/usr/bin/python
+  import sys,os
+  global newb = 0.5
+  execfile('CreateMosFile.py')
+  os.popen(r"omc CalledbyPython.mos").read()
+  execfile('RetrResult.py')
 
-**import** sys,os
+.. code-block :: python
+  :caption: CreateMosFile.py
 
-**global** newb = 0.5
+  #!/usr/bin/python
+  mos_file = open('CalledbyPython.mos','w', 1)
+  mos_file.write('loadFile("CalledbyPython.mo");\n')
+  mos_file.write('setComponentModifierValue(CalledbyPython,b,$Code(="+str(newb)+"));\n')
+  mos_file.write('simulate(CalledbyPython,stopTime=10);\n')
+  mos_file.close()
 
-os.chdir(r'C:\\Users\\Documents\\python')
+.. code-block :: python
+  :caption: RetrResult.py
 
-execfile('CreateMosFile.py')
-
-os.popen(r"C:\\OpenModelica1.4.5\\bin\\omc.exe
-CalledbyPython.mos").read()
-
-execfile('RetrResult.py')
-
-# file: CreateMosFile.py
-
-#!/usr/bin/python
-
-mos\_file = open('CalledbyPython.mos',’w’,1)
-
-mos\_file.write("loadFile(\\"CalledbyPython.mo\\");\\n")
-
-mos\_file.write("setComponentModifierValue(CalledbyPython,b,$Code(="+str(newb)+")
-
-    );\\n")
-
-mos\_file.write("simulate(CalledbyPython,stopTime=10);\\n")
-
-mos\_file.close()
-
-# file: RetrResult.py
-
-#!/usr/bin/python
-
-**def** zeros(n): #
-
-vec = [0.0]
-
-**for** i **in** range(int(n)-1): vec = vec + [0.0]
-
-**return** vec
-
-res\_file = open("CalledbyPython\_res.plt",'r',1)
-
-line = res\_file.readline()
-
-size = int(res\_file.readline().split('=')[1])
-
-time = zeros(size)
-
-y = zeros(size)
-
-**while** line != ['DataSet: time\\n']: line =
-res\_file.readline().split(',')[0:1]
-
-**for** j **in** range(int(size)):
-time[j]=float(res\_file.readline().split(',')[0])
-
-**while** line != ['DataSet: y\\n']:
-line=res\_file.readline().split(',')[0:1]
-
-**for** j **in** range(int(size)):
-y[j]=float(res\_file.readline().split(',')[1])
-
-res\_file.close()
+  #!/usr/bin/python
+  def zeros(n): #
+    vec = [0.0]
+    for i in range(int(n)-1): vec = vec + [0.0]
+    return vec
+  res_file = open("CalledbyPython_res.plt",'r',1)
+  line = res_file.readline()
+  size = int(res_file.readline().split('=')[1])
+  time = zeros(size)
+  y = zeros(size)
+  while line != ['DataSet: time\\n']:
+    line = res_file.readline().split(',')[0:1]
+  for j in range(int(size)):
+    time[j]=float(res\_file.readline().split(',')[0])
+  while line != ['DataSet: y\\n']:
+    line=res_file.readline().split(',')[0:1]
+  for j in range(int(size)):
+    y[j]=float(res\_file.readline().split(',')[1])
+  res_file.close()
 
 A second option of simulating the above Modelica model is to use the
 command buildModel instead of the simulate command and setting the

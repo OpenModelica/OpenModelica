@@ -30,12 +30,13 @@ To export the bouncing ball example to an FMU, use the following commands:
 
   loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
   translateModelFMU(BouncingBall)
-  system("unzip -l BouncingBall.fmu | grep -v sources > BB.log")
+  system("unzip -l BouncingBall.fmu | egrep -v 'sources|files' | tail -n+3 | grep -o '[A-Za-z._0-9/]*$' > BB.log")
 
 After the command execution is complete you will see that a file
 BouncingBall.fmu has been created. Its contents varies depending on the
 current platform.
-On the machine generating this documentation, the contents in :numref:`BouncingBall FMU contents` are generated.
+On the machine generating this documentation, the contents in
+:numref:`BouncingBall FMU contents` are generated (along with the C source code).
 
 .. literalinclude :: ../tmp/BB.log
   :name: BouncingBall FMU contents
@@ -86,5 +87,6 @@ The imported FMU can then be simulated like any normal model:
   simulate(BouncingBall_me_FMU, stopTime=3.0)
 
 .. omc-gnuplot :: bouncingball_fmu
+  :caption: Height of the bouncing ball, simulated through an FMU.
 
   h
