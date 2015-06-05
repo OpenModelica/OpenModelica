@@ -291,7 +291,11 @@ of the differential equation into homogenous and particular parts is an
 important technique taught to the students in engineering courses, also
 illustrated in Figure 4 -34.
 
-|image23|
+.. math ::
+
+  {{\partial ^{n}y}\over{\partial t^n}} + a_1 {{\partial ^{n-1}y}\over{\partial t^{n-1}}} + \ldots + a_n y
+  =
+  b_0 {{\partial ^{m}u} \over {\partial t^m}} + \ldots + b_{m-1} {{\partial u}\over{\partial t}} + b_m u
 
 Now let us examine a second order system:
 
@@ -792,7 +796,6 @@ Stephen Wolfram. The Mathematica Book. Wolfram Media Inc, 1997.
 
 .. |image19| image:: media/image33.png
 .. |image20| image:: media/image35.png
-.. |image23| image:: media/image42.png
 .. |image25| image:: media/image44.png
 
 .. |WYSIWYG| replace:: :abbr:`WYSIWYG (What-You-See-Is-What-You-Get)`
