@@ -331,7 +331,9 @@ be defined in the Modelica model itself.
 For instance, if mechanical stress must be less than 5 N.m\ :sup:`-2`,
 one should write in the model:
 
-assert( mechanicalStress < 5, “Mechanical stress too high”);
+.. code-block ::
+
+  assert(mechanicalStress < 5, "Mechanical stress too high");
 
 If during simulation, the variable *mechanicalStress* exceeds 5
 N.m\ :sup:`-2`, the simulation will stop and be considered as a failure.
@@ -389,12 +391,12 @@ OMOptim should detect dependencies and load corresponding files.
 However, it some errors occur, please load by yourself dependencies. You
 can also load Modelica library using Model->Load Modelica library.
 
-When the model correctly loaded, you should see a window similar to
-Figure 6 -48.
+When the model correctly loaded, you should see a window similar to :numref:`omoptim-loaded`.
 
-|image33|
+.. figure :: media/omoptim-loaded.png
+  :name: omoptim-loaded
 
-Figure 648. **OMOptim window after having loaded model.**
+  OMOptim window after having loaded model.
 
 Create a new optimization problem
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -407,17 +409,20 @@ Model can be selected (no Package, Component, Block…).
 A new form will be displayed. This form has two tabs. One is called
 Variables, the other is called Optimization.
 
-|image34| Figure 649. **Forms for defining a new optimization problem.**
+.. figure :: media/omoptim-define-new-problem.png
+  :name: omoptim-define-new-problem
+
+  Forms for defining a new optimization problem.
 
 **List of Variables is Empty**
 
 If variables are not displayed, right click on model name in model
 hierarchy, and select *Read variables*.
 
-|image35|
+.. figure :: media/omoptim-setup-model.png
+  :name: omoptim-setup-model
 
-Figure 650. **Selecting read variables, set parameters, and selecting
-simulator.**
+  Selecting read variables, set parameters, and selecting simulator.
 
 Select Optimized Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -426,7 +431,7 @@ To set optimization, we first have to define the variables the optimizer
 will consider as free *i.e.* those that it should find best values of.
 To do this, select in the left list, the variables concerned. Then, add
 them to *Optimized variables* by clicking on corresponding button
-(|image36|).
+(|omoptim-blue-cross|).
 
 For each variable, you must set minimum and maximum values it can take.
 This can be done in the *Optimized variables* table.
@@ -435,7 +440,7 @@ Select objectives
 ^^^^^^^^^^^^^^^^^
 
 Objectives correspond to the final values of chosen variables. To select
-these last, select in left list variables concerned and click |image37|
+these last, select in left list variables concerned and click |omoptim-blue-cross|
 button of *Optimization objectives* table.
 
 For each objective, you must:
@@ -550,15 +555,11 @@ are not optimization parameters neither objectives).
 Window Regions in OMOptim GUI
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-|image38|
+.. figure :: media/omoptim-window-regions.png
 
-Figure 651. **Window regions in OMOptim GUI.**
+  Window regions in OMOptim GUI.
 
 .. |image31| image:: media/image57.png
 .. |image32| image:: media/image58.png
-.. |image33| image:: media/image59.png
-.. |image34| image:: media/image60.png
-.. |image35| image:: media/image61.png
-.. |image36| image:: media/image62.png
-.. |image37| image:: media/image63.png
-.. |image38| image:: media/image64.png
+.. |omoptim-blue-cross| image:: media/omoptim-blue-cross.png
+  :height: 12pt
