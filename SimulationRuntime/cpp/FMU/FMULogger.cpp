@@ -7,7 +7,7 @@
 
 #include <FMU/FMULogger.h>
 
-FMULogger::FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName) :
+FMULogger::FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName) : Logger(false),
   callbackLogger(callbackLogger), component(component), instanceName(instanceName)
 {
 }
@@ -28,5 +28,6 @@ void FMULogger::writeWarningInternal(std::string warningMsg)
 
 void FMULogger::writeInfoInternal(std::string infoMsg)
 {
-  callbackLogger(component, instanceName, fmiOK, "?", infoMsg.c_str());
+  if(isEnabledInternal())
+    callbackLogger(component, instanceName, fmiOK, "?", infoMsg.c_str());
 }

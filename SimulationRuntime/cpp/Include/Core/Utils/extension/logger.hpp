@@ -28,30 +28,47 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
       if(instance != NULL)
         delete instance;
 
-      instance = new Logger();
+      instance = new Logger(true);
     }
 
     static void writeError(std::string errorMsg)
     {
       getInstance()->writeErrorInternal(errorMsg);
     }
+
     static void writeWarning(std::string warningMsg)
     {
       getInstance()->writeWarningInternal(warningMsg);
     }
+
     static void writeInfo(std::string infoMsg)
     {
       getInstance()->writeInfoInternal(infoMsg);
     }
 
+    static void setEnabled(bool enabled)
+    {
+      getInstance()->setEnabledInternal(enabled);
+    }
+
+    static bool isEnabled()
+    {
+      getInstance()->isEnabledInternal();
+    }
+
   protected:
-    Logger();
+    Logger(bool enabled);
 
     virtual void writeErrorInternal(std::string errorMsg);
     virtual void writeWarningInternal(std::string warningMsg);
     virtual void writeInfoInternal(std::string infoMsg);
+    virtual void setEnabledInternal(bool enabled);
+    virtual bool isEnabledInternal();
 
     static Logger* instance;
+
+  private:
+    bool _isEnabled;
 };
 
 
