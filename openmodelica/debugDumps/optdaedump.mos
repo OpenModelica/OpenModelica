@@ -1766,6 +1766,123 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// post-optimization module simplifyConstraints:
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (9)
+// ========================================
+// 1: iC:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: iL:STATE(1)() .testOptdaedump, .Real type: Real []
+// 3: i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 4: i1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 5: i0:VARIABLE() .testOptdaedump, .Real type: Real []
+// 6: uC:DUMMY_STATE() .testOptdaedump, .Real type: Real []
+// 7: uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 8: u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 9: $DER.uC:DUMMY_DER(fixed = false ) .testOptdaedump, .Real type: Real []
+//
+//
+// Equations (9, 9)
+// ========================================
+// 1/1 (1): $DER.uC = -sin(time)    [dynamic]
+// 2/2 (1): u1 = R1 * i1    [dynamic]
+// 3/3 (1): u1 = uC - uL    [dynamic]
+// 4/4 (1): uL = R2 * i2    [dynamic]
+// 5/5 (1): uL = L * der(iL)    [dynamic]
+// 6/6 (1): iC = C * $DER.uC    [dynamic]
+// 7/7 (1): i0 = i1 + iC    [dynamic]
+// 8/8 (1): i1 = i2 + iL    [dynamic]
+// 9/9 (1): uC = cos(time)    [dynamic]
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 7
+// var 6 is solved in eqn 9
+// var 7 is solved in eqn 4
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {9:6}
+// {2, 8, 4, 3:8, 7, 3, 4} Size: 4 Jacobian Linear
+// {5:2}
+// {1:9}
+// {6:1}
+// {7:5}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (5)
+// ========================================
+// 1: v0:VARIABLE()  = 0.0 .testOptdaedump, .Real type: Real []
+// 2: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
+// 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
+// 4: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 5: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (4)
+// ========================================
+// 1: u0:VARIABLE()  = uC .testOptdaedump, .Real type: Real []
+// 2: u2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
+// 3: v1:VARIABLE()  = uC .testOptdaedump, .Real type: Real []
+// 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
 // post-optimization module CSE:
 //
 //
