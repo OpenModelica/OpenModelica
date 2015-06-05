@@ -209,6 +209,8 @@ match cref
     let cref_str = dumpCref(componentRef)
     '<%ident%><%sub_str%>.<%cref_str%>'
   case WILD() then '_'
+  case OPTIMICA_ATTR_INST_CREF(__) then
+    '<%dumpCref(componentRef)%>(<%instant%>)'
   else errorMsg("ExpressionDumpTpl.dumpCref: unknown cref")
 end dumpCref;
 
