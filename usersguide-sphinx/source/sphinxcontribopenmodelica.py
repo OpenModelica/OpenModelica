@@ -220,7 +220,7 @@ class OMCResetDirective(Directive):
 
   def run(self):
     global omc
-    omc.ask('quit()')
+    del(omc)
     omc = OMCSession()
     omc.sendExpression('cd("tmp")')
     return []
