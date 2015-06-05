@@ -40,6 +40,25 @@ class ExecDirective(Directive):
 def fixPaths(s):
   return str(s).replace(omhome, u"«OPENMODELICAHOME»").replace(dochome, u"«DOCHOME»").strip()
 
+def onlyNotifications():
+  (nm,ne,nw) = omc.sendExpression("countMessages()")
+  return ne+nw == 0
+
+def getErrorString(state):
+  (nm,ne,nw) = omc.sendExpression("countMessages()")
+  s = fixPaths(omc.sendExpression("getErrorString()"))
+  if nm==0:
+    return []
+  node = nodes.paragraph()
+  for x in s.split("\n"):
+    node += nodes.paragraph(text = x)
+  if ne>0:
+    return [nodes.error(None, node)]
+  elif nw>0:
+    return [nodes.warning(None, node)]
+  else:
+    return [nodes.note(None, node)]
+
 class ExecMosDirective(directives.CodeBlock):
   """Execute the specified Modelica code and insert the output into the document using syntax highlighting"""
   has_content = True
@@ -54,11 +73,13 @@ class ExecMosDirective(directives.CodeBlock):
     'noerror': rstdirectives.flag,
     'clear': rstdirectives.flag,
     'parsed': rstdirectives.flag,
-    'combine-lines': rstdirectives.positive_int_list
+    'combine-lines': rstdirectives.positive_int_list,
+    'erroratend': rstdirectives.flag,
   }
 
   def run(self):
     #oldStdout, sys.stdout = sys.stdout, StringIO()
+    erroratend = 'erroratend' in self.options or (not 'noerror' in self.options and len(self.content)==1)
     try:
       if 'clear' in self.options:
         assert(omc.ask('clear()'))
@@ -80,19 +101,21 @@ class ExecMosDirective(directives.CodeBlock):
           res.append(fixPaths(omc.sendExpression(str(s))))
         else:
           res.append(fixPaths(omc.ask(str(s), parsed=False)))
-        if not ('noerror' in self.options):
+        if not ('noerror' in self.options or erroratend):
           errs = fixPaths(omc.ask('getErrorString()', parsed=False))
           if errs<>'""':
             res.append(errs)
       # res += sys.stdout.readlines()
       self.content = res
       self.arguments.append('modelica')
-      return super(ExecMosDirective, self).run()
+      return super(ExecMosDirective, self).run() + (getErrorString(self.state) if erroratend else [])
     except Exception, e:
       return [nodes.error(None, nodes.paragraph(text = "Unable to execute Modelica code"), nodes.paragraph(text = str(e) + "\n" + traceback.format_exc()))]
     finally:
       pass # sys.stdout = oldStdout
 
+def escapeString(s):
+  return '"' + s.replace('"', '\\"') + '"'
 
 class OMCLoadStringDirective(Directive):
   """Loads the code into OMC and returns the highlighted version of it"""
@@ -106,9 +129,9 @@ class OMCLoadStringDirective(Directive):
     for n in self.content:
       vl.append("  " + str(n), "<OMC loadString>")
     node = docutils.nodes.paragraph()
-    omc.ask('\n'.join([str(n) for n in self.content]), parsed=False)
+    omc.sendExpression("loadString(%s)" % escapeString('\n'.join([str(n) for n in self.content])))
     self.state.nested_parse(vl, 0, node)
-    return node.children
+    return node.children + getErrorString(self.state)
 
 class OMCGnuplotDirective(Directive):
   """Execute the specified python code and insert the output into the document"""

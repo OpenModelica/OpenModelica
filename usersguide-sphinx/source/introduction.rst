@@ -333,10 +333,8 @@ We also load a file containing the dcmotor model:
 It is simulated:
 
 .. omc-mos::
-  :noerror:
 
   simulate(dcmotor, startTime=0.0, stopTime=10.0)
-  getErrorString()
 
 We list the source code of the model:
 
@@ -389,8 +387,14 @@ that contains these commands:
 
 .. omc-mos ::
   :clear:
+  :combine-lines: 5,6
+  :erroratend:
 
-  writeFile("sim_BouncingBall.mos", "loadFile(getInstallationDirectoryPath() + \"/share/doc/omc/testmodels/BouncingBall.mo\"); simulate(BouncingBall, stopTime=3.0); /* plot({h,flying}); */")
+  writeFile("sim_BouncingBall.mos", "
+    loadFile(getInstallationDirectoryPath() + \"/share/doc/omc/testmodels/BouncingBall.mo\");
+    simulate(BouncingBall, stopTime=3.0);
+    /* plot({h,flying}); */
+  ")
   runScript("sim_BouncingBall.mos")
 
 
@@ -600,7 +604,7 @@ Type in a function:
     output Real y;
   algorithm
     y:=x*x;
-  end MySqr;
+  end mySqr;
 
 Call the function:
 
@@ -741,8 +745,12 @@ automatically.
 
   package Modelica
     annotation(uses(Complex(version="1.0"),
-    ModelicaServices(version="1.1")))
+    ModelicaServices(version="1.1")));
   end Modelica;
+
+.. omc-mos ::
+
+  clear()
 
 Packages will also be loaded if a model has a uses-annotation:
 
@@ -753,6 +761,7 @@ Packages will also be loaded if a model has a uses-annotation:
   end M;
 
 .. omc-mos ::
+  :parsed:
 
   instantiateModel(M)
 
@@ -760,8 +769,8 @@ Packages will also be loaded by looking at the first identifier in the path:
 
 .. omc-mos ::
   :parsed:
+  :clear:
 
-  clear();
   instantiateModel(Modelica.Electrical.Analog.Basic.Ground)
 
 Calling the Model Query and Manipulation API
@@ -795,6 +804,7 @@ structure:
 Different kinds of calls with returned results:
 
 .. omc-mos ::
+  :erroratend:
 
   getClassRestriction(BouncingBall)
   getClassInformation(BouncingBall)
