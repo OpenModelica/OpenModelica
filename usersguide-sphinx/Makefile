@@ -202,5 +202,5 @@ source/logo.pdf: source/logo.svg
 source/media/systemoverview.pdf: source/media/systemoverview.svg
 	inkscape -f $< --export-pdf $@
 
-source/openmodelica.bib: resolve-crossref.py openmodelica.bib
-	python resolve-crossref.py openmodelica.bib source/openmodelica.bib
+source/openmodelica.bib: resolve-crossref.py $(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib
+	python resolve-crossref.py "$(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib" source/openmodelica.bib

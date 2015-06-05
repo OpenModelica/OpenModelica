@@ -16,5 +16,7 @@ for e in bib_database.entries:
       if not e.has_key(k):
         e[k] = e2[k]
     del(e['crossref'])
+    if 'pdf' in e:
+      del(e['pdf']) # Not used by the template and contains %20 sometimes...
 
 open(sys.argv[2], "w").write(bibtexparser.dumps(bib_database).encode("utf8"))

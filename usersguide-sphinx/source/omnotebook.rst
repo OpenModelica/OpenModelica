@@ -17,10 +17,10 @@ simulation scripting, model documentation and storage, etc.
 Mathematica Notebooks
 ~~~~~~~~~~~~~~~~~~~~~
 
-(?? Reference section )Literate Programming (Knuth 1984) is a form of
+Literate Programming :cite:`Knuth84literateprogramming` is a form of
 programming where programs are integrated with documentation in the same
-document. Mathematica notebooks (Wolfram 1997) is one of the first
-WYSIWYG (What-You-See-Is-What-You-Get) systems that support Literate
+document. Mathematica notebooks :cite:`mathematicbook:third` is one of the first
+|WYSIWYG| systems that support Literate
 Programming. Such notebooks are used, e.g., in the MathModelica modeling
 and simulation environment, e.g. see Figure 4 -25below and Chapter 19 in
 :cite:`openmodelica.org:fritzson:2004`.
@@ -28,18 +28,16 @@ and simulation environment, e.g. see Figure 4 -25below and Chapter 19 in
 OMNotebook
 ~~~~~~~~~~
 
-(?? Reference section ) The OMNotebook software (Axelsson 2005,
-Fernström 2006) is a new open source free software that gives an
-interactive WYSIWYG (What-You-See-Is-What-You-Get) realization of
+The OMNotebook software :cite:`openmodelica.org:axelsson:msc:2005,openmodelica.org:fernstroem:msc:2006`
+is a new open source free software that gives an
+interactive |WYSIWYG| realization of
 Literate Programming, a form of programming where programs are
 integrated with documentation in the same document.
 
-(?? Reference section ) The OMNotebook facility is actually an
-interactive WYSIWYG (What-You-See-Is-What-You-Get) realization of
-Literate Programming, a form of programming where programs are
-integrated with documentation in the same document. OMNotebook is a
-simple open-source software tool for an electronic notebook supporting
-Modelica.
+The OMNotebook facility is actually an interactive |WYSIWYG|
+realization of Literate Programming, a form of programming where programs are
+integrated with documentation in the same document.
+OMNotebook is a simple open-source software tool for an electronic notebook supporting Modelica.
 
 A more advanced electronic notebook tool, also supporting mathematical
 typesetting and many other facilities, is provided by Mathematica
@@ -297,25 +295,21 @@ illustrated in Figure 4 -34.
 
 Now let us examine a second order system:
 
-|image24|
+.. math ::
 
-**model** NegRoots
+  \ddot y + a_1 \dot y + a_2 y = 1
 
-Real y;
+.. code-block :: modelica
 
-Real der\_y;
-
-**parameter** Real a1 = 3;
-
-**parameter** Real a2 = 2;
-
-**equation**
-
-der\_y = **der**\ (y);
-
-**der**\ (der\_y) + a1\*der\_y + a2\*y = 1;
-
-**end** NegRoots;
+  model NegRoots
+    Real y;
+    Real der_y;
+    parameter Real a1 = 3;
+    parameter Real a2 = 2;
+  equation
+    der_y = der(y);
+    der(der_y) + a1*der_y + a2*y = 1;
+  end NegRoots;
 
 Choosing different values for a\ :sub:`1` and a\ :sub:`2` leads to
 different behavior as shown in Figure 4 -35 and Figure 4 -36.
@@ -774,10 +768,6 @@ pedagogic environment for Java. In Proceedings of the 33rd ACM Technical
 Symposium on Computer Science Education (SIGCSE 2002) (Northern Kentucky
 – The Southern Side of Cincinnati, USA, February 27 – March 3, 2002).
 
-Ingemar Axelsson. OpenModelica Notebook for Interactive Structured
-Modelica Documents. Final thesis, LITH-IDA-EX–05/080–SE, Linköping
-University, Linköping, Sweden, October 21, 2005.
-
 Anders Fernström, Ingemar Axelsson, Peter Fritzson, Anders Sandholm,
 Adrian Pop. OMNotebook – Interactive WYSIWYG Book Software for Teaching
 Programming. In Proc. of the Workshop on Developing Computer Science
@@ -788,9 +778,6 @@ Anders Fernström. Extending OMNotebook – An Interactive Notebook for
 Structured Modelica Documents. Final thesis, LITH-IDA-EX--06/057—SE,
 Dept. Computer and Information Science, Linköping University, Sweden,
 September 4, 2006.
-
-Knuth, Donald E. Literate Programming. The Computer Journal, NO27(2),
-pp. 97–111, May 1984.
 
 Eva-Lena Lengquist-Sandelin, Susanna Monemar, Peter Fritzson, and Peter
 Bunus. DrModelica – A Web-Based Teaching Environment for Modelica. In
@@ -806,5 +793,6 @@ Stephen Wolfram. The Mathematica Book. Wolfram Media Inc, 1997.
 .. |image19| image:: media/image33.png
 .. |image20| image:: media/image35.png
 .. |image23| image:: media/image42.png
-.. |image24| image:: media/image43.png
 .. |image25| image:: media/image44.png
+
+.. |WYSIWYG| replace:: :abbr:`WYSIWYG (What-You-See-Is-What-You-Get)`
