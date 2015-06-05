@@ -804,6 +804,8 @@ Debugger
 -  *Generate operations in the info xml* – if true then adds the
    operations information in the info xml file.
 
+.. _omedit-fmi-settings :
+
 FMI
 ~~~
 
