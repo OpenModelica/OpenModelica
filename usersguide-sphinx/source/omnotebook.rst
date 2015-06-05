@@ -95,8 +95,7 @@ Figure 426. **The front-page notebook of the OMNotebook version of the
 DrModelica tutoring system.**
 
 In each chapter of DrModelica the user is presented a short summary of
-the corresponding chapter of the book “Principles of Object-Oriented
-Modeling and Simulation with Modelica 2.1” by Peter Fritzson. The
+the corresponding chapter of the Modelica book :cite:`openmodelica.org:fritzson:2004`. The
 summary introduces some *keywords*, being hyperlinks that will lead the
 user to other notebooks describing the keywords in detail.
 
@@ -767,6 +766,10 @@ Additional Features
 References
 ----------
 
+.. todo ::
+
+  Add these into extrarefs.bib and cite them somewhere
+
 Eric Allen, Robert Cartwright, Brian Stoler. DrJava: A lightweight
 pedagogic environment for Java. In Proceedings of the 33rd ACM Technical
 Symposium on Computer Science Education (SIGCSE 2002) (Northern Kentucky
@@ -778,21 +781,11 @@ Programming. In Proc. of the Workshop on Developing Computer Science
 Education – How Can It Be Done?. Linköping University, Dept. Computer &
 Inf. Science, Linköping, Sweden, March 10, 2006.
 
-Anders Fernström. Extending OMNotebook – An Interactive Notebook for
-Structured Modelica Documents. Final thesis, LITH-IDA-EX--06/057—SE,
-Dept. Computer and Information Science, Linköping University, Sweden,
-September 4, 2006.
-
 Eva-Lena Lengquist-Sandelin, Susanna Monemar, Peter Fritzson, and Peter
 Bunus. DrModelica – A Web-Based Teaching Environment for Modelica. In
 Proceedings of the 44th Scandinavian Conference on Simulation and
 Modeling (SIMS’2003), available at www.scan-sims.org. Västerås, Sweden.
 September 18-19, 2003.
-
-The Modelica Association. The Modelica Language Specification Version
-3.0, Sept 2007. http://www.modelica.org.
-
-Stephen Wolfram. The Mathematica Book. Wolfram Media Inc, 1997.
 
 .. |image19| image:: media/image33.png
 .. |image20| image:: media/image35.png
