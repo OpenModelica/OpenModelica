@@ -271,11 +271,6 @@ in Figure 6 -47.
 Figure 647: **Optimization results for Batch Reactor model – state and
 control variables.**
 
-.. omc-mos ::
-  :hidden:
-
-  setCommandLineOptions("+g=Modelica")
-
 .. _parameter-sweep-optimization-using-omoptim:
 
 Parameter Sweep Optimization using OMOptim
@@ -331,7 +326,7 @@ be defined in the Modelica model itself.
 For instance, if mechanical stress must be less than 5 N.m\ :sup:`-2`,
 one should write in the model:
 
-.. code-block ::
+.. code-block :: modelica
 
   assert(mechanicalStress < 5, "Mechanical stress too high");
 
@@ -563,3 +558,5 @@ Window Regions in OMOptim GUI
 .. |image32| image:: media/image58.png
 .. |omoptim-blue-cross| image:: media/omoptim-blue-cross.png
   :height: 12pt
+
+.. omc-reset ::

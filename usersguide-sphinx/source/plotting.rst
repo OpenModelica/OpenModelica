@@ -19,12 +19,12 @@ Example
 
 To create a simple time plot the above model HelloWorld is simulated. To
 reduce the amount of simulation data in this example the number of
-intervals is limited with the argument numberOfIntervals=10. The
+intervals is limited with the argument numberOfIntervals=5. The
 simulation is started with the command below.
 
 .. omc-mos ::
 
-  simulate(HelloWorld, outputFormat="csv", startTime=0, stopTime=4, numberOfIntervals=10)
+  simulate(HelloWorld, outputFormat="csv", startTime=0, stopTime=4, numberOfIntervals=5)
 
 When the simulation is finished the file :ref:`HelloWorld_res.csv` contains the
 simulation data:
