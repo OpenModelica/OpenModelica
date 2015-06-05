@@ -38,6 +38,7 @@ testAlgLoop3.mos \
 testAlgLoop4.mos \
 testAlgLoop5.mos \
 testAlgLoop6.mos \
+testSimpliCon1.mos \
 TFC.mos \
 TFC2.mos \
 TFC3.mos \
