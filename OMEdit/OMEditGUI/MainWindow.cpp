@@ -909,6 +909,46 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
 }
 
 /*!
+ * \brief MainWindow::fetchInterfaceData
+ * \param pLibraryTreeNode
+ * Fetches the interface data for TLM co-simulation.
+ */
+void MainWindow::fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode)
+{
+  if (mpOptionsDialog->getTLMPage()->getTLMManagerProcessTextBox()->text().isEmpty()) {
+    QString message;
+#ifdef Q_OS_MAC
+    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET_MSG_MAC));
+#else
+    message = GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET).arg(GUIMessages::getMessage(GUIMessages::TLMMANAGER_NOT_SET_MSG));
+#endif
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), message, Helper::ok);
+  } else {
+    if (pLibraryTreeNode->isSaved()) {
+      fetchInterfaceDataHelper(pLibraryTreeNode);
+    } else {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+      pMessageBox->setIcon(QMessageBox::Question);
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeNode->getNameStructure()));
+      pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+      pMessageBox->setDefaultButton(QMessageBox::Yes);
+      int answer = pMessageBox->exec();
+      switch (answer) {
+        case QMessageBox::Yes:
+          if (mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode)) {
+            fetchInterfaceDataHelper(pLibraryTreeNode);
+          }
+          break;
+        case QMessageBox::No:
+        default:
+          break;
+      }
+    }
+  }
+}
+
+/*!
  * \brief MainWindow::TLMSimulate
  * \param pLibraryTreeNode
  * Starts the TLM co-simulation.
@@ -921,7 +961,7 @@ void MainWindow::TLMSimulate(LibraryTreeNode *pLibraryTreeNode)
     QMessageBox *pMessageBox = new QMessageBox(this);
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setText(tr("Meta model <b>%1</b> has unsaved changes. Do you want to save?").arg(pLibraryTreeNode->getNameStructure()));
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeNode->getNameStructure()));
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
     int answer = pMessageBox->exec();
@@ -1248,9 +1288,9 @@ void MainWindow::showOpenTransformationFileDialog()
 
 /*!
   Creates a new TLM LibraryTreeNode & ModelWidget.\n
-  Slot activated when mpNewTLMFileAction triggered signal is raised.
+  Slot activated when mpNewMetaModelFileAction triggered signal is raised.
   */
-void MainWindow::createNewTLMFile()
+void MainWindow::createNewMetaModelFile()
 {
   QString metaModelName = mpLibraryTreeWidget->getUniqueLibraryTreeNodeName("MetaModel");
   LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(LibraryTreeNode::TLM, metaModelName, false);
@@ -1263,9 +1303,9 @@ void MainWindow::createNewTLMFile()
 
 /*!
   Opens the TLM file(s).\n
-  Slot activated when mpOpenTLMFileAction triggered signal is raised.
+  Slot activated when mpOpenMetaModelFileAction triggered signal is raised.
   */
-void MainWindow::openTLMFile()
+void MainWindow::openMetaModelFile()
 {
   QStringList fileNames;
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
@@ -1926,9 +1966,27 @@ void MainWindow::exportToClipboard()
 }
 
 /*!
-  Slot activated when mpTLMSimulateAction triggered signal is raised.\n
-  Calls the function that starts the TLM simulation.
-  */
+ * \brief MainWindow::fetchInterfaceData
+ * Slot activated when mpFetchInterfaceDataAction triggered signal is raised.
+ * Calls the function that fetches the interface data.
+ */
+void MainWindow::fetchInterfaceData()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget)
+  {
+    LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+    if (pLibraryTreeNode) {
+      fetchInterfaceData(pLibraryTreeNode);
+    }
+  }
+}
+
+/*!
+ * \brief MainWindow::TLMSimulate
+ * Slot activated when mpTLMSimulateAction triggered signal is raised.
+ * Calls the function that starts the TLM simulation.
+ */
 void MainWindow::TLMSimulate()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -2225,14 +2283,14 @@ void MainWindow::createActions()
   mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
-  // create new TLM file action
-  mpNewTLMFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New TLM File"), this);
-  mpNewTLMFileAction->setStatusTip(tr("Create New TLM File"));
-  connect(mpNewTLMFileAction, SIGNAL(triggered()), SLOT(createNewTLMFile()));
+  // create new MetaModel action
+  mpNewMetaModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New MetaModel"), this);
+  mpNewMetaModelFileAction->setStatusTip(tr("Create New MetaModel File"));
+  connect(mpNewMetaModelFileAction, SIGNAL(triggered()), SLOT(createNewMetaModelFile()));
   // open TLM file action
-  mpOpenTLMFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open TLM File"), this);
-  mpOpenTLMFileAction->setStatusTip(tr("Opens the TLM file(s)"));
-  connect(mpOpenTLMFileAction, SIGNAL(triggered()), SLOT(openTLMFile()));
+  mpOpenMetaModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open MetaModel"), this);
+  mpOpenMetaModelFileAction->setStatusTip(tr("Opens the MetaModel file(s)"));
+  connect(mpOpenMetaModelFileAction, SIGNAL(triggered()), SLOT(openMetaModelFile()));
   // load External Model action
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM meta-modeling"));
@@ -2527,6 +2585,10 @@ void MainWindow::createActions()
   mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
   mpExportToClipboardAction->setEnabled(false);
   connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
+  // fetch interface data
+  mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, this);
+  mpFetchInterfaceDataAction->setStatusTip(Helper::fetchInterfaceDataTip);
+  connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
   // TLM simulate actions
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
@@ -2551,8 +2613,8 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpOpenResultFileAction);
   pFileMenu->addAction(mpOpenTransformationFileAction);
   pFileMenu->addSeparator();
-  pFileMenu->addAction(mpNewTLMFileAction);
-  pFileMenu->addAction(mpOpenTLMFileAction);
+  pFileMenu->addAction(mpNewMetaModelFileAction);
+  pFileMenu->addAction(mpOpenMetaModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpSaveAction);
@@ -2829,6 +2891,33 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
   }
 }
 
+/*!
+ * \brief MainWindow::fetchInterfaceDataHelper
+ * \param pLibraryTreeNode
+ * Helper function for fetching the interface data.
+ */
+void MainWindow::fetchInterfaceDataHelper(LibraryTreeNode *pLibraryTreeNode)
+{
+  QProcess *pManagerProcess = new QProcess;
+  QFileInfo fileInfo(pLibraryTreeNode->getFileName());
+  pManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  QStringList args;
+  args << "-r" << fileInfo.absoluteFilePath();
+  QProcessEnvironment environment;
+#ifdef WIN32
+  environment = StringHandler::simulationProcessEnvironment();
+#else
+  environment = QProcessEnvironment::systemEnvironment();
+#endif
+  environment.insert("PATH", mpOptionsDialog->getTLMPage()->getTLMPluginPathTextBox()->text() + ";" + environment.value("PATH"));
+  environment.insert("TLMPluginPath", mpOptionsDialog->getTLMPage()->getTLMPluginPathTextBox()->text());
+  pManagerProcess->setProcessEnvironment(environment);
+  pManagerProcess->start(mpOptionsDialog->getTLMPage()->getTLMManagerProcessTextBox()->text(), args);
+  pManagerProcess->waitForFinished();
+
+  /*! @todo Read the interfaceData.xml file here */
+}
+
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
@@ -2920,6 +3009,7 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->setObjectName("TLM Simulation Toolbar");
   mpTLMSimulationToolbar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to TLM Simulation Toolbar
+  mpTLMSimulationToolbar->addAction(mpFetchInterfaceDataAction);
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
 }
 

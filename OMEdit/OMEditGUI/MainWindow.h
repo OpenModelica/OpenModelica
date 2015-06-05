@@ -139,6 +139,7 @@ public:
   QAction* getImportFromOMNotebookAction();
   QAction* getImportNgspiceNetlistAction();
   QAction* getConnectModeAction();
+  QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
@@ -157,6 +158,7 @@ public:
   void exportModelFMU(LibraryTreeNode *pLibraryTreeNode);
   void exportModelXML(LibraryTreeNode *pLibraryTreeNode);
   void exportModelFigaro(LibraryTreeNode *pLibraryTreeNode);
+  void fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode);
   void TLMSimulate(LibraryTreeNode *pLibraryTreeNode);
   void exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode);
   void createOMNotebookTitleCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
@@ -212,8 +214,8 @@ private:
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   // TLM File Actions
-  QAction *mpNewTLMFileAction;
-  QAction *mpOpenTLMFileAction;
+  QAction *mpNewMetaModelFileAction;
+  QAction *mpOpenMetaModelFileAction;
   QAction *mpLoadExternModelAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
@@ -289,6 +291,7 @@ private:
   QAction *mpExportAsImageAction;
   QAction *mpExportToClipboardAction;
   // TLM Simulation Action
+  QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
@@ -311,8 +314,8 @@ public slots:
   void loadModelicaLibrary();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
-  void createNewTLMFile();
-  void openTLMFile();
+  void createNewMetaModelFile();
+  void openMetaModelFile();
   void loadExternalModels();
   void loadSystemLibrary();
   void readOutputFile(qint64 bytes);
@@ -347,6 +350,7 @@ public slots:
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
   void exportToClipboard();
+  void fetchInterfaceData();
   void TLMSimulate();
   void openConfigurationOptions();
   void openUsersGuide();
@@ -383,6 +387,7 @@ private:
   void switchToPlottingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
+  void fetchInterfaceDataHelper(LibraryTreeNode *pLibraryTreeNode);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event);
   virtual void dragMoveEvent(QDragMoveEvent *event);

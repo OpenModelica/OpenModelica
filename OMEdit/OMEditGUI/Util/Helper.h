@@ -297,6 +297,8 @@ public:
   static QString unlimited;
   static QString simulationOutput;
   static QString cancelSimulation;
+  static QString fetchInterfaceData;
+  static QString fetchInterfaceDataTip;
   static QString tlmCoSimulationSetup;
   static QString tlmCoSimulationSetupTip;
   static QString tlmCoSimulation;
@@ -359,6 +361,10 @@ public:
     CLASS_NOT_FOUND,
     BREAKPOINT_INSERT_NOT_SAVED,
     BREAKPOINT_INSERT_NOT_MODELICA_CLASS,
+    TLMMANAGER_NOT_SET,
+    TLMMANAGER_NOT_SET_MSG,
+    TLMMANAGER_NOT_SET_MSG_MAC,
+    METAMODEL_UNSAVED,
     TLMCOSIMULATION_ALREADY_RUNNING
   };
 
