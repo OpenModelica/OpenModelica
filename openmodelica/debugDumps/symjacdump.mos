@@ -34,7 +34,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real []
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real [] unreplaceable
 // 2: x_2_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
 // 3: x_3_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
 // 4: x_4_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
@@ -396,7 +396,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real []
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:STATE_DER()  type: Real [] unreplaceable
 // 2: x_2_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
 // 3: x_3_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
 // 4: x_4_.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real []
@@ -960,7 +960,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real []
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real [] unreplaceable
 // 2: x_99_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
 // 3: x_98_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
 // 4: x_97_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
@@ -1322,7 +1322,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Variables (98)
 // ========================================
-// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real []
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:STATE_DER()  type: Real [] unreplaceable
 // 2: x_99_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
 // 3: x_98_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
 // 4: x_97_.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real []
