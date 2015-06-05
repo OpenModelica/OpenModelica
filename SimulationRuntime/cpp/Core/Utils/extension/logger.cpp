@@ -8,7 +8,7 @@
 
 Logger* Logger::instance = 0;
 
-Logger::Logger()
+Logger::Logger(bool enabled) : _isEnabled(enabled)
 {
 }
 
@@ -18,15 +18,28 @@ Logger::~Logger()
 
 void Logger::writeErrorInternal(std::string errorMsg)
 {
-  std::cerr << "Error: " << errorMsg << std::endl;
+  if(_isEnabled)
+    std::cerr << "Error: " << errorMsg << std::endl;
 }
 
 void Logger::writeWarningInternal(std::string warningMsg)
 {
-  std::cerr << "Warning: " << warningMsg << std::endl;
+  if(_isEnabled)
+    std::cerr << "Warning: " << warningMsg << std::endl;
 }
 
 void Logger::writeInfoInternal(std::string infoMsg)
 {
-  std::cout << "Info: " << infoMsg << std::endl;
+  if(_isEnabled)
+    std::cout << "Info: " << infoMsg << std::endl;
+}
+
+void Logger::setEnabledInternal(bool enabled)
+{
+  _isEnabled = enabled;
+}
+
+bool Logger::isEnabledInternal()
+{
+  return _isEnabled;
 }
