@@ -67,9 +67,7 @@ void TLMCoSimulationThread::runManager()
   connect(mpManagerProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(managerProcessFinished(int,QProcess::ExitStatus)));
   QStringList args;
   args << tlmCoSimulationOptions.getManagerArgs() << fileInfo.absoluteFilePath();
-  // start the executable
   QString fileName = tlmCoSimulationOptions.getManagerProcess();
-  // run the simulation executable to create the result file
   QProcessEnvironment environment;
 #ifdef WIN32
   environment = StringHandler::simulationProcessEnvironment();
@@ -79,6 +77,7 @@ void TLMCoSimulationThread::runManager()
   environment.insert("PATH", tlmCoSimulationOptions.getTLMPluginPath() + ";" + environment.value("PATH"));
   environment.insert("TLMPluginPath", tlmCoSimulationOptions.getTLMPluginPath());
   mpManagerProcess->setProcessEnvironment(environment);
+  // start the executable
   mpManagerProcess->start(fileName, args);
   emit sendManagerOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo);
 }

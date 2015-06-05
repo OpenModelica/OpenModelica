@@ -3441,6 +3441,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getExportAsImageAction()->setEnabled(enabled && modelica);
   getMainWindow()->getExportToClipboardAction()->setEnabled(enabled && modelica);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
+  getMainWindow()->getFetchInterfaceDataAction()->setEnabled(enabled && TLM);
   getMainWindow()->getTLMSimulationAction()->setEnabled(enabled && TLM);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {

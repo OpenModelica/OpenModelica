@@ -295,6 +295,8 @@ QString Helper::version;
 QString Helper::unlimited;
 QString Helper::simulationOutput;
 QString Helper::cancelSimulation;
+QString Helper::fetchInterfaceData;
+QString Helper::fetchInterfaceDataTip;
 QString Helper::tlmCoSimulationSetup;
 QString Helper::tlmCoSimulationSetupTip;
 QString Helper::tlmCoSimulation;
@@ -479,6 +481,8 @@ void Helper::initHelperVariables()
   Helper::unlimited = tr("unlimited");
   Helper::simulationOutput = tr("Simulation Output");
   Helper::cancelSimulation = tr("Cancel Simulation");
+  Helper::fetchInterfaceData = tr("Fetch Interface Data");
+  Helper::fetchInterfaceDataTip = tr("Fetches the interface data for TLM co-simulation");
   Helper::tlmCoSimulationSetup = tr("TLM Co-Simulation Setup");
   Helper::tlmCoSimulationSetupTip = tr("Opens the TLM co-simulation setup");
   Helper::tlmCoSimulation = tr("TLM Co-Simulation");
@@ -588,6 +592,14 @@ QString GUIMessages::getMessage(int type)
       return tr("The class <b>%1</b> is not saved. Breakpoints are only allowed on saved classes.");
     case BREAKPOINT_INSERT_NOT_MODELICA_CLASS:
       return tr("The class <b>%1</b> is not a modelica class. Breakpoints are only allowed on modelica classes.");
+    case TLMMANAGER_NOT_SET:
+      return tr("TLM Manager executable path is not set. Set it via <b>%1</b>");
+    case TLMMANAGER_NOT_SET_MSG:
+      return tr("Tools->Options->TLM");
+    case TLMMANAGER_NOT_SET_MSG_MAC:
+      return tr("OMEdit->Preferences->TLM");
+    case METAMODEL_UNSAVED:
+      return tr("Metamodel <b>%1</b> has unsaved changes. Do you want to save?");
     case TLMCOSIMULATION_ALREADY_RUNNING:
       return tr("TLM co-simulation session is already running. Only one session is allowed.");
     default:

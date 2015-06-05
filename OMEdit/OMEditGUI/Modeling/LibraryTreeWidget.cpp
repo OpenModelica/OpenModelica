@@ -585,6 +585,10 @@ void LibraryTreeWidget::createActions()
   mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::exportFigaro, this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
+  // fetch interface data
+  mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, this);
+  mpFetchInterfaceDataAction->setStatusTip(Helper::fetchInterfaceDataTip);
+  connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
   // TLM co-simulation action
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
@@ -1602,6 +1606,7 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
         menu.addAction(mpUnloadTextFileAction);
         break;
       case LibraryTreeNode::TLM:
+        menu.addAction(mpFetchInterfaceDataAction);
         menu.addAction(mpTLMCoSimulationAction);
         menu.addSeparator();
         menu.addAction(mpUnloadTLMFileAction);
@@ -1795,6 +1800,23 @@ void LibraryTreeWidget::exportModelFigaro()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     mpMainWindow->exportModelFigaro(pLibraryTreeNode);
+}
+
+/*!
+ * \brief LibraryTreeWidget::fetchInterfaceData
+ * Slot activated when mpFetchInterfaceDataAction triggered signal is raised.
+ * Calls the function that fetches the interface data.
+ */
+void LibraryTreeWidget::fetchInterfaceData()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty()) {
+    return;
+  }
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode) {
+    mpMainWindow->fetchInterfaceData(pLibraryTreeNode);
+  }
 }
 
 void LibraryTreeWidget::TLMSimulate()
