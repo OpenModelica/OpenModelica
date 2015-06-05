@@ -18,15 +18,15 @@ FMULogger::~FMULogger()
 
 void FMULogger::writeErrorInternal(std::string errorMsg)
 {
-  callbackLogger(component, instanceName, fmiError, "", errorMsg.c_str());
+  callbackLogger(component, instanceName, fmiError, "?", errorMsg.c_str());
 }
 
 void FMULogger::writeWarningInternal(std::string warningMsg)
 {
-  callbackLogger(component, instanceName, fmiWarning, "", warningMsg.c_str());
+  callbackLogger(component, instanceName, fmiWarning, "?", warningMsg.c_str());
 }
 
 void FMULogger::writeInfoInternal(std::string infoMsg)
 {
-  callbackLogger(component, instanceName, fmiOK, "", infoMsg.c_str());
+  callbackLogger(component, instanceName, fmiOK, "?", infoMsg.c_str());
 }

@@ -235,13 +235,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     // getters for given value references
     virtual void getReal(const unsigned int vr[], int nvr, double value[]);
     virtual void getInteger(const unsigned int vr[], int nvr, int value[]);
-    virtual void getBoolean(const unsigned int vr[], int nvr, int value[]);
+    virtual void getBoolean(const unsigned int vr[], int nvr, char value[]);
     virtual void getString(const unsigned int vr[], int nvr, string value[]);
 
     // setters for given value references
     virtual void setReal(const unsigned int vr[], int nvr, const double value[]);
     virtual void setInteger(const unsigned int vr[], int nvr, const int value[]);
-    virtual void setBoolean(const unsigned int vr[], int nvr, const int value[]);
+    virtual void setBoolean(const unsigned int vr[], int nvr, const char value[]);
     virtual void setString(const unsigned int vr[], int nvr, const string value[]);
   };
   >>
@@ -277,6 +277,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   // create simulation variables
   #include <Core/System/FactoryExport.h>
   #include <Core/System/SimVars.h>
+  #include <sstream>
 
   ISimVars *<%modelShortName%>FMU::createSimVars() {
     return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
@@ -508,7 +509,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   <%accessRealFunction(simCode, direction, modelShortName, modelInfo)%>
   <%accessVarsFunction(simCode, direction, modelShortName, "Integer", "int", vars.intAlgVars, vars.intParamVars, vars.intAliasVars)%>
-  <%accessVarsFunction(simCode, direction, modelShortName, "Boolean", "int", vars.boolAlgVars, vars.boolParamVars, vars.boolAliasVars)%>
+  <%accessVarsFunction(simCode, direction, modelShortName, "Boolean", "char", vars.boolAlgVars, vars.boolParamVars, vars.boolAliasVars)%>
   <%accessVarsFunction(simCode, direction, modelShortName, "String", "string", vars.stringAlgVars, vars.stringParamVars, vars.stringAliasVars)%>
   >>
 end accessFunctions;
@@ -521,6 +522,7 @@ case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numA
   let qualifier = if stringEq(direction, "set") then "const"
   <<
   void <%modelShortName%>FMU::<%direction%>Real(const unsigned int vr[], int nvr, <%qualifier%> double value[]) {
+    std::stringstream message;
     for (int i = 0; i < nvr; i++)
       switch (vr[i]) {
         <%vars.stateVars |> var => accessVecVar(direction, var, 0, "__z"); separator="\n"%>
@@ -530,8 +532,9 @@ case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numA
         <%vars.paramVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(intMul(2, numStateVars), numAlgVars), numDiscreteReal)); separator="\n"%>
         <%vars.aliasVars |> var => accessVar(simCode, direction, var, intAdd(intAdd(intAdd(intMul(2, numStateVars), numAlgVars), numDiscreteReal), numParams)); separator="\n"%>
         default:
-          std::ostringstream message;
+          message.str("");
           message << "<%direction%>Real with wrong value reference " << vr[i];
+          Logger::writeError(message.str());
           throw std::invalid_argument(message.str());
       }
   }
@@ -545,14 +548,16 @@ template accessVarsFunction(SimCode simCode, String direction, String modelShort
   let qualifier = if stringEq(direction, "set") then "const"
   <<
   void <%modelShortName%>FMU::<%direction%><%typeName%>(const unsigned int vr[], int nvr, <%qualifier%> <%typeImpl%> value[]) {
+    std::stringstream message;
     for (int i = 0; i < nvr; i++)
       switch (vr[i]) {
         <%algVars |> var => accessVar(simCode, direction, var, 0); separator="\n"%>
         <%paramVars |> var => accessVar(simCode, direction, var, listLength(algVars)); separator="\n"%>
         <%aliasVars |> var => accessVar(simCode, direction, var, intAdd(listLength(algVars), listLength(paramVars))); separator="\n"%>
         default:
-          std::ostringstream message;
+          message.str("");
           message << "<%direction%><%typeName%> with wrong value reference " << vr[i];
+          Logger::writeError(message.str());
           throw std::invalid_argument(message.str());
       }
   }
@@ -572,7 +577,8 @@ match simVar
   if stringEq(direction, "get") then
   <<
   case <%intAdd(offset, index)%>: <%description%>
-    value[i] = <%cppSign%><%cppName%>; break;
+    value[i] = <%cppSign%><%cppName%>;
+    Logger::writeInfo("Found variable <%descName%>"); break;
   >>
   else
   <<
@@ -620,7 +626,8 @@ match simVar
   else if stringEq(direction, "get") then
   <<
   case <%intAdd(offset, index)%>: <%description%>
-    value[i] = <%vecName%>[<%index%>]; break;
+    value[i] = <%vecName%>[<%index%>];
+    Logger::writeInfo("Found variable <%descName%>"); break;
   >>
   else
   <<
@@ -724,7 +731,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
-  OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lFMU_static
+  OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppFMU_static -lOMCppExtensionUtilities_static -lOMCppModelicaUtilities_static
   OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
