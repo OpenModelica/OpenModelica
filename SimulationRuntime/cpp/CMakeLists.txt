@@ -72,6 +72,7 @@ SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
 SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities)
 SET(BasiLibName ${LIBPREFIX}Base)
 SET(ModelicaCompilerName ${LIBPREFIX}ModelicaCompiler)
+SET(FMUName ${LIBPREFIX}FMU)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
@@ -438,6 +439,7 @@ add_subdirectory (Solver/UmfPack)
 add_subdirectory (Solver/Peer)
 ##add_subdirectory (Solver/RTRK)
 
+add_subdirectory (FMU)
 
 if(REDUCE_DAE)
   #add_subdirectory(ReduceDAE/Implementation)
@@ -522,6 +524,9 @@ GET_FILENAME_COMPONENT(libModelicaCompilerName ${libModelicaCompiler} NAME)
 GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} LOCATION)
 GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
 
+GET_TARGET_PROPERTY(libFMU ${FMUName} LOCATION)
+GET_FILENAME_COMPONENT(libFMUName ${libFMU} NAME)
+
 set (EULER_LIB ${libEulerName})
 set (RTEULER_LIB ${libRTEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
@@ -539,6 +544,7 @@ set (DATAEXCHANGE_LIB ${libDataExchangeName})
 set (SIMCONTROLLER_LIB ${libSimControllerName})
 set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
 set (MODELICACOMPILER_LIB ${libModelicaCompilerName})
+set (FMU_LIB ${libFMUName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
@@ -595,6 +601,7 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/Core/Utils/extension/registry.hpp
         Include/Core/Utils/extension/shared_library.hpp
         Include/Core/Utils/extension/type_map.hpp
+	Include/Core/Utils/extension/logger.hpp
         Include/Core/Utils/extension/impl/adaptable_factory.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
@@ -607,13 +614,6 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/Core/Utils/extension/impl/library_impl.hpp
         Include/Core/Utils/extension/impl/shared_library.hpp
         Include/Core/Utils/extension/impl/typeinfo.hpp
-        Include/FMU/fmiModelFunctions.h
-        Include/FMU/fmiModelTypes.h
-        Include/FMU/FMUGlobalSettings.h
-        Include/FMU/IFMUInterface.h
-        Include/FMU/FMULibInterface.cpp
-        Include/FMU/FMUWrapper.cpp
-        Include/FMU/FMUWrapper.h
         Include/FMU2/fmi2Functions.h
         Include/FMU2/fmi2FunctionTypes.h
         Include/FMU2/fmi2TypesPlatform.h

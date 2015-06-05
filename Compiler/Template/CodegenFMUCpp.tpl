@@ -268,15 +268,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <%if isFMIVersion20(FMUVersion) then
     '#include "FMU2/FMU2Wrapper.cpp"'
   else
-    '#include "FMU/FMUWrapper.cpp"'%>
+    '#include <FMU/FMUWrapper.h>'%>
   <%if isFMIVersion20(FMUVersion) then
     '#include "FMU2/FMU2Interface.cpp"'
   else
-    '#include "FMU/FMULibInterface.cpp"'%>
+    '#include <FMU/FMULibInterface.h>'%>
 
   // create simulation variables
-  #include <System/FactoryExport.h>
-  #include <System/SimVars.h>
+  #include <Core/System/FactoryExport.h>
+  #include <Core/System/SimVars.h>
 
   ISimVars *<%modelShortName%>FMU::createSimVars() {
     return new SimVars(<%numRealvars(modelInfo)%>, <%numIntvars(modelInfo)%>, <%numBoolvars(modelInfo)%>, <%getPreVarsCount(modelInfo)%>, <%numStatevars(modelInfo)%>, <%numStateVarIndex(modelInfo)%>);
@@ -716,7 +716,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/Core" -I"$(OMHOME)/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
   CPPFLAGS = $(CFLAGS)
   LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(BOOST_LIBS)"
   PLATFORM="<%platformstr%>"
@@ -724,7 +724,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
-  OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppModelicaUtilities_static
+  OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lFMU_static
   OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
