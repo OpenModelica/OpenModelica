@@ -4,16 +4,17 @@ Optimization with OpenModelica
 The following facilities for model-based optimization are provided with
 OpenModelica:
 
--  Builtin dynamic optimization with OpenModelica and IpOpt using
-       dynamic optimization, Section 6.1 This is the recommended way of
+-  :ref:`builtin-dynamic-optimization` using
+       dynamic optimization is the recommended way of
        performing dynamic optimization with OpenModelica.
 
--  Dynamic optimization with OpenModelica by automatic export of the
-       problem to CasADi, Section 6.2. Use this if you want to employ
+-  :ref:`dynamic-optimization-casadi`. Use this if you want to employ
        the CasADi tool for dynamic optimization.
 
--  Classical parameter sweep based design optimization, Section 6.3. Use
+-  Classical :ref:`parameter-sweep-optimization-using-omoptim`. Use
        this if you have a static optimization problem.
+
+.. _builtin-dynamic-optimization :
 
 Builtin Dynamic Optimization with OpenModelica and IpOpt
 --------------------------------------------------------
@@ -35,11 +36,6 @@ simulations as in the parameter-sweep optimization described in section :ref:`pa
 
 For more detailed information regarding background and methods, see :cite:`openmodelica.org:bernhard:modelica:2012,openmodelica.org:Ruge:modelica:2014`
 
-.. figure :: media/omnotebook-optimization.png
-  :name: omnotebook-optimization
-
-  OMNotebook screenshot for dynamic optimization.
-
 Compiling the Modelica code
 ---------------------------
 
@@ -55,21 +51,6 @@ The OpenModelica command optimize(ModelName) from OMShell, OMNotebook or
 MDT runs immediately the optimization. The generated result file can be
 read in and visualized with OMEdit or within OMNotebook.
 
-// name: BatchReactor.mos
-
-setCommandLineOptions("+g=Optimica");
-
-getErrorString();
-
-loadFile("BatchReactor.mo");
-
-getErrorString();
-
-optimize(nmpcBatchReactor, numberOfIntervals=16, stopTime=1,
-tolerance=1e-8);
-
-getErrorString();
-
 An Example
 ----------
 
@@ -82,70 +63,84 @@ constructs including a new specialized class optimization, a constraint
 section, startTime, finalTime etc. See the optimal control problem for
 batch reactor model below.
 
-**optimization** BatchReactor(objective=-x2(finalTime),
-
-startTime = 0, finalTime =1)
-
-Real x1(start =1, fixed=true, min=0, max=1);
-
-Real x2(start =0, fixed=true, min=0, max=1);
-
-**input** Real u(min=0, max=5);
-
-**equation**
-
-**der**\ (x1) = -(u+u^2/2)\*x1;
-
-**der**\ (x2) = u\*x1;
-
-**end** BatchReactor;
-
-Create a new file named BatchReactor.mo and save it in you working
+Create a new file named :ref:`BatchReactor.mo` and save it in you working
 directory. Notice that this model contains both the dynamic system to be
 optimized and the optimization specification.
 
 Once we have formulated the undelying optimal control problems, we can
-run the optimization by using OMShell, OMNotebook , MDT, OMEdit or
-command line terminals similar as described in Figure 6 -42.
+run the optimization by using OMShell, OMNotebook, MDT, OMEdit using
+command line terminals similar to the options described below:
 
-The control and state trajectories of the optimization results are shown
-in Figure 6 -43.
+.. omc-mos ::
 
-|image27|
+  setCommandLineOptions("+g=Optimica");
 
-|image28|
+.. omc-loadstring ::
+  :caption: BatchReactor.mo
+  :name: BatchReactor.mo
 
-Figure 643: **Optimization results for Batch Reactor model – state and
-control variables.**
+  optimization BatchReactor(objective=-x2(finalTime), startTime = 0, finalTime =1)
+    Real x1(start =1, fixed=true, min=0, max=1);
+    Real x2(start =0, fixed=true, min=0, max=1);
+    input Real u(min=0, max=5);
+  equation
+    der(x1) = -(u+u^2/2)*x1;
+    der(x2) = u*x1;
+  end BatchReactor;
+
+.. omc-loadstring ::
+
+  optimization nmpcBatchReactor(objective=-x2)
+    extends BatchReactor;
+  end nmpcBatchReactor;
+
+.. omc-mos ::
+
+  optimize(nmpcBatchReactor, numberOfIntervals=16, stopTime=1, tolerance=1e-8)
+
+The control and state trajectories of the optimization results:
+
+.. omc-gnuplot :: nmpc-input
+  :caption: Optimization results for Batch Reactor model – input variables.
+
+  u
+
+.. omc-gnuplot :: nmpc-states
+  :caption: Optimization results for Batch Reactor model – state variables.
+
+  x1
+  x2
 
 Different Options for the Optimizer IPOPT
 -----------------------------------------
 
-Compiler options
+.. table :: New meanings of the usual simualtion options for Ipopt.
 
-+-----------------------+-------------------------+-------------------------+
-| numberOfIntervals     |                         | collocation intervals   |
-+-----------------------+-------------------------+-------------------------+
-| startTime, stopTime   |                         | time horizon            |
-+-----------------------+-------------------------+-------------------------+
-| tolerance = 1e-8      | e.g. 1e-8               | solver tolerance        |
-+-----------------------+-------------------------+-------------------------+
-| simflags              | all run/debug options   |
-+-----------------------+-------------------------+-------------------------+
+  +-----------------------+-------------------------+-------------------------+
+  | numberOfIntervals     |                         | collocation intervals   |
+  +-----------------------+-------------------------+-------------------------+
+  | startTime, stopTime   |                         | time horizon            |
+  +-----------------------+-------------------------+-------------------------+
+  | tolerance = 1e-8      | e.g. 1e-8               | solver tolerance        |
+  +-----------------------+-------------------------+-------------------------+
+  | simflags              | all run/debug options   |                         |
+  +-----------------------+-------------------------+-------------------------+
 
-Run/debug options
+|
 
-+---------------------+------------------+-----------------------------------------+
-| -lv                 | LOG\_IPOPT       | console output                          |
-+---------------------+------------------+-----------------------------------------+
-| -ipopt\_hesse       | CONST,BFGS,NUM   | hessian approximation                   |
-+---------------------+------------------+-----------------------------------------+
-| -ipopt\_max\_iter   | number e.g. 10   | maximal number of iteration for ipopt   |
-+---------------------+------------------+-----------------------------------------+
-| externalInput.csv   |                  | input guess                             |
-+---------------------+------------------+-----------------------------------------+
+.. table :: New simulation options for Ipopt.
 
-Figure 644: **Compiler options for IpOpt.**
+  +---------------------+------------------+-----------------------------------------+
+  | -lv                 | LOG\_IPOPT       | console output                          |
+  +---------------------+------------------+-----------------------------------------+
+  | -ipopt\_hesse       | CONST,BFGS,NUM   | hessian approximation                   |
+  +---------------------+------------------+-----------------------------------------+
+  | -ipopt\_max\_iter   | number e.g. 10   | maximal number of iteration for ipopt   |
+  +---------------------+------------------+-----------------------------------------+
+  | externalInput.csv   |                  | input guess                             |
+  +---------------------+------------------+-----------------------------------------+
+
+.. _dynamic-optimization-casadi :
 
 Dynamic Optimization with OpenModelica and CasADi
 -------------------------------------------------
@@ -180,25 +175,14 @@ OMNotebook or MDT exports the XML. The export XML command is also
 integrated with OMEdit. Select XML > Export XML the XML document is
 generated in the current directory of omc. You can use the cd() command
 to see the current location. After the command execution is complete you
-will see that a file ModelName.xml has been exported. As depicted in
-Figure 6 -45, we first changed the current directory to
-C:/OpenModelica1.9.2/bin, and then we loaded a Modelica file with
-BatchReactor example model and finally exported an XML for it using the
-translateModelXML call.
+will see that a file ModelName.xml has been exported.
 
 Assuming that the model is defined in the modelName.mo, the model can
 also be exported to an XML code using the following steps from the
 terminal window:
 
--  Go to the path where your model file found(C:/<%path to modelName .mo
-   file%>).
-
--  Go to omc path (<%path to omc%>/omc) and write the flag +s
-   +g=Optimica +simCodeTarget=XML <%your.mo file name%>.mo>
-
-|image29|
-
-Figure 645: **OMShell screenshot for exporting an XML.**
+-  Go to the path where your model file found
+-  Run command omc +g=Optimica +simCodeTarget=XML Model.mo
 
 An example
 ~~~~~~~~~~
@@ -212,460 +196,33 @@ constructs including a new specialized class optimization, a constraint
 section, startTime, finalTime etc. See the optimal control problem for
 batch reactor model below.
 
-**optimization** BatchReactor(objective=-x2(finalTime),
-
-startTime = 0, finalTime =1)
-
-Real x1(start =1, fixed=true, min=0, max=1);
-
-Real x2(start =0, fixed=true, min=0, max=1);
-
-input Real u(min=0, max=5);
-
-**equation**
-
-der(x1) = -(u+u^2/2)\*x1;
-
-der(x2) = u\*x1;
-
-**end** BatchReactor;
-
-Create a new file named BatchReactor.mo and save it in you working
+Create a new file named :ref:`BatchReactor.mo` and save it in you working
 directory. Notice that this model contains both the dynamic system to be
 optimized and the optimization specification.
 
+.. omc-mos ::
+  :parsed:
+
+  list(BatchReactor)
+
 One we have formulated the undelying optimal control problems, we can
-export the XML by using OMShell, OMNotebook , MDT, OMEdit or command
+export the XML by using OMShell, OMNotebook, MDT, OMEdit or command
 line terminals which are described in Section 6.2.4 .
 
-To export XML using terminals as depicted in Figure 6 -46, we first
-changed the current directory to C:/TestCases, and run command
-../Dev/OpenModleica/build/bin omc +s +g=Optimica +simCodeTarget=XML
-BatchReactor.mo. This will generate an XML file under C:/TestCases
-directory named BatchReactor.xml shown in Section 6.2.3 that contains a
-symbolic representation of the optimal control problem and can be
-inspected in a standard XML editor.
+To export XML, we set the simulation target to XML:
 
-|image30|
+.. omc-mos ::
 
-Figure 646: **Terminal screenshot for exporting an XML.**
+  translateModelXML(BatchReactor)
 
-Generated XML for Example
-~~~~~~~~~~~~~~~~~~~~~~~~~
+This will generate an XML file named :ref:`BatchReactor.xml` (:numref:`BatchReactor.xml`)
+that contains a symbolic representation of the optimal control problem
+and can be inspected in a standard XML editor.
 
-<?xml version="1.0" encoding="UTF-8"?>
-
-<OpenModelicaModelDescription
-
-xmlns:exp="https://svn.jmodelica.org/trunk/XML/daeExpressions.xsd"
-
-xmlns:equ="https://svn.jmodelica.org/trunk/XML/daeEquations.xsd"
-
-xmlns:fun="https://svn.jmodelica.org/trunk/XML/daeFunctions.xsd"
-
-xmlns:opt="https://svn.jmodelica.org/trunk/XML/daeOptimization.xsd"
-
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-
-fmiVersion="1.0"
-
-modelName="BatchReactor"
-
-modelIdentifier="BatchReactor"
-
-guid="{d06ca497-3a14-4c61-ab0a-ee9f3edfca73}"
-
-generationDateAndTime="2012-05-18T17:47:35"
-
-variableNamingConvention="Structured"
-
-numberOfContinuousStates="2"
-
-numberOfEventIndicators="0">
-
-<VendorAnnotations>
-
-<Tool name="OpenModelica Compiler 1.8.1+ (r11925)">
-
-</Tool>
-
-</VendorAnnotations>
-
-<ModelVariables>
-
-<ScalarVariable name="finalTime" valueReference="0"
-
-variability="parameter" causality="internal" alias="noAlias">
-
-<Real relativeQuantity="false" start="1.0" free="false"
-
-initialGuess="0.0" />
-
-<QualifiedName>
-
-<exp:QualifiedNamePart name="finalTime"/>
-
-</QualifiedName>
-
-<isLinear>true</isLinear>
-
-<isLinearTimedVariables>
-
-<TimePoint index="0" isLinear="true"/>
-
-</isLinearTimedVariables>
-
-<VariableCategory>independentParameter</VariableCategory>
-
-</ScalarVariable>
-
-<ScalarVariable name="startTime" valueReference="1"
-
-variability="parameter" causality="internal" alias="noAlias">
-
-<Real relativeQuantity="false" start="0.0" free="false"
-
-initialGuess="0.0" />
-
-<QualifiedName>
-
-<exp:QualifiedNamePart name="startTime"/>
-
-</QualifiedName>
-
-<isLinear>true</isLinear>
-
-<isLinearTimedVariables>
-
-<TimePoint index="0" isLinear="true"/>
-
-</isLinearTimedVariables>
-
-<VariableCategory>independentParameter</VariableCategory>
-
-</ScalarVariable>
-
-<ScalarVariable name="x1" valueReference="2" variability="continuous"
-
-causality="internal" alias="noAlias">
-
-<Real relativeQuantity="false" min="0.0" max="1.0" start="1.0"
-
-fixed="true" />
-
-<QualifiedName>
-
-<exp:QualifiedNamePart name="x1"/>
-
-</QualifiedName>
-
-<VariableCategory>state</VariableCategory>
-
-</ScalarVariable>
-
-<ScalarVariable name="x2" valueReference="3"
-
-variability="continuous" causality="internal" alias="noAlias">
-
-<Real relativeQuantity="false" min="0.0" max="1.0" start="0.0"
-
-fixed="true" />
-
-<QualifiedName>
-
-<exp:QualifiedNamePart name="x2"/>
-
-</QualifiedName>
-
-<VariableCategory>state</VariableCategory>
-
-</ScalarVariable>
-
-<ScalarVariable name="der(x1)" valueReference="4"
-
-variability="continuous" causality="internal" alias="noAlias">
-
-<Real relativeQuantity="false" />
-
-<QualifiedName>
-
-<exp:QualifiedNamePart name="x1"/>
-
-</QualifiedName>
-
-<VariableCategory>derivative</VariableCategory>
-
-</ScalarVariable>
-
-<ScalarVariable name="der(x2)" valueReference="5"
-
-variability="continuous" causality="internal" alias="noAlias">
-
-<Real relativeQuantity="false" />
-
-<QualifiedName>
-
-<exp:QualifiedNamePart name="x2"/>
-
-</QualifiedName>
-
-<VariableCategory>derivative</VariableCategory>
-
-</ScalarVariable>
-
-<ScalarVariable name="u" valueReference="6"
-
-variability="continuous" causality="input" alias="noAlias">
-
-<Real relativeQuantity="false" min="0.0" max="5.0"/>
-
-<QualifiedName>
-
-<exp:QualifiedNamePart name="u"/>
-
-</QualifiedName>
-
-<VariableCategory>algebraic</VariableCategory>
-
-</ScalarVariable>
-
-</ModelVariables>
-
-<equ:BindingEquations>
-
-<equ:BindingEquation>
-
-<equ:Parameter>
-
-<exp:QualifiedNamePart name="startTime"/>
-
-</equ:Parameter>
-
-<equ:BindingExp>
-
-<exp:IntegerLiteral>0</exp:IntegerLiteral>
-
-</equ:BindingExp>
-
-</equ:BindingEquation>
-
-<equ:BindingEquation>
-
-<equ:Parameter>
-
-<exp:QualifiedNamePart name="finalTime"/>
-
-</equ:Parameter>
-
-<equ:BindingExp>
-
-<exp:IntegerLiteral>1</exp:IntegerLiteral>
-
-</equ:BindingExp>
-
-</equ:BindingEquation>
-
-</equ:BindingEquations>
-
-<equ:DynamicEquations>
-
-<equ:Equation>
-
-<exp:Sub>
-
-<exp:Der>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="x2"/>
-
-</exp:Identifier>
-
-</exp:Der>
-
-<exp:Mul>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="u"/>
-
-</exp:Identifier>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="x1"/>
-
-</exp:Identifier>
-
-</exp:Mul>
-
-</exp:Sub>
-
-</equ:Equation>
-
-<equ:Equation>
-
-<exp:Sub>
-
-<exp:Der>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="x1"/>
-
-</exp:Identifier>
-
-</exp:Der>
-
-<exp:Mul>
-
-<exp:Sub>
-
-<exp:Div>
-
-<exp:Neg>
-
-<exp:Pow>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="u"/>
-
-</exp:Identifier>
-
-<exp:RealLiteral>2.0</exp:RealLiteral>
-
-</exp:Pow>
-
-</exp:Neg>
-
-<exp:RealLiteral>2.0</exp:RealLiteral>
-
-</exp:Div>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="u"/>
-
-</exp:Identifier>
-
-</exp:Sub>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="x1"/>
-
-</exp:Identifier>
-
-</exp:Mul>
-
-</exp:Sub>
-
-</equ:Equation>
-
-</equ:DynamicEquations>
-
-<equ:InitialEquations>
-
-<equ:Equation>
-
-<exp:Sub>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="x1"/>
-
-</exp:Identifier>
-
-<exp:RealLiteral>1.0</exp:RealLiteral>
-
-</exp:Sub>
-
-</equ:Equation>
-
-<equ:Equation>
-
-<exp:Sub>
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="x2"/>
-
-</exp:Identifier>
-
-<exp:RealLiteral>0.0</exp:RealLiteral>
-
-</exp:Sub>
-
-</equ:Equation>
-
-</equ:InitialEquations>
-
-<opt:Optimization>
-
-<opt:ObjectiveFunction>
-
-<exp:Neg>
-
-<exp:TimedVariable timePointIndex = "0" >
-
-<exp:Identifier>
-
-<exp:QualifiedNamePart name="x2"/>
-
-</exp:Identifier>
-
-</exp:TimedVariable>
-
-</exp:Neg>
-
-</opt:ObjectiveFunction>
-
-<opt:IntervalStartTime>
-
-<opt:Value>0.0</opt:Value>
-
-<opt:Free>false</opt:Free>
-
-<opt:InitialGuess>0.0</opt:InitialGuess>
-
-</opt:IntervalStartTime>
-
-<opt:IntervalFinalTime>
-
-<opt:Value>1.0</opt:Value>
-
-<opt:Free>false</opt:Free>
-
-<opt:InitialGuess>1.0</opt:InitialGuess>
-
-</opt:IntervalFinalTime>
-
-<opt:TimePoints>
-
-<opt:TimePoint index = "0" value = "1.0">
-
-<opt:QualifiedName>
-
-<exp:QualifiedNamePart name="x2"/>
-
-</opt:QualifiedName>
-
-</opt:TimePoint>
-
-</opt:TimePoints>
-
-<opt:Constraints>
-
-</opt:Constraints>
-
-</opt:Optimization>
-
-<fun:FunctionsList>
-
-</fun:FunctionsList>
-
-</OpenModelicaModelDescription>
+.. literalinclude :: ../tmp/BatchReactor.xml
+  :name: BatchReactor.xml
+  :caption: BatchReactor.xml
+  :language: xml
 
 XML Import to CasADi via OpenModelica Python Script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -713,6 +270,11 @@ in Figure 6 -47.
 
 Figure 647: **Optimization results for Batch Reactor model – state and
 control variables.**
+
+.. omc-mos ::
+  :hidden:
+
+  setCommandLineOptions("+g=Modelica")
 
 .. _parameter-sweep-optimization-using-omoptim:
 
@@ -992,10 +554,6 @@ Window Regions in OMOptim GUI
 
 Figure 651. **Window regions in OMOptim GUI.**
 
-.. |image27| image:: media/image53.png
-.. |image28| image:: media/image54.png
-.. |image29| image:: media/image55.png
-.. |image30| image:: media/image56.png
 .. |image31| image:: media/image57.png
 .. |image32| image:: media/image58.png
 .. |image33| image:: media/image59.png

@@ -955,7 +955,7 @@ Figure 221: **Attach to Running Process.**
 Using the Algorithmic Debugger Window
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Figure 2 -22 shows the Algorithmic Debugger window. The window contains
+:numref:`omedit-algorithmic-debugger` shows the Algorithmic Debugger window. The window contains
 the following browsers,
 
 -  *Stack Frames Browser* – shows the list of frames. It contains the
@@ -977,9 +977,10 @@ the following browsers,
 
 -  *Output Browser* – shows the output of the debugged executable.
 
-|image18|
+.. figure :: media/omedit-algorithmic-debugger.png
+  :name: omedit-algorithmic-debugger
 
-Figure 222: **Algorithmic Debugger.**
+  Algorithmic Debugger.
 
 .. |image1| image:: media/image8.png
 .. |image2| image:: media/image9.png
@@ -998,4 +999,3 @@ Figure 222: **Algorithmic Debugger.**
 .. |image15| image:: media/image25.png
 .. |image16| image:: media/image26.png
 .. |image17| image:: media/image27.png
-.. |image18| image:: media/image28.png
