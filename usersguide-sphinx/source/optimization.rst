@@ -31,28 +31,14 @@ optimization language extension called Optimica (currently partially
 supported) for the optimization part of the problem. This is used to
 solve the underlying dynamic optimization model formulation using
 collocation methods, using a single execution instead of multiple
-simulations as in the parameter-sweep optimization described in Section
-6.3.
+simulations as in the parameter-sweep optimization described in section :ref:`parameter-sweep-optimization-using-omoptim`.
 
-For more detailed information regarding background and methods, see the
-papers:
+For more detailed information regarding background and methods, see :cite:`openmodelica.org:bernhard:modelica:2012,openmodelica.org:Ruge:modelica:2014`
 
--  Bernhard Bachmann, Lennart Ochel, Vitalij Ruge, Mahder Gebremedhin,
-       Peter Fritzson, Vaheed Nezhadali, Lars Eriksson, Martin
-       Sivertsson. Parallel Multiple-Shooting and Collocation
-       Optimization with OpenModelica. In Proceedings of the 9th
-       International Modelica Conference (Modelica'2012), Munich,
-       Germany, Sept.3-5, 2012.
+.. figure :: media/omnotebook-optimization.png
+  :name: omnotebook-optimization
 
--  Vitalij Ruge, Willi Braun, Bernhard Bachmann, Andrea Walther and
-       Kshitij Kulshreshtha. Efficient Implementation of Collocation
-       Methods for Optimization using OpenModelica and ADOL–C. In
-       Proceedings of the 10th International Modelica Conference
-       (Modelica'2014), Munich, Germany, March.10-12, 2014.
-
-|image26|
-
-Figure 642: **OMNotebook screenshot for dynamic optimization.**
+  OMNotebook screenshot for dynamic optimization.
 
 Compiling the Modelica code
 ---------------------------
@@ -728,6 +714,8 @@ in Figure 6 -47.
 Figure 647: **Optimization results for Batch Reactor model – state and
 control variables.**
 
+.. _parameter-sweep-optimization-using-omoptim:
+
 Parameter Sweep Optimization using OMOptim
 ------------------------------------------
 
@@ -1004,7 +992,6 @@ Window Regions in OMOptim GUI
 
 Figure 651. **Window regions in OMOptim GUI.**
 
-.. |image26| image:: media/image52.png
 .. |image27| image:: media/image53.png
 .. |image28| image:: media/image54.png
 .. |image29| image:: media/image55.png
