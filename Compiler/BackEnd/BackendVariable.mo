@@ -4218,7 +4218,7 @@ algorithm
   end matchcontinue;
 end mergeNominalAttribute;
 
-protected function mergeMinMaxAttribute
+public function mergeMinMaxAttribute
   input BackendDAE.Var inAVar;
   input BackendDAE.Var inVar;
   input Boolean negate;
@@ -4246,6 +4246,17 @@ algorithm
     else inVar;
   end matchcontinue;
 end mergeMinMaxAttribute;
+
+public function getMinMaxAttribute
+  input BackendDAE.Var iVar;
+  output Option<DAE.Exp> oMin;
+  output Option<DAE.Exp> oMax;
+protected
+  Option<DAE.VariableAttributes> attr;
+algorithm
+  BackendDAE.VAR(values = attr) := iVar;
+  (oMin, oMax) := DAEUtil.getMinMaxValues(attr);
+end getMinMaxAttribute;
 
 protected function mergeMinMax
   input Boolean negate;

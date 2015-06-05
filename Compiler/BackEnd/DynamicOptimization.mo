@@ -52,6 +52,8 @@ protected import BackendVariable;
 protected import ComponentReference;
 protected import Config;
 
+protected import Differentiate;
+
 protected import Expression;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
@@ -666,11 +668,187 @@ algorithm
     end if;
     oshared := BackendVariable.addKnVarDAE(var, oshared);
     oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(e, Expression.crefExp(cr), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), oeqns);
-
   end for;
 
 
 end res2Con;
+
+// =============================================================================
+// section for postOptModule >>simplifyConstraints<<
+//
+// simplify nonlinear constraints if possible in  box constraints
+// =============================================================================
+
+public function simplifyConstraints
+"
+  author: vitalij
+"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  list<BackendDAE.EqSystem> systlst, new_systlst = {};
+  BackendDAE.Shared shared;
+  BackendDAE.Equation eqn_;
+  BackendDAE.Var var_, var_con;
+  BackendDAE.StrongComponents comps;
+  Integer eindex,vindx;
+  DAE.ComponentRef cr;
+  list<BackendDAE.Var> var_lst, var_lst_opt, var_lst1;
+  DAE.Exp e1, e2, e, c;
+  DAE.FunctionTree funcs;
+  BackendDAE.Variables vars, knownVars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.StateSets stateSets;
+  DAE.FunctionTree funcs;
+  Option<DAE.Exp> oMax_con, oMin_con;
+  DAE.Exp max_con, min_con, zero, con2, z, der_e;
+  Boolean b1,b2,b, b3, b4;
+  DAE.Type tp;
+algorithm
+
+  if Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+
+    //BackendDump.bltdump("START:", inDAE);
+    BackendDAE.DAE(systlst, shared) := inDAE;
+    BackendDAE.SHARED(functionTree = funcs, knownVars = knownVars) := shared;
+
+    for syst in systlst loop
+      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
+      b := false;
+      for comp in comps loop
+        //BackendDump.dumpComponent(comp);
+       if (match comp case BackendDAE.SINGLEEQUATION() then true; else false; end match) then
+
+         BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx) := comp;
+         (var_con as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx);
+         b3 := BackendVariable.isRealOptimizeConstraintsVars(var_con);
+         if b3 then
+           try
+             (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2)):= BackendEquation.equationNth1(eqns, eindex);
+             true := Expression.expEqual(e1, BackendVariable.varExp(var_con));
+           else
+             b3 := false;
+           end try;
+         end if;
+         if b3 then
+           //print("\neqn " + BackendDump.equationString(eqn_));
+           var_lst := BackendEquation.equationsLstVars({eqn_}, vars);
+           var_lst_opt := list(vv for vv  guard BackendVariable.isStateVar(vv) in var_lst);
+           b3 := listLength(var_lst_opt) == 1;
+           var_lst := BackendEquation.equationsLstVars({eqn_}, knownVars);
+           var_lst_opt := listAppend(var_lst_opt, list(vv for vv guard BackendVariable.isInput(vv) in var_lst));
+           //print("\nn = " + intString(listLength(var_lst_opt)));
+           if listLength(var_lst_opt) == 1 then
+             {var_} := var_lst_opt;
+             BackendDAE.VAR(varName=cr) := var_;
+             e := Expression.crefExp(cr);
+             tp := Expression.typeof(e);
+             zero := Expression.makeConstZero(tp);
+             try
+              der_e := Differentiate.differentiateExpSolve(e2,cr,SOME(funcs));
+              (der_e,_) := ExpressionSimplify.simplify(der_e);
+              if Expression.isZero(e) then
+                continue;
+              end if;
+              (z,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
+              ((c,_)) := Expression.replaceExp(e2, e, z);
+              (c,_) := ExpressionSimplify.simplify(c);
+              //print("\nde = " + ExpressionDump.printExpStr(der_e));
+              //print("\nc = " + ExpressionDump.printExpStr(c));
+              //print("\ne = " + ExpressionDump.printExpStr(e));
+              //print("\ne2 = " + ExpressionDump.printExpStr(e2));
+
+              var_lst := BackendEquation.expressionVars(der_e, knownVars);
+              if b3 then
+                var_lst := list(vv for vv guard not BackendVariable.isParam(vv) in var_lst);
+              end if;
+              var_lst := listAppend(BackendEquation.expressionVars(der_e, vars), var_lst);
+
+              var_lst1 := BackendEquation.expressionVars(c, knownVars);
+              if b3 then
+                var_lst1 := list(vv for vv guard not BackendVariable.isParam(vv) in var_lst1);
+              end if;
+              var_lst1 := listAppend(BackendEquation.expressionVars(c, vars), var_lst1);
+
+              var_lst := listAppend(var_lst1, var_lst);
+
+              b4 := Expression.expHasCref(der_e,DAE.crefTime) or Expression.expHasCref(c,DAE.crefTime);
+              //print("\nn = " + intString(listLength(var_lst)));
+              if listEmpty(var_lst) and not b4 then
+                (oMin_con, oMax_con) := BackendVariable.getMinMaxAttribute(var_con);
+                b1 := isSome(oMin_con);
+                b2 := isSome(oMax_con);
+                con2 := Expression.makeNoEvent(DAE.RELATION(der_e,  DAE.LESS(tp), zero,-1,NONE()));
+
+                if b1 then
+                  SOME(min_con) := oMin_con;
+                  min_con := Expression.makeDiv(Expression.expSub(min_con,c),der_e);
+                else
+                  min_con := DAE.RCONST(-1e64);
+                end if;
+
+                if b2 then
+                  SOME(max_con) := oMax_con;
+                  max_con := Expression.makeDiv(Expression.expSub(max_con,c),der_e);
+                else
+                  max_con :=  DAE.RCONST(1e64);
+                end if;
+
+                oMin_con := SOME(DAE.IFEXP(con2, max_con, min_con));
+                oMax_con := SOME(DAE.IFEXP(con2, min_con, max_con));
+
+                oMin_con := ExpressionSimplify.simplify1o(oMin_con);
+                oMax_con := ExpressionSimplify.simplify1o(oMax_con);
+
+                var_con := BackendVariable.setVarMinMax(var_con, oMin_con, oMax_con);
+                var_ := BackendVariable.mergeMinMaxAttribute(var_con, var_, false);
+
+                //vars := BackendVariable.addVar(var_, vars);
+
+                var_con := BackendVariable.setVarKind(var_con,  BackendDAE.VARIABLE());
+                vars := BackendVariable.setVarAt(vars, vindx, var_con);
+
+                try
+                  (_,{vindx}) := BackendVariable.getVar(cr, vars);
+                  vars := BackendVariable.setVarAt(vars, vindx, var_);
+                  //print("var" +  BackendDump.varString(var_));
+                else
+                  (_,{vindx}) := BackendVariable.getVar(cr, knownVars);
+                  knownVars := BackendVariable.setVarAt(knownVars, vindx, var_);
+                  //print("var" +  BackendDump.varString(var_));
+                end try;
+
+                //(vars,_) := BackendVariable.removeVar(vindx, vars);
+                //eqns := BackendEquation.equationRemove(eindex, eqns);
+                b := true;
+              end if;
+             else
+             end try;
+
+           end if;
+         end if;
+       end if;
+      end for;
+
+      if b then
+        // remove empty entries from vars/eqns
+        //vars := BackendVariable.listVar1(BackendVariable.varList(vars));
+        //eqns := BackendEquation.listEquation(BackendEquation.equationList(eqns));
+        new_systlst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind) :: new_systlst;
+      else
+       new_systlst := syst :: new_systlst;
+      end if;
+    end for;
+
+    shared := BackendDAEUtil.replaceKnownVarsInShared(shared, knownVars);
+    outDAE := BackendDAE.DAE(new_systlst, shared);
+  else
+    outDAE := inDAE;
+  end if;
+
+
+end simplifyConstraints;
 
 
 // =============================================================================

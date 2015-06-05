@@ -7676,6 +7676,7 @@ algorithm
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
                         (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
+                        (DynamicOptimization.simplifyConstraints, "simplifyConstraints", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
