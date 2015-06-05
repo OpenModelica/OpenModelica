@@ -5,11 +5,13 @@ project(${FMUName})
 add_library(${FMUName} SHARED FMULogger.cpp)
 add_library(${FMUName}_static STATIC FMULogger.cpp)
 
+set_target_properties(${FMUName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+
 add_precompiled_header(${FMUName} Include/Core/Modelica.h)
 add_precompiled_header(${FMUName}_static Include/Core/Modelica.h)
 
 if (UNIX)
-	set_target_properties(${FMUName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${FMUName} PROPERTIES COMPILE_FLAGS -fPIC)
 	set_target_properties(${FMUName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
