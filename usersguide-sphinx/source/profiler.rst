@@ -1,5 +1,5 @@
 Modelica Performance Analyzer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#############################
 
 A common problem when simulating models in an equation-based language
 like Modelica is that the model may contain non-linear equation systems.
@@ -59,9 +59,11 @@ We simulate as usual, but set measureTime=true to activate the profiling:
   :target: ProfilingTest_prof.999.svg
   system("pandoc -o ProfilingTest_prof.rst ProfilingTest_prof.html")
   system("sed -i= 's/:target: ProfilingTest_prof.*/:width: 32px/' ProfilingTest_prof.rst")
+  system("mv ProfilingTest_prof.rst ../source/ProfilingTest_prof.inc")
+  system("rm ProfilingTest_prof.html")
   system("cp ProfilingTest_prof* ../source/")
 
-.. include :: ProfilingTest_prof.rst
+.. include :: ProfilingTest_prof.inc
 
 Genenerated JSON for the Example
 ================================

@@ -1,115 +1,90 @@
 Modelica3D
 ==========
 
+.. highlight:: modelica
+
 Modelica3D is a lightweight, platform independent 3D-visualisation
-library for Modelica. Read more about the Modelica3D library here
-`*https://mlcontrol.uebb.tu-berlin.de/redmine/projects/modelica3d-public* <https://mlcontrol.uebb.tu-berlin.de/redmine/projects/modelica3d-public>`__.
+library for Modelica. Read more about the Modelica3D library `here <https://mlcontrol.uebb.tu-berlin.de/redmine/projects/modelica3d-public>`__.
+
+Installing Modelica3D
+---------------------
 
 Windows
--------
+~~~~~~~
 
 In order to run Modelica3D on windows you need following softwares;
 
 -  Python – Install python from
-       `*http://www.python.org/download/* <http://www.python.org/download/>`__.
+       http://www.python.org/download/.
        Python2.7.3 is recommended.
 
 -  PyGTK – Install GTK+ for python from
-       `*http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.24/* <http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.24/>`__.
+       http://ftp.gnome.org/pub/GNOME/binaries/win32/pygtk/2.24/.
        Download the all-in-one package. Recommmended is
        pygtk-all-in-one-2.24.2.win32-py2.7.msi.
 
+MacOS
+~~~~~
+
+On MacOS you can use the 3d visualization like this. Note that on your
+system the paths used here might vary. In one terminal type:
+
+.. code-block :: bash
+
+  # start the dbus server (you only need to do this once)
+  sudo launchctl load -w /opt/openmodelica/Library/LaunchDaemons/org.freedesktop.dbus-system.plist
+  launchctl load -w /opt/openmodelica/Library/LaunchAgents/org.freedesktop.dbus-session.plist
+  # export python path
+  export PYTHONPATH=/opt/openmodelica/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages:$PYTHONPATH
+
+Running Modelica3D
+------------------
+
 Run the Modelica3D server by executing the dbus-server.py script located
-at OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk.
+in your OpenModelica or Modelica3D installation, for example:
 
-python dbus-server.py
+.. omc-mos ::
 
-This will start the Modelica3D server and on success you should see the
-output,
+  "python " + getInstallationDirectoryPath() + "/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py"
+
+Running this command in a command prompt will start the Modelica3D
+server and on success you should see the output:
 
 Running dbus-server...
 
 Now run the simulation. The following commands will load the Modelica3D
-library and simulates the DoublePendulum example,
+library and the modified DoublePendulum example:
 
-loadModelica3D(); getErrorString();
+.. omc-mos ::
 
-loadString("model DoublePendulum
+  loadModelica3D()
 
-extends Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum;
+.. omc-loadstring ::
 
-inner ModelicaServices.Modelica3D.Controller m3d\_control;
+  model DoublePendulum
+    extends Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum;
+    inner ModelicaServices.Modelica3D.Controller m3d_control;
+  end DoublePendulum;
 
-end DoublePendulum;"); getErrorString();
+Then simulate the DoublePendulum:
 
-simulate(DoublePendulum); getErrorString();
+>>> simulate(DoublePendulum)
 
 If everything goes fine a visualization window will pop-up. To visualize
 any models from the MultiBody library you can use this script and change
 the extends to point to the model you want. Note that you will need to
 add visualisers to your model similarly to what Modelica.MultiBody
-library has. See some documentation of the visualizers available here:
-`*https://build.openmodelica.org/Documentation/Modelica.Mechanics.MultiBody.Visualizers.html* <https://build.openmodelica.org/Documentation/Modelica.Mechanics.MultiBody.Visualizers.html>`__
+library has. The documentation of the visualizers is available `here <https://build.openmodelica.org/Documentation/Modelica.Mechanics.MultiBody.Visualizers.html>`__
 
-loadModelica3D(); getErrorString();
+.. omc-mos ::
 
-loadString("
+  loadModelica3D()
 
-model Visualize\_MyModel
+.. omc-loadstring ::
 
-inner ModelicaServices.Modelica3D.Controller m3d\_control;
+  model Visualize_MyModel
+    inner ModelicaServices.Modelica3D.Controller m3d_control;
+    extends MyModel;
+  end Visualize_MyModel;
 
-extends **MyModel**;
-
-end Visualize\_MyModel;
-
-");
-
-simulate(Visualize\_MyModel); getErrorString();
-
-MacOS
------
-
-On MacOS you can use the 3d visualization like this. Note that on your
-system the paths used here might vary. In one terminal type:
-
-# start the dbus server (you only need to do this once)
-
-> sudo launchctl load -w
-/opt/openmodelica/Library/LaunchDaemons/org.freedesktop.dbus-system.plist
-
-> launchctl load -w
-/opt/openmodelica/Library/LaunchAgents/org.freedesktop.dbus-session.plist
-
-# export python path
-
-> export
-PYTHONPATH=/opt/openmodelica/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages:$PYTHONPATH
-
-# run the dbus-server.py
-
-# go to your openmodelica installation /lib/omlibrary-modelica3d/osg-gtk
-
-> python dbus-server.py
-
-In another terminal type:
-
-> cat > modelica3d.mos
-
-loadModelica3D();getErrorString();
-
-loadString("model DoublePendulum
-
-extends Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum;
-
-inner ModelicaServices.Modelica3D.Controller m3d\_control;
-
-end DoublePendulum;");getErrorString();
-
-instantiateModel(DoublePendulum); getErrorString();
-
-simulate(DoublePendulum); getErrorString();
-
-CTRL+D
-
-> omc modelica3d.mos
+>>> simulate(Visualize_MyModel)
