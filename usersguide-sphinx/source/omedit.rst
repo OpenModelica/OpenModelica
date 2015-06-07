@@ -515,17 +515,11 @@ rectangle using the rectangle tool and a polygon using the polygon tool,
 in the Icon View of the model. The model’s Modelica Text will appear as
 follows:
 
-**model** testModel
+.. code-block :: modelica
 
-annotation(Icon(graphics = {Rectangle(rotation = 0, lineColor =
-{0,0,255}, fillColor = {0,0,255}, pattern = LinePattern.Solid,
-fillPattern = FillPattern.None, lineThickness = 0.25, extent = {{
--64.5,88},{63, -22.5}}),Polygon(points = {{ -47.5, -29.5},{52.5,
--29.5},{4.5, -86},{ -47.5, -29.5}}, rotation = 0, lineColor = {0,0,255},
-fillColor = {0,0,255}, pattern = LinePattern.Solid, fillPattern =
-FillPattern.None, lineThickness = 0.25)}));
-
-**end** testModel;
+  model testModel
+    annotation(Icon(graphics = {Rectangle(rotation = 0, lineColor = {0,0,255}, fillColor = {0,0,255}, pattern = LinePattern.Solid, fillPattern = FillPattern.None, lineThickness = 0.25, extent = {{ -64.5,88},{63, -22.5}}),Polygon(points = {{ -47.5, -29.5},{52.5, -29.5},{4.5, -86},{ -47.5, -29.5}}, rotation = 0, lineColor = {0,0,255}, fillColor = {0,0,255}, pattern = LinePattern.Solid, fillPattern = FillPattern.None, lineThickness = 0.25)}));
+  end testModel;
 
 In the above code snippet of testModel, the rectangle and a polygon are
 added to the icon annotation of the model. Similarly, any user defined
@@ -843,9 +837,12 @@ source equation(s) to the position of the bug.
 Load a Model to Debug
 ~~~~~~~~~~~~~~~~~~~~~
 
-Load an interesting model. We will use the package
-`*https://openmodelica.org/svn/OpenModelica/trunk/testsuite/openmodelica/debugging/Debugging.mo* <https://openmodelica.org/svn/OpenModelica/trunk/testsuite/openmodelica/debugging/Debugging.mo>`__
+Load an interesting model. We will use the package `Debugging.mo <https://github.com/OpenModelica/OpenModelica-testsuite/blob/master/openmodelica/debugging/Debugging.mo>`
 since it contains suitable, broken models to demonstrate common errors.
+
+.. todo ::
+
+  Include Debugging.mo in the test models in the distribution?
 
 Simulate and Start the Debugger
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -895,14 +892,15 @@ Adding Breakpoints
 There are two ways to add the breakpoints,
 
 -  Click directly on the line number in Text View, a red circle is
-       created indicating a breakpoint as shown in Figure 2 -19.
+       created indicating a breakpoint as shown in :numref:`omedit-add-breakpoint`.
 
 -  Open the Algorithmic Debugger window and add a breakpoint using the
        right click menu of Breakpoints Browser window.
 
-|image15|
+.. figure :: media/image25.png
+  :name: omedit-add-breakpoint
 
-Figure 219: **Adding breakpoint in Text View.**
+  Adding breakpoint in Text View.
 
 Start the Algorithmic Debugger
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -936,23 +934,24 @@ The debugger also supports MetaModelica data structures so one can debug
 omc executable. Select omc executable as program and write the name of
 the mos script file in Arguments.
 
-|image16|
+.. figure :: media/image26.png
 
-Figure 220: **Debug Configurations.**
+  Debug Configurations.
 
 Attach to Running Process
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you already have a running simulation executable with debugging
 symbols outside of OMEdit then you can use the Debug->Attach to Running
-Process option to attach the debugger with it. Figure 2 -21 shows the
+Process option to attach the debugger with it. :numref:`omedit-attach-to-process` shows the
 Attach to Running Process dialog. The dialog shows the list of processes
 running on the machine. The user selects the program that he/she wish to
 debug. OMEdit debugger attaches to the process.
 
-|image17|
+.. figure :: media/image27.png
+  :name: omedit-attach-to-process
 
-Figure 221: **Attach to Running Process.**
+  Attach to Running Process.
 
 Using the Algorithmic Debugger Window
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -998,6 +997,4 @@ the following browsers,
 .. |image12| image:: media/image19.png
 .. |image13| image:: media/image20.png
 .. |image14| image:: media/image21.png
-.. |image15| image:: media/image25.png
-.. |image16| image:: media/image26.png
 .. |image17| image:: media/image27.png
