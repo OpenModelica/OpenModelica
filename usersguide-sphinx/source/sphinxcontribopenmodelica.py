@@ -21,6 +21,7 @@ from OMPython import OMCSession
 
 omc = OMCSession()
 omhome = omc.sendExpression("getInstallationDirectoryPath()")
+omc.sendExpression("setModelicaPath(\""+omhome+"/lib/omlibrary\")")
 omc.sendExpression('mkdir("tmp/source")')
 dochome = omc.sendExpression('cd("tmp")')
 
@@ -77,6 +78,7 @@ class ExecMosDirective(directives.CodeBlock):
     'combine-lines': rstdirectives.positive_int_list,
     'erroratend': rstdirectives.flag,
     'hidden': rstdirectives.flag,
+    'ompython-output': rstdirectives.flag,
   }
 
   def run(self):
@@ -96,7 +98,10 @@ class ExecMosDirective(directives.CodeBlock):
       else:
         content = [str(s) for s in self.content]
       for s in content:
-        res.append(">>> %s" % s)
+        if 'ompython-output' in self.options:
+          res.append('>>> omc.sendExpression(%s)' % escapeString(s))
+        else:
+          res.append(">>> %s" % s)
         if s.strip().endswith(";"):
           assert("" == omc.ask(str(s), parsed=False).strip())
         elif 'parsed' in self.options:
@@ -109,12 +114,15 @@ class ExecMosDirective(directives.CodeBlock):
             res.append(errs)
       # res += sys.stdout.readlines()
       self.content = res
-      self.arguments.append('modelica')
+      if 'ompython-output' in self.options:
+        self.arguments.append('python')
+      else:
+        self.arguments.append('modelica')
       return ([] if 'hidden' in self.options else super(ExecMosDirective, self).run()) + (getErrorString(self.state) if erroratend else [])
     except Exception, e:
       s = str(e).decode("utf8") + "\n" + traceback.format_exc().decode("utf8")
       print s
-      return [nodes.error(None, nodes.paragraph(text = "Unable to execute Modelica code"), nodes.paragraph(s))]
+      return [nodes.error(None, nodes.paragraph(text = "Unable to execute Modelica code"), nodes.paragraph(text = s))]
     finally:
       pass # sys.stdout = oldStdout
 
@@ -222,6 +230,7 @@ class OMCResetDirective(Directive):
     global omc
     del(omc)
     omc = OMCSession()
+    omc.sendExpression("setModelicaPath(\""+omhome+"/lib/omlibrary\")")
     omc.sendExpression('cd("tmp")')
     return []
 
