@@ -37,8 +37,14 @@ Microsoft Windows
 OMEdit can be launched using the executable placed in
 OpenModelicaInstallationDirectory/bin/OMEdit/OMEdit.exe. Alternately,
 choose OpenModelica > OpenModelica Connection Editor from the start menu
-in Windows. A splash screen similar to the one shown in Figure 2 -2 will
+in Windows. A splash screen similar to the one shown in :numref:`omedit-splash` will
 appear indicating that it is starting OMEdit.
+
+.. figure :: media/omedit_splashscreen.png
+  :name: omedit-splash
+
+  OMEdit Splash Screen.
+
 
 Linux
 ~~~~~
@@ -50,10 +56,6 @@ Mac OS X
 ~~~~~~~~
 
 ?? fill in
-
-|image1|
-
-Figure 22: **OMEdit Splash Screen.**
 
 MainWindow & Browsers
 ---------------------
@@ -86,9 +88,9 @@ see section 2.9.1.
 Search Browser
 ~~~~~~~~~~~~~~
 
-|image3|
+.. figure :: media/omedit-search-browser.png
 
-Figure 24: **Search Browser.**
+  Search Browser.
 
 To view the Search Browser click Edit->Search Browser or press keyboard
 shortcut Ctrl+Shift+F. The loaded Modelica classes can be searched by
@@ -108,9 +110,9 @@ protected classes are not shown by default. If you want to see the
 protected classes then you must enable the Show Protected Classes
 option, see section 2.9.1.
 
-|image4|
+.. figure :: media/omedit-libraries-browser.png
 
-Figure 25: **Libraries Browser.**
+  Libraries Browser.
 
 Documentation Browser
 ~~~~~~~~~~~~~~~~~~~~~
@@ -120,9 +122,9 @@ navigation buttons for moving forward and backward. To see documentation
 of any class, right click the Modelica class in Libraries Browser and
 choose View Documentation.
 
-|image5|
+.. figure :: media/omedit-documentation-browser.png
 
-Figure 26: **Documentation Browser.**
+  Documentation Browser.
 
 Variables Browser
 ~~~~~~~~~~~~~~~~~
@@ -139,9 +141,9 @@ The browser allows manipulation of changeable parameters for
 re-simulation. See section 2.7. It also displays the unit and
 description of the variable.
 
-|image6|
+.. figure :: media/omedit-variables-browser.png
 
-Figure 27: **Variables Browser.**
+  Variables Browser.
 
 Messages Browser
 ~~~~~~~~~~~~~~~~
@@ -274,11 +276,12 @@ Making Connections
 ~~~~~~~~~~~~~~~~~~
 
 In order to connect one component model to another the user first needs
-to enable the connect mode from the toolbar. See Figure 2 -12.
+to enable the connect mode from the toolbar. See :numref:`omedit-connect-mode`.
 
-|image11|
+.. figure :: media/omedit-connect-mode.*
+  :name: omedit-connect-mode
 
-Figure 212: **Connect/Unconnect Mode toolbar button. **
+  Connect/Unconnect Mode toolbar button.
 
 Simulating a Model
 ------------------
@@ -983,17 +986,11 @@ the following browsers,
 
   Algorithmic Debugger.
 
-.. |image1| image:: media/image8.png
 .. |image2| image:: media/image9.png
-.. |image3| image:: media/image10.png
-.. |image4| image:: media/image11.png
-.. |image5| image:: media/image12.png
-.. |image6| image:: media/image13.png
 .. |image7| image:: media/image14.png
 .. |image8| image:: media/image15.png
 .. |image9| image:: media/image16.png
 .. |image10| image:: media/image17.png
-.. |image11| image:: media/image18.png
 .. |image12| image:: media/image19.png
 .. |image13| image:: media/image20.png
 .. |image14| image:: media/image21.png

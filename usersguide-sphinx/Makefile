@@ -187,20 +187,30 @@ pseudoxml: $(ALLDEP)
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
 
-latex: $(ALLDEP) source/logo.pdf source/media/systemoverview.pdf
+latex: $(ALLDEP) source/logo.pdf source/media/systemoverview.pdf source/media/omedit-connect-mode.pdf
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex."
 	@echo "Run \`make' in that directory to run these through (pdf)latex" \
 	      "(use \`make latexpdf' here to do that automatically)."
+ADDED_SVGS=$(wildcard source/ProfilingTest_*.svg)
+addedPdfs: $(ADDED_SVGS:%.svg=%.pdf)
 pdf: latex
+	$(MAKE) addedPdfs
 	sed -i "s/usepackage.utf8..inputenc./usepackage[utf8x]{inputenc}/" build/latex/OpenModelicaUsersGuide.tex
 	sed -i "/DeclareUnicodeCharacter/d" build/latex/OpenModelicaUsersGuide.tex
+	# sphinx seems to only handle .* extension for images?
+	sed -i "s,{\(media/[A-Za-z_0-9.-]*\)[.][*],{`pwd`/source/\1.pdf,g" build/latex/OpenModelicaUsersGuide.tex
+	sed -i "s,{ProfilingTest_prof[.]\([^.]*\)[.]thumb[.]svg,{`pwd`/source/ProfilingTest_prof-\1-thumb.pdf,g" build/latex/OpenModelicaUsersGuide.tex
 	(cd build/latex && latexmk -pdf OpenModelicaUsersGuide.tex)
 source/logo.pdf: source/logo.svg
 	inkscape -f $< -A $@
 source/media/systemoverview.pdf: source/media/systemoverview.svg
 	inkscape -f $< --export-pdf $@
-
+source/media/omedit-connect-mode.pdf: source/media/omedit-connect-mode.svg
+	inkscape -f $< --export-pdf $@
+%.pdf: %.svg
+	inkscape -f $< --export-pdf $@
+	FNAME=`echo $@ | sed "s/[.]/-/g" | sed "s/-pdf/.pdf/g"`; if test "$$FNAME" != "$@"; then cp -a "$@" "$$FNAME"; fi
 source/openmodelica.bib: resolve-crossref.py $(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib
 	python resolve-crossref.py "$(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib" source/openmodelica.bib
