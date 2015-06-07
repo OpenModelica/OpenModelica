@@ -82,10 +82,11 @@ protected
   list<BackendDAE.Equation> e;
 algorithm
 
-  if not inOptimicaFlag and not inDynOptimization then //no optimization
+  if (not inOptimicaFlag and not inDynOptimization) or Flags.getConfigString(Flags.SIMCODE_TARGET) == "XML" then //no optimization
     outVars := inVars;
     outEqns := inEqns;
     outClassAttr := inClassAttr;
+    Flags.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, false);
   else
 
    if not inOptimicaFlag then
