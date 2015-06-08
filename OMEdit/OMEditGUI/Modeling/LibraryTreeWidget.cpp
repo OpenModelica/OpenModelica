@@ -1951,7 +1951,7 @@ void LibraryTreeWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
     }
   }
   // create a LibraryTreeNode for new loaded TLM file.
-  LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(LibraryTreeNode::TLM, fileInfo.completeBaseName(), false);
+  LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(LibraryTreeNode::TLM, fileInfo.completeBaseName(), true);
   if (pLibraryTreeNode) {
     pLibraryTreeNode->setSaveContentsType(LibraryTreeNode::SaveInOneFile);
     pLibraryTreeNode->setIsSaved(true);
