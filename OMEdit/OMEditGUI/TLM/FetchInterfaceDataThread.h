@@ -28,40 +28,36 @@
  *
  */
 
-#ifndef FETCHINTERFACEDATADIALOG_H
-#define FETCHINTERFACEDATADIALOG_H
+#ifndef FETCHINTERFACEDATATHREAD_H
+#define FETCHINTERFACEDATATHREAD_H
 
-#include "MainWindow.h"
-#include "FetchInterfaceDataThread.h"
+#include "FetchInterfaceDataDialog.h"
 
-class FetchInterfaceDataThread;
+class FetchInterfaceDataDialog;
 
-class FetchInterfaceDataDialog : public QDialog
+class FetchInterfaceDataThread : public QThread
 {
   Q_OBJECT
 public:
-  FetchInterfaceDataDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow);
-  void closeEvent(QCloseEvent *event);
-  MainWindow* getMainWindow() {return mpMainWindow;}
-  LibraryTreeNode* getLibraryTreeNode() {return mpLibraryTreeNode;}
+  FetchInterfaceDataThread(FetchInterfaceDataDialog *pFetchInterfaceDataDialog);
+  QProcess* getManagerProcess() {return mpManagerProcess;}
+  void setIsManagerProcessRunning(bool isManagerProcessRunning) {mIsManagerProcessRunning = isManagerProcessRunning;}
+  bool isManagerProcessRunning() {return mIsManagerProcessRunning;}
+protected:
+  virtual void run();
 private:
-  MainWindow *mpMainWindow;
-  LibraryTreeNode *mpLibraryTreeNode;
-  Label *mpProgressLabel;
-  QProgressBar *mpProgressBar;
-  QPushButton *mpCancelButton;
-  QPushButton *mpFetchAgainButton;
-  Label *mpOutputLabel;
-  QPlainTextEdit *mpOutputTextBox;
-  FetchInterfaceDataThread *mpFetchInterfaceDataThread;
-public slots:
-  void cancelFetchingInterfaceData();
-  void fetchAgainInterfaceData();
+  FetchInterfaceDataDialog *mpFetchInterfaceDataDialog;
+  QProcess *mpManagerProcess;
+  bool mIsManagerProcessRunning;
+private slots:
   void managerProcessStarted();
-  void writeManagerOutput(QString output, StringHandler::SimulationMessageType type);
+  void readManagerStandardOutput();
+  void readManagerStandardError();
   void managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 signals:
-  void readInterfaceData(LibraryTreeNode *pLibraryTreeNode);
+  void sendManagerStarted();
+  void sendManagerOutput(QString, StringHandler::SimulationMessageType type);
+  void sendManagerFinished(int, QProcess::ExitStatus);
 };
 
-#endif // FETCHINTERFACEDATADIALOG_H
+#endif // FETCHINTERFACEDATATHREAD_H
