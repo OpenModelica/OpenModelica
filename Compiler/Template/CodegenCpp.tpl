@@ -1862,7 +1862,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <<
   #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
-  #include <SimController/ISimController.h>
+  #include <Core/SimController/ISimController.h>
 
 
   <%
