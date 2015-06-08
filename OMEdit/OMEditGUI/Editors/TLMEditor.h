@@ -47,7 +47,11 @@ class TLMEditor : public BaseEditor
   Q_OBJECT
 public:
   TLMEditor(ModelWidget *pModelWidget);
-  bool TLMEditorFocusChanged();
+  bool validateMetaModelText();
+  void setPlainText(const QString &text);
+private:
+  bool mForceSetPlainText;
+  bool mTextChanged;
 signals:
   bool focusOut();
 private slots:
