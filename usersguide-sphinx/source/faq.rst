@@ -103,6 +103,3 @@ OMDev - OpenModelica Development Environment
 
 .. |image46| image:: media/image87.png
 .. |image47| image:: media/image88.png
-.. |image54| image:: media/image101.png
-.. |image55| image:: media/image102.png
-.. |image56| image:: media/image103.png

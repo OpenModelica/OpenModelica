@@ -579,175 +579,86 @@ Examples
 The following is an interactive session with the OpenModelica
 environment including some of the abovementioned commands and examples.
 First we start the system, and use the command line interface from
-OMShell, OMNotebook, or command window of some of the other tools. The
-system responds with a header line:
-
-OpenModelica 1.9.0
+OMShell, OMNotebook, or command window of some of the other tools.
 
 We type in a very small model:
 
->> **model** test "Testing OpenModelica Scripts" Real x, y; **equation**
-x = 5.0; y = 6.0; **end** test;
+.. omc-loadstring ::
 
-{test}
+  model Test "Testing OpenModelica Scripts"
+    Real x, y;
+  equation
+    x = 5.0+time; y = 6.0;
+  end Test;
 
 We give the command to flatten a model:
 
->> instantiateModel(test)
+.. omc-mos ::
+  :parsed:
 
-"**class** test
-
-Real x;
-
-Real y;
-
-**equation**
-
-x = 5.0;
-
-y = 6.0;
-
-**end** test;
-
-"
+  instantiateModel(Test)
 
 A range expression is typed in:
 
->> a:=1:10
+.. omc-mos ::
 
-{1,2,3,4,5,6,7,8,9,10}
+  a:=1:10
 
 It is multiplied by 2:
 
->> a\*2
+.. omc-mos ::
 
-{2,4,6,8,10,12,14,16,18,20}
+  a*2
 
 The variables are cleared:
 
->> clearVariables()
+.. omc-mos ::
 
-true
+  clearVariables()
 
 We print the loaded class test from its internal representation:
 
->> list(test)
+.. omc-mos ::
+  :parsed:
 
-"**class** test \\"Testing OpenModelica Scripts\\"
-
-Real x;
-
-Real y;
-
-**equation**
-
-x = 5.0;
-
-y = 6.0;
-
-**end** test;
-
-"
+  list(Test)
 
 We get the name and other properties of a class:
 
->> getClassNames()
+.. omc-mos ::
 
-{test}
-
->> getClassComment(test)
-
-"Testing OpenModelica Scripts"
-
->> isPartial(test)
-
-false
-
->> isPackage(test)
-
-false
-
->> isModel(test)
-
-true
-
->> checkModel(test)
-
-"Check of test completed successfully.
-
-Class test has 2 equation(s) and 2 variable(s).
-
-2 of these are trivial equation(s).
-
-"
-
->> clear()
-
-true
-
->> getClassNames()
-
-{}
+  getClassNames()
+  getClassComment(Test)
+  isPartial(Test)
+  isPackage(Test)
+  isModel(Test)
+  checkModel(Test)
 
 The common combination of a simulation followed by getting a value and
 doing a plot:
 
->> simulate(test, stopTime=3.0);
+.. omc-mos ::
 
->> val(x , 2.0)
+  simulate(Test, stopTime=3.0)
+  val(x , 2.0)
 
-5.0
+.. omc-gnuplot :: testmodel
 
->> plot(y)
+  y
 
-|image54|
+.. omc-gnuplot :: testmodel-plotall
+  :plotall:
 
->> plotAll()
-
-|image55|
-
-**VanDerPol Model and Parametric Plot**
-
->>
-loadFile("C:/OpenModelica1.9.0/share/doc/omc/testmodels/VanDerPol.mo")
-
-true
-
->> instantiateModel(VanDerPol)
-
-"**class** VanDerPol \\"Van der Pol oscillator model\\"
-
-Real x(start = 1.0);
-
-Real y(start = 1.0);
-
-**parameter** Real lambda = 0.3;
-
-**equation**
-
-**der**\ (x) = y;
-
-**der**\ (y) = lambda \* (1.0 - x ^ 2.0) \* y - x;
-
-**end** VanDerPol;
-
-"
-
->> simulate(VanDerPol);
-
->> plotParametric(x,y)
-
-|image56|
-
-**Interactive Function Calls, Reading, and Writing**
+Interactive Function Calls, Reading, and Writing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We enter an assignment of a vector expression, created by the range
 construction expression 1:12, to be stored in the variable x. The type
 and the value of the expression is returned.
 
->> x := 1:12
+.. omc-mos ::
 
-{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+  x := 1:12
 
 The function bubblesort is called to sort this vector in descending
 order. The sorted result is returned together with its type. Note that
@@ -756,108 +667,102 @@ this is the declared type of the function result. The input Integer
 vector was automatically converted to a Real vector according to the
 Modelica type coercion rules.
 
->> bubblesort(x)
+.. omc-mos ::
 
-{12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/bubblesort.mo")
+  bubblesort(x)
 
 Now we want to try another small application, a simplex algorithm for
 optimization. First read in a small matrix containing coefficients that
 define a simplex problem to be solved:
 
->> a := read("simplex\_in.txt")
+.. omc-mos ::
+  :combine-lines: 8
 
-{{-1,-1,-1, 0, 0, 0, 0, 0, 0},
+  a := {
+    {-1,-1,-1, 0, 0, 0, 0, 0, 0},
+    {-1, 1, 0, 1, 0, 0, 0, 0, 5},
+    { 1, 4, 0, 0, 1, 0, 0, 0, 45},
+    { 2, 1, 0, 0, 0, 1, 0, 0, 27},
+    { 3,-4, 0, 0, 0, 0, 1, 0, 24},
+    { 0, 0, 1, 0, 0, 0, 0, 1, 4}
+  }
 
-{-1, 1, 0, 1, 0, 0, 0, 0, 5},
+.. omc-loadstring ::
 
-{ 1, 4, 0, 0, 1, 0, 0, 0, 45},
+  function pivot1
+    input Real b[:,:];
+    input Integer p;
+    input Integer q;
+    output Real a[size(b,1),size(b,2)];
+  protected
+    Integer M;
+    Integer N;
+  algorithm
+    a := b;
+    N := size(a,1)-1;
+    M := size(a,2)-1;
+    for j in 1:N loop
+      for k in 1:M loop
+        if j<>p and k<>q then
+         a[j,k] := a[j,k]-0.3*j;
+        end if;
+      end for;
+    end for;
+    a[p,q] := 0.05;
+  end pivot1;
 
-{ 2, 1, 0, 0, 0, 1, 0, 0, 27},
-
-{ 3,-4, 0, 0, 0, 0, 1, 0, 24},
-
-{ 0, 0, 1, 0, 0, 0, 0, 1, 4}}
+  function misc_simplex1
+    input Real matr[:,:];
+    output Real x[size(matr,2)-1];
+    output Real z;
+    output  Integer q;
+    output  Integer p;
+  protected
+    Real a[size(matr,1),size(matr,2)];
+    Integer M;
+    Integer N;
+  algorithm
+    N := size(a,1)-1;
+    M := size(a,2)-1;
+    a := matr;
+    p:=0;q:=0;
+    a := pivot1(a,p+1,q+1);
+    while not (q==(M) or p==(N)) loop
+      q := 0;
+      while not (q == (M) or a[0+1,q+1]>1) loop
+        q:=q+1;
+      end while;
+      p := 0;
+      while not (p == (N) or a[p+1,q+1]>0.1) loop
+        p:=p+1;
+      end while;
+      if (q < M) and (p < N) and(p>0) and (q>0) then
+        a := pivot1(a,p,q);
+      end if;
+    if(p<=0) and (q<=0) then
+       a := pivot1(a,p+1,q+1);
+    end if;
+    if(p<=0) and (q>0) then
+       a := pivot1(a,p+1,q);
+    end if;
+    if(p>0) and (q<=0) then
+       a := pivot1(a,p,q+1);
+    end if;
+    end while;
+    z := a[1,M];
+    x := {a[1,i] for i in 1:size(x,1)};
+    for i in 1:10 loop
+     for j in 1:M loop
+      x[j] := x[j]+x[j]*0.01;
+     end for;
+    end for;
+  end misc_simplex1;
 
 Then call the simplex algorithm implemented as the Modelica function
 simplex1. This function returns four results, which are represented as a
 tuple of four return values:
 
->> simplex1(a)
+.. omc-mos ::
 
-Tuple: 4
-
-Real[8]: {9, 9, 4, 5, 0, 0, 33, 0}
-
-Real: 22
-
-Integer: 9
-
-Integer: 3
-
-It is possible to compute an expression, e.g. 12:-1:1, and store the
-result in a file using the write command:
-
->> write(12:-1:1,"test.dat")
-
-We can read back the stored result from the file into a variable y:
-
->> y := read("test.dat")
-
-Integer[12]: {12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
-
-It is also possible to give operating system commands via the system
-utility function. A command is provided as a string argument. The
-example below shows system applied to the Linux command cat, which here
-outputs the contents of the file bubblesort.mo to the output stream.
-
->> system("cat bubblesort.mo")
-
-**function** bubblesort
-
-**input** Real[:] x;
-
-**output** Real[size(x,1)] y;
-
-**protected**
-
-Real t;
-
-**algorithm**
-
-y := x;
-
-**for** i **in** 1:size(x,1) **loop**
-
-**for** j **in** 1:size(x,1) **loop**
-
-**if** y[i] > y[j] **then**
-
-t := y[i];
-
-y[i] := y[j];
-
-y[j] := t;
-
-**end** **if**;
-
-**end for**;
-
-**end for**;
-
-**end** bubblesort;
-
-Another built-in command is cd, the *change current directory* command.
-The resulting current directory is returned as a string.
-
->> cd("..")
-
-"/home/petfr/modelica"
-
-OpenModelica Python Scripting Commands
---------------------------------------
-
-The OpenModelica Python API Interface—OMPython, attempts to mimic the
-Modelica scripting commands available in the OpenModelica environment,
-see the table in Section 13.1.4 for available Python scripting commands.
-To test the command outputs, see some test examples described in section
-13.1.
+  misc_simplex1(a)
