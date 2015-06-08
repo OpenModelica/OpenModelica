@@ -15,6 +15,8 @@ if (UNIX)
 	set_target_properties(${FMUName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
+target_link_libraries (${FMUName} ${ExtensionUtilitiesName})
+
 install (TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})
 install (TARGETS ${FMUName}_static DESTINATION ${LIBINSTALLEXT})
 
