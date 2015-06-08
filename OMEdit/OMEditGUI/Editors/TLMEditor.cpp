@@ -32,7 +32,7 @@
 #include "TLMEditor.h"
 
 TLMEditor::TLMEditor(ModelWidget *pModelWidget)
-  : BaseEditor(pModelWidget)
+  : BaseEditor(pModelWidget), mTextChanged(false)
 {
   connect(this, SIGNAL(focusOut()), mpModelWidget, SLOT(TLMEditorTextChanged()));
 }
@@ -54,18 +54,39 @@ void TLMEditor::showContextMenu(QPoint point)
 void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
   Q_UNUSED(position);
-  if (mpModelWidget->isVisible())
-  {
-    if (charsRemoved == 0 && charsAdded == 0)
+  if (mpModelWidget->isVisible()) {
+    if (charsRemoved == 0 && charsAdded == 0) {
       return;
-    mpModelWidget->setModelModified();
+    }
+    /* if user is changing the text. */
+    if (!mForceSetPlainText) {
+      mpModelWidget->setModelModified();
+      mTextChanged = true;
+    }
   }
 }
 
-bool TLMEditor::TLMEditorFocusChanged()
+bool TLMEditor::validateMetaModelText()
 {
-  emit focusOut();
+   if (mTextChanged) {
+      emit focusOut();
+   }
   return true;
+}
+
+/*!
+ * \brief TLMEditor::setPlainText
+ * Reimplementation of QPlainTextEdit::setPlainText method.
+ * Makes sure we dont update if the passed text is same.
+ * \param text the string to set.
+ */
+void TLMEditor::setPlainText(const QString &text)
+{
+  if (text != mpPlainTextEdit->toPlainText()) {
+    mForceSetPlainText = true;
+    mpPlainTextEdit->setPlainText(text);
+    mForceSetPlainText = false;
+  }
 }
 
 //! @class TLMHighlighter

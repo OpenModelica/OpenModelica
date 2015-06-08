@@ -2237,7 +2237,8 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
                                              "  <!-- Parameters for the simulation -->\n"
                                              "  <SimulationParams StartTime=\"0\" StopTime=\"1\" />\n"
                                              "</Model>").arg(mpLibraryTreeNode->getName());
-      mpEditor->getPlainTextEdit()->setPlainText(defaultMetaModelText);
+      TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
+      pTLMEditor->setPlainText(defaultMetaModelText);
     } else {
       QFile file(mpLibraryTreeNode->getFileName());
       if (!file.open(QIODevice::ReadOnly)) {
@@ -2245,7 +2246,8 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
                               GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(mpLibraryTreeNode->getFileName())
                               .arg(file.errorString()), Helper::ok);
       } else {
-        mpEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
+        TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
+        pTLMEditor->setPlainText(QString(file.readAll()));
         file.close();
       }
     }
@@ -2846,7 +2848,7 @@ void ModelWidget::showDiagramView(bool checked)
       return;
     }
     TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
-    if (pTLMEditor && !pTLMEditor->TLMEditorFocusChanged()) {
+    if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }

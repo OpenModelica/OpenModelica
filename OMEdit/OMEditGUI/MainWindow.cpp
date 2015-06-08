@@ -2915,7 +2915,58 @@ void MainWindow::fetchInterfaceDataHelper(LibraryTreeNode *pLibraryTreeNode)
   pManagerProcess->start(mpOptionsDialog->getTLMPage()->getTLMManagerProcessTextBox()->text(), args);
   pManagerProcess->waitForFinished();
 
-  /*! @todo Read the interfaceData.xml file here */
+  /*! Read the interfaceData.xml file here */
+   QFile file(fileInfo.absoluteDir().absolutePath()+ "/interfaceData.xml");
+   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                             GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg("interfacedata.xml")
+                             .arg(file.errorString()), Helper::ok);
+    }
+   else {
+     QDomDocument interfaceData;
+      if (!interfaceData.setContent(&file)) {
+        file.close();
+      }
+      file.close();
+     // Get the "Root" element
+     QDomElement interfaces = interfaceData.documentElement();
+     QDomElement interfaceDataElement = interfaces.firstChildElement();
+     while (!interfaceDataElement.isNull()) {
+       if(interfaceDataElement.tagName() == "Interface")
+         break;
+       interfaceDataElement = interfaceDataElement.nextSiblingElement();
+     }
+
+     QDomDocument doc;
+     doc.setContent(pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+
+     // Get the "Root" element
+     QDomElement docElem = doc.documentElement();
+     QDomElement subModels = docElem.firstChildElement();
+     while (!subModels.isNull()) {
+       if(subModels.tagName() == "SubModels")
+         break;
+       subModels = subModels.nextSiblingElement();
+     }
+     QDomElement subModel = subModels.firstChildElement();
+     while (!subModel.isNull()) {
+       QDomElement interfaceDataElement = interfaces.firstChildElement();
+       while(!interfaceDataElement.isNull()){
+         if(subModel.tagName() == "SubModel" && subModel.attribute("Name") == interfaceDataElement.attribute("model") )  {
+           QDomElement interfacePoint = doc.createElement("InterfacePoint");
+           interfacePoint.setAttribute("Name",interfaceDataElement.attribute("name") );
+           interfacePoint.setAttribute("Position",interfaceDataElement.attribute("Position") );
+           interfacePoint.setAttribute("Angle321",interfaceDataElement.attribute("Angle321") );
+           subModel.appendChild(interfacePoint);
+           break;
+         }
+         interfaceDataElement = interfaceDataElement.nextSiblingElement();
+       }
+       subModel = subModel.nextSiblingElement();
+     }
+     QString metaModelText = doc.toString();
+     pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+   }
 }
 
 //! Creates the toolbars
