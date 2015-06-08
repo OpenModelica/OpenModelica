@@ -2312,23 +2312,27 @@ protected
   list<Absyn.Path> paths;
   list<String> paths_lst;
   String path_str;
+  Boolean unreplaceable;
+  String unreplaceableStr;
 algorithm
-  BackendDAE.VAR(varName = cr,
-                 varKind = kind,
-                 varDirection = dir,
-                 varType = var_type,
-                 arryDim = arrayDim,
-                 bindExp = bindExp,
-                 source = source,
-                 values = dae_var_attr,
-                 comment = comment,
-                 connectorType = ct) := inVar;
+  BackendDAE.VAR(varName=cr,
+                 varKind=kind,
+                 varDirection=dir,
+                 varType=var_type,
+                 arryDim=arrayDim,
+                 bindExp=bindExp,
+                 source=source,
+                 values=dae_var_attr,
+                 comment=comment,
+                 connectorType=ct,
+                 unreplaceable=unreplaceable) := inVar;
   paths := DAEUtil.getElementSourceTypes(source);
   paths_lst := List.map(paths, Absyn.pathString);
+  unreplaceableStr := if unreplaceable then " unreplaceable" else "";
   outStr := DAEDump.dumpDirectionStr(dir) + ComponentReference.printComponentRefStr(cr) + ":"
             + kindString(kind) + "(" + connectorTypeString(ct) + attributesString(dae_var_attr)
             + ") " + optExpressionString(bindExp,"") + DAEDump.dumpCommentAnnotationStr(comment)
-            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type) + "["+ExpressionDump.dimensionsString(arrayDim)+"]";
+            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type) + "["+ExpressionDump.dimensionsString(arrayDim) + "]" + unreplaceableStr;
 end varString;
 
 public function dumpKind

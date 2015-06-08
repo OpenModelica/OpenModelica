@@ -121,8 +121,12 @@ template generateAdditionalIncludesForParallelCode(SimCode simCode, Text& extraF
       <<
       #include <tbb/tbb.h>
       #include <tbb/flow_graph.h>
+	  #include <tbb/tbb_stddef.h>
       #include <boost/function.hpp>
       #include <boost/bind.hpp>
+      #if TBB_INTERFACE_VERSION >= 8000
+      #include <tbb/task_arena.h>
+      #endif
       >>
     case ("mpi") then // MF: mpi.h
       <<
@@ -200,6 +204,32 @@ template generateAdditionalStructHeaders(Schedule odeSchedule)
               void_function();
             }
           };
+          #if TBB_INTERFACE_VERSION >= 8000
+          struct TbbArenaFunctor
+          {
+          	tbb::flow::graph * g;
+          	tbb::flow::broadcast_node<tbb::flow::continue_msg> * sn;
+
+          	TbbArenaFunctor( )
+          	{
+          		g = NULL;
+          		sn = NULL;
+          	}
+
+          	TbbArenaFunctor( tbb::flow::graph & in_g , tbb::flow::broadcast_node<tbb::flow::continue_msg> & in_sn )
+          	{
+          		g = &in_g;
+          		sn = &in_sn;
+          	}
+
+          	void operator()()
+          	{
+          		sn->try_put( tbb::flow::continue_msg() );
+          		g->wait_for_all();
+          	}
+
+          };
+          #endif
           >>
         else ""
       end match
@@ -328,6 +358,10 @@ template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule>> sche
           tbb::flow::broadcast_node<tbb::flow::continue_msg> _tbbStartNode;
           std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* > _tbbNodeList_ODE;
           std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* > _tbbNodeList_DAE;
+          #if TBB_INTERFACE_VERSION >= 8000
+          tbb::task_arena _tbbArena;
+          TbbArenaFunctor _tbbArenaFunctor;
+          #endif
           >>
         else ""
       end match
@@ -459,7 +493,6 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
         case ("tbb") then
           let tbbVars = generateTbbConstructorExtension(odeSchedule.tasks, daeSchedule.tasks, modelNamePrefixStr)
           <<
-          omp_set_dynamic(1);
           <%tbbVars%>
           >>
         else ""
@@ -767,8 +800,12 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
           <%functionHead%>
           {
             //Start
+          #if TBB_INTERFACE_VERSION >= 8000
+			_tbbArena.execute(_tbbArenaFunctor);
+          #else
             _tbbStartNode.try_put(tbb::flow::continue_msg());
             _tbbGraph.wait_for_all();
+          #endif
             //End
           }
           >>
@@ -972,6 +1009,10 @@ template generateTbbConstructorExtension(list<tuple<Task,list<Integer>>> odeTask
   tbb::flow::continue_node<tbb::flow::continue_msg> *tbb_task;
   <%odeNodesAndEdges%>
   <%daeNodesAndEdges%>
+  #if TBB_INTERFACE_VERSION >= 8000
+  _tbbArena = tbb::task_arena(<%getConfigInt(NUM_PROC)%>);
+  _tbbArenaFunctor = TbbArenaFunctor(_tbbGraph,_tbbStartNode);
+  #endif
   >>
 end generateTbbConstructorExtension;
 

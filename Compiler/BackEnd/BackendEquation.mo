@@ -1186,7 +1186,7 @@ algorithm
   eqns_1 := List.fold(eqnlst, addEquation, eqns);
 end addEquations;
 
-public function mergeEquationArray "author: vitalij
+public function mergeEquationArray "
   This function returns an EquationArray containing all the equations from both
   inputs."
   input BackendDAE.EquationArray inEqns1;

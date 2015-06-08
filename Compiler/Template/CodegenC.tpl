@@ -8115,7 +8115,13 @@ case BINARY(__) then
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(exp))%>");}<%\n%>'
     '(<%e1%> / <%e2%>)'
   case POW(__) then
-    if isHalf(exp2) then 'sqrt(<%e1%>)'
+    if isHalf(exp2) then
+      (let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
+       let ass = '(<%tmp%> >= 0.0)'
+       let &preExpMsg = buffer ""
+       let retPre = assertCommonVar(ass,'"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(exp1))%>) was %g should be >= 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
+       let &preExp += '<%tmp%> = <%e1%>; <%\n%><%retPre%>'
+       'sqrt(<%tmp%>)')
     else match realExpIntLit(exp2)
       case SOME(2) then
         let tmp = tempDecl("modelica_real", &varDecls)

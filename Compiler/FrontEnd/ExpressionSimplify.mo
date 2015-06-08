@@ -503,6 +503,23 @@ algorithm
   (outExp,hasChanged) := simplify1WithOptions(inExp,optionSimplifyOnly);
 end simplify1;
 
+public function simplify1o
+"This function does some very basic simplification
+  on expressions, like 0*a = 0, [1][1] => 1, etc."
+  input Option<DAE.Exp> inExp;
+  output Option<DAE.Exp> outExp;
+algorithm
+  outExp := match inExp
+            local DAE.Exp e;
+            case SOME(e)
+            equation
+              (e,_) = simplify1WithOptions(e,optionSimplifyOnly);
+            then SOME(e);
+            else inExp;
+            end match;
+end simplify1o;
+
+
 public function simplify1WithOptions
 "This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."

@@ -403,6 +403,15 @@ static inline int intMax(int a, int b)
   return a>b ? a : b;
 }
 
+static int endsWith(const char *s, const char *suffix)
+{
+  s = strrchr(s, *suffix);
+  if (s != NULL) {
+    return 0==strcmp(s, suffix);
+  } else {
+    return 0;
+  }
+}
 int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals)
 {
   const char *msg[5] = {"","","","",""};
@@ -426,6 +435,37 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     int *parameter_indexesToOutput = NULL;
     parameter_indexes[0] = 1; /* time */
     omc_matlab4_read_all_vals(&simresglob.matReader);
+    if (endsWith(outFile,".csv")) {
+      double **vals = GC_malloc(sizeof(double*)*numToFilter);
+      for (i=0; i<numToFilter; i++) {
+        const char *var = MMC_STRINGDATA(MMC_CAR(vars));
+        vars = MMC_CDR(vars);
+        mat_var[i] = omc_matlab4_find_var(&simresglob.matReader, var);
+        if (mat_var[i] == NULL) {
+          msg[0] = SystemImpl__basename(inFile);
+          msg[1] = var;
+          c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
+          return 0;
+        }
+        vals[i] = omc_matlab4_read_vals(&simresglob.matReader, mat_var[i]->index);
+      }
+      FILE *fout = fopen(outFile, "w");
+      fprintf(fout, "time");
+      for (i=1; i<numToFilter; i++) {
+        fprintf(fout, ",\"%s\"", mat_var[i]->name);
+      }
+      fprintf(fout, ",nrows=%d\n", simresglob.matReader.nrows);
+      for (i=0; i<simresglob.matReader.nrows; i++) {
+        fprintf(fout, "%.15g", vals[0][i]);
+        for (j=1; j<numToFilter; j++) {
+          fprintf(fout, ",%.15g", vals[j][i]);
+        }
+        fprintf(fout, "\n");
+      }
+      fclose(fout);
+      return 1;
+    } /* Not CSV */
+
     for (i=0; i<numToFilter; i++) {
       const char *var = MMC_STRINGDATA(MMC_CAR(vars));
       vars = MMC_CDR(vars);

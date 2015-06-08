@@ -170,6 +170,11 @@ package DAE
       list<Subscript> subscriptLst;
     end CREF_ITER;
 
+    record OPTIMICA_ATTR_INST_CREF
+      ComponentRef componentRef;
+      String instant;
+    end OPTIMICA_ATTR_INST_CREF;
+
     record WILD end WILD;
   end ComponentRef;
 
