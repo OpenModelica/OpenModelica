@@ -121,6 +121,7 @@ SOURCES += main.cpp \
   Simulation/SimulationOutputWidget.cpp \
   Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
+  TLM/FetchInterfaceDataDialog.cpp \
   Simulation/TLMCoSimulationDialog.cpp \
   Simulation/TLMCoSimulationOutputWidget.cpp \
   Simulation/TLMCoSimulationThread.cpp \
@@ -183,6 +184,7 @@ HEADERS  += Util/Helper.h \
   Simulation/SimulationOutputWidget.h \
   Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
+  TLM/FetchInterfaceDataDialog.h \
   Simulation/TLMCoSimulationOptions.h \
   Simulation/TLMCoSimulationDialog.h \
   Simulation/TLMCoSimulationOutputWidget.h \
@@ -231,6 +233,7 @@ INCLUDEPATH += . \
   Options \
   Plotting \
   Simulation \
+  TLM \
   TransformationalDebugger \
   Util \
   $$OPENMODELICAHOME/include/omc/scripting-API
