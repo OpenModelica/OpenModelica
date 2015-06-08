@@ -3329,11 +3329,14 @@ algorithm
       then explst;
 
     case (DAE.CALL(path=p1,expLst=explst,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
+      guard Absyn.pathEqual(p1,p2) "is record constructor"
+      then List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
+
+    case(DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = incref)}), _)
       equation
-        true = Absyn.pathEqual(p1,p2) "is record constructor";
-        explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
-      then
-        explst;
+        cr = ComponentReference.crefPrefixDer(incref);
+        e = Expression.crefExp(cr);
+      then generateCrefsExpLstFromExp(e, inCrefPrefix);
 
     case (DAE.CREF(componentRef=cr,ty=ty),SOME(incref))
       equation
@@ -3350,7 +3353,7 @@ algorithm
 
     else
       equation
-        print("Expression.generateCrefsExpLstFromExp: fail for" + ExpressionDump.printExpStr(inExp) + "\n");
+        print("Expression.generateCrefsExpLstFromExp: fail for " + ExpressionDump.printExpStr(inExp) + "\n");
       then fail();
 
   end match;
