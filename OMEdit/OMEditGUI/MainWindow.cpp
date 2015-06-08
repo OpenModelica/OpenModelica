@@ -42,6 +42,7 @@
 #include "VariablesWidget.h"
 #include "Helper.h"
 #include "SimulationOutputWidget.h"
+#include "FetchInterfaceDataDialog.h"
 #include "TLMCoSimulationOutputWidget.h"
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
@@ -2898,6 +2899,8 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
  */
 void MainWindow::fetchInterfaceDataHelper(LibraryTreeNode *pLibraryTreeNode)
 {
+//  FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeNode, this);
+//  pFetchInterfaceDataDialog->exec();
   QProcess *pManagerProcess = new QProcess;
   QFileInfo fileInfo(pLibraryTreeNode->getFileName());
   pManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
