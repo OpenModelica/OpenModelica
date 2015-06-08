@@ -2178,6 +2178,71 @@ void MainWindow::toggleAutoSave()
   }
 }
 
+/*!
+ * \brief MainWindow::readInterfaceData
+ * \param pLibraryTreeNode
+ * Reads the interface data by reading the interfaceData.xml file and updates the meta-model text.
+ */
+void MainWindow::readInterfaceData(LibraryTreeNode *pLibraryTreeNode)
+{
+  if (!pLibraryTreeNode) {
+    return;
+  }
+
+  QFileInfo fileInfo(pLibraryTreeNode->getFileName());
+  QFile file(fileInfo.absoluteDir().absolutePath()+ "/interfaceData.xml");
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg("interfaceData.xml")
+                          .arg(file.errorString()), Helper::ok);
+  } else {
+    QDomDocument interfaceData;
+    interfaceData.setContent(&file);
+    file.close();
+    // Get the "Root" element
+    QDomElement interfaces = interfaceData.documentElement();
+    QDomElement interfaceDataElement = interfaces.firstChildElement();
+    while (!interfaceDataElement.isNull()) {
+      if (interfaceDataElement.tagName() == "Interface")
+        break;
+      interfaceDataElement = interfaceDataElement.nextSiblingElement();
+    }
+
+    // if we don't have ModelWidget then show it.
+    if (!pLibraryTreeNode->getModelWidget()) {
+      mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode);
+    }
+    QDomDocument doc;
+    doc.setContent(pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+    // Get the "Root" element
+    QDomElement docElem = doc.documentElement();
+    QDomElement subModels = docElem.firstChildElement();
+    while (!subModels.isNull()) {
+      if(subModels.tagName() == "SubModels")
+        break;
+      subModels = subModels.nextSiblingElement();
+    }
+    QDomElement subModel = subModels.firstChildElement();
+    while (!subModel.isNull()) {
+      QDomElement interfaceDataElement = interfaces.firstChildElement();
+      while(!interfaceDataElement.isNull()){
+        if(subModel.tagName() == "SubModel" && subModel.attribute("Name") == interfaceDataElement.attribute("model") )  {
+          QDomElement interfacePoint = doc.createElement("InterfacePoint");
+          interfacePoint.setAttribute("Name",interfaceDataElement.attribute("name") );
+          interfacePoint.setAttribute("Position",interfaceDataElement.attribute("Position") );
+          interfacePoint.setAttribute("Angle321",interfaceDataElement.attribute("Angle321") );
+          subModel.appendChild(interfacePoint);
+          break;
+        }
+        interfaceDataElement = interfaceDataElement.nextSiblingElement();
+      }
+      subModel = subModel.nextSiblingElement();
+    }
+    QString metaModelText = doc.toString();
+    pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+  }
+}
+
 void MainWindow::perspectiveTabChanged(int tabIndex)
 {
   switch (tabIndex)
@@ -2899,26 +2964,9 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
  */
 void MainWindow::fetchInterfaceDataHelper(LibraryTreeNode *pLibraryTreeNode)
 {
-//  FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeNode, this);
-//  pFetchInterfaceDataDialog->exec();
-  QProcess *pManagerProcess = new QProcess;
-  QFileInfo fileInfo(pLibraryTreeNode->getFileName());
-  pManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  QStringList args;
-  args << "-r" << fileInfo.absoluteFilePath();
-  QProcessEnvironment environment;
-#ifdef WIN32
-  environment = StringHandler::simulationProcessEnvironment();
-#else
-  environment = QProcessEnvironment::systemEnvironment();
-#endif
-  environment.insert("PATH", mpOptionsDialog->getTLMPage()->getTLMPluginPathTextBox()->text() + ";" + environment.value("PATH"));
-  environment.insert("TLMPluginPath", mpOptionsDialog->getTLMPage()->getTLMPluginPathTextBox()->text());
-  pManagerProcess->setProcessEnvironment(environment);
-  pManagerProcess->start(mpOptionsDialog->getTLMPage()->getTLMManagerProcessTextBox()->text(), args);
-  pManagerProcess->waitForFinished();
-
-  /*! @todo Read the interfaceData.xml file here */
+  FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeNode, this);
+  connect(pFetchInterfaceDataDialog, SIGNAL(readInterfaceData(LibraryTreeNode*)), SLOT(readInterfaceData(LibraryTreeNode*)));
+  pFetchInterfaceDataDialog->exec();
 }
 
 //! Creates the toolbars

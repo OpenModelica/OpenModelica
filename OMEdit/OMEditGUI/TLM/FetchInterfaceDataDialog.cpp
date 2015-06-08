@@ -39,7 +39,7 @@ FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeNode *pLibraryTree
   setMinimumWidth(550);
   mpLibraryTreeNode = pLibraryTreeNode;
   // progress
-  mpProgressLabel = new Label(tr("Fetching interface data for <b>%1</b>...").arg(mpLibraryTreeNode->getNameStructure()));
+  mpProgressLabel = new Label;
   mpProgressLabel->setTextFormat(Qt::RichText);
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
@@ -63,5 +63,112 @@ FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeNode *pLibraryTree
   pMainGridLayout->addWidget(mpOutputLabel, 2, 0, 1, 3);
   pMainGridLayout->addWidget(mpOutputTextBox, 3, 0, 1, 3);
   setLayout(pMainGridLayout);
+  // create the thread
+  mpFetchInterfaceDataThread = new FetchInterfaceDataThread(this);
+  connect(mpFetchInterfaceDataThread, SIGNAL(sendManagerStarted()), SLOT(managerProcessStarted()));
+  connect(mpFetchInterfaceDataThread, SIGNAL(sendManagerOutput(QString,StringHandler::SimulationMessageType)),
+          SLOT(writeManagerOutput(QString,StringHandler::SimulationMessageType)));
+  connect(mpFetchInterfaceDataThread, SIGNAL(sendManagerFinished(int,QProcess::ExitStatus)),
+          SLOT(managerProcessFinished(int,QProcess::ExitStatus)));
+  mpFetchInterfaceDataThread->start();
+}
+
+/*!
+ * \brief FetchInterfaceDataDialog::closeEvent
+ * \param event
+ * Reimplentation of QDialog::closeEvent(). Doesn't allow closing the dialog if we are fetching interface data.
+ */
+void FetchInterfaceDataDialog::closeEvent(QCloseEvent *event)
+{
+  if (mpFetchInterfaceDataThread->isManagerProcessRunning()) {
+    event->ignore();
+  } else {
+    mpFetchInterfaceDataThread->exit();
+    mpFetchInterfaceDataThread->wait();
+    event->accept();
+  }
+}
+
+/*!
+ * \brief FetchInterfaceDataDialog::cancelFetchingInterfaceData
+ * Slot activated when mpCancelButton clicked signal is raised.\n
+ * Kills the manager process.
+ */
+void FetchInterfaceDataDialog::cancelFetchingInterfaceData()
+{
+  if (mpFetchInterfaceDataThread->isManagerProcessRunning()) {
+    mpFetchInterfaceDataThread->getManagerProcess()->kill();
+    mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b> is cancelled.").arg(mpLibraryTreeNode->getNameStructure()));
+    mpCancelButton->setEnabled(false);
+    mpFetchAgainButton->setEnabled(true);
+  }
+}
+
+void FetchInterfaceDataDialog::fetchAgainInterfaceData()
+{
+  if (mpFetchInterfaceDataThread->isRunning()) {
+    mpFetchInterfaceDataThread->exit();
+    mpFetchInterfaceDataThread->wait();
+  }
+  mpFetchInterfaceDataThread->start();
+}
+
+/*!
+ * \brief FetchInterfaceDataDialog::managerProcessStarted
+ * Slot activated when FetchInterfaceDataThread sendManagerStarted signal is raised.\n
+ * Updates the progress label, bar and stop manager button controls.
+ */
+void FetchInterfaceDataDialog::managerProcessStarted()
+{
+  mpProgressLabel->setText(tr("Fetching interface data for <b>%1</b>...").arg(mpLibraryTreeNode->getNameStructure()));
+  mpProgressBar->setRange(0, 0);
+  mpProgressBar->setTextVisible(true);
+  mpCancelButton->setEnabled(true);
+  mpFetchAgainButton->setEnabled(false);
+}
+
+/*!
+ * \brief FetchInterfaceDataDialog::writeManagerOutput
+ * \param output
+ * \param type
+ * Slot activated when FetchInterfaceDataThread sendManagerOutput signal is raised.\n
+ * Writes the manager standard output/error to the manager output text box.
+ */
+void FetchInterfaceDataDialog::writeManagerOutput(QString output, StringHandler::SimulationMessageType type)
+{
+  /* move the cursor down before adding to the logger. */
+  QTextCursor textCursor = mpOutputTextBox->textCursor();
+  textCursor.movePosition(QTextCursor::End);
+  mpOutputTextBox->setTextCursor(textCursor);
+  /* set the text color */
+  QTextCharFormat charFormat = mpOutputTextBox->currentCharFormat();
+  charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+  mpOutputTextBox->setCurrentCharFormat(charFormat);
+  /* append the output */
+  mpOutputTextBox->insertPlainText(output + "\n");
+  /* move the cursor */
+  textCursor.movePosition(QTextCursor::End);
+  mpOutputTextBox->setTextCursor(textCursor);
+}
+
+/*!
+ * \brief FetchInterfaceDataDialog::managerProcessFinished
+ * \param exitCode
+ * \param exitStatus
+ * Slot activated when FetchInterfaceDataThread sendManagerFinished signal is raised.
+ */
+void FetchInterfaceDataDialog::managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+  Q_UNUSED(exitCode);
+  Q_UNUSED(exitStatus);
+  mpProgressBar->setRange(0, 100);
+  mpProgressBar->setValue(mpProgressBar->maximum());
+  mpCancelButton->setEnabled(false);
+  mpFetchAgainButton->setEnabled(true);
+  // if manager process has finished successfully then try reading the interface data.
+  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+    mpProgressLabel->setText(tr("Fetched interface data for <b>%1</b>...").arg(mpLibraryTreeNode->getNameStructure()));
+    emit readInterfaceData(mpLibraryTreeNode);
+  }
 }
 

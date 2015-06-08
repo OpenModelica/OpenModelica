@@ -122,6 +122,7 @@ SOURCES += main.cpp \
   Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
   TLM/FetchInterfaceDataDialog.cpp \
+  TLM/FetchInterfaceDataThread.cpp \
   Simulation/TLMCoSimulationDialog.cpp \
   Simulation/TLMCoSimulationOutputWidget.cpp \
   Simulation/TLMCoSimulationThread.cpp \
@@ -185,6 +186,7 @@ HEADERS  += Util/Helper.h \
   Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
   TLM/FetchInterfaceDataDialog.h \
+  TLM/FetchInterfaceDataThread.h \
   Simulation/TLMCoSimulationOptions.h \
   Simulation/TLMCoSimulationDialog.h \
   Simulation/TLMCoSimulationOutputWidget.h \

@@ -371,6 +371,7 @@ public slots:
   void hideProgressBar();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void toggleAutoSave();
+  void readInterfaceData(LibraryTreeNode *pLibraryTreeNode);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void autoSave();
