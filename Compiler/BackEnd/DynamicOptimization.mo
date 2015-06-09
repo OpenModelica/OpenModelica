@@ -501,7 +501,7 @@ public function removeLoops
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  if Flags.isSet(Flags.EXTENDS_DYN_OPT) then
+  if Flags.isSet(Flags.EXTENDS_DYN_OPT) or Flags.isSet(Flags.LOOP2CON) then
     //BackendDump.bltdump("***", inDAE);
     (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findLoops, false);
     //BackendDump.bltdump("###", outDAE);
@@ -573,13 +573,18 @@ algorithm
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.FunctionTree funcs;
+      BackendDAE.JacobianType jacType;
+      Boolean linear, force_break = not Flags.isSet(Flags.LOOP2CON);
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx)))
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx, jacType=jacType)))
+    guard force_break or not isConstOrlinear(jacType)
     equation
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
     then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex,tearingvars=vindx))))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex,tearingvars=vindx),linear=linear)))
+    guard force_break or not linear
     equation
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
     then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
@@ -602,6 +607,16 @@ algorithm
 
 end removeLoopsWork;
 
+protected function isConstOrlinear
+  input BackendDAE.JacobianType jacType;
+  output Boolean b;
+algorithm
+  b := match jacType
+       case BackendDAE.JAC_CONSTANT() then true;
+       case BackendDAE.JAC_LINEAR() then true;
+       else false;
+       end match;
+end isConstOrlinear;
 
 protected function res2Con
 "

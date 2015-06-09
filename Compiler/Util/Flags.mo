@@ -446,6 +446,8 @@ constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(138, "buildExternalLibs", true,
   Util.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
 constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(139, "runtimeStaticLinking", false,
   Util.gettext("Use the static simulation runtime libraries (C++ simulation runtime)."));
+constant DebugFlag LOOP2CON = DEBUG_FLAG(140, "loop2con", false,
+  Util.gettext("transform nonlinear loop in nonlinear constraint. hint: using intial guess from file!"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -591,7 +593,8 @@ constant list<DebugFlag> allDebugFlags = {
   ADD_SCALED_VARS_INPUT,
   VECTORIZE,
   CHECK_EXT_LIBS,
-  RUNTIME_STATIC_LINKING
+  RUNTIME_STATIC_LINKING,
+  LOOP2CON
 };
 
 public
