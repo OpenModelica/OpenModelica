@@ -418,7 +418,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     // get the model defaultComponentName
     QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(className);
     if (defaultName.isEmpty()) {
-      name = getUniqueComponentName(name.toLower());
+      name = getUniqueComponentName(StringHandler::toCamelCase(name));
     } else {
       if (checkComponentName(defaultName)) {
         name = defaultName;

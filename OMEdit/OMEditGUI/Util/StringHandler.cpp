@@ -1482,3 +1482,16 @@ QString StringHandler::makeClassNameRelative(QString draggedClassName, QString d
     return draggedClassName;
   }
 }
+
+/*!
+ * \brief StringHandler::toCamelCase
+ * Converts the string to camel case.
+ * \param str
+ * \return the string converted to camel case.
+ */
+QString StringHandler::toCamelCase(QString str)
+{
+  QString s = str;
+  s[0] = s[0].toLower();
+  return s;
+}
