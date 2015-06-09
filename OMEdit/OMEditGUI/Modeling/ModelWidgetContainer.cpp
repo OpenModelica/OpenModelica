@@ -544,33 +544,6 @@ void GraphicsView::addComponentObject(Component *pComponent)
     annotation.setAttribute("Rotation", QString::number(pComponent->getTransformation()->getRotateAngle()));
     subModel.appendChild(annotation);
 
-    int i = -1;
-    QList<ComponentInfo*> componentInfoList = pComponent->getOMCProxy()->getComponents(pComponent->getClassName());
-    QString className = pComponent->getClassName();
-    foreach (ComponentInfo *pComponentInfo, componentInfoList) {
-      i++;
-      QString componentClassName = pComponentInfo->getClassName();
-      QString componentName = pComponentInfo->getName();
-      QList<ComponentInfo*> componentInfoList1 = pComponent->getOMCProxy()->getComponents(pComponentInfo->getClassName());
-      foreach (ComponentInfo *pComponentInfo, componentInfoList1) {
-        if (pComponentInfo->getName()== "interfaceName") {
-          QString value = "";
-          if (value.isEmpty() && !componentName.isEmpty()) {
-            value = pComponent->getOMCProxy()->getComponentModifierValue(className, QString(componentName).append(".").append(pComponentInfo->getName()));
-           }
-           if (value.isEmpty()) {
-              value = StringHandler::removeFirstLastQuotes(pComponent->getOMCProxy()->getParameterValue(componentClassName, pComponentInfo->getName()));
-           }
-           QDomElement interfaceName = doc.createElement("InterfacePoint");
-           interfaceName.setAttribute("Name",value );
-           subModel.appendChild(interfaceName);
-
-           TLMInterfacePointInfo *pTLMInterfacePointInfo;
-           pTLMInterfacePointInfo = new TLMInterfacePointInfo(pComponent->getName(), pComponent->getClassName(), value);
-           mpModelWidget->getDiagramGraphicsView()->getComponentObject(pComponent->getName())->addInterfacePoint(pTLMInterfacePointInfo);
-        }
-     }
-   }
    subModels.appendChild(subModel);
    QString metaModelText = doc.toString();
    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
