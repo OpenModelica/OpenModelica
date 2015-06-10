@@ -528,9 +528,9 @@ void GraphicsView::addComponentObject(Component *pComponent)
     QDomElement docElem = doc.documentElement();
     QDomElement subModels = docElem.firstChildElement();
     while (!subModels.isNull()) {
-      if(subModels.tagName() == "SubModels") break;
-      subModels = subModels.nextSiblingElement();
-    }
+        if(subModels.tagName() == "SubModels") break;
+        subModels = subModels.nextSiblingElement();
+      }
     QDomElement subModel = doc.createElement("SubModel");
     subModel.setAttribute("Name", pComponent->getName());
     subModel.setAttribute("StartCommand", "StartTLMOpenModelica");
@@ -544,11 +544,11 @@ void GraphicsView::addComponentObject(Component *pComponent)
     annotation.setAttribute("Rotation", QString::number(pComponent->getTransformation()->getRotateAngle()));
     subModel.appendChild(annotation);
 
-   subModels.appendChild(subModel);
-   QString metaModelText = doc.toString();
-   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-   pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
- }
+    subModels.appendChild(subModel);
+    QString metaModelText = doc.toString();
+    MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
+    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+  }
   // make the model modified
   mpModelWidget->setModelModified();
   // add the component to the local list
