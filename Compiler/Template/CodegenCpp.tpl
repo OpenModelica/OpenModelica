@@ -1633,8 +1633,9 @@ extern "C"  int runSimulation(void)
   PATH modelicaSystem_path = "";
   boost::shared_ptr<VxWorksFactory> factory = boost::shared_ptr<VxWorksFactory>(new VxWorksFactory(libraries_path, modelicaSystem_path));
   ISimController* sim_controller = createSimController(libraries_path, modelicaSystem_path);
-  boost::weak_ptr<ISimData> simData = sim_controller->LoadSimData("model2");
-  boost::weak_ptr<IMixedSystem> system = sim_controller->LoadSystem("model2","model2");
+  boost::weak_ptr<ISimData> simData = sim_controller->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
+  boost::weak_ptr<ISimVars> simVars = sim_controller->LoadSimVars("<%lastIdentOfPath(modelInfo.name)%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>);
+  boost::weak_ptr<IMixedSystem> system = sim_controller->LoadSystem("<%lastIdentOfPath(modelInfo.name)%>","<%lastIdentOfPath(modelInfo.name)%>");
   boost::shared_ptr<ISimData> simData_shared = simData.lock();
 
 
@@ -2656,6 +2657,9 @@ case "vxworks69" then
 
       WIND_HOME := $(subst \,/,$(WIND_HOME))
       WIND_BASE := $(subst \,/,$(WIND_BASE))
+	  MLPI := $(subst \,/,$(MLPI))
+      OMDEV := $(subst \,/,$(OMDEV))
+      CPP_RUNTIME := $(subst \,/,$(CPP_RUNTIME))
 
       all : clean pre_build main_all post_build
 
@@ -2703,10 +2707,10 @@ case "vxworks69" then
       LIBPATH =
       LIBS =
 
-      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/
+      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
 
-      IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a
-
+      IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
+	  
       IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
 
 
@@ -2752,8 +2756,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
+      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEFINES =
@@ -2804,8 +2808,8 @@ case "vxworks69" then
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
       endif
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -ID:/Windriver_Projekte/1.10.1.0/mlpiCore/include -IC:/OMdev/lib/3rdParty/boost-1_49 -IC:/cpp_runtime_for_xm22/Include/SimCoreFactory -IC:/cpp_runtime_for_xm22/Include/Core -IC:/cpp_runtime_for_xm22/Include/
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = C:/wb335_BoschOEM/workspace/MATH_BIB/ATOMgnu/MATH_BIB/Debug/MATH_BIB.a C:/wb335_BoschOEM/workspace/ModelicaExternalC/ATOMgnu/ModelicaExternalC/Debug/ModelicaExternalC.a C:/wb335_BoschOEM/workspace/Math/ATOMgnu/Math/Debug/Math.a C:/wb335_BoschOEM/workspace/VxWorksFactory/ATOMgnu/VxWorksFactory/Debug/VxWorksFactory.a C:/wb335_BoschOEM/workspace/SimController/ATOMgnu/SimulationController/Debug/SimulationController.a C:/wb335_BoschOEM/workspace/DataExchange/ATOMgnu/DataExchange/Debug/DataExchange.a C:/wb335_BoschOEM/workspace/SimulationSettings/ATOMgnu/SimulationSettings/Debug/SimulationSettings.a C:/wb335_BoschOEM/workspace/Solver/ATOMgnu/Solver/Debug/Solver.a C:/wb335_BoschOEM/workspace/System/ATOMgnu/System/Debug/System.a C:/wb335_BoschOEM/workspace/RTSolver/ATOMgnu/RTSolver/Debug/RTSolver.a C:/wb335_BoschOEM/workspace/Kinsol_Sources/ATOMgnu/Kinsol_Sources/Debug/Kinsol_Sources.a C:/wb335_BoschOEM/workspace/Kinsol/ATOMgnu/Kinsol/Debug/Kinsol.a
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI)/mlpiCore/include -I$(OMDEV)/lib/3rdParty/boost-1_49 -I$(CPP_RUNTIME)/Include/Core -I$(CPP_RUNTIME)/Include
+      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(CPP_RUNTIME)/Build/VxWorks/SimCore.a
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : PROJECT_TYPE = DKM
       com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEFINES =
@@ -9858,7 +9862,7 @@ template generateInitAlgloopsolverVariables1(list<SimEqSystem> allEquationsPlusW
       generateInitAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace);separator="\n")
     ;separator="\n")
 
-  let &funcCalls += 'initializeAlgloopSolverVariables_<%partIdx%>();'
+  let &funcCalls += 'initializeAlgloopSolverVariables_<%partIdx%>(); <%\n%>'
   <<
   void <%className%>::initializeAlgloopSolverVariables_<%partIdx%>()
   {
@@ -9932,7 +9936,7 @@ template generateDeleteAlgloopsolverVariables1(list<SimEqSystem> allEquationsPlu
   let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       generateDeleteAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace);separator="\n")
     ;separator="\n")
-  let &funcCalls += 'deleteAlgloopSolverVariables_<%partIdx%>();'
+  let &funcCalls += 'deleteAlgloopSolverVariables_<%partIdx%>(); <%\n%>'
   <<
   void <%className%>::deleteAlgloopSolverVariables_<%partIdx%>()
   {

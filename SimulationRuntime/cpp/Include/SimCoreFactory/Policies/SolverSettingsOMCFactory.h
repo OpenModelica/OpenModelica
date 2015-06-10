@@ -102,6 +102,18 @@ public:
             }
             solver_settings_key.assign("extension_export_cvode");
         }
+		else if((solvername.compare("arkode")==0))
+        {
+            PATH arkode_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH arkode_name(ARKODE_LIB);
+            arkode_path/=arkode_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(arkode_path.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading ARKode solver library!");
+            }
+            solver_settings_key.assign("extension_export_arkode");
+        }
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
 
