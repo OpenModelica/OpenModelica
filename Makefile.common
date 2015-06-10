@@ -403,3 +403,12 @@ $(LIBMODELICAEXTERNALC):
 	@test -f $@
 $(LIBMODELICASTANDARDTABLES): $(LIBMODELICAEXTERNALC)
 	@test -f $@
+
+git-clean:
+	test -e .git
+	git clean -fdx
+
+git-sanity-check: git-clean
+	test "./Compiler/boot/bootstrap-sources.tar.xz" = `find . -type f -size +684k | grep -v 3rdParty`
+	test ! -e SimulationRuntime/cpp/Doc
+	! find . -name "*.html" -o -name "*.png" | grep -v 3rdParty

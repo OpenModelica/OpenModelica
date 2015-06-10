@@ -7665,8 +7665,8 @@ algorithm
     // not functions. So it is not really a call Exp but the compiler treats it as if it is up until this point.
     // This is a kind of trick to handle that.
     case (cache,env,fn,{Absyn.CREF(Absyn.CREF_IDENT(name,_))},_,impl,_,_,pre,_,_)
+      guard Config.acceptOptimicaGrammar()
       equation
-        true = Config.acceptOptimicaGrammar();
         cref = Absyn.pathToCref(fn);
 
         (cache,SOME((daeexp as DAE.CREF(daecref,tp),prop,_))) = elabCref(cache,env, cref, impl,true,pre,info);
