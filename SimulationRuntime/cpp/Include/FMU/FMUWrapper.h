@@ -34,7 +34,7 @@ private:
     }
 
 public:
-    FMUWrapper(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn) : IFMUInterface(instanceName, GUID, functions, loggingOn)
+    FMUWrapper(fmiString instanceName, fmiString GUID, fmiCallbackFunctions functions, fmiBoolean loggingOn) : IFMUInterface(instanceName, GUID, functions, loggingOn), _need_update(true)
     {
       FMULogger::initialize(functions.logger, this, instanceName);
       boost::shared_ptr<IAlgLoopSolverFactory>
@@ -52,6 +52,7 @@ public:
 
     virtual fmiStatus setDebugLogging  (fmiBoolean loggingOn)
     {
+    	Logger::setEnabled(loggingOn);
         return fmiOK;
     }
 
@@ -66,6 +67,9 @@ public:
     virtual fmiStatus setContinuousStates    (const fmiReal states[], size_t nx)
     {
       // to set states do the folowing
+	  std::stringstream message;
+	  message << "Setting continuous states";
+	  Logger::writeInfo(message.str());
       _model->setContinuousStates(states);
       _need_update = true;
       return fmiOK;
@@ -140,6 +144,7 @@ public:
 
     virtual fmiStatus getDerivatives    (fmiReal derivatives[]    , size_t nx)
     {
+	  Logger::writeInfo("Try to get derivatives");
       updateModel();
       _model->getRHS(derivatives);
       return fmiOK;
