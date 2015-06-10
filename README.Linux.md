@@ -155,4 +155,4 @@ Otherwise the testsuite will fail when generating simulation code.
 
 - On some Linux systems when running simulate(Model, ...) the executable for the Model enters an infinite loop. To fix this, add -ffloat-store to CFLAGS
 
-Last updated 2015-05-21. Much is still outdated.
+Last updated 2015-06-10. Much is still outdated.
