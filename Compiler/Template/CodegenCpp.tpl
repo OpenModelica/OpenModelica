@@ -13965,17 +13965,12 @@ end equationFunctions;
 
 template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime)
 ::=
-  let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
   let &varDecls = buffer "" /*BUFD*/
+  let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
 
-  let &eqfuncs = buffer ""
-  let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate")
-                    ;separator="\n")
-
-  let equation_notOde_func_calls = (SimCodeUtil.getDaeEqsNotPartOfOdeSystem(simCode ) |> eq =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate")
-                    ;separator="\n")
+  let equation_all_func_calls = (List.partition(allEquationsPlusWhen, 100) |> eqs hasindex i0 =>
+                                 createEvaluateWithSplit(i0, context, eqs, "evaluateAll", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+                                 ;separator="\n")
 
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, stateDerVectorName, useFlatArrayNotation)
@@ -13990,11 +13985,6 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_all_func_calls%>
-
-    /* evaluateODE(command);
-
-    <%equation_notOde_func_calls%>
-    */
     // Reinits
     <%reinit%>
 
@@ -14032,9 +14022,9 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
   let &varDecls = buffer "" /*BUFD*/
 
-  let equation_ode_func_calls = (odeEquations |> eqs => (eqs |> eq  =>
-                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate");separator="\n")
-                   )
+  let equation_ode_func_calls = (List.partition(List.flatten(odeEquations), 100) |> eqs hasindex i0 =>
+                                 createEvaluateWithSplit(i0, context, eqs, "evaluateODE", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+                                 ;separator="\n")
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
@@ -14053,8 +14043,8 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
   let &varDecls = buffer "" /*BUFD*/
 
   let &eqfuncs = buffer ""
-  let equation_zero_func_calls = (equationsForZeroCrossings |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate")
+  let equation_zero_func_calls = (List.partition(equationsForZeroCrossings, 100) |> eqs hasindex i0 =>
+                    createEvaluateWithSplit(i0, context, eqs, "evaluateZeroFuncs", className, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)
                     ;separator="\n")
 
   <<
@@ -14066,6 +14056,29 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
   }
   >>
 end createEvaluateZeroFuncs;
+
+template createEvaluateWithSplit(Integer sectionIndex, Context context, list<SimEqSystem> sectionEquations, String functionName, String className, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let equation_func_calls = (sectionEquations |> eq  =>
+                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate")
+                    ;separator="\n")
+  let &extraFuncs +=
+  <<
+  <%\n%>bool <%className%>::<%functionName%>_<%sectionIndex%>(const UPDATETYPE command)
+  {
+    <%varDecls%>
+    <%equation_func_calls%>
+  }
+  >>
+  let &extraFuncsDecl +=
+  <<
+  bool <%functionName%>_<%sectionIndex%>(const UPDATETYPE command);<%\n%>
+  >>
+  <<
+  <%functionName%>_<%sectionIndex%>(command);
+  >>
+end createEvaluateWithSplit;
 
 /*
  //! Evaluates only the equations whose indexs are passed to it.
