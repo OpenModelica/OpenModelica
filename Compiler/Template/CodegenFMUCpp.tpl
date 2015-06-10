@@ -292,11 +292,12 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   // initialization
   void <%modelShortName%>FMU::initialize() {
+    Logger::writeInfo("Initialization started");
     <%modelShortName%>WriteOutput::initialize();
-    <%modelShortName%>Initialize::initializeMemory();
-    <%modelShortName%>Initialize::initializeFreeVariables();
+    <%modelShortName%>Initialize::initialize();
     <%modelShortName%>Jacobian::initialize();
     <%modelShortName%>Jacobian::initializeColoredJacobianA();
+    Logger::writeInfo("Initialization finished");
   }
 
   // getters
@@ -576,11 +577,16 @@ match simVar
   <<
   case <%intAdd(offset, index)%>: <%description%>
     value[i] = <%cppSign%><%cppName%>;
-    Logger::writeInfo("Found variable <%descName%>"); break;
+    message.str("");
+    message << "Getting variable <%descName%> with value " << value[i];
+    Logger::writeInfo(message.str()); break;
   >>
   else
   <<
   case <%intAdd(offset, index)%>: <%description%>
+    message.str("");
+    message << "Setting variable <%descName%> to value " << <%cppSign%>value[i];
+    Logger::writeInfo(message.str());
     <%cppName%> = <%cppSign%>value[i]; break;
   >>
 end accessVar;
@@ -625,11 +631,16 @@ match simVar
   <<
   case <%intAdd(offset, index)%>: <%description%>
     value[i] = <%vecName%>[<%index%>];
-    Logger::writeInfo("Found variable <%descName%>"); break;
+    message.str("");
+    message << "Getting variable <%descName%> with value " << value[i];
+    Logger::writeInfo(message.str()); break;
   >>
   else
   <<
   case <%intAdd(offset, index)%>: <%description%>
+    message.str("");
+    message << "Setting variable <%descName%> to value " << value[i];
+    Logger::writeInfo(message.str());
     <%vecName%>[<%index%>] = value[i]; break;
   >>
 end accessVecVar;

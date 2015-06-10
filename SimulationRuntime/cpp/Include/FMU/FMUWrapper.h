@@ -66,6 +66,7 @@ public:
 
     virtual fmiStatus setContinuousStates    (const fmiReal states[], size_t nx)
     {
+    	Logger::writeInfo("setContinuousStates called");
       // to set states do the folowing
 	  std::stringstream message;
 	  message << "Setting continuous states";
