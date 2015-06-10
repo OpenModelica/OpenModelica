@@ -123,9 +123,9 @@ SOURCES += main.cpp \
   Simulation/SimulationOutputHandler.cpp \
   TLM/FetchInterfaceDataDialog.cpp \
   TLM/FetchInterfaceDataThread.cpp \
-  Simulation/TLMCoSimulationDialog.cpp \
-  Simulation/TLMCoSimulationOutputWidget.cpp \
-  Simulation/TLMCoSimulationThread.cpp \
+  TLM/TLMCoSimulationDialog.cpp \
+  TLM/TLMCoSimulationOutputWidget.cpp \
+  TLM/TLMCoSimulationThread.cpp \
   FMI/ImportFMUDialog.cpp \
   Plotting/VariablesWidget.cpp \
   Options/NotificationsDialog.cpp \
@@ -187,10 +187,10 @@ HEADERS  += Util/Helper.h \
   Simulation/SimulationOutputHandler.h \
   TLM/FetchInterfaceDataDialog.h \
   TLM/FetchInterfaceDataThread.h \
-  Simulation/TLMCoSimulationOptions.h \
-  Simulation/TLMCoSimulationDialog.h \
-  Simulation/TLMCoSimulationOutputWidget.h \
-  Simulation/TLMCoSimulationThread.h \
+  TLM/TLMCoSimulationOptions.h \
+  TLM/TLMCoSimulationDialog.h \
+  TLM/TLMCoSimulationOutputWidget.h \
+  TLM/TLMCoSimulationThread.h \
   FMI/ImportFMUDialog.h \
   Plotting/VariablesWidget.h \
   Options/NotificationsDialog.h \
