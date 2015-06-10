@@ -1,7 +1,7 @@
 // name: testAlgLoop4
 // status: correct
 
-setCommandLineOptions("+gDynOpt +d=extendsDynOpt");
+setCommandLineOptions("+gDynOpt +loop2con=all");
 //setCommandLineOptions("+gDynOpt");
 getErrorString();
 

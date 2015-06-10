@@ -1,7 +1,7 @@
 // name: pendel
 // status: correct
 
-setCommandLineOptions("+gDynopt +indexReductionMethod=dummyDerivatives +d=extendsDynOpt,advanceTearing");
+setCommandLineOptions("+gDynopt +indexReductionMethod=dummyDerivatives +d=advanceTearing +loop2con=all");
 getErrorString();
 
 loadString("

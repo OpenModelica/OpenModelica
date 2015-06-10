@@ -1,7 +1,7 @@
 // name: testAlgLoop5
 // status: correct
 
-setCommandLineOptions("+gDynOpt +d=extendsDynOpt,advanceTearing");
+setCommandLineOptions("+gDynOpt +d=advanceTearing +loop2con=all");
 //setCommandLineOptions("+gDynOpt");
 getErrorString();
 
