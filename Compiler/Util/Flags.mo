@@ -430,24 +430,20 @@ constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(130, "advanceTearing", false,
   Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
 constant DebugFlag CONSTJAC = DEBUG_FLAG(131, "constjac", false,
   Util.gettext("solves linear systems with const jacobian and variable b-Vector symbolically"));
-constant DebugFlag EXTENDS_DYN_OPT = DEBUG_FLAG(132, "extendsDynOpt", false,
-  Util.gettext("generat extends NLP, move loops in the optimization problem as constraints. hint: using intial guess from file!"));
-constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(133, "reduceDynOpt", false,
+constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(132, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
-constant DebugFlag VISUAL_XML = DEBUG_FLAG(134, "visxml", false,
+constant DebugFlag VISUAL_XML = DEBUG_FLAG(133, "visxml", false,
   Util.gettext("Outputs a xml-file that contains information for visualization."));
-constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(135, "addScaledVars", false,
+constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(134, "addScaledVars", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state"));
-constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(136, "addScaledVarsInput", false,
+constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(135, "addScaledVarsInput", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input"));
-constant DebugFlag VECTORIZE = DEBUG_FLAG(137, "vectorize", false,
+constant DebugFlag VECTORIZE = DEBUG_FLAG(136, "vectorize", false,
   Util.gettext("Activates vectorization in the backend."));
-constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(138, "buildExternalLibs", true,
+constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(137, "buildExternalLibs", true,
   Util.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
-constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(139, "runtimeStaticLinking", false,
+constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(138, "runtimeStaticLinking", false,
   Util.gettext("Use the static simulation runtime libraries (C++ simulation runtime)."));
-constant DebugFlag LOOP2CON = DEBUG_FLAG(140, "loop2con", false,
-  Util.gettext("transform nonlinear loop in nonlinear constraint. hint: using intial guess from file!"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -586,15 +582,13 @@ constant list<DebugFlag> allDebugFlags = {
   NO_PARTITIONING,
   ADVANCE_TEARING,
   CONSTJAC,
-  EXTENDS_DYN_OPT,
   REDUCE_DYN_OPT,
   VISUAL_XML,
   ADD_SCALED_VARS,
   ADD_SCALED_VARS_INPUT,
   VECTORIZE,
   CHECK_EXT_LIBS,
-  RUNTIME_STATIC_LINKING,
-  LOOP2CON
+  RUNTIME_STATIC_LINKING
 };
 
 public
@@ -1069,6 +1063,16 @@ constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
 
+constant ConfigFlag LOOP2CON = CONFIG_FLAG(71, "loop2con",
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
+  SOME(STRING_DESC_OPTION({
+    ("none", Util.gettext("Disables module")),
+    ("lin", Util.gettext("linear loops --> constraints.")),
+    ("noLin", Util.gettext("no linear loops --> constraints.")),
+    ("all", Util.gettext("loops --> constraints."))})),
+    Util.gettext("Specifies method that transform loops in constraints. hint: using intial guess from file!"));
+
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1143,7 +1147,8 @@ constant list<ConfigFlag> allConfigFlags = {
   REMOVE_SIMPLE_EQUATIONS,
   DYNAMIC_TEARING,
   SYM_EULER,
-  ADD_TIME_AS_STATE
+  ADD_TIME_AS_STATE,
+  LOOP2CON
 };
 
 public function new

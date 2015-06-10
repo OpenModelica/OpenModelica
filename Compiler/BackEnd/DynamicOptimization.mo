@@ -501,7 +501,7 @@ public function removeLoops
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  if Flags.isSet(Flags.EXTENDS_DYN_OPT) or Flags.isSet(Flags.LOOP2CON) then
+  if not Flags.getConfigString(Flags.LOOP2CON) == "none"  then
     //BackendDump.bltdump("***", inDAE);
     (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findLoops, false);
     //BackendDump.bltdump("###", outDAE);
@@ -540,10 +540,21 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
   BackendDAE.EquationArray eqns;
-
+  Boolean l2p_all = Flags.getConfigString(Flags.LOOP2CON) == "all";
+  Boolean l2p_nl;
+  Boolean l2p_l;
 algorithm
+
+  if l2p_all then
+    l2p_nl := true;
+    l2p_l := true;
+  else
+    l2p_nl := Flags.getConfigString(Flags.LOOP2CON) == "noLin";
+    l2p_l := not l2p_nl;
+  end if;
+
   for comp in inComps loop
-    (osyst,oshared) := removeLoopsWork(osyst,oshared,comp);
+    (osyst,oshared) := removeLoopsWork(osyst,oshared,comp, l2p_all, l2p_l);
   end for;
 
 end findLoops1;
@@ -556,6 +567,8 @@ protected function removeLoopsWork
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponent icomp;
+  input Boolean l2p_all;
+  input Boolean l2p_l;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
@@ -574,22 +587,25 @@ algorithm
       DAE.ComponentRef cr;
       DAE.FunctionTree funcs;
       BackendDAE.JacobianType jacType;
-      Boolean linear, force_break = not Flags.isSet(Flags.LOOP2CON);
+      Boolean linear;
 
 
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx, jacType=jacType)))
-    guard force_break or not isConstOrlinear(jacType)
+    guard l2p_all or (if l2p_l then isConstOrlinear(jacType) else not isConstOrlinear(jacType))
     equation
+      if l2p_l then
+      end if;
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
     then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
 
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex,tearingvars=vindx),linear=linear)))
-    guard force_break or not linear
+    guard l2p_all or (if l2p_l then linear else not linear)
     equation
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
     then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
 
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,BackendDAE.SINGLEEQUATION(eqn=eindex_,var=vindx_))
+    guard l2p_all or not l2p_l
     equation
         BackendDAE.EQUATION(exp=e1, scalar=e2) = BackendEquation.equationNth1(eqns, eindex_);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, vindx_);
