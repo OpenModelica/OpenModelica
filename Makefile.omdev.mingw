@@ -1,8 +1,16 @@
 defaultMakefileTarget = Makefile.omdev.mingw
 REALPATH = $(realpath .)
 OMBUILDDIR=$(REALPATH)/build
+CMAKE = $(OMDEV)/bin/cmake/bin/cmake
+CMAKE_TARGET = "MSYS Makefiles"
+DBUS_INCLUDE_DIR = $(OMDEV)/lib/dbus-1.6.0-win32/include/
+DBUS_INCLUDE_LIB_DIR = $(OMDEV)/lib/dbus-1.6.0-win32/lib/
+DBUS_PATH = $(OMDEV)/lib/dbus-1.6.0-win32/
+BOOST_PATH = $(OMDEV)/lib/3rdParty/boost-1_55/
+PKG_CONFIG_PATH = $(OMDEV)/lib/gtk+-2.24.10/bin/
+OSG_PATH = $(OMDEV)/lib/openscenegraph-2.8.3-mingw/
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim
+.PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim modelica3d
 
 all: omc omc-diff omlibrary-core
 
@@ -14,9 +22,11 @@ omc-diff: omc
 
 omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
+	$(MAKE) modelica3d
 
 omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all
+	$(MAKE) modelica3d
 
 omplot:
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
@@ -92,6 +102,30 @@ mkbuilddirs-python:
 	mkdir -p $(builddir_lib)/python/omniORB
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
 
+modelica3d:
+	cd libraries/git/Modelica3D && mkdir -p build
+	cd libraries/git/Modelica3D/build && $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DDBUS_INCLUDE_DIR=$(DBUS_INCLUDE_DIR) -DDBUS_INCLUDE_LIB_DIR=$(DBUS_INCLUDE_LIB_DIR) -DDBUS_LIBRARY=$(DBUS_PATH) -DBOOST_ROOT=$(BOOST_PATH) -DCMAKE_PREFIX_PATH=$(OSG_PATH) -DCMAKE_PROGRAM_PATH=$(PKG_CONFIG_PATH) -DUSE_OMC=0 .. -G $(CMAKE_TARGET)
+	$(MAKE) -C libraries/git/Modelica3D/build
+	cp -p libraries/git/Modelica3D/build/lib/modcount/libmodcount.a libraries/git/Modelica3D/build/lib/modbus/libmodbus.a $(OMBUILDDIR)/lib/omc/
+	mkdir -p $(OMBUILDDIR)/lib/omlibrary-modelica3d/blender2.59 $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/etc
+	# copy the dbus static lib required during the simulation
+	cp -rp $(OMDEV)/lib/dbus-1.6.0-win32/bin/libdbus-1.a $(OMBUILDDIR)/lib/omc/
+	cp -p libraries/git/Modelica3D/examples/multibody/src/modelica/*.mo $(OMBUILDDIR)/lib/omlibrary-modelica3d/
+	cp -p libraries/git/Modelica3D/backends/blender2.59/dbus-server.py $(OMBUILDDIR)/lib/omlibrary-modelica3d/blender2.59/
+	cp -p libraries/git/Modelica3D/backends/osg-gtk/python/dbus-server.py $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
+	# copy the dbus-python bindings binaries required by osg-gtk python script
+	cp -rp $(OMDEV)/lib/dbus-python-1.1.1/lib/site-packages/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/
+	cp -rp $(OMDEV)/lib/dbus-python-1.1.1/bin/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/
+	cp -rp $(OMDEV)/lib/dbus-python-1.1.1/etc/* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/dbus-python/etc
+	# copy the required gtk binaries
+	cp -p -u $(OMDEV)/lib/gtk+-2.24.10/bin/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
+	# copy the required modelica3D binaries
+	cp -p libraries/git/Modelica3D/build/backends/osg-gtk/libm3d-osg-gtk.* libraries/git/Modelica3D/build/lib/proc3d/libproc3d.* $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
+	# copy the required osg binaries
+	mkdir -p  $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/osgPlugins-2.8.3
+	cp -p -u $(OMDEV)/lib/openscenegraph-2.8.3-mingw/bin/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/
+	cp -p -u $(OMDEV)/lib/openscenegraph-2.8.3-mingw/bin/osgPlugins-2.8.3/*.dll $(OMBUILDDIR)/lib/omlibrary-modelica3d/osg-gtk/osgPlugins-2.8.3/
+	
 clean-python:
 	rm -rf OMPython/build/ OMPython/OMPythonIDL/ OMPython/OMPython/_GlobalID* OMPython/OMPython/omc_communication_idl.py
 
