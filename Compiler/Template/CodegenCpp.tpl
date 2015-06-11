@@ -14065,7 +14065,7 @@ template createEvaluateWithSplit(Integer sectionIndex, Context context, list<Sim
                     ;separator="\n")
   let &extraFuncs +=
   <<
-  <%\n%>bool <%className%>::<%functionName%>_<%sectionIndex%>(const UPDATETYPE command)
+  <%\n%>void <%className%>::<%functionName%>_<%sectionIndex%>(const UPDATETYPE command)
   {
     <%varDecls%>
     <%equation_func_calls%>
@@ -14073,7 +14073,7 @@ template createEvaluateWithSplit(Integer sectionIndex, Context context, list<Sim
   >>
   let &extraFuncsDecl +=
   <<
-  bool <%functionName%>_<%sectionIndex%>(const UPDATETYPE command);<%\n%>
+  void <%functionName%>_<%sectionIndex%>(const UPDATETYPE command);<%\n%>
   >>
   <<
   <%functionName%>_<%sectionIndex%>(command);
