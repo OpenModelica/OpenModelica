@@ -25,6 +25,7 @@ else ifeq ("$(BUILD_DOCUMENTATION)","true")
 	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -DBUILD_DOCUMENTATION=ON -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
 else
+	mkdir -p Build
 	cd ./Build; echo "change to Build";	\
 	$(CMAKE) -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=$(BUILDTYPE) -D CMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	make;
@@ -84,4 +85,3 @@ install: runtimeCpp
 
 clean:
 	rm -R -f Build
-	mkdir Build
