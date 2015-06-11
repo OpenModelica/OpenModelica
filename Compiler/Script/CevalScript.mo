@@ -2859,8 +2859,6 @@ algorithm
 
     case (cache,_,"readSimulationResultSize",{Values.STRING(filename)},st,_)
       equation
-        pwd = System.pwd();
-        pd = System.pathDelimiter();
         filename_1 = Util.absoluteOrRelative(filename);
         i = SimulationResults.readSimulationResultSize(filename_1);
       then
