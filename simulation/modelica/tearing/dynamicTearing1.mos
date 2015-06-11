@@ -1,0 +1,152 @@
+// name:      dynamicTearing1
+// keywords:  dynamic tearing
+// status:    correct
+
+// loadString("
+// model dynamicTearing1
+//    Real x,y,z;
+//    parameter Real a=10;
+//    parameter Real b=5;
+//    parameter Real c=2;
+// equation
+//    // 5*a*x = 7*b - c +y;
+//    // 2*y + b = c*x;
+//    
+//    // 5*a*x = 7*b - c + a*x*sin(y);
+//    // 2*y + b = c*x;
+//    
+//    // 5*a*x - 7*b +c = y;
+//    // 2/c*y +b/c = x;
+//    
+//    (a-5-b)*y = x * time + time;
+//    a + b - 7*c = x*y +1;
+//    z = x - y;
+// end dynamicTearing1;
+// "); getErrorString();
+
+loadString("
+model dynamicTearing1
+   Real x,y,z,x1,y1,z1,z2;
+   parameter Real a=10;
+   parameter Real b=5;
+   parameter Real c=2;
+equation
+   (a-5-b)*y = x * time + time;
+   a + b - 7*c = x*y +1;
+   z = x - y;
+   
+   (a-5-b)*y1 = x1 * time + time;
+   a + b - 7*c = x1*y1 +1;
+   z1 = x1 - y1;
+   
+   z2 = z + z1;
+end dynamicTearing1;
+"); getErrorString();
+
+// loadString("
+// model dynamicTearing1
+  // Real x,y;
+  // parameter Real a=10;
+  // parameter Real b=5;
+  // parameter Real c=2;
+// equation
+   // sin(x)*x*time = y;
+	// cos(y)*y*time = x;
+// end dynamicTearing1;
+// "); getErrorString();
+
+// setDebugFlags("backenddaeinfo"); getErrorString();
+setTearingMethod("cellier"); getErrorString();
+setCommandLineOptions("+forceTearing"); getErrorString();
+// setCommandLineOptions("+dynamicTearing"); getErrorString();
+simulate(dynamicTearing1); getErrorString();
+
+print("x at time=0.0");
+val(x,0.0); getErrorString();
+print("x1 at time=0.0");
+val(x1,0.0); getErrorString();
+print("y at time=0.0");
+val(y,0.0); getErrorString();
+print("y1 at time=0.0");
+val(y1,0.0); getErrorString();
+print("z at time=0.0");
+val(z,0.0); getErrorString();
+print("z1 at time=0.0");
+val(z1,0.0); getErrorString();
+print("z2 at time=0.0");
+val(z2,0.0); getErrorString();
+print("x at time=0.1");
+val(x,0.1); getErrorString();
+print("x1 at time=0.1");
+val(x1,0.1); getErrorString();
+print("y at time=0.1");
+val(y,0.1); getErrorString();
+print("y1 at time=0.1");
+val(y1,0.1); getErrorString();
+print("z at time=0.1");
+val(z,0.1); getErrorString();
+print("z1 at time=0.1");
+val(z1,0.1); getErrorString();
+print("z2 at time=0.1");
+val(z2,0.1); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "dynamicTearing1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
+// "
+// x at time=0.0
+// 0.0
+// ""
+// x1 at time=0.0
+// 0.0
+// ""
+// y at time=0.0
+// 0.0
+// ""
+// y1 at time=0.0
+// 0.0
+// ""
+// z at time=0.0
+// 0.0
+// ""
+// z1 at time=0.0
+// 0.0
+// ""
+// z2 at time=0.0
+// 0.0
+// ""
+// x at time=0.1
+// -1.0
+// ""
+// x1 at time=0.1
+// -1.0
+// ""
+// y at time=0.1
+// 0.0
+// ""
+// y1 at time=0.1
+// 0.0
+// ""
+// z at time=0.1
+// -1.0
+// ""
+// z1 at time=0.1
+// -1.0
+// ""
+// z2 at time=0.1
+// -2.0
+// ""
+// endResult
