@@ -22,11 +22,11 @@ omc-diff: omc
 
 omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
-	$(MAKE) modelica3d
+	$(MAKE) -f $(defaultMakefileTarget) modelica3d
 
 omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all
-	$(MAKE) modelica3d
+	$(MAKE) -f $(defaultMakefileTarget) modelica3d
 
 omplot:
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
