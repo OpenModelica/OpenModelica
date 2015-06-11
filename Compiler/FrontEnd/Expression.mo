@@ -1717,6 +1717,11 @@ algorithm
       expLst = arrayElements(e);
       then
         expLst;
+    case(DAE.MATRIX(matrix=expLstLst))
+      equation
+        expLst = List.flatten(expLstLst);
+      then
+        expLst;
     case(DAE.TUPLE(PR=expLst))
       then
         expLst;
