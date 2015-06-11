@@ -444,6 +444,9 @@ constant DebugFlag VECTORIZE = DEBUG_FLAG(137, "vectorize", false,
   Util.gettext("Activates vectorization in the backend."));
 constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(138, "buildExternalLibs", true,
   Util.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
+constant DebugFlag DYNAMIC_TEARING_INFO = DEBUG_FLAG(139, "dynamicTearingInfo", false,
+  Util.gettext("Dumps information about the strict and casual sets of the tearing system."));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -588,7 +591,8 @@ constant list<DebugFlag> allDebugFlags = {
   ADD_SCALED_VARS,
   ADD_SCALED_VARS_INPUT,
   VECTORIZE,
-  CHECK_EXT_LIBS
+  CHECK_EXT_LIBS,
+  DYNAMIC_TEARING_INFO
 };
 
 public
@@ -1049,8 +1053,8 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
     Util.gettext("Specifies method that removes simple equations."));
 
 constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(68, "dynamicTearing",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime)"));
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"));
 
 constant ConfigFlag SYM_EULER = CONFIG_FLAG(69, "symEuler",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1060,6 +1064,9 @@ constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
 
+constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(71, "forceTearing",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Use tearing set even if it is not smaller than the original component.)"));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1135,7 +1142,8 @@ constant list<ConfigFlag> allConfigFlags = {
   REMOVE_SIMPLE_EQUATIONS,
   DYNAMIC_TEARING,
   SYM_EULER,
-  ADD_TIME_AS_STATE
+  ADD_TIME_AS_STATE,
+  FORCE_TEARING
 };
 
 public function new
