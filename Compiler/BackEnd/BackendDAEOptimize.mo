@@ -2884,10 +2884,13 @@ public function makeEquationToResidualExp ""
 algorithm
   oExp := matchcontinue(eq)
     local
-      DAE.Exp e1,e2;
+      DAE.Exp e1,e2, e;
+      list<DAE.Exp> expl, expl1;
       DAE.ComponentRef cr1;
       String str;
       DAE.Type ty;
+      Integer idx;
+      list<Integer> idxs;
     // normal equation
     case(BackendDAE.EQUATION(exp=e1,scalar=e2))
       equation
@@ -2914,6 +2917,24 @@ algorithm
       then
         oExp;
     // complex equation
+    // (x,_) = f(.)
+    case(BackendDAE.COMPLEX_EQUATION(left = e1 as DAE.TUPLE(expl), right = e2))
+      algorithm
+        expl1 := {};
+        idxs := {};
+        idx := 1;
+        for elem in expl loop
+          if Expression.isNotWild(elem) then
+            idxs := idx :: idxs;
+            expl1 := elem :: expl1;
+          end if;
+          idx := idx + 1;
+        end for;
+        {e} :=  expl1;
+        {idx} := idxs;
+        oExp := Expression.expSub(e, DAE.TSUB(e2,idx,Expression.typeof(e)));
+        //print("\n" + ExpressionDump.dumpExpStr(oExp,0));
+      then oExp;
     case(BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
       equation
         oExp = Expression.expSub(e1,e2);
