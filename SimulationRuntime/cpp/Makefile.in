@@ -22,7 +22,7 @@ SUNDIALS_LAPACK_COMMAND="-DSUNDIALS_LAPACK=ON"
 CMAKE_COMMANDS=CC="scorep --user --nocompiler --thread=pthread gcc" CXX="scorep --user --nocompiler --thread=pthread g++"
 CMAKE_ARGS=$(patsubst CMAKE_%, -D%, $(filter CMAKE_%, $(MAKEFLAGS)))
 
-runtimeCpp: clean
+runtimeCpp:
 ifneq ("$(RUNTIME_STATIC_LINKING)","true")
 	$(eval RUNTIME_STATIC_LINKING_COMMAND=)
 endif
