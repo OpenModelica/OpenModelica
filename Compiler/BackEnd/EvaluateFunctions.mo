@@ -256,66 +256,64 @@ algorithm
   end matchcontinue;
 end evalFunctions_findFuncs;
 
-public function evaluateFunctionCallExp"checks if the expression is a call and can be evaluated somehow.
-the output is a list of completely constant complex crefs and their expressions constant scalar crefs (can be part of a complex expression) and their expressions and the remaining
-variable stuff from the complex crefs and the remaining variable crefs "
+
+public function evaluateConstantFunctionCallExp"checks if the expression is a call and can be evaluated to a constant value.
+the output is either a constant expression or the input exp. no partial evaluation is performed in here."
   input DAE.Exp expIn;
   input DAE.FunctionTree funcsIn;
-  output list<tuple<DAE.ComponentRef, DAE.Exp>> constComplexOutput;
-  output list<tuple<DAE.ComponentRef, DAE.Exp>> constScalarOutput;
-  output list<DAE.ComponentRef> variableComplexOutput;
-  output list<DAE.ComponentRef> variableScalarOutput;
+  output DAE.Exp expOut;
 algorithm
-  (constComplexOutput,constScalarOutput,variableComplexOutput,variableScalarOutput) := matchcontinue(expIn,funcs)
+  expOut := matchcontinue(expIn,funcsIn)
     local
       Boolean hasAssert, hasReturn, hasTerminate, hasReinit, abort;
       Integer idx;
       Absyn.Path path;
       BackendVarTransform.VariableReplacements repl;
       DAE.CallAttributes attr1;
+      DAE.Exp exp;
       DAE.Function func;
-      list<DAE.ComponentRef> allInputCrefs, outputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc,constComplexCrefs,varComplexCrefs,constScalarCrefs;
+      DAE.FunctionTree funcs;
+      list<DAE.ComponentRef> allInputCrefs, outputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
       list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
       list<DAE.Element> elements, protectVars, algs, allInputs, allOutputs;
-      list<DAE.Exp> exps, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps;
+      list<DAE.Exp> exps, sub, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps;
       list<list<DAE.Exp>> scalarExp;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> constComplexOutput, constScalarOutput;
 
   case(DAE.CALL(path=path, expLst=exps, attr=attr1),_)
     equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("\nStart evaluation of:\n"+ExpressionDump.printExpStr(lhsExpIn)+" := "+ExpressionDump.printExpStr(rhsExpIn)+"\n\n");
+          print("\nStart constant evaluation of expression: "+ExpressionDump.printExpStr(expIn)+"\n\n");
         end if;
 
         // get the elements of the function and the algorithms
         SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
         elements = DAEUtil.getFunctionElements(func);
-        List.map_0(elements,DAEDump.dumpDebugElement);
-        if Flags.isSet(Flags.EVAL_FUNC_DUMP) and listEmpty(elements) then
-          print("Its a Record!\n");
-        end if;
-        false = listEmpty(elements);  // its a record
-        protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
-        algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
-
+      
+        // get the input exps from the call
+        exps = List.map1(exps,evaluateConstantFunctionCallExp,funcsIn);
+        scalarExp = List.map1(exps,expandComplexEpressions,funcsIn);
+        allInputExps = List.flatten(scalarExp);
+        //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+        
         // get all input crefs (from function body) (scalar and one dimensioanl)
         allInputs = List.filterOnTrue(elements,DAEUtil.isInputVar);
         scalarInputs = List.map(allInputs,expandComplexElementsToCrefs);
         allInputCrefs = List.flatten(scalarInputs);
         //print("\nallInputCrefs\n"+stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
-
-        // get the input exps from the call
-        exps = List.map1(exps,evaluateConstantFunctionCall,funcsIn);
-        scalarExp = List.map(exps,expandComplexEpressions);
-        allInputExps = List.flatten(scalarExp);
-        //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+            
+        if listEmpty(elements) then  // its a record
+          expOut = DAE.TUPLE(allInputExps);
+        else
+        
+        protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
+        algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
 
         // get all output crefs (complex and scalar)
         allOutputs = List.filterOnTrue(elements,DAEUtil.isOutputVar);
         outputCrefs = List.map(allOutputs,DAEUtil.varCref);
         scalarOutputs = List.map(allOutputs,getScalarsForComplexVar);
         allOutputCrefs = listAppend(outputCrefs,List.flatten(scalarOutputs));
-        //print("\ncomplex OutputCrefs\n"+stringDelimitList(List.map(outputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("\n allOutputs\n"+stringDelimitList(List.map(outputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
         //print("\nscalarOutputs\n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
 
         // get the constant inputs
@@ -339,9 +337,9 @@ algorithm
         abort = hasReturn or hasTerminate or hasReinit;
 
         // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm
-        (algs,(funcs,repl,idx)) = List.mapFold(algs,evaluateFunctions_updateAlgorithms,(funcsIn,repl,eqIdx));
+        (algs,(funcs,repl,idx)) = List.mapFold(listAppend(protectVars,algs),evaluateFunctions_updateAlgElements,(funcsIn,repl,1));
           //print("\nall algs after"+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
-          BackendVarTransform.dumpReplacements(repl);
+          //BackendVarTransform.dumpReplacements(repl);
 
         //get all replacements in order to check for constant outputs
         (constCrefs,constExps) = BackendVarTransform.getAllReplacements(repl);
@@ -353,22 +351,52 @@ algorithm
 
         // get the completely constant complex outputs, the constant parts of complex outputs and the variable parts of complex outputs and the expressions
         (constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs) = checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
-        (constScalarCrefs,constScalarExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constScalarCrefs,constExps);
-        (constComplexCrefs,constComplexExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constComplexCrefs,constExps);
+        constScalarExps = List.map1r(constScalarCrefs,BackendVarTransform.getReplacement,repl);
+        constComplexExps = List.map1r(constComplexCrefs,BackendVarTransform.getReplacement,repl);
+        //(constScalarCrefs,constScalarExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constScalarCrefs,constExps);
+        //(constComplexCrefs,constComplexExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constComplexCrefs,constExps);
 
-        print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
-        print("varComplexCrefs\n"+stringDelimitList(List.map(varComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
-        print("constScalarCrefs 1\n"+stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
-        print("varScalarCrefs 1\n"+stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("varComplexCrefs\n"+stringDelimitList(List.map(varComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("constScalarCrefs \n"+stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("varScalarCrefs \n"+stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
-        //collect outputs
-        constComplexOutput = List.threadMap(constComplexCrefs,constComplexExps,Util.makeTuple);
-        constScalarOutput = List.threadMap(constScalarCrefs,constScalarExps,Util.makeTuple);
-    then (constComplexOutput,constScalarOutput,varComplexCrefs,varScalarCrefs);
+        if listEmpty(varScalarCrefs) and listEmpty(varScalarCrefs) and listEmpty(constComplexCrefs) then
+        // there is a constant scalar expression 
+          if listLength(constScalarCrefs)==1 then expOut = listHead(constScalarExps);
+          else expOut = DAE.TUPLE(constScalarExps); end if;
+        // there is a constant complex expression 
+        elseif listEmpty(varScalarCrefs) and listEmpty(varScalarCrefs) and listEmpty(constScalarCrefs) then
+          if listLength(constComplexCrefs)==1 then expOut = listHead(constComplexExps);
+          else expOut = DAE.TUPLE(constComplexExps); end if;
+        else fail();
+        end if;
+	    end if;
+	  
+	  	if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+	     print("\nevaluted to: "+ExpressionDump.printExpStr(expOut)+"\n\n");
+	    end if;
+	  
+      then expOut;
+        
+	case(DAE.ASUB(DAE.CALL(path=path, expLst=exps, attr=attr1),sub),_)
+	  equation
+	    //this ASUB stuff occures in the flattened DAE, check this special case because of removeSimpleEquations
+	   exp = evaluateConstantFunctionCallExp(DAE.CALL(path=path, expLst=exps, attr=attr1),funcsIn);
+	   if not Expression.isConst(exp) then exp = expIn; end if;
+	   (exp,_) = ExpressionSimplify.simplify(DAE.ASUB(exp,sub));
+	  then exp;
+	    
   else
-    then ({},{},{},{});
+  // could not evaluate it
+   equation
+     if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+	     print("\ncould not been evaluated to a constant expression!\n");
+	   end if;
+    then expIn;
   end matchcontinue;
-end evaluateFunctionCallExp;
+end evaluateConstantFunctionCallExp;
+
 
 public function evaluateConstantFunction "Analyses if the rhsExp is a function call. the constant inputs are inserted and it will be checked if the outputs can be evaluated to a constant.
 If the function can be completely evaluated, the function call will be removed.
@@ -396,7 +424,7 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.Type ty, singleOutputType;
       list<BackendDAE.Equation> constEqs;
-      list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsOut;
+      list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsOut,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
       list<DAE.Element> elements, algs, allInputs, protectVars, allOutputs, updatedVarOutputs, newOutputVars;
       list<DAE.Exp> exps, inputExps, complexExp, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps, lhsExps, sub;
       list<list<DAE.Exp>> scalarExp;
@@ -404,37 +432,104 @@ algorithm
       list<DAE.Type> outputVarTypes;
       list<String> outputVarNames;
       list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
-
-
-
-      list<tuple<DAE.ComponentRef, DAE.Exp>> constComplexOutput, constScalarOutput;
-      list<DAE.ComponentRef> constComplexCrefs, constScalarCrefs, varComplexCrefs, varScalarCrefs;
-
     case(DAE.CALL(path=path, expLst=exps, attr=attr1),_,_,_)
       equation
-        // insert as much as possible in the function call, evaluate everything and give me the outputs
-        (constComplexOutput,constScalarOutput,varComplexCrefs,varScalarCrefs) = evaluateFunctionCallExp(rhsExpIn,funcsIn);
-        (constComplexCrefs) = List.map(constComplexOutput, Util.tuple21);
-        (constComplexExps) = List.map(constComplexOutput, Util.tuple22);
-        (constScalarCrefs) = List.map(constScalarOutput, Util.tuple21);
-        (constScalarExps) = List.map(constScalarOutput, Util.tuple22);
+        
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("\nStart evaluation of:\n"+ExpressionDump.printExpStr(lhsExpIn)+" := "+ExpressionDump.printExpStr(rhsExpIn)+"\n\n");
+        end if;
+      
+        //------------------------------------------------     
+        //Collect all I/O Information for the function call
+        //------------------------------------------------    
+              
+        // get the elements of the function and the algorithms
+        SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
+        elements = DAEUtil.getFunctionElements(func);
+        List.map_0(elements,DAEDump.dumpDebugElement);
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) and listEmpty(elements) then
+          print("Its a Record!\n");
+        end if;
+        false = listEmpty(elements);  // its a record
+        protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
+        algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
 
-        //the function information, get them somehow!!!!!!!!!!!
-        scalarOutputs= {};
-        allOutputs = {};
-        allOutputCrefs = {};
-        algs = {};
+        // get all input crefs (from function body) (scalar and one dimensioanl)
+        allInputs = List.filterOnTrue(elements,DAEUtil.isInputVar);
+        scalarInputs = List.map(allInputs,expandComplexElementsToCrefs);
+        allInputCrefs = List.flatten(scalarInputs);
+        //print("\nallInputCrefs\n"+stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+
+        // get the input exps from the call
+        exps = List.map1(exps,evaluateConstantFunctionCallExp,funcsIn);
+        scalarExp = List.map1(exps,expandComplexEpressions,funcsIn);//these exps are evaluated as well
+        allInputExps = List.flatten(scalarExp);
+        //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+
+        // get all output crefs (complex and scalar)
+        allOutputs = List.filterOnTrue(elements,DAEUtil.isOutputVar);
+        outputCrefs = List.map(allOutputs,DAEUtil.varCref);
+        scalarOutputs = List.map(allOutputs,getScalarsForComplexVar);
+        allOutputCrefs = listAppend(outputCrefs,List.flatten(scalarOutputs));
+        //print("\ncomplex OutputCrefs\n"+stringDelimitList(List.map(outputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("\nscalarOutputs\n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
+
+        // get the constant inputs
+        (constInputExps,constInputCrefs) = List.filterOnTrueSync(allInputExps,Expression.isConst,allInputCrefs);
+        //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+        //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+        //print("\nconstInputCrefs\n"+stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
+
+        //------------------------------------------------     
+        //evaluate function call
+        //------------------------------------------------    
+
+        //build replacement rules
         repl = BackendVarTransform.emptyReplacements();
-        allInputs = {};
-        protectVars = {};
+        repl = BackendVarTransform.addReplacements(repl,constInputCrefs,constInputExps,NONE());
+        //repl = BackendVarTransform.addReplacements(repl,allInputCrefs,allInputExps,NONE());
+         //BackendVarTransform.dumpReplacements(repl);
 
+        // recognize if there are statements we cannot evaluate at the moment
+        hasAssert = List.fold(algs,hasAssertFold,false);
+        hasReturn = List.fold(algs,hasReturnFold,false);
+        hasTerminate = List.fold(algs,hasReturnFold,false);
+        hasReinit = List.fold(algs,hasReinitFold,false);
+        abort = hasReturn or hasTerminate or hasReinit;
+
+        // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm
+        (algs,(funcs,repl,idx)) = List.mapFold(listAppend(protectVars,algs),evaluateFunctions_updateAlgElements,(funcsIn,repl,1));
+          //print("\nall algs after"+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
+          BackendVarTransform.dumpReplacements(repl);
+
+        //get all replacements in order to check for constant outputs
+        (constCrefs,constExps) = BackendVarTransform.getAllReplacements(repl);
+        (constCrefs,constExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,allOutputCrefs,constExps); // extract outputs
+        (constExps,constCrefs) = List.filterOnTrueSync(constExps,Expression.isConst,constCrefs); // extract constant outputs
+
+        //print("all constant crefs \n"+stringDelimitList(List.map(constCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("all constant exps:\n"+ExpressionDump.printExpListStr(constExps)+"\n");
+
+        // get the completely constant complex outputs, the constant parts of complex outputs and the variable parts of complex outputs and the expressions
+        (constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs) = checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
+        (constScalarCrefs,constScalarExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constScalarCrefs,constExps);
+        (constComplexCrefs,constComplexExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constComplexCrefs,constExps);
+
+        //print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("varComplexCrefs\n"+stringDelimitList(List.map(varComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("constScalarCrefs 1\n"+stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("varScalarCrefs 1\n"+stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+
+        //------------------------------------------------     
+        //evaluate the result and build new function call accordingly
+        //------------------------------------------------   
 
         // is it completely constant or partially?
         funcIsConst = listEmpty(varScalarCrefs) and listEmpty(varComplexCrefs);
         funcIsPartConst = ((not listEmpty(varScalarCrefs)) or (not listEmpty(varComplexCrefs))) and ((not listEmpty(constScalarCrefs)) or (not listEmpty(constComplexCrefs))) and not funcIsConst;
         isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and listEmpty(varScalarCrefs) and listEmpty(varComplexCrefs) and listEmpty(constComplexCrefs);
 
-/*
         //bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           if funcIsConst then
@@ -456,7 +551,6 @@ algorithm
 
         true =  funcIsPartConst or funcIsConst;
         changed = funcIsPartConst or funcIsConst;
-*/
 
         // build the new lhs, the new statements for the function, the constant parts...
         (updatedVarOutputs,outputExp,varScalarCrefsInFunc) = buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
@@ -514,32 +608,48 @@ algorithm
       then
         ((exp,outputExp,constEqs,funcs,idx,changed));
 
-    case(DAE.ASUB(DAE.CALL(path=path, expLst=exps, attr=attr1),sub),_,_,_)
-      equation
-        //this ASUB stuff occures in the flattened DAE, check this special case because of removeSimpleEquations
-       (exp,outputExp,constEqs,funcs,idx,changed) = EvaluateFunctions.evaluateConstantFunction(DAE.CALL(path=path, expLst=exps, attr=attr1),lhsExpIn,funcsIn,eqIdx);
-      then((DAE.ASUB(exp,sub),outputExp,constEqs,funcs,idx,changed));
-
     else
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false));
   end matchcontinue;
 end evaluateConstantFunction;
 
-protected function expandComplexEpressions "gets the complex contents or if its not complex, then the exp itself
+protected function expandComplexEpressions "gets the complex contents or if its not complex, then the exp itself, if its a call, get the scalar outputs.
+it would be possible to evaluate the exp before.
 author:Waurich TUD 2014-05"
   input DAE.Exp e;
+  input DAE.FunctionTree funcs;
   output list<DAE.Exp> eLst;
 algorithm
-  eLst := matchcontinue(e)
+  eLst := matchcontinue(e,funcs)
     local
+      Absyn.Path path;
+      DAE.Function func;
       list<DAE.Exp> lst;
-    case(_)
+      list<DAE.Element> elements, allOutputs;
+    case(DAE.CALL(path=path, expLst=lst),_)
+      equation
+        SOME(func) = DAEUtil.avlTreeGet(funcs,path);
+        elements = DAEUtil.getFunctionElements(func);
+        if listEmpty(elements) then 
+        // its a record
+          eLst = lst;
+        else
+       // its a call, get the scalar outputs
+        SOME(func) = DAEUtil.avlTreeGet(funcs,path);
+        elements = DAEUtil.getFunctionElements(func);
+        allOutputs = List.filterOnTrue(elements,DAEUtil.isOutputVar);
+        lst = List.map(List.flatten(List.map(allOutputs,getScalarsForComplexVar)),Expression.crefExp);
+        end if;
+      then
+        lst;
+    case(_,_)
       equation
         lst = Expression.getComplexContents(e);
         false = listEmpty(lst);
       then
         lst;
     else
+      equation
       then {e};
   end matchcontinue;
 end expandComplexEpressions;
@@ -876,18 +986,36 @@ algorithm
       Boolean const;
       DAE.ComponentRef cref,constCref;
       DAE.Element elem;
-      list<DAE.ComponentRef> scalars, constVars, varVars, partConstCrefs, varCrefs;
+      list<DAE.ComponentRef> scalars, constVars, varVars, partConstCrefs, varCrefs, constCrefs1;
       list<DAE.Element> rest;
       list<DAE.ComponentRef> constCompl, varCompl, varScalar, constScalar, constScalarCrefs;
     case({},_,_,_,_,_)
         then(constComplexLstIn,varComplexLstIn,constScalarLstIn,varScalarLstIn);
+	 case(elem::rest,_,_,_,_,_)
+	      //check if the given complext output cref appears in the constCrefs
+	      equation
+	        cref = DAEUtil.varCref(elem);
+	        //print("the cref\n"+stringDelimitList(List.map({DAEUtil.varCref(elem)},ComponentReference.printComponentRefStr),"\n")+"\n");
+	
+	        (constVars,_,constCrefs1) = List.intersection1OnTrue({cref},constCrefs,ComponentReference.crefEqual);
+	        //print("constVars\n"+stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+"\n");
+          if listEmpty(constVars) then
+            //try again with the scalars
+            scalars = getScalarsForComplexVar(elem);
+            (constVars,varVars,constCrefs1) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
+            (constCompl,varCompl,constScalar,varScalar) = (constComplexLstIn,varComplexLstIn,listAppend(constVars,constScalarLstIn),listAppend(varVars,varScalarLstIn));
+          else
+            //this complex var has been found
+            (constCompl,varCompl,constScalar,varScalar) = (listAppend(constVars,constComplexLstIn),varComplexLstIn,constScalarLstIn,varScalarLstIn);
+          end if;
+        (constCompl,varCompl,constScalar,varScalar) = checkIfOutputIsEvaluatedConstant(rest,constCrefs1,constCompl,varCompl,constScalar,varScalar);
+      then (constCompl,varCompl,constScalar,varScalar);    
     case(elem::rest,_,_,_,_,_)
       equation
-        _ = DAEUtil.varCref(elem);
         scalars = getScalarsForComplexVar(elem);
         // function outputs a record, its either constCompl or constScalar and varScalar
-        //print("the cref\n"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
-        //print("scalars to check\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
+        print("the cref\n"+stringDelimitList(List.map({DAEUtil.varCref(elem)},ComponentReference.printComponentRefStr),"\n")+"\n");
+        print("scalars to check\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         false = listEmpty(scalars);
         (constVars,_,_) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
@@ -1378,23 +1506,54 @@ algorithm
   end match;
 end addReplacementRuleForAssignment;
 
-protected function evaluateFunctions_updateAlgorithms "gets the statements from an algorithm in order to traverse them.
+protected function evaluateFunctions_updateAlgElements "gets the statements from an algorithm in order to traverse them and tries to evaluate the binding expressions from protected vars.
 author:Waurich TUD 2014-03"
   input DAE.Element algIn;
   input tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements,Integer> tplIn;
   output DAE.Element algOut;
   output tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements,Integer> tplOut;
-protected
-  DAE.Algorithm alg;
-  DAE.ElementSource source;
-  list<DAE.Statement> stmts;
 algorithm
-  DAE.ALGORITHM(alg,source) := algIn;
-  stmts := DAEUtil.getStatement(algIn);
-  (stmts,tplOut) := evaluateFunctions_updateStatement(stmts,tplIn,{});
-  alg := DAE.ALGORITHM_STMTS(stmts);
-  algOut := DAE.ALGORITHM(alg,source);
-end evaluateFunctions_updateAlgorithms;
+  (algOut,tplOut) := matchcontinue(algIn,tplIn)
+    local
+      Integer i;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.Algorithm alg;
+      DAE.ElementSource source;
+      DAE.Exp exp;
+      DAE.FunctionTree funcs;
+      DAE.ComponentRef cref;
+      list<DAE.Statement> stmts;
+      list<DAE.Exp> scalarExps;
+      list<DAE.ComponentRef> scalars;
+  case(DAE.ALGORITHM(alg,source),_)
+    equation
+		  stmts = DAEUtil.getStatement(algIn);
+		  (stmts,tplOut) = evaluateFunctions_updateStatement(stmts,tplIn,{});
+		  alg = DAE.ALGORITHM_STMTS(stmts);
+		then (DAE.ALGORITHM(alg,source),tplOut);
+		  
+  case(DAE.VAR(componentRef=cref,binding=SOME(exp)),(funcs,repl,i))
+    equation
+      //print("VARIN "+DAEDump.dumpElementsStr({algIn})+"\n");
+		  (exp,_) = BackendVarTransform.replaceExp(exp, repl,NONE());
+		  (exp,_) = ExpressionSimplify.simplify(exp);
+		  if Expression.isConst(exp) then
+		    //add replacement for complex and scalar values
+		    repl = BackendVarTransform.addReplacement(repl,cref,exp,NONE());
+		    scalars = ComponentReference.expandCref(cref,false);
+		    scalarExps = Expression.getComplexContents(exp);
+		    if listLength(scalars)==listLength(scalarExps) then
+		      repl = BackendVarTransform.addReplacements(repl,scalars,scalarExps,NONE());
+		    end if;
+		  end if;
+		  
+		  //print("bind "+ExpressionDump.printExpStr(exp)+"\n");
+		  //update binding in var
+		then (DAEUtil.replaceBindungInVar(exp,algIn),(funcs,repl,i));
+  else
+    then(algIn,tplIn);
+  end matchcontinue;
+end evaluateFunctions_updateAlgElements;
 
 protected function evaluateFunctions_updateStatement "replaces the statements with regards to the given varReplacements and check for constant assignments.
 if there are constant assignments add this replacement rule
@@ -1494,12 +1653,70 @@ algorithm
         //print("\nthe traverse LIST after :"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then (rest,(funcTree,repl,idx));
-    case (DAE.STMT_ASSIGN_ARR()::rest,(funcTree,_,idx),_)
+    case (DAE.STMT_ASSIGN_ARR(type_=typ, lhs=exp1, exp=exp2, source=source)::rest,(funcTree,replIn,idx),_)
       equation
-        //print("STMT_ASSIGN_ARR");
-        //print("the STMT_ASSIGN_ARR: "+DAEDump.ppStatementStr(listHead(algsIn))+"\n");
-        alg = listHead(algsIn);
-        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,tplIn,alg::lstIn);
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("Array assignment:\n"+DAEDump.ppStatementStr(listHead(algsIn)));
+        end if;
+        // replace, evaluate, simplify the assignment
+       //print("the STMT_ASSIGN_ARR before: "+DAEDump.ppStatementStr(listHead(algsIn)));
+        cref = Expression.expCref(exp1);
+        scalars = getRecordScalars(cref);
+        (exp2,_) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
+        (exp2,(exp1,funcTree,idx,addStmts)) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
+        // (exp2,changed) = bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed); This does nothing useful with the statement below...
+        (exp2,_) = ExpressionSimplify.simplify(exp2);
+        expLst = Expression.getComplexContents(exp2);
+        //print("SIMPLIFIED\n"+stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+"\n");
+
+        // add the replacements for the addStmts and remove the replacements for the variable outputs
+        repl = List.fold(addStmts,addReplacementRuleForAssignment,replIn);
+        lhsExps = Expression.getComplexContents(exp1);
+        outputs = List.map(lhsExps,Expression.expCref);
+        repl = BackendVarTransform.removeReplacements(repl,outputs,NONE());
+
+        // check if its constant, a record or a tuple
+        isCon = Expression.isConst(exp2);
+        eqDim = listLength(scalars) == listLength(expLst);  // so it can be partly constant
+        isRec = ComponentReference.isRecord(cref);
+        isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2);
+        _ = Expression.isCall(exp2);
+        //print("is it const? "+boolString(isCon)+" ,is it rec: "+boolString(isRec)+" ,is it tpl: "+boolString(isTpl)+" ,is it call: "+boolString(isCall)+"\n");
+
+        // remove the variable crefs and add the constant crefs to the replacements
+        //print("scalars\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("expLst\n"+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
+        scalars = if isRec and eqDim then scalars else {};
+        expLst = if isRec and eqDim then expLst else {};
+        (_,varScalars) = List.filterOnTrueSync(expLst,Expression.isNotConst,scalars);
+        (expLst,constScalars) = List.filterOnTrueSync(expLst,Expression.isConst,scalars);
+        //print("variable scalars\n"+stringDelimitList(List.map(varScalars,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //BackendVarTransform.dumpReplacements(replIn);
+
+        repl = if isCon and not isRec then BackendVarTransform.addReplacement(repl,cref,exp2,NONE()) else repl;
+        repl = if isCon and isRec then BackendVarTransform.addReplacements(repl,scalars,expLst,NONE()) else repl;
+        repl = if not isCon and not isRec then BackendVarTransform.removeReplacement(repl,cref,NONE()) else repl;
+        repl = if not isCon and isRec then BackendVarTransform.removeReplacements(repl,varScalars,NONE()) else repl;
+        repl = if not isCon and isRec then BackendVarTransform.addReplacements(repl,constScalars,expLst,NONE()) else repl;
+
+        //bcall(isCon and not isRec,print,"add the replacement: "+ComponentReference.crefStr(cref)+" --> "+ExpressionDump.printExpStr(exp2)+"\n");
+        //bcall(not isCon,print,"update the replacement for: "+ComponentReference.crefStr(cref)+"\n");
+        //BackendVarTransform.dumpReplacements(repl);
+
+        // build the new statements
+        alg = if isCon then DAE.STMT_ASSIGN(typ,exp1,exp2,source) else listHead(algsIn);
+        tplExpsLHS = if isTpl then Expression.getComplexContents(exp1) else {};
+        tplExpsRHS = if isTpl then Expression.getComplexContents(exp2) else {};
+        tplStmts = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS);
+        stmts1 = if isTpl then tplStmts else {alg};
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("evaluated assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
+        end if;
+
+        //stmts1 = listAppend({alg},lstIn);
+        stmts1 = listAppend(stmts1,lstIn);
+        //print("\nthe traverse LIST after :"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_IF(statementLst=stmtsIf, else_=else_)::rest,(funcTree,replIn,idx),_)
       equation
@@ -2177,16 +2394,10 @@ algorithm
       then
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_REAL(), dims=dims ))
-      equation
-        dim = List.map(dims, Expression.dimensionSize);
-        if intEq(listLength(dim),2) then
-          print("failure in getScalarsForComplexVar:the array has multiple dimensions");
-        end if;
-        true = listLength(dim) == 1;
-        dim = List.intRange(listHead(dim));
-        ranges = List.map1(dim,List.fill,1);
-        subslst = List.map(ranges, Expression.intSubscripts);
-        crefs = List.map1r(subslst,ComponentReference.subscriptCref,cref);
+      algorithm
+        dim := List.map(dims, Expression.dimensionSize);
+        subslst := expandDimension(dims,{});
+        crefs := List.map1r(subslst,ComponentReference.subscriptCref,cref);
       then
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_ARRAY(dims=dimensions)))
@@ -2215,6 +2426,45 @@ algorithm
         {};
   end matchcontinue;
 end getScalarsForComplexVar;
+
+protected function expandDimension"expands the dimensions. e.g. [3,3] {{1,1},{1,2},{1,3}, {2,1},{2,2},{2,3}, {3,1},{3,2},{3,3}}"
+  input list<DAE.Dimension> dims;
+  input list<list<DAE.Subscript>> subsIn;
+  output list<list<DAE.Subscript>> subsOut;
+algorithm
+  subsOut := matchcontinue(dims,subsIn)
+    local
+      Integer size;
+      list<Integer> range;
+      DAE.Dimension dim;
+      DAE.Subscript sub;
+      list<DAE.Dimension> rest;
+      list<DAE.Subscript> subs;
+      list<list<DAE.Subscript>> subsLst, subsLst1, subFold = {};
+  case(dim::rest,_)
+    algorithm
+      size := Expression.dimensionSize(dim);
+      range := List.intRange(size);
+      subs := List.map(range, Expression.intSubscript);
+      subsLst := List.map(subs,List.create);
+      for sub in subsIn loop
+        subsLst1 := List.map1r(subsLst,listAppend,sub);
+        subFold := listAppend(subFold,subsLst1);
+      end for;
+      if listEmpty(subsIn) then subFold := subsLst; end if;
+    then expandDimension(rest,subFold);
+  case({},_)
+    equation
+    then subsIn;
+  end matchcontinue;
+end expandDimension;
+
+protected function subsLstString
+  input list<DAE.Subscript> subs;
+  output String s;
+algorithm
+  s := "{"+stringDelimitList(List.map(subs,ExpressionDump.subscriptString),",")+"}";
+end subsLstString;
 
 protected function isNotComplexVar "returns true if the given var is one dimensional (no array,record...).
 author: Waurich TUD 2014-03"

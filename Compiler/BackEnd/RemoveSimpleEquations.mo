@@ -1752,8 +1752,12 @@ algorithm
         false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
         //print(ExpressionDump.dumpExpStr(exp,0)+"\n");
-        (exp2,_,_,_,_,_) = EvaluateFunctions.evaluateConstantFunction(exp,DAE.CREF(cr,ComponentReference.crefType(cr)),functions,0);
-        print("exp1 "+ExpressionDump.printExpStr(exp)+" exp2 "+ExpressionDump.printExpStr(exp2)+"\n");
+        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
+        if not Expression.isConst(exp2) then
+          exp2 = exp;
+        else
+           print("exp1 "+ExpressionDump.printExpStr(exp)+" exp2 "+ExpressionDump.printExpStr(exp2)+"\n");
+        end if;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
         end if;
