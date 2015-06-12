@@ -594,7 +594,7 @@ algorithm
         singleOutputType = if not listEmpty(newOutputVars) then listHead(outputVarTypes) else singleOutputType;//if the function is evaluated completely
         attr1 = DAEUtil.replaceCallAttrType(attr1,singleOutputType);
         attr2 = if intEq(listLength(newOutputVars),1) then attr1 else attr2;
-        DAEDump.dumpCallAttr(attr2);
+        //DAEDump.dumpCallAttr(attr2);
 
         exp2 = if List.hasOneElement(constComplexExps) and funcIsConst then listHead(constComplexExps) else DAE.TUPLE(constComplexExps);  // either a single equation or a tuple equation
         exp = if funcIsConst then exp2 else rhsExpIn;

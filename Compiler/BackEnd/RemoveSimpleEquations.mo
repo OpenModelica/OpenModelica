@@ -1753,10 +1753,7 @@ algorithm
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
         exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
         if not Expression.isConst(exp2) then
-          exp2 = exp;
-        else
-           print("exp1 "+ExpressionDump.printExpStr(exp)+" exp2 "+ExpressionDump.printExpStr(exp2)+"\n");
-        end if;
+          exp2 = exp; end if;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
         end if;
