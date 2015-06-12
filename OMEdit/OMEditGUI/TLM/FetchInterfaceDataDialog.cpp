@@ -53,6 +53,7 @@ FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeNode *pLibraryTree
   // output
   mpOutputLabel = new Label(Helper::output);
   mpOutputTextBox = new QPlainTextEdit;
+  mpOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   // main Layout
   QGridLayout *pMainGridLayout = new QGridLayout;
   pMainGridLayout->setContentsMargins(5, 5, 5, 5);
