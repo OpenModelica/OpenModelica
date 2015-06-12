@@ -91,7 +91,7 @@ void TextEditor::showContextMenu(QPoint point)
 void TextEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
 {
   Q_UNUSED(position);
-  if (mpModelWidget->isVisible()) {
+  if (mpModelWidget && mpModelWidget->isVisible()) {
     if (charsRemoved == 0 && charsAdded == 0) {
       return;
     }

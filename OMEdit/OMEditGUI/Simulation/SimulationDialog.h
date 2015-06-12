@@ -125,6 +125,9 @@ private:
   QComboBox *mpOutputFormatComboBox;
   Label *mpFileNameLabel;
   QLineEdit *mpFileNameTextBox;
+  Label *mpResultFileNameLabel;
+  QLineEdit *mpResultFileNameTextBox;
+  Label *mpResultFileName;
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
   QCheckBox *mpProtectedVariablesCheckBox;
@@ -214,6 +217,8 @@ public slots:
   void browseEquationSystemInitializationFile();
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
   void simulate();
+private slots:
+  void resultFileNameChanged(QString text);
 };
 
 #endif // SIMULATIONDIALOG_H

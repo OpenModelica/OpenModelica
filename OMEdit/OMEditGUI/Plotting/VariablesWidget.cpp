@@ -435,17 +435,19 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   mpRootVariablesTreeItem->insertChild(row, pTopVariablesTreeItem);
   endInsertRows();
   /* open the model_init.xml file for reading */
-  QString initFileName = QString(fileName).replace(resultTypeRegExp, "_init.xml");
-  QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
-  if (initFile.open(QIODevice::ReadOnly)) {
-    QXmlStreamReader initXmlReader(&initFile);
-    parseInitXml(initXmlReader);
-    initFile.close();
-  } else {
-    MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
-    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                               GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                               .arg(initFile.errorString()),Helper::scriptingKind, Helper::warningLevel));
+  if (simulationOptions.isValid()) {
+    QString initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
+    QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
+    if (initFile.open(QIODevice::ReadOnly)) {
+      QXmlStreamReader initXmlReader(&initFile);
+      parseInitXml(initXmlReader);
+      initFile.close();
+    } else {
+      MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                 GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                 .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    }
   }
   /* open the .mat file */
   ModelicaMatReader matReader;
@@ -1021,9 +1023,8 @@ void VariablesWidget::reSimulate(bool showSetup)
 void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
 {
   /* Update the _init.xml file with new values. */
-  QRegExp resultTypeRegExp("(_res.mat|_res.plt|_res.csv)");
   /* open the model_init.xml file for writing */
-  QString initFileName = QString(simulationOptions.getResultFileName()).replace(resultTypeRegExp, "_init.xml");
+  QString initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
   QFile initFile(QString(simulationOptions.getWorkingDirectory()).append(QDir::separator()).append(initFileName));
   QDomDocument initXmlDocument;
   if (initFile.open(QIODevice::ReadOnly)) {

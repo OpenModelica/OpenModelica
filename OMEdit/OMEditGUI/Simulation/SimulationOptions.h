@@ -66,6 +66,7 @@ public:
     setStepSize(0.002);
     setOutputFormat("mat");
     setFileNamePrefix("");
+    setResultFileName("");
     setVariableFilter("");
     setProtectedVariables(false);
     setEquidistantTimeGrid(true);
@@ -149,7 +150,8 @@ public:
   void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
   QString getFileNamePrefix() {return mFileNamePrefix;}
   QString getOutputFileName() const {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
-  QString getResultFileName() {return getOutputFileName() + "_res." + mOutputFormat;}
+  void setResultFileName(QString resultFileName) {mResultFileName = resultFileName;}
+  QString getResultFileName() {return mResultFileName.isEmpty() ? getOutputFileName() + "_res." + mOutputFormat : mResultFileName;}
   void setVariableFilter(QString variableFilter) {mVariableFilter = variableFilter;}
   QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
   void setProtectedVariables(bool protectedVariables) {mProtectedVariables = protectedVariables;}
@@ -254,6 +256,7 @@ private:
   qreal mStepSize;
   QString mOutputFormat;
   QString mFileNamePrefix;
+  QString mResultFileName;
   QString mVariableFilter;
   bool mProtectedVariables;
   bool mEquidistantTimeGrid;
