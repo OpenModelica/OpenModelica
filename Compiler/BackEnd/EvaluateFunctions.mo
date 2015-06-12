@@ -100,15 +100,14 @@ algorithm
       equation
         true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
-        //BackendDump.dumpBackendDAE(inDAE,"inDAE");
         (eqSysts,(shared,_,changed)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1,false));
         //shared = evaluateShared(shared);
+        
         if changed then
           outDAE = updateVarKinds(RemoveSimpleEquations.fastAcausal(BackendDAE.DAE(eqSysts,shared)));
         else
           outDAE = inDAE;
         end if;
-      //BackendDump.dumpBackendDAE(outDAE,"outDAE");
       then
         outDAE;
     else
@@ -1016,14 +1015,19 @@ algorithm
 	      equation
 	        cref = DAEUtil.varCref(elem);
 	        //print("the cref\n"+stringDelimitList(List.map({DAEUtil.varCref(elem)},ComponentReference.printComponentRefStr),"\n")+"\n");
-
-	        (constVars,_,constCrefs1) = List.intersection1OnTrue({cref},constCrefs,ComponentReference.crefEqual);
+	        (constVars,varVars,constCrefs1) = List.intersection1OnTrue({cref},constCrefs,ComponentReference.crefEqual);
 	        //print("constVars\n"+stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+"\n");
           if listEmpty(constVars) then
             //try again with the scalars
             scalars = getScalarsForComplexVar(elem);
-            (constVars,varVars,constCrefs1) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
-            (constCompl,varCompl,constScalar,varScalar) = (constComplexLstIn,varComplexLstIn,listAppend(constVars,constScalarLstIn),listAppend(varVars,varScalarLstIn));
+            if listEmpty(scalars) then
+              // has no scalars, the 1-d element is variable
+              (constCompl,varCompl,constScalar,varScalar) = (constComplexLstIn,listAppend(varVars,varComplexLstIn),constScalarLstIn,varScalarLstIn);
+            else
+            // has scalars, some are variables some are constant
+              (constVars,varVars,constCrefs1) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
+              (constCompl,varCompl,constScalar,varScalar) = (constComplexLstIn,varComplexLstIn,listAppend(constVars,constScalarLstIn),listAppend(varVars,varScalarLstIn));
+            end if;
           else
             //this complex var has been found
             (constCompl,varCompl,constScalar,varScalar) = (listAppend(constVars,constComplexLstIn),varComplexLstIn,constScalarLstIn,varScalarLstIn);
