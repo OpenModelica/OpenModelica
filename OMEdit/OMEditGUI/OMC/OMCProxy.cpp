@@ -561,8 +561,7 @@ QString OMCProxy::getErrorString(bool warningsAsErrors)
 /*!
   Gets the errors by using the getMessagesStringInternal API.
   Reads all the errors and add them to the Messages Window.
-  \see MessageWidget::addGUIMessage
-  \see MessageTreeItem
+  \see MessagesWidget::addGUIMessage
   \return true if there are any errors otherwise false.'
   */
 bool OMCProxy::printMessagesStringInternal()
