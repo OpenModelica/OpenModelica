@@ -273,10 +273,15 @@ void SimulationDialog::setUpForm()
   mpOutputFormatComboBox = new QComboBox;
   mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
   // Output filename
-  mpFileNameLabel = new Label(tr("File Name (Optional):"));
+  mpFileNameLabel = new Label(tr("File Name Prefix (Optional):"));
   mpFileNameTextBox = new QLineEdit;
   mpFileNameTextBox->setToolTip(tr("The name is used as a prefix for the output files. This is just a name not the path.\n"
                                    "If you want to change the output path then update the working directory in Options/Preferences."));
+  mpResultFileNameLabel = new Label(tr("Result File (Optional):"));
+  mpResultFileNameTextBox = new QLineEdit;
+  mpResultFileName = new Label;
+  connect(mpResultFileNameTextBox, SIGNAL(textEdited(QString)), SLOT(resultFileNameChanged(QString)));
+  connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(resultFileNameChanged(QString)));
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit(".*");
@@ -294,17 +299,20 @@ void SimulationDialog::setUpForm()
   QGridLayout *pOutputTabLayout = new QGridLayout;
   pOutputTabLayout->setAlignment(Qt::AlignTop);
   pOutputTabLayout->addWidget(mpNumberofIntervalLabel, 0, 0);
-  pOutputTabLayout->addWidget(mpNumberofIntervalsSpinBox, 0, 1);
+  pOutputTabLayout->addWidget(mpNumberofIntervalsSpinBox, 0, 1, 1, 2);
   pOutputTabLayout->addWidget(mpOutputFormatLabel, 1, 0);
-  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 1, 1);
+  pOutputTabLayout->addWidget(mpOutputFormatComboBox, 1, 1, 1, 2);
   pOutputTabLayout->addWidget(mpFileNameLabel, 2, 0);
-  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1);
-  pOutputTabLayout->addWidget(mpVariableFilterLabel, 3, 0);
-  pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1);
-  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 4, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 5, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 6, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 7, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1, 1, 2);
+  pOutputTabLayout->addWidget(mpResultFileNameLabel, 3, 0);
+  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1);
+  pOutputTabLayout->addWidget(mpResultFileName, 3, 2);
+  pOutputTabLayout->addWidget(mpVariableFilterLabel, 4, 0);
+  pOutputTabLayout->addWidget(mpVariableFilterTextBox, 4, 1, 1, 2);
+  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 6, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 7, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 8, 0, 1, 3);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -556,7 +564,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     }
     mpCflagsTextBox->setEnabled(true);
     mpNumberofIntervalsSpinBox->setEnabled(true);
-    mpOutputFormatComboBox->setEnabled(true);
     mpFileNameTextBox->setEnabled(true);
     mpSaveSimulationCheckbox->setEnabled(true);
     mpSimulateButton->setText(Helper::simulate);
@@ -603,8 +610,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpBuildOnlyCheckBox->setChecked(simulationOptions.getBuildOnly());
     // Output Interval
     mpNumberofIntervalsSpinBox->setValue(simulationOptions.getNumberofIntervals());
-    // Output Format
-    mpOutputFormatComboBox->setDisabled(true);
     // Output filename
     mpFileNameTextBox->setDisabled(true);
     // Variable filter
@@ -740,6 +745,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   } else if (mClassName.contains('\'')) {
     simulationOptions.setFileNamePrefix("_omcQuot_" + QByteArray(mClassName.toStdString().c_str()).toHex());
   }
+  simulationOptions.setResultFileName(mpResultFileName->text());
   simulationOptions.setVariableFilter(mpVariableFilterTextBox->text());
   simulationOptions.setProtectedVariables(mpProtectedVariablesCheckBox->isChecked());
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
@@ -786,6 +792,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
                          .arg("solver").arg(simulationOptions.getMethod())
                          .arg("outputFormat").arg(simulationOptions.getOutputFormat())
                          .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
+  simulationFlags.append(QString("-r=").append(simulationOptions.getResultFileName()));
   // dassl options
   if (mpDasslOptionsGroupBox->isEnabled()) {
     // dassl jacobian
@@ -1171,5 +1178,27 @@ void SimulationDialog::simulate()
     if (isTranslationSuccessful) {
       createAndShowSimulationOutputWidget(simulationOptions);
     }
+  }
+}
+
+/*!
+ * \brief SimulationDialog::resultFileNameChanged
+ * \param text
+ * Slot activated when mpResultFileNameTextBox textEdited OR mpOutputFormatComboBox currentIndexChanged signal is raised.\n
+ * Sets the result file name label.
+ */
+void SimulationDialog::resultFileNameChanged(QString text)
+{
+  QLineEdit *pLineEditSender = qobject_cast<QLineEdit*>(sender());
+  QComboBox *pComboBoxSender = qobject_cast<QComboBox*>(sender());
+
+  if (pLineEditSender) {
+    if (text.isEmpty()) {
+      mpResultFileName->clear();
+    } else {
+      mpResultFileName->setText(QString("%1_res.%2").arg(text).arg(mpOutputFormatComboBox->currentText()));
+    }
+  } else if (pComboBoxSender && !mpResultFileNameTextBox->text().isEmpty()) {
+    mpResultFileName->setText(QString("%1_res.%2").arg(mpResultFileNameTextBox->text()).arg(mpOutputFormatComboBox->currentText()));
   }
 }
