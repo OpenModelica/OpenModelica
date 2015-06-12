@@ -4,6 +4,8 @@
  *  Created on: 04.06.2015
  *      Author: marcus
  */
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Core/Utils/extension/logger.hpp>
 
 Logger* Logger::instance = 0;

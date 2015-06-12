@@ -4,7 +4,8 @@
  *  Created on: 04.06.2015
  *      Author: marcus
  */
-
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <FMU/FMULogger.h>
 
 FMULogger::FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName) : Logger(false),

@@ -8,10 +8,11 @@
 #ifndef FMULOGGER_H_
 #define FMULOGGER_H_
 
+#include <Core/Modelica.h>
 #include <Core/Utils/extension/logger.hpp>
 #include "fmiModelFunctions.h"
 
-class FMULogger : Logger
+class BOOST_EXTENSION_EXPORT_DECL FMULogger : Logger
 {
   public:
     FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName);

@@ -53,7 +53,7 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
 
     static bool isEnabled()
     {
-      getInstance()->isEnabledInternal();
+      return getInstance()->isEnabledInternal();
     }
 
   protected:
