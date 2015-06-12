@@ -4577,8 +4577,16 @@ protected function createStateSets "author: Frenkel TUD 2012
 protected
   Boolean flag;
 algorithm
+  if Flags.getConfigString(Flags.INDEX_REDUCTION_METHOD) == "dummyDerivatives" then
+    outDAE := inDAE;
+    oEquations := iEquations;
+    ouniqueEqIndex := iuniqueEqIndex;
+    otempvars := itempvars;
+    numStateSets := 0;
+  else
   (outDAE, (oEquations, ouniqueEqIndex, otempvars, numStateSets)) :=
     BackendDAEUtil.mapEqSystemAndFold(inDAE, createStateSetsSystem, (iEquations, iuniqueEqIndex, itempvars, 0));
+  end if;
   // BackendDump.printBackendDAE(outDAE);
 end createStateSets;
 

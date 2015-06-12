@@ -91,8 +91,9 @@ algorithm
 
    if not inOptimicaFlag then
     Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-    Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
    end if;
+
+    Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
 
     (mayer,lagrange,startTimeE,finalTimeE) := match(inClassAttr)
                         local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
