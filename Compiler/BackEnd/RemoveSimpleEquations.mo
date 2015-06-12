@@ -60,7 +60,7 @@ protected import BackendVarTransform;
 protected import BackendDAETransform;
 protected import BaseHashSet;
 protected import BaseHashTable;
-//protected import Ceval;
+protected import Ceval;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import SimCodeUtil;
@@ -1751,7 +1751,6 @@ algorithm
       equation
         false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
-        //print(ExpressionDump.dumpExpStr(exp,0)+"\n");
         exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
         if not Expression.isConst(exp2) then
           exp2 = exp;
