@@ -2349,7 +2349,7 @@ algorithm
 
           // get other vars
           otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
-          otherVarsInts = List.unionList(otherVarsIntsLst);
+          otherVarsInts = List.flatten(otherVarsIntsLst);
           ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
           ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
           ovars = BackendVariable.listVar1(ovarsLst);
@@ -2391,7 +2391,7 @@ algorithm
 
           // get other vars
           otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
-          otherVarsInts = List.unionList(otherVarsIntsLst);
+          otherVarsInts = List.flatten(otherVarsIntsLst);
           ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
           ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
           ovars = BackendVariable.listVar1(ovarsLst);
@@ -2428,7 +2428,7 @@ algorithm
 
           // get other vars
           otherVarsIntsLst = List.map(otherEqnVarTpl2, Util.tuple22);
-          otherVarsInts = List.unionList(otherVarsIntsLst);
+          otherVarsInts = List.flatten(otherVarsIntsLst);
           ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
           ovarsLst = List.map(ovarsLst, BackendVariable.transformXToXd);
           ovars = BackendVariable.listVar1(ovarsLst);
