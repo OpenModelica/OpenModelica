@@ -31,27 +31,32 @@
 #include "rational.h"
 
 RATIONAL addInt2Rat(long a, RATIONAL b) {
-  return {a * b.n + b.m, b.n};
+  RATIONAL x = {a * b.n + b.m, b.n};
+  return x;
 }
 
 RATIONAL subInt2Rat(long a, RATIONAL b) {
-  return {a * b.n - b.m, b.n};
+  RATIONAL x = {a * b.n - b.m, b.n};
+  return x;
 }
 
 RATIONAL addRat2Rat(RATIONAL a, RATIONAL b) {
-  return {a.m * b.n + b.m * a.n, a.n * b.n};
+  RATIONAL x = {a.m * b.n + b.m * a.n, a.n * b.n};
+  return x;
 }
 
 RATIONAL multRat2Rat(RATIONAL a, RATIONAL b) {
-  return {a.m * b.m, a.n * b.n};
+  RATIONAL x = {a.m * b.m, a.n * b.n};
+  return x;
 }
 
 RATIONAL multInt2Rat(long a, RATIONAL b) {
-  return {a * b.m, b.n};
+  RATIONAL x = {a * b.m, b.n};
+  return x;
 }
 
 double rat2Real(RATIONAL a) {
-    return (double)a / b;
+    return (double)a.m / a.n;
 }
 
 // Input argument should not be a negative number
