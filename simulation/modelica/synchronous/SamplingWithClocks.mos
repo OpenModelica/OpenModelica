@@ -27,68 +27,104 @@ translateModel(SamplingWithClocks); getErrorString();
 // true
 // ""
 // "class SamplingWithClocks \"Using clocks to sub and super sample\"
-//   Real x;
-//   Real y;
-//   Real z;
-//   Real w;
+// Real x;
+// Real y;
+// Real z;
+// Real w;
 // equation
-//   x = sample(time, Clock(0.1));
-//   y = sample(time, Clock(0.1));
-//   z = subSample(x, 2);
-//   w = superSample(x, 3);
+// x = sample(time, Clock(0.1));
+// y = sample(time, Clock(0.1));
+// z = subSample(x, 2);
+// w = superSample(x, 3);
 // end SamplingWithClocks;
 // "
 // ""
-//
+// 
 // ########################################
-// base-clock partitioning (2 partitions)
+// base-clock partitioning (4 partitions)
 // ########################################
-//
-//
-// clocked partition
+// 
+// 
+// clocked partition(2, 1/1, 0/1)
 // ========================================
-//
-// Variables (3)
-// ========================================
-// 1: w:VARIABLE() .SamplingWithClocks, .Real type: Real []
-// 2: z:VARIABLE() .SamplingWithClocks, .Real type: Real []
-// 3: x:VARIABLE() .SamplingWithClocks, .Real type: Real []
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = sample(1, time, Clock(0.1))    [dynamic, sub-partition index: 3]
-// 2/2 (1): z = subSample(x, 2)    [dynamic, sub-partition index: 2]
-// 3/3 (1): w = superSample(x, 3)    [dynamic, sub-partition index: 1]
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-// clocked partition
-// ========================================
-//
+// 
 // Variables (1)
 // ========================================
 // 1: y:VARIABLE() .SamplingWithClocks, .Real type: Real []
-//
-//
+// 
+// 
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): y = sample(1, time, Clock(0.1))    [dynamic, sub-partition index: 1]
-//
-//
+// 1/1 (1): y = $getPart(time)    [dynamic]
+// 
+// 
 // State Sets
 // ========================================
-//
-//
+// 
+// 
 // no matching
-//
-//
+// 
+// 
+// clocked partition(1, 1/1, 0/1)
+// ========================================
+// 
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE() .SamplingWithClocks, .Real type: Real []
+// 
+// 
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = $getPart(time)    [dynamic]
+// 
+// 
+// State Sets
+// ========================================
+// 
+// 
+// no matching
+// 
+// 
+// clocked partition(1, 1/2, 0/1)
+// ========================================
+// 
+// Variables (1)
+// ========================================
+// 1: z:VARIABLE() .SamplingWithClocks, .Real type: Real []
+// 
+// 
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): z = $getPart(x)    [dynamic]
+// 
+// 
+// State Sets
+// ========================================
+// 
+// 
+// no matching
+// 
+// 
+// clocked partition(1, 3/1, 0/1)
+// ========================================
+// 
+// Variables (1)
+// ========================================
+// 1: w:VARIABLE() .SamplingWithClocks, .Real type: Real []
+// 
+// 
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): w = $getPart(x)    [dynamic]
+// 
+// 
+// State Sets
+// ========================================
+// 
+// 
+// no matching
+// 
+// 
 // true
 // ""
 // endResult

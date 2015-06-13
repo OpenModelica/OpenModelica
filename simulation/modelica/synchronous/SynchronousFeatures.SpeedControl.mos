@@ -15,77 +15,77 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // true
 // ""
 // "class SynchronousFeatures.SpeedControl \"Plant and Controller Partitioning\"
-//   parameter Real m(quantity = \"Mass\", unit = \"kg\", min = 0.0) = 1.0;
-//   parameter Real k(unit = \"N/m\") = 1.0;
-//   parameter Real d(unit = \"N.s/m\") = 0.1;
-//   Real x(quantity = \"Length\", unit = \"m\", start = 1.0, fixed = true) \"Position\";
-//   Real v(quantity = \"Velocity\", unit = \"m/s\", start = 0.0, fixed = true) \"Velocity\";
-//   Real f(quantity = \"Force\", unit = \"N\") \"Force\";
-//   parameter Real K = 20.0 \"Gain of speed P controller\";
-//   parameter Real vref(quantity = \"Velocity\", unit = \"m/s\") = 100.0 \"Speed ref.\";
-//   discrete Real vd;
-//   discrete Real u(start = 0.0);
+// parameter Real m(quantity = \"Mass\", unit = \"kg\", min = 0.0) = 1.0;
+// parameter Real k(unit = \"N/m\") = 1.0;
+// parameter Real d(unit = \"N.s/m\") = 0.1;
+// Real x(quantity = \"Length\", unit = \"m\", start = 1.0, fixed = true) \"Position\";
+// Real v(quantity = \"Velocity\", unit = \"m/s\", start = 0.0, fixed = true) \"Velocity\";
+// Real f(quantity = \"Force\", unit = \"N\") \"Force\";
+// parameter Real K = 20.0 \"Gain of speed P controller\";
+// parameter Real vref(quantity = \"Velocity\", unit = \"m/s\") = 100.0 \"Speed ref.\";
+// discrete Real vd;
+// discrete Real u(start = 0.0);
 // equation
-//   vd = sample(v, Clock(0.01));
-//   u = K * (vref - vd);
-//   f = hold(u);
-//   der(x) = v;
-//   m * der(v) = f + (-k) * x - d * v;
+// vd = sample(v, Clock(0.01));
+// u = K * (vref - vd);
+// f = hold(u);
+// der(x) = v;
+// m * der(v) = f + (-k) * x - d * v;
 // end SynchronousFeatures.SpeedControl;
 // "
 // ""
-//
+// 
 // ########################################
 // base-clock partitioning (2 partitions)
 // ########################################
-//
-//
+// 
+// 
 // continuous time partition
 // ========================================
-//
+// 
 // Variables (3)
 // ========================================
 // 1: f:VARIABLE(unit = "N" )  "Force".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Force type: Real []
 // 2: v:VARIABLE(start = 0.0 unit = "m/s" fixed = true )  "Velocity".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Velocity$v type: Real []
 // 3: x:VARIABLE(start = 1.0 unit = "m" fixed = true )  "Position".SynchronousFeatures.SpeedControl, .SynchronousFeatures.Position$x type: Real []
-//
-//
+// 
+// 
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = hold(u)    [dynamic, sub-partition index: 1]
-// 2/2 (1): der(x) = v    [dynamic, sub-partition index: 1]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic, sub-partition index: 1]
-//
-//
+// 1/1 (1): f = $getPart(u)    [dynamic]
+// 2/2 (1): der(x) = v    [dynamic]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic]
+// 
+// 
 // State Sets
 // ========================================
-//
-//
+// 
+// 
 // no matching
-//
-//
-// clocked partition
+// 
+// 
+// clocked partition(1, 1/1, 0/1)
 // ========================================
-//
+// 
 // Variables (2)
 // ========================================
 // 1: u:DISCRETE(start = 0.0 ) .SynchronousFeatures.SpeedControl, .Real type: Real []
 // 2: vd:DISCRETE() .SynchronousFeatures.SpeedControl, .Real type: Real []
-//
-//
+// 
+// 
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): vd = sample(1, v, Clock(0.01))    [dynamic, sub-partition index: 1]
-// 2/2 (1): u = K * (vref - vd)    [dynamic, sub-partition index: 1]
-//
-//
+// 1/1 (1): u = K * (vref - vd)    [dynamic]
+// 2/2 (1): vd = $getPart(v)    [dynamic]
+// 
+// 
 // State Sets
 // ========================================
-//
-//
+// 
+// 
 // no matching
-//
-//
+// 
+// 
 // true
 // ""
 // endResult
