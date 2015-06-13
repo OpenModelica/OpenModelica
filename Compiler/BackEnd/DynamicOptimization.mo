@@ -590,7 +590,6 @@ algorithm
       BackendDAE.JacobianType jacType;
       Boolean linear;
 
-
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx, jacType=jacType)))
     guard l2p_all or (if l2p_l then isConstOrlinear(jacType) else not isConstOrlinear(jacType))
     equation

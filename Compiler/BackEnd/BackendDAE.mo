@@ -44,6 +44,7 @@ public import SCode;
 public import Values;
 public import HashTable3;
 public import HashTableCG;
+public import MMath;
 
 public
 type Type = .DAE.Type
@@ -79,25 +80,27 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
   end EQSYSTEM;
 end EqSystem;
 
+public uniontype SubClock
+  record SUBCLOCK
+    MMath.Rational factor;
+    MMath.Rational shift;
+    Option<String> solver;
+  end SUBCLOCK;
+end SubClock;
+
 public
 uniontype BaseClockPartitionKind
   record UNKNOWN_PARTITION end UNKNOWN_PARTITION;
   record CLOCKED_PARTITION
-    .DAE.ClockKind clockKind;
-    // array<SubClockPartitions> subClockPartitions;
+    Integer baseClock;
+    SubClock subClock;
+    Boolean holdEvents;
   end CLOCKED_PARTITION;
   record CONTINUOUS_TIME_PARTITION end CONTINUOUS_TIME_PARTITION;
   record UNSPECIFIED_PARTITION "treated as CONTINUOUS_TIME_PARTITION" end UNSPECIFIED_PARTITION;
 end BaseClockPartitionKind;
 
-public
-uniontype SubClockPartition
-  record SubClockPartition
-    Integer factor "subSample/superSample";
-    //Integer counter "shiftSample/backSample";
-    //Integer resolution "shiftSample/backSample";
-  end SubClockPartition;
-end SubClockPartition;
+
 
 public
 uniontype Shared "Data shared for all equation-systems"
@@ -244,26 +247,33 @@ public uniontype TearingSelect
   record ALWAYS end ALWAYS;
 end TearingSelect;
 
+public constant String WHENCLK_PRREFIX = "$whenclk";
 public uniontype EquationKind "equation kind"
-  record BINDING_EQUATION end BINDING_EQUATION;
-  record DYNAMIC_EQUATION end DYNAMIC_EQUATION;
-  record INITIAL_EQUATION end INITIAL_EQUATION;
-  record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
+  record BINDING_EQUATION
+  end BINDING_EQUATION;
+  record DYNAMIC_EQUATION
+  end DYNAMIC_EQUATION;
+  record INITIAL_EQUATION
+  end INITIAL_EQUATION;
+  record CLOCKED_EQUATION
+    Integer clk;
+  end CLOCKED_EQUATION;
+  record UNKNOWN_EQUATION_KIND
+  end UNKNOWN_EQUATION_KIND;
 end EquationKind;
 
 public uniontype EquationAttributes
   record EQUATION_ATTRIBUTES
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
     EquationKind kind;
-    Integer subPartitionIndex;
     LoopInfo loopInfo;
   end EQUATION_ATTRIBUTES;
 end EquationAttributes;
 
-public constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), 0, NO_LOOP());
-public constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(false, BINDING_EQUATION(), 0, NO_LOOP());
-public constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), 0, NO_LOOP());
-public constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), 0, NO_LOOP());
+public constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), NO_LOOP());
+public constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(false, BINDING_EQUATION(), NO_LOOP());
+public constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), NO_LOOP());
+public constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), NO_LOOP());
 
 public uniontype LoopInfo "is this equation part of a for-loop"
   record NO_LOOP
@@ -526,6 +536,7 @@ uniontype EventInfo
     list<ZeroCrossing> sampleLst       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+    array<.DAE.ClockKind> clocks;
   end EVENT_INFO;
 end EventInfo;
 
@@ -645,8 +656,8 @@ uniontype IndexType
   record ABSOLUTE "incidence matrix with absolute indexes" end ABSOLUTE;
   record NORMAL "incidence matrix with positive/negative indexes" end NORMAL;
   record SOLVABLE "incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
-  record BASECLOCK "incidence matrix for base-clock partitioning" end BASECLOCK;
-  record SUBCLOCK "incidence matrix for sub-clock partitioning" end SUBCLOCK;
+  record BASECLOCK_IDX "incidence matrix for base-clock partitioning" end BASECLOCK_IDX;
+  record SUBCLOCK_IDX "incidence matrix for sub-clock partitioning" end SUBCLOCK_IDX;
   record SPARSE "incidence matrix as normal, but add for inputs also a value" end SPARSE;
 end IndexType;
 

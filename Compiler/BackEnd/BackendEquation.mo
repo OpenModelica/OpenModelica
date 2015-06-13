@@ -1834,6 +1834,10 @@ algorithm
     case BackendDAE.WHEN_EQUATION(source=source) then source;
     case BackendDAE.ALGORITHM(source=source) then source;
     case BackendDAE.COMPLEX_EQUATION(source=source) then source;
+    case BackendDAE.IF_EQUATION(source=source) then source;
+    else
+      equation Error.addInternalError("BackendEquation.equationSource failed!", sourceInfo());
+      then fail();
   end match;
 end equationSource;
 
@@ -2017,20 +2021,8 @@ public function generateEQUATION "author: Frenkel TUD 2010-05"
   input BackendDAE.EquationKind inEqKind;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()));
+  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()));
 end generateEQUATION;
-
-public function setSubPartition "author: lochel"
-  input BackendDAE.Equation inEqn;
-  input Integer inSubClockPartitionIndex;
-  output BackendDAE.Equation outEqn;
-protected
-  BackendDAE.EquationAttributes attr;
-algorithm
-  attr := getEquationAttributes(inEqn);
-  attr := setSubClockPartitionIndex(attr, inSubClockPartitionIndex);
-  outEqn := setEquationAttributes(inEqn, attr);
-end setSubPartition;
 
 public function getEquationAttributes
   input BackendDAE.Equation inEqn;
@@ -2055,19 +2047,6 @@ algorithm
     then fail();
   end match;
 end getEquationAttributes;
-
-public function setSubClockPartitionIndex
-  input BackendDAE.EquationAttributes inAttr;
-  input Integer inSubClockPartitionIndex;
-  output BackendDAE.EquationAttributes outAttr;
-protected
-  Boolean differentiated;
-  BackendDAE.EquationKind kind;
-  BackendDAE.LoopInfo loopInfo;
-algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind, loopInfo=loopInfo) := inAttr;
-  outAttr := BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, inSubClockPartitionIndex, loopInfo);
-end setSubClockPartitionIndex;
 
 public function setEquationAttributes
   input BackendDAE.Equation inEqn;
@@ -2131,7 +2110,7 @@ algorithm
     DAE.Exp rhs;
 
     case (_, SOME(rhs), _, _)
-    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, 0, BackendDAE.NO_LOOP()))};
+    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind, BackendDAE.NO_LOOP()))};
 
     else {};
   end match;
@@ -2924,11 +2903,10 @@ protected function markDifferentiated2
   output BackendDAE.EquationAttributes outAttr;
 protected
   BackendDAE.EquationKind kind;
-  Integer subPartitionIndex;
   BackendDAE.LoopInfo loopInfo;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex, loopInfo=loopInfo) := inAttr;
-  outAttr := BackendDAE.EQUATION_ATTRIBUTES(true, kind, subPartitionIndex, loopInfo);
+  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, loopInfo=loopInfo) := inAttr;
+  outAttr := BackendDAE.EQUATION_ATTRIBUTES(true, kind, loopInfo);
 end markDifferentiated2;
 
 public function isDifferentiated

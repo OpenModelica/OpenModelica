@@ -127,7 +127,7 @@ algorithm
                       stateSets=stateSets,
                       partitionKind=partitionKind) := inEqSystem;
 
-  print("\n" + partitionKindString(partitionKind) + " partition\n" + UNDERLINE + "\n");
+  print("\n" + partitionKindString(partitionKind) + "\n" + UNDERLINE + "\n");
   dumpVariables(orderedVars, "Variables");
   dumpEquationArray(orderedEqs, "Equations");
   dumpStateSets(stateSets, "State Sets");
@@ -268,6 +268,7 @@ protected
   BackendDAE.ExternalObjectClasses extObjClasses;
   BackendDAE.BackendDAEType backendDAEType;
   BackendDAE.SymbolicJacobians symjacs;
+  array<DAE.ClockKind> clocks;
 algorithm
   BackendDAE.SHARED(knownVars=knownVars,
                     externalObjects=externalObjects,
@@ -275,13 +276,15 @@ algorithm
                     initialEqs=initialEqs,
                     removedEqs=removedEqs,
                     constraints=constraints,
-                    eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents, relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst),
+                    eventInfo=BackendDAE.EVENT_INFO( timeEvents=timeEvents, relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst,
+                                                     sampleLst=sampleLst, whenClauseLst=whenClauseLst, clocks = clocks ),
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := inShared;
   print("\nBackendDAEType: ");
   printBackendDAEType(backendDAEType);
   print("\n\n");
+
 
   dumpVariables(knownVars, "Known Variables (constants)");
   dumpVariables(externalObjects, "External Objects");
@@ -299,6 +302,16 @@ algorithm
   dumpWhenClauseList(whenClauseLst, "When Clauses");
   dumpConstraintList(constraints, "Constraints");
 end printShared;
+
+public function printClocks
+  input array<DAE.ClockKind> clocks;
+protected
+    Integer i;
+algorithm
+  for i in 1:arrayLength(clocks) loop
+    print(intString(i) + ": " + Tpl.tplString2(ExpressionDumpTpl.dumpClockKind, arrayGet(clocks, i), "") + "\n");
+  end for;
+end printClocks;
 
 public function printBackendDAEType "This is a helper for printShared."
   input BackendDAE.BackendDAEType btp;
@@ -529,8 +542,8 @@ end setIncidenceMatrix1;
 //   - dumpVarList
 // =============================================================================
 
-protected constant String BORDER    = "########################################";
-protected constant String UNDERLINE = "========================================";
+public constant String BORDER    = "########################################";
+public constant String UNDERLINE = "========================================";
 
 public function dumpDAE "dumps the DAE representation of the current transformation state"
   input BackendDAE.BackendDAE inDAE;
@@ -575,6 +588,16 @@ algorithm
   List.map_0(inEqSystems, printEqSystem);
   print("\n");
 end dumpEqSystems;
+
+public function dumpClocks
+  input array<DAE.ClockKind> clocks;
+  input String heading;
+algorithm
+  print("\n" + heading + " (" + intString(arrayLength(clocks)) + ")\n" + UNDERLINE + "\n");
+  printClocks(clocks);
+  print("\n");
+end dumpClocks;
+
 
 public function dumpVariables "function dumpVariables"
   input BackendDAE.Variables inVars;
@@ -1971,7 +1994,7 @@ algorithm
     case DAE.T_REAL() then "Real ";
     case DAE.T_BOOL() then "Boolean ";
     case DAE.T_STRING() then "String ";
-
+    case DAE.T_CLOCK() then "Clock ";
     case DAE.T_ENUMERATION(names = l)
       equation
         s1 = stringDelimitList(l, ", ");
@@ -2633,15 +2656,29 @@ algorithm
   end match;
 end optStateSelectionString;
 
-protected function partitionKindString
+public function partitionKindString
   input BackendDAE.BaseClockPartitionKind inPartitionKind;
   output String outString;
 algorithm
   outString := match(inPartitionKind)
-    case BackendDAE.CLOCKED_PARTITION() then "clocked";
-    case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time";
-    case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified";
-    case BackendDAE.UNKNOWN_PARTITION() then "unknown";
+    local
+      String solver;
+      Integer baseClock;
+      MMath.Rational factor, shift;
+      Option<String> solverMethod;
+      String solver;
+    case BackendDAE.CLOCKED_PARTITION( baseClock,
+                                       BackendDAE.SUBCLOCK(factor, shift, solverMethod) )
+      algorithm
+        solver := match solverMethod
+          case NONE() then "";
+          case SOME(solver) then ", " + solver;
+        end match;
+      then "clocked partition(" + intString(baseClock) + ", " + MMath.printNumber(factor)
+            + ", " + MMath.printNumber(shift) + solver + ")";
+    case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time partition";
+    case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified partition";
+    case BackendDAE.UNKNOWN_PARTITION() then "unknown partition";
     else equation
       Error.addInternalError("function partitionKindString failed", sourceInfo());
     then fail();
@@ -2653,36 +2690,32 @@ protected function equationAttrString
   output String outString;
 protected
   BackendDAE.EquationKind kind;
-  Integer subPartitionIndex;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex) := inEqAttr;
+  BackendDAE.EQUATION_ATTRIBUTES(kind=kind) := inEqAttr;
   outString := "[" + equationKindString(kind);
-  outString := if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then (outString + ", sub-partition index: " + subPartitionString(subPartitionIndex)) else outString;
   outString := outString + "]";
 end equationAttrString;
-
-protected function subPartitionString
-  input Integer inSubPartitionIndex;
-  output String outString;
-algorithm
-  outString := match inSubPartitionIndex
-    case 0 then "unknown";
-    else intString(inSubPartitionIndex);
-  end match;
-end subPartitionString;
 
 protected function equationKindString
   input BackendDAE.EquationKind inEqKind;
   output String outString;
 algorithm
   outString := match(inEqKind)
+    local
+     Integer i;
+     DAE.ComponentRef cr;
     case BackendDAE.BINDING_EQUATION() then "binding";
     case BackendDAE.DYNAMIC_EQUATION() then "dynamic";
     case BackendDAE.INITIAL_EQUATION() then "initial";
     case BackendDAE.UNKNOWN_EQUATION_KIND() then "unknown";
-    else equation
-      Error.addInternalError("function equationKindString failed", sourceInfo());
-    then fail();
+    case BackendDAE.CLOCKED_EQUATION(i)
+      equation
+        cr = DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(i), DAE.T_CLOCK_DEFAULT, {});
+      then "clocked(" + DAE.ComponentReference.printComponentRefStr(cr) + ")";
+    else
+      equation
+        Error.addInternalError("function equationKindString failed", sourceInfo());
+      then fail();
   end match;
 end equationKindString;
 

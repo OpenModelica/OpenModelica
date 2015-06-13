@@ -3547,7 +3547,7 @@ protected function removeSimpleEquationsShared
   output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE:=
-  match (b, inDAE, repl)
+  match (b, inDAE)
     local
       BackendDAE.Variables knvars, exobj, knvars1;
       BackendDAE.Variables aliasVars;
@@ -3569,9 +3569,13 @@ algorithm
       Boolean b1;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
+      array<DAE.ClockKind> clocks;
 
-    case (false, _, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei)), _)
+    case (false, _) then inDAE;
+    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree,
+                                                         BackendDAE.EVENT_INFO( timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst,
+                                                                                numMathFunctions, clocks ),
+                                                         eoc, btp, symjacs, ei )))
       equation
         if Flags.isSet(Flags.DUMP_REPL) then
           BackendVarTransform.dumpReplacements(repl);
@@ -3593,7 +3597,10 @@ algorithm
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1), assertWithCondTrue));
       then
-        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei));
+        BackendDAE.DAE(systs1, BackendDAE.SHARED( knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, graph, funcTree,
+                                                  BackendDAE.EVENT_INFO( timeEvents, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst,
+                                                                         numMathFunctions, clocks ),
+                                                  eoc, btp, symjacs, ei ));
   end match;
 end removeSimpleEquationsShared;
 
@@ -4371,11 +4378,13 @@ algorithm
       Boolean b1;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
-
+      array<DAE.ClockKind> clocks;
       BackendVarTransform.VariableReplacements repl;
 
     case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets,partitionKind),
-          BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei))  equation
+          BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree,
+                             BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions, clocks),
+                             eoc, btp, symjacs, ei ))  equation
 
       // sizes of Hash tables are system dependent!!!!
       size = BackendVariable.varsSize(orderedVars);
@@ -4457,7 +4466,9 @@ algorithm
       //SimCodeUtil.execStat("FINDSIMPLE6: ");
 
       outSystem = BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
-      outShared = BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei);
+      outShared = BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree,
+                                     BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions, clocks),
+                                     eoc, btp, symjacs, ei);
     then (outSystem,outShared);
     else (inSystem,inShared);
   end matchcontinue;
@@ -5059,19 +5070,16 @@ protected
   DAE.FunctionTree funcTree;
   BackendDAE.ExternalObjectClasses eoc;
   BackendDAE.SymbolicJacobians symjacs;
-  list<BackendDAE.WhenClause> whenClauseLst;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst, relationsLst, sampleLst;
-  Integer numMathFunctions;
   BackendDAE.BackendDAEType btp;
-  list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ExtraInfo ei;
+  BackendDAE.EventInfo eventInfo;
 
   HashTableCrToCrEqLst.HashTable HTAliasLst;
   list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplAliasLst;
   Integer size;
 algorithm
    BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets,partitionKind):= inSystem;
-   BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei) := inShared;
+   BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei) := inShared;
 
    size := BackendVariable.varsSize(orderedVars);
    size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
@@ -5081,8 +5089,8 @@ algorithm
    (tplAliasLst) := BaseHashTable.hashTableList(HTAliasLst);
    orderedVars := setAttributes(tplAliasLst, orderedVars, aliasVars);
 
-   outShared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions), eoc, btp, symjacs, ei);
-   outSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets,partitionKind);
+   outShared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei);
+   outSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind);
 end getAliasAttributes;
 
 protected function setAttributes "BB
