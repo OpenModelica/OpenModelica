@@ -42,3 +42,4 @@ end ExtObjectTest;
 // class ExtObjectTest.Ex
 //   ExtObjectTest.Ex.ExtPackage1.ExtObj mapping = ExtObjectTest.Ex.ExtPackage1.ExtObj.constructor();
 // end ExtObjectTest.Ex;
+// endResult
