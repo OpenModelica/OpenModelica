@@ -24,7 +24,7 @@ omc_communication.cc: $(builddir_share)/omc/omc_communication.idl
 	$(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc $<
 omc_communication.h: omc_communication.cc
 
-$(NAME): omc_communication.cc Makefile
+$(NAME): omc_communication.cc omc_communication.h Makefile
 	$(MAKE) -f Makefile
 
 build: $(NAME)
