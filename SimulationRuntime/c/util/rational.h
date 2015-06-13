@@ -47,8 +47,8 @@ RATIONAL addRat2Rat(RATIONAL a, RATIONAL b);
 RATIONAL multRat2Rat(RATIONAL a, RATIONAL b);
 RATIONAL multInt2Rat(long a, RATIONAL b);
 double rat2Real(RATIONAL a);
-double ceilRat(RATIONAL a, bool strict);
-double floorRat(RATIONAL a, bool strict);
+double ceilRat(RATIONAL a, int strict);
+double floorRat(RATIONAL a, int strict);
 
 #ifdef __cplusplus
 }

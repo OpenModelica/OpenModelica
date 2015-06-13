@@ -54,14 +54,14 @@ double rat2Real(RATIONAL a) {
     return (double)a / b;
 }
 
-//Input argument should not be a negative number
-double ceilRat(RATIONAL a, bool strict) {
+// Input argument should not be a negative number
+double ceilRat(RATIONAL a, int strict) {
   long k = a.m / a.n;
   return (a.m == k * a.n) ? (strict ? k + 1 : k) : k + 1;
 }
 
-//Input argument should not be a negative number
-double floorRat(RATIONAL a, bool strict) {
+// Input argument should not be a negative number
+double floorRat(RATIONAL a, int strict) {
   long k = a.m / a.n;
   return (a.m == k * a.n) ? (strict ? k - 1 : k) : k;
 }
