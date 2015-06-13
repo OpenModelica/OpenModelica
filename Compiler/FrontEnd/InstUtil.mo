@@ -1063,8 +1063,8 @@ algorithm
     case(_, SOME(cr), _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
-        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
 end extractConstantPlusDepsTpl;
@@ -1113,8 +1113,8 @@ algorithm
     case(_, SOME(cr), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
-        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
 end extractConstantPlusDeps;
@@ -1808,7 +1808,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.getCrefFromDim failed\n");
+        Debug.trace("- InstUtil.getCrefFromDim failed\n");
       then
         fail();
   end matchcontinue;
@@ -2345,7 +2345,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.addClassdefsToEnv failed\n");
+        Debug.trace("- InstUtil.addClassdefsToEnv failed\n");
       then fail();
 
   end matchcontinue;
@@ -2452,7 +2452,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.addClassdefToEnv2 failed\n");
+        Debug.trace("- InstUtil.addClassdefToEnv2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2679,7 +2679,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.addComponentToEnv failed");
+        Debug.traceln("- InstUtil.addComponentToEnv failed");
       then
         fail();
   end matchcontinue;
@@ -2741,7 +2741,7 @@ algorithm
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
 
         /*
-        print("Inst.addCompToEnv: " +
+        print("InstUtil.addCompToEnv: " +
           n + " in env " +
           FGraph.printGraphPathStr(env) + " with mod: " + Mod.printModStr(cmod_1) + " in element: " +
           SCodeDump.printElementStr(comp) + "\n");
@@ -2767,7 +2767,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.addComponentsToEnv2 failed\n");
+        Debug.trace("- InstUtil.addComponentsToEnv2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -3647,7 +3647,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.makeArrayType failed\n");
+        Debug.trace("- InstUtil.makeArrayType failed\n");
       then
         fail();
   end matchcontinue;
@@ -3789,7 +3789,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         id = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
-        Debug.traceln("Inst.getUsertypeDimensions failed: " + id);
+        Debug.traceln("InstUtil.getUsertypeDimensions failed: " + id);
       then
         fail();
 
@@ -3838,7 +3838,7 @@ algorithm
 
     else
       equation
-        print("Inst.addEnumerationLiteralToEnv: Unknown enumeration type!\n");
+        print("InstUtil.addEnumerationLiteralToEnv: Unknown enumeration type!\n");
       then fail();
   end matchcontinue;
 end addEnumerationLiteralToEnv;
@@ -3964,7 +3964,7 @@ algorithm
     case (DAE.DIM_UNKNOWN(), _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.instWholeDimFromMod failed\n");
+        Debug.trace("- InstUtil.instWholeDimFromMod failed\n");
       then
         fail();
   end matchcontinue;
@@ -4343,7 +4343,7 @@ algorithm
     case (_, _, cref,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.elabComponentArraydimFromEnv failed: " +
+        Debug.traceln("- InstUtil.elabComponentArraydimFromEnv failed: " +
           ComponentReference.printComponentRefStr(cref));
       then
         fail();
@@ -4532,7 +4532,7 @@ algorithm
       equation
         // only display when the failtrace flag is on
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.elabArraydim failed on: \n\tcref:");
+        Debug.trace("- InstUtil.elabArraydim failed on: \n\tcref:");
         Debug.trace(Absyn.pathString(path) + " " + Dump.printComponentRefStr(cref));
         Debug.traceln(Dump.printArraydimStr(ad) + " = " + Types.unparseOptionEqMod(eq));
       then
@@ -4580,7 +4580,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.compatibleArraydim failed\n");
+        Debug.trace("- InstUtil.compatibleArraydim failed\n");
       then
         fail();
   end match;
@@ -5751,7 +5751,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.instExtGetFargs failed");
+        Debug.traceln("- InstUtil.instExtGetFargs failed");
       then
         fail();
   end matchcontinue;
@@ -5923,7 +5923,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.instExtRettype failed");
+        Debug.traceln("- InstUtil.instExtRettype failed");
       then
         fail();
   end matchcontinue;
@@ -6263,7 +6263,7 @@ algorithm
 
     else
       equation
-        print("Inst.mktypeWithArrays failed\n");
+        print("InstUtil.mktypeWithArrays failed\n");
       then fail();
 
   end matchcontinue;
@@ -8391,7 +8391,7 @@ algorithm
       then ();
     else
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Inst.checkFunctionDefUse failed"}, info);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"InstUtil.checkFunctionDefUse failed"}, info);
       then ();
   end matchcontinue;
 end checkFunctionDefUse;
@@ -8497,7 +8497,7 @@ algorithm
       equation
         info = DAEUtil.getElementSourceFileInfo(DAEUtil.getStatementSource(inStmt));
         Error.addSourceMessage(Error.INTERNAL_ERROR,
-          {"Inst.checkFunctionDefUseStmt failed"}, info);
+          {"InstUtil.checkFunctionDefUseStmt failed"}, info);
       then fail();
     case (DAE.STMT_ASSIGN(exp1=lhs,exp=rhs,source=source),_,(_,_,unbound))
       equation
@@ -8582,7 +8582,7 @@ algorithm
     else
       equation
         str = DAEDump.ppStatementStr(inStmt);
-        str = "Inst.checkFunctionDefUseStmt failed: " + str;
+        str = "InstUtil.checkFunctionDefUseStmt failed: " + str;
         info = DAEUtil.getElementSourceFileInfo(DAEUtil.getStatementSource(inStmt));
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
