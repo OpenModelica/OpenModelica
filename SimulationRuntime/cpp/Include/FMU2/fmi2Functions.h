@@ -4,7 +4,7 @@
  *  Module for fmu 2.0 import/export
  *  @{
  */
-     
+
 /* This header file must be utilized when compiling a FMU.
    It defines all functions of the
          FMI 2.0 Model Exchange and Co-Simulation Interface.

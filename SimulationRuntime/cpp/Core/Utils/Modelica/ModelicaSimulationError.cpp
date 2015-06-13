@@ -1,5 +1,5 @@
 /** @addtogroup coreUtils
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>

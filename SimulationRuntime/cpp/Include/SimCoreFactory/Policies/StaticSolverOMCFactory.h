@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 
@@ -16,7 +16,7 @@ public:
         :SolverOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
     }
-    
+
     virtual ~StaticSolverOMCFactory()
     {
     }
@@ -37,7 +37,7 @@ public:
         {
           Ida *ida = new Ida(system,solver_settings.get());
           return boost::shared_ptr<ISolver>(ida);
-        } 
+        }
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
 

@@ -3,7 +3,7 @@
  *  Module for simulation settings
  *  @{
  */
- 
+
 /*includes removed for static linking not needed any more
 #ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimulationSettings//ISettingsFactory.h>

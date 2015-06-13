@@ -2,7 +2,7 @@
 /** @addtogroup math
  *   @{
 */
-    
+
 #include <math.h>                        ///< mathematical expressions
 #include <stdlib.h>
 #include <limits>

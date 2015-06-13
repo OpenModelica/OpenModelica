@@ -1,5 +1,5 @@
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 #include <SimCoreFactory/ObjectFactory.h>

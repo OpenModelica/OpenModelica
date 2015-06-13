@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup solverEuler
- *  
+ *
  *  @{
  */
 #if defined(__vxworks)

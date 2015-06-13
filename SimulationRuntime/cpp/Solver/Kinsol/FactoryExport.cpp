@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup solverKinsol
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>

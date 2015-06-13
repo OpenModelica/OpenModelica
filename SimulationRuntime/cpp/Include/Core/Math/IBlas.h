@@ -2,7 +2,7 @@
 /** @addtogroup math
  *   @{
 */
-    
+
 /*************************
     copies a vector, x, to a vector, y.
     uses unrolled loops for increments equal to one.

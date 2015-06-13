@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSimcontroller
- *  
+ *
  *  @{
  */
 /*includes removed for static linking not needed any more

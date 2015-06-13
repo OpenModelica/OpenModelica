@@ -37,7 +37,7 @@ encapsulated package VisualXML
 
 
   RCS: $Id: VisualXML 2014-02-04 waurich $
-  
+
 "
 
 protected import Absyn;
@@ -99,7 +99,7 @@ algorithm
   //in case we have a time dependent, protected variable, set the solved equation as binding
   eqs := List.map(eqs0,BackendDAEUtil.copyEqSystem);
   eqs := List.map(eqs,setBindingForProtectedVars);
-  
+
   //get all variables that contain visualization vars
   knownVarLst := BackendVariable.varList(knownVars);
   aliasVarLst := BackendVariable.varList(aliasVars);

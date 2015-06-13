@@ -1516,7 +1516,7 @@ algorithm
         res;
     case (BackendDAE.FOR_EQUATION(iter=iter, start=start, stop=stop, left=e1, right=e2))
       equation
-        s1 = ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop); 
+        s1 = ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop);
         s2 = ExpressionDump.printExpStr(e1) + "=" + ExpressionDump.printExpStr(e2);
         res = stringAppendList({"for ",s1," loop \n    ",s2, "; end for; "});
       then

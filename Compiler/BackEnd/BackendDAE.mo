@@ -369,7 +369,7 @@ uniontype Equation
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
   end FOR_EQUATION;
-  
+
 end Equation;
 
 public

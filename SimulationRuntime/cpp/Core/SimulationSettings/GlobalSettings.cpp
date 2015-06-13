@@ -1,8 +1,8 @@
 /** @addtogroup coreSimulationSettings
- *  
+ *
  *  @{
  */
-     
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL

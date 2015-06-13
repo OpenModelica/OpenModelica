@@ -656,7 +656,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
     ;separator="";empty)
    <<
-   
+
    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  algloopfilesInclude(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="")
      ;separator="")
@@ -695,7 +695,7 @@ template simulationStateSelectionCppFile(SimCode simCode, Text& extraFuncs, Text
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   
+
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
@@ -717,7 +717,7 @@ template simulationWriteOutputCppFile(SimCode simCode ,Text& extraFuncs,Text& ex
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-  
+
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
@@ -960,7 +960,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(__))) then
   let classname = lastIdentOfPath(modelInfo.name)
    <<
-   
+
    <%classname%>Extension::<%classname%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%classname%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
        , <%classname%>WriteOutput(globalSettings,nonlinsolverfactory, sim_data,sim_vars)
@@ -2140,7 +2140,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
-    
+
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -2186,7 +2186,7 @@ template simulationFunctionsFile(SimCode simCode, Text& extraFuncs, Text& extraF
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-  
+
 
   <%externalFunctionIncludes(includes)%>
 
@@ -3132,7 +3132,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 match eq
     case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-   
+
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 
@@ -3194,7 +3194,7 @@ match eq
 
     case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    <<
-   
+
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 

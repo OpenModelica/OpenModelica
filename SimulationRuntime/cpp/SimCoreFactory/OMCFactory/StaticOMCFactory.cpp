@@ -1,5 +1,5 @@
 /** @addtogroup simcorefactoryOMCFactory
- *  
+ *
  *  @{
  */
 

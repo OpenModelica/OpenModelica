@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSimulationSettings
- *  
+ *
  *  @{
  */
 #include <Core/SimulationSettings/IGlobalSettings.h>

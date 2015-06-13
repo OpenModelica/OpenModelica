@@ -1,5 +1,5 @@
 /** @addtogroup solverEuler
- *  
+ *
  *  @{
  */
 #pragma once

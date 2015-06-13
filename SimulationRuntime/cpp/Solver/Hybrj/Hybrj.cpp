@@ -1,6 +1,6 @@
 #include <Core/ModelicaDefine.h>
 /** @addtogroup solverCvode
- *  
+ *
  *  @{
  */
 #include <Core/Modelica.h>
@@ -43,15 +43,15 @@ Hybrj::Hybrj(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 }
 
 Hybrj::~Hybrj()
-{    
+{
     if(_x)         delete []    _x;
     if(_xHelp)    delete []    _xHelp;
-    if(_f)        delete []    _f;    
-    if(_fHelp)    delete []    _fHelp;    
-  if(_iHelp)    delete []    _iHelp; 
+    if(_f)        delete []    _f;
+    if(_fHelp)    delete []    _fHelp;
+  if(_iHelp)    delete []    _iHelp;
     if(_jac)    delete []    _jac;
-    if( _diag ) delete[] _diag; 
-    if(_r) delete[] _r;   
+    if( _diag ) delete[] _diag;
+    if(_r) delete[] _r;
     if(_qtf) delete[] _qtf;
     if(_wa1)delete[]  _wa1;
     if(_wa2)delete[]  _wa2;
@@ -63,7 +63,7 @@ Hybrj::~Hybrj()
     if(_x_nom) delete[] _x_nom;
     if(_x_scale) delete[] _x_scale;
     if(_x_ex) delete[] _x_ex;
-    
+
 }
 
 void Hybrj::stepCompleted(double time)
@@ -75,15 +75,15 @@ void Hybrj::stepCompleted(double time)
 void Hybrj::initialize()
 {
     _firstCall = false;
-   
+
     //(Re-) Initialization of algebraic loop
     _algLoop->initialize();
 
     // Dimension of the system (number of variables)
-    int 
+    int
         dimDouble    = _algLoop->getDimReal(),
         dimInt        = 0,
-        dimBool        = 0; 
+        dimBool        = 0;
 
     // Check system dimension
     if (dimDouble != _dimSys)
@@ -94,10 +94,10 @@ void Hybrj::initialize()
         {
             // Initialization of vector of unknowns
             if(_x)         delete []    _x;
-            if(_f)        delete []    _f;    
+            if(_f)        delete []    _f;
             if(_xHelp)    delete []    _xHelp;
-            if(_fHelp)    delete []    _fHelp;  
-    if(_iHelp)    delete []    _iHelp;       
+            if(_fHelp)    delete []    _fHelp;
+    if(_iHelp)    delete []    _iHelp;
             if(_jac)    delete []    _jac;
             if(_x0) delete[] _x0;
             if(_x1) delete[] _x1;
@@ -107,7 +107,7 @@ void Hybrj::initialize()
             if(_x_ex) delete[] _x_ex;
             if(_x_restart) delete[] _x_restart;
             _x            = new double[_dimSys];
-            _f            = new double[_dimSys];    
+            _f            = new double[_dimSys];
             _xHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
       _iHelp        = new long int[_dimSys];
@@ -129,11 +129,11 @@ void Hybrj::initialize()
             _algLoop->getNominalReal(_x_nom);
             std::fill_n(_f,_dimSys,0.0);
               std::fill_n(_x_scale,_dimSys,1.0);
-           
+
           std::fill_n(_xHelp,_dimSys,0.0);
           std::fill_n(_fHelp,_dimSys,0.0);
           std::fill_n(_jac,_dimSys*_dimSys,0.0);
-         
+
 
             _lr = (_dimSys*(_dimSys + 1)) / 2;
             _ldfjac= _dimSys;
@@ -142,8 +142,8 @@ void Hybrj::initialize()
             _factor = 100;
             _nprint=-1;
           _mode=1;
-            if( _diag ) delete[] _diag; 
-            if(_r) delete[] _r;   
+            if( _diag ) delete[] _diag;
+            if(_r) delete[] _r;
             if(_qtf) delete[] _qtf;
             if(_wa1)delete[]  _wa1;
             if(_wa2)delete[]  _wa2;
@@ -210,7 +210,7 @@ void Hybrj::solve()
             __minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag,
                 &_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf,
                 _wa1, _wa2, _wa3, _wa4,_data);
-            //check if  the conditions of the system has changed 
+            //check if  the conditions of the system has changed
             if(isConsistent)
             {
                isConsistent = _algLoop->isConsistent();
@@ -226,7 +226,7 @@ void Hybrj::solve()
             /*solution was found*/
             if(info==1  || (_fnorm <= local_tol))
                 _iterationStatus = DONE;
-            
+
              /* first try to decrease factor */
             else if((info==4 || info == 5) && iter<3)
             {
@@ -358,7 +358,7 @@ void Hybrj::solve()
             }
             else
                  throw ModelicaSimulationError(ALGLOOP_SOLVER,"Unsuccessful termination of HYBRJ, iteration is making no progress ");
-            
+
 
         }
 
@@ -368,9 +368,9 @@ void Hybrj::solve()
         }*/
         _factor=100;
           _mode=1;
-       
+
     }
- 
+
 
 }
 

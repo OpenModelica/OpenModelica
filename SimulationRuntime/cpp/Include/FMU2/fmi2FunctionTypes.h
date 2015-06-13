@@ -1,5 +1,5 @@
 /** @addtogroup fmu2
- *  
+ *
  *  @{
  */
 #ifndef fmi2FunctionTypes_h

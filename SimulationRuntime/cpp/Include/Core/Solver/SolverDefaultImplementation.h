@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSolver
- *  
+ *
  *  @{
  */
 #include <Core/Solver/SystemStateSelection.h>
