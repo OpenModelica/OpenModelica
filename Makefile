@@ -83,6 +83,7 @@ gitlibraries.log
 # Sorted by time it takes to run the tests...
 # DO NOT ADD ANYTHING HERE THAT YOU EXPECT WILL TAKE MORE THAN 5 SECONDS TO RUN IN THE NEXT 18 YEARS
 FASTLOGS= \
+modelicaexternal-objects.log \
 simulationalgorithms-functions.log \
 simulationarrays.log \
 simulationasserts.log \
@@ -207,6 +208,9 @@ modelicaothers.log: omc-diff
 	@echo $@ done
 modelicaexternal-functions.log: omc-diff
 	$(MAKE) -C flattening/modelica/external-functions -f Makefile test > $@
+	@echo $@ done
+modelicaexternal-objects.log: omc-diff
+	$(MAKE) -C flattening/modelica/external-objects -f Makefile test > $@
 	@echo $@ done
 modelicaequations.log: omc-diff
 	$(MAKE) -C flattening/modelica/equations -f Makefile test > $@
