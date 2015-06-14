@@ -159,6 +159,7 @@ class OMCGnuplotDirective(Directive):
   option_spec = {
     'filename': rstdirectives.path,
     'caption': rstdirectives.unchanged,
+    'name': rstdirectives.unchanged,
     'parametric': rstdirectives.flag,
     'plotall': rstdirectives.flag
   }
@@ -212,7 +213,7 @@ class OMCGnuplotDirective(Directive):
       subprocess.check_call(["gnuplot", "tmp/%s.gnuplot" % self.arguments[0]])
       try:
         vl = ViewList()
-        for text in [".. figure :: %s.*" % self.arguments[0], "", "  %s" % caption]:
+        for text in [".. figure :: %s.*" % self.arguments[0]] + (["  :name: %s" % self.options["name"]] if "name" in self.options else []) + ["", "  %s" % caption]:
           vl.append(text, "<OMC gnuplot>")
         node = docutils.nodes.paragraph()
         self.state.nested_parse(vl, 0, node)

@@ -99,14 +99,14 @@ the corresponding chapter of the Modelica book :cite:`openmodelica.org:fritzson:
 summary introduces some *keywords*, being hyperlinks that will lead the
 user to other notebooks describing the keywords in detail.
 
-\ |image19|
+.. figure :: media/omnotebook-helloworld.png
+  :name: omnotebook-helloworld
 
-Figure 427. **The** HelloWorld **class simulated and plotted using the
-OMNotebook version of DrModelica.**
+  The HelloWorld class simulated and plotted using the OMNotebook version of DrModelica.
 
 Now, let us consider that the link “\ *HelloWorld*\ ” in DrModelica
-Section is clicked by the user. The new HelloWorld notebook (see Figure
-4 -27), to which the user is being linked, is not only a textual
+Section is clicked by the user. The new HelloWorld notebook (see :numref:`omnotebook-helloworld`),
+to which the user is being linked, is not only a textual
 description but also contains one or more examples explaining the
 specific keyword. In this class, HelloWorld, a differential equation is
 specified.
@@ -121,7 +121,7 @@ Figure 428. **DrModelica Chapter on Algorithms and Functions in the main
 page of the OMNotebook version of DrModelica.**
 
 When a class has been successfully evaluated the user can simulate and
-plot the result, as previously depicted in Figure 4 -27 for the simple
+plot the result, as previously depicted in :numref:`omnotebook-helloworld` for the simple
 HelloWorld example model.
 
 After reading a chapter in DrModelica the user can immediately practice
@@ -139,26 +139,32 @@ algorithm sections, when-statements, and reinit equations, and then
 practice these constructs by solving the exercises corresponding to the
 recently studied section.
 
-|image20|
+.. figure :: media/omnotebook-drmodelica-ex1.png
+  :name: omnotebook-drmodelica-ex1
 
-Figure 429. **Exercise 1 in Chapter 9 of DrModelica**
+  Exercise 1 in Chapter 9 of DrModelica.
 
-Exercise 1 from Chapter 9 is shown in Figure 4 -29. In this exercise the
-user has the opportunity to practice different language constructs and
-then compare the solution to the answer for the exercise. Notice that
-the answer is not visible until the *Answer* section is expanded. The
-answer is shown in Figure 4 -30.
+Exercise 1 from Chapter 9 is shown in :numref:`omnotebook-drmodelica-ex1`.
+In this exercise the user has the opportunity to practice different
+language constructs and then compare the solution to the answer for the exercise.
+Notice that the answer is not visible until the *Answer* section is expanded.
+The answer is shown in :numref:`omnotebook-drmodelica-ex1-answer`.
 
-Figure 430. \ **The answer section to Exercise 1 in Chapter 9 of
-DrModelica.**
+.. figure :: media/omnotebook-drmodelica-ex1-answer.png
+  :name: omnotebook-drmodelica-ex1-answer
+
+  The answer section to Exercise 1 in Chapter 9 of DrModelica.
 
 DrControl Tutorial for Teaching Control Theory
 ----------------------------------------------
 
 DrControl is an interactive OMNotebook document aimed at teaching
 control theory. It is included in the OpenModelica distribution and
-appears under the directory OpenModelica1.9.2/share/
-omnotebook/drcontrol.
+appears under the directory:
+
+.. omc-mos ::
+
+  getInstallationDirectoryPath() + "/share/omnotebook/drcontrol"
 
 The front-page of DrControl resembles a linked table of content that can
 be used as a navigation center. The content list contains topics like:
@@ -288,7 +294,7 @@ In most systems the relation between the inputs and outputs can be
 described by a linear differential equation. Tearing apart the solution
 of the differential equation into homogenous and particular parts is an
 important technique taught to the students in engineering courses, also
-illustrated in Figure 4 -34.
+illustrated in :numref:`omnotebook-mathematical-modeling-with-characteristic-equation`.
 
 .. math ::
 
@@ -302,7 +308,7 @@ Now let us examine a second order system:
 
   \ddot y + a_1 \dot y + a_2 y = 1
 
-.. code-block :: modelica
+.. omc-loadstring ::
 
   model NegRoots
     Real y;
@@ -315,56 +321,73 @@ Now let us examine a second order system:
   end NegRoots;
 
 Choosing different values for a\ :sub:`1` and a\ :sub:`2` leads to
-different behavior as shown in Figure 4 -35 and Figure 4 -36.
+different behavior as shown in :numref:`omnotebook-drcontrol-negroots` and :numref:`omnotebook-drcontrol-imgposroots`.
 
-|image25|
+.. figure :: media/omnotebook-mathematical-modeling-with-characteristic-equation.png
+  :name: omnotebook-mathematical-modeling-with-characteristic-equation
 
-Figure 434. **Mathematical modeling with characteristic equation.**
+  Mathematical modeling with characteristic equation.
 
 In the first example the values of a\ :sub:`1` and a\ :sub:`2` are
 chosen in such way that the characteristic equation has negative real
-roots and thereby a stable output response, see Figure 4 -35.
+roots and thereby a stable output response, see :numref:`omnotebook-drcontrol-negroots`.
 
-Figure 435. **Characteristic eq. with real negative roots.**
+.. omc-mos ::
+
+  simulate(NegRoots, stopTime=10)
+
+.. omc-gnuplot :: omnotebook-drcontrol-negroots
+  :name: omnotebook-drcontrol-negroots
+  :caption: Characteristic equation with real negative roots.
+
+  y
 
 The importance of the sign of the roots in the characteristic equation
-is illustrated in Figure 4 -35 and Figure 4 -36, e.g., a stable system
+is illustrated in :numref:`omnotebook-drcontrol-negroots` and
+:numref:`omnotebook-drcontrol-imgposroots`, e.g., a stable system
 with negative real roots and an unstable system with positive imaginary
 roots resulting in oscillations.
 
-**model** NegRoots
+.. omc-loadstring ::
 
-Real y;
+  model ImgPosRoots
+    Real y;
+    Real der_y;
+    parameter Real a1 = -2;
+    parameter Real a2 = 10;
+  equation
+    der_y = der(y);
+    der(der_y) + a1*der_y + a2*y = 1;
+  end ImgPosRoots;
 
-Real der\_y;
+.. omc-mos ::
 
-**parameter** Real a1 = -2;
+  simulate(ImgPosRoots, stopTime=10)
 
-**parameter** Real a2 = 10;
+.. omc-gnuplot :: omnotebook-drcontrol-imgposroots
+  :name: omnotebook-drcontrol-imgposroots
+  :caption: Characteristic equation with imaginary roots with positive real part.
 
-**equation**
+  y
 
-der\_y = **der**\ (y);
+.. figure :: media/omnotebook-step-pulse.png
 
-**der**\ (der\_y) + a1\*der\_y + a2\*y = 1;
-
-**end** NegRoots;
-
-Figure 436. **Characteristic eq. with positive imaginary roots.**
-
-Figure 437. **Step and pulse (weight function) response.**
+  Step and pulse (weight function) response.
 
 The theory and application of Kalman filters is also explained in the
 interactive course material.
 
-Figure 438. **Theory background about Kalman filter.**
+.. figure :: media/omnotebook-theory-kalman.png
+
+  Theory background about Kalman filter.
 
 In reality noise is present in almost every physical system under study
 and therefore the concept of noise is also introduced in the course
 material, which is purely Modelica based.
 
-Figure 439. Comparison of a noisy system with feedback link i\ **n
-DrControl.**
+.. figure :: media/omnotebook-kalman-noisy-feedback.png
+
+  Comparison of a noisy system with feedback link in DrControl.
 
 OpenModelica Notebook Commands
 ------------------------------
@@ -787,8 +810,6 @@ Proceedings of the 44th Scandinavian Conference on Simulation and
 Modeling (SIMS’2003), available at www.scan-sims.org. Västerås, Sweden.
 September 18-19, 2003.
 
-.. |image19| image:: media/image33.png
 .. |image20| image:: media/image35.png
-.. |image25| image:: media/image44.png
 
 .. |WYSIWYG| replace:: :abbr:`WYSIWYG (What-You-See-Is-What-You-Get)`

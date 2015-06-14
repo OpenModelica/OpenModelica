@@ -1018,7 +1018,3 @@ the following browsers,
   :name: omedit-algorithmic-debugger
 
   Algorithmic Debugger.
-
-.. |image13| image:: media/image20.png
-.. |image14| image:: media/image21.png
-.. |image17| image:: media/image27.png
