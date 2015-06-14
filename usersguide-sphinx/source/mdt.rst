@@ -86,13 +86,13 @@ Selecting a Workspace Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Eclipse stores your projects in a folder called a workspace. You need to
-choose a workspace folder for this session, see Figure 5- 7 -52
+choose a workspace folder for this session, see :numref:`mdt-switching-workspace`.
 
 .. todo ::
 
-  Missing figure
+  Missing figure mdt-switching-workspace
 
-  Figure 5752. Eclipse Setup – Switching Workspace.
+  Eclipse Setup – Switching Workspace.
 
 Creating one or more Modelica Projects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,12 +107,11 @@ the Modelica Projects view and selecting New->Modelica Project.
 
   Eclipse Setup – creating a Modelica project in the workspace.
 
-You need to disable automatic build for the project(s) (Figure 5- 7
--54).
+You need to disable automatic build for the project(s) (:numref:`mdt-disable-automatic-build`).
 
 .. todo ::
 
-  Missing figure
+  Missing figure mdt-disable-automatic-build
 
   Eclipse Setup – disable automatic build for the projects.
 

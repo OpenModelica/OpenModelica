@@ -207,7 +207,7 @@ optimized and the optimization specification.
 
 One we have formulated the undelying optimal control problems, we can
 export the XML by using OMShell, OMNotebook, MDT, OMEdit or command
-line terminals which are described in Section 6.2.4 .
+line terminals which are described in Section :ref:`xml-import-to-casadi`.
 
 To export XML, we set the simulation target to XML:
 
@@ -223,6 +223,8 @@ and can be inspected in a standard XML editor.
   :name: BatchReactor.xml
   :caption: BatchReactor.xml
   :language: xml
+
+.. _xml-import-to-casadi :
 
 XML Import to CasADi via OpenModelica Python Script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

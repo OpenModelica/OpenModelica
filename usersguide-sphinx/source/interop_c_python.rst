@@ -1,3 +1,5 @@
+.. _interop-c :
+
 Interoperability – C and Python
 ===============================
 

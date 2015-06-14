@@ -660,6 +660,8 @@ about the error cause after a simulation failure:
 
   getErrorString()
 
+.. _alternative-output-formats :
+
 Alternative Simulation Output Formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -706,7 +708,7 @@ combinations
 Using External Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-See Chapter 12 for more information about calling functions in other
+See Chapter :ref:`interop-c` for more information about calling functions in other
 programming languages.
 
 Using Parallel Simulation via OpenMP Multi-Core Support
@@ -887,7 +889,7 @@ it.
   “rungekutta” are also available. Output format “mat” is default. “plt”
   and “mat” (MATLAB) are the only ones that work with the val() command,
   “csv” (comma separated values) and “empty” (no output) are also
-  available (see chapter 1.2.14).
+  available (see section :ref:`alternative-output-formats`).
 
 plot(\ *vars*) Plot the variables given as a vector or a scalar, e.g.
 plot({x1,x2}) or plot(x1).
