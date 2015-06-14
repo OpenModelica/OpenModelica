@@ -22,8 +22,8 @@ programming where programs are integrated with documentation in the same
 document. Mathematica notebooks :cite:`mathematicbook:third` is one of the first
 |WYSIWYG| systems that support Literate
 Programming. Such notebooks are used, e.g., in the MathModelica modeling
-and simulation environment, e.g. see Figure 4 -25below and Chapter 19 in
-:cite:`openmodelica.org:fritzson:2004`.
+and simulation environment, see e.g. :numref:`mathematica-notebooks` below
+and Chapter 19 in :cite:`openmodelica.org:fritzson:2004`.
 
 OMNotebook
 ~~~~~~~~~~
@@ -41,10 +41,13 @@ OMNotebook is a simple open-source software tool for an electronic notebook supp
 
 A more advanced electronic notebook tool, also supporting mathematical
 typesetting and many other facilities, is provided by Mathematica
-notebooks in the MathModelica environment, see Figure 4 -25.
+notebooks in the MathModelica environment, see :numref:`mathematica-notebooks`.
 
-Figure 425. **Examples of Mathematica notebooks in the MathModelica
-modeling and simulation environment.**
+.. figure :: media/mathematica-notebooks.*
+  :name: mathematica-notebooks
+
+  Examples of Mathematica notebooks in the MathModelica modeling and
+  simulation environment.
 
 Traditional documents, e.g. books and reports, essentially always have a
 hierarchical structure. They are divided into sections, subsections,
@@ -89,10 +92,13 @@ OMNotebook tool itself.
 DrModelica has a hierarchical structure represented as notebooks. The
 front-page notebook is similar to a table of contents that holds all
 other notebooks together by providing links to them. This particular
-notebook is the first page the user will see (Figure 4 -26).
+notebook is the first page the user will see (:numref:`omnotebook-drmodelica`).
 
-Figure 426. **The front-page notebook of the OMNotebook version of the
-DrModelica tutoring system.**
+.. figure :: media/omnotebook-drmodelica.png
+  :name: omnotebook-drmodelica
+
+  The front-page notebook of the OMNotebook version of the DrModelica
+  tutoring system.
 
 In each chapter of DrModelica the user is presented a short summary of
 the corresponding chapter of the Modelica book :cite:`openmodelica.org:fritzson:2004`. The
@@ -117,8 +123,11 @@ can create an entirely new notebook in order to write his/her own
 programs or copy examples from other notebooks. This new notebook can be
 linked from existing notebooks.
 
-Figure 428. **DrModelica Chapter on Algorithms and Functions in the main
-page of the OMNotebook version of DrModelica.**
+.. figure :: media/omnotebook-drmodelica-ch9.png
+  :name: omnotebook-drmodelica-ch9
+
+  DrModelica Chapter on Algorithms and Functions in the main page of the
+  OMNotebook version of DrModelica.
 
 When a class has been successfully evaluated the user can simulate and
 plot the result, as previously depicted in :numref:`omnotebook-helloworld` for the simple
@@ -133,11 +142,11 @@ doing*\ ”. The exercises consist of either theoretical questions or
 practical programming assignments. All exercises provide answers in
 order to give the user immediate feedback.
 
-Figure 4 -28 shows part of Chapter 9 of the DrModelica teaching
-material. Here the user can read about language constructs, like
-algorithm sections, when-statements, and reinit equations, and then
-practice these constructs by solving the exercises corresponding to the
-recently studied section.
+:numref:`omnotebook-drmodelica-ch9` shows part of Chapter 9 of the
+DrModelica teaching material.
+Here the user can read about language constructs, like algorithm sections,
+when-statements, and reinit equations, and then practice these constructs
+by solving the exercises corresponding to the recently studied section.
 
 .. figure :: media/omnotebook-drmodelica-ex1.png
   :name: omnotebook-drmodelica-ex1
@@ -209,20 +218,23 @@ One of the basic concepts of control theory is using feedback loops
 either for neutralizing the disturbances from the surroundings or a
 desire for a smoother output.
 
-In Figure 4 -31, control of a simple car model is illustrated where the
+In :numref:`omnotebook-feedback`, control of a simple car model is illustrated where the
 car velocity on a road is controlled, first with an open loop control,
 and then compared to a closed loop system with a feedback loop. The car
 has a mass m, velocity y, and aerodynamic coefficient α. The θ is the
 road slope, which in this case can be regarded as noise.
 
-Figure 431. **Feedback loop**
+.. figure :: media/omnotebook-feedback.png
+  :name: omnotebook-feedback
+
+  Feedback loop.
 
 Lets look at the Modelica model for the open loop controlled car:
 
 .. math::
   m \dot y = u - \alpha y - m g * sin(\theta)
 
-.. code-block:: modelica
+.. omc-loadString ::
 
   model noFeedback
     import SI = Modelica.SIunits;
@@ -242,19 +254,31 @@ Lets look at the Modelica model for the open loop controlled car:
 
 By applying a road slope angle different from zero the car velocity is
 influenced which can be regarded as noise in this model. The output
-signal in Figure 4 -32 is stable but an overshoot can be observed
+signal in :numref:`omnotebook-open-loop` is stable but an overshoot can be observed
 compared to the reference signal. Naturally the overshoot is not desired
 and the student will in the next exercise learn how to get rid of this
 undesired behavior of the system.
 
-Figure 432. **Open loop control example.**
+.. omc-mos ::
+  :erroratend:
+
+  loadModel(Modelica)
+  simulate(noFeedback, stopTime=100)
+
+.. omc-gnuplot :: omnotebook-open-loop
+  :caption: Open loop control example.
+  :name: omnotebook-open-loop
+
+  r
+  y
+  yNoise
 
 The closed car model with a proportional regulator is shown below:
 
 .. math::
   u = K*(r-y)
 
-.. code-block:: modelica
+.. omc-loadString ::
 
   model withFeedback
     import SI = Modelica.SIunits;
@@ -277,7 +301,7 @@ The closed car model with a proportional regulator is shown below:
 By using the information about the current level of the output signal
 and re-tune the regulator the output quantity can be controlled towards
 the reference signal smoothly and without an overshoot, as shown in
-Figure 4 -33.
+:numref:`omnotebook-closed-loop`.
 
 In the above simple example the flat modeling approach was adopted since
 it was the fastest one to quickly obtain a working model. However, one
@@ -285,7 +309,19 @@ could use the object oriented approach and encapsulate the car and
 regulator models in separate classes with the Modelica connector
 mechanism in between.
 
-Figure 433. **Closed loop control example.**
+.. omc-mos ::
+  :erroratend:
+
+  loadModel(Modelica)
+  simulate(withFeedback, stopTime=10)
+
+.. omc-gnuplot :: omnotebook-closed-loop
+  :caption: Closed loop control example.
+  :name: omnotebook-closed-loop
+
+  r
+  y
+  yNoise
 
 Mathematical Modeling with Characteristic Equations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
