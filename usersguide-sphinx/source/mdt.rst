@@ -47,7 +47,7 @@ successfully downloaded and installed Eclipse (http://www.eclipse.org).
 4. Select ‘New Remote Site...’
 
 5. Enter ‘MDT’ as name and
-   ‘\ `*http://www.ida.liu.se/labs/pelab/modelica/OpenModelica/MDT* <http://www.ida.liu.se/labs/pelab/OpenModelica/MDT>`__\ ’
+   http://www.ida.liu.se/labs/pelab/OpenModelica/MDT
    as URL and click ‘OK’
 
 6. Make sure ‘MDT’ is selected and click ‘Finish’
@@ -69,7 +69,7 @@ MDT needs to be able to locate the binary of the compiler. It uses the
 environment variable OPENMODELICAHOME to do so.
 
 If you have problems using MDT, make sure that OPENMODELICAHOME is
-pointing to the folder where the Open Modelica Compiler is installed. In
+pointing to the folder where the OpenModelica Compiler is installed. In
 other words, OPENMODELICAHOME must point to the folder that contains the
 Open Modelica Compiler (OMC) binary. On the Windows platform it’s called
 omc.exe and on Unix platforms it’s called omc.
@@ -88,7 +88,11 @@ Selecting a Workspace Folder
 Eclipse stores your projects in a folder called a workspace. You need to
 choose a workspace folder for this session, see Figure 5- 7 -52
 
-Figure 5752. **Eclipse Setup – Switching Workspace.**
+.. todo ::
+
+  Missing figure
+
+  Figure 5752. Eclipse Setup – Switching Workspace.
 
 Creating one or more Modelica Projects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,14 +101,20 @@ To start a new project, use the New Modelica Project Wizard. It is
 accessible through File->New-> Modelica Project or by right-clicking in
 the Modelica Projects view and selecting New->Modelica Project.
 
-Figure 5753. **Eclipse Setup – creating a Modelica project in the
-workspace.**
+.. todo ::
+
+  Missing figure
+
+  Eclipse Setup – creating a Modelica project in the workspace.
 
 You need to disable automatic build for the project(s) (Figure 5- 7
 -54).
 
-Figure 5754. Eclipse Setup – disable automatic build for the
-projects\ **.**
+.. todo ::
+
+  Missing figure
+
+  Eclipse Setup – disable automatic build for the projects.
 
 Repeat the procedure for all the projects you need, e.g. for the
 exercises described in the MetaModelica users guide: 01\_experiment,
@@ -117,28 +127,47 @@ Building and Running a Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After having created a project, you eventually need to build the project
-(Figure 7 -55).
+(:numref:`mdt-build-project`).
 
-Figure 755. **Eclipse MDT – Building a project.**
+.. figure :: media/mdt-build-project.png
+  :name: mdt-build-project
+
+  Eclipse MDT – Building a project.
 
 There are several options: building, building from scratch (clean),
-running, see Figure 7 -56.
+running, see :numref:`mdt-build-run`.
 
-Figure 756. **Eclipse – building and running a project.**
+.. todo ::
 
-You may also open additional views, e.g as in Figure 7 -57.
+  Missing figure
 
-Figure 757. Eclipse – Opening views\ **.**
+.. figure :: media/mdt-build-run.png
+  :name: mdt-build-run
+
+  Eclipse – building and running a project.
+
+You may also open additional views, e.g as in :numref:`mdt-opening-views`.
+
+.. todo ::
+
+  Missing figure
+
+.. figure :: media/mdt-opening-views.png
+  :name: mdt-opening-views
+
+  Eclipse – Opening views.
 
 Switching to Another Perspective
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need, you can (temporarily) switch to another perspective, e.g.
 to the Java perspective for working with an OpenModelica Java client as
-in Figure 7 -58.
+in :numref:`mdt-switch-view`.
 
-Figure 758. Eclipse – Switching to another perspective – e.g. the Java
-Perspective\ **.**
+.. figure :: media/mdt-switch-view.png
+  :name: mdt-switch-view
+
+  Eclipse – Switching to another perspective – e.g. the Java Perspective.
 
 Creating a Package
 ~~~~~~~~~~~~~~~~~~
@@ -148,7 +177,9 @@ File->New->Modelica Package\ **.** Enter the desired name of the package
 and a description of what it contains. Note: for the exercises we
 already have existing packages.
 
-Figure 759. **Creating a new Modelica package.**
+.. figure :: media/mdt-create-package.png
+
+  Creating a new Modelica package.
 
 Creating a Class
 ~~~~~~~~~~~~~~~~
@@ -162,7 +193,9 @@ can select modifiers that add code blocks to the generated code.
 ‘Include initial code block’ will for example add the line ‘initial
 equation’ to the class.
 
-Figure 760. **Creating a new Modelica class.**
+.. figure :: media/mdt-create-class.png
+
+  Creating a new Modelica class.
 
 Syntax Checking
 ~~~~~~~~~~~~~~~
@@ -176,7 +209,9 @@ and as a red marker in the right-hand side of the editor. If you want to
 reach the problem, you can either click the item in the Problems view or
 select the red box in the right-hand side of the editor.
 
-Figure 761. **Syntax checking.**
+.. figure :: media/mdt-syntax-checking.png
+
+  Syntax checking.
 
 Automatic Indentation Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -195,15 +230,18 @@ completion when typing a dot after a class (package) name, shows
 alternatives in a menu. Besides the alternatives, Modelica documentation
 from comments is shown if is available. This makes the selection easyer.
 
-Figure 762. **Code completion when typing a dot.**
+.. figure :: media/mdt-code-completion.png
+
+  Code completion when typing a dot.
 
 The second variant is useful when typing a call to a function. It shows
 the function signature (formal parameter names and types) in a popup
 when typing the parenthesis after the function name, here the signature
 Real sin(SI.Angle u) of the sin function:
 
-Figure 763. **Code completion at a function call when typing left
-parenthesis.**
+.. figure :: media/mdt-code-completion-call.png
+
+  Code completion at a function call when typing left parenthesis.
 
 Code Assistance on Identifiers when Hovering
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -214,7 +252,9 @@ press F2 to focus the popup dialog and scroll up and down to examine all
 the text. As one can see the information in the popup dialog is
 syntax-highlighted.
 
-Figure 764. **Displaying information for identifiers on hovering**
+.. figure :: media/mdt-info-on-hover.png
+
+  Displaying information for identifiers on hovering.
 
 Go to Definition Support
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -231,12 +271,17 @@ When writing records, the same functionality as for function calls is
 used. This is useful especially in MetaModelica when writing cases in
 match constructs.
 
-Figure 765. **Code assistance when writing cases with records in
-MetaModelica.**
+.. figure :: media/mdt-assist-mm-record.png
+
+  Code assistance when writing cases with records in MetaModelica.
 
 Using the MDT Console for Plotting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Figure 766. **Activate the MDT Console**
+.. figure :: media/mdt-console.png
 
-Figure 767. **Simulation from MDT Console**
+  Activate the MDT Console.
+
+.. figure :: media/mdt-console-simulate.png
+
+  Simulation from MDT Console.
