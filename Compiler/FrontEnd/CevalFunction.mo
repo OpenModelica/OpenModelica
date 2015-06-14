@@ -1131,21 +1131,15 @@ algorithm
       then
         (cache, inEnv, NEXT(), st);
 
-    // Non-returning function calls should probably be constant evaluated, but
-    // causes problem when we call functions with side-effects (such as in the
-    // test case mosfiles/Random.mos). Enable this code when functions with
-    // side-effects are no longer constant evaluated.
-    /*case (DAE.STMT_NORETCALL(exp = rhs), _, _)
-      equation
-        _ = cevalExp(rhs, inEnv);
-      then
-        (inEnv, NEXT());*/
-
-    // Special case for print, and other known calls for now, see comment on case above.
-    case (DAE.STMT_NORETCALL(exp = DAE.CALL(path = path, expLst = exps)), _, _, _)
-      equation
-        (cache, vals, st) = cevalExpList(exps, inCache, inEnv, inST);
-        (cache, _) = Ceval.cevalKnownExternalFuncs(cache,inEnv,path,vals,Absyn.NO_MSG());
+    // Special case for print, and other known calls for now; evaluated even when there is no ST
+    case (DAE.STMT_NORETCALL(exp = rhs as DAE.CALL(path = path, expLst = exps)), _, _, _)
+      algorithm
+        (cache, vals, st) := cevalExpList(exps, inCache, inEnv, inST);
+        if isSome(st) then
+          (cache, _, st) := cevalExp(rhs, cache, inEnv, st);
+        else
+          (cache, _) := Ceval.cevalKnownExternalFuncs(cache,inEnv,path,vals,Absyn.NO_MSG());
+        end if;
       then
         (cache, inEnv, NEXT(), st);
 
