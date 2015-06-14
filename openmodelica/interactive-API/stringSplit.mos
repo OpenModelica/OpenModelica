@@ -1,0 +1,13 @@
+// status: correct
+
+stringSplit("a.b..c",".");
+stringSplit("a.b.c",".");
+stringSplit("a",".");
+stringSplit("",".");
+
+// Result:
+// {"a","b","","c"}
+// {"a","b","c"}
+// {"a"}
+// {}
+// endResult
