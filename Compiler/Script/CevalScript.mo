@@ -1083,7 +1083,7 @@ algorithm
     case (cache,_,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         Absyn.CLASS(_,_,_,_,_,cdef,_) = Interactive.getPathedClassInProgram(path, p);
-        str = getClassComment(cdef);
+        str = System.unescapedString(getClassComment(cdef));
       then
         (cache,Values.STRING(str),st);
 
