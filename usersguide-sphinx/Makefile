@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
-ALLDEP = source/openmodelica.bib
+ALLDEP = source/openmodelica.bib source/interface.inc
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -54,18 +54,24 @@ clean:
 
 html: dvisvgm.sh $(ALLDEP)
 	test -f dvisvgm.sh
-	$(SPHINXBUILD) -b html -D pngmath_dvipng="`pwd`"/dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	$(SPHINXBUILD) -b html -t nomathjax -D pngmath_dvipng="`pwd`"/dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
+htmlmathjax: $(ALLDEP)
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/htmlmathjax
+	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/htmlmathjax."
+
 dirhtml: $(ALLDEP)
-	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
+	$(SPHINXBUILD) -b dirhtml -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
 
 singlehtml: $(ALLDEP)
-	$(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $(BUILDDIR)/singlehtml
+	$(SPHINXBUILD) -b singlehtml -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/singlehtml
 	@echo
 	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
 
@@ -112,7 +118,7 @@ devhelp: $(ALLDEP)
 	@echo "# devhelp"
 
 epub: $(ALLDEP)
-	$(SPHINXBUILD) -b epub $(ALLSPHINXOPTS) $(BUILDDIR)/epub
+	$(SPHINXBUILD) -b epub -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/epub
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
 
@@ -214,3 +220,6 @@ source/media/omedit-connect-mode.pdf: source/media/omedit-connect-mode.svg
 	FNAME=`echo $@ | sed "s/[.]/-/g" | sed "s/-pdf/.pdf/g"`; if test "$$FNAME" != "$@"; then cp -a "$@" "$$FNAME"; fi
 source/openmodelica.bib: resolve-crossref.py $(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib
 	python resolve-crossref.py "$(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib" source/openmodelica.bib
+source/interface.inc: interface.mos
+	$(OPENMODELICAHOME)/bin/omc +g=MetaModelica +d=nogen interface.mos
+	mv interface.inc $@

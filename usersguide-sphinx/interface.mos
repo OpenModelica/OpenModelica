@@ -1,0 +1,34 @@
+s := "
+function trim
+  input String s;
+  output String o;
+protected
+  String a[1];
+algorithm
+  (,a) := OpenModelica.Scripting.regex(s, \"[^ ].*\");
+  o := a[1];
+end trim;
+
+function reSTInterface
+  input OpenModelica.Scripting.TypeName cl;
+  output String out;
+protected
+  String s;
+  String strs[:] = OpenModelica.Scripting.typeNameStrings(cl);
+  String doc[2] = OpenModelica.Scripting.getDocumentationAnnotation(cl);
+  String doc1 = doc[1];
+algorithm
+  out := \"\\n\" + strs[end] + \"\\n\" + sum(\"^\" for c in 1:stringLength(strs[end])) + \"\\n\";
+  out := out + sum(\"\" + trim(l) + \"\\n\" for l in OpenModelica.Scripting.strtok(OpenModelica.Scripting.getClassComment(cl), \"\\n\"));
+  OpenModelica.Scripting.writeFile(\"interface.inc.tmp\", doc1, false);
+  OpenModelica.Scripting.system(\"pandoc -t rst -f html -o interface.inc.tmp.rst interface.inc.tmp\");
+  out := out + \"\\n\" + sum(\"\" + l + \"\\n\" for l in OpenModelica.Scripting.stringSplit(OpenModelica.Scripting.readFile(\"interface.inc.tmp.rst\"), \"\\n\")) + \"  \\n\";
+  out := out + \"\\n.. code-block :: modelica\\n\\n\";
+  s := OpenModelica.Scripting.list(cl, interfaceOnly=true);
+  out := out + sum(\"  \" + l + \"\\n\" for l in OpenModelica.Scripting.strtok(s, \"\\n\")) + \"  \\n\";
+end reSTInterface;
+";
+loadString(s);
+getErrorString();
+
+writeFile("interface.inc", sum(reSTInterface(cl) for cl guard isFunction(cl) and not isPartial(cl) and not regexBool(typeNameString(cl), "Internal") in getClassNames(OpenModelica.Scripting, sort=true, recursive=true)));getErrorString();
