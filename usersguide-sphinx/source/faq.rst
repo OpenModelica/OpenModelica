@@ -100,6 +100,3 @@ OMDev - OpenModelica Development Environment
        lvprcsrv.exe is running, kill it and/or prevent it to start again
        at reboot; it does not do anything really useful, not needed for
        operation of web cameras or mice.
-
-.. |image46| image:: media/image87.png
-.. |image47| image:: media/image88.png
