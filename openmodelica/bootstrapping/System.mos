@@ -1,7 +1,7 @@
 // name: System
 // status: correct
 
-setCommandLineOptions("+g=MetaModelica +d=rml");
+setCommandLineOptions("+g=MetaModelica +d=rml,noevalfunc");
 loadFile("../../../OMCompiler/Compiler/Util/System.mo");
 loadFile("SystemTest.mo");
 
