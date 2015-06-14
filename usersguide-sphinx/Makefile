@@ -7,7 +7,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
 
-ALLDEP = source/openmodelica.bib source/interface.inc $(OMEDIT_ICONS)
+ALLDEP = source/openmodelica.bib source/interface.inc $(OMEDIT_ICONS) $(OMOPTIM_ICONS)
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -230,8 +230,9 @@ OMEDIT_ICONS_SVG=$(OMEDIT_ICONS_BASE:%=source/media/omedit-icons/%)
 OMEDIT_ICONS_PNG=$(OMEDIT_ICONS_SVG:%.svg=%.png)
 OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG)
 
-omedit-icons:
-	echo $(OMEDIT_ICONS)
+OMOPTIM_ICONS_BASE=Add.png
+OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
+
 all-dep: $(ALLDEP)
 
 source/media/omedit-icons/%.svg: $(OPENMODELICAHOME)/../OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
@@ -240,3 +241,7 @@ source/media/omedit-icons/%.svg: $(OPENMODELICAHOME)/../OMEdit/OMEdit/OMEditGUI/
 
 source/media/omedit-icons/%.png: source/media/omedit-icons/%.svg
 	inkscape "$<" --export-png="$@"
+
+source/media/omoptim-icons/%.png: $(OPENMODELICAHOME)/../OMOptim/OMOptim/GUI/Resources/icons/%.png
+	@mkdir -p source/media/omoptim-icons
+	cp -a "$<" "$@"

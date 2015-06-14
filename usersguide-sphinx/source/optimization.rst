@@ -262,14 +262,14 @@ E.g. Python.exe ..\\share\\casadi\\scripts defaultStart.py
 BatchReactor.xml
 
 The control and state trajectories of the optimization results are shown
-in Figure 6 -47.
+below:
 
-|image31|
+.. |casadi-input| image:: media/casadi-input.png
+  :width: 40%
+.. |casadi-state| image:: media/casadi-state.png
+  :width: 40%
 
-|image32|
-
-Figure 647: **Optimization results for Batch Reactor model – state and
-control variables.**
+|casadi-input| |casadi-state|
 
 .. _parameter-sweep-optimization-using-omoptim:
 
@@ -554,9 +554,7 @@ Window Regions in OMOptim GUI
 
   Window regions in OMOptim GUI.
 
-.. |image31| image:: media/image57.png
-.. |image32| image:: media/image58.png
-.. |omoptim-blue-cross| image:: media/omoptim-blue-cross.png
+.. |omoptim-blue-cross| image:: media/omoptim-icons/Add.png
   :height: 12pt
 
 .. omc-reset ::

@@ -8,9 +8,6 @@ For more information, see https://github.com/tshort/openmodelica-javascript
 
 Below used on the MSL MultiBody RobotR3.fullRobot example model.
 
-|image48|
+.. image:: media/emscripten-model.png
 
-|image49|
-
-.. |image48| image:: media/image91.png
-.. |image49| image:: media/image92.png
+.. image:: media/emscripten-result.png

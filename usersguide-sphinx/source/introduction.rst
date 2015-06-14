@@ -495,7 +495,7 @@ Japenese, Chinese, and other kinds of UniCode characters can be used
 within quoted (single quote) identifiers, see for example the variable
 name to the right in the plot below:
 
-|image0|
+.. image :: media/bb-japanese.png
 
 Scripting with For-Loops, While-Loops, and If-Statements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1018,4 +1018,3 @@ C:\\dev> C:\\OpenModelica1.9.2 \\bin\\omc +showErrorMessages
 .. |omlogo| image:: logo.*
   :alt: OpenModelica logotype
   :height: 14pt
-.. |image0| image:: media/image7.png
