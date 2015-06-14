@@ -3088,41 +3088,6 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    // visualize2
-    case (cache,env,"visualize",
-        {
-          Values.CODE(Absyn.C_TYPENAME(className)),
-          Values.BOOL(externalWindow),
-          Values.STRING(filename)
-        },(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
-      equation
-        // get OPENMODELICAHOME
-        omhome = Settings.getInstallationDirectoryPath();
-        // get the simulation filename
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        pd = System.pathDelimiter();
-        // create absolute path of simulation result file
-        str = System.pwd() + pd + filename;
-        filename = if System.regularFileExists(str) then str else filename;
-        (_,visvar_str) = Interactive.getElementsOfVisType(className, p);
-        // write the visualizing objects to the file
-        str1 = System.pwd() + pd + Absyn.pathString(className) + ".visualize";
-        System.writeFile(str1, visvar_str);
-        s1 = if System.os() == "Windows_NT" then ".exe" else "";
-        // create the path till OMVisualize
-        str2 = stringAppendList({omhome,pd,"bin",pd,"OMVisualize",s1});
-        // create the list of arguments for OMVisualize
-        str3 = "--visualizationfile=\"" + str1 + "\" --simulationfile=\"" + filename + "\"" + " --new-window=" + boolString(externalWindow);
-        call = stringAppendList({"\"",str2,"\""," ",str3});
-
-        0 = System.spawnCall(str2, call);
-      then
-        (cache,Values.BOOL(true),st);
-
-    case (cache,_,"visualize",_,st,_)
-      then
-        (cache,Values.BOOL(false),st);
-
     case (cache,env,"val",{cvar,Values.REAL(timeStamp),Values.STRING("<default>")},st,_)
       equation
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),msg, 0);
