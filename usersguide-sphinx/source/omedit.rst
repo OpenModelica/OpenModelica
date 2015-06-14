@@ -31,20 +31,23 @@ editing, and simulating models:
 Starting OMEdit
 ---------------
 
-Microsoft Windows
-~~~~~~~~~~~~~~~~~
-
-OMEdit can be launched using the executable placed in
-OpenModelicaInstallationDirectory/bin/OMEdit/OMEdit.exe. Alternately,
-choose OpenModelica > OpenModelica Connection Editor from the start menu
-in Windows. A splash screen similar to the one shown in :numref:`omedit-splash` will
+A splash screen similar to the one shown in :numref:`omedit-splash` will
 appear indicating that it is starting OMEdit.
+The executable is found in different places depending on the platform
+(see below).
 
 .. figure :: media/omedit_splashscreen.png
   :name: omedit-splash
 
   OMEdit Splash Screen.
 
+Microsoft Windows
+~~~~~~~~~~~~~~~~~
+
+OMEdit can be launched using the executable placed in
+OpenModelicaInstallationDirectory/bin/OMEdit/OMEdit.exe. Alternately,
+choose OpenModelica > OpenModelica Connection Editor from the start menu
+in Windows.
 
 Linux
 ~~~~~
@@ -55,7 +58,7 @@ or typing “\ **OMEdit**\ ” at the shell or command prompt.
 Mac OS X
 ~~~~~~~~
 
-?? fill in
+The default installation is /Application/MacPorts/OMEdit.app.
 
 MainWindow & Browsers
 ---------------------
@@ -72,18 +75,19 @@ The MainWindow contains several dockable browsers,
 
 -  Messages Browser
 
-Figure 2 -3 shows the MainWindow and browsers.
+:numref:`omedit-mainwindow-browsers` shows the MainWindow and browsers.
 
-|image2|
+.. figure :: media/omedit-mainwindow-browsers.png
+  :name: omedit-mainwindow-browsers
 
-Figure 23: **OMEdit MainWindow and Browsers.**
+  OMEdit MainWindow and Browsers.
 
-The default location of the browsers are shown in Figure 2 -3. All
-browsers except for Message Browser can be docked into left or right
+The default location of the browsers are shown in :numref:`omedit-mainwindow-browsers`.
+All browsers except for Message Browser can be docked into left or right
 column. The Messages Browser can be docked into left,right or bottom
 areas. If you want OMEdit to remember the new docked position of the
 browsers then you must enable Preserve User's GUI Customizations option,
-see section 2.9.1.
+see section :ref:`omedit-settings-general`.
 
 Search Browser
 ~~~~~~~~~~~~~~
@@ -108,7 +112,7 @@ Browser has right click menu for easy manipulation and usage of the
 class. The classes are shown in a tree structure with name and icon. The
 protected classes are not shown by default. If you want to see the
 protected classes then you must enable the Show Protected Classes
-option, see section 2.9.1.
+option, see section :ref:`omedit-settings-general`.
 
 .. figure :: media/omedit-libraries-browser.png
 
@@ -126,6 +130,8 @@ choose View Documentation.
 
   Documentation Browser.
 
+.. _omedit-variables-browser :
+
 Variables Browser
 ~~~~~~~~~~~~~~~~~
 
@@ -138,7 +144,7 @@ Variables Browser can be collapsed and expanded using the Collapse All
 and Expand All buttons.
 
 The browser allows manipulation of changeable parameters for
-re-simulation. See section 2.7. It also displays the unit and
+:ref:`omedit-resimulation`. It also displays the unit and
 description of the variable.
 
 .. figure :: media/omedit-variables-browser.png
@@ -162,7 +168,7 @@ Shows the list of errors. Following kinds of error can occur,
 
 -  Scripting
 
-See section 2.9.6 for Messages Browser options.
+See section :ref:`omedit-settings-messages` for Messages Browser options.
 
 Perspectives
 ------------
@@ -178,28 +184,30 @@ The perspective tabs are loacted at the bottom right of the MainWindow:
 Welcome Perspective
 ~~~~~~~~~~~~~~~~~~~
 
-|image7|
+.. figure :: media/omedit-welcome.png
+  :name: omedit-welcome
 
-Figure 28: **OMEdit Welcome Perspective.**
+  OMEdit Welcome Perspective.
 
 The Welcome Perspective shows the list of recent files and the list of
-latest news from `*openmodelica.org* <https://www.openmodelica.org/>`__.
-See Figure 2 -8. The orientation of recent files and latest news can be
+latest news from https://www.openmodelica.org/.
+See :numref:`omedit-welcome`. The orientation of recent files and latest news can be
 horizontal or vertical. User is allowed to show/hide the latest news.
-See section 2.9.1.
+See section :ref:`omedit-settings-general`.
 
 Modeling Perspective
 ~~~~~~~~~~~~~~~~~~~~
 
 The Modeling Perpective provides the interface where user can create and
-design their models. See Figure 2 -9.
+design their models. See :numref:`omedit-modeling-perspective`.
 
-|image8|
+.. figure :: media/omedit-modeling-perspective.png
+  :name: omedit-modeling-perspective
 
-Figure 29: **OMEdit Modeling Perspective.**
+  OMEdit Modeling Perspective.
 
 The Modeling Perspective interface can be viewed in two different modes,
-the tabbed view and subwindow view, see section 2.9.1.
+the tabbed view and subwindow view, see section :ref:`omedit-settings-general`.
 
 Plotting Perspective
 ~~~~~~~~~~~~~~~~~~~~
@@ -210,11 +218,12 @@ simulation of the model is finished successfully. It will also become
 active when user opens any of the OpenModelica’s supported result file.
 Similar to Modeling Perspective this perspective can also be viewed in
 two different modes, the tabbed view and subwindow view, see section
-2.9.1.
+:ref:`omedit-settings-general`.
 
-|image9|
+.. figure :: media/omedit-plotting-perspective.png
+  :name: omedit-plotting-perspective
 
-Figure 210: **OMEdit Plotting Perspective.**
+  OMEdit Plotting Perspective.
 
 Modeling a Model
 ----------------
@@ -260,11 +269,12 @@ Model Widget
 For each Modelica class one Model Widget is created. It has a statusbar
 and a view area. The statusbar contains buttons for navigation between
 the views and labels for information. The view area is used to display
-the icon, diagram and text layers of Modelica class. See Figure 2 -11.
+the icon, diagram and text layers of Modelica class. See :numref:`omedit-model-widget`.
 
-|image10|
+.. figure :: media/omedit-model-widget.png
+  :name: omedit-model-widget
 
-Figure 211: **Model Widget showing the Diagram View.**
+  Model Widget showing the Diagram View.
 
 Adding Component Models
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -278,7 +288,7 @@ Making Connections
 In order to connect one component model to another the user first needs
 to enable the connect mode from the toolbar. See :numref:`omedit-connect-mode`.
 
-.. figure :: media/omedit-connect-mode.*
+.. figure :: media/omedit-icons/connect-mode.*
   :name: omedit-connect-mode
 
   Connect/Unconnect Mode toolbar button.
@@ -329,7 +339,7 @@ Output Tab
 
 -  *Variable Filter (Optional).*
 
--  *Protecetd Variables –* adds the protected variables in result file.
+-  *Protected Variables –* adds the protected variables in result file.
 
 -  *Store Variables at Events –* adds the variables at time events.
 
@@ -423,7 +433,7 @@ Plotting the Simulation Results
 Successful simulation of model produces the result file which contains
 the instance variables that are candidate for plotting. Variables
 Browser will show the list of such instance variables. Each variable has
-a checkbox, checking it will plot the variable. See Figure 2 -10.
+a checkbox, checking it will plot the variable. See :numref:`omedit-plotting-perspective`.
 
 Types of Plotting
 ~~~~~~~~~~~~~~~~~
@@ -435,12 +445,13 @@ Time Plot
 ^^^^^^^^^
 
 Plots the variable over the simulation time. You can have multiple Time
-Plot windows by clicking on New Plot Window toolbar button. See Figure 2
--13.
+Plot windows by clicking on New Plot Window toolbar button.
+See :numref:`omedit-plot-window`.
 
-|image12|
+.. figure :: media/omedit-icons/plot-window.*
+  :name: omedit-plot-window
 
-Figure 213: **New Plot Window toolbar button.**
+  New Plot Window toolbar button.
 
 Plot Parametric
 ^^^^^^^^^^^^^^^
@@ -448,24 +459,27 @@ Plot Parametric
 Draws a two-dimensional parametric diagram, between variables x and y,
 with *y* as a function of *x*. You can have multiple Plot Parametric
 windows by clicking on the New Plot Parametric toolbar button. See
-Figure 2 -14.
+:numref:`omedit-parametric-plot-window`.
 
-|image13|
+.. figure :: media/omedit-icons/parametric-plot-window.*
+  :name: omedit-parametric-plot-window
 
-Figure 214: **New Plot Parametric toolbar button.**
+  New Plot Parametric toolbar button.
+
+.. _omedit-resimulation :
 
 Re-simulating a Model
 ---------------------
 
-The Variables Browser allows manipulation of changeable parameters for
-re-simulation as shown in Figure 2 -7. After changing the parameter
-values user can click on the Re-simulate toolbar button, , or right
-click the model in Variables Browser and choose Re-simulate from the
-menu.
+The :ref:`omedit-variables-browser` allows manipulation of changeable
+parameters for re-simulation.
+After changing the parameter values user can click on the re-simulate
+toolbar button, or right click the model in Variables Browser and choose
+re-simulate from the menu.
 
-|image14|
+.. figure :: media/omedit-icons/re-simulate.svg
 
-Figure 215: **Re-simulate toolbar button.**
+  Re-simulate toolbar button.
 
 How to Create User Defined Shapes – Icons
 -----------------------------------------
@@ -535,6 +549,8 @@ Settings
 OMEdit allows users to save several settings which will be remembered
 across different sessions of OMEdit. The Options Dialog can be used for
 reading and writing the settings.
+
+.. _omedit-settings-general :
 
 General
 ~~~~~~~
@@ -674,6 +690,8 @@ Simulation
 
 -  *Formatted Text –* Shows the simulation output in the form of
    formatted text.
+
+.. _omedit-settings-messages :
 
 Messages
 ~~~~~~~~
@@ -986,12 +1004,6 @@ the following browsers,
 
   Algorithmic Debugger.
 
-.. |image2| image:: media/image9.png
-.. |image7| image:: media/image14.png
-.. |image8| image:: media/image15.png
-.. |image9| image:: media/image16.png
-.. |image10| image:: media/image17.png
-.. |image12| image:: media/image19.png
 .. |image13| image:: media/image20.png
 .. |image14| image:: media/image21.png
 .. |image17| image:: media/image27.png

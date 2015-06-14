@@ -6,7 +6,8 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
-ALLDEP = source/openmodelica.bib source/interface.inc
+
+ALLDEP = source/openmodelica.bib source/interface.inc $(OMEDIT_ICONS)
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -52,46 +53,46 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
-html: dvisvgm.sh $(ALLDEP)
+html: dvisvgm.sh all-dep
 	test -f dvisvgm.sh
 	$(SPHINXBUILD) -b html -t nomathjax -D pngmath_dvipng="`pwd`"/dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
-htmlmathjax: $(ALLDEP)
+htmlmathjax: all-dep
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/htmlmathjax
 	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/htmlmathjax."
 
-dirhtml: $(ALLDEP)
+dirhtml: all-dep
 	$(SPHINXBUILD) -b dirhtml -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
 
-singlehtml: $(ALLDEP)
+singlehtml: all-dep
 	$(SPHINXBUILD) -b singlehtml -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/singlehtml
 	@echo
 	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
 
-pickle: $(ALLDEP)
+pickle: all-dep
 	$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) $(BUILDDIR)/pickle
 	@echo
 	@echo "Build finished; now you can process the pickle files."
 
-json: $(ALLDEP)
+json: all-dep
 	$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) $(BUILDDIR)/json
 	@echo
 	@echo "Build finished; now you can process the JSON files."
 
-htmlhelp: $(ALLDEP)
+htmlhelp: all-dep
 	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) $(BUILDDIR)/htmlhelp
 	@echo
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
 	      ".hhp project file in $(BUILDDIR)/htmlhelp."
 
-qthelp: $(ALLDEP)
+qthelp: all-dep
 	$(SPHINXBUILD) -b qthelp $(ALLSPHINXOPTS) $(BUILDDIR)/qthelp
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
@@ -100,7 +101,7 @@ qthelp: $(ALLDEP)
 	@echo "To view the help file:"
 	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/OpenModelicaUsersGuide.qhc"
 
-applehelp: $(ALLDEP)
+applehelp: all-dep
 	$(SPHINXBUILD) -b applehelp $(ALLSPHINXOPTS) $(BUILDDIR)/applehelp
 	@echo
 	@echo "Build finished. The help book is in $(BUILDDIR)/applehelp."
@@ -108,7 +109,7 @@ applehelp: $(ALLDEP)
 	      "~/Library/Documentation/Help or install it in your application" \
 	      "bundle."
 
-devhelp: $(ALLDEP)
+devhelp: all-dep
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
@@ -117,83 +118,83 @@ devhelp: $(ALLDEP)
 	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/OpenModelicaUsersGuide"
 	@echo "# devhelp"
 
-epub: $(ALLDEP)
+epub: all-dep
 	$(SPHINXBUILD) -b epub -t nomathjax $(ALLSPHINXOPTS) $(BUILDDIR)/epub
 	@echo
 	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
 
-latexpdf: $(ALLDEP)
+latexpdf: all-dep
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo "Running LaTeX files through pdflatex..."
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
-latexpdfja: $(ALLDEP)
+latexpdfja: all-dep
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo "Running LaTeX files through platex and dvipdfmx..."
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf-ja
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
-text: $(ALLDEP)
+text: all-dep
 	$(SPHINXBUILD) -b text $(ALLSPHINXOPTS) $(BUILDDIR)/text
 	@echo
 	@echo "Build finished. The text files are in $(BUILDDIR)/text."
 
-man: $(ALLDEP)
+man: all-dep
 	$(SPHINXBUILD) -b man $(ALLSPHINXOPTS) $(BUILDDIR)/man
 	@echo
 	@echo "Build finished. The manual pages are in $(BUILDDIR)/man."
 
-texinfo: $(ALLDEP)
+texinfo: all-dep
 	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/texinfo
 	@echo
 	@echo "Build finished. The Texinfo files are in $(BUILDDIR)/texinfo."
 	@echo "Run \`make' in that directory to run these through makeinfo" \
 	      "(use \`make info' here to do that automatically)."
 
-info: $(ALLDEP)
+info: all-dep
 	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/texinfo
 	@echo "Running Texinfo files through makeinfo..."
 	make -C $(BUILDDIR)/texinfo info
 	@echo "makeinfo finished; the Info files are in $(BUILDDIR)/texinfo."
 
-gettext: $(ALLDEP)
+gettext: all-dep
 	$(SPHINXBUILD) -b gettext $(I18NSPHINXOPTS) $(BUILDDIR)/locale
 	@echo
 	@echo "Build finished. The message catalogs are in $(BUILDDIR)/locale."
 
-changes: $(ALLDEP)
+changes: all-dep
 	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) $(BUILDDIR)/changes
 	@echo
 	@echo "The overview file is in $(BUILDDIR)/changes."
 
-linkcheck: $(ALLDEP)
+linkcheck: all-dep
 	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in $(BUILDDIR)/linkcheck/output.txt."
 
-doctest: $(ALLDEP)
+doctest: all-dep
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
-coverage: $(ALLDEP)
+coverage: all-dep
 	$(SPHINXBUILD) -b coverage $(ALLSPHINXOPTS) $(BUILDDIR)/coverage
 	@echo "Testing of coverage in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/coverage/python.txt."
 
-xml: $(ALLDEP)
+xml: all-dep
 	$(SPHINXBUILD) -b xml $(ALLSPHINXOPTS) $(BUILDDIR)/xml
 	@echo
 	@echo "Build finished. The XML files are in $(BUILDDIR)/xml."
 
-pseudoxml: $(ALLDEP)
+pseudoxml: all-dep
 	$(SPHINXBUILD) -b pseudoxml $(ALLSPHINXOPTS) $(BUILDDIR)/pseudoxml
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
 
-latex: $(ALLDEP) source/logo.pdf source/media/systemoverview.pdf source/media/omedit-connect-mode.pdf
+latex: all-dep source/logo.pdf source/media/systemoverview.pdf source/media/omedit-connect-mode.pdf
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex."
@@ -223,3 +224,19 @@ source/openmodelica.bib: resolve-crossref.py $(OPENMODELICAHOME)/../doc/bibliogr
 source/interface.inc: interface.mos
 	$(OPENMODELICAHOME)/bin/omc +g=MetaModelica +d=nogen interface.mos
 	mv interface.inc $@
+
+OMEDIT_ICONS_BASE=connect-mode.svg parametric-plot-window.svg plot-window.svg re-simulate.svg
+OMEDIT_ICONS_SVG=$(OMEDIT_ICONS_BASE:%=source/media/omedit-icons/%)
+OMEDIT_ICONS_PNG=$(OMEDIT_ICONS_SVG:%.svg=%.png)
+OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG)
+
+omedit-icons:
+	echo $(OMEDIT_ICONS)
+all-dep: $(ALLDEP)
+
+source/media/omedit-icons/%.svg: $(OPENMODELICAHOME)/../OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
+	@mkdir -p source/media/omedit-icons
+	cp -a "$<" "$@"
+
+source/media/omedit-icons/%.png: source/media/omedit-icons/%.svg
+	inkscape "$<" --export-png="$@"
