@@ -2775,6 +2775,12 @@ algorithm
         i = listLength(vals);
       then (cache,Values.ARRAY(vals,{i}),st);
 
+    case (cache,_,"stringSplit",{Values.STRING(str),Values.STRING(token)},st,_)
+      equation
+        vals = List.map(Util.stringSplitAtChar(str,token), ValuesUtil.makeString);
+        i = listLength(vals);
+      then (cache,Values.ARRAY(vals,{i}),st);
+
     case (cache,_,"stringReplace",{Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)},st,_)
       equation
         str = System.stringReplace(str1, str2, str3);

@@ -2043,8 +2043,30 @@ function strtok "Splits the strings at the places given by the token, for exampl
   input String token;
   output String[:] strings;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentatrion(info="<html>
+<p>Splits the strings at the places given by the token, for example:
+<ul>
+<li>strtok(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}</li>
+<li>strtok(\"abcbdef\",\"cd\") => {\"ab\",\"ef\"}</li>
+</ul>
+</p>
+<p>Note: strtok does not return empty tokens. To split a read file into every line, use <a href=\"modelica://OpenModelica.Scripting.stringSplit\">stringSplit</a> instead (splits only on character).</p>
+</html>"),preferredView="text");
 end strtok;
+
+function stringSplit "Splits the string at the places given by the character"
+  input String string;
+  input String token "single character only";
+  output String[:] strings;
+external "builtin";
+annotation(Documentatrion(info="<html>
+<p>Splits the string at the places given by the character, for example:
+<ul>
+<li>stringSplit(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}</li>
+</ul>
+</p>
+</html>"),preferredView="text");
+end stringSplit;
 
 public function stringReplace
   input String str;
