@@ -518,9 +518,12 @@ available in OMEdit.
 
 -  *Bitmap Tool* – Draws a bitmap container.
 
-The shape tools are located in the toolbar. See Figure 2 -16.
+The shape tools are located in the toolbar. See :numref:`omedit-user-defined-shapes`.
 
-Figure 216: **User defined shapes.**
+.. figure :: media/omedit-user-defined-shapes.png
+  :name: omedit-user-defined-shapes
+
+  User defined shapes.
 
 The user can select any of the shape tools and start drawing on the
 Icon/Diagram View. The shapes created on the Diagram View of Model
@@ -668,6 +671,8 @@ Graphical Views
 -  *Preserve aspect ratio* – If true then the component’s aspect ratio
    is preserved while scaling.
 
+.. _omedit-settings-simulation :
+
 Simulation
 ~~~~~~~~~~
 
@@ -790,6 +795,8 @@ Figaro
 
 -  *Figaro Process* – the Figaro process location.
 
+.. _omedit-settings-debugger :
+
 Debugger
 ~~~~~~~~
 
@@ -846,8 +853,8 @@ The compilation time overhead from having this tracing on is less than
 write the xml file containing the transformation tracing information.
 
 Enable +d=infoXmlOperations in Tools->Options->Simulation (see section
-2.9.5) OR alternatively click on the checkbox *Generate operations in
-the info xml* in Tools->Options->Debugger (see section 2.9.12) which
+:ref:`omedit-settings-simulation`) OR alternatively click on the checkbox *Generate operations in
+the info xml* in Tools->Options->Debugger (see section :ref:`omedit-settings-debugger`) which
 performs the same thing.
 
 This adds all the transformations performed by OpenModelica on the
@@ -858,7 +865,7 @@ source equation(s) to the position of the bug.
 Load a Model to Debug
 ~~~~~~~~~~~~~~~~~~~~~
 
-Load an interesting model. We will use the package `Debugging.mo <https://github.com/OpenModelica/OpenModelica-testsuite/blob/master/openmodelica/debugging/Debugging.mo>`
+Load an interesting model. We will use the package `Debugging.mo <https://github.com/OpenModelica/OpenModelica-testsuite/blob/master/openmodelica/debugging/Debugging.mo>`__
 since it contains suitable, broken models to demonstrate common errors.
 
 .. todo ::
@@ -875,7 +882,9 @@ get a clickable link that starts the debugger. If the user interface is
 unresponsive or the running simulation uses too much processing power,
 click cancel simulation first.
 
-Figure 217. **Simulating the model.**
+.. figure :: media/omedit-debug-more.png
+
+  Simulating the model.
 
 Use the Transformation Debugger for Browsing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -895,15 +904,17 @@ Try some larger models, e.g. in the MultiBody library or some other
 library, to see more operations with several transformation steps
 between different versions of the relevant equation(s). If you do not
 trigger any errors in a model, you can still open the debugger, using
-File->Open Transformations File (model\_info.xml).
+File->Open Transformations File (model\_info.json).
 
-Figure 218. **Transfomation Debugger.**
+.. figure :: media/omedit-transformationsbrowser.png
+
+  Transfomations Browser.
 
 The Algorithmic Debugger
 ------------------------
 
 This section gives a short description how to get started using the
-algorithmic debugger in OMEdit. See section 2.9.12 for further details
+algorithmic debugger in OMEdit. See section :ref:`omedit-settings-simulation` for further details
 of debugger options/settings. The Algorithmic Debugger window can be
 launched from Tools->Windows->Algorithmic Debugger.
 
@@ -918,7 +929,7 @@ There are two ways to add the breakpoints,
 -  Open the Algorithmic Debugger window and add a breakpoint using the
        right click menu of Breakpoints Browser window.
 
-.. figure :: media/image25.png
+.. figure :: media/omedit-add-breakpoint.png
   :name: omedit-add-breakpoint
 
   Adding breakpoint in Text View.
@@ -939,10 +950,12 @@ There are four ways to start the debugger,
        Algorithmic Debugger.
 
 -  Open the Algorithmic Debugger window and from menu select
-       Debug->Debug Configurations (see section 2.11.3).
+       Debug-> :ref:`omedit-debug-configurations`.
 
 -  Open the Algorithmic Debugger window and from menu select
-       Debug->Attach to Running Process (see section 2.11.4).
+       Debug-> :ref:`omedit-debug-attach`.
+
+.. _omedit-debug-configurations :
 
 Debug Configurations
 ~~~~~~~~~~~~~~~~~~~~
@@ -955,9 +968,11 @@ The debugger also supports MetaModelica data structures so one can debug
 omc executable. Select omc executable as program and write the name of
 the mos script file in Arguments.
 
-.. figure :: media/image26.png
+.. figure :: media/omedit-debug-config.png
 
   Debug Configurations.
+
+.. _omedit-debug-attach :
 
 Attach to Running Process
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -969,7 +984,7 @@ Attach to Running Process dialog. The dialog shows the list of processes
 running on the machine. The user selects the program that he/she wish to
 debug. OMEdit debugger attaches to the process.
 
-.. figure :: media/image27.png
+.. figure :: media/omedit-attach-to-process.png
   :name: omedit-attach-to-process
 
   Attach to Running Process.
