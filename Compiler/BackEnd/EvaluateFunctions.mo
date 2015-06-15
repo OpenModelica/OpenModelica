@@ -1637,7 +1637,7 @@ algorithm
         scalars = getRecordScalars(cref);
         (exp2,_) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
          (exp2,_) = ExpressionSimplify.simplify(exp2);
-        
+
         (exp2,(exp1,funcTree,idx,addStmts)) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
 
         // (exp2,changed) = bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed); This does nothing useful with the statement below...
@@ -2352,17 +2352,17 @@ algorithm
       list<BackendDAE.Equation> addEqs;
       list<DAE.Statement> stmts,stmtsIn;
   case (DAE.CALL(),(lhs,funcs,idx,stmtsIn))
-    equation    
+    equation
       ((rhs,lhs,addEqs,funcs,idx,_)) = evaluateConstantFunction(inExp,lhs,funcs,idx);
       stmts = List.map(addEqs,equationToStmt);
       stmts = listAppend(stmts,stmtsIn);
     then (rhs,true,(lhs,funcs,idx,stmts));
-      
+
   case (DAE.UNBOX(exp=rhs, ty=ty),(lhs,funcs,idx,stmts))
     equation
       (rhs,_,(lhs,funcs,idx,stmts)) = evaluateConstantFunctionWrapper(rhs,inTpl);
     then (rhs,true,(lhs,funcs,idx,stmts));
-      
+
   case (rhs,(lhs,funcs,idx,stmtsIn))
     then (rhs,false,(lhs,funcs,idx,stmtsIn));
   end matchcontinue;
