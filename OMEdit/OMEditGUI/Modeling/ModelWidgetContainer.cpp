@@ -782,6 +782,90 @@ void GraphicsView::deleteShapeObject(ShapeAnnotation *pShape)
   mShapesList.removeOne(pShape);
 }
 
+/*!
+ * \brief GraphicsView::bringToFront
+ * \param pShape
+ * Brings the shape to front of all other shapes.
+ */
+void GraphicsView::bringToFront(ShapeAnnotation *pShape)
+{
+  deleteShapeObject(pShape);
+  int i = 0;
+  // update the shapes z index
+  for (; i < mShapesList.size() ; i++) {
+    mShapesList.at(i)->setZValue(i + 1);
+  }
+  pShape->setZValue(i + 1);
+  mShapesList.append(pShape);
+  // update class annotation.
+  addClassAnnotation();
+  setCanAddClassAnnotation(true);
+}
+
+/*!
+ * \brief GraphicsView::bringForward
+ * \param pShape
+ * Brings the shape one level forward.
+ */
+void GraphicsView::bringForward(ShapeAnnotation *pShape)
+{
+  int shapeIndex = mShapesList.indexOf(pShape);
+  if (shapeIndex == -1 || shapeIndex == mShapesList.size() - 1) { // if the shape is already at top.
+    return;
+  }
+  // swap the shapes in the list
+  mShapesList.swap(shapeIndex, shapeIndex + 1);
+  // update the shapes z index
+  for (int i = 0 ; i < mShapesList.size() ; i++) {
+    mShapesList.at(i)->setZValue(i + 1);
+  }
+  // update class annotation.
+  addClassAnnotation();
+  setCanAddClassAnnotation(true);
+}
+
+/*!
+ * \brief GraphicsView::sendToBack
+ * \param pShape
+ * Sends the shape to back of all other shapes.
+ */
+void GraphicsView::sendToBack(ShapeAnnotation *pShape)
+{
+  deleteShapeObject(pShape);
+  int i = 0;
+  pShape->setZValue(i + 1);
+  mShapesList.prepend(pShape);
+  // update the shapes z index
+  for (i = 1 ; i < mShapesList.size() ; i++) {
+    mShapesList.at(i)->setZValue(i + 1);
+  }
+  // update class annotation.
+  addClassAnnotation();
+  setCanAddClassAnnotation(true);
+}
+
+/*!
+ * \brief GraphicsView::sendBackward
+ * \param pShape
+ * Sends the shape one level backward.
+ */
+void GraphicsView::sendBackward(ShapeAnnotation *pShape)
+{
+  int shapeIndex = mShapesList.indexOf(pShape);
+  if (shapeIndex <= 0) { // if the shape is already at bottom.
+    return;
+  }
+  // swap the shapes in the list
+  mShapesList.swap(shapeIndex - 1, shapeIndex);
+  // update the shapes z index
+  for (int i = 0 ; i < mShapesList.size() ; i++) {
+    mShapesList.at(i)->setZValue(i + 1);
+  }
+  // update class annotation.
+  addClassAnnotation();
+  setCanAddClassAnnotation(true);
+}
+
 void GraphicsView::removeAllComponents()
 {
   mComponentsList.clear();
@@ -1021,6 +1105,22 @@ void GraphicsView::createActions()
   mpDuplicateAction->setStatusTip(Helper::duplicateTip);
   mpDuplicateAction->setShortcut(QKeySequence("Ctrl+d"));
   mpDuplicateAction->setDisabled(isSystemLibrary);
+  // Bring To Front Action
+  mpBringToFrontAction = new QAction(QIcon(":/Resources/icons/bring-to-front.svg"), tr("Bring to Front"), this);
+  mpBringToFrontAction->setStatusTip(tr("Brings the item to front"));
+  mpBringToFrontAction->setDisabled(isSystemLibrary);
+  // Bring Forward Action
+  mpBringForwardAction = new QAction(QIcon(":/Resources/icons/bring-forward.svg"), tr("Bring Forward"), this);
+  mpBringForwardAction->setStatusTip(tr("Brings the item one level forward"));
+  mpBringForwardAction->setDisabled(isSystemLibrary);
+  // Send To Back Action
+  mpSendToBackAction = new QAction(QIcon(":/Resources/icons/send-to-back.svg"), tr("Send to Back"), this);
+  mpSendToBackAction->setStatusTip(tr("Sends the item to back"));
+  mpSendToBackAction->setDisabled(isSystemLibrary);
+  // Send Backward Action
+  mpSendBackwardAction = new QAction(QIcon(":/Resources/icons/send-backward.svg"), tr("Send Backward"), this);
+  mpSendBackwardAction->setStatusTip(tr("Sends the item one level backward"));
+  mpSendBackwardAction->setDisabled(isSystemLibrary);
   // Rotate ClockWise Action
   mpRotateClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.svg"), tr("Rotate Clockwise"), this);
   mpRotateClockwiseAction->setStatusTip(tr("Rotates the item clockwise"));

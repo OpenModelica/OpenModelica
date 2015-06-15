@@ -323,7 +323,7 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   */
 OriginItem::OriginItem()
 {
-  setZValue(3000);
+  setZValue(4000);
   mActivePen = QPen(Qt::red, 2);
   mActivePen.setCosmetic(true);
   mPassivePen = QPen(Qt::transparent);

@@ -128,6 +128,10 @@ private:
   QAction *mpPropertiesAction;
   QAction *mpDeleteConnectionAction;
   QAction *mpDeleteAction;
+  QAction *mpBringToFrontAction;
+  QAction *mpBringForwardAction;
+  QAction *mpSendToBackAction;
+  QAction *mpSendBackwardAction;
   QAction *mpDuplicateAction;
   QAction *mpRotateClockwiseAction;
   QAction *mpRotateAntiClockwiseAction;
@@ -162,9 +166,14 @@ public:
   void setItemsFlags(bool enable);
   void setIsMovingComponentsAndShapes(bool enable);
   bool isMovingComponentsAndShapes();
+  QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QAction* getDeleteConnectionAction();
   QAction* getDeleteAction();
   QAction* getDuplicateAction();
+  QAction* getBringToFrontAction() {return mpBringToFrontAction;}
+  QAction* getBringForwardAction() {return mpBringForwardAction;}
+  QAction* getSendToBackAction() {return mpSendToBackAction;}
+  QAction* getSendBackwardAction() {return mpSendBackwardAction;}
   QAction* getRotateClockwiseAction();
   QAction* getRotateAntiClockwiseAction();
   QAction* getFlipHorizontalAction();
@@ -185,6 +194,10 @@ public:
   void deleteConnectionObject(LineAnnotation *pConnectionLineAnnotation);
   void addShapeObject(ShapeAnnotation *pShape);
   void deleteShapeObject(ShapeAnnotation *pShape);
+  void bringToFront(ShapeAnnotation *pShape);
+  void bringForward(ShapeAnnotation *pShape);
+  void sendToBack(ShapeAnnotation *pShape);
+  void sendBackward(ShapeAnnotation *pShape);
   void removeAllComponents();
   void removeAllShapes();
   void removeAllConnections();

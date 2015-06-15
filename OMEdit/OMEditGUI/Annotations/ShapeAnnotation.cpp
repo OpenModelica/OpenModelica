@@ -347,6 +347,7 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = pGraphicsView;
+  setZValue(mpGraphicsView->getShapesList().size() + 1);
   mpTransformation = new Transformation(StringHandler::Diagram);
   mIsCustomShape = true;
   mIsInheritedShape = inheritedShape;
@@ -1359,7 +1360,43 @@ void ShapeAnnotation::deleteMe()
   */
 void ShapeAnnotation::duplicate()
 {
-  /* duplicate code is implement in each child shape class. */
+  /* duplicate code is implemented in each child shape class. */
+}
+
+/*!
+ * \brief ShapeAnnotation::bringToFront
+ * Brings the shape to front of all other shapes.
+ */
+void ShapeAnnotation::bringToFront()
+{
+  mpGraphicsView->bringToFront(this);
+}
+
+/*!
+ * \brief ShapeAnnotation::bringForward
+ * Brings the shape one level forward.
+ */
+void ShapeAnnotation::bringForward()
+{
+  mpGraphicsView->bringForward(this);
+}
+
+/*!
+ * \brief ShapeAnnotation::sendToBack
+ * Sends the shape to back of all other shapes.
+ */
+void ShapeAnnotation::sendToBack()
+{
+  mpGraphicsView->sendToBack(this);
+}
+
+/*!
+ * \brief ShapeAnnotation::sendBackward
+ * Sends the shape one level backward.
+ */
+void ShapeAnnotation::sendBackward()
+{
+  mpGraphicsView->sendBackward(this);
 }
 
 /*!
@@ -1838,6 +1875,11 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     menu.addAction(mpGraphicsView->getDeleteAction());
     menu.addAction(mpGraphicsView->getDuplicateAction());
     menu.addSeparator();
+    menu.addAction(mpGraphicsView->getBringToFrontAction());
+    menu.addAction(mpGraphicsView->getBringForwardAction());
+    menu.addAction(mpGraphicsView->getSendToBackAction());
+    menu.addAction(mpGraphicsView->getSendBackwardAction());
+    menu.addSeparator();
     menu.addAction(mpGraphicsView->getRotateClockwiseAction());
     menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
   }
@@ -1871,6 +1913,10 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         } else {
           connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
           connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getSendBackwardAction(), SIGNAL(triggered()), this, SLOT(sendBackward()), Qt::UniqueConnection);
           connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()), Qt::UniqueConnection);
           connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwiseMouseRightClick()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
@@ -1903,6 +1949,10 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         } else {
           disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
           disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
+          disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));
+          disconnect(mpGraphicsView->getBringForwardAction(), SIGNAL(triggered()), this, SLOT(bringForward()));
+          disconnect(mpGraphicsView->getSendToBackAction(), SIGNAL(triggered()), this, SLOT(sendToBack()));
+          disconnect(mpGraphicsView->getSendBackwardAction(), SIGNAL(triggered()), this, SLOT(sendBackward()));
           disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()));
           disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwiseMouseRightClick()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
