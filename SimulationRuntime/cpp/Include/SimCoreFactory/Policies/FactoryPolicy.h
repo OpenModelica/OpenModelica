@@ -13,12 +13,14 @@
     #include <SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h>
     #include <SimCoreFactory/Policies/LinSolverVxWorksFactory.h>
     /*Policy defines*/
-    typedef SystemVxWorksFactory<VxWorksFactory> SimControllerPolicy;
-    typedef SolverVxWorksFactory<VxWorksFactory> ConfigurationPolicy;
-    //typedef LinSolverVxWorksFactory<VxWorksFactory> NonLinSolverPolicy;
-    typedef NonLinSolverVxWorksFactory<VxWorksFactory> NonLinSolverPolicy;
-    typedef SolverSettingsVxWorksFactory<VxWorksFactory> SolverSettingsPolicy;
-    typedef LinSolverVxWorksFactory<VxWorksFactory> LinSolverPolicy;
+
+    typedef VxWorksFactory BaseFactory;
+    typedef SystemVxWorksFactory<BaseFactory> SimControllerPolicy;
+    typedef SolverVxWorksFactory<BaseFactory> ConfigurationPolicy;
+    //typedef LinSolverVxWorksFactory<BaseFactory> NonLinSolverPolicy;
+    typedef NonLinSolverVxWorksFactory<BaseFactory> NonLinSolverPolicy;
+    typedef SolverSettingsVxWorksFactory<BaseFactory> SolverSettingsPolicy;
+    typedef LinSolverVxWorksFactory<BaseFactory> LinSolverPolicy;
 
 #elif defined(__TRICORE__)
 

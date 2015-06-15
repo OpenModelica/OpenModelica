@@ -1648,11 +1648,11 @@ extern "C"  int runSimulation(void)
 
 
   // Set simulation Settings: mainly stepsize important
-    SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "model2",EMPTY, 100,EMPTY2, OFF};
+    SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",EMPTY, 100,EMPTY2, OFF};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
-    sim_controller->StartVxWorks(settings, "model2");
+    sim_controller->StartVxWorks(settings, "<%lastIdentOfPath(modelInfo.name)%>");
   }
   catch(ModelicaSimulationError& ex)
   {

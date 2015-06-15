@@ -8,7 +8,7 @@
 #if defined(__vxworks) || defined(__TRICORE__)
 
 
-
+#include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
 {

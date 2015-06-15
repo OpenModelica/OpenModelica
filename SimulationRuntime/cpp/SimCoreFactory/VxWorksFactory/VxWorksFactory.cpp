@@ -2,10 +2,10 @@
  *  
  *  @{
  */
-/* TODO
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-*/
+
 #include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 
 extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path);
