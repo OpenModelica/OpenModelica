@@ -105,7 +105,9 @@ namespace IAEX
     evalExpression(QString("getInstallationDirectoryPath()"));
     QString result = getResult();
     result = result.remove( "\"" );
+    MMC_TRY_TOP_INTERNAL()
     omc_Main_setWindowsPaths(threadData, mmc_mk_scon(result.toStdString().c_str()));
+    MMC_CATCH_TOP()
 #endif
   }
 
