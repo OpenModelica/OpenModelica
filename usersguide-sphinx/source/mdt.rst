@@ -1,6 +1,9 @@
 MDT – The OpenModelica Development Tooling Eclipse Plugin
 =========================================================
 
+.. role:: bash(code)
+   :language: bash
+
 Introduction
 ------------
 
@@ -37,6 +40,8 @@ The installation of MDT is accomplished by following the below
 installation instructions. These instructions assume that you have
 successfully downloaded and installed Eclipse (http://www.eclipse.org).
 
+The latest installation instructions are available through the `OpenModelica Trac <https://trac.openmodelica.org/MDT>`_.
+
 1. Start Eclipse
 
 2. Select Help->Software Updates->Find and Install.\ **..** from the
@@ -47,7 +52,7 @@ successfully downloaded and installed Eclipse (http://www.eclipse.org).
 4. Select ‘New Remote Site...’
 
 5. Enter ‘MDT’ as name and
-   http://www.ida.liu.se/labs/pelab/OpenModelica/MDT
+   http://www.ida.liu.se/labs/pelab/modelica/OpenModelica/MDT
    as URL and click ‘OK’
 
 6. Make sure ‘MDT’ is selected and click ‘Finish’
@@ -88,9 +93,8 @@ Selecting a Workspace Folder
 Eclipse stores your projects in a folder called a workspace. You need to
 choose a workspace folder for this session, see :numref:`mdt-switching-workspace`.
 
-.. todo ::
-
-  Missing figure mdt-switching-workspace
+.. figure :: media/mdt-switch-workspace.png
+  :name: mdt-switch-workspace
 
   Eclipse Setup – Switching Workspace.
 
@@ -101,17 +105,14 @@ To start a new project, use the New Modelica Project Wizard. It is
 accessible through File->New-> Modelica Project or by right-clicking in
 the Modelica Projects view and selecting New->Modelica Project.
 
-.. todo ::
-
-  Missing figure
+.. figure :: media/mdt-create-project.*
 
   Eclipse Setup – creating a Modelica project in the workspace.
 
 You need to disable automatic build for the project(s) (:numref:`mdt-disable-automatic-build`).
 
-.. todo ::
-
-  Missing figure mdt-disable-automatic-build
+.. figure :: media/mdt-disable-automatic-build.png
+  :name: mdt-disable-automatic-build
 
   Eclipse Setup – disable automatic build for the projects.
 
@@ -133,38 +134,28 @@ After having created a project, you eventually need to build the project
 
   Eclipse MDT – Building a project.
 
-There are several options: building, building from scratch (clean),
-running, see :numref:`mdt-build-run`.
+The build options are the same as the make targets: you can build,
+build from scratch (clean), or run simulations depending on how the
+project is setup. See :numref:`mdt-build-run` for an example of how omc
+can be compiled (:bash:`make omc` builds OMC).
 
-.. todo ::
+.. figure :: media/mdt-build-prompt.*
 
-  Missing figure
+  Eclipse – building a project.
 
-  xx figure :: media/mdt-build-run.png
-    :name: mdt-build-run
+.. figure :: media/mdt-build-log.png
 
-    Eclipse – building and running a project.
-
-You may also open additional views, e.g as in :numref:`mdt-opening-views`.
-
-.. todo ::
-
-  Missing figure
-
-  xx figure :: media/mdt-opening-views.png
-    :name: mdt-opening-views
-
-    Eclipse – Opening views.
+  Eclipse – building a project, resulting log.
 
 Switching to Another Perspective
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need, you can (temporarily) switch to another perspective, e.g.
 to the Java perspective for working with an OpenModelica Java client as
-in :numref:`mdt-switch-view`.
+in :numref:`mdt-switch-perspective`.
 
-.. figure :: media/mdt-switch-view.png
-  :name: mdt-switch-view
+.. figure :: media/mdt-switch-perspective.png
+  :name: mdt-switch-perspective
 
   Eclipse – Switching to another perspective – e.g. the Java Perspective.
 
