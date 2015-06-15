@@ -191,6 +191,10 @@ public slots:
   void deleteConnection();
   void deleteMe();
   virtual void duplicate();
+  void bringToFront();
+  void bringForward();
+  void sendToBack();
+  void sendBackward();
   void rotateClockwiseKeyPress();
   void rotateAntiClockwiseKeyPress();
   void rotateClockwiseMouseRightClick();

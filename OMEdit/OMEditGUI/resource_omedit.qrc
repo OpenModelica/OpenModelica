@@ -11,6 +11,10 @@
         <file>Resources/icons/new.svg</file>
         <file>Resources/icons/open.svg</file>
         <file>Resources/icons/paste.svg</file>
+        <file>Resources/icons/bring-to-front.svg</file>
+        <file>Resources/icons/bring-forward.svg</file>
+        <file>Resources/icons/send-to-back.svg</file>
+        <file>Resources/icons/send-backward.svg</file>
         <file>Resources/icons/rotateanticlockwise.svg</file>
         <file>Resources/icons/rotateclockwise.svg</file>
         <file>Resources/icons/save.svg</file>
