@@ -17,10 +17,15 @@ model EnumArrayMod1
 end EnumArrayMod1;
 
 // Result:
-// function EnumArrayMod1.R$re.R$re.R$re "Automatically generated record constructor for EnumArrayMod1.R$re.R$re.R$re"
-//   input enumeration(a, b, c) e = EnumArrayMod1.E.c;
+// function EnumArrayMod1.R "Automatically generated record constructor for EnumArrayMod1.R"
+//   input enumeration(a, b, c) e;
+//   output R res;
+// end EnumArrayMod1.R;
+//
+// function EnumArrayMod1.R$re "Automatically generated record constructor for EnumArrayMod1.R$re"
+//   input enumeration(a, b, c) e;
 //   output R$re res;
-// end EnumArrayMod1.R$re.R$re.R$re;
+// end EnumArrayMod1.R$re;
 //
 // class EnumArrayMod1
 //   enumeration(a, b, c) re[EnumArrayMod1.E.a].e = EnumArrayMod1.E.a;
