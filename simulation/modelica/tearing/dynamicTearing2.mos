@@ -1,30 +1,31 @@
-// name:      dynamicTearing1
-// keywords:  dynamic tearing
+// name:      dynamicTearing2
+// keywords:  linear, dynamic tearing
 // status:    correct
 
 loadString("
-model dynamicTearing1
+model dynamicTearing2
    Real x,y,z,x1,y1,z1,z2;
    parameter Real a=10;
    parameter Real b=5;
    parameter Real c=2;
 equation
-   (a-5-b)*y = x * time + time;
-   a + b - 7*c = x*y +1;
+   (a-5-b)*y = cos(time) * x + time;
+   a + b - 7*c = x * sin(time) + y * cos(time) +1;
    z = x - y;
    
-   (a-5-b)*y1 = x1 * time + time;
-   a + b - 7*c = x1*y1 +1;
+   (a-5-b)*y1 = cos(time)* x1 + time;
+   a + b - 7*c = x1 * sin(time) + y1 * cos(time) +1;
    z1 = x1 - y1;
    
    z2 = z + z1;
-end dynamicTearing1;
+end dynamicTearing2;
 "); getErrorString();
+
 
 setTearingMethod("cellier"); getErrorString();
 setCommandLineOptions("+forceTearing"); getErrorString();
 setCommandLineOptions("+dynamicTearing"); getErrorString();
-simulate(dynamicTearing1); getErrorString();
+simulate(dynamicTearing2); getErrorString();
 
 print("x at time=0.0");
 val(x,0.0); getErrorString();
@@ -66,12 +67,11 @@ val(z2,0.1); getErrorString();
 // true
 // ""
 // record SimulationResult
-//     resultFile = "dynamicTearing1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "dynamicTearing2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. Use +d=initialization for more information.
-// "
+// ""
 // x at time=0.0
 // 0.0
 // ""
@@ -94,24 +94,24 @@ val(z2,0.1); getErrorString();
 // 0.0
 // ""
 // x at time=0.1
-// -1.0
+// -0.1005020918400455
 // ""
 // x1 at time=0.1
-// -1.0
+// -0.1005020918400455
 // ""
 // y at time=0.1
-// 0.0
+// 0.01008384442867287
 // ""
 // y1 at time=0.1
-// 0.0
+// 0.01008384442867287
 // ""
 // z at time=0.1
-// -1.0
+// -0.1105859362687184
 // ""
 // z1 at time=0.1
-// -1.0
+// -0.1105859362687184
 // ""
 // z2 at time=0.1
-// -2.0
+// -0.2211718725374368
 // ""
 // endResult

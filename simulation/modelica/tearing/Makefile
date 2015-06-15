@@ -1,47 +1,6 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-Tearing1-omc.mos \
-Tearing2-omc.mos \
-Tearing3-omc.mos \
-Tearing4-omc.mos \
-Tearing5-omc.mos \
-Tearing6-omc.mos \
-Tearing7-omc.mos \
-Tearing8-omc.mos \
-Tearing9-omc.mos \
-Tearing10-omc.mos \
-Tearing11-omc.mos \
-Tearing12-omc.mos \
-Tearing13-omc.mos \
-Tearing14-omc.mos \
-Tearing15-omc.mos \
-Tearing16-omc.mos \
-Algorithm1-omc.mos \
-Algorithm2-omc.mos \
-MixedTearing1-omc.mos \
-AnnotationTest-omc.mos \
-AnnotationTest2-omc.mos \
-Tearing1-cel.mos \
-Tearing2-cel.mos \
-Tearing3-cel.mos \
-Tearing4-cel.mos \
-Tearing5-cel.mos \
-Tearing6-cel.mos \
-Tearing7-cel.mos \
-Tearing8-cel.mos \
-Tearing9-cel.mos \
-Tearing10-cel.mos \
-Tearing11-cel.mos \
-Tearing12-cel.mos \
-Tearing13-cel.mos \
-Tearing14-cel.mos \
-Tearing15-cel.mos \
-Tearing16-cel.mos \
-Tearing19-cel.mos \
-Algorithm1-cel.mos \
-Algorithm2-cel.mos \
-MixedTearing1-cel.mos \
 Tearing1-celMC3.mos \
 Tearing2-celMC3.mos \
 Tearing3-celMC3.mos \
@@ -71,6 +30,51 @@ Algorithm2-celMC3.mos \
 MixedTearing1-celMC3.mos \
 AnnotationTest-celMC3.mos \
 AnnotationTest2-celMC3.mos \
+dynamicTearing1.mos \
+dynamicTearing2.mos \
+Tearing1-cel.mos \
+Tearing2-cel.mos \
+Tearing3-cel.mos \
+Tearing4-cel.mos \
+Tearing5-cel.mos \
+Tearing6-cel.mos \
+Tearing7-cel.mos \
+Tearing8-cel.mos \
+Tearing9-cel.mos \
+Tearing10-cel.mos \
+Tearing11-cel.mos \
+Tearing12-cel.mos \
+Tearing13-cel.mos \
+Tearing14-cel.mos \
+Tearing15-cel.mos \
+Tearing16-cel.mos \
+Tearing19-cel.mos \
+Algorithm1-cel.mos \
+Algorithm2-cel.mos \
+MixedTearing1-cel.mos \
+Tearing1-omc.mos \
+Tearing2-omc.mos \
+Tearing3-omc.mos \
+Tearing4-omc.mos \
+Tearing5-omc.mos \
+Tearing6-omc.mos \
+Tearing7-omc.mos \
+Tearing8-omc.mos \
+Tearing9-omc.mos \
+Tearing10-omc.mos \
+Tearing11-omc.mos \
+Tearing12-omc.mos \
+Tearing13-omc.mos \
+Tearing14-omc.mos \
+Tearing15-omc.mos \
+Tearing16-omc.mos \
+Algorithm1-omc.mos \
+Algorithm2-omc.mos \
+MixedTearing1-omc.mos \
+AnnotationTest-omc.mos \
+AnnotationTest2-omc.mos \
+
+
 
 
 # test that currently fail. Move up when fixed. 
