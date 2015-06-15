@@ -91,7 +91,7 @@ Selecting a Workspace Folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Eclipse stores your projects in a folder called a workspace. You need to
-choose a workspace folder for this session, see :numref:`mdt-switching-workspace`.
+choose a workspace folder for this session, see :numref:`mdt-switch-workspace`.
 
 .. figure :: media/mdt-switch-workspace.png
   :name: mdt-switch-workspace
@@ -136,10 +136,11 @@ After having created a project, you eventually need to build the project
 
 The build options are the same as the make targets: you can build,
 build from scratch (clean), or run simulations depending on how the
-project is setup. See :numref:`mdt-build-run` for an example of how omc
+project is setup. See :numref:`mdt-build-prompt` for an example of how omc
 can be compiled (:bash:`make omc` builds OMC).
 
 .. figure :: media/mdt-build-prompt.*
+  :name: mdt-build-prompt
 
   Eclipse – building a project.
 

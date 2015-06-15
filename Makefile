@@ -233,7 +233,7 @@ OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG) $(OMEDIT_ICONS_PDF)
 OMOPTIM_ICONS_BASE=Add.png
 OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
-all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf
+all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf
 
 source/media/omedit-icons/%.svg: $(OPENMODELICAHOME)/../OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons

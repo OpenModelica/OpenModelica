@@ -156,6 +156,8 @@ OMPython is designed to,
 
 -  Return or display the results.
 
+.. _pysimulator :
+
 PySimulator
 -----------
 

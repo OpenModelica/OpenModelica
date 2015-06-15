@@ -215,12 +215,12 @@ To export XML, we set the simulation target to XML:
 
   translateModelXML(BatchReactor)
 
-This will generate an XML file named :ref:`BatchReactor.xml` (:numref:`BatchReactor.xml`)
+This will generate an XML file named :ref:`batchreactorxml` (:numref:`batchreactorxml`)
 that contains a symbolic representation of the optimal control problem
 and can be inspected in a standard XML editor.
 
 .. literalinclude :: ../tmp/BatchReactor.xml
-  :name: BatchReactor.xml
+  :name: batchreactorxml
   :caption: BatchReactor.xml
   :language: xml
 

@@ -6,7 +6,7 @@ MDT Debugger for Algorithmic Modelica
 
 The algorithmic code debugger, used for the algorithmic subset of the
 Modelica language as well as the MetaModelica language is described in
-Section :numref:`eclipse-based-debugger-algorithms`.
+Section :ref:`eclipse-based-debugger-algorithms`.
 Using this debugger replaces debugging of algorithmic code
 by primitive means such as print statements or asserts which is complex,
 time-consuming and error- prone. The usual debugging functionality found
