@@ -1,10 +1,10 @@
 #pragma once
 
 /** @addtogroup coreSimulationSettings
- *  
+ *
  *  @{
  */
-     
+
 #include <fstream>
 
 class GlobalSettings : public IGlobalSettings

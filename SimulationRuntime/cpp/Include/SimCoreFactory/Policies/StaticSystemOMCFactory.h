@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 /*includes removed for static linking not needed any more
@@ -30,15 +30,15 @@ public:
   {
     return ObjectFactory<CreationPolicy>::_factory->createAlgLoopSolverFactory(globalSettings);
   }
-  
+
   boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)
   {
      return createModelicaSystem(globalSettings,algloopsolverfactory,simData,simVars);
   }
-  
+
 protected:
   virtual void initializeLibraries(PATH library_path, PATH modelicasystem_path, PATH config_path)
   {
   }
-}; 
+};
 /** @} */ // end of simcorefactoriesPolicies

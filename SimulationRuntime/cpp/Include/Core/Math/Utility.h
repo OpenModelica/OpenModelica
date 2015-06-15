@@ -39,7 +39,7 @@
 /** @addtogroup math
  *   @{
 */
-   
+
 
 /* fmod in math.h does not work in the same way as mod defined by modelica, so
  * we need to define our own mod. */

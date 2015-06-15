@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 
@@ -50,7 +50,7 @@ public:
 
     virtual boost::shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, boost::shared_ptr<ISolverSettings> solver_settings)
     {
-        
+
         if(solvername.compare("euler")==0)
         {
              PATH euler_path = ObjectFactory<CreationPolicy>::_library_path;
@@ -61,7 +61,7 @@ public:
             {
                 throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Euler solver library!");
             }
-            
+
         }
         else if(solvername.compare("peer")==0)
         {
@@ -87,7 +87,7 @@ public:
         }
         else if(solvername.compare("idas")==0)
         {
-           
+
         }
         else if(solvername.compare("ida")==0)
         {
@@ -115,7 +115,7 @@ public:
         }
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
-        
+
         std::map<std::string, factory<ISolver,IMixedSystem*, ISolverSettings*> >::iterator iter;
         std::map<std::string, factory<ISolver,IMixedSystem*, ISolverSettings*> >& factories(_solver_type_map->get());
         string solver_key = solvername.append("Solver");
@@ -124,15 +124,15 @@ public:
         {
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such Solver " + solver_key);
         }
-        
+
         boost::shared_ptr<ISolver> solver = boost::shared_ptr<ISolver>(iter->second.create(system,solver_settings.get()));
-       
+
         return solver;
     }
 protected:
     virtual void initializeLibraries(PATH library_path,PATH modelicasystem_path,PATH config_path)
     {
-        
+
         LOADERRESULT result;
 
     PATH math_path = ObjectFactory<CreationPolicy>::_library_path;
@@ -147,8 +147,8 @@ protected:
             throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading Math library: ") + math_path.string());
         }
 
-        
-        
+
+
         PATH settingsfactory_path = ObjectFactory<CreationPolicy>::_library_path;
         PATH settingsfactory_name(SETTINGSFACTORY_LIB);
         settingsfactory_path/=settingsfactory_name;

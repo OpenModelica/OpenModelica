@@ -1102,6 +1102,8 @@ algorithm
     then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,_,fn,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,SOME(isProtected),fn,so));
+    case (SOME(DAE.VAR_ATTR_CLOCK(fn,_)), _)
+      then SOME(DAE.VAR_ATTR_CLOCK(fn,SOME(isProtected)));
     case (NONE(),_)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE(),NONE()));
   end match;
@@ -1118,6 +1120,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_BOOL(isProtected=SOME(isProtected)))) then isProtected;
     case (SOME(DAE.VAR_ATTR_STRING(isProtected=SOME(isProtected)))) then isProtected;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(isProtected=SOME(isProtected)))) then isProtected;
+    case (SOME(DAE.VAR_ATTR_CLOCK(isProtected=SOME(isProtected)))) then isProtected;
     else false;
   end match;
 end getProtectedAttr;
@@ -1196,6 +1199,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_BOOL(finalPrefix=SOME(b)))) then b;
     case (SOME(DAE.VAR_ATTR_STRING(finalPrefix=SOME(b)))) then b;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(finalPrefix=SOME(b)))) then b;
+    case (SOME(DAE.VAR_ATTR_CLOCK(finalPrefix=SOME(b)))) then b;
   else false;
   end match;
 end getFinalAttr;
@@ -2810,139 +2814,294 @@ algorithm
   outExp:= Expression.makeCrefExp(inComponentRef,DAE.T_UNKNOWN_DEFAULT);
 end crefToExp;
 
-public function verifyWhenEquation
-"This function verifies when-equations.
-Returns the crefs written to, and also checks for illegal statements in when-body eqn's."
-  input list<DAE.Element> inElems;
-  output list<DAE.ComponentRef> leftSideCrefs;
+public function verifyEquationsDAE "
+  Perform some checks for DAE equations:
+  1. Assert equations should be used only inside when equations;
+  2. Bolean when equation should:
+    2.1 not contain nested clocked or boolean when equations;
+    2.2 not have clocked else-when parts;
+    2.3 have component references on left side of its equations, and
+        for each branch the set of left hand references should be same;
+  3. Clocked when equation should not:
+    3.1 contain nested clocked when equations;
+    3.2 contain else-when parts;
+    3.3 contain reinit equation(?);
+  4. Initial when equation should not contain assert equation.
+"
+  input DAE.DAElist dae;
+protected
+  DAE.Exp cond;
+  list<DAE.Element> dae_elts, eqs;
+  Option<DAE.Element> ew;
+  DAE.ElementSource source;
+  DAE.Element el;
+  SourceInfo info;
 algorithm
-  leftSideCrefs := match (inElems)
-    local
-      list<DAE.Element> elems1,moreWhen;
-      list<DAE.ComponentRef> crefs1;
+  DAE.DAE(dae_elts) := dae;
+  for el in dae_elts loop
+    () := match el
+      case DAE.WHEN_EQUATION(cond, eqs, ew, source)
+        equation verifyWhenEquation(cond, eqs, ew, source);
+        then ();
+      case DAE.REINIT()
+        equation
+          info = getElementSourceFileInfo(getElementSource(el));
+          Error.addSourceMessageAndFail(Error.REINIT_NOTIN_WHEN, {}, info);
+        then ();
+      else ();
+    end match;
+  end for;
+end verifyEquationsDAE;
 
-    case {} then {};
-      // no need to check elseWhen, they are being handled in a reverse order, from inst.mo.
-    case (DAE.WHEN_EQUATION(equations=elems1)::_)
-      equation
-        crefs1 = verifyWhenEquationStatements(elems1,{});
-      then listReverse(crefs1);
-    case (elems1)
-      equation
-        crefs1 = verifyWhenEquationStatements(elems1,{});
-      then listReverse(crefs1);
-  end match;
+protected function verifyWhenEquation
+  input DAE.Exp cond;
+  input list<DAE.Element> eqs;
+  input Option<DAE.Element> ew;
+  input DAE.ElementSource source;
+algorithm
+  if Types.isClockOrSubTypeClock(Expression.typeof(cond))
+    then verifyClockWhenEquation(cond, eqs, ew, source);
+    else verifyBoolWhenEquation(cond, eqs, ew, source);
+  end if;
 end verifyWhenEquation;
 
-protected function verifyWhenEquationStatements2 ""
-  input list<DAE.Exp> inExps;
-  input list<DAE.ComponentRef> inAcc;
-  input DAE.ElementSource source "the element origin";
-  output list<DAE.ComponentRef> leftSideCrefs;
+protected function verifyClockWhenEquation
+  input DAE.Exp cond;
+  input list<DAE.Element> eqs;
+  input Option<DAE.Element> ew;
+  input DAE.ElementSource source;
+protected
+  SourceInfo info;
 algorithm
-  leftSideCrefs := match(inExps,inAcc,source)
-    local
-      DAE.Exp e;
-      list<DAE.ComponentRef> acc;
-      list<DAE.Exp> exps;
+  if not isNone(ew) then
+    info := getElementSourceFileInfo(source);
+    Error.addSourceMessageAndFail(Error.ELSE_WHEN_CLOCK, {}, info);
+  end if;
+  verifyClockWhenEquation1(eqs);
+end verifyClockWhenEquation;
 
-    case ({},acc,_) then acc;
-    case (e::exps,acc,_)
-      equation
-        acc = verifyWhenEquationStatements({DAE.EQUATION(e,e,source)},acc);
-      then verifyWhenEquationStatements2(exps,acc,source);
-  end match;
-end verifyWhenEquationStatements2;
-
-protected function verifyWhenEquationStatements "
-Author BZ, 2008-09
-Helper function for verifyWhenEquation
-TODO: add some error reporting for this."
-  input list<DAE.Element> inElems;
-  input list<DAE.ComponentRef> inAcc;
-  output list<DAE.ComponentRef> leftSideCrefs;
+protected function verifyClockWhenEquation1
+  input list<DAE.Element> inEqs;
+protected
+  DAE.Element el;
 algorithm
-  leftSideCrefs:= match (inElems,inAcc)
+  for el in inEqs loop
+    () := match el
+      local
+        DAE.Exp cond;
+        list<DAE.Element> eqs;
+        Option<DAE.Element> ew;
+        DAE.ElementSource source;
+        SourceInfo info;
+      case DAE.REINIT()
+        equation
+          info = getElementSourceFileInfo(getElementSource(el));
+          Error.addSourceMessageAndFail(Error.REINIT_NOTIN_WHEN, {}, info);
+        then ();
+      case DAE.WHEN_EQUATION(cond, eqs, ew, source)
+        equation
+          if Types.isClockOrSubTypeClock(Expression.typeof(cond)) then
+            info = getElementSourceFileInfo(getElementSource(el));
+            Error.addSourceMessageAndFail(Error.NESTED_CLOCKED_WHEN, {}, info);
+          end if;
+          verifyBoolWhenEquation(cond, eqs, ew, source);
+        then ();
+      else ();
+    end match;
+  end for;
+end verifyClockWhenEquation1;
+
+protected function verifyBoolWhenEquation
+  input DAE.Exp inCond;
+  input list<DAE.Element> inEqs;
+  input Option<DAE.Element> inElseWhen;
+  input DAE.ElementSource source;
+protected
+  list<DAE.ComponentRef> crefs1, crefs2;
+  list<tuple<DAE.Exp, list<DAE.Element>>> whenBranches;
+  tuple<DAE.Exp, list<DAE.Element>> whenBranch;
+  DAE.Exp cond;
+  list<DAE.Element> eqs;
+  SourceInfo info;
+algorithm
+  crefs1 := verifyBoolWhenEquationBranch(inCond, inEqs);
+  whenBranches := collectWhenEquationBranches(inElseWhen);
+  for whenBranch in whenBranches loop
+    (cond, eqs) := whenBranch;
+    if Types.isClockOrSubTypeClock(Expression.typeof(cond)) then
+      info := getElementSourceFileInfo(source);
+      Error.addSourceMessageAndFail(Error.CLOCKED_WHEN_BRANCH, {}, info);
+    end if;
+    crefs2 := verifyBoolWhenEquationBranch(cond, eqs);
+    crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReference.crefEqual);
+    if listLength(crefs2) <> listLength(crefs1) then
+      info := getElementSourceFileInfo(source);
+      Error.addSourceMessageAndFail(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {}, info);
+    end if;
+  end for;
+end verifyBoolWhenEquation;
+
+protected function collectWhenEquationBranches
+  input Option<DAE.Element> inElseWhen;
+  input list<tuple<DAE.Exp, list<DAE.Element>>> inWhenBranches = {};
+  output list<tuple<DAE.Exp, list<DAE.Element>>> outWhenBranches;
+algorithm
+  outWhenBranches := match inElseWhen
     local
-      String msg;
-      list<DAE.Exp> exps,exps1;
-      DAE.Exp exp,ee1,ee2;
-      DAE.ComponentRef cref;
-      DAE.Element el;
-      list<DAE.Element> eqsfalseb,rest;
-      list<list<DAE.Element>> eqstrueb;
-      list<DAE.ComponentRef> crefs1,crefs2,acc;
-      DAE.ElementSource source "the element origin";
-      list<list<DAE.ComponentRef>> crefslist;
-      Boolean b;
+      DAE.Exp cond;
+      list<DAE.Element> eqs;
+      Option<DAE.Element> ew;
       SourceInfo info;
-
-    case({},acc) then acc;
-
-    case(DAE.VAR()::rest,acc)
-      then verifyWhenEquationStatements(rest,acc);
-
-    case(DAE.DEFINE(componentRef = cref)::rest,acc)
-      then verifyWhenEquationStatements(rest,cref::acc);
-
-    case(DAE.EQUATION(exp = DAE.CREF(cref,_))::rest,acc)
-      then verifyWhenEquationStatements(rest,cref::acc);
-
-    case(DAE.EQUATION(exp = DAE.TUPLE(exps1),source=source)::rest,acc)
+      String msg;
+      DAE.Element el;
+    case NONE()
+      then inWhenBranches;
+    case SOME(DAE.WHEN_EQUATION(cond, eqs, ew, _))
+      then collectWhenEquationBranches(ew, (cond, eqs)::inWhenBranches);
+    case SOME(el)
       equation
-        acc = verifyWhenEquationStatements2(exps1,acc,source);
-      then verifyWhenEquationStatements(rest,acc);
+        msg = "- DAEUtil.collectWhenEquationBranches failed on: " + DAEDump.dumpElementsStr({el});
+        info = getElementSourceFileInfo(getElementSource(el));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, info);
+      then fail();
+  end match;
+end collectWhenEquationBranches;
 
-    case(DAE.ARRAY_EQUATION(exp = DAE.CREF(cref, _))::rest,acc)
-      then verifyWhenEquationStatements(rest,cref::acc);
+protected function verifyBoolWhenEquationBranch
+  input DAE.Exp inCond;
+  input list<DAE.Element> inEqs;
+  output list<DAE.ComponentRef> crefs;
+protected
+  Boolean initCond = Expression.containsInitialCall(inCond, false);
+algorithm
+  crefs := verifyBoolWhenEquation1(inEqs, initCond);
+end verifyBoolWhenEquationBranch;
 
-    case(DAE.EQUEQUATION(cr1=cref)::rest,acc)
-      then verifyWhenEquationStatements(rest,cref::acc);
+protected function verifyBoolWhenEquation1
+  input list<DAE.Element> inElems;
+  input Boolean initCond;
+  input list<DAE.ComponentRef> inCrefs = {};
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+outCrefs := match inElems
+    local
+      list<DAE.Element> rest;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+      list<DAE.Exp> exps;
+      list<DAE.ComponentRef> crefs;
+      list<list<DAE.ComponentRef>> crefsLists;
+      DAE.ElementSource source;
+      SourceInfo info;
+      DAE.Element el;
+      list<DAE.Element> falseEqs;
+      list<list<DAE.Element>> trueEqs;
+      Boolean b;
+      String msg;
+    case {} then inCrefs;
 
-    case(DAE.IF_EQUATION(equations2 = eqstrueb,equations3 = eqsfalseb,source = source)::rest,acc)
+    case DAE.VAR()::rest
+      then verifyBoolWhenEquation1(rest, initCond, inCrefs);
+
+    case DAE.DEFINE(componentRef = cr)::rest
+      then verifyBoolWhenEquation1(rest, initCond, cr::inCrefs);
+
+    case DAE.EQUATION(exp = e, source = source)::rest
+      equation crefs = collectWhenCrefs1(e, source, inCrefs);
+      then verifyBoolWhenEquation1(rest, initCond, crefs);
+
+    case DAE.ARRAY_EQUATION(exp = e, source = source)::rest
+      equation crefs = collectWhenCrefs1(e, source, inCrefs);
+      then verifyBoolWhenEquation1(rest, initCond, crefs);
+
+    case DAE.EQUEQUATION(cr1 = cr)::rest
+      then verifyBoolWhenEquation1(rest, initCond, cr::inCrefs);
+
+    case DAE.IF_EQUATION(equations2 = trueEqs, equations3 = falseEqs, source = source)::rest
       equation
-        crefslist = List.map1(eqstrueb,verifyWhenEquationStatements,{});
-        crefs2 = verifyWhenEquationStatements(eqsfalseb,{});
-        crefslist = crefs2::crefslist;
-        (crefs1,b) = compareCrefList(crefslist);
-        Error.assertionOrAddSourceMessage(b,Error.WHEN_EQ_LHS,{"All branches must write to the same variable"},getElementSourceFileInfo(source));
-        acc = listAppend(crefs1,acc);
-      then verifyWhenEquationStatements(rest,acc);
+        crefsLists = List.map2(trueEqs, verifyBoolWhenEquation1, initCond, {});
+        crefs = verifyBoolWhenEquation1(falseEqs, initCond);
+        crefsLists = crefs::crefsLists;
+        (crefs, b) = compareCrefList(crefsLists);
+        if not b then
+          info = getElementSourceFileInfo(source);
+          msg = "All branches must write to the same variable";
+          Error.addSourceMessage(Error.WHEN_EQ_LHS, {msg}, info);
+          fail();
+        end if;
+      then verifyBoolWhenEquation1(rest, initCond, listAppend(crefs, inCrefs));
 
-    case(DAE.ASSERT()::rest,acc)
-      then verifyWhenEquationStatements(rest,acc);
+    case DAE.ASSERT()::rest
+      then verifyBoolWhenEquation1(rest, initCond, inCrefs);
 
-    case(DAE.TERMINATE()::rest,acc)
-      then verifyWhenEquationStatements(rest,acc);
+    case DAE.TERMINATE()::rest
+      then verifyBoolWhenEquation1(rest, initCond, inCrefs);
 
-    case(DAE.REINIT()::rest,acc)
-      then verifyWhenEquationStatements(rest,acc);
+    case DAE.REINIT(source = source)::rest
+      equation
+        if initCond then
+          info = getElementSourceFileInfo(source);
+          Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
+          fail();
+        end if;
+      then verifyBoolWhenEquation1(rest, initCond, inCrefs);
 
     // adrpo: TODO! FIXME! WHY??!! we might push values to a file writeFile(time);
-    case(DAE.NORETCALL()::rest,acc)
-      then verifyWhenEquationStatements(rest,acc);
+    case DAE.NORETCALL()::rest
+      then verifyBoolWhenEquation1(rest, initCond, inCrefs);
 
-    case(DAE.EQUATION(exp = exp, source=source)::_,_)
+    case DAE.WHEN_EQUATION(condition = e, source=source)::_
       equation
-        msg = ExpressionDump.printExpStr(exp);
-        Error.addSourceMessage(Error.WHEN_EQ_LHS,{msg},getElementSourceFileInfo(source));
+        info = getElementSourceFileInfo(source);
+        if Types.isClockOrSubTypeClock(Expression.typeof(e)) then
+          Error.addSourceMessage(Error.CLOCKED_WHEN_IN_WHEN_EQ , {}, info);
+        else
+          Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
+        end if;
       then fail();
 
-    case(DAE.WHEN_EQUATION(source=source)::_,_)
-      equation
-        Error.addSourceMessage(Error.NESTED_WHEN,{},getElementSourceFileInfo(source));
-      then
-        fail();
-
-    case(el::_,_)
+    case el::_
       equation
         msg = "- DAEUtil.verifyWhenEquationStatements failed on: " + DAEDump.dumpElementsStr({el});
         info = getElementSourceFileInfo(getElementSource(el));
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{msg}, info);
-      then
-        fail();
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, info);
+      then fail();
   end match;
-end verifyWhenEquationStatements;
+end verifyBoolWhenEquation1;
+
+protected function collectWhenCrefs
+  input list<DAE.Exp> inExps;
+  input DAE.ElementSource source;
+  input list<DAE.ComponentRef> inCrefs = {};
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  outCrefs := List.fold1(inExps, collectWhenCrefs1, source, inCrefs);
+end collectWhenCrefs;
+
+protected function collectWhenCrefs1
+  input DAE.Exp inExp;
+  input DAE.ElementSource source;
+  input list<DAE.ComponentRef> inCrefs = {};
+  output list<DAE.ComponentRef> outCrefs;
+protected
+  DAE.Exp e;
+  list<DAE.Exp> exps;
+  DAE.ComponentRef cr;
+algorithm
+  outCrefs := match inExp
+    local
+      String msg;
+      SourceInfo info;
+    case DAE.CREF(cr, _) then cr::inCrefs;
+    case DAE.TUPLE(exps) then collectWhenCrefs(exps, source, inCrefs);
+    else
+      equation
+        msg = ExpressionDump.printExpStr(inExp);
+        info = getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.WHEN_EQ_LHS, {msg}, info);
+      then fail();
+  end match;
+end collectWhenCrefs1;
 
 protected function compareCrefList ""
   input list<list<DAE.ComponentRef>> inCrefs;

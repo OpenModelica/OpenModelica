@@ -1,8 +1,8 @@
 /** @addtogroup coreSimulationSettings
- *  
+ *
  *  @{
  */
-     
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 

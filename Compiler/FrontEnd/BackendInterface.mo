@@ -73,7 +73,7 @@ public function cevalCallFunction
   input Boolean inImplInst;
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Absyn.Msg inMsg;
-  input Integer inNumIter;
+  input Integer inNumIter = 1;
   output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outSymbolTable;

@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSimcontroller
- *  
+ *
  *  @{
  */
 #include "Configuration.h"

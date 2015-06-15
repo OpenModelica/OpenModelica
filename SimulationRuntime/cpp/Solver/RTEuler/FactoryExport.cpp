@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup solverCvode
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>

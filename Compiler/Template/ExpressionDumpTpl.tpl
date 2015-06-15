@@ -190,8 +190,8 @@ match clk
     let condition_str = dumpExp(condition, stringDelimiter)
     'Clock(<%condition_str%>, <%startInterval%>)'
   case SOLVER_CLOCK(__) then
-    let clk_str = dumpClockKind(c, stringDelimiter)
-    'Clock(<%clk_str%>, <%solverMethod%>)'
+    let clk_str = dumpExp(c, stringDelimiter)
+    'Clock(<%clk_str%>, "<%solverMethod%>")'
 end dumpClockKind;
 
 

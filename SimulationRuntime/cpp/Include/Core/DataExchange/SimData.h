@@ -1,9 +1,9 @@
 #pragma once
 /** @addtogroup dataexchange
- *  
+ *
  *  @{
  */
-     
+
 #include <Core/SimController/ISimData.h>
 
 

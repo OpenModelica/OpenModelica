@@ -1,10 +1,10 @@
 /** @addtogroup solverCvode
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
- 
+
 
 #include <Solver/Hybrj/HybrjSettings.h>
 
@@ -23,7 +23,7 @@ long int     HybrjSettings::getNewtMax()
 void         HybrjSettings::setNewtMax(long int max)
 {
     iNewt_max =max;
-}    
+}
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
 double         HybrjSettings::getRtol()
 {
@@ -32,25 +32,25 @@ double         HybrjSettings::getRtol()
 void         HybrjSettings::setRtol(double t)
 {
     dRtol=t;
-}                
+}
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
 double         HybrjSettings::getAtol()
 {
     return dAtol;
-}                        
+}
 void         HybrjSettings::setAtol(double t)
 {
     dAtol =t;
-}                
+}
 /*Dämpfungsfaktor (default: 0.9)*/
 double         HybrjSettings::getDelta()
 {
     return dDelta;
-}                            
+}
 void         HybrjSettings::setDelta(double t)
 {
     dDelta = t;
-}    
+}
 
 void HybrjSettings::load(string)
 {

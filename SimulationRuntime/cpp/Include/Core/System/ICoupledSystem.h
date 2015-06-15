@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSystem
- *  
+ *
  *  @{
  */
 #include <Core/Object/IObject.h>

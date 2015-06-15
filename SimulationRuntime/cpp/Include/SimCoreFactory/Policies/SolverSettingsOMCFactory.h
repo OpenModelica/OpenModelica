@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 #include <SimCoreFactory/ObjectFactory.h>
@@ -105,7 +105,7 @@ public:
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
 
-      
+
         string settings = solvername.append("Settings");
         std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >::iterator iter;
         std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >& factories(_solver_type_map->get());
@@ -121,8 +121,8 @@ public:
             throw ModelicaSimulationError(MODEL_FACTORY,"No such Solver " + solvername + ". Available solver factories:" + factoryStr );
         }
         boost::shared_ptr<ISolverSettings> solver_settings  = boost::shared_ptr<ISolverSettings>(iter->second.create(globalSettings.get()));
-    
-     
+
+
         return solver_settings;
 
     }

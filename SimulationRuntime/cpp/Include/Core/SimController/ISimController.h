@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSimcontroller
- *  
+ *
  *  @{
  */
 /*includes removed for static linking not needed any more
@@ -41,7 +41,7 @@ class ISimController
 {
 
 public:
- 
+
   virtual ~ISimController() {};
   virtual boost::weak_ptr<IMixedSystem> LoadSystem(string modelLib,string modelKey) = 0;
   virtual boost::weak_ptr<IMixedSystem> LoadModelicaSystem(PATH modelica_path,string modelKey) = 0;

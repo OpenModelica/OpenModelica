@@ -518,65 +518,26 @@ end stringReplaceChar;
 
 public function stringSplitAtChar "Takes a string and a char and split the string at the char returning the list of components.
   Example: stringSplitAtChar(\"hej.b.c\",\".\") => {\"hej,\"b\",\"c\"}"
-  input String inString1;
-  input String inString2;
-  output list<String> outStringLst;
+  input String string;
+  input String token;
+  output list<String> strings = {};
+protected
+  Integer ch = stringCharInt(token);
+  list<String> cur = {};
 algorithm
-  outStringLst := matchcontinue (inString1,inString2)
-    local
-      list<String> chrList;
-      list<String> stringList;
-      String str,strList;
-      String chr;
-    case (str,chr)
-      equation
-        chrList = stringListStringChar(str);
-        stringList = stringSplitAtChar2(chrList, chr, {}) "listString(resList) => res" ;
-      then
-        stringList;
-    case (strList,_) then {strList};
-  end matchcontinue;
-end stringSplitAtChar;
-
-protected function stringSplitAtChar2
-  input list<String> inStringLst1;
-  input String inString2;
-  input list<String> inStringLst3;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := matchcontinue (inStringLst1,inString2,inStringLst3)
-    local
-      list<String> chr_rest_1,chr_rest,chrList,rest,res;
-      String firstChar,chr,str;
-
-    case ({},_,chr_rest)
-      equation
-        chr_rest_1 = listReverse(chr_rest);
-        str = stringCharListString(chr_rest_1);
-      then
-        {str};
-
-    case ((firstChar :: rest),chr,chr_rest)
-      equation
-        true = stringEq(firstChar, chr);
-        chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
-        str = stringCharListString(chrList);
-        res = stringSplitAtChar2(rest, chr, {});
-      then
-        (str :: res);
-    case ((firstChar :: rest),chr,chr_rest)
-      equation
-        false = stringEq(firstChar, chr);
-        res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
-      then
-        res;
+  for c in stringListStringChar(string) loop
+    if stringCharInt(c) == ch then
+      strings := stringAppendList(listReverse(cur)) :: strings;
+      cur := {};
     else
-      equation
-        print("- Util.stringSplitAtChar2 failed\n");
-      then
-        fail();
-  end matchcontinue;
-end stringSplitAtChar2;
+      cur := c :: cur;
+    end if;
+  end for;
+  if not listEmpty(cur) then
+    strings := stringAppendList(listReverse(cur)) :: strings;
+  end if;
+  strings := listReverse(strings);
+end stringSplitAtChar;
 
 public function modelicaStringToCStr " this replaces symbols that are illegal in C to legal symbols
  see replaceStringPatterns to see the format. (example: \".\" becomes \"$P\")

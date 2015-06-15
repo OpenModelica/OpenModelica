@@ -508,6 +508,18 @@ algorithm
   outList := listAppend(listAppend(lst1,{inElement}),lst2);
 end set;
 
+public function first<T>
+  "Returns the first element of a list. Fails if the list is empty."
+  input list<T> inList;
+  output T out;
+algorithm
+  out := match(inList)
+    local
+      T e;
+    case e :: _ then e;
+  end match;
+end first;
+
 public function firstOrEmpty<T>
   "Returns the first element of a list as a list, or an empty list if the given
    list is empty."

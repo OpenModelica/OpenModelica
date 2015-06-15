@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 #include <SimCoreFactory/ObjectFactory.h>
@@ -30,17 +30,17 @@ public:
    virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
    {
        string nonlin_solver_key;
-      
+
         if(nonlin_solver.compare("newton")==0)
         {
-            
+
              PATH newton_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH newton_name(NEWTON_LIB);
             newton_path/=newton_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(newton_path.string(),*_non_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
-            
+
                 throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Newton solver library!");
             }
             nonlin_solver_key.assign("extension_export_newton");
@@ -53,7 +53,7 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(kinsol_path.string(),*_non_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
-            
+
                 throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Kinsol solver library!");
             }
             nonlin_solver_key.assign("extension_export_kinsol");
@@ -66,7 +66,7 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(hybrj_path.string(),*_non_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
-            
+
                 throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Hybrj solver library!");
             }
             nonlin_solver_key.assign("extension_export_hybrj");
@@ -78,7 +78,7 @@ public:
         std::map<std::string, factory<INonLinSolverSettings> >::iterator iter;
         std::map<std::string, factory<INonLinSolverSettings> >& nonLinSolversettingsfactory(_non_linsolver_type_map->get());
         iter = nonLinSolversettingsfactory.find(nonlinsolversettings);
-        if (iter ==nonLinSolversettingsfactory.end()) 
+        if (iter ==nonLinSolversettingsfactory.end())
         {
             throw ModelicaSimulationError(MODEL_FACTORY,"No such nonlinear solver Settings");
         }
@@ -94,7 +94,7 @@ public:
             std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >::iterator iter;
             std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >& nonlinSolverFactory(_non_linsolver_type_map->get());
             iter = nonlinSolverFactory.find(solver_name);
-            if (iter ==nonlinSolverFactory.end()) 
+            if (iter ==nonlinSolverFactory.end())
             {
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such non linear Solver");
             }

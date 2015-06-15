@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSystem
- *  
+ *
  *  @{
  */
 /*includes removed for static linking not needed any more

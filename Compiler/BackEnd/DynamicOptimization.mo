@@ -91,8 +91,9 @@ algorithm
 
    if not inOptimicaFlag then
     Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-    Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
    end if;
+
+    Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
 
     (mayer,lagrange,startTimeE,finalTimeE) := match(inClassAttr)
                         local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
@@ -588,7 +589,6 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.JacobianType jacType;
       Boolean linear;
-
 
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx, jacType=jacType)))
     guard l2p_all or (if l2p_l then isConstOrlinear(jacType) else not isConstOrlinear(jacType))

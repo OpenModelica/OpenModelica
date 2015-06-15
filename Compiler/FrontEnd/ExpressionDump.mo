@@ -1791,7 +1791,7 @@ algorithm
       Integer resolution;
       DAE.Exp intervalCounter, interval, condition;
       String solverMethod;
-      DAE.ClockKind c;
+      DAE.Exp c;
 
     case DAE.INFERRED_CLOCK()
     then "Clock()";
@@ -1806,7 +1806,7 @@ algorithm
     then "Clock(" + dumpExpStr(condition,0) + ", " + realString(startInterval) + ")";
 
     case DAE.SOLVER_CLOCK(c=c, solverMethod=solverMethod)
-    then "Clock(" + clockKindString(c) + ", " + solverMethod + ")";
+    then "Clock(" + dumpExpStr(c,0) + ", \"" + solverMethod + "\")";
   end match;
 end clockKindString;
 

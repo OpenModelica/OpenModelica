@@ -51,6 +51,8 @@ import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenFMU.*;
+import CodegenFMUCommon;
+import CodegenFMU2;
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType)
  "Generates C++ code and Makefile for compiling an FMU of a Modelica model.
@@ -151,7 +153,7 @@ case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <%
-    if isFMIVersion20(FMUVersion) then fmi2ModelDescription(simCode, guid)
+    if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid)
     else fmiModelDescriptionCpp(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace,guid)
   %>
   >>
@@ -168,8 +170,8 @@ case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmiModelDescriptionAttributesCpp(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace,guid)%>>
-    <%CodegenFMU.DefaultExperiment(simulationSettingsOpt)%>
-    <%CodegenFMU.ModelVariables(modelInfo,"1.0")%>
+    <%CodegenFMUCommon.DefaultExperiment(simulationSettingsOpt)%>
+    <%CodegenFMUCommon.fmiModelVariables(modelInfo,"1.0")%>
   </fmiModelDescription>
   >>
 end fmiModelDescriptionCpp;
@@ -186,7 +188,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let author = ''
   let version= ''
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-  let generationDateAndTime = xsdateTime(getCurrentDateTime())
+  let generationDateAndTime = CodegenFMUCommon.xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfContinuousStates = vi.numStateVars
   let numberOfEventIndicators = zerocrosslength(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)

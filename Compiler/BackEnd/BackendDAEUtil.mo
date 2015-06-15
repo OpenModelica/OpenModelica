@@ -1964,11 +1964,16 @@ algorithm
       BackendDAEType btp;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
+      array<DAE.ClockKind> clocks;
 
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
+    case (_,BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs,
+                               BackendDAE.EVENT_INFO(timeEvents, wclst, zc, smplLst, rellst, numberOfMathEventFunctions, clocks),
+                               eoc, btp, symjacs, ei ))
       equation
         wclst1 = listAppend(wclst,inWcLst);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst1,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
+      then BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs,
+                              BackendDAE.EVENT_INFO(timeEvents, wclst1, zc, smplLst, rellst, numberOfMathEventFunctions, clocks),
+                              eoc, btp, symjacs, ei );
 
   end match;
 end whenClauseAddDAE;
@@ -2610,7 +2615,24 @@ public function incidenceRow
   input list<Integer> iRow;
   output list<Integer> outIntegerLst;
   output Integer rowSize;
+protected
+  list<Integer> whenIntegerLst;
 algorithm
+  whenIntegerLst := matchcontinue inIndexType
+    local
+      BackendDAE.EquationKind kind;
+      DAE.ComponentRef cr;
+      Integer i;
+      list<Integer> varIxs;
+    case BackendDAE.BASECLOCK_IDX()
+      equation
+        BackendDAE.EQUATION_ATTRIBUTES(kind = kind) = BackendEquation.getEquationAttributes(inEquation);
+        BackendDAE.CLOCKED_EQUATION(i) = kind;
+        cr = DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(i), DAE.T_CLOCK_DEFAULT, {});
+        (_, varIxs) = BackendVariable.getVar(cr, vars);
+      then varIxs;
+    else {};
+  end matchcontinue;
   (outIntegerLst,rowSize) := matchcontinue (inEquation)
     local
       list<Integer> lst1,lst2,res,dimsize;
@@ -2627,16 +2649,16 @@ algorithm
     // EQUATION
     case BackendDAE.EQUATION(exp = e1,scalar = e2)
       equation
-        lst1 = incidenceRowExp(e1,vars,iRow,functionTree,inIndexType);
-        res = incidenceRowExp(e2,vars,lst1,functionTree,inIndexType);
+        lst1 = incidenceRowExp(e1, vars, iRow, functionTree, inIndexType);
+        res = incidenceRowExp(e2, vars, lst1, functionTree, inIndexType);
       then
         (res,1);
 
     // COMPLEX_EQUATION
     case BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2)
       equation
-        lst1 = incidenceRowExp(e1,vars,iRow,functionTree,inIndexType);
-        res = incidenceRowExp(e2,vars,lst1,functionTree,inIndexType);
+        lst1 = incidenceRowExp(e1, vars, iRow, functionTree, inIndexType);
+        res = incidenceRowExp(e2, vars, lst1, functionTree, inIndexType);
       then
         (res,size);
 
@@ -2644,8 +2666,8 @@ algorithm
     case BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2)
       equation
         size = List.reduce(dimsize, intMul);
-        lst1 = incidenceRowExp(e1,vars,iRow,functionTree,inIndexType);
-        res = incidenceRowExp(e2,vars,lst1,functionTree,inIndexType);
+        lst1 = incidenceRowExp(e1, vars, iRow, functionTree, inIndexType);
+        res = incidenceRowExp(e2, vars, lst1, functionTree, inIndexType);
       then
         (res,size);
 
@@ -2653,15 +2675,15 @@ algorithm
     case BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)
       equation
         expCref = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(expCref,vars,iRow,functionTree,inIndexType);
-        res = incidenceRowExp(e,vars,lst1,functionTree,inIndexType);
+        lst1 = incidenceRowExp(expCref, vars, iRow, functionTree, inIndexType);
+        res = incidenceRowExp(e, vars, lst1, functionTree, inIndexType);
       then
         (res,1);
 
     // RESIDUAL_EQUATION
     case BackendDAE.RESIDUAL_EQUATION(exp = e)
       equation
-        res = incidenceRowExp(e,vars,iRow,functionTree,inIndexType);
+        res = incidenceRowExp(e, vars, iRow, functionTree, inIndexType);
       then
         (res,1);
 
@@ -2669,18 +2691,18 @@ algorithm
     case BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()))
       equation
         e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond,vars,iRow,functionTree,inIndexType);
-        lst2 = incidenceRowExp(e1,vars,lst1,functionTree,inIndexType);
-        res = incidenceRowExp(e2,vars,lst2,functionTree,inIndexType);
+        lst1 = incidenceRowExp(cond, vars, iRow, functionTree, inIndexType);
+        lst2 = incidenceRowExp(e1, vars, lst1, functionTree, inIndexType);
+        res = incidenceRowExp(e2, vars, lst2, functionTree, inIndexType);
       then
         (res,size);
     case BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe)))
       equation
         e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond,vars,iRow,functionTree,inIndexType);
-        lst2 = incidenceRowExp(e1,vars,lst1,functionTree,inIndexType);
-        res = incidenceRowExp(e2,vars,lst2,functionTree,inIndexType);
-        res = incidenceRowWhen(vars,elsewe,inIndexType,functionTree,res);
+        lst1 = incidenceRowExp(cond, vars, iRow, functionTree, inIndexType);
+        lst2 = incidenceRowExp(e1, vars, lst1, functionTree, inIndexType);
+        res = incidenceRowExp(e2, vars, lst2, functionTree, inIndexType);
+        res = incidenceRowWhen(vars, elsewe, inIndexType, functionTree, res);
       then
         (res,size);
 
@@ -2699,9 +2721,9 @@ algorithm
     // if Equation
     case BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns)
       equation
-        res = incidenceRow1(expl, incidenceRowExp,vars,iRow,functionTree,inIndexType);
-        res = incidenceRowLstLst(eqnslst,vars,inIndexType,functionTree,res);
-        (res,size) = incidenceRowLst(eqns,vars,inIndexType,functionTree,res);
+        res = incidenceRow1(expl, incidenceRowExp, vars, iRow, functionTree, inIndexType);
+        res = incidenceRowLstLst(eqnslst, vars, inIndexType, functionTree, res);
+        (res,size) = incidenceRowLst(eqns, vars, inIndexType, functionTree, res);
       then
         (res,size);
 
@@ -2713,6 +2735,7 @@ algorithm
       then
         fail();
   end matchcontinue;
+  outIntegerLst := listAppend(whenIntegerLst, outIntegerLst);
 end incidenceRow;
 
 protected function incidenceRowLst
@@ -2863,11 +2886,11 @@ algorithm
       (_, (_, vallst, _)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables, inIntegerLst, functionTree));
     then vallst;
 
-    case (_, _, _, _, BackendDAE.BASECLOCK()) equation
+    case (_, _, _, _, BackendDAE.BASECLOCK_IDX()) equation
       (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingIncidenceRowExpFinderBaseClock, (inVariables, inIntegerLst));
     then vallst;
 
-    case (_, _, _, _, BackendDAE.SUBCLOCK()) equation
+    case (_, _, _, _, BackendDAE.SUBCLOCK_IDX()) equation
       (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingIncidenceRowExpFinderSubClock, (inVariables, inIntegerLst));
     then vallst;
 
@@ -2991,53 +3014,26 @@ public function traversingIncidenceRowExpFinderBaseClock "author: lochel
 algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
     local
-      list<Integer> p, pa, res;
+      list<Integer> p, pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e, e1, e2;
-      list<BackendDAE.Var> varslst;
-      Boolean b;
+      DAE.Exp e;
 
-    case (e as DAE.CREF(componentRef=cr), (vars, pa))
+    case (DAE.CREF(componentRef=cr), (vars, pa))
       equation
-        (varslst, p) = BackendVariable.getVar(cr, vars);
-        res = incidenceRowExp1(varslst, p, pa, 0);
-      then (e, true, (vars, res));
+        (_, p) = BackendVariable.getVar(cr, vars);
+      then (inExp, true, (vars, List.union(p, pa)));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)) equation
-      (varslst, p) = BackendVariable.getVar(cr, vars);
-      res = incidenceRowExp1(varslst, p, pa, 1);
-      /* check also indizes of cr */
-      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
-    then (e, false, (vars, res));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)) equation
-      cr = ComponentReference.crefPrefixDer(cr);
-      (varslst, p) = BackendVariable.getVar(cr, vars);
-      res = incidenceRowExp1(varslst, p, pa, 1);
-      /* check also indizes of cr */
-      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
-    then (e, false, (vars, res));
-
-    // lochel: internally generated call start(v) depends not on v
-    case (DAE.CALL(path=Absyn.IDENT(name="$_start")), _)
-    then (inExp, false, inTpl);
-
-    /* pre(v) is considered a known variable */
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF()}), _)
-    then (inExp, false, inTpl);
-
-    /* delay(e) can be used to break algebraic loops given some solver options */
-    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (_, _))
+    case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, e}), (vars, pa))
       equation
-        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
-      then (inExp, not b, inTpl);
+        (_, (_, p)) = Expression.traverseExpTopDown(e, traversingIncidenceRowExpFinderBaseClock, (vars, pa));
+      then (inExp, false, (vars, p));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="sample"), expLst={_, _, _}), _)
-    then (inExp, false, inTpl);
+    case (DAE.CLKCONST(DAE.BOOLEAN_CLOCK()), _)
+      then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="hold")), _)
-    then (inExp, false, inTpl);
+      then (inExp, false, inTpl);
 
     else (inExp, true, inTpl);
   end matchcontinue;
@@ -3057,59 +3053,27 @@ algorithm
       list<Integer> p, pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e, e1, e2;
-      list<BackendDAE.Var> varslst;
-      Boolean b;
 
-    case (e as DAE.CREF(componentRef=cr), (vars, pa))
+    case (DAE.CREF(componentRef=cr), (vars, pa))
       equation
-        (varslst, p) = BackendVariable.getVar(cr, vars);
-        res = incidenceRowExp1(varslst, p, pa, 0);
-      then (e, true, (vars, res));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)) equation
-      (varslst, p) = BackendVariable.getVar(cr, vars);
-      res = incidenceRowExp1(varslst, p, pa, 1);
-      /* check also indizes of cr */
-      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
-    then (e, false, (vars, res));
-
-    case (e as DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa)) equation
-      cr = ComponentReference.crefPrefixDer(cr);
-      (varslst, p) = BackendVariable.getVar(cr, vars);
-      res = incidenceRowExp1(varslst, p, pa, 1);
-      /* check also indizes of cr */
-      (_, (_, res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars, res));
-    then (e, false, (vars, res));
-
-    // lochel: internally generated call start(v) depends not on v
-    case (e as DAE.CALL(path=Absyn.IDENT(name="$_start")), (vars, pa))
-    then (e, false, (vars, pa));
-
-    /* pre(v) is considered a known variable */
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF()}), _)
-    then (inExp, false, inTpl);
-
-    /* delay(e) can be used to break algebraic loops given some solver options */
-    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), _)
-      equation
-        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
-      then (inExp, not b, inTpl);
+        (_, p) = BackendVariable.getVar(cr, vars);
+        res = List.union(p, pa);
+      then (inExp, true, (vars, res));
 
     case (DAE.CALL(path=Absyn.IDENT(name="subSample")), _)
-    then (inExp, false, inTpl);
+      then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="superSample")), _)
-    then (inExp, false, inTpl);
+      then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="shiftSample")), _)
-    then (inExp, false, inTpl);
+      then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="backSample")), _)
-    then (inExp, false, inTpl);
+      then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="noClock")), _)
-    then (inExp, false, inTpl);
+      then (inExp, false, inTpl);
 
     else (inExp, true, inTpl);
   end matchcontinue;
@@ -6017,7 +5981,8 @@ algorithm
       list<BackendDAE.EqSystem> systs;
       String name;
 
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))),_,_)
+    case (BackendDAE.DAE( eqs=systs, shared=BackendDAE.SHARED(knownVars=vars2, initialEqs=ieqns, removedEqs=reqns,
+                          eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) )), _, _)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVars(vars2,func,ext_arg_1);
@@ -6572,6 +6537,9 @@ algorithm
      (f,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
      (eqbound,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
     then (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,i,f,eqbound,p,fin,startOrigin)),outExtraArg);
+  case(SOME(DAE.VAR_ATTR_CLOCK(p, fin)),_,_)
+    then (SOME(DAE.VAR_ATTR_CLOCK(p,fin)),extraArg);
+
  end match;
 end traverseBackendDAEVarAttr;
 
@@ -8262,6 +8230,17 @@ algorithm
   end match;
 end expInt;
 
+public function createEqSystem
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqs;
+  input BackendDAE.StateSets inStateSets = {};
+  input BackendDAE.BaseClockPartitionKind inPartitionKind = BackendDAE.UNKNOWN_PARTITION();
+  output BackendDAE.EqSystem outSyst;
+algorithm
+  outSyst := BackendDAE.EQSYSTEM( inVars, inEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),
+                                  inStateSets, inPartitionKind );
+end createEqSystem;
+
 public function makeSingleEquationComp
   input Integer eqIdx;
   input Integer varIdx;
@@ -8309,6 +8288,42 @@ algorithm
   shared := replaceKnownVarsInShared(shared, inKnownVars);
   outDAE := BackendDAE.DAE(eqs, shared);
 end setKnownVars;
+
+public function setEventInfo
+  input BackendDAE.Shared inShared;
+  input BackendDAE.EventInfo eventInfo;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knownVars;
+  BackendDAE.Variables externalObjects;
+  BackendDAE.Variables aliasVars;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
+algorithm
+  BackendDAE.SHARED( knownVars = knownVars, externalObjects = externalObjects, aliasVars = aliasVars,
+                     initialEqs = initialEqs, removedEqs = removedEqs, constraints = constraints, classAttrs = classAttrs,
+                     cache = cache, graph = graph, functionTree = functionTree, extObjClasses = extObjClasses,
+                     backendDAEType = backendDAEType, symjacs = symjacs, info = info ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars = knownVars, externalObjects = externalObjects, aliasVars = aliasVars,
+                     initialEqs = initialEqs, removedEqs = removedEqs, constraints = constraints, classAttrs = classAttrs,
+                     cache = cache, graph = graph, functionTree = functionTree, extObjClasses = extObjClasses, info = info,
+                     eventInfo = eventInfo, backendDAEType = backendDAEType, symjacs = symjacs );
+end setEventInfo;
+
+public function emptyEventInfo
+  output BackendDAE.EventInfo info;
+algorithm
+  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, arrayCreate(0, DAE.INFERRED_CLOCK()));
+end emptyEventInfo;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

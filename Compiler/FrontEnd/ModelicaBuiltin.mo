@@ -2043,8 +2043,30 @@ function strtok "Splits the strings at the places given by the token, for exampl
   input String token;
   output String[:] strings;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentatrion(info="<html>
+<p>Splits the strings at the places given by the token, for example:
+<ul>
+<li>strtok(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}</li>
+<li>strtok(\"abcbdef\",\"cd\") => {\"ab\",\"ef\"}</li>
+</ul>
+</p>
+<p>Note: strtok does not return empty tokens. To split a read file into every line, use <a href=\"modelica://OpenModelica.Scripting.stringSplit\">stringSplit</a> instead (splits only on character).</p>
+</html>"),preferredView="text");
 end strtok;
+
+function stringSplit "Splits the string at the places given by the character"
+  input String string;
+  input String token "single character only";
+  output String[:] strings;
+external "builtin";
+annotation(Documentatrion(info="<html>
+<p>Splits the string at the places given by the character, for example:
+<ul>
+<li>stringSplit(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}</li>
+</ul>
+</p>
+</html>"),preferredView="text");
+end stringSplit;
 
 public function stringReplace
   input String str;
@@ -2541,22 +2563,6 @@ function plotAll "Works in the same way as plot(), but does not accept any
 external "builtin";
 annotation(preferredView="text");
 end plotAll;
-
-function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
-  visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
-  System Documentation for more details.
-  Writes the visulizations objects into the file \"model_name.visualize\"
-
-  Example command sequence:
-  simulate(A,outputFormat=\"mat\");visualize(A);visualize(A,fileName=\"B.mat\");visualize(A,fileName=\"B.mat\", true);
-  "
-  input TypeName className;
-  input Boolean externalWindow = false "Opens the visualize in a new window";
-  input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  output Boolean success "Returns true on success";
-  external "builtin";
-annotation(preferredView="text");
-end visualize;
 
 function plotParametric "Launches a plotParametric window using OMPlot. Returns true on success.
 

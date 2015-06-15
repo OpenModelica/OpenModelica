@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 /*includes removed for static linking not needed any more
@@ -13,7 +13,7 @@
 template<class T>
 struct ObjectFactory;
 
-template <class CreationPolicy> 
+template <class CreationPolicy>
 class StaticNonLinSolverOMCFactory : public NonLinSolverOMCFactory<CreationPolicy>
 {
 
@@ -23,7 +23,7 @@ public:
         NonLinSolverOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
     }
-  
+
     virtual ~StaticNonLinSolverOMCFactory()
     {
     }
@@ -31,7 +31,7 @@ public:
    virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
    {
     string nonlin_solver_key;
-      
+
     if(nonlin_solver.compare("newton")==0)
     {
       boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new NewtonSettings());

@@ -1,5 +1,5 @@
 /** @addtogroup solverNewton
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>

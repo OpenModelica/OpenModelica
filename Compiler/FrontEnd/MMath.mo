@@ -84,6 +84,19 @@ algorithm
   end match;
 end rationalString;
 
+public function equals
+  input Rational r1;
+  input Rational r2;
+  output Boolean res;
+algorithm
+  res := match (r1, r2)
+    local
+      Integer i1, i2, i3, i4;
+    case (RATIONAL(i1,i2), RATIONAL(i3,i4))
+      then i1*i4 - i3*i2 == 0;
+  end match;
+end equals;
+
 public function subRational "subtracts two rationals"
   input Rational r1;
   input Rational r2;
@@ -146,6 +159,15 @@ algorithm
   end matchcontinue;
 end intGcd;
 
+public function printNumber
+  input Rational inp;
+  output String out;
+protected
+  Integer i1, i2;
+algorithm
+  RATIONAL(i1, i2) := inp;
+  out := intString(i1) + "/" + intString(i2);
+end printNumber;
 
 /* Tests */
 

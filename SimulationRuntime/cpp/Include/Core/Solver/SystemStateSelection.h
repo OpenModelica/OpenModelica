@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSolver
- *  
+ *
  *  @{
  */
 #if defined(__TRICORE__) || defined(__vxworks)

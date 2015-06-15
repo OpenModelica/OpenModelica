@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 /*
@@ -38,7 +38,7 @@ public:
         else if(solvername.compare("RTRK")==0)
         {
             solver_settings_key.assign("createRTRKSettings");
-        }  
+        }
         else if(solvername.compare("Idas")==0)
         {
             solver_settings_key.assign("extension_export_idas");
@@ -53,11 +53,11 @@ public:
         }
         else
             throw std::invalid_argument("Selected Solver is not available");
-    
+
 
         boost::shared_ptr<ISolverSettings> solver_settings  = ObjectFactory<CreationPolicy>::_factory->LoadSolverSettings(solver_settings_key, globalSettings) ;
 
-     
+
         return solver_settings;
     }
 };

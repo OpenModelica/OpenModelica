@@ -1,5 +1,5 @@
 /** @addtogroup simcorefactoryBodas
- *  
+ *
  *  @{
  */
 #include <Core/SimController/ISimController.h>
