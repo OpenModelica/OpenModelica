@@ -8,6 +8,7 @@ OMNotebook/OMNotebookGUI/Makefile.Release
 OMNotebook/OMNotebookGUI/Makefile.unix
 OMNotebook/OMNotebookGUI/object_script.*
 OMNotebook/OMNotebookGUI/OMNotebookGUI.pro.*
+OMNotebook/OMNotebookGUI/OMNotebook.config
 OMNotebook/OMNotebookGUI/*.qm
 /Makefile
 OMNotebook/OMNotebookGUI/omc_config.h
