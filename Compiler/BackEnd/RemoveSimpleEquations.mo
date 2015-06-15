@@ -66,6 +66,7 @@ protected import DAEUtil;
 protected import SimCodeUtil;
 protected import Debug;
 protected import Error;
+protected import EvaluateFunctions;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -1749,7 +1750,10 @@ algorithm
     case (_, _, _, _, _, (vars, shared as BackendDAE.SHARED(functionTree=functions), eqns, seqns, index, mT, _))
       equation
         false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
-        exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
+        //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
+        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp,functions);
+        if not Expression.isConst(exp2) then
+          exp2 = exp; end if;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
         end if;

@@ -1123,6 +1123,12 @@ algorithm
     case ((e as DAE.CALL(path = path,expLst = expl,attr = attr)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
+        cr = ComponentReference.toExpCref(Absyn.pathToCref(path));
+        if hasReplacement(repl,cr) then
+          e1_1 = getReplacement(repl,cr);
+          DAE.PARTEVALFUNCTION(path=path,expList = expl_1) = e1_1;
+          expl = listAppend(expl_1,expl);
+        end if;
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.CALL(path,expl_1,attr),true);
@@ -1205,6 +1211,18 @@ algorithm
         (e1_1,_) = replaceExp(e1, repl, cond);
         (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
       then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);
+    case ((e as DAE.BOX(exp = e1)),repl,cond)
+      equation
+         true = replaceExpCond(cond, e);
+        (e1_1,true) = replaceExp(e1, repl, cond);
+      then
+        (DAE.BOX(e1_1),true);
+    case ((e as DAE.UNBOX(ty=tp, exp = e1)),repl,cond)
+      equation
+         true = replaceExpCond(cond, e);
+        (e1_1,true) = replaceExp(e1, repl, cond);
+      then
+        (DAE.UNBOX(e1_1,tp),true);
     case (e,_,_)
       then (e,false);
   end matchcontinue;

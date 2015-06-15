@@ -1717,6 +1717,11 @@ algorithm
       expLst = arrayElements(e);
       then
         expLst;
+    case(DAE.MATRIX(matrix=expLstLst))
+      equation
+        expLst = List.flatten(expLstLst);
+      then
+        expLst;
     case(DAE.TUPLE(PR=expLst))
       then
         expLst;
@@ -7292,6 +7297,8 @@ algorithm
       /*TODO:Make this work for multiple iters, guard exps*/
     case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}),_)
       then isConstWork(e1,isConstWork(e2,true));
+
+    case(DAE.BOX(exp=e),_) then isConstWork(e,true);
 
     else false;
   end match;
