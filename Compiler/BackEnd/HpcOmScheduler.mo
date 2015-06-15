@@ -1982,7 +1982,7 @@ algorithm
   //levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
   levelTasks := List.threadMap(SCCs,List.mapList(level,List.create),makeCalcLevelParTaskLst);
-  oSchedule := setScheduleLockIds(HpcOmSimCode.LEVELSCHEDULE(levelTasks, false));
+  oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks, false);
 
   //update nodeMark for graphml representation
   nodeMark := arrayCreate(arrayLength(inComps),-1);
