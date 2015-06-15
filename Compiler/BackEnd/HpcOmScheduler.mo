@@ -130,7 +130,7 @@ algorithm
   (tmpSchedule,_) := createListSchedule1(nodeList,threadReadyTimes, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
   tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
   //printSchedule(tmpSchedule);
-  oSchedule := tmpSchedule;
+  oSchedule := setScheduleLockIds(tmpSchedule);
 end createListSchedule;
 
 protected function createListSchedule1 "function createListSchedule1
@@ -300,7 +300,7 @@ algorithm
   tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph, addReleaseLocksToSchedule, commCosts, inComps, iSimVarMapping,
                                              tmpSchedule);
   //printSchedule(tmpSchedule);
-  oSchedule := tmpSchedule;
+  oSchedule := setScheduleLockIds(tmpSchedule);
 end createRandomSchedule;
 
 
@@ -493,7 +493,7 @@ algorithm
   threadTasks := Array.map(threadTasks, listReverse);
   tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
   //printSchedule(tmpSchedule);
-  oSchedule := tmpSchedule;
+  oSchedule := setScheduleLockIds(tmpSchedule); // set unique lock ids
 end createListScheduleReverse;
 
 protected function addSuccessorLocksToSchedule
@@ -839,7 +839,7 @@ protected function createDepTask "author: marcusw
   input HpcOmSimCode.CommunicationInfo commInfo;
   output HpcOmSimCode.Task oAssignTask;
 algorithm
-  oAssignTask := HpcOmSimCode.DEPTASK(iSourceTask,iTargetTask,iOutgoing,commInfo);
+  oAssignTask := HpcOmSimCode.DEPTASK(iSourceTask,iTargetTask,iOutgoing,0,commInfo);
 end createDepTask;
 
 protected function createDepTaskAndCommunicationInfo "author: marcusw
@@ -1982,7 +1982,7 @@ algorithm
   //levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
   levelTasks := List.threadMap(SCCs,List.mapList(level,List.create),makeCalcLevelParTaskLst);
-  oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks, false);
+  oSchedule := setScheduleLockIds(HpcOmSimCode.LEVELSCHEDULE(levelTasks, false));
 
   //update nodeMark for graphml representation
   nodeMark := arrayCreate(arrayLength(inComps),-1);
@@ -2531,7 +2531,7 @@ algorithm
         //tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
         //tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
         //tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
-      then tmpSchedule;
+      then setScheduleLockIds(tmpSchedule); // set unique lock ids
     else
       equation
         print("HpcOmScheduler.createMetisSchedule not every node has a scheduler-info.\n");
@@ -2684,7 +2684,7 @@ algorithm
         tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
         tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
         //printSchedule(tmpSchedule);
-      then tmpSchedule;
+      then setScheduleLockIds(tmpSchedule); // set unique lock ids
     else
       equation
         print("HpcOmScheduler.createHMetisSchedule not every node has a scheduler-info.\n");
@@ -4807,7 +4807,7 @@ algorithm
   schedule := traverseAndUpdateThreadsInSchedule(schedule,removeLocksFromThread,removeLocks);
   schedule := updateLockIdcsInThreadschedule(schedule,removeLocksFromLockList,removeLocks);
   //printSchedule(schedule);
-  oSchedule := schedule;
+  oSchedule := setScheduleLockIds(schedule); // set unique lock ids
 end createMCPschedule;
 
 protected function MCP_getTaskAssignment "gets the assignment which nodes is computed of which processor for the MCP algorithm.
@@ -6496,6 +6496,130 @@ algorithm
     else iResultList;
   end matchcontinue;
 end revertTaskList;
+
+//----------------
+//  LockIdSetter
+//----------------
+
+protected function setScheduleLockIds "Function creates unique Ids for every  tuple of out and ingoing locks
+	author: mhartung"
+  input HpcOmSimCode.Schedule iSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  array<list<HpcOmSimCode.Task>> allThreadTasks;
+  array<list<HpcOmSimCode.Task>> tmpFoldArray;
+  array<list<HpcOmSimCode.Task>> newAllThreadTasks;
+  list<HpcOmSimCode.Task> scheduledTasks;
+  array<list<tuple<Integer,Integer>>> lockIds; // going to contain all outgoing locks by node to the target node with id: BSP: locks[source_node](target_node,lockId)
+  list<HpcOmSimCode.Task> outgoingDepTasks;
+  list<HpcOmSimCode.Task> newOutgoingDepTasks = {};
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+  tuple<Integer,Integer> newTuple;
+  HpcOmSimCode.Task sourceTask;
+  HpcOmSimCode.Task targetTask;
+  HpcOmSimCode.Task iterTask;
+  Integer counter;
+  Integer id, sourceTaskId, targetTaskId;
+  Boolean outgoing;
+  HpcOmSimCode.CommunicationInfo communicationInfo;
+algorithm
+ ((HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,scheduledTasks,allCalcTasks))) := iSchedule;
+  lockIds := arrayCreate(arrayLength(allCalcTasks),{});
+  newAllThreadTasks := arrayCreate(arrayLength(allThreadTasks),{});
+  counter := 0;
+  //getting LockIds:
+  for iterTask in outgoingDepTasks loop
+    ((HpcOmSimCode.DEPTASK(sourceTask = sourceTask,targetTask = targetTask,outgoing = outgoing,id = id, communicationInfo = communicationInfo))) := iterTask;
+    HpcOmSimCode.CALCTASK(index = sourceTaskId) := sourceTask;
+    HpcOmSimCode.CALCTASK(index = targetTaskId) := targetTask;
+    newTuple := (targetTaskId,counter);
+    arrayUpdate(lockIds,sourceTaskId,listAppend(arrayGet(lockIds,sourceTaskId),{newTuple}));
+    newOutgoingDepTasks := HpcOmSimCode.DEPTASK(sourceTask,targetTask,outgoing,counter,communicationInfo)::newOutgoingDepTasks;
+    counter := counter +1;
+  end for;
+  //Setting old locks on new labeled Locks
+  tmpFoldArray := arrayCreate(arrayLength(allThreadTasks),{});
+  (newAllThreadTasks,_) := Array.fold(allThreadTasks, function replaceDepTaskIdsByLockIds(lockIds = lockIds),(tmpFoldArray,1));
+  oSchedule := HpcOmSimCode.THREADSCHEDULE(newAllThreadTasks, newOutgoingDepTasks, scheduledTasks, allCalcTasks);
+end setScheduleLockIds;
+
+protected function replaceDepTaskIdsByLockIds
+  input list<HpcOmSimCode.Task> inTasks;
+  input array<list<tuple<Integer,Integer>>> lockIds;
+  input tuple<array<list<HpcOmSimCode.Task>>,Integer> iAllThreadTasks;
+  output tuple<array<list<HpcOmSimCode.Task>>,Integer> oTasks;
+protected
+  array<list<HpcOmSimCode.Task>> allThreadTasks;
+  list<HpcOmSimCode.Task> tmpList;
+  Integer threadId;
+algorithm
+  (allThreadTasks,threadId) := iAllThreadTasks;
+  tmpList := listReverse(List.fold(inTasks, function replaceDepTasksInListByLockIds(lockIds=lockIds),{}));
+  arrayUpdate(allThreadTasks,threadId,tmpList);
+  oTasks:=(allThreadTasks,threadId+1);
+end replaceDepTaskIdsByLockIds;
+
+protected function replaceDepTasksInListByLockIds
+  input HpcOmSimCode.Task inTask;
+  input array<list<tuple<Integer,Integer>>> lockIds;
+  input list<HpcOmSimCode.Task> tmpTaskList;
+  output list<HpcOmSimCode.Task> oList;
+protected
+  HpcOmSimCode.Task tmpTask;
+algorithm
+  tmpTask := findTaskWithLockId(lockIds,inTask);
+  oList := tmpTask::tmpTaskList;
+end replaceDepTasksInListByLockIds;
+
+
+protected function findTaskWithLockId "Function returns	a DepTask with the id regarding lockIds or the identity of the given task"
+  input array<list<tuple<Integer,Integer>>> lockIds;
+  input HpcOmSimCode.Task iTask;
+  output HpcOmSimCode.Task oTask;
+
+protected
+  HpcOmSimCode.Task tmpTask;
+  HpcOmSimCode.Task sourceTask;
+  HpcOmSimCode.Task targetTask;
+  Boolean outgoing;
+  Integer lockId, sourceTaskId , targetTaskId;
+  HpcOmSimCode.CommunicationInfo communicationInfo;
+algorithm
+  oTask := match(iTask)
+    case(HpcOmSimCode.DEPTASK(sourceTask = sourceTask,targetTask = targetTask,outgoing = outgoing,communicationInfo = communicationInfo))
+      equation
+          // Finding Nemo
+          HpcOmSimCode.CALCTASK(index = sourceTaskId) = sourceTask;
+          HpcOmSimCode.CALCTASK(index = targetTaskId) = targetTask;
+          lockId = findInIntTuple1(arrayGet(lockIds,sourceTaskId),targetTaskId);
+          tmpTask = HpcOmSimCode.DEPTASK(sourceTask,targetTask,outgoing,lockId,communicationInfo);
+      then tmpTask;
+    else
+    then iTask;
+  end match;
+end findTaskWithLockId;
+
+protected function findInIntTuple1
+  input list<tuple<Integer,Integer>> liste;
+  input Integer toFind;
+  output Integer secondElement;
+
+protected
+  Integer first, second;
+  tuple<Integer,Integer> iter;
+
+algorithm
+  for iter in liste loop
+    (first,second) := iter;
+    if intEq(first,toFind) then
+
+      secondElement := second;
+      return;
+    end if;
+  end for;
+
+end findInIntTuple1;
+
 
 protected function convertFixedLevelScheduleToTaskListsForLevel
   "Convert a level task list into a task list for each thread.
