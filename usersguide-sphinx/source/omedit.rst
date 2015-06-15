@@ -477,7 +477,7 @@ After changing the parameter values user can click on the re-simulate
 toolbar button, or right click the model in Variables Browser and choose
 re-simulate from the menu.
 
-.. figure :: media/omedit-icons/re-simulate.svg
+.. figure :: media/omedit-icons/re-simulate.*
 
   Re-simulate toolbar button.
 

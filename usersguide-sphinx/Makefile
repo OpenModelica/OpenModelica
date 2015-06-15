@@ -194,7 +194,7 @@ pseudoxml: all-dep
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
 
-latex: all-dep source/logo.pdf source/media/systemoverview.pdf source/media/omedit-connect-mode.pdf
+latex: all-dep source/logo.pdf source/media/systemoverview.pdf
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo
 	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex."
@@ -214,8 +214,6 @@ source/logo.pdf: source/logo.svg
 	inkscape -f $< -A $@
 source/media/systemoverview.pdf: source/media/systemoverview.svg
 	inkscape -f $< --export-pdf $@
-source/media/omedit-connect-mode.pdf: source/media/omedit-connect-mode.svg
-	inkscape -f $< --export-pdf $@
 %.pdf: %.svg
 	inkscape -f $< --export-pdf $@
 	FNAME=`echo $@ | sed "s/[.]/-/g" | sed "s/-pdf/.pdf/g"`; if test "$$FNAME" != "$@"; then cp -a "$@" "$$FNAME"; fi
@@ -227,13 +225,14 @@ source/interface.inc: interface.mos
 
 OMEDIT_ICONS_BASE=connect-mode.svg parametric-plot-window.svg plot-window.svg re-simulate.svg
 OMEDIT_ICONS_SVG=$(OMEDIT_ICONS_BASE:%=source/media/omedit-icons/%)
+OMEDIT_ICONS_PDF=$(OMEDIT_ICONS_SVG:%.svg=%.pdf)
 OMEDIT_ICONS_PNG=$(OMEDIT_ICONS_SVG:%.svg=%.png)
-OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG)
+OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG) $(OMEDIT_ICONS_PDF)
 
 OMOPTIM_ICONS_BASE=Add.png
 OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
-all-dep: $(ALLDEP)
+all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf
 
 source/media/omedit-icons/%.svg: $(OPENMODELICAHOME)/../OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
@@ -241,6 +240,8 @@ source/media/omedit-icons/%.svg: $(OPENMODELICAHOME)/../OMEdit/OMEdit/OMEditGUI/
 
 source/media/omedit-icons/%.png: source/media/omedit-icons/%.svg
 	inkscape "$<" --export-png="$@"
+source/media/omedit-icons/%.pdf: source/media/omedit-icons/%.svg
+	inkscape "$<" --export-pdf="$@"
 
 source/media/omoptim-icons/%.png: $(OPENMODELICAHOME)/../OMOptim/OMOptim/GUI/Resources/icons/%.png
 	@mkdir -p source/media/omoptim-icons

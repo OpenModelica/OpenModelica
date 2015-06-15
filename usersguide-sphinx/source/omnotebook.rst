@@ -846,6 +846,6 @@ Proceedings of the 44th Scandinavian Conference on Simulation and
 Modeling (SIMS’2003), available at www.scan-sims.org. Västerås, Sweden.
 September 18-19, 2003.
 
-.. |image20| image:: media/image35.png
-
 .. |WYSIWYG| replace:: :abbr:`WYSIWYG (What-You-See-Is-What-You-Get)`
+
+.. omc-reset ::

@@ -140,10 +140,10 @@ running, see :numref:`mdt-build-run`.
 
   Missing figure
 
-.. figure :: media/mdt-build-run.png
-  :name: mdt-build-run
+  xx figure :: media/mdt-build-run.png
+    :name: mdt-build-run
 
-  Eclipse – building and running a project.
+    Eclipse – building and running a project.
 
 You may also open additional views, e.g as in :numref:`mdt-opening-views`.
 
@@ -151,10 +151,10 @@ You may also open additional views, e.g as in :numref:`mdt-opening-views`.
 
   Missing figure
 
-.. figure :: media/mdt-opening-views.png
-  :name: mdt-opening-views
+  xx figure :: media/mdt-opening-views.png
+    :name: mdt-opening-views
 
-  Eclipse – Opening views.
+    Eclipse – Opening views.
 
 Switching to Another Perspective
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

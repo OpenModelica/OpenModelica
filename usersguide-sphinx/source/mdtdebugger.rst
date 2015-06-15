@@ -176,3 +176,5 @@ standard Eclipse way of showing the change).
 .. figure :: media/mdt-debugger-switch-perspective.png
 
   Switching between perspectives.
+
+.. omc-reset ::

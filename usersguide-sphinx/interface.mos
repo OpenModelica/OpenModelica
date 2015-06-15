@@ -25,9 +25,11 @@ algorithm
   OpenModelica.Scripting.system(\"pandoc --no-wrap -t rst -f html -o interface.inc.tmp.rst interface.inc.tmp\");
   OpenModelica.Scripting.system(\"sed -i= 's,`\\\\([^`]*\\\\) <modelica://OpenModelica.Scripting.\\\\([A-Za-z0-9_-]*\\\\)>`__,:ref:`\\\\1 <\\\\2>`,g' interface.inc.tmp.rst\");
   out := out + \"\\n\" + sum(\"\" + l + \"\\n\" for l in OpenModelica.Scripting.stringSplit(OpenModelica.Scripting.readFile(\"interface.inc.tmp.rst\"), \"\\n\")) + \"  \\n\";
-  out := out + \"\\n.. code-block :: modelica\\n\\n\";
   s := OpenModelica.Scripting.list(cl, interfaceOnly=true);
-  out := out + sum(\"  \" + l + \"\\n\" for l in OpenModelica.Scripting.strtok(s, \"\\n\")) + \"  \\n\";
+  if stringLength(s) > 0 then
+    out := out + \"\\n.. code-block :: modelica\\n\\n\";
+    out := out + sum(\"  \" + l + \"\\n\" for l in OpenModelica.Scripting.strtok(s, \"\\n\")) + \"  \\n\";
+  end if;
 end reSTInterface;
 ";
 loadString(s);

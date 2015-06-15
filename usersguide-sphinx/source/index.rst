@@ -32,9 +32,10 @@ Contents:
   :maxdepth: 1
 
   releases
+  contributors
 
 .. only:: html or epub
-  
+
   ##################
   Indices and tables
   ##################

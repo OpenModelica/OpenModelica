@@ -24,7 +24,8 @@ The most important enhancements in the OpenModelica 1.9.2 release:
 
 -  OMEdit graphic connection editor improvements
 
-   1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release mainly includes improvements of the OpenModelica Compiler
 (OMC), including, but not restricted to the following:
@@ -69,19 +70,23 @@ This release mainly includes improvements of the OpenModelica Compiler
 
 No changes apart from bug fixing.
 
-1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes apart from bug fixing.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes apart from bug fixing.
 
-1. Graphic Editor OMEdit
+Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~
 
 -  The OpenModelica graphic connection editor OMEdit has become 3-5
        times faster due to faster communication with the OpenModelica
@@ -102,12 +107,14 @@ No changes apart from bug fixing.
        drawing, added snap to grid for icons and conversion of icons
        from PNG to SVG, and some additional fixes.
 
-   1. Optimization
+Optimization
+~~~~~~~~~~~~
 
 Some smaller improvements of the Dynamic Optimization module with
 collocation, using Ipopt.
 
-1. FMI Support
+FMI Support
+~~~~~~~~~~~
 
 Further improved for FMI 2.0 model exchange import and export, now
 compliant according to the FMI compliance tests. FMI 1.0 support has
@@ -135,7 +142,8 @@ New features: Dynamic debugger for equation-based models; Dynamic
 Optimization with collocation built into OpenModelica, performance
 analyzer integrated with the equation model debugger.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release mainly includes improvements of the OpenModelica Compiler
 (OMC), including, but not restricted to the following:
@@ -244,19 +252,23 @@ This release mainly includes improvements of the OpenModelica Compiler
 
 No changes apart from bug fixing.
 
-1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes apart from bug fixing.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes apart from bug fixing.
 
-1. Graphic Editor OMEdit
+Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~
 
 -  Convenient editing of model parameter values and re-simulation
    without recompilation after parameter changes.
@@ -271,12 +283,14 @@ No changes apart from bug fixing.
 -  Run-time Modelica algorithmic code debugger; also MetaModelica
    debugger with the bootstrapped OpenModelica compiler.
 
-   1. Optimization
+Optimization
+~~~~~~~~~~~~
 
 A builtin integrated Dynamic Optimization module with collocation, using
 Ipopt, is now available.
 
-1. FMI Support
+FMI Support
+~~~~~~~~~~~
 
 Support for FMI 2.0 model exchange import and export has been added. FMI
 1.0 support has been further improved.
@@ -296,7 +310,8 @@ The three most important enhancements in the OpenModelica 1.9.0 release:
 New features: integration of the PySimulator analysis package; Dynamic
 Optimization with CasADi.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release mainly includes improvements of the OpenModelica Compiler
 (OMC), including, but not restricted to the following:
@@ -364,27 +379,32 @@ This release mainly includes improvements of the OpenModelica Compiler
 -  Support for optimization of semiLinear according to MSL 3.3 chapter
        3.7.2.5 semiLinear.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The DrModelica interactive document has been updated and the models
 tested. Almost all models now simulate with OpenModelica.
 
-1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Enhanced debugger for algorithmic Modelica code, supporting both
 standard Modelica algorithmic code called from simulation models, and
 MetaModelica code.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Migration of version handling and configuration management from
 CodeBeamer to Trac.
 
-1. Graphic Editor OMEdit
+Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~
 
 -  General GUI: backward and forward navigation support in Documentation
        view, enhanced parameters window with support for Dialog
@@ -448,7 +468,8 @@ CodeBeamer to Trac.
        to avoid losing edits after GUI or compiler crash. The save
        interval can be set in the Options menu.
 
-   1. Optimization
+Optimization
+~~~~~~~~~~~~
 
 Dynamic optimization with XML export to the CaSAdi package is now
 integrated with OpenModelica. Moreover, a native integrated Dynamic
@@ -456,7 +477,8 @@ Optimization prototype using Ipopt is now in the OpenModelica release,
 but currently needs a special flag to be turned on since it needs more
 testing and refinement before being generally made available.
 
-1. FMI Support
+FMI Support
+~~~~~~~~~~~
 
 FMI co-simulation with OpenModelica as master. Improved FMI Import and
 export for model exchange. Simulation of multiple instances of the FMU
@@ -473,7 +495,8 @@ version with support for value bindings in requirements-driven modeling
 and importing Modelica library models into ModelicaML models. A beta
 version of the new OpenModelica Python scripting is also included.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes bug fixes and improvements of the flattening
 frontend part of the OpenModelica Compiler (OMC) and several
@@ -539,27 +562,33 @@ improvements of the backend, including, but not restricted to:
 
 Faster and more stable plottning.
 
-1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Small fixes and improvements.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes.
 
-1. Graphic Editor OMEdit
+Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~
 
 Bug fixes.
 
-1. New OMOptim Optimization Subsystem
+New OMOptim Optimization Subsystem
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bug fixes.
 
-1. FMI Support
+FMI Support
+~~~~~~~~~~~
 
 Bug fixes.
 
@@ -574,7 +603,8 @@ functionalities – the FMI for model exchange import and export, and a
 new efficient Eclipse-based debugger for Modelica/MetaModelica
 algorithmic code.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes bug fixes and improvements of the flattening
 frontend part of the OpenModelica Compiler (OMC) and several
@@ -619,34 +649,40 @@ improvements of the backend, including, but not restricted to:
 
 No changes.
 
-1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Small performance improvements.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Small fixes and improvements. MDT now also includes a beta version of a
 new Eclipse-based very efficient algorithmic code debugger for functions
 in MetaModelica/Modelica.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Third party binaries, including Qt libraries and executable Qt clients,
 are now part of the OMDev package. Also, now uses GCC 4.4.0 instead of
 the earlier GCC 3.4.5.
 
-1. Graphic Editor OMEdit
+Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~
 
 Bug fixes. Access to FMI Import/Export through a pull-down menu.
 Improved configuration of library loading. A function to go to a
 specific line number. A button to cancel an on-going simulation. Support
 for some updated OMC API calls.
 
-1. New OMOptim Optimization Subsystem
+New OMOptim Optimization Subsystem
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bug fixes, especially in the Linux version.
 
-1. FMI Support
+FMI Support
+~~~~~~~~~~~
 
 The Functional Mockup Interface FMI 1.0 for model exchange import and
 export is supported by this release. The functionality is accessible via
@@ -659,10 +695,11 @@ The OpenModelica 1.7 release contains OMC flattening improvements for
 the Media library, better and faster event handling and simulation, and
 fast MetaModelica support in the compiler, enabling it to compiler
 itself. This release also includes two interesting new tools – the
-OMOpttim optimization subsystem, and a new performance profiler for
+OMOptim optimization subsystem, and a new performance profiler for
 equation-based Modelica models.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes bug fixes and performance improvements of the
 flattening frontend part of the OpenModelica Compiler (OMC) and several
@@ -696,25 +733,30 @@ improvements of the backend, including, but not restricted to:
 
 -  Many bug fixes.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Improved much faster and more stable 2D plotting through the new OMPlot
 module. Plotting from binary .mat files. Better integration between
 OMEdit and OMNotebook, copy/paste between them.
 
-1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously, except the improved 2D plotting through OMPlot.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes.
 
-1. Graphic Editor OMEdit
+Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~
 
 Several enhancements of OMEdit are included in this release. Support for
 Icon editing is now available. There is also an improved much faster 2D
@@ -722,14 +764,16 @@ plotting through the new OMPlot module. Better integration between
 OMEdit and OMNotebook, with copy/paste between them. Interactive on-line
 simulation is available in an easy-to-use way.
 
-1. New OMOptim Optimization Subsystem
+New OMOptim Optimization Subsystem
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A new optimization subsystem called OMOptim has been added to
 OpenModelica. Currently, parameter optimization using genetic algorithms
 is supported in this version 0.9. Pareto front optimization is also
 supported.
 
-1. New Performance Profiler
+New Performance Profiler
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 A new, low overhead, performance profiler for Modelica models has been
 developed.
@@ -744,7 +788,8 @@ connection editor, and a new educational material called DrControl, and
 an improved ModelicaML UML/Modelica profile with better support for
 modeling and requirement handling.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes bug fix and performance improvemetns of the
 flattening frontend part of the OpenModelica Compiler (OMC) and some
@@ -783,20 +828,24 @@ improvements of the backend, including, but not restricted to:
 
 -  Many bug fixes.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A new DrControl electronic notebook for teaching control and modeling
 with Modelica.
 
-1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Several enhancements. Support for match-expressions in addition to
 matchcontinue. Support for real if-then-else. Support for if-then
@@ -804,7 +853,8 @@ without else-branches. Modelica Development Tooling 0.7.7 with small
 improvements such as more settings, improved error detection in console,
 etc.
 
-1. New Graphic Editor OMEdit
+New Graphic Editor OMEdit
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A new improved open source graphic model connection editor called
 OMEdit, supporting 3.1 graphical annotations, which makes it possible to
@@ -825,7 +875,8 @@ invested in the compiler compared to the 1.4.5 version, e.g., in order
 to have a more complete coverage of Modelica 3.0, mainly focusing on
 improved flattening in the compiler frontend.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes major improvements of the flattening frontend part
 of the OpenModelica Compiler (OMC) and some improvements of the backend,
@@ -903,7 +954,8 @@ updated to version 0.9.0 with a important new functionality, including
 support for Modelica 3.1 and 3.0 annotations. The 1.6 and 2.2.1 Modelica
 graphical annotation versions are still supported.
 
-1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Improvements in platform availability.
 
@@ -913,15 +965,18 @@ Improvements in platform availability.
 
 -  Better support for MacOS, including 64-bit OSX.
 
-   1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Minor bug fixes.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Minor bug fixes.
 
@@ -931,7 +986,8 @@ OpenModelica 1.4.5, January 2009
 This release has several improvements, especially platform availability,
 less compiler memory usage, and supporting more aspects of Modelica 3.0.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes small improvements and some bugfixes of the
 OpenModelica Compiler (OMC):
@@ -954,7 +1010,8 @@ OpenModelica Compiler (OMC):
 -  (Not part of OMC): Additional free graphic editor SimForge can be
        used with OpenModelica.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A number of improvements, primarily in the plotting functionality and
 platform availability.
@@ -969,15 +1026,18 @@ platform availability.
 -  Support for several platforms Linux, MacOS, Windows (2000, Xp,
        Vista).
 
-   1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Minor bug fixes.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously.
 
@@ -992,7 +1052,8 @@ Public License), with support from the recently created Open Source
 Modelica Consortium. An integrated version handler, bug-, and issue
 tracker has also been added.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes small improvements and some bugfixes of the
 OpenModelica Compiler (OMC):
@@ -1006,7 +1067,8 @@ OpenModelica Compiler (OMC):
 
 -  A number of bug-fixes.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Test release of improvements, primarily in the plotting functionality
 and platform availability.
@@ -1018,16 +1080,19 @@ and platform availability.
 
 -  Programmable plotting accessible through a Modelica API.
 
-   1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Same as previously.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes minor bugfixes of MDT and the associated
-MetaModelica debugger:
+MetaModelica debugger.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Extended test suite with a better structure. Version handling, bug
 tracking, issue tracking, etc. now available under the integrated
@@ -1041,7 +1106,8 @@ compiler, OMNotebook, the MDT plugin and the OMDev. Increased platform
 availability now also for Linux and Macintosh, in addition to Windows.
 OMShell is the same as previously, but now ported to Linux and Mac.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes a number of improvements of the OpenModelica
 Compiler (OMC):
@@ -1134,7 +1200,8 @@ MetaModelica debugger:
 
 -  Many bug fixes.
 
-   1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Increased compilation speed for MetaModelica. Better if-expression
 support in MetaModelica.
@@ -1146,7 +1213,8 @@ This release has improvements and bug fixes of the OMC compiler,
 OMNotebook, the MDT plugin and the OMDev. OMShell is the same as
 previously.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes further improvements of the OpenModelica Compiler
 (OMC):
@@ -1167,7 +1235,8 @@ This release includes further improvements of the OpenModelica Compiler
 
 -  Many bug fixes.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Search and replace functions have been added. The DrModelica tutorial
 (all files) has been updated, obsolete sections removed, and models
@@ -1175,7 +1244,8 @@ which are not supported by the current implementation marked clearly.
 Automatic recognition of the .onb suffix (e.g. when double-clicking) in
 Windows makes it even more convenient to use.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Two major improvements are added in this release:
 
@@ -1185,7 +1255,8 @@ Two major improvements are added in this release:
 -  The debugger for algorithmic code is now available and operational in
        Eclipse for debugging of MetaModelica programs.
 
-   1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Mostly the same as previously.
 
@@ -1196,7 +1267,8 @@ This release has only improvements and bug fixes of the OMC compiler,
 the MDT plugin and the OMDev components. The OMShell and OMNotebook are
 the same.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes further improvements of the OpenModelica Compiler
 (OMC):
@@ -1210,13 +1282,15 @@ This release includes further improvements of the OpenModelica Compiler
 
 -  Many bug fixes.
 
-   1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Improvements of the error reporting when building the OMC compiler. The
 errors are now added to the problems view. The latest MDT release is
 version 0.6.6 (2006-06-06).
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Small fixes in the MetaModelica compiler. MetaModelica Users Guide is
 now part of the OMDev release. The latest OMDev was release in
@@ -1230,7 +1304,8 @@ significant change is probably that OMC has now been translated to an
 extended subset of Modelica (MetaModelica), and that all development of
 the compiler is now done in this version..
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes further improvements of the OpenModelica Compiler
 (OMC):
@@ -1253,13 +1328,15 @@ This release includes further improvements of the OpenModelica Compiler
 
 -  Many bug fixes.
 
-   1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Essentially the same OMShell as in 1.3.1. One difference is that now all
 error messages are sent to the command window instead of to a separate
 log window.
 
-1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Many significant improvements and bug fixes. This version supports
 graphic plots within the cells in the notebook. Improved cell handling
@@ -1267,7 +1344,8 @@ and Modelica code syntax highlighting. Command completion of the most
 common OMC commands is now supported. The notebook has been used in
 several courses.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is the first really useful version of MDT. Full browsing of
 Modelica code, e.g. the MSL 2.2, is now supported. (MetaModelica
@@ -1277,7 +1355,8 @@ Many bug fixes. The Eclipse plug-in is now in use for OpenModelica
 development at PELAB and MathCore Engineering AB since approximately one
 month.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following mechanisms have been put in place to support OpenModelica
 development.
@@ -1298,7 +1377,8 @@ development.
 
 -  Successful builds and tests of OMC under Linux and Solaris.
 
-1. OpenModelica 1.3.1, November 2005
+OpenModelica 1.3.1, November 2005
+---------------------------------
 
 This release has several important highlights.
 
@@ -1307,7 +1387,8 @@ open-source license applies to the source code, including the whole
 compiler and run-time system. This makes is possible to use OpenModelica
 for both academic and commercial purposes without restrictions.
 
-1. OpenModelica Compiler (OMC)
+OpenModelica Compiler (OMC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes a significantly improved OpenModelica Compiler
 (OMC):
@@ -1333,26 +1414,30 @@ This release includes a significantly improved OpenModelica Compiler
 -  Updated User's Guide including examples of hybrid simulation and
        external functions.
 
-   1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 An improved window-based interactive command shell, now including
 command completion and better editing and font size support.
 
-1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A free implementation of an OpenModelica notebook (OMNOtebook), for
+A free implementation of an OpenModelica notebook (OMNotebook), for
 electronic books with course material, including the DrModelica
 interactive course material. It is possible to simulate and plot from
 this notebook.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 An early alpha version of the first Eclipse plug-in (called MDT for
 Modelica Development Tooling) for Modelica Development. This version
 gives compilation support and partial support for browsing Modelica
 package hierarchies and classes.
 
-1. OpenModelica Development Environment (OMDev)
+OpenModelica Development Environment (OMDev)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following mechanisms have been put in place to support OpenModelica
 development.
@@ -1366,968 +1451,3 @@ development.
 -  Version handling is done using SVN, which is better than the
        previously used CVS system. For example, name change of modules
        is now possible within the version handling system.
-
-Contributors to OpenModelica
-============================
-
-This Appendix lists the individuals who have made significant
-contributions to OpenModelica, in the form of software development,
-design, documentation, project leadership, tutorial material, promotion,
-etc. The individuals are listed for each year, from 1998 to the current
-year: the project leader and main author/editor of this document
-followed by main contributors followed by contributors in alphabetical
-order.
-
-OpenModelica Contributors 2014
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Adeel Asghar, PELAB, Linköping University, Linköping, Sweden.
-
-Willi Braun, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Jens Frenkel, TU Dresden, Dresden, Germany.
-
-Lennart Ochel, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Martin Sjölund, PELAB, Linköping University, Linköping, Sweden.
-
-Per Östlund, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Vasile Baluta, PELAB, Linköping University, Linköping, Sweden.
-
-Robert Braun, IEI, Linköping University, Linköping, Sweden.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Stefan Brus, PELAB, Linköping University, Linköping, Sweden.
-
-Lena Buffoni, PELAB, Linköping University, Linköping, Sweden.
-
-Francesco Casella, Politecnico di Milano, Milan, Italy.
-
-Filippo Donida, Politecnico di Milano, Milan, Italy.
-
-Mahder Gebremedhin, PELAB, Linköping University, Linköping, Sweden.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Michael Hanke, NADA, KTH, Stockholm.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Zoheb Hossain, PELAB, Linköping University, Linköping, Sweden.
-
-Alf Isaksson, ABB Corporate Research, Västerås, Sweden.
-
-Daniel Kanth, Bosch-Rexroth, Lohr am Main, Germany.
-
-Tommi Karhela, VTT, Espoo, Finland.
-
-Petter Krus, IEI, Linköping University, Linköping, Sweden.
-
-Juha Kortelainen, VTT, Espoo, Finland.
-
-Abhinn Kothari, PELAB, Linköping University, Linköping, Sweden.
-
-Alexey Lebedev, Equa Simulation AB, Stockholm, Sweden.
-
-Oliver Lenord, Siemens PLM, California, USA.
-
-Ariel Liebman, Energy Users Association of Australia, Victoria,
-Australia.
-
-Henrik Magnusson, Linköping, Sweden.
-
-Abhi Raj Metkar, CDAC, Trivandrum, Kerala, India.
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Tuomas Miettinen, VTT, Espoo, Finland.
-
-Afshin Moghadam, PELAB, Linköping University, Linköping, Sweden.
-
-Maroun Nemer, CEP Paristech, Ecole des Mines, Paris, France.
-
-Hannu Niemistö, VTT, Espoo, Finland.
-
-Peter Nordin, IEI, Linköping University, Linköping, Sweden.
-
-Arunkumar Palanisamy, PELAB, Linköping University, Linköping, Sweden.
-
-Karl Pettersson, IEI, Linköping University, Linköping, Sweden.
-
-Pavol Privitzer, Institute of Pathological Physiology, Praha, Czech
-Republic.
-
-Jhansi Remala, PELAB, Linköping University, Linköping, Sweden.
-
-Reino Ruusu, VTT, Espoo, Finland.
-
-Per Sahlin, Equa Simulation AB, Stockholm, Sweden.
-
-Wladimir Schamai, EADS, Hamburg, Germany.
-
-Gerhard Schmitz, University of Hamburg, Hamburg, Germany.
-
-Alachew Shitahun, PELAB, Linköping University, Linköping, Sweden.
-
-Anton Sodja, University of Ljubljana, Ljubljana, Slovenia
-
-Ingo Staack, IEI, Linköping University, Linköping, Sweden.
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Sonia Tariq, PELAB, Linköping University, Linköping, Sweden.
-
-Hubert Thierot, CEP Paristech, Ecole des Mines, Paris, France.
-
-Mohsen Torabzadeh-Tari, PELAB, Linköping University, Linköping, Sweden.
-
-Parham Vasaiely, EADS, Hamburg, Germany.
-
-Niklas Worschech, Bosch-Rexroth, Lohr am Main, Germany.
-
-Robert Wotzlaw, Goettingen, Germany.
-
-Azam Zia, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2013
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Adeel Asghar, PELAB, Linköping University, Linköping, Sweden.
-
-Willi Braun, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Jens Frenkel, TU Dresden, Dresden, Germany.
-
-Lennart Ochel, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Martin Sjölund, PELAB, Linköping University, Linköping, Sweden.
-
-Per Östlund, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Vasile Baluta, PELAB, Linköping University, Linköping, Sweden.
-
-Robert Braun, IEI, Linköping University, Linköping, Sweden.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Stefan Brus, PELAB, Linköping University, Linköping, Sweden.
-
-Lena Buffoni, PELAB, Linköping University, Linköping, Sweden.
-
-Francesco Casella, Politecnico di Milano, Milan, Italy.
-
-Filippo Donida, Politecnico di Milano, Milan, Italy.
-
-Mahder Gebremedhin, PELAB, Linköping University, Linköping, Sweden.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Michael Hanke, NADA, KTH, Stockholm.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Zoheb Hossain, PELAB, Linköping University, Linköping, Sweden.
-
-Alf Isaksson, ABB Corporate Research, Västerås, Sweden.
-
-Daniel Kanth, Bosch-Rexroth, Lohr am Main, Germany.
-
-Tommi Karhela, VTT, Espoo, Finland.
-
-Petter Krus, IEI, Linköping University, Linköping, Sweden.
-
-Juha Kortelainen, VTT, Espoo, Finland.
-
-Abhinn Kothari, PELAB, Linköping University, Linköping, Sweden.
-
-Alexey Lebedev, Equa Simulation AB, Stockholm, Sweden.
-
-Oliver Lenord, Siemens PLM, California, USA.
-
-Ariel Liebman, Energy Users Association of Australia, Victoria,
-Australia.
-
-Henrik Magnusson, Linköping, Sweden.
-
-Abhi Raj Metkar, CDAC, Trivandrum, Kerala, India.
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Tuomas Miettinen, VTT, Espoo, Finland.
-
-Afshin Moghadam, PELAB, Linköping University, Linköping, Sweden.
-
-Maroun Nemer, CEP Paristech, Ecole des Mines, Paris, France.
-
-Hannu Niemistö, VTT, Espoo, Finland.
-
-Peter Nordin, IEI, Linköping University, Linköping, Sweden.
-
-Arunkumar Palanisamy, PELAB, Linköping University, Linköping, Sweden.
-
-Karl Pettersson, IEI, Linköping University, Linköping, Sweden.
-
-Pavol Privitzer, Institute of Pathological Physiology, Praha, Czech
-Republic.
-
-Jhansi Remala, PELAB, Linköping University, Linköping, Sweden.
-
-Reino Ruusu, VTT, Espoo, Finland.
-
-Per Sahlin, Equa Simulation AB, Stockholm, Sweden.
-
-Wladimir Schamai, EADS, Hamburg, Germany.
-
-Gerhard Schmitz, University of Hamburg, Hamburg, Germany.
-
-Alachew Shitahun, PELAB, Linköping University, Linköping, Sweden.
-
-Anton Sodja, University of Ljubljana, Ljubljana, Slovenia
-
-Ingo Staack, IEI, Linköping University, Linköping, Sweden.
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Sonia Tariq, PELAB, Linköping University, Linköping, Sweden.
-
-Hubert Thierot, CEP Paristech, Ecole des Mines, Paris, France.
-
-Mohsen Torabzadeh-Tari, PELAB, Linköping University, Linköping, Sweden.
-
-Parham Vasaiely, EADS, Hamburg, Germany.
-
-Niklas Worschech, Bosch-Rexroth, Lohr am Main, Germany.
-
-Robert Wotzlaw, Goettingen, Germany.
-
-Azam Zia, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2012
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Adeel Asghar, PELAB, Linköping University, Linköping, Sweden.
-
-Willi Braun, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Jens Frenkel, TU Dresden, Dresden, Germany.
-
-Lennart Ochel, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Martin Sjölund, PELAB, Linköping University, Linköping, Sweden.
-
-Per Östlund, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-David Akhvlediani, PELAB, Linköping University, Linköping, Sweden.
-
-Mikael Axin, IEI, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Vasile Baluta, PELAB, Linköping University, Linköping, Sweden.
-
-Robert Braun, IEI, Linköping University, Linköping, Sweden.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Stefan Brus, PELAB, Linköping University, Linköping, Sweden.
-
-Francesco Casella, Politecnico di Milano, Milan, Italy.
-
-Filippo Donida, Politecnico di Milano, Milan, Italy.
-
-Mahder Gebremedhin, PELAB, Linköping University, Linköping, Sweden.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Michael Hanke, NADA, KTH, Stockholm.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Zoheb Hossain, PELAB, Linköping University, Linköping, Sweden.
-
-Alf Isaksson, ABB Corporate Research, Västerås, Sweden.
-
-Daniel Kanth, Bosch-Rexroth, Lohr am Main, Germany.
-
-Tommi Karhela, VTT, Espoo, Finland.
-
-Petter Krus, IEI, Linköping University, Linköping, Sweden.
-
-Juha Kortelainen, VTT, Espoo, Finland.
-
-Abhinn Kothari, PELAB, Linköping University, Linköping, Sweden.
-
-Alexey Lebedev, Equa Simulation AB, Stockholm, Sweden.
-
-Oliver Lenord, Siemens PLM, California, USA.
-
-Ariel Liebman, Energy Users Association of Australia, Victoria,
-Australia.
-
-Henrik Magnusson, Linköping, Sweden.
-
-Abhi Raj Metkar, CDAC, Trivandrum, Kerala, India.
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Tuomas Miettinen, VTT, Espoo, Finland.
-
-Afshin Moghadam, PELAB, Linköping University, Linköping, Sweden.
-
-Maroun Nemer, CEP Paristech, Ecole des Mines, Paris, France.
-
-Hannu Niemistö, VTT, Espoo, Finland.
-
-Peter Nordin, IEI, Linköping University, Linköping, Sweden.
-
-Arunkumar Palanisamy, PELAB, Linköping University, Linköping, Sweden.
-
-Karl Pettersson, IEI, Linköping University, Linköping, Sweden.
-
-Pavol Privitzer, Institute of Pathological Physiology, Praha, Czech
-Republic.
-
-Jhansi Remala, PELAB, Linköping University, Linköping, Sweden.
-
-Reino Ruusu, VTT, Espoo, Finland.
-
-Per Sahlin, Equa Simulation AB, Stockholm, Sweden.
-
-Wladimir Schamai, EADS, Hamburg, Germany.
-
-Gerhard Schmitz, University of Hamburg, Hamburg, Germany.
-
-Alachew Shitahun, PELAB, Linköping University, Linköping, Sweden.
-
-Anton Sodja, University of Ljubljana, Ljubljana, Slovenia
-
-Ingo Staack, IEI, Linköping University, Linköping, Sweden.
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Sonia Tariq, PELAB, Linköping University, Linköping, Sweden.
-
-Hubert Thierot, CEP Paristech, Ecole des Mines, Paris, France.
-
-Mohsen Torabzadeh-Tari, PELAB, Linköping University, Linköping, Sweden.
-
-Parham Vasaiely, EADS, Hamburg, Germany.
-
-Niklas Worschech, Bosch-Rexroth, Lohr am Main, Germany.
-
-Robert Wotzlaw, Goettingen, Germany.
-
-Azam Zia, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2011
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Willi Braun, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Jens Frenkel, TU Dresden, Dresden, Germany.
-
-Martin Sjölund, PELAB, Linköping University, Linköping, Sweden.
-
-Per Östlund, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-Adeel Asghar, PELAB, Linköping University, Linköping, Sweden.
-
-David Akhvlediani, PELAB, Linköping University, Linköping, Sweden.
-
-Mikael Axin, IEI, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Vasile Baluta, PELAB, Linköping University, Linköping, Sweden.
-
-Robert Braun, IEI, Linköping University, Linköping, Sweden.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Stefan Brus, PELAB, Linköping University, Linköping, Sweden.
-
-Francesco Casella, Politecnico di Milano, Milan, Italy.
-
-Filippo Donida, Politecnico di Milano, Milan, Italy.
-
-Anand Ganeson, PELAB, Linköping University, Linköping, Sweden.
-
-Mahder Gebremedhin, PELAB, Linköping University, Linköping, Sweden.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Michael Hanke, NADA, KTH, Stockholm.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Zoheb Hossain, PELAB, Linköping University, Linköping, Sweden.
-
-Alf Isaksson, ABB Corporate Research, Västerås, Sweden.
-
-Kim Jansson, PELAB, Linköping University, Linköping, Sweden.
-
-Daniel Kanth, Bosch-Rexroth, Lohr am Main, Germany.
-
-Tommi Karhela, VTT, Espoo, Finland.
-
-Joel Klinghed, PELAB, Linköping University, Linköping, Sweden.
-
-Petter Krus, IEI, Linköping University, Linköping, Sweden.
-
-Juha Kortelainen, VTT, Espoo, Finland.
-
-Abhinn Kothari, PELAB, Linköping University, Linköping, Sweden.
-
-Alexey Lebedev, Equa Simulation AB, Stockholm, Sweden.
-
-Oliver Lenord, Siemens PLM, California, USA.
-
-Ariel Liebman, Energy Users Association of Australia, Victoria,
-Australia.
-
-Rickard Lindberg, PELAB, Linköping University, Linköping, Sweden
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Henrik Magnusson, Linköping, Sweden.
-
-Abhi Raj Metkar, CDAC, Trivandrum, Kerala, India.
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Tuomas Miettinen, VTT, Espoo, Finland.
-
-Afshin Moghadam, PELAB, Linköping University, Linköping, Sweden.
-
-Maroun Nemer, CEP Paristech, Ecole des Mines, Paris, France.
-
-Hannu Niemistö, VTT, Espoo, Finland.
-
-Peter Nordin, IEI, Linköping University, Linköping, Sweden.
-
-Kristoffer Norling, PELAB, Linköping University, Linköping, Sweden.
-
-Lennart Ochel, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Karl Pettersson, IEI, Linköping University, Linköping, Sweden.
-
-Pavol Privitzer, Institute of Pathological Physiology, Praha, Czech
-Republic.
-
-Reino Ruusu, VTT, Espoo, Finland.
-
-Per Sahlin, Equa Simulation AB, Stockholm, Sweden.
-
-Wladimir Schamai, EADS, Hamburg, Germany.
-
-Gerhard Schmitz, University of Hamburg, Hamburg, Germany.
-
-Klas Sjöholm, PELAB, Linköping University, Linköping, Sweden.
-
-Anton Sodja, University of Ljubljana, Ljubljana, Slovenia
-
-Ingo Staack, IEI, Linköping University, Linköping, Sweden.
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Sonia Tariq, PELAB, Linköping University, Linköping, Sweden.
-
-Hubert Thierot, CEP Paristech, Ecole des Mines, Paris, France.
-
-Mohsen Torabzadeh-Tari, PELAB, Linköping University, Linköping, Sweden.
-
-Parham Vasaiely, EADS, Hamburg, Germany.
-
-Niklas Worschech, Bosch-Rexroth, Lohr am Main, Germany.
-
-Robert Wotzlaw, Goettingen, Germany.
-
-Björn Zachrisson, MathCore Engineering AB, Linköping, Sweden.
-
-Azam Zia, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2010
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Martin Sjölund, PELAB, Linköping University, Linköping, Sweden.
-
-Per Östlund, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-Adeel Asghar, PELAB, Linköping University, Linköping, Sweden.
-
-David Akhvlediani, PELAB, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Vasile Baluta, PELAB, Linköping University, Linköping, Sweden.
-
-Simon Björklén, PELAB, Linköping University, Linköping, Sweden.
-
-Mikael Blom, PELAB, Linköping University, Linköping, Sweden.
-
-Robert Braun, IEI, Linköping University, Linköping, Sweden.
-
-Willi Braun, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Stefan Brus, PELAB, Linköping University, Linköping, Sweden.
-
-Francesco Casella, Politecnico di Milano, Milan, Italy.
-
-Filippo Donida, Politecnico di Milano, Milan, Italy.
-
-Henrik Eriksson, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Fernström, PELAB, Linköping University, Linköping, Sweden.
-
-Jens Frenkel, TU Dresden, Dresden, Germany.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Michael Hanke, NADA, KTH, Stockholm.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Alf Isaksson, ABB Corporate Research, Västerås, Sweden.
-
-Kim Jansson, PELAB, Linköping University, Linköping, Sweden.
-
-Daniel Kanth, Bosch-Rexroth, Lohr am Main, Germany.
-
-Tommi Karhela, VTT, Espoo, Finland.
-
-Joel Klinghed, PELAB, Linköping University, Linköping, Sweden.
-
-Petter Krus, IEI, Linköping University, Linköping, Sweden.
-
-Juha Kortelainen, VTT, Espoo, Finland.
-
-Alexey Lebedev, Equa Simulation AB, Stockholm, Sweden.
-
-Magnus Leksell, Linköping, Sweden.
-
-Oliver Lenord, Bosch-Rexroth, Lohr am Main, Germany.
-
-Ariel Liebman, Energy Users Association of Australia, Victoria,
-Australia.
-
-Rickard Lindberg, PELAB, Linköping University, Linköping, Sweden
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Henrik Magnusson, Linköping, Sweden.
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Hannu Niemistö, VTT, Espoo, Finland.
-
-Peter Nordin, IEI, Linköping University, Linköping, Sweden.
-
-Kristoffer Norling, PELAB, Linköping University, Linköping, Sweden.
-
-Lennart Ochel, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Atanas Pavlov, Munich, Germany.
-
-Karl Pettersson, IEI, Linköping University, Linköping, Sweden.
-
-Pavol Privitzer, Institute of Pathological Physiology, Praha, Czech
-Republic.
-
-Reino Ruusu, VTT, Espoo, Finland.
-
-Per Sahlin, Equa Simulation AB, Stockholm, Sweden.
-
-Wladimir Schamai, EADS, Hamburg, Germany.
-
-Gerhard Schmitz, University of Hamburg, Hamburg, Germany.
-
-Klas Sjöholm, PELAB, Linköping University, Linköping, Sweden.
-
-Anton Sodja, University of Ljubljana, Ljubljana, Slovenia
-
-Ingo Staack, IEI, Linköping University, Linköping, Sweden.
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Sonia Tariq, PELAB, Linköping University, Linköping, Sweden.
-
-Mohsen Torabzadeh-Tari, PELAB, Linköping University, Linköping, Sweden.
-
-Niklas Worschech, Bosch-Rexroth, Lohr am Main, Germany.
-
-Robert Wotzlaw, Goettingen, Germany.
-
-Björn Zachrisson, MathCore Engineering AB, Linköping, Sweden.
-
-OpenModelica Contributors 2009
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-David Akhvlediani, PELAB, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Vasile Baluta, PELAB, Linköping University, Linköping, Sweden.
-
-Constantin Belyaev, Bashpromavtomatika Ltd., Ufa, Russia
-
-Simon Björklén, PELAB, Linköping University, Linköping, Sweden.
-
-Mikael Blom, PELAB, Linköping University, Linköping, Sweden.
-
-Willi Braun, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Stefan Brus, PELAB, Linköping University, Linköping, Sweden.
-
-Francesco Casella, Politecnico di Milano, Milan, Italy
-
-Filippo Donida, Politecnico di Milano, Milan, Italy
-
-Henrik Eriksson, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Fernström, PELAB, Linköping University, Linköping, Sweden.
-
-Jens Frenkel, TU Dresden, Dresden, Germany.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Michael Hanke, NADA, KTH, Stockholm
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Alf Isaksson, ABB Corporate Research, Västerås, Sweden
-
-Kim Jansson, PELAB, Linköping University, Linköping, Sweden.
-
-Daniel Kanth, Bosch-Rexroth, Lohr am Main, Germany
-
-Tommi Karhela, VTT, Espoo, Finland.
-
-Joel Klinghed, PELAB, Linköping University, Linköping, Sweden.
-
-Juha Kortelainen, VTT, Espoo, Finland
-
-Alexey Lebedev, Equa Simulation AB, Stockholm, Sweden
-
-Magnus Leksell, Linköping, Sweden
-
-Oliver Lenord, Bosch-Rexroth, Lohr am Main, Germany
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Henrik Magnusson, Linköping, Sweden
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Hannu Niemistö, VTT, Espoo, Finland
-
-Kristoffer Norling, PELAB, Linköping University, Linköping, Sweden.
-
-Atanas Pavlov, Munich, Germany.
-
-Pavol Privitzer, Institute of Pathological Physiology, Praha, Czech
-Republic.
-
-Per Sahlin, Equa Simulation AB, Stockholm, Sweden.
-
-Gerhard Schmitz, University of Hamburg, Hamburg, Germany
-
-Klas Sjöholm, PELAB, Linköping University, Linköping, Sweden.
-
-Martin Sjölund, PELAB, Linköping University, Linköping, Sweden.
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Mohsen Torabzadeh-Tari, PELAB, Linköping University, Linköping, Sweden.
-
-Niklas Worschech, Bosch-Rexroth, Lohr am Main, Germany
-
-Robert Wotzlaw, Goettingen, Germany
-
-Björn Zachrisson, MathCore Engineering AB, Linköping, Sweden
-
-OpenModelica Contributors 2008
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-David Akhvlediani, PELAB, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Vasile Baluta, PELAB, Linköping University, Linköping, Sweden.
-
-Mikael Blom, PELAB, Linköping University, Linköping, Sweden.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Henrik Eriksson, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Fernström, PELAB, Linköping University, Linköping, Sweden.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Kim Jansson, PELAB, Linköping University, Linköping, Sweden.
-
-Joel Klinghed, PELAB, Linköping University, Linköping, Sweden.
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Kristoffer Norling, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Sandholm, PELAB, Linköping University, Linköping, Sweden.
-
-Klas Sjöholm, PELAB, Linköping University, Linköping, Sweden.
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Simon Bjorklén, PELAB, Linköping University, Linköping, Sweden.
-
-Constantin Belyaev, Bashpromavtomatika Ltd., Ufa, Russia
-
-OpenModelica Contributors 2007
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-David Akhvlediani, PELAB, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Henrik Eriksson, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Fernström, PELAB, Linköping University, Linköping, Sweden.
-
-Pavel Grozman, Equa AB, Stockholm, Sweden.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Ola Leifler, IDA, Linköping University, Linköping, Sweden.
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Eric Meyers, Pratt & Whitney Rocketdyne, Palm City, Florida, USA.
-
-Kristoffer Norling, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Sandholm, PELAB, Linköping University, Linköping, Sweden.
-
-Klas Sjöholm, PELAB, Linköping University, Linköping, Sweden.
-
-William Spinelli, Politecnico di Milano, Milano, Italy
-
-Kristian Stavåker, PELAB, Linköping University, Linköping, Sweden.
-
-Stefan Vorkoetter, MapleSoft, Waterloo, Canada.
-
-Björn Zachrisson, MathCore Engineering AB, Linköping, Sweden.
-
-Constantin Belyaev, Bashpromavtomatika Ltd., Ufa, Russia
-
-OpenModelica Contributors 2006
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, MathCore Engineering AB, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-David Akhvlediani, PELAB, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Fernström, PELAB, Linköping University, Linköping, Sweden.
-
-Elmir Jagudin, PELAB, Linköping University, Linköping, Sweden.
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Kaj Nyström, PELAB, Linköping University, Linköping, Sweden.
-
-Lucian Popescu, MathCore Engineering AB, Linköping, Sweden.
-
-Andreas Remar, PELAB, Linköping University, Linköping, Sweden.
-
-Anders Sandholm, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2005
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, PELAB, Linköping University and MathCore Engineering AB,
-Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Ingemar Axelsson, PELAB, Linköping University, Linköping, Sweden.
-
-David Broman, PELAB, Linköping University, Linköping, Sweden.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Kaj Nyström, PELAB, Linköping University, Linköping, Sweden.
-
-Lucian Popescu, MathCore Engineering AB, Linköping, Sweden.
-
-Levon Saldamli, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2004
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, Linköping University, Linköping, Sweden.
-
-Bernhard Bachmann, Fachhochschule Bielefeld, Bielefeld, Germany.
-
-Peter Bunus, PELAB, Linköping University, Linköping, Sweden.
-
-Daniel Hedberg, MathCore Engineering AB, Linköping, Sweden.
-
-Håkan Lundvall, PELAB, Linköping University, Linköping, Sweden.
-
-Emma Larsdotter Nilsson, PELAB, Linköping University, Linköping, Sweden.
-
-Kaj Nyström, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Lucian Popescu, MathCore Engineering AB, Linköping, Sweden.
-
-Levon Saldamli, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2003
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, Linköping University, Linköping, Sweden.
-
-Levon Saldamli, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Bunus, PELAB, Linköping University, Linköping, Sweden.
-
-Vadim Engelson, PELAB, Linköping University, Linköping, Sweden.
-
-Daniel Hedberg, Linköping University, Linköping, Sweden.
-
-Eva-Lena Lengquist-Sandelin, PELAB, Linköping University, Linköping,
-Sweden.
-
-Susanna Monemar, PELAB, Linköping University, Linköping, Sweden.
-
-Adrian Pop, PELAB, Linköping University, Linköping, Sweden.
-
-Erik Svensson, MathCore Engineering AB, Linköping, Sweden.
-
-OpenModelica Contributors 2002
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Levon Saldamli, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, Linköping University, Linköping, Sweden.
-
-Daniel Hedberg, Linköping University, Linköping, Sweden.
-
-Henrik Johansson, PELAB, Linköping University, Linköping, Sweden
-
-Andreas Karström, PELAB, Linköping University, Linköping, Sweden
-
-OpenModelica Contributors 2001
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-Levon Saldamli, PELAB, Linköping University, Linköping, Sweden.
-
-Peter Aronsson, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 2000
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 1999
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden
-
-Peter Rönnquist, PELAB, Linköping University, Linköping, Sweden.
-
-OpenModelica Contributors 1998
-------------------------------
-
-Peter Fritzson, PELAB, Linköping University, Linköping, Sweden.
-
-David Kågedal, PELAB, Linköping University, Linköping, Sweden.
-
-Vadim Engelson, PELAB, Linköping University, Linköping, Sweden.
