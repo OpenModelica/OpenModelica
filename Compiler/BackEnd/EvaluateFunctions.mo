@@ -1579,6 +1579,21 @@ algorithm
   end matchcontinue;
 end evaluateFunctions_updateAlgElements;
 
+protected function unboxExp
+"takes an expression and unboxes it if it is boxed"
+  input DAE.Exp ie;
+  input Boolean bIn;
+  output DAE.Exp outExp;
+  output Boolean bOut;
+algorithm
+  (outExp, bOut) := match (ie,bIn)
+    local
+      DAE.Exp e;
+    case (DAE.BOX(e),_) then unboxExp(e,true);
+    else (ie,bIn);
+  end match;
+end unboxExp;
+
 protected function evaluateFunctions_updateStatement "replaces the statements with regards to the given varReplacements and check for constant assignments.
 if there are constant assignments add this replacement rule
 author:Waurich TUD 2014-03"
@@ -1621,10 +1636,13 @@ algorithm
         cref = Expression.expCref(exp1);
         scalars = getRecordScalars(cref);
         (exp2,_) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
+         (exp2,_) = ExpressionSimplify.simplify(exp2);
+        
         (exp2,(exp1,funcTree,idx,addStmts)) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
 
         // (exp2,changed) = bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed); This does nothing useful with the statement below...
-        (exp2,_) = ExpressionSimplify.simplify(exp2);
+        //(exp2,_) = ExpressionSimplify.simplify(exp2);
+        (exp2,_) = Expression.traverseExpBottomUp(exp2,unboxExp,false);// for metamodelica/meta/omc
         expLst = Expression.getComplexContents(exp2);
 
         // add the replacements for the addStmts and remove the replacements for the variable outputs
@@ -2330,17 +2348,21 @@ algorithm
       Integer idx;
       DAE.Exp rhs, lhs;
       DAE.FunctionTree funcs;
+      DAE.Type ty;
       list<BackendDAE.Equation> addEqs;
       list<DAE.Statement> stmts,stmtsIn;
-  case (rhs,(lhs,funcs,idx,stmtsIn))
-    equation
-      DAE.CALL() = rhs;
-      ((rhs,lhs,addEqs,funcs,idx,_)) = evaluateConstantFunction(rhs,lhs,funcs,idx);
-
+  case (DAE.CALL(),(lhs,funcs,idx,stmtsIn))
+    equation    
+      ((rhs,lhs,addEqs,funcs,idx,_)) = evaluateConstantFunction(inExp,lhs,funcs,idx);
       stmts = List.map(addEqs,equationToStmt);
-
       stmts = listAppend(stmts,stmtsIn);
     then (rhs,true,(lhs,funcs,idx,stmts));
+      
+  case (DAE.UNBOX(exp=rhs, ty=ty),(lhs,funcs,idx,stmts))
+    equation
+      (rhs,_,(lhs,funcs,idx,stmts)) = evaluateConstantFunctionWrapper(rhs,inTpl);
+    then (rhs,true,(lhs,funcs,idx,stmts));
+      
   case (rhs,(lhs,funcs,idx,stmtsIn))
     then (rhs,false,(lhs,funcs,idx,stmtsIn));
   end matchcontinue;
