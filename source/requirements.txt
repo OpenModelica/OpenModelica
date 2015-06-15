@@ -1,2 +1,2 @@
-sphinxcontrib.bibtex
-sphinxcontrib.inlinesyntaxhighlight
+sphinxcontrib-bibtex
+sphinxcontrib-inlinesyntaxhighlight
