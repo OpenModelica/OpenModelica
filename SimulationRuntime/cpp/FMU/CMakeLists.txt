@@ -16,6 +16,7 @@ if (UNIX)
 endif(UNIX)
 
 target_link_libraries (${FMUName} ${ExtensionUtilitiesName})
+target_link_libraries (${FMUName}_static ${ExtensionUtilitiesName}_static)
 
 install (TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})
 install (TARGETS ${FMUName}_static DESTINATION ${LIBINSTALLEXT})

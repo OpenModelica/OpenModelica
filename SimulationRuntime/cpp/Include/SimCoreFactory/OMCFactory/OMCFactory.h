@@ -29,12 +29,12 @@ public:
    * @param argv command line arguments of main function
    * @param opts default options that are overridden with argv
    */
-  virtual std::pair<boost::shared_ptr<ISimController>,SimSettings>
-    createSimulation(int argc, const char* argv[],
-                     std::map<std::string, std::string> &opts);
+  virtual std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
 protected:
-  SimSettings ReadSimulationParameter(int argc, const char* argv[]);
+  std::vector<const char *> modifyArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+  SimSettings readSimulationParameter(int argc, const char* argv[]);
+
   //boost::shared_ptr<ISimController> _simController;
   std::map<string,shared_library> _modules;
   PATH _library_path;

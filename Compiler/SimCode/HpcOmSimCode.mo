@@ -84,6 +84,7 @@ encapsulated package HpcOmSimCode
       Task sourceTask;
       Task targetTask;
       Boolean outgoing; //true if the dependency is leading to the task of another thread
+      Integer id;
       CommunicationInfo communicationInfo;
     end DEPTASK;
     record PREFETCHTASK //This task will load variables in the cache

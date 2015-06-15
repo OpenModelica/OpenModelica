@@ -17,6 +17,6 @@ class StaticOMCFactory : public OMCFactory
     virtual ~StaticOMCFactory();
     virtual boost::shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings);
     virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory();
-    virtual std::pair<boost::shared_ptr<ISimController>, SimSettings> createSimulation(int argc, const char* argv[]);
+    virtual std::pair<boost::shared_ptr<ISimController>, SimSettings> createSimulation(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 };
 /** @} */ // end of simcorefactoryOMCFactory

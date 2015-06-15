@@ -4,8 +4,13 @@
  *  Created on: 04.06.2015
  *      Author: marcus
  */
-
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <FMU/FMULogger.h>
+
+#if defined(_MSC_VER) && !defined(RUNTIME_STATIC_LINKING)
+	Logger* Logger::instance = 0;
+#endif
 
 FMULogger::FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName) : Logger(false),
   callbackLogger(callbackLogger), component(component), instanceName(instanceName)

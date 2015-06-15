@@ -1860,16 +1860,31 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let solver    = settings.method
   let moLib     = makefileParams.compileDir
   let home      = makefileParams.omhome
+  let &includeMeasure = buffer "" /*BUFD*/
   <<
   #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
   #include <Core/SimController/ISimController.h>
 
-
   <%
   match(getConfigString(PROFILING_LEVEL))
      case("none") then ''
-     case("all_perf") then '#include <Core/Utils/extension/measure_time_papi.hpp>'
+     case("all_perf") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_papi.hpp>
+       #endif
+       >>
+     case("all_stat") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_statistic.hpp>
+       #endif
+       >>
      else
        <<
        #ifdef USE_SCOREP
@@ -1880,7 +1895,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
        >>
   end match
   %>
-
   <%additionalIncludes%>
 
   #ifdef USE_BOOST_THREAD
@@ -1928,6 +1942,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
              MeasureTimePAPI::initialize(getThreadNumber);
            #endif
            >>
+          case("all_stat") then
+          <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimeStatistic::initialize();
+           #endif
+          >>
           else
            <<
            #ifdef USE_SCOREP
@@ -2575,14 +2597,14 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
-            let staticLibs = '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK)  $(LIBOMCPPIDA) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+            let staticLibs = '-lOMCppOMCFactory_static -lOMCppSimController_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppIDA_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppOMCFactory_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
             let &timeMeasureLink +=
                 match(getConfigString(PROFILING_LEVEL))
-                    case("all_perf") then ' -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -lOMCppExtensionUtilities -lOMCppExtensionUtilities_papi -lpapi'
-                    else ' -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -lOMCppExtensionUtilities'
+                    case("all_perf") then " -lOMCppExtensionUtilities_papi -lpapi"
+                    else ""
                 end match
             let CC = if (compileForMPI) then "mpicc" else '<%makefileParams.ccompiler%>'
             let CXX = if (compileForMPI) then "mpicxx" else '<%makefileParams.cxxcompiler%>'
@@ -2603,16 +2625,24 @@ case "gcc" then
 
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
-            CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-            CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
-            CFLAGS_STATIC=$(CFLAGS) <%staticIncludes%> -DRUNTIME_STATIC_LINKING
+
+            CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+            CFLAGS_DYNAMIC=$(CFLAGS_COMMON)
+            CFLAGS_STATIC=$(CFLAGS_COMMON) <%staticIncludes%> -DRUNTIME_STATIC_LINKING
+            <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'CFLAGS=$(CFLAGS_STATIC)' else 'CFLAGS=$(CFLAGS_DYNAMIC)'%>
+            CPPFLAGS=$(CFLAGS)
 
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
-            LDSYSTEMFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory_static -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
-            LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS)
-            LDMAINFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -lOMCppOMCFactory_static -lOMCppModelicaUtilities -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%>
-            LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS)
-            CPPFLAGS = $(CFLAGS) <%extraCppFlags%>
+            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%> -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
+            LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS_COMMON)
+            <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'LDSYSTEMFLAGS=$(LDSYSTEMFLAGS_STATIC)' else 'LDSYSTEMFLAGS=$(LDSYSTEMFLAGS_DYNAMIC)'%>
+
+            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%>
+            LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities $(LDMAINFLAGS_COMMON)
+            LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS_COMMON)
+            <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'LDMAINFLAGS=$(LDMAINFLAGS_STATIC)' else 'LDMAINFLAGS=$(LDMAINFLAGS_DYNAMIC)'%>
+
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
             MAINOBJ=<%fileNamePrefix%>$(EXEEXT)
@@ -2628,13 +2658,10 @@ case "gcc" then
 
             <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
             ifeq ($(RUNTIME_STATIC_LINKING),ON)
-            <%\t%>$(eval CFLAGS=$(CFLAGS_STATIC))
-            <%\t%>$(eval LDMAINFLAGS=$(LDMAINFLAGS_STATIC))
-            <%\t%>$(eval LDSYTEMFLAGS=$(LDSYSTEMFLAGS_STATIC))
-            <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(OFILES) $(MAINFILE) $(LDMAINFLAGS) $(MODELICA_EXTERNAL_LIBS)
+            <%\t%>$(CXX) $(CFLAGS) -I. -o $(MAINOBJ) $(OFILES) $(MAINFILE) $(LDMAINFLAGS) $(MODELICA_EXTERNAL_LIBS)
             else
             <%\t%>$(CXX) -shared -o $(SYSTEMOBJ) $(OFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDSYSTEMFLAGS) $(MODELICA_EXTERNAL_LIBS)
-            <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
+            <%\t%>$(CXX) $(CFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
             endif
 
             <%if boolNot(stringEq(makefileParams.platform, "win32")) then
@@ -6011,7 +6038,22 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <%
   match(getConfigString(PROFILING_LEVEL))
      case("none") then ''
-     case("all_perf") then '#include <Core/Utils/extension/measure_time_papi.hpp>'
+     case("all_perf") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_papi.hpp>
+       #endif
+       >>
+     case("all_stat") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_statistic.hpp>
+       #endif
+       >>
      else
        <<
        #ifdef USE_SCOREP

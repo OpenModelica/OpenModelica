@@ -321,8 +321,8 @@ template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule>> sche
         else ""
       end match
     case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__))) then
-      let odeLocks = odeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockOde", type); separator="\n"
-      let daeLocks = daeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockDae", type); separator="\n"
+      let odeLocks = createLockArrayByName(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockOde", type); separator="\n"
+      let daeLocks = createLockArrayByName(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockDae", type); separator="\n"
       match type
         case ("openmp") then
           let threadDecl = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
@@ -447,10 +447,10 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
         else ""
       end match
     case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__))) then
-      let initlocksOde = odeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockOde", type); separator="\n"
-      let assignLocksOde = odeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "_lockOde", type); separator="\n"
-      let initlocksDae = daeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockDae", type); separator="\n"
-      let assignLocksDae = daeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "_lockDae", type); separator="\n"
+      let initlocksOde = initializeArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockOde", type); separator="\n"
+      let assignLocksOde = assignArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "_lockOde", type); separator="\n"
+      let initlocksDae = initializeArrayLocks(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockDae", type); separator="\n"
+      let assignLocksDae = assignArrayLocks(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "_lockDae", type); separator="\n"
       match type
         case ("openmp") then
           let threadFuncs = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
@@ -500,6 +500,93 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
   end match
 end generateAdditionalConstructorBodyStatements;
 
+template initializeArrayLocks(Integer numComms, String lockName, String iType)
+::=
+match(iType)
+  case "openmp" then
+  <<
+  for(unsigned i=0;i<<%numComms%>;++i)
+  	omp_init_lock(&<%lockName%>_[i]);
+  >>
+  case "pthreads" then
+  <<
+  for(unsigned i=0;i<<%numComms%>;++i)
+  	<%lockName%>_[i] = new alignedLock();
+  >>
+  case "pthreads_spin" then
+  <<
+  for(unsigned i=0;i<<%numComms%>;++i)
+  	<%lockName%>_[i] = new alignedSpinlock();
+  >>
+  else
+  <<
+  //Unsupported parallel instrumentation
+  >>
+end initializeArrayLocks;
+
+template assignArrayLocks(Integer numComms, String lockName, String iType)
+::=
+  match iType
+    case ("openmp") then
+      <<
+      for(unsigned i=0;i<<%numComms%>;++i)
+      	omp_set_lock(&<%lockName%>_[i]);
+      >>
+    case ("pthreads")
+    case ("pthreads_spin") then
+      <<
+      for(unsigned i=0;i<<%numComms%>;++i)
+      	<%lockName%>_[i]->lock();
+      >>
+
+  else
+  <<
+  //Unsupported parallel instrumentation
+  >>
+  end match
+end assignArrayLocks;
+
+template createLockArrayByName(Integer numComms, String lockName, String iType)
+::=
+match(iType)
+  case "openmp" then
+  <<
+  omp_lock_t <%lockName%>_[<%numComms%>];
+  >>
+  case "pthreads" then
+  <<
+  alignedLock* <%lockName%>_[<%numComms%>];
+  >>
+  case "pthreads_spin" then
+  <<
+  alignedSpinlock* <%lockName%>_[<%numComms%>];
+  >>
+  else
+  <<
+  //Unsupported parallel instrumentation
+  >>
+end createLockArrayByName;
+
+template destroyArrayLocks(Integer numComms, String lockName, String iType)
+::=
+match(iType)
+  case "openmp" then
+  <<
+  for(unsigned i=0;i<<%numComms%>;++i)
+  	omp_destroy_lock(&<%lockName%>_[i]);
+  >>
+  case "pthreads"
+  case "pthreads_spin" then
+  <<
+  for(unsigned i=0;i<<%numComms%>;++i)
+    delete <%lockName%>_[i];
+  >>
+  else
+  <<
+  //Unsupported parallel instrumentation
+  >>
+end destroyArrayLocks;
+
 template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedule>> schedulesOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
@@ -517,8 +604,8 @@ template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedu
           >>
         else ""
     case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__))) then
-      let destroyLocksOde = odeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockOde", type); separator="\n"
-      let destroyLocksDae = daeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockDae", type); separator="\n"
+      let destroyLocksOde = destroyArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockOde", type); separator="\n"
+      let destroyLocksDae = destroyArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockDae", type); separator="\n"
       match type
         case ("openmp") then
           <<
@@ -1313,9 +1400,9 @@ end generateThread;
 
 template getLockNameByDepTask(Task depTask)
 ::=
-  match(depTask)
-    case(DEPTASK(sourceTask=CALCTASK(index=sourceIdx), targetTask=CALCTASK(index=targetIdx))) then
-      '<%sourceIdx%>_<%targetIdx%>'
+  match depTask
+    case(task as DEPTASK(__)) then
+      '[<%task.id%>]'
     else
       'invalidLockTask'
   end match
@@ -1460,10 +1547,7 @@ template assignLockByLockName(String lockName, String lockPrefix, String iType)
       <<
       omp_set_lock(&<%lockPrefix%>_<%lockName%>);
       >>
-    case ("pthreads") then
-      <<
-      <%lockPrefix%>_<%lockName%>->lock();
-      >>
+    case ("pthreads")
     case ("pthreads_spin") then
       <<
       <%lockPrefix%>_<%lockName%>->lock();
