@@ -1129,7 +1129,7 @@ algorithm
           DAE.PARTEVALFUNCTION(path=path,expList = expl_1) = e1_1;
           expl = listAppend(expl_1,expl);
         end if;
-        (expl_1,_) = replaceExpList(expl, repl, cond, {}, false);
+        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.CALL(path,expl_1,attr),true);
     case ((e as DAE.PARTEVALFUNCTION(path,expl,tp,t)),repl,cond)
