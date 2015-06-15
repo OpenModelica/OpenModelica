@@ -3547,6 +3547,7 @@ package HpcOmSimCode
       Task sourceTask;
       Task targetTask;
       Boolean outgoing; //true if the dependency is leading to the task of another thread
+      Integer id;
       CommunicationInfo communicationInfo;
     end DEPTASK;
   end Task;
