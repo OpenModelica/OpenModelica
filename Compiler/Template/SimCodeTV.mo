@@ -731,18 +731,6 @@ end SimCode;
 
 package SimCodeUtil
 
-  function testforsecondtearingset
-    input SimCode.SimCode simCode;
-  end testforsecondtearingset;
-
-  function testforsecondtearingset2
-    input list<SimCode.SimEqSystem> eqnlst;
-  end testforsecondtearingset2;
-
-  function testforsecondtearingset3
-    input SimCode.SimEqSystem eqn;
-  end testforsecondtearingset3;
-
   function elementVars
     input list<DAE.Element> ld;
     output list<SimCode.Variable> vars;

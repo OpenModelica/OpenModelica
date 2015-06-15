@@ -1803,87 +1803,6 @@ algorithm
   end matchcontinue;
 end createSimCode;
 
-
-public function testforsecondtearingset
-  input SimCode.SimCode simCode;
-algorithm
-  _ := match(simCode)
-    local
-      list<list<SimCode.SimEqSystem>> algebraicEquations;
-
-    case(SimCode.SIMCODE(algebraicEquations=algebraicEquations))
-      equation
-        List.map_0(algebraicEquations,testforsecondtearingset2);
-     then ();
-
-    else
-      equation
-        print("\n\nIm else case von testforsecondtearingset!\n\n");
-     then ();
-
-  end match;
-end testforsecondtearingset;
-
-public function testforsecondtearingset2
-  input list<SimCode.SimEqSystem> eqnlst;
-algorithm
-  _ := match(eqnlst)
-    local
-       SimCode.SimEqSystem eqn;
-       list<SimCode.SimEqSystem> eqnrest;
-    case(eqn::{})
-      equation
-        testforsecondtearingset3(eqn);
-        print("\n\nREADY\n\n");
-     then ();
-
-    case(eqn::eqnrest)
-      equation
-        testforsecondtearingset3(eqn);
-        testforsecondtearingset2(eqnrest);
-     then ();
-  end match;
-end testforsecondtearingset2;
-
-public function testforsecondtearingset3
-  input SimCode.SimEqSystem eqn;
-algorithm
-  _ := match(eqn)
-    local
-      Integer index, index2, sysIndex, sysIndex2;
-      list<SimCode.SimEqSystem> eqs, eqs2;
-      list<DAE.ComponentRef> crefs, crefs2;
-      SimCode.SimEqSystem cont;
-      list<SimCodeVar.SimVar> discVars;
-      list<SimCode.SimEqSystem> discEqs;
-      Option<SimCode.JacobianMatrix> optSymJac, optSymJac2;
-      Boolean partOfMixed;
-      list<SimCodeVar.SimVar> vars;
-      list<DAE.Exp> beqs;
-      Boolean linearTearing, linearTearing2;
-      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-      list<DAE.ElementSource> sources;
-      Boolean homotopySupport, homotopySupport2;
-      Boolean mixedSystem, mixedSystem2;
-
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=eqs, crefs=crefs, jacobianMatrix=optSymJac, linearTearing=linearTearing, homotopySupport=homotopySupport, mixedSystem=mixedSystem), NONE()))
-      equation
-        print("\n\nIn testforsecondtearingset OHNE second tearing set\n\n");
-     then ();
-
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=eqs, crefs=crefs, jacobianMatrix=optSymJac, linearTearing=linearTearing, homotopySupport=homotopySupport, mixedSystem=mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index=index2, eqs=eqs2, crefs=crefs2, jacobianMatrix=optSymJac2, linearTearing=linearTearing2, homotopySupport=homotopySupport2, mixedSystem=mixedSystem2))))
-      equation
-        print("\n\nIn testforsecondtearingset MIT second tearing set\n\n");
-     then ();
-
-    else
-      equation
-        print("\n\nAnything else!\n\n");
-     then ();
-
-  end match;
-end testforsecondtearingset3;
-
 protected function getParamAsserts"splits the equationArray in variable-dependent and parameter-dependent equations.
 author: Waurich  TUD-2015-04"
   input BackendDAE.Equation eqIn;
@@ -2201,42 +2120,39 @@ algorithm
       list<SimCodeVar.SimVar> discVars;
       list<SimCode.SimEqSystem> discEqs;
       Option<SimCode.JacobianMatrix> optSymJac, optSymJac2;
-      Boolean partOfMixed;
-      list<SimCodeVar.SimVar> vars;
-      list<DAE.Exp> beqs;
+      Boolean partOfMixed,partOfMixed2;
+      list<SimCodeVar.SimVar> vars,vars2;
+      list<DAE.Exp> beqs,beqs2;
       Boolean linearTearing, linearTearing2;
-      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-      list<DAE.ElementSource> sources;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac,simJac2;
+      list<DAE.ElementSource> sources,sources2;
       Boolean homotopySupport, homotopySupport2;
       Boolean mixedSystem, mixedSystem2;
 
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, optSymJac, sources, _)), _) equation
-      // print("\n\nIn case(SimCode.SES_LINEAR\n\n");
+    // no dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, optSymJac, sources, _), NONE()), _) equation
       sysIndex = inSysIndexMap[index];
     then SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, optSymJac, sources, sysIndex), NONE());
 
-    // no dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, optSymJac, linearTearing, homotopySupport, mixedSystem), NONE()), _) equation
-      // print("\n\nIn case(SimCode.SES_NONLINEAR WITHOUT dynamic tearing\n\n");
-      // print("\ninSysIndexMap: " + stringDelimitList(List.map(arrayList(inSysIndexMap),intString),",") + "\n");
       eqs = List.map1(eqs, setSystemIndexMap, inSysIndexMap);
       sysIndex = inSysIndexMap[index];
     then SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, sysIndex, optSymJac, linearTearing, homotopySupport, mixedSystem), NONE());
 
     // dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, optSymJac, sources, _), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, _))), _) equation
+      sysIndex = inSysIndexMap[index];
+      sysIndex2 = inSysIndexMap[index2];
+    then SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, optSymJac, sources, sysIndex), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, sysIndex2)));
+
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=eqs, crefs=crefs, jacobianMatrix=optSymJac, linearTearing=linearTearing, homotopySupport=homotopySupport, mixedSystem=mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index=index2, eqs=eqs2, crefs=crefs2, jacobianMatrix=optSymJac2, linearTearing=linearTearing2, homotopySupport=homotopySupport2, mixedSystem=mixedSystem2))), _) equation
-      // print("\n\nIn case(SimCode.SES_NONLINEAR WITH dynamic tearing\n\n");
-      // print("\ninSysIndexMap: " + stringDelimitList(List.map(arrayList(inSysIndexMap),intString),",") + "\n");
       eqs = List.map1(eqs, setSystemIndexMap, inSysIndexMap);
       sysIndex = inSysIndexMap[index];
-      // print("\nsysIndex: " + intString(sysIndex) + "\n");
       eqs2 = List.map1(eqs2, setSystemIndexMap, inSysIndexMap);
       sysIndex2 = inSysIndexMap[index2];
-      // print("\nsysIndex2: " + intString(sysIndex2) + "\n");
     then SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, sysIndex, optSymJac, linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, sysIndex2, optSymJac2, linearTearing2, homotopySupport2, mixedSystem2)));
 
     case(SimCode.SES_MIXED(index, cont, discVars, discEqs, _), _) equation
-      // print("\n\nIn case(SimCode.MIXED\n\n");
       sysIndex = inSysIndexMap[index];
       cont = setSystemIndexMap(cont, inSysIndexMap);
     then SimCode.SES_MIXED(index, cont, discVars, discEqs, sysIndex);
@@ -2296,12 +2212,12 @@ algorithm
       list<SimCode.JacobianMatrix> symjacs, symjacs2, restSymJacs, accJac;
       Option<SimCode.JacobianMatrix> optSymJac;
       SimCode.JacobianMatrix symJac, symJac2;
-      Boolean partOfMixed;
-      list<SimCodeVar.SimVar> vars;
-      list<DAE.Exp> beqs;
-      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+      Boolean partOfMixed,partOfMixed2;
+      list<SimCodeVar.SimVar> vars,vars2;
+      list<DAE.Exp> beqs,beqs2;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac,simJac2;
       Boolean linearTearing, linearTearing2;
-      list<DAE.ElementSource> sources;
+      list<DAE.ElementSource> sources,sources2;
       Boolean homotopySupport, homotopySupport2;
       Boolean mixedSystem, mixedSystem2;
 
@@ -2318,115 +2234,61 @@ algorithm
     // No dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, NONE(), linearTearing, homotopySupport, mixedSystem), NONE())::rest, _, _, _, _, _, _, _)
       equation
-        // print("\n\nIN countandIndexAlgebraicLoopsWork case OHNE Jacobian OHNE dynamic tearing\n\n");
-        // print(dumpSimEqSystemLst(eqs) + "\ninNonLinSysIndex: " + intString(inNonLinSysIndex) + "\n");
         (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        // print("\neqs:\n" + dumpSimEqSystemLst(eqs) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\n");
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, NONE(), linearTearing, homotopySupport, mixedSystem), NONE())::inEqnsAcc, inSymJacsAcc);
-        // print("\nres:\n" + dumpSimEqSystemLst(res) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\nEND CASE\n");
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac), linearTearing, homotopySupport, mixedSystem), NONE())::rest, _, _, _, _, _, _, _)
       equation
-          // print("\n\nIN countandIndexAlgebraicLoopsWork case MIT Jacobian OHNE dynamic tearing\n\n");
-          // print(dumpSimEqSystemLst(eqs) + "\ninNonLinSysIndex: " + intString(inNonLinSysIndex) + "\ninJacobianIndex: " + intString(inJacobianIndex) + "\n");
-          // print("NR 1\n");
-          // dumpJacobianMatrixLst(inSymJacs);
-          // print("Jacobian Matrix1:\n" + dumpJacobianMatrix(SOME(symJac)) + "\n\n");
         (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-          // print("\neqs:\n" + dumpSimEqSystemLst(eqs) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\n");
-          // print("NR 2\n");
-          // dumpJacobianMatrixLst(symjacs);
         (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-          // print("Jacobian Matrix2:\n" + dumpJacobianMatrix(SOME(symJac)) + "\n\n");
-          // print("NR 3\n");
-          // dumpJacobianMatrixLst(symjacs);
-          // print("\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\n");
-          // print("\nbegin listAppend(symjacs,inSymJacs):\n");
-          // dumpJacobianMatrixLst(listAppend(symjacs,inSymJacs));
-          // print("\nend listAppend(symjacs,inSymJacs)\n\nbegin symJac::inSymJacsAcc:\n");
-          // dumpJacobianMatrixLst(symJac::inSymJacsAcc);
-          // print("end symJac::inSymJacsAcc\n\n");
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs,inSymJacs), countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), linearTearing, homotopySupport, mixedSystem), NONE())::inEqnsAcc, symJac::inSymJacsAcc);
-          // print("\nres:\n" + dumpSimEqSystemLst(res) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\nEND CASE\n");
-          // print("NR 4\n");
-          // dumpJacobianMatrixLst(symjacs);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
-    // Dynamic tearing
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, NONE(), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, NONE(), linearTearing2, homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
-      equation
-        // print("\n\nIN countandIndexAlgebraicLoopsWork case OHNE Jacobian MIT dynamic tearing\n\n");
-        // print(dumpSimEqSystemLst(eqs));
-        // print(dumpSimEqSystemLst(eqs2) + "\ninNonLinSysIndex: " + intString(inNonLinSysIndex) + "\n");
-        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-        (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
-        // print("\neqs:\n" + dumpSimEqSystemLst(eqs) + "\neqs2:\n" + dumpSimEqSystemLst(eqs2) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\n");
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, NONE(), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, NONE(), linearTearing2, homotopySupport2, mixedSystem2)))::inEqnsAcc, inSymJacsAcc);
-        // print("\nres: " + dumpSimEqSystemLst(res) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\nEND CASE\n");
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, SOME(symJac2), linearTearing2, homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
-      equation
-          // print("\n\nIN countandIndexAlgebraicLoopsWork case MIT Jacobian MIT dynamic tearing\n\n");
-          // print(dumpSimEqSystemLst(eqs) + "\ninNonLinSysIndex: " + intString(inNonLinSysIndex) + "\ninJacobianIndex: " + intString(inJacobianIndex) + "\n");
-          // print("NR 1\n");
-          // dumpJacobianMatrixLst(inSymJacs);
-          // print("Jacobian Matrix1 strict set:\n" + dumpJacobianMatrix(SOME(symJac)) + "\n\n");
-          // print("Jacobian Matrix1 casual set:\n" + dumpJacobianMatrix(SOME(symJac2)) + "\n\n");
-        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
-          // print("\neqs:\n" + dumpSimEqSystemLst(eqs) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\n");
-          // print("NR 2 strict set\n");
-          // dumpJacobianMatrixLst(symjacs);
-        (eqs2, symjacs2, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
-          // print("\neqs2:\n" + dumpSimEqSystemLst(eqs2) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\n");
-          // print("NR 2 casual set\n");
-          // dumpJacobianMatrixLst(symjacs2);
-        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-          // print("Jacobian Matrix2 stict set:\n" + dumpJacobianMatrix(SOME(symJac)) + "\n\n");
-          // print("NR 3 strict set\n");
-          // dumpJacobianMatrixLst(symjacs);
-          // print("\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\n");
-          // print("\nbegin listAppend(symjacs,inSymJacs) strict set:\n");
-          // dumpJacobianMatrixLst(listAppend(symjacs,inSymJacs));
-          // print("\nend listAppend(symjacs,inSymJacs) strict set\n\nbegin symJac::inSymJacsAcc strict set:\n");
-          // dumpJacobianMatrixLst(symJac::inSymJacsAcc);
-          // print("end symJac::inSymJacsAcc strict set\n\n");
-        (symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs2) = countandIndexAlgebraicLoopsSymJac(symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-          // print("Jacobian Matrix2 casual set:\n" + dumpJacobianMatrix(SOME(symJac2)) + "\n\n");
-          // print("NR 3 casual set\n");
-          // dumpJacobianMatrixLst(symjacs2);
-          // print("\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\n");
-          // print("\nbegin listAppend(symjacs,inSymJacs) casual set:\n");
-          // dumpJacobianMatrixLst(listAppend(symjacs2,inSymJacs));
-          // print("\nend listAppend(symjacs,inSymJacs) casual set\n\nbegin symJac::inSymJacsAcc casual set:\n");
-          // dumpJacobianMatrixLst(symJac2::inSymJacsAcc);
-          // print("end symJac::inSymJacsAcc casual set\n\n");
-          // print("\n\n\nVEREINT: listAppend(listAppend(symjacs2,symjacs),inSymJacs)\n");
-          // dumpJacobianMatrixLst(listAppend(listAppend(symjacs2,symjacs),inSymJacs));
-          // print("\n\n\nVEREINT 2: listAppend({symJac2, symJac}, inSymJacsAcc)\n");
-          // dumpJacobianMatrixLst(listAppend({symJac2, symJac}, inSymJacsAcc));
-          // print("\n\n\n");
-        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(listAppend(symjacs2,symjacs),inSymJacs), countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, SOME(symJac2), linearTearing2, homotopySupport2, mixedSystem2)))::inEqnsAcc, listAppend({symJac2, symJac}, inSymJacsAcc));
-          // print("\nres:\n" + dumpSimEqSystemLst(res) + "\ncountNonLinSys: " + intString(countNonLinSys) + "\ncountJacobians: " + intString(countJacobians) + "\nEND CASE\n");
-          // print("NR 4 strict set\n");
-          // dumpJacobianMatrixLst(symjacs);
-          // print("NR 4 casual set\n");
-          // dumpJacobianMatrixLst(symjacs2);
-      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
-
-    // No dynamic tearing
-    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, NONE(), sources, _))::rest, _, _, _, _, _, _, _)
+    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, NONE(), sources, _), NONE())::rest, _, _, _, _, _, _, _)
       equation
         (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, NONE(), sources, inLinearSysIndex), NONE())::inEqnsAcc, inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
-    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, SOME(symJac), sources, _))::rest, _, _, _, _, _, _, _)
+    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, SOME(symJac), sources, _), NONE())::rest, _, _, _, _, _, _, _)
       equation
         (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
         (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(symjacs,inSymJacs), countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, SOME(symJac), sources, inLinearSysIndex), NONE())::inEqnsAcc, symJac::inSymJacsAcc);
+      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+
+    // Dynamic tearing
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, NONE(), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, NONE(), linearTearing2, homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
+      equation
+        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
+        (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, NONE(), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, NONE(), linearTearing2, homotopySupport2, mixedSystem2)))::inEqnsAcc, inSymJacsAcc);
+      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, SOME(symJac), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, _, SOME(symJac2), linearTearing2, homotopySupport2, mixedSystem2)))::rest, _, _, _, _, _, _, _)
+      equation
+        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inJacobianIndex, {}, {});
+        (eqs2, symjacs2, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys, countNonLinSys+1, countMixedSys, countJacobians, {}, {});
+        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+        (symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs2) = countandIndexAlgebraicLoopsSymJac(symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(listAppend(symjacs2,symjacs),inSymJacs), countLinearSys, countNonLinSys, countMixedSys, countJacobians, SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, inNonLinSysIndex, SOME(symJac), linearTearing, homotopySupport, mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, inNonLinSysIndex+1, SOME(symJac2), linearTearing2, homotopySupport2, mixedSystem2)))::inEqnsAcc, listAppend({symJac2, symJac}, inSymJacsAcc));
+      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+
+    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, NONE(), sources, _), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, NONE(), sources2, _)))::rest, _, _, _, _, _, _, _)
+      equation
+        (eqs,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
+        (eqs2,_, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys+1, countNonLinSys, countMixedSys, countJacobians,  {}, {});
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, NONE(), sources, inLinearSysIndex), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, NONE(), sources2, inLinearSysIndex+1)))::inEqnsAcc, inSymJacsAcc);
+      then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+
+    case (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, SOME(symJac), sources, _), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, SOME(symJac2), sources2, _)))::rest, _, _, _, _, _, _, _)
+      equation
+        (eqs, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs, {}, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex,  {}, {});
+        (eqs2, symjacs2, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(eqs2, {}, countLinearSys+1, countNonLinSys, countMixedSys, countJacobians,  {}, {});
+        (symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs) = countandIndexAlgebraicLoopsSymJac(symJac, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+        (symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians, symjacs2) = countandIndexAlgebraicLoopsSymJac(symJac2, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
+        (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, listAppend(listAppend(symjacs2,symjacs),inSymJacs), countLinearSys, countNonLinSys, countMixedSys, countJacobians,  SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, beqs, simJac, eqs, SOME(symJac), sources, inLinearSysIndex), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, vars2, beqs2, simJac2, eqs2, SOME(symJac2), sources2, inLinearSysIndex+1)))::inEqnsAcc, listAppend({symJac2, symJac}, inSymJacsAcc));
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
 
     case (SimCode.SES_MIXED(index, cont, discVars, discEqs, _)::rest, _, _, _, _, _, _, _)
@@ -2437,7 +2299,6 @@ algorithm
 
     case (eq::rest, _, _, _, _, _, _, _)
       equation
-        // print("else: " + dumpSimEqSystem(eq) + "\n");
         (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians) = countandIndexAlgebraicLoopsWork(rest, inSymJacs, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inJacobianIndex, eq::inEqnsAcc, inSymJacsAcc);
       then (res, symjacs, countLinearSys, countNonLinSys, countMixedSys, countJacobians);
   end match;
@@ -4557,7 +4418,6 @@ algorithm
 */
      // CASE: linear
      case(true, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv)) equation
-       // print("\n\nCASE: linear in createTornSystem\n\n");
        BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian) = strictTearingSet;
        // get tearing vars
        tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
@@ -4569,16 +4429,11 @@ algorithm
        reqns = BackendEquation.getEqns(residualEqns, eqns);
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate other equations
-       // print("STRICT SET:\n");
-       // print("iuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
        (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
-       // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
-       // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-       // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        lSystem = SimCode.LINEARSYSTEM(uniqueEqIndex, false, simVars, {}, {}, simequations, jacobianMatrix, {}, 0);
 
        // Do if dynamic tearing is activated
@@ -4594,27 +4449,20 @@ algorithm
          reqns = BackendEquation.getEqns(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate other equations
-         // print("\nCASUAL SET:\n");
-         // print("iuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
          (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
-         // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
-         // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
          simequations = listAppend(simequations, resEqs);
 
          (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-         // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
          alternativeTearingL = SOME(SimCode.LINEARSYSTEM(uniqueEqIndex, false, simVars, {}, {}, simequations, jacobianMatrix, {}, 0));
 
        else
          alternativeTearingL = NONE();
        end if;
-       // print("\noutputIndex: " + intString(uniqueEqIndex+1) + "\n\n");
      then ({SimCode.SES_LINEAR(lSystem, alternativeTearingL)}, uniqueEqIndex+1, tempvars);
 
      // CASE: nonlinear
      case(false, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _) equation
-       // print("\n\nCASE: nonlinear in createTornSystem\n\n");
        BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, otherEqnVarTpl=otherEqns, jac=inJacobian) = strictTearingSet;
        // get tearing vars
        tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
@@ -4626,16 +4474,11 @@ algorithm
        // generate residual replacements
        tcrs = List.map(tvars, BackendVariable.varCref);
        // generate other equations
-       // print("STRICT SET:\n");
-       // print("iuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
        (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
-       // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
-       // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-       // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
        (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquationList(reqns, containsHomotopyCall, false);
 
        nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix, linear, homotopySupport, mixedSystem);
@@ -4653,23 +4496,17 @@ algorithm
          // generate residual replacements
          tcrs = List.map(tvars, BackendVariable.varCref);
          // generate other equations
-         // print("\nCASUAL SET:\n");
-         // print("iuniqueEqIndex: " + intString(iuniqueEqIndex) + "\n");
          (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex+1, tempvars, {});
-         // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
-         // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
          simequations = listAppend(simequations, resEqs);
 
          (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-         // print("uniqueEqIndex: " + intString(uniqueEqIndex) + "\n");
          (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquationList(reqns, containsHomotopyCall, false);
 
          alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix, linear, homotopySupport, mixedSystem));
        else
          alternativeTearingNl = NONE();
        end if;
-       // print("\noutputIndex: " + intString(uniqueEqIndex+1) + "\n\n");
      then ({SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl)}, uniqueEqIndex+1, tempvars);
    end match;
 end createTornSystem;
@@ -10351,8 +10188,8 @@ algorithm
     local
       DAE.Exp e,left;
       DAE.ComponentRef cr;
-      Boolean partOfMixed;
-      list<SimCodeVar.SimVar> vars;
+      Boolean partOfMixed,partOfMixed1;
+      list<SimCodeVar.SimVar> vars,vars1;
       list<DAE.Exp> elst, elst1;
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac, simJac1;
       Integer index, index1, indexSys, indexSys1;
@@ -10364,7 +10201,7 @@ algorithm
       DAE.ElementSource source;
       Option<SimCode.JacobianMatrix> symJac, symJac1;
       Boolean linearTearing, linearTearing1;
-      list<DAE.ElementSource> sources;
+      list<DAE.ElementSource> sources,sources1;
       Boolean homotopySupport, homotopySupport1;
       Boolean mixedSystem, mixedSystem1;
 
@@ -10390,14 +10227,15 @@ algorithm
          then
          SimCode.SES_ALGORITHM();
          */
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, elst, simJac, discEqs, symJac, sources, indexSys))
+
+    // no dynamic tearing
+    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, elst, simJac, discEqs, symJac, sources, indexSys), NONE())
       equation
         simJac1 = List.map(simJac, addDivExpErrorMsgtosimJac);
         elst1 = List.map1(elst, addDivExpErrorMsgtoExp, DAE.emptyElementSource);
       then
         SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, elst1, simJac1, discEqs, symJac, sources, indexSys), NONE());
 
-    // no dynamic tearing
     case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=discEqs, crefs=crefs, indexNonLinearSystem=indexSys, jacobianMatrix=symJac, linearTearing=linearTearing, homotopySupport=homotopySupport, mixedSystem=mixedSystem), NONE())
       equation
         discEqs =  List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);
@@ -10405,6 +10243,15 @@ algorithm
         SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, discEqs, crefs, indexSys, symJac, linearTearing, homotopySupport, mixedSystem), NONE());
 
     // dynamic tearing
+    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, elst, simJac, discEqs, symJac, sources, indexSys), SOME(SimCode.LINEARSYSTEM(index1, partOfMixed1, vars1, elst1, simJac1, discEqs1, symJac1, sources1, indexSys1)))
+      equation
+        simJac = List.map(simJac, addDivExpErrorMsgtosimJac);
+        elst = List.map1(elst, addDivExpErrorMsgtoExp, DAE.emptyElementSource);
+        simJac1 = List.map(simJac1, addDivExpErrorMsgtosimJac);
+        elst1 = List.map1(elst1, addDivExpErrorMsgtoExp, DAE.emptyElementSource);
+      then
+        SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, vars, elst, simJac, discEqs, symJac, sources, indexSys), SOME(SimCode.LINEARSYSTEM(index1, partOfMixed1, vars1, elst1, simJac1, discEqs1, symJac1, sources1, indexSys1)));
+
     case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=discEqs, crefs=crefs, indexNonLinearSystem=indexSys, jacobianMatrix=symJac, linearTearing=linearTearing, homotopySupport=homotopySupport, mixedSystem=mixedSystem), SOME(SimCode.NONLINEARSYSTEM(index=index1, eqs=discEqs1, crefs=crefs1, indexNonLinearSystem=indexSys1, jacobianMatrix=symJac1, linearTearing=linearTearing1, homotopySupport=homotopySupport1, mixedSystem=mixedSystem1)))
       equation
         discEqs =  List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);

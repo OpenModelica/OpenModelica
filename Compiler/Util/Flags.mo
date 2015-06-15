@@ -1053,7 +1053,7 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
     Util.gettext("Specifies method that removes simple equations."));
 
 constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(68, "dynamicTearing",
-  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"));
 
 constant ConfigFlag SYM_EULER = CONFIG_FLAG(69, "symEuler",
