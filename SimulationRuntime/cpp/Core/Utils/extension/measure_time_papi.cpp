@@ -6,14 +6,14 @@ MeasureTimeValuesPAPI::MeasureTimeValuesPAPI(unsigned long long time, long long 
 
 MeasureTimeValuesPAPI::~MeasureTimeValuesPAPI() {}
 
-std::string MeasureTimeValuesPAPI::serializeToJson(unsigned int numCalcs)
+std::string MeasureTimeValuesPAPI::serializeToJson()
 {
   std::stringstream ss;
-  ss << "\"time\":" << time << ",\"maxTime\":" << max_time << ",\"l2cacheMisses\":" << l2CacheMisses
+  ss << "\"ncall\":" << _numCalcs << "\"time\":" << time << ",\"maxTime\":" << max_time << ",\"l2cacheMisses\":" << l2CacheMisses
           << ",\"instructions\":" << instructions
-          << ",\"meanTime\":" << (numCalcs == 0 ? 0 : time/numCalcs)
-          << ",\"meanInstructions\":" << (numCalcs == 0 ? 0 : instructions/numCalcs)
-          << ",\"meanL2CacheMisses\":" << (numCalcs == 0 ? 0 : l2CacheMisses/numCalcs);
+          << ",\"meanTime\":" << (_numCalcs == 0 ? 0 : time/_numCalcs)
+          << ",\"meanInstructions\":" << (_numCalcs == 0 ? 0 : instructions/_numCalcs)
+          << ",\"meanL2CacheMisses\":" << (_numCalcs == 0 ? 0 : l2CacheMisses/_numCalcs);
   return ss.str();
 }
 
