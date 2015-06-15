@@ -849,3 +849,7 @@ September 18-19, 2003.
 .. |WYSIWYG| replace:: :abbr:`WYSIWYG (What-You-See-Is-What-You-Get)`
 
 .. omc-reset ::
+
+.. bibliography:: openmodelica.bib extrarefs.bib
+  :cited:
+  :filter: docname in docnames

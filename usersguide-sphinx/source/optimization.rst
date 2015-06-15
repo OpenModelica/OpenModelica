@@ -560,3 +560,7 @@ Window Regions in OMOptim GUI
   :height: 12pt
 
 .. omc-reset ::
+
+.. bibliography:: openmodelica.bib extrarefs.bib
+  :cited:
+  :filter: docname in docnames

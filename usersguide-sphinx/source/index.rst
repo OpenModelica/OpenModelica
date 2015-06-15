@@ -26,7 +26,6 @@ Contents:
   ompython
   scripting_api
   faq
-  conclusion
 
 .. toctree::
   :maxdepth: 1
