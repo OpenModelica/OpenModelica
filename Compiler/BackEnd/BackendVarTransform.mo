@@ -2639,17 +2639,17 @@ algorithm
     local
       Boolean differentiated;
       BackendDAE.EquationKind kind;
-      Integer subPartitionIndex, id;
+      Integer id;
       BackendDAE.LoopInfo loopInfo;
       DAE.Exp startIt, endIt;
       list<BackendDAE.IterCref> crefs;
-  case(BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind,subPartitionIndex=subPartitionIndex, loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=crefs)),_)
+  case(BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=kind, loopInfo=BackendDAE.LOOP(loopId=id,startIt=startIt,endIt=endIt,crefs=crefs)),_)
     equation
       crefs = replaceIterationCrefs(crefs,repl,{});
       if listEmpty(crefs) then loopInfo = BackendDAE.NO_LOOP();
       else loopInfo = BackendDAE.LOOP(id,startIt,endIt,crefs);
       end if;
-    then BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex, loopInfo);
+    then BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, loopInfo);
   else
     then eqAttrIn;
   end matchcontinue;

@@ -1217,7 +1217,7 @@ uniontype ClockKind
   end BOOLEAN_CLOCK;
 
   record SOLVER_CLOCK
-    ClockKind c;
+    Exp c;
     String solverMethod;
   end SOLVER_CLOCK;
 end ClockKind;

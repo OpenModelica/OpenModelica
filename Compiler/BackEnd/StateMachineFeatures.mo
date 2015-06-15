@@ -341,7 +341,7 @@ protected
   list<tuple<DAE.ComponentRef,list<Composition>>> refiningFiltered;
 algorithm
   AUTOMATA_EQS(vars, knowns, eqs) := synEqsAcc;
-  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0, BackendDAE.NO_LOOP());
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), BackendDAE.NO_LOOP());
 
   R(initialState, refining) := comp;
   flatA := List.find(flatAs, function findInitialState(crefCmp=initialState));
@@ -482,7 +482,7 @@ algorithm
   outStateInnerOuters := {};
   outLocalEqns := {};
   sharedCrefToStateExps := HashTableExpToIndexExp.emptyHashTable();
-  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0, BackendDAE.NO_LOOP());
+  attrDynamic := BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC;
 
   preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
   activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
@@ -627,7 +627,7 @@ algorithm
   DAE.CREF(componentRef=componentRef, ty=ty) := varCRefToCheck;
   tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource);
   callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0, BackendDAE.NO_LOOP());
+  attrDynamic := BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC;
 
   activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
   activeResetRefExp := DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT);
@@ -843,7 +843,7 @@ algorithm
   eqExp := DAE.RELATION(DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
   // SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
   andExp := DAE.LBINARY(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
-  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0, BackendDAE.NO_LOOP());
+  bindingKind := BackendDAE.EQ_ATTR_DEFAULT_BINDING;
   eqn := BackendDAE.EQUATION(DAE.CREF(activePlotIndicatorRef, DAE.T_BOOL_DEFAULT), andExp, DAE.emptyElementSource, bindingKind);
 end synthesizeAutomatonEqsCreateActiveIndication;
 
@@ -1162,7 +1162,7 @@ algorithm
 
   // ***** Create new governing equations *****
   eqs := {};
-  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0, BackendDAE.NO_LOOP());
+  bindingKind := BackendDAE.EQ_ATTR_DEFAULT_BINDING;
 
   //input Boolean c[size(t,1)] "Transition conditions sorted in priority";
   // Delayed transitions are realized by "c[i] = previous(cImmediate[i])"
@@ -2496,27 +2496,28 @@ Just a workaround as long as no support of synchronous features."
 algorithm
   oshared := match (timeEventsIn,shared)
     local
-      BackendDAE.Variables knvars,exobj,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      list<BackendDAE.WhenClause> wclst,wclst1;
-      list<BackendDAE.ZeroCrossing> zc, rellst, smplLst;
-      Integer numberOfMathEventFunctions;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
       list<BackendDAE.TimeEvent> timeEvents;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
+      list<BackendDAE.WhenClause> whenClauseLst;
+      list<BackendDAE.ZeroCrossing> zeroCrossingLst;
+      list<BackendDAE.ZeroCrossing> sampleLst;
+      list<BackendDAE.ZeroCrossing> relationsLst;
+      Integer numberMathEvents;
+      array<DAE.ClockKind> clocks;
+      BackendDAE.EventInfo eventInfo;
+    case( _, BackendDAE.SHARED( eventInfo =
+              BackendDAE.EVENT_INFO (
+                  timeEvents = timeEvents, whenClauseLst = whenClauseLst,
+                  zeroCrossingLst = zeroCrossingLst, sampleLst = sampleLst,
+                  relationsLst = relationsLst, numberMathEvents = numberMathEvents,
+                  clocks = clocks ) ))
       equation
         timeEvents = listAppend(timeEvents,timeEventsIn);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
-
+        eventInfo = BackendDAE.EVENT_INFO (
+                      timeEvents = timeEvents, whenClauseLst = whenClauseLst,
+                      zeroCrossingLst = zeroCrossingLst, sampleLst = sampleLst,
+                      relationsLst = relationsLst, numberMathEvents = numberMathEvents,
+                      clocks = clocks );
+      then BackendDAEUtil.setEventInfo(shared, eventInfo);
   end match;
 end wrapAddTimeEventHack;
 
@@ -2542,14 +2543,13 @@ protected
   // EQUATION_ATTRIBUTES
   Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   BackendDAE.EquationKind kind;
-  Integer subPartitionIndex;
 
   BackendDAE.LoopInfo loopInfo;
 algorithm
   try
     BackendDAE.EQUATION(exp,scalar,source,attr) := inEq;
     DAE.CREF(componentRef=left) := exp;
-    BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex, loopInfo) := attr;
+    BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, loopInfo) := attr;
     // walk through scalar, replace previous(x) by pre(x)
     scalar := Expression.traverseExpBottomUp(scalar, subsPreForPrevious, NONE());
     // sample(0, samplingTime)
@@ -2557,7 +2557,7 @@ algorithm
     whenEquation := BackendDAE.WHEN_EQ(expCond, left, scalar, NONE());
     size := 1; // Fixme what is "size" for? does it reference the "sample index" of a corresponding (time)event BackendDAE.Shared.eventInfo.timeEvents
     outEq := BackendDAE.WHEN_EQUATION(size, whenEquation, source,
-      BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION(), subPartitionIndex, loopInfo));
+      BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION(), loopInfo));
   else
     print("wrapInWhenHack: I FAILED MISERABLY FOR: " + anyString(inEq) + "\n");
     fail();

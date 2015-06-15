@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 #include <SimCoreFactory/ObjectFactory.h>

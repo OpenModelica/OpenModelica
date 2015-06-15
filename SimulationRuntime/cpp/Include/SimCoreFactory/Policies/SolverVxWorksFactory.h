@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 
@@ -15,7 +15,7 @@ public:
         : ObjectFactory<CreationPolicy>(library_path, modelicasystem_path, config_path)
     {
     }
-    
+
     ~SolverVxWorksFactory()
     {
     }
@@ -30,7 +30,7 @@ public:
     {
         string solver_key;
         if(solver_name.compare("Euler") == 0)
-        {          
+        {
             solver_key.assign("createEuler");
         }
         else if(solver_name.compare("RTEuler") == 0)

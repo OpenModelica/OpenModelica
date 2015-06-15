@@ -641,6 +641,37 @@ algorithm
 end matchcontinue;
 end isIntegerOrSubTypeInteger;
 
+protected function isClockOrSubTypeClock1
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := matchcontinue(inType)
+    local Type ty; Boolean lb1,lb2,lb3, lb4;
+    case(ty)
+      equation
+        lb1 = isClock(ty);
+        lb2 = subtype(ty, DAE.T_CLOCK_DEFAULT);
+        lb3 = subtype(DAE.T_CLOCK_DEFAULT,ty);
+        lb1 = boolOr(lb1,boolAnd(lb2,lb3));
+
+      then lb1;
+    else false;
+end matchcontinue;
+end isClockOrSubTypeClock1;
+
+public function isClockOrSubTypeClock
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match inType
+    local
+      DAE.Type ty;
+    case DAE.T_FUNCTION(funcResultType = ty)
+      then isClockOrSubTypeClock1(ty);
+    else isClockOrSubTypeClock1(inType);
+  end match;
+end isClockOrSubTypeClock;
+
 public function isBooleanOrSubTypeBoolean
 "@author: adrpo
  This function verifies if it is some kind of a Boolean type we are working with."
@@ -703,6 +734,26 @@ algorithm
     else false;
   end matchcontinue;
 end isIntegerOrRealOrBooleanOrSubTypeOfEither;
+
+public function isClock
+  input DAE.Type tp;
+  output Boolean res;
+algorithm
+  res := isScalarClock(arrayElementType(tp));
+end isClock;
+
+public function isScalarClock
+  input DAE.Type inType;
+  output Boolean res;
+algorithm
+  res := match inType
+  local
+    Type ty;
+  case DAE.T_CLOCK() then true;
+  case DAE.T_SUBTYPE_BASIC(complexType = ty) then isScalarClock(ty);
+  else false;
+  end match;
+end isScalarClock;
 
 public function isInteger "Returns true if type is Integer"
   input DAE.Type tp;

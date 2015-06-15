@@ -129,6 +129,7 @@ protected
   BackendDAE.Variables vars_;
   BackendDAE.EquationArray eqns_;
   BackendDAE.ExtraInfo info;
+  array<DAE.ClockKind> clocks;
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
   BackendDAE.SHARED(knownVars=knownVars,
@@ -151,7 +152,8 @@ algorithm
                         zeroCrossingLst=zeroCrossingLst,
                         sampleLst=sampleLst,
                         relationsLst=relationsLst,
-                        numberMathEvents=numberMathEvents) := eventInfo;
+                        numberMathEvents=numberMathEvents,
+                        clocks=clocks) := eventInfo;
 
   ht := HashTableExpToIndex.emptyHashTable();
 
@@ -172,7 +174,8 @@ algorithm
                                      zeroCrossingLst,
                                      sampleLst,
                                      relationsLst,
-                                     numberMathEvents);
+                                     numberMathEvents,
+                                     clocks);
   shared := BackendDAE.SHARED(knownVars,
                               externalObjects,
                               aliasVars,
@@ -693,46 +696,65 @@ protected function findZeroCrossings1 "
   output BackendDAE.EqSystem outSyst;
   output BackendDAE.Shared outShared;
 protected
-  BackendDAE.Variables vars, knvars, exobj, av;
-  BackendDAE.EquationArray eqns, remeqns, inieqns, eqns1;
-  list<DAE.Constraint> constrs;
-  list<DAE.ClassAttributes> clsAttrs;
-  BackendDAE.EventInfo einfo1;
-  BackendDAE.ExternalObjectClasses eoc;
-  list<BackendDAE.WhenClause> whenclauses;
-  list<BackendDAE.Equation> eqs_lst, eqs_lst1;
-  list<BackendDAE.TimeEvent> timeEvents;
-  list<BackendDAE.ZeroCrossing> zero_crossings;
-  list<BackendDAE.ZeroCrossing> relations, sampleLst;
-  Integer countMathFunctions;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+
   Option<BackendDAE.IncidenceMatrix> m, mT;
-  BackendDAE.BackendDAEType btp;
+
   BackendDAE.Matching matching;
-  DAE.FunctionTree funcs;
-  BackendDAE.SymbolicJacobians symjacs;
-  FCore.Cache cache;
-  FCore.Graph graph;
   BackendDAE.StateSets stateSets;
-  BackendDAE.ExtraInfo ei;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := inSyst;
-  BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
-    cache, graph, funcs, BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
-    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations, numberMathEvents=countMathFunctions),
-    eoc, btp, symjacs, ei) := inShared;
-
-  eqs_lst := BackendEquation.equationList(eqns);
-  (zero_crossings, eqs_lst1, _, _, countMathFunctions, relations, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, listLength(relations), countMathFunctions, zero_crossings, relations, sampleLst, {}, {});
-  eqs_lst1 := listReverse(eqs_lst1);
-  if Flags.isSet(Flags.RELIDX) then
-    print("findZeroCrossings1 number of relations: " + intString(listLength(relations)) + "\n");
-    print("findZeroCrossings1 sample index: " + intString(listLength(sampleLst)) + "\n");
-  end if;
-  eqns1 := BackendEquation.listEquation(eqs_lst1);
-  einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relations, countMathFunctions);
-  outSyst := BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets, partitionKind);
-  outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo1, eoc, btp, symjacs, ei);
+  (outSyst, outShared) := match partitionKind
+    local
+      BackendDAE.Variables knvars, exobj, av;
+      BackendDAE.EquationArray remeqns, inieqns, eqns1;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      BackendDAE.EventInfo einfo1;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<BackendDAE.WhenClause> whenclauses;
+      list<BackendDAE.Equation> eqs_lst, eqs_lst1;
+      list<BackendDAE.TimeEvent> timeEvents;
+      list<BackendDAE.ZeroCrossing> zero_crossings;
+      list<BackendDAE.ZeroCrossing> relations, sampleLst;
+      Integer countMathFunctions;
+      DAE.FunctionTree funcs;
+      BackendDAE.SymbolicJacobians symjacs;
+      FCore.Cache cache;
+      FCore.Graph graph;
+      BackendDAE.ExtraInfo ei;
+      BackendDAE.BackendDAEType btp;
+      array<DAE.ClockKind> clocks;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+    //No zero crossing for clocked discrete partitions;
+    case BackendDAE.CLOCKED_PARTITION(subClock=BackendDAE.SUBCLOCK(solver=NONE()))
+      then (inSyst, inShared);
+    else
+      algorithm
+        BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
+          cache, graph, funcs, BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, clocks=clocks,
+          sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations, numberMathEvents=countMathFunctions),
+          eoc, btp, symjacs, ei) := inShared;
+          eqs_lst := BackendEquation.equationList(eqns);
+          (zero_crossings, eqs_lst1, _, _, countMathFunctions, relations, sampleLst) :=
+            findZeroCrossings2( vars, knvars, eqs_lst, 0, {}, 0, listLength(relations),
+                                countMathFunctions, zero_crossings, relations, sampleLst, {}, {} );
+          eqs_lst1 := listReverse(eqs_lst1);
+          if Flags.isSet(Flags.RELIDX) then
+            print("findZeroCrossings1 number of relations: " + intString(listLength(relations)) + "\n");
+            print("findZeroCrossings1 sample index: " + intString(listLength(sampleLst)) + "\n");
+          end if;
+          eqns1 := BackendEquation.listEquation(eqs_lst1);
+          einfo1 := BackendDAE.EVENT_INFO( timeEvents, whenclauses, zero_crossings, sampleLst, relations,
+                                           countMathFunctions, clocks );
+          syst := BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets, partitionKind);
+          shared := BackendDAE.SHARED( knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache,
+                                       graph, funcs, einfo1, eoc, btp, symjacs, ei );
+      then (syst, shared);
+  end match;
 end findZeroCrossings1;
 
 protected function findZeroCrossings2

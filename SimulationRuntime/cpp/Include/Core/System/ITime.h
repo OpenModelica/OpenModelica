@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSystem
- *  
+ *
  *  @{
  */
 typedef std::vector<std::pair<double,double> > time_event_type;

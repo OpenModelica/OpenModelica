@@ -1,6 +1,8 @@
 #pragma once
-#include <Core/SimulationSettings//IGlobalSettings.h>
+#include <string.h>
+using std::string;
 
+#include <Core/SimulationSettings/IGlobalSettings.h>
 
 class  FMUGlobalSettings : public IGlobalSettings
 {
@@ -38,7 +40,7 @@ public:
     virtual void setSelectedLinSolver(string) {}
     virtual string    getSelectedNonLinSolver() { return "kinsol"; }
     virtual void setSelectedNonLinSolver(string) {}
-    virtual void load(std::string xml_file) {};
+    virtual void load(string xml_file) {};
     virtual void setResultsFileName(string) {}
     virtual string getResultsFileName() { return ""; }
     virtual void setRuntimeLibrarypath(string) {}

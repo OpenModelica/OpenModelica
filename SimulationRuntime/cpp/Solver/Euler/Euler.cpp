@@ -1,5 +1,5 @@
 /** @addtogroup solverEuler
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>

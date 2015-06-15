@@ -1560,6 +1560,19 @@ algorithm
   end match;
 end expArrayIndex;
 
+public function expString
+  input DAE.Exp exp;
+  output String str;
+algorithm
+  str := match exp
+    local
+      String s;
+      Absyn.Path name;
+    case DAE.SCONST(s) then s;
+    case DAE.ENUM_LITERAL(name) then Absyn.pathString(name);
+  end match;
+end expString;
+
 public function varName "Returns the name of a Var"
   input DAE.Var v;
   output String name;
@@ -2167,6 +2180,7 @@ algorithm
     case (DAE.RCONST()) then DAE.T_REAL_DEFAULT;
     case (DAE.SCONST()) then DAE.T_STRING_DEFAULT;
     case (DAE.BCONST()) then DAE.T_BOOL_DEFAULT;
+    case (DAE.CLKCONST()) then DAE.T_CLOCK_DEFAULT;
     case (DAE.ENUM_LITERAL(name = p, index=i)) then DAE.T_ENUMERATION(SOME(i), p, {}, {}, {}, DAE.emptyTypeSource);
     case (DAE.CREF(ty = tp)) then tp;
     case (DAE.BINARY(operator = op)) then typeofOp(op);
@@ -4747,6 +4761,7 @@ algorithm
       DAE.ReductionIterators riters, riters_1;
       DAE.ComponentRef cr, cr_1;
       list<list<String>> aliases;
+      DAE.ClockKind clk, clk1;
 
     case DAE.EMPTY() equation
       (e, ext_arg) = inFunc(inExp, inExtArg);
@@ -4768,8 +4783,10 @@ algorithm
       (e, ext_arg) = inFunc(inExp, inExtArg);
     then (e, ext_arg);
 
-    case DAE.CLKCONST() equation
-      (e, ext_arg) = inFunc(inExp, inExtArg);
+    case DAE.CLKCONST(clk) equation
+      (clk1, ext_arg) = traverseExpClk(clk, inFunc, inExtArg);
+      e = if referenceEq(clk1, clk) then inExp else DAE.CLKCONST(clk1);
+      (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
     case DAE.ENUM_LITERAL() equation
@@ -5183,6 +5200,99 @@ algorithm
   (outExp,outArg) := traverseExpTopDown1(cont,outExp,func,outArg);
 end traverseExpTopDown;
 
+protected function traverseExpClk
+  replaceable type Type_a subtypeof Any;
+  input DAE.ClockKind inClk;
+  input FuncExpType func;
+  input Type_a inArg;
+  output DAE.ClockKind outClk;
+  output Type_a outArg;
+  partial function FuncExpType
+    input DAE.Exp exp;
+    input Type_a arg;
+    output DAE.Exp outExp;
+    output Type_a outArg;
+  end FuncExpType;
+algorithm
+  (outClk, outArg) := match inClk
+    local
+      DAE.Exp e, e1;
+      Real intvl;
+      Integer i1, i2;
+      Type_a arg;
+      String str;
+      DAE.ClockKind clk;
+    case DAE.INTEGER_CLOCK(e, i1)
+      equation
+        (e1, arg) = traverseExpBottomUp(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.INTEGER_CLOCK(e1, i1);
+      then (clk, arg);
+    case DAE.REAL_CLOCK(e)
+      equation
+        (e1, arg) = traverseExpBottomUp(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.REAL_CLOCK(e1);
+      then (clk, arg);
+    case DAE.BOOLEAN_CLOCK(e, intvl)
+      equation
+        (e1, arg) = traverseExpBottomUp(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.BOOLEAN_CLOCK(e1, intvl);
+      then (clk, arg);
+    case DAE.SOLVER_CLOCK(e, str)
+      equation
+        (e1, arg) = traverseExpBottomUp(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.SOLVER_CLOCK(e1, str);
+      then (clk, arg);
+    else (inClk, inArg);
+  end match;
+end traverseExpClk;
+
+protected function traverseExpTopDownClockHelper
+  replaceable type Type_a subtypeof Any;
+  input DAE.ClockKind inClk;
+  input FuncExpType func;
+  input Type_a inArg;
+  output DAE.ClockKind outClk;
+  output Type_a outArg;
+  partial function FuncExpType
+    input DAE.Exp exp;
+    input Type_a arg;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output Type_a outArg;
+  end FuncExpType;
+algorithm
+  (outClk, outArg) := match inClk
+    local
+      DAE.Exp e, e1;
+      Real intvl;
+      Integer i1, i2;
+      Type_a arg;
+      String str;
+      DAE.ClockKind clk;
+    case DAE.INTEGER_CLOCK(e, i1)
+      equation
+        (e1, arg) = traverseExpTopDown(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.INTEGER_CLOCK(e1, i1);
+      then (clk, arg);
+    case DAE.REAL_CLOCK(e)
+      equation
+        (e1, arg) = traverseExpTopDown(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.REAL_CLOCK(e1);
+      then (clk, arg);
+    case DAE.BOOLEAN_CLOCK(e, intvl)
+      equation
+        (e1, arg) = traverseExpTopDown(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.BOOLEAN_CLOCK(e1, intvl);
+      then (clk, arg);
+    case DAE.SOLVER_CLOCK(e, str)
+      equation
+        (e1, arg) = traverseExpTopDown(e, func, inArg);
+        clk = if referenceEq(e1, e) then inClk else DAE.SOLVER_CLOCK(e1, str);
+      then (clk, arg);
+    else (inClk, inArg);
+  end match;
+end traverseExpTopDownClockHelper;
+
 protected function traverseExpTopDown1
 "Helper for traverseExpTopDown."
   replaceable type Type_a subtypeof Any;
@@ -5226,13 +5336,18 @@ algorithm
       list<DAE.MatchCase> cases;
       ComponentRef cr,cr_1;
       list<list<String>> aliases;
+      DAE.ClockKind clk, clk1;
 
     case (false,_,_,_) then (inExp,inArg);
     case (_,DAE.ICONST(_),_,ext_arg) then (inExp,ext_arg);
     case (_,DAE.RCONST(_),_,ext_arg) then (inExp,ext_arg);
     case (_,DAE.SCONST(_),_,ext_arg) then (inExp,ext_arg);
     case (_,DAE.BCONST(_),_,ext_arg) then (inExp,ext_arg);
-    case (_,DAE.CLKCONST(_),_,ext_arg) then (inExp,ext_arg);
+    case (_,DAE.CLKCONST(clk),_,ext_arg)
+      equation
+        (clk1, ext_arg) = traverseExpTopDownClockHelper(clk,func,ext_arg);
+        e = if referenceEq(clk1,clk) then inExp else DAE.CLKCONST(clk1);
+      then (e, ext_arg);
     case (_,DAE.ENUM_LITERAL(),_,ext_arg) then (inExp,ext_arg);
     case (_,DAE.CREF(cr,tp),rel,ext_arg)
       equation

@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup dataexchange
- *  
+ *
  *  @{
  */
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD

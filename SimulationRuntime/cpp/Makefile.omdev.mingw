@@ -30,8 +30,8 @@ else
 	make;
 endif
 
-runtimeCPPmsvc: #clean
 
+runtimeCPPmsvc: #clean
 	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC'
 	#rm -rf build_msvc

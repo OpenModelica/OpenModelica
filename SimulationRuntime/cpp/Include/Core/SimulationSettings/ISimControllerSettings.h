@@ -1,9 +1,9 @@
 #pragma once
 /** @addtogroup coreSimulationSettings
- *  
+ *
  *  @{
  */
-     
+
 /* Klasse zur Kapselung der Parameter (Einstellungen) für den SimManagerSettings.*/
 
 #include <Core/Math/Constants.h>

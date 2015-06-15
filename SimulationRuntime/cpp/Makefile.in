@@ -8,6 +8,7 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
+OMBUILDDIR=@OMBUILDDIR@
 CC=@CC@
 CXX=@CXX@
 
@@ -21,7 +22,7 @@ SUNDIALS_LAPACK_COMMAND="-DSUNDIALS_LAPACK=ON"
 CMAKE_COMMANDS=CC="scorep --user --nocompiler --thread=pthread gcc" CXX="scorep --user --nocompiler --thread=pthread g++"
 CMAKE_ARGS=$(patsubst CMAKE_%, -D%, $(filter CMAKE_%, $(MAKEFLAGS)))
 
-runtimeCpp: clean
+runtimeCpp:
 ifneq ("$(RUNTIME_STATIC_LINKING)","true")
 	$(eval RUNTIME_STATIC_LINKING_COMMAND=)
 endif
@@ -46,7 +47,8 @@ endif
 ifneq ("$(USE_SUNDIALS_LAPACK)","true")
 	$(eval SUNDIALS_LAPACK_COMMAND=)
 endif
-	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(RUNTIME_STATIC_LINKING_COMMAND) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) $(SUNDIALS_LAPACK_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="@OMBUILDDIR@" -DLIBINSTALLEXT=lib/@host_short@/omc/cpp $(CMAKE_ARGS)  ../
+	mkdir -p Build
+	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(RUNTIME_STATIC_LINKING_COMMAND) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) $(SUNDIALS_LAPACK_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIBINSTALLEXT=lib/@host_short@/omc/cpp $(CMAKE_ARGS)  ../
 	$(MAKE) -C Build VERBOSE=1
 
 install: runtimeCpp
@@ -54,7 +56,6 @@ install: runtimeCpp
 
 clean:
 	rm -R -f Build
-	mkdir Build
 
 Makefile: Makefile.in
 	cd @top_builddir@ && ./config.status

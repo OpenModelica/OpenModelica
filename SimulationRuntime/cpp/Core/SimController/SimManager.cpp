@@ -1,5 +1,5 @@
 /** @addtogroup coreSimcontroller
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>

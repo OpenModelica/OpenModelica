@@ -109,6 +109,9 @@ Compiler/Template/CodegenCSharp.mo
 Compiler/Template/CodegenCpp.mo
 Compiler/Template/CodegenCppHpcom.mo
 Compiler/Template/CodegenFMU.mo
+Compiler/Template/CodegenFMU1.mo
+Compiler/Template/CodegenFMU2.mo
+Compiler/Template/CodegenFMUCommon.mo
 Compiler/Template/CodegenFMUCpp.mo
 Compiler/Template/CodegenJS.mo
 Compiler/Template/CodegenJava.mo

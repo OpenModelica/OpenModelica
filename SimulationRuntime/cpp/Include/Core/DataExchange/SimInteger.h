@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup dataexchange
- *  
+ *
  *  @{
  */
 #include "ISimVar.h"

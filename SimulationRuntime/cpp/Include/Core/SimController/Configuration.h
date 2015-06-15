@@ -1,9 +1,9 @@
 #pragma once
 /** @defgroup coreSimcontroller Core.SimController
- *  Configuration and control of simulation 
- *  
+ *  Configuration and control of simulation
+ *
  *  @{
- */ 
+ */
 
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 

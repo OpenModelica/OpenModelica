@@ -29,8 +29,9 @@
  *
  */
 
-#include "IFMUInterface.h"
-#include "FMU/fmiModelFunctions.h"
+#include <FMU/IFMUInterface.h>
+#include <FMU/fmiModelFunctions.h>
+#include <FMU/FMUWrapper.h>
 //#include "FMU/log.hpp"
 #include <iostream>
 

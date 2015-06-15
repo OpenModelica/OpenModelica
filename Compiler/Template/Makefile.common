@@ -1,6 +1,6 @@
 .PHONY : all
 
-GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
+GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
 
 all : $(GENERATED_FILES)
 
@@ -34,8 +34,21 @@ CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-CodegenFMU.mo : CodegenFMU.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
+# FMU
+CodegenFMUCommon.mo : CodegenFMUCommon.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
+	@echo " ** CodegenFMUCommon template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+CodegenFMU.mo : CodegenFMU.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+CodegenFMU1.mo : CodegenFMU1.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
+	@echo " ** CodegenFMU1 template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+CodegenFMU2.mo : CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
+	@echo " ** CodegenFMU2 template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 

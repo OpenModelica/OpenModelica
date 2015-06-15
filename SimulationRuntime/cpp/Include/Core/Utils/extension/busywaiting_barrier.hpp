@@ -12,7 +12,7 @@
 
 #include <boost/atomic.hpp>
 #include <iostream>
-#include <Modelica.h>
+#include <Core/Modelica.h>
 
 VAR_ALIGN_PRE class alignedLock
 {

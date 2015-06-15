@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup solverCvode
- *  
+ *
  *  @{
  */
 #if defined(__vxworks)

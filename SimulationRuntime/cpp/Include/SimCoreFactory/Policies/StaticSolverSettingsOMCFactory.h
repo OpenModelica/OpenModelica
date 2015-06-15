@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 /*includes removed for static linking not needed any more

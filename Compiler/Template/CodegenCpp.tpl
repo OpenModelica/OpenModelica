@@ -656,7 +656,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
     ;separator="";empty)
    <<
-   
+
    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  algloopfilesInclude(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="")
      ;separator="")
@@ -695,7 +695,7 @@ template simulationStateSelectionCppFile(SimCode simCode, Text& extraFuncs, Text
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   
+
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
    {
@@ -717,7 +717,7 @@ template simulationWriteOutputCppFile(SimCode simCode ,Text& extraFuncs,Text& ex
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-  
+
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
@@ -960,7 +960,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(__))) then
   let classname = lastIdentOfPath(modelInfo.name)
    <<
-   
+
    <%classname%>Extension::<%classname%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%classname%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
        , <%classname%>WriteOutput(globalSettings,nonlinsolverfactory, sim_data,sim_vars)
@@ -1863,7 +1863,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <<
   #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
-  #include <SimController/ISimController.h>
+  #include <Core/SimController/ISimController.h>
 
 
   <%
@@ -2141,7 +2141,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
-    
+
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -2187,7 +2187,7 @@ template simulationFunctionsFile(SimCode simCode, Text& extraFuncs, Text& extraF
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-  
+
 
   <%externalFunctionIncludes(includes)%>
 
@@ -2525,9 +2525,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
   !IF "$(PCH_FILE)" == ""
-  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY <%additionalCFlags_MSVC%>
+  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY <%additionalCFlags_MSVC%>
   !ELSE
-  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/Core/$(PCH_FILE)  /YuCore/$(H_FILE) <%additionalCFlags_MSVC%>
+  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/" /I. <%makefileParams.includes%>  /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/Core/$(PCH_FILE)  /YuCore/$(H_FILE) <%additionalCFlags_MSVC%>
   !ENDIF
   CPPFLAGS =
   # /ZI enable Edit and Continue debug info
@@ -2604,7 +2604,7 @@ case "gcc" then
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
             CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-            CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp/Core" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
+            CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
             CFLAGS_STATIC=$(CFLAGS) <%staticIncludes%> -DRUNTIME_STATIC_LINKING
 
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
@@ -3136,7 +3136,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 match eq
     case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-   
+
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 
@@ -3198,7 +3198,7 @@ match eq
 
     case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    <<
-   
+
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 
@@ -6023,29 +6023,8 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   end match
   %>
 
-  #include "System/SystemDefaultImplementation.h"
-  /*includes removed for static linking not needed any more
-  #ifdef RUNTIME_STATIC_LINKING
-    #include <boost/shared_ptr.hpp>
-    #include <boost/weak_ptr.hpp>
-    #include <boost/numeric/ublas/vector.hpp>
-    #include <boost/numeric/ublas/matrix.hpp>
-    #include <string>
-    #include <vector>
-    #include <map>
+  #include <Core/System/SystemDefaultImplementation.h>
 
-    using std::string;
-    using std::vector;
-    using std::map;
-
-    #include <SimCoreFactory/Policies/FactoryConfig.h>
-    #include <SimController/ISimController.h>
-    #include <System/IMixedSystem.h>
-
-    #include <boost/numeric/ublas/matrix_sparse.hpp>
-    typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
-  #endif //RUNTIME_STATIC_LINKING
-  */
   //Forward declaration to speed-up the compilation process
   class Functions;
   class EventHandling;
@@ -10264,7 +10243,7 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode ,Text& 
     * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
     *
     *****************************************************************************/
-    #include "System/AlgLoopDefaultImplementation.h"
+    #include <Core/System/AlgLoopDefaultImplementation.h>
     //jac files
     <%jacfiles%>
     //alg loop files
@@ -13990,17 +13969,12 @@ end equationFunctions;
 
 template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean createMeasureTime)
 ::=
-  let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
   let &varDecls = buffer "" /*BUFD*/
+  let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
 
-  let &eqfuncs = buffer ""
-  let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate")
-                    ;separator="\n")
-
-  let equation_notOde_func_calls = (SimCodeUtil.getDaeEqsNotPartOfOdeSystem(simCode ) |> eq =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate")
-                    ;separator="\n")
+  let equation_all_func_calls = (List.partition(allEquationsPlusWhen, 100) |> eqs hasindex i0 =>
+                                 createEvaluateWithSplit(i0, context, eqs, "evaluateAll", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+                                 ;separator="\n")
 
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, stateDerVectorName, useFlatArrayNotation)
@@ -14015,11 +13989,6 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_all_func_calls%>
-
-    /* evaluateODE(command);
-
-    <%equation_notOde_func_calls%>
-    */
     // Reinits
     <%reinit%>
 
@@ -14057,9 +14026,9 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
   let &varDecls = buffer "" /*BUFD*/
 
-  let equation_ode_func_calls = (odeEquations |> eqs => (eqs |> eq  =>
-                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate");separator="\n")
-                   )
+  let equation_ode_func_calls = (List.partition(List.flatten(odeEquations), 100) |> eqs hasindex i0 =>
+                                 createEvaluateWithSplit(i0, context, eqs, "evaluateODE", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+                                 ;separator="\n")
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
@@ -14078,8 +14047,8 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
   let &varDecls = buffer "" /*BUFD*/
 
   let &eqfuncs = buffer ""
-  let equation_zero_func_calls = (equationsForZeroCrossings |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate")
+  let equation_zero_func_calls = (List.partition(equationsForZeroCrossings, 100) |> eqs hasindex i0 =>
+                    createEvaluateWithSplit(i0, context, eqs, "evaluateZeroFuncs", className, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)
                     ;separator="\n")
 
   <<
@@ -14091,6 +14060,29 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
   }
   >>
 end createEvaluateZeroFuncs;
+
+template createEvaluateWithSplit(Integer sectionIndex, Context context, list<SimEqSystem> sectionEquations, String functionName, String className, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let equation_func_calls = (sectionEquations |> eq  =>
+                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate")
+                    ;separator="\n")
+  let &extraFuncs +=
+  <<
+  <%\n%>void <%className%>::<%functionName%>_<%sectionIndex%>(const UPDATETYPE command)
+  {
+    <%varDecls%>
+    <%equation_func_calls%>
+  }
+  >>
+  let &extraFuncsDecl +=
+  <<
+  void <%functionName%>_<%sectionIndex%>(const UPDATETYPE command);<%\n%>
+  >>
+  <<
+  <%functionName%>_<%sectionIndex%>(command);
+  >>
+end createEvaluateWithSplit;
 
 /*
  //! Evaluates only the equations whose indexs are passed to it.

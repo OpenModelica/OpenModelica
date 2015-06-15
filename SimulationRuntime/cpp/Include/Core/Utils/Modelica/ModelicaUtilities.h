@@ -1,5 +1,5 @@
 /** @addtogroup coreUtils
- *  
+ *
  *  @{
  */
 /** \file ModelicaUtilities.h

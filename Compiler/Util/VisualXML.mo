@@ -37,7 +37,7 @@ encapsulated package VisualXML
 
 
   RCS: $Id: VisualXML 2014-02-04 waurich $
-  
+
 "
 
 protected import Absyn;
@@ -99,7 +99,7 @@ algorithm
   //in case we have a time dependent, protected variable, set the solved equation as binding
   eqs := List.map(eqs0,BackendDAEUtil.copyEqSystem);
   eqs := List.map(eqs,setBindingForProtectedVars);
-  
+
   //get all variables that contain visualization vars
   knownVarLst := BackendVariable.varList(knownVars);
   aliasVarLst := BackendVariable.varList(aliasVars);
@@ -115,7 +115,7 @@ algorithm
   allVarLst := listAppend(listAppend(knownVarLst,allVarLst),aliasVarLst);
   (visuals,_) := List.mapFold(allVisuals, fillVisualizationObjects,allVarLst);
     //print("\nvisuals :\n"+stringDelimitList(List.map(visuals,printVisualization),"\n")+"\n");
- 
+
   //dump xml file
   dumpVis(listArray(visuals), fileName+"_visual.xml");
 end visualizationInfoXML;
@@ -137,7 +137,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := eqSysIn;
   BackendDAE.MATCHING(ass1=ass1) := matching;
-  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setBindingForProtectedVars1,(1,ass1,eqs)); 
+  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setBindingForProtectedVars1,(1,ass1,eqs));
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
 end setBindingForProtectedVars;
 
