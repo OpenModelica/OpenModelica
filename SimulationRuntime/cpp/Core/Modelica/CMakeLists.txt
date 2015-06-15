@@ -4,10 +4,12 @@ project(${ModelicaName})
 
 #FIX RUNTIME_STATIC_LINKING
 add_library(${ModelicaName}_static STATIC Modelica.cpp )
+target_link_libraries (${ModelicaName}_static ${Boost_LIBRARIES})
 set_target_properties(${ModelicaName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 
 add_library(${ModelicaName} SHARED Modelica.cpp)
+target_link_libraries (${ModelicaName} ${Boost_LIBRARIES})
 
 GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
 GET_FILENAME_COMPONENT(libModelicaSystemNameExt ${libModelicaSystem} EXT)
