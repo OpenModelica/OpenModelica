@@ -507,7 +507,7 @@ algorithm
         hasReinit = List.fold(algs,hasReinitFold,false);
         abort = hasReturn or hasTerminate or hasReinit;
         // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm
-        (algs,(funcs,repl,idx)) = List.mapFold(algs,evaluateFunctions_updateAlgElements,(funcsIn,repl,1));
+        (algs,(funcs,repl,idx)) = List.mapFold(algs,evaluateFunctions_updateAlgElements,(funcsIn,repl,eqIdx));
           //print("\nall algs after"+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
           //BackendVarTransform.dumpReplacements(repl);
 
