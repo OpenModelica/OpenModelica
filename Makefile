@@ -220,6 +220,7 @@ source/media/systemoverview.pdf: source/media/systemoverview.svg
 source/openmodelica.bib: resolve-crossref.py $(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib
 	python resolve-crossref.py "$(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib" source/openmodelica.bib
 source/interface.inc: interface.mos
+	@mkdir -p tmp
 	$(OPENMODELICAHOME)/bin/omc +g=MetaModelica +d=nogen interface.mos
 	mv interface.inc $@
 
