@@ -28,3 +28,4 @@ config.*
 configure
 autom4te.cache
 qwt/qwt.config
+install-sh
