@@ -374,3 +374,5 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 numfig = True
 numfig_format = {'figure': "Figure %s", 'table': "Table %s", 'code-block': "Listing %s"}
+
+highlight_language = 'modelica'

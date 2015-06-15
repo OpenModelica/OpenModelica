@@ -21,7 +21,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) sou
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext readme
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -246,3 +246,9 @@ source/media/omedit-icons/%.pdf: source/media/omedit-icons/%.svg
 source/media/omoptim-icons/%.png: $(OPENMODELICAHOME)/../OMOptim/OMOptim/GUI/Resources/icons/%.png
 	@mkdir -p source/media/omoptim-icons
 	cp -a "$<" "$@"
+
+readme/sphinxcontribopenmodelica.py: source/sphinxcontribopenmodelica.py
+	cp -a "$<" "$@"
+readme: readme/sphinxcontribopenmodelica.py
+	ln -sf ../source/aplot.svg readme
+	sphinx-build -b html -t nomathjax -d build/readme/doctrees readme build/readme/html
