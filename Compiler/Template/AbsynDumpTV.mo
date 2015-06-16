@@ -323,6 +323,7 @@ package Absyn
     record EQ_EQUALS
       Exp leftSide;
       Exp rightSide;
+      Option<ComponentRef> domainOpt;
     end EQ_EQUALS;
 
     record EQ_CONNECT

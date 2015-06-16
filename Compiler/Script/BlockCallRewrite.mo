@@ -261,6 +261,7 @@ algorithm
       list<Absyn.EquationItem> eqs1, eqs2, eqs3;
       list<Absyn.ElementItem> elems1, elems2, elems3;
       Integer count, count1, count2;
+      Option<Absyn.ComponentRef> domainOpt;
     case(Absyn.EQ_IF(exp1, leq1, tup1, leq2))
       equation
        // print("IF STATEMENT\n");
@@ -271,14 +272,14 @@ algorithm
         //ntup1 = parseEquationTuple(tup1); TODO
       then
         (Absyn.EQ_IF(nexp1, nleq1, tup1, nleq2),  eqs3, elems3, count2);
-    case(Absyn.EQ_EQUALS(exp1, exp2))
+    case(Absyn.EQ_EQUALS(exp1, exp2, domainOpt))
       equation
         // print("EQUALS STATEMENT\n");
         (nexp1, eqs1, elems1, count) = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
         (nexp2, eqs2, elems2, count1) = parseExpression(exp2, defs, eqs1, elems1, count);
        // print("EQ_Equals count1 " + intString(count1) + "\n");
       then
-        (Absyn.EQ_EQUALS(nexp1, nexp2), eqs2, elems2, count1);
+        (Absyn.EQ_EQUALS(nexp1, nexp2, domainOpt), eqs2, elems2, count1);
     case(Absyn.EQ_CONNECT(cr1, cr2))
     then
       (Absyn.EQ_CONNECT(cr1, cr2), oldEqs, oldElems, instNo);
@@ -756,7 +757,7 @@ algorithm
     case({}, _) then (oldEqs, args);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps, arg::r_args)
       equation
-        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), arg), NONE(), Absyn.dummyInfo);
+        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), arg, NONE()), NONE(), Absyn.dummyInfo);
       then
         matchVarArgs(elemId, r_args, r_comps, eq::oldEqs);
 
@@ -924,7 +925,7 @@ algorithm
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _)
       equation
          (cName == argName) = true;
-        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue), NONE(), Absyn.dummyInfo);
+        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue, NONE()), NONE(), Absyn.dummyInfo);
       then
         (eq::oldEqs, true);
        case(_ :: r_comps)

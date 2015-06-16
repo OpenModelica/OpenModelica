@@ -1452,13 +1452,24 @@ algorithm
       then
         ();
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = NONE()))
       equation
         Print.printBuf("EQ_EQUALS(");
         printExp(e1);
         Print.printBuf(",");
         printExp(e2);
         Print.printBuf(")");
+      then
+        ();
+
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = SOME(cr)))
+      equation
+        Print.printBuf("EQ_EQUALS(");
+        printExp(e1);
+        Print.printBuf(",");
+        printExp(e2);
+        Print.printBuf(") indomain ");
+        printComponentRef(cr);
       then
         ();
 
@@ -3916,7 +3927,7 @@ algorithm
     local
       Absyn.Exp ifExp,leftSide,rightSide,whenExp;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> elseIfBranches, elseWhenEquations;
-      Absyn.ComponentRef connector1,connector2,functionName;
+      Absyn.ComponentRef connector1,connector2,functionName,cr;
       Absyn.ForIterators iterators;
       list<Absyn.EquationItem> equationTrueItems,equationElseItems,forEquations,whenEquations;
       Absyn.FunctionArgs functionArgs;
@@ -3933,12 +3944,22 @@ algorithm
         printListAsCorbaString(equationElseItems, printEquationItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.EQ_IF;");
       then ();
-    case Absyn.EQ_EQUALS(leftSide,rightSide)
+    case Absyn.EQ_EQUALS(leftSide,rightSide,NONE())
       equation
         Print.printBuf("record Absyn.EQ_EQUALS leftSide = ");
         printExpAsCorbaString(leftSide);
         Print.printBuf(", rightSide = ");
         printExpAsCorbaString(rightSide);
+        Print.printBuf(" end Absyn.EQ_EQUALS;");
+      then ();
+    case Absyn.EQ_EQUALS(leftSide,rightSide,SOME(cr))
+      equation
+        Print.printBuf("record Absyn.EQ_EQUALS leftSide = ");
+        printExpAsCorbaString(leftSide);
+        Print.printBuf(", rightSide = ");
+        printExpAsCorbaString(rightSide);
+        Print.printBuf(", domain = ");
+        printComponentRefAsCorbaString(cr);
         Print.printBuf(" end Absyn.EQ_EQUALS;");
       then ();
     case Absyn.EQ_CONNECT(connector1,connector2)

@@ -357,14 +357,14 @@ protected function printEquation
 algorithm
   outNode := matchcontinue (inEquation)
     local
-      String s1,s2,s,s_1,s_2,es;
+      String s1,s2,s3,s,s_1,s_2,es;
       Absyn.Exp e1,e2;
       Absyn.ComponentRef c1,c2;
       list<Graphviz.Node> eqn;
       list<Absyn.EquationItem> eqs;
       Absyn.ForIterators iterators;
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = NONE()))
       equation
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
@@ -372,6 +372,19 @@ algorithm
         s_1 = stringAppend(s, s2);
       then
         Graphviz.LNODE("EQ_EQUALS",{s_1},{},{});
+
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2,domainOpt = SOME(c1)))
+      equation
+        s1 = Dump.printExpStr(e1);
+        s2 = Dump.printExpStr(e2);
+        s3 = Dump.printComponentRefStr(c1);
+        s = stringAppend(s1, " = ");
+        s_1 = stringAppend(s, s2);
+        s_1 = stringAppend(s_1, " indomain ");
+        s_1 = stringAppend(s_1, s3);
+      then
+        Graphviz.LNODE("EQ_EQUALS",{s_1},{},{});
+
 
     case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2))
       equation
