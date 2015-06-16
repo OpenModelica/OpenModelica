@@ -291,7 +291,7 @@ protected constant DAE.Var finalTimeVar = DAE.TYPES_VAR("finalTime",
 /* Optimica Extensions. The builtin variable objectiveIntegrand. */
 protected constant DAE.Var objectiveIntegrandVar = DAE.TYPES_VAR("objectiveIntegrand",
           DAE.dummyAttrInput,
-          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `objectiveIntegrand\' variable" ;
 
 /* Optimica Extensions. The builtin variable objective. */
 protected constant DAE.Var objectiveVar = DAE.TYPES_VAR("objective",

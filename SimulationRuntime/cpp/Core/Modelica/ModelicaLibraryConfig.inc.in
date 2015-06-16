@@ -1,15 +1,3 @@
-LIBOMCPPOMCFACTORY = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@OMCFactoryName@_static.a"
-LIBOMCPPSIMCONTROLLER = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@SimControllerName@_static.a"
-LIBOMCPPSIMULATIONSETTINGS = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@SimulationSettings@_static.a"
-LIBOMCPPSYSTEM = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@SystemName@_static.a"
-LIBOMCPPDATAEXCHANGE = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@DataExchangeName@_static.a"
-LIBOMCPPNEWTON = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@NewtonName@_static.a"
-LIBOMCPPKINSOL = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@KinsolName@_static.a"
-LIBOMCPPUMFPACK = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@UmfPackName@_static.a"
-LIBOMCPPIDA = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@IDAName@_static.a"
-LIBOMCPPCVODE = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@CVodeName@_static.a"
-LIBOMCPPPEER = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@PeerName@_static.a"
-LIBOMCPPSOLVER = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@SolverName@_static.a"
-LIBOMCPPMATH = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@MathName@_static.a"
-LIBOMCPPMODELICAUTILITIES = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@ModelicaUtilitiesName@.a"
-LIBOMCPPEXTENSIONUTILITIES = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@ExtensionUtilitiesName@_static.a"
+#FMU Libraries
+SUNDIALS_LIBRARIES_KINSOL = @SUNDIALS_KINSOL_LIB@
+LIBOMCPPKINSOL = "$(OMHOME)/@LIBINSTALLEXT@/lib@KinsolName@$(DLLEXT)"

@@ -1,9 +1,9 @@
 #pragma once
 /** @addtogroup coreSimulationSettings
- *  
+ *
  *  @{
  */
-     
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(__vxworks) || defined(__TRICORE__)

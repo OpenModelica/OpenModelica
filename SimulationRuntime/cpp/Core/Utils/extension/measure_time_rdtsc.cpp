@@ -2,38 +2,38 @@
 #include <Core/Modelica.h>
 #include <Core/Utils/extension/measure_time_rdtsc.hpp>
 
-MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : MeasureTimeValues(), time(time), max_time(time) {}
+MeasureTimeValuesRDTSC::MeasureTimeValuesRDTSC(unsigned long long time) : MeasureTimeValues(), _time(time), _max_time(time) {}
 
 MeasureTimeValuesRDTSC::~MeasureTimeValuesRDTSC() {}
 
-std::string MeasureTimeValuesRDTSC::serializeToJson(unsigned int numCalcs)
+std::string MeasureTimeValuesRDTSC::serializeToJson()
 {
   std::stringstream ss;
-  ss << "\"time\":" << time << ",\"maxTime\":" <<  max_time << ",\"meanTime\":" << (numCalcs == 0 ? 0 : time/numCalcs);
+  ss << "\"ncall\":" << _numCalcs << "\"time\":" << _time << ",\"maxTime\":" <<  _max_time << ",\"meanTime\":" << (_numCalcs == 0 ? 0 : _time/_numCalcs);
   return ss.str();
 }
 
 void MeasureTimeValuesRDTSC::add(MeasureTimeValues *values)
 {
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
-  time += val->time;
+  _time += val->_time;
 
-  if( val->time > max_time )
-    max_time = val->time;
+  if( val->_time > _max_time )
+    _max_time = val->_time;
 }
 
 void MeasureTimeValuesRDTSC::sub(MeasureTimeValues *values)
 {
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
-  if(time > val->time)
-    time -= val->time;
+  if(_time > val->_time)
+    _time -= val->_time;
   else
-    time = 0;
+    _time = 0ull;
 }
 
 void MeasureTimeValuesRDTSC::div(int counter)
 {
-  time = time / counter;
+  _time = _time / counter;
 }
 
 MeasureTimeRDTSC::MeasureTimeRDTSC() : MeasureTime()
@@ -58,19 +58,19 @@ void MeasureTimeRDTSC::getTimeValuesStartP(MeasureTimeValues *res)
 {
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);
   unsigned long long time = RDTSC();
-  val->time = time;
+  val->_time = time;
 }
 
 void MeasureTimeRDTSC::getTimeValuesEndP(MeasureTimeValues *res)
 {
   unsigned long long time = RDTSC();
   MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(res);
-  val->time = time;
+  val->_time = time;
 }
 
 MeasureTimeValues* MeasureTimeRDTSC::getZeroValuesP()
 {
-  return new MeasureTimeValuesRDTSC(0);
+  return new MeasureTimeValuesRDTSC(0ull);
 }
 
 #if defined(_MSC_VER)

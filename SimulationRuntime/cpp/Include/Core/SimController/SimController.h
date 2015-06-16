@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup coreSimcontroller
- *  
+ *
  *  @{
  */
 #include "SimManager.h"
@@ -49,5 +49,10 @@ private:
     // for real-time usage (VxWorks and BODAS)
     //removed, has to be released after simulation run, see SimController.Start
     boost::shared_ptr<SimManager> _simMgr;
+
+    #ifdef RUNTIME_PROFILING
+    std::vector<MeasureTimeData> measureTimeFunctionsArray;
+    MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
+    #endif
 };
 /** @} */ // end of coreSimcontroller

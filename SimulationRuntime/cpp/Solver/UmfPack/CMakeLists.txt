@@ -3,22 +3,15 @@ cmake_minimum_required (VERSION 2.8.6)
 project(${UmfPackName})
 
 # add the solver default implementation library
+add_library(${UmfPackName}_static STATIC UmfPack.cpp UmfPackSettings.cpp FactoryExport )
+set_target_properties(${UmfPackName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
 
-
-IF(RUNTIME_STATIC_LINKING)
-	message(STATUS "Building UmfPack for analyzation")
-	add_library(${UmfPackName}_static STATIC UmfPack.cpp UmfPackSettings.cpp FactoryExport )
-	install (TARGETS ${UmfPackName}_static DESTINATION ${LIBINSTALLEXT})
-ELSE(RUNTIME_STATIC_LINKING)
-	add_library(${UmfPackName} SHARED UmfPack.cpp UmfPackSettings.cpp FactoryExport)
-	target_link_libraries( ${UmfPackName} ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
+add_library(${UmfPackName} SHARED UmfPack.cpp UmfPackSettings.cpp FactoryExport)
+target_link_libraries( ${UmfPackName} ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
 	
-    install (TARGETS ${UmfPackName} DESTINATION ${LIBINSTALLEXT})
-ENDIF(RUNTIME_STATIC_LINKING)
+install (TARGETS ${UmfPackName} ${UmfPackName}_static DESTINATION ${LIBINSTALLEXT})
 
-IF(RUNTIME_STATIC_LINKING)
-  install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPack.h
+install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPack.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPackSettings.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/FactoryExport.h
-           DESTINATION include/omc/cpp/Solver/UmfPack)
-ENDIF(RUNTIME_STATIC_LINKING)
+DESTINATION include/omc/cpp/Solver/UmfPack)

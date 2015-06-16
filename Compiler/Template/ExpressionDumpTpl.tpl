@@ -190,8 +190,8 @@ match clk
     let condition_str = dumpExp(condition, stringDelimiter)
     'Clock(<%condition_str%>, <%startInterval%>)'
   case SOLVER_CLOCK(__) then
-    let clk_str = dumpClockKind(c, stringDelimiter)
-    'Clock(<%clk_str%>, <%solverMethod%>)'
+    let clk_str = dumpExp(c, stringDelimiter)
+    'Clock(<%clk_str%>, "<%solverMethod%>")'
 end dumpClockKind;
 
 
@@ -209,6 +209,8 @@ match cref
     let cref_str = dumpCref(componentRef)
     '<%ident%><%sub_str%>.<%cref_str%>'
   case WILD() then '_'
+  case OPTIMICA_ATTR_INST_CREF(__) then
+    '<%dumpCref(componentRef)%>(<%instant%>)'
   else errorMsg("ExpressionDumpTpl.dumpCref: unknown cref")
 end dumpCref;
 

@@ -1,6 +1,6 @@
 #pragma once
 /** @addtogroup simcorefactoriesPolicies
- *  
+ *
  *  @{
  */
 /*
@@ -38,7 +38,7 @@ public:
         boost::shared_ptr<ISimData> simData = ObjectFactory<CreationPolicy>::_factory->LoadSimData();
         return simData;
     }
-    
+
     boost::shared_ptr<IMixedSystem> createModelicaSystem(PATH modelica_path, string modelKey, IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory, boost::shared_ptr<ISimData> simData, boost::shared_ptr<ISimVars> simVars)
     {
         boost::shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings, algloopsolverfactory, simData, simVars);

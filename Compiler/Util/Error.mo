@@ -797,6 +797,32 @@ public constant Message ROOT_USER_INTERACTIVE = MESSAGE(557, SCRIPTING(), ERROR(
   Util.gettext("You are trying to run OpenModelica as a server using the root user.\nThis is a very bad idea:\n* The socket interface does not authenticate the user.\n* OpenModelica allows execution of arbitrary commands."));
 public constant Message USES_MISSING_VERSION = MESSAGE(558, SCRIPTING(), WARNING(),
   Util.gettext("Uses-annotation is missing version for library %s. Assuming the tool-specific version=\"default\"."));
+public constant Message CLOCK_PREFIX_ERROR = MESSAGE(559, TRANSLATION(), ERROR(),
+  Util.gettext("Clock variable can not be declared with prefixes flow, stream, discrete, parameter, or constant."));
+public constant Message DEFAULT_CLOCK_USED = MESSAGE(560, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Default inferred clock is used."));
+public constant Message CONT_CLOCKED_PARTITION_CONFLICT_VAR = MESSAGE(561, TRANSLATION(), ERROR(),
+  Util.gettext("Variable %s belongs to clocked and continuous partitions."));
+public constant Message ELSE_WHEN_CLOCK = MESSAGE(562, TRANSLATION(), ERROR(),
+  Util.gettext("Clocked when equation can not contain elsewhen part."));
+public constant Message REINIT_NOTIN_WHEN = MESSAGE(563, TRANSLATION(), ERROR(),
+  Util.gettext("Operator reinit should be in body of when statement."));
+public constant Message NESTED_CLOCKED_WHEN = MESSAGE(564, TRANSLATION(), ERROR(),
+  Util.gettext("Nested clocked when statements are not allowed."));
+public constant Message CLOCKED_WHEN_BRANCH = MESSAGE(565, TRANSLATION(), ERROR(),
+  Util.gettext("Clocked when branch in when equation."));
+public constant Message CLOCKED_WHEN_IN_WHEN_EQ = MESSAGE(566, TRANSLATION(), ERROR(),
+  Util.gettext("Clocked when equation inside the body of when equation."));
+public constant Message CONT_CLOCKED_PARTITION_CONFLICT_EQ = MESSAGE(567, TRANSLATION(), ERROR(),
+  Util.gettext("Equation belongs to clocked and continuous partitions."));
+public constant Message CLOCKED_DSICRETE_CONT_CONFLICT = MESSAGE(568, TRANSLATION(), ERROR(),
+  Util.gettext("Clocked equation contains discrete and continuous expression."));
+public constant Message INVALID_CLOCK_EQUATION = MESSAGE(569, TRANSLATION(), ERROR(),
+  Util.gettext("Invalid form of clock equation"));
+public constant Message SUBCLOCK_CONFLICT = MESSAGE(570, TRANSLATION(), ERROR(),
+  Util.gettext("Partition have different sub-clocks."));
+public constant Message CLOCK_CONFLICT = MESSAGE(571, TRANSLATION(), ERROR(),
+  Util.gettext("Partition have different base clocks."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

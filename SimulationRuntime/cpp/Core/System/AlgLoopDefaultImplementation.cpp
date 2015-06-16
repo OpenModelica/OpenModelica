@@ -1,5 +1,5 @@
 /** @addtogroup coreSystem
- *  
+ *
  *  @{
  */
 #include <Core/ModelicaDefine.h>

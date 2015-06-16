@@ -31,3 +31,4 @@ private:
   boost::shared_ptr<ISolverSettings> _solver_settings;
 };
 /** @} */ // end of coreSimulationSettings
+

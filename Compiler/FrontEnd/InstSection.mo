@@ -435,8 +435,6 @@ algorithm
           Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
         end if;
 
-        checkWhenEquation(inEEquation);
-
         (outCache, outEnv, outIH, cond_exp, el, outGraph) :=
           instWhenEqBranch(inCache, inEnv, inIH, inPrefix, inSets, inState,
             (inEEquation.condition, inEEquation.eEquationLst), inImpl,
@@ -445,22 +443,11 @@ algorithm
         // Set the source of this element.
         source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
 
-        crefs1 := DAEUtil.verifyWhenEquation(el);
         else_when := NONE();
-
         for branch in listReverse(inEEquation.elseBranches) loop
           (outCache, outEnv, outIH, exp, el2, outGraph) :=
             instWhenEqBranch(outCache, outEnv, outIH, inPrefix, inSets, inState,
               branch, inImpl, alwaysUnroll, outGraph, info);
-
-          crefs2 := DAEUtil.verifyWhenEquation(el2);
-          crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReference.crefEqual);
-
-          if listLength(crefs2) <> listLength(crefs1) then
-            Error.addSourceMessageAndFail(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,
-              {}, info);
-          end if;
-
           else_when := SOME(DAE.WHEN_EQUATION(exp, el2, else_when, source));
         end for;
 
@@ -2901,6 +2888,10 @@ algorithm
   // Instantiate the when condition.
   (outCache, outCondition) :=
     instExp(inCache, inEnv, inIH, inPrefix, cond, inImpl, inInfo);
+
+  if not Types.isClockOrSubTypeClock(Expression.typeof(outCondition)) then
+    List.map_0(body, checkForNestedWhenInEq);
+  end if;
 
   // Instantiate the when body.
   (outCache, outEnv, outIH, DAE.DAE(outEquations), _, _, outGraph) :=

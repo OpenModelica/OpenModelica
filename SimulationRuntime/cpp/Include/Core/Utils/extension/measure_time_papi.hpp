@@ -28,7 +28,7 @@ public:
   MeasureTimeValuesPAPI(unsigned long long time, long long l2CacheMisses, long long instructions);
   virtual ~MeasureTimeValuesPAPI();
 
-  virtual std::string serializeToJson(unsigned int numCalcs);
+  virtual std::string serializeToJson();
 
   virtual void add(MeasureTimeValues *values);
   virtual void sub(MeasureTimeValues *values);

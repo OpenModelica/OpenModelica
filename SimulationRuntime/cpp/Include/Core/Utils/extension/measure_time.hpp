@@ -13,11 +13,10 @@
 #else
   #define MEASURETIME_REGION_DEFINE(handlerName, regionName)
   #define MEASURETIME_START(valStart, handlerName, regionName) MeasureTime::getTimeValuesStart(valStart)
-  #define MEASURETIME_END(valStart, valEnd, valRes, handlerName) { MeasureTime::getTimeValuesEnd(valEnd); valEnd->sub(valStart); valEnd->sub(MeasureTime::getOverhead()); valRes.sumMeasuredValues->add(valEnd); ++(valRes.numCalcs); }
+  #define MEASURETIME_END(valStart, valEnd, valRes, handlerName) { MeasureTime::getTimeValuesEnd(valEnd); valEnd->sub(valStart); valEnd->sub(MeasureTime::getOverhead()); valRes.sumMeasuredValues->add(valEnd); ++(valRes.sumMeasuredValues->_numCalcs); }
 #endif
 
 #include <fstream>
-#include <string>
 #include <sstream>
 #include <vector>
 #include <map>
@@ -28,10 +27,14 @@
 class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValues
 {
  public:
+
+
+  unsigned int _numCalcs;
+
   MeasureTimeValues();
   virtual ~MeasureTimeValues();
 
-  virtual std::string serializeToJson(unsigned int numCalcs) = 0;
+  virtual std::string serializeToJson() = 0;
 
   virtual void add(MeasureTimeValues *values) = 0;
   virtual void sub(MeasureTimeValues *values) = 0;
@@ -45,7 +48,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesSolver : public MeasureTimeVa
     MeasureTimeValuesSolver(unsigned long long functionEvaluations, unsigned long long errorTestFailures);
     virtual ~MeasureTimeValuesSolver();
 
-    virtual std::string serializeToJson(unsigned int numCalcs);
+    virtual std::string serializeToJson();
 
     virtual void add(MeasureTimeValues *values);
     virtual void sub(MeasureTimeValues *values);
@@ -60,7 +63,6 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeData
  public:
   std::string id;
   MeasureTimeValues *sumMeasuredValues;
-  unsigned int numCalcs;
 
   MeasureTimeData();
   MeasureTimeData(std::string id);

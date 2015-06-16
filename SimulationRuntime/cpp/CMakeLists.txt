@@ -14,14 +14,13 @@
 #     if profiling for the simulation runtime should be enabled                    -DRUNTIME_PROFILING
 #
 # Some of these options can be controlled by passing arguments to CMAKE
-#     if all runtime libraries should be built and linked statically               -DRUNTIME_STATIC_LINKING=ON
 #     if write output should be handled in parallel                                -DUSE_PARALLEL_OUTPUT=ON
 #     if ScoreP should be used for performance analysis                            -DUSE_SCOREP=ON
 #     if the boost libraries should be linked statically                           -DBOOST_STATIC_LINKING=ON
 #     if the lapack functions and data structurs of sundials should be used        -DSUNDIALS_LAPACK=ON
 #     if boost libraries should be linked against absolute path libraries          -DUSE_BOOST_REALPATHS=ON
 #
-#     Example: "cmake -DRUNTIME_STATIC_LINKING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
+#     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
@@ -33,7 +32,6 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
 MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
 #Set Options
-OPTION(RUNTIME_STATIC_LINKING "RUNTIME_STATIC_LINKING" OFF)
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
 OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
@@ -74,6 +72,7 @@ SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
 SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities)
 SET(BasiLibName ${LIBPREFIX}Base)
 SET(ModelicaCompilerName ${LIBPREFIX}ModelicaCompiler)
+SET(FMUName ${LIBPREFIX}FMU)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
@@ -101,14 +100,6 @@ ELSE(NOT BOOST_STATIC_LINKING)
   SET(Boost_USE_STATIC_RUNTIME ON)
   ADD_DEFINITIONS(-DBOOST_STATIC_LINKING)
 ENDIF(NOT BOOST_STATIC_LINKING)
-
-# Handle static linking
-IF(NOT RUNTIME_STATIC_LINKING)
-  MESSAGE(STATUS "Static build and linking of runtime disabled")
-ELSE(NOT RUNTIME_STATIC_LINKING)
-  MESSAGE(STATUS "Build and linking runtime statically")
-  ADD_DEFINITIONS(-DRUNTIME_STATIC_LINKING)
-ENDIF(NOT RUNTIME_STATIC_LINKING)
 
 # Handle sundials lapack
 IF(NOT SUNDIALS_LAPACK)
@@ -300,6 +291,7 @@ IF(USE_SUNDIALS)
   IF (NOT SUNDIALS_INCLUDE_DIR)
     MESSAGE(FATAL_ERROR "Could not find Sundials, specify environment variable SUNDIALS_ROOT")
   ELSE(NOT SUNDIALS_INCLUDE_DIR)
+    # Extract the version number from sundials_config.h
     FIND_PATH(SUNDIALS_CONFIG_FILE "sundials_config.h" ${SUNDIALS_INCLUDE_DIR} "${SUNDIALS_INCLUDE_DIR}/sundials")
     SET(SUNDIALS_CONFIG_FILE "${SUNDIALS_CONFIG_FILE}/sundials_config.h")
     FILE(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
@@ -447,6 +439,7 @@ add_subdirectory (Solver/UmfPack)
 add_subdirectory (Solver/Peer)
 ##add_subdirectory (Solver/RTRK)
 
+add_subdirectory (FMU)
 
 if(REDUCE_DAE)
   #add_subdirectory(ReduceDAE/Implementation)
@@ -531,6 +524,9 @@ GET_FILENAME_COMPONENT(libModelicaCompilerName ${libModelicaCompiler} NAME)
 GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} LOCATION)
 GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
 
+GET_TARGET_PROPERTY(libFMU ${FMUName} LOCATION)
+GET_FILENAME_COMPONENT(libFMUName ${libFMU} NAME)
+
 set (EULER_LIB ${libEulerName})
 set (RTEULER_LIB ${libRTEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
@@ -548,6 +544,7 @@ set (DATAEXCHANGE_LIB ${libDataExchangeName})
 set (SIMCONTROLLER_LIB ${libSimControllerName})
 set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
 set (MODELICACOMPILER_LIB ${libModelicaCompilerName})
+set (FMU_LIB ${libFMUName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
@@ -604,6 +601,7 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/Core/Utils/extension/registry.hpp
         Include/Core/Utils/extension/shared_library.hpp
         Include/Core/Utils/extension/type_map.hpp
+	Include/Core/Utils/extension/logger.hpp
         Include/Core/Utils/extension/impl/adaptable_factory.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
@@ -616,13 +614,6 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/Core/Utils/extension/impl/library_impl.hpp
         Include/Core/Utils/extension/impl/shared_library.hpp
         Include/Core/Utils/extension/impl/typeinfo.hpp
-        Include/FMU/fmiModelFunctions.h
-        Include/FMU/fmiModelTypes.h
-        Include/FMU/FMUGlobalSettings.h
-        Include/FMU/IFMUInterface.h
-        Include/FMU/FMULibInterface.cpp
-        Include/FMU/FMUWrapper.cpp
-        Include/FMU/FMUWrapper.h
         Include/FMU2/fmi2Functions.h
         Include/FMU2/fmi2FunctionTypes.h
         Include/FMU2/fmi2TypesPlatform.h

@@ -1,5 +1,5 @@
 /** @addtogroup solverCvode
- *  
+ *
  *  @{
  */
 #pragma once

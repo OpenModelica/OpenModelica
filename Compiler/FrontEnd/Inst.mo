@@ -2269,7 +2269,8 @@ algorithm
 
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
-          instList(cache, env5, ih, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, InstTypes.alwaysUnroll, graph) ;
+          instList(cache, env5, ih, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, InstTypes.alwaysUnroll, graph);
+        DAEUtil.verifyEquationsDAE(dae2);
 
         //Instantiate inital equations (see function "instInitialEquation")
         (cache,env5,ih,dae3,csets3,ci_state4,graph) =

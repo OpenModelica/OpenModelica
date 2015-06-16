@@ -170,6 +170,11 @@ package DAE
       list<Subscript> subscriptLst;
     end CREF_ITER;
 
+    record OPTIMICA_ATTR_INST_CREF
+      ComponentRef componentRef;
+      String instant;
+    end OPTIMICA_ATTR_INST_CREF;
+
     record WILD end WILD;
   end ComponentRef;
 
@@ -215,7 +220,7 @@ package DAE
     end BOOLEAN_CLOCK;
 
     record SOLVER_CLOCK
-      ClockKind c;
+      Exp c;
       String solverMethod;
     end SOLVER_CLOCK;
   end ClockKind;

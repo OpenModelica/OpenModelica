@@ -1,5 +1,5 @@
 /** @addtogroup simcorefactoryOMCFactory
- *  
+ *
  *  @{
  */
 
@@ -45,7 +45,7 @@ static pair<string, string> checkOMEditOption(const string &s)
         return make_pair(string(), string());
 }
 
-SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
+SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
@@ -209,51 +209,59 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      return settings;
 
 }
+
+std::vector<const char *> OMCFactory::modifyArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts)
+{
+  std::map<std::string, std::string>::const_iterator oit;
+  std::vector<const char *> optv;
+  optv.push_back(argv[0]);
+  std::string override;                // OMEdit override option
+  for (int i = 1; i < argc; i++) {
+      if ((oit = opts.find(argv[i])) != opts.end() && i < argc - 1)
+          opts[oit->first] = argv[++i]; // regular override
+      else if (strncmp(argv[i], "-override=", 10) == 0) {
+          std::map<std::string, std::string> supported = map_list_of
+              ("startTime", "-s")("stopTime", "-e")("stepSize", "-f")
+              ("tolerance", "-y")("solver", "-i")("outputFormat", "-o");
+          std::vector<std::string> strs;
+          boost::split(strs, argv[i], boost::is_any_of(",="));
+          for (int j = 1; j < strs.size(); j++) {
+              if ((oit = supported.find(strs[j])) != supported.end()
+                  && j < strs.size() - 1) {
+                  opts[oit->second] = strs[++j];
+              }
+              else {
+                  // leave untreated overrides
+                  if (override.size() > 0)
+                      override += ",";
+                  else
+                      override = "-override=";
+                  override += strs[j];
+                  if (j < strs.size() - 1)
+                      override += "=" + strs[++j];
+              }
+          }
+          if (override.size() > 10)
+              optv.push_back(override.c_str());
+      }
+      else
+          optv.push_back(argv[i]);     // pass through
+  }
+  for (oit = opts.begin(); oit != opts.end(); oit++) {
+      optv.push_back(oit->first.c_str());
+      optv.push_back(oit->second.c_str());
+  }
+
+  return optv;
+}
+
 std::pair<boost::shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
                              std::map<std::string, std::string> &opts)
 {
-     std::map<std::string, std::string>::const_iterator oit;
-     std::vector<const char *> optv;
-     optv.push_back(argv[0]);
-     std::string override;                // OMEdit override option
-     for (int i = 1; i < argc; i++) {
-         if ((oit = opts.find(argv[i])) != opts.end() && i < argc - 1)
-             opts[oit->first] = argv[++i]; // regular override
-         else if (strncmp(argv[i], "-override=", 10) == 0) {
-             std::map<std::string, std::string> supported = map_list_of
-                 ("startTime", "-s")("stopTime", "-e")("stepSize", "-f")
-                 ("tolerance", "-y")("solver", "-i")("outputFormat", "-o");
-             std::vector<std::string> strs;
-             boost::split(strs, argv[i], boost::is_any_of(",="));
-             for (int j = 1; j < strs.size(); j++) {
-                 if ((oit = supported.find(strs[j])) != supported.end()
-                     && j < strs.size() - 1) {
-                     opts[oit->second] = strs[++j];
-                 }
-                 else {
-                     // leave untreated overrides
-                     if (override.size() > 0)
-                         override += ",";
-                     else
-                         override = "-override=";
-                     override += strs[j];
-                     if (j < strs.size() - 1)
-                         override += "=" + strs[++j];
-                 }
-             }
-             if (override.size() > 10)
-                 optv.push_back(override.c_str());
-         }
-         else
-             optv.push_back(argv[i]);     // pass through
-     }
-     for (oit = opts.begin(); oit != opts.end(); oit++) {
-         optv.push_back(oit->first.c_str());
-         optv.push_back(oit->second.c_str());
-     }
+     std::vector<const char *> optv = modifyArguments(argc, argv, opts);
 
-     SimSettings settings = ReadSimulationParameter(optv.size(), &optv[0]);
+     SimSettings settings = readSimulationParameter(optv.size(), &optv[0]);
      type_map simcontroller_type_map;
      PATH simcontroller_path = _library_path;
      PATH simcontroller_name(SIMCONTROLLER_LIB);

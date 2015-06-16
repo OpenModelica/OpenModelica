@@ -1,5 +1,5 @@
 #pragma once
-/* 
+/*
  * Implement Modelica array slices.
  *
  * This file is part of OpenModelica.
@@ -35,7 +35,7 @@
 /** @addtogroup math
  *   @{
 */
-    
+
 /**
  * Modelica slice.
  * Defined by start:stop or start:step:stop, start = 0 or stop = 0 meaning end,

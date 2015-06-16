@@ -34,12 +34,11 @@ encapsulated package HpcOmSimCode
   public import HashTableCrILst;
   public import SimCodeVar;
 
-  public constant HpcOmData emptyHpcomData = HPCOMDATA(NONE(), NONE(), NONE());
+  public constant HpcOmData emptyHpcomData = HPCOMDATA(NONE(), NONE());
 
   public uniontype HpcOmData
     record HPCOMDATA
-      Option<HpcOmSimCode.Schedule> daeSchedule;
-      Option<HpcOmSimCode.Schedule> odeSchedule;
+      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules; //<ode schedule, dae schedule>
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
     end HPCOMDATA;
   end HpcOmData;
@@ -85,6 +84,7 @@ encapsulated package HpcOmSimCode
       Task sourceTask;
       Task targetTask;
       Boolean outgoing; //true if the dependency is leading to the task of another thread
+      Integer id;
       CommunicationInfo communicationInfo;
     end DEPTASK;
     record PREFETCHTASK //This task will load variables in the cache
@@ -121,6 +121,7 @@ encapsulated package HpcOmSimCode
       list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
     end TASKDEPSCHEDULE;
     record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system or if the serial code should be produced
+      TaskList tasks;
     end EMPTYSCHEDULE;
   end Schedule;
 

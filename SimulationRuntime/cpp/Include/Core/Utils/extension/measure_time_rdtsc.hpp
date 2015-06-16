@@ -6,17 +6,20 @@
 class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesRDTSC : public MeasureTimeValues
 {
 public:
-  unsigned long long time;
-  unsigned long long max_time;
+  unsigned long long _time;
+  unsigned long long _max_time;
 
   MeasureTimeValuesRDTSC(unsigned long long time);
   virtual ~MeasureTimeValuesRDTSC();
 
-  virtual std::string serializeToJson(unsigned int numCalcs);
+  virtual std::string serializeToJson();
 
   virtual void add(MeasureTimeValues *values);
   virtual void sub(MeasureTimeValues *values);
   virtual void div(int counter);
+
+
+
 };
 
 class BOOST_EXTENSION_EXPORT_DECL MeasureTimeRDTSC : public MeasureTime
@@ -27,6 +30,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeRDTSC : public MeasureTime
   MeasureTimeValues* getZeroValuesP();
   void getTimeValuesStartP(MeasureTimeValues *res);
   void getTimeValuesEndP(MeasureTimeValues *res);
+
 
  public:
   virtual ~MeasureTimeRDTSC();
@@ -40,8 +44,9 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeRDTSC : public MeasureTime
   virtual void initializeThread(unsigned long int threadNumber);
   virtual void deinitializeThread();
 
- private:
+
   static inline unsigned long long RDTSC(); //__attribute__((always_inline));
+
 };
 
 #endif /* MEASURE_TIME_RDTSC_HPP_ */

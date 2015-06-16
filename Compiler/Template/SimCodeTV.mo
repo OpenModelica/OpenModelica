@@ -140,13 +140,6 @@ package builtin
     output Real z;
   end realDiv;
 
-  function listGet
-    replaceable type TypeVar subtypeof Any;
-    input list<TypeVar> lst;
-    input Integer index;
-    output TypeVar result;
-  end listGet;
-
   function stringLength
     input String str;
     output Integer length;
@@ -553,6 +546,7 @@ package SimCode
       SimCodeVar.SimVars vars;
       list<Function> functions;
       list<String> labels;
+      Integer maxDer;
     end MODELINFO;
   end ModelInfo;
 
@@ -3056,6 +3050,7 @@ package Flags
   constant DebugFlag WRITE_TO_BUFFER;
   constant DebugFlag MODEL_INFO_JSON;
   constant DebugFlag USEMPI;
+  constant DebugFlag RUNTIME_STATIC_LINKING;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;
@@ -3521,8 +3516,7 @@ end HpcOmSimCodeMain;
 package HpcOmSimCode
   uniontype HpcOmData
     record HPCOMDATA
-      Option<Schedule> daeSchedule;
-      Option<Schedule> odeSchedule;
+      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules;
       Option<MemoryMap> hpcOmMemory;
     end HPCOMDATA;
   end HpcOmData;
@@ -3553,6 +3547,7 @@ package HpcOmSimCode
       Task sourceTask;
       Task targetTask;
       Boolean outgoing; //true if the dependency is leading to the task of another thread
+      Integer id;
       CommunicationInfo communicationInfo;
     end DEPTASK;
   end Task;
@@ -3579,6 +3574,7 @@ package HpcOmSimCode
       list<tuple<Task,list<Integer>>> tasks;
     end TASKDEPSCHEDULE;
     record EMPTYSCHEDULE
+      TaskList tasks;
     end EMPTYSCHEDULE;
   end Schedule;
 
@@ -3593,9 +3589,10 @@ end HpcOmSimCode;
 
 package HpcOmScheduler
   function convertFixedLevelScheduleToTaskLists
-    input HpcOmSimCode.Schedule iSchedule;
+    input HpcOmSimCode.Schedule iOdeSchedule;
+    input HpcOmSimCode.Schedule iDaeSchedule;
     input Integer iNumOfThreads;
-    output array<list<list<HpcOmSimCode.Task>>> oThreadLevelTasks;
+    output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks;
   end convertFixedLevelScheduleToTaskLists;
 end HpcOmScheduler;
 

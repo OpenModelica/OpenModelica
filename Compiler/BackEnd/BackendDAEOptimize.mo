@@ -261,13 +261,14 @@ protected
   list<BackendDAE.WhenClause> whenClauseLst;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
   Integer numberMathEvents;
+  array<DAE.ClockKind> clocks;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := iEventInfo;
+  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents, clocks) := iEventInfo;
   (whenClauseLst, outTypeA) := traverseWhenClauseExps(whenClauseLst, func, inTypeA, {});
   (zeroCrossingLst, outTypeA) := traverseZeroCrossingExps(zeroCrossingLst, func, outTypeA, {});
   (sampleLst, outTypeA) := traverseZeroCrossingExps(sampleLst, func, outTypeA, {});
   (relationsLst, outTypeA) := traverseZeroCrossingExps(relationsLst, func, outTypeA, {});
-  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents);
+  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents, clocks);
 end traverseEventInfoExps;
 
 protected function traverseWhenClauseExps<T>
@@ -1199,7 +1200,8 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs,ei)))
+    case (BackendDAE.DAE(eqs,BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs,
+                                                einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst), eoc, btp, symjacs, ei)))
       equation
         knvars1 = BackendVariable.emptyVars();
         ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
@@ -2884,10 +2886,13 @@ public function makeEquationToResidualExp ""
 algorithm
   oExp := matchcontinue(eq)
     local
-      DAE.Exp e1,e2;
+      DAE.Exp e1,e2, e;
+      list<DAE.Exp> expl, expl1;
       DAE.ComponentRef cr1;
       String str;
       DAE.Type ty;
+      Integer idx;
+      list<Integer> idxs;
     // normal equation
     case(BackendDAE.EQUATION(exp=e1,scalar=e2))
       equation
@@ -2914,6 +2919,24 @@ algorithm
       then
         oExp;
     // complex equation
+    // (x,_) = f(.)
+    case(BackendDAE.COMPLEX_EQUATION(left = e1 as DAE.TUPLE(expl), right = e2))
+      algorithm
+        expl1 := {};
+        idxs := {};
+        idx := 1;
+        for elem in expl loop
+          if Expression.isNotWild(elem) then
+            idxs := idx :: idxs;
+            expl1 := elem :: expl1;
+          end if;
+          idx := idx + 1;
+        end for;
+        {e} :=  expl1;
+        {idx} := idxs;
+        oExp := Expression.expSub(e, DAE.TSUB(e2,idx,Expression.typeof(e)));
+        //print("\n" + ExpressionDump.dumpExpStr(oExp,0));
+      then oExp;
     case(BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
       equation
         oExp = Expression.expSub(e1,e2);

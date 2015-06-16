@@ -1,5 +1,5 @@
 /** @addtogroup simcorefactoryVxworks
- *  
+ *
  *  @{
  */
 #include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>

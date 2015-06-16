@@ -5522,8 +5522,10 @@ algorithm
   res:= match (inEls)
     local
       list<Element> els;
+      Absyn.Path path;
     case {} then false;
-    case EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject"))::_ then true;
+    case EXTENDS(baseClassPath = path)::_
+      guard( Absyn.pathEqual(path, Absyn.IDENT("ExternalObject")) ) then true;
     case _::els then hasExtendsOfExternalObject(els);
   end match;
 end hasExtendsOfExternalObject;

@@ -5,7 +5,7 @@
 MeasureTime * MeasureTime::instance = 0;
 MeasureTime::file_map MeasureTime::toWrite;
 
-MeasureTimeValues::MeasureTimeValues() {}
+MeasureTimeValues::MeasureTimeValues() : _numCalcs(0){}
 
 MeasureTimeValues::~MeasureTimeValues()
 {
@@ -21,7 +21,7 @@ MeasureTimeValuesSolver::MeasureTimeValuesSolver(unsigned long long functionEval
 
 MeasureTimeValuesSolver::~MeasureTimeValuesSolver() {}
 
-std::string MeasureTimeValuesSolver::serializeToJson(unsigned int numCalcs)
+std::string MeasureTimeValuesSolver::serializeToJson()
 {
   std::stringstream ss;
   ss << "\"functionEvaluations\":" <<  functionEvaluations << ",\"errorTestFailures\":" << errorTestFailures;
@@ -49,9 +49,9 @@ void MeasureTimeValuesSolver::div(int counter)
 }
 
 
-MeasureTimeData::MeasureTimeData() : id(""), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
+MeasureTimeData::MeasureTimeData() : id(""), sumMeasuredValues(MeasureTime::getZeroValues()) {}
 
-MeasureTimeData::MeasureTimeData(std::string id) : id(id), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
+MeasureTimeData::MeasureTimeData(std::string id) : id(id), sumMeasuredValues(MeasureTime::getZeroValues()) {}
 
 MeasureTimeData::~MeasureTimeData()
 {
@@ -62,7 +62,7 @@ MeasureTimeData::~MeasureTimeData()
 std::string MeasureTimeData::serializeToJson()
 {
   std::stringstream ss("");
-  ss << "\"ncall\":" << numCalcs << "," << sumMeasuredValues->serializeToJson(numCalcs);
+  ss << sumMeasuredValues->serializeToJson();
   return ss.str();
 }
 
@@ -151,6 +151,7 @@ void MeasureTime::addResultContentBlock(std::string model_name, std::string bloc
 void MeasureTime::writeToJson()
 {
   std::stringstream date;
+  std::string tmpS;
   date.str("");
   time_t sec = time(NULL);
   tm * date_t = localtime(&sec);
@@ -180,7 +181,9 @@ void MeasureTime::writeToJson()
       //write data
       for (unsigned i = 0; i < data->size()-1; ++i)
       {
-        os << "{\"id\":\"" << (*data)[i].id << "\"," << (*data)[i].serializeToJson() << "},\n";
+    	  tmpS = (*data)[i].serializeToJson();
+    	  if(tmpS != "")
+    		  os << "{\"id\":\"" << (*data)[i].id << "\"," << tmpS << "},\n";
       }
       if( data->size() > 0 ) os << "{\"id\":\"" << (*data)[data->size()-1].id << "\"," << (*data)[data->size()-1].serializeToJson() << "}]";
       else os << "]";

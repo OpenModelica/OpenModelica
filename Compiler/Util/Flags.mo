@@ -430,23 +430,22 @@ constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(130, "advanceTearing", false,
   Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
 constant DebugFlag CONSTJAC = DEBUG_FLAG(131, "constjac", false,
   Util.gettext("solves linear systems with const jacobian and variable b-Vector symbolically"));
-constant DebugFlag EXTENDS_DYN_OPT = DEBUG_FLAG(132, "extendsDynOpt", false,
-  Util.gettext("generat extends NLP, move loops in the optimization problem as constraints. hint: using intial guess from file!"));
-constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(133, "reduceDynOpt", false,
+constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(132, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
-constant DebugFlag VISUAL_XML = DEBUG_FLAG(134, "visxml", false,
+constant DebugFlag VISUAL_XML = DEBUG_FLAG(133, "visxml", false,
   Util.gettext("Outputs a xml-file that contains information for visualization."));
-constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(135, "addScaledVars", false,
+constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(134, "addScaledVars", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is state"));
-constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(136, "addScaledVarsInput", false,
+constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(135, "addScaledVarsInput", false,
   Util.gettext("Adds an alias equation var_nrom = var/nominal where var is input"));
-constant DebugFlag VECTORIZE = DEBUG_FLAG(137, "vectorize", false,
+constant DebugFlag VECTORIZE = DEBUG_FLAG(136, "vectorize", false,
   Util.gettext("Activates vectorization in the backend."));
-constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(138, "buildExternalLibs", true,
+constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(137, "buildExternalLibs", true,
   Util.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
+constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(138, "runtimeStaticLinking", false,
+  Util.gettext("Use the static simulation runtime libraries (C++ simulation runtime)."));
 constant DebugFlag DYNAMIC_TEARING_INFO = DEBUG_FLAG(139, "dynamicTearingInfo", false,
   Util.gettext("Dumps information about the strict and casual sets of the tearing system."));
-
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -585,13 +584,13 @@ constant list<DebugFlag> allDebugFlags = {
   NO_PARTITIONING,
   ADVANCE_TEARING,
   CONSTJAC,
-  EXTENDS_DYN_OPT,
   REDUCE_DYN_OPT,
   VISUAL_XML,
   ADD_SCALED_VARS,
   ADD_SCALED_VARS_INPUT,
   VECTORIZE,
   CHECK_EXT_LIBS,
+  RUNTIME_STATIC_LINKING,
   DYNAMIC_TEARING_INFO
 };
 
@@ -737,12 +736,15 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
   NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
     ("uode", Util.gettext("Use the underlying ODE without the constraints.")),
-    ("dynamicStateSelection", Util.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system."))})),
+    ("dynamicStateSelection", Util.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system.")),
+    ("dummyDerivatives", Util.gettext("Simple index reduction method, select (static) dummy states based on heuristic."))
+    })),
     Util.gettext("Sets the index reduction method to use. See --help=optmodules for more info."));
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
+    "simplifyConstraints",
     "CSE",
     "relaxSystem",
     "inlineArrayEqn",
@@ -1004,7 +1006,8 @@ constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(58, "profiling",
     ("blocks",Util.gettext("Generate code for profiling function calls as well as linear and non-linear systems of equations")),
     ("blocks+html",Util.gettext("Like blocks, but also run xsltproc and gnuplot to generate an html report")),
     ("all",Util.gettext("Generate code for profiling of all functions and equations")),
-    ("all_perf",Util.gettext("Generate code for profiling of all functions and equations with additional performance data using the papi-interface (cpp-runtime)"))
+    ("all_perf",Util.gettext("Generate code for profiling of all functions and equations with additional performance data using the papi-interface (cpp-runtime)")),
+    ("all_stat",Util.gettext("Generate code for profiling of all functions and equations with additional statistics (cpp-runtime)"))
     })),
   Util.gettext("Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."));
 
@@ -1064,9 +1067,19 @@ constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
 
-constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(71, "forceTearing",
+constant ConfigFlag LOOP2CON = CONFIG_FLAG(71, "loop2con",
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
+  SOME(STRING_DESC_OPTION({
+    ("none", Util.gettext("Disables module")),
+    ("lin", Util.gettext("linear loops --> constraints.")),
+    ("noLin", Util.gettext("no linear loops --> constraints.")),
+    ("all", Util.gettext("loops --> constraints."))})),
+    Util.gettext("Specifies method that transform loops in constraints. hint: using intial guess from file!"));
+
+constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(72, "forceTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Use tearing set even if it is not smaller than the original component.)"));
+
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1143,6 +1156,7 @@ constant list<ConfigFlag> allConfigFlags = {
   DYNAMIC_TEARING,
   SYM_EULER,
   ADD_TIME_AS_STATE,
+  LOOP2CON,
   FORCE_TEARING
 };
 

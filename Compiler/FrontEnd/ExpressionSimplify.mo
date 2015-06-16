@@ -503,6 +503,23 @@ algorithm
   (outExp,hasChanged) := simplify1WithOptions(inExp,optionSimplifyOnly);
 end simplify1;
 
+public function simplify1o
+"This function does some very basic simplification
+  on expressions, like 0*a = 0, [1][1] => 1, etc."
+  input Option<DAE.Exp> inExp;
+  output Option<DAE.Exp> outExp;
+algorithm
+  outExp := match inExp
+            local DAE.Exp e;
+            case SOME(e)
+            equation
+              (e,_) = simplify1WithOptions(e,optionSimplifyOnly);
+            then SOME(e);
+            else inExp;
+            end match;
+end simplify1o;
+
+
 public function simplify1WithOptions
 "This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
@@ -1241,7 +1258,7 @@ algorithm
             simplifySymmetric(marr, arrayLength(marr)-1, arrayLength(marr));
             mexpl = List.map(arrayList(marr), arrayList);
             tp1 = Types.unliftArray(tp);
-            es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1,{}));
+            es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1));
             e = Expression.makeArray(es, tp, false);
           then e;
         end match;
@@ -1254,7 +1271,7 @@ algorithm
 
     case DAE.CALL(path=Absyn.IDENT("vector"),expLst=es as (e::_),attr=DAE.CALL_ATTR(ty=DAE.T_ARRAY(tp,_,source)))
       equation
-        false = Types.isArray(Expression.typeof(e),{});
+        false = Types.isArray(Expression.typeof(e));
         i = listLength(es);
         tp = DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(i)},source);
       then DAE.ARRAY(tp,true,es);
@@ -2937,7 +2954,7 @@ algorithm
     // name subscript
     case(DAE.CREF(c,t), _, _)
       equation
-        true = Types.isArray(t,{});
+        true = Types.isArray(t);
         t = Expression.unliftArray(t);
         c_1 = simplifyAsubCref(c, inSubExp);
         exp = Expression.makeCrefExp(c_1, t);
@@ -5295,7 +5312,7 @@ algorithm
         aty = Types.unliftArray(Types.expTypetoTypesType(ty));
         length = listLength(inExps);
         ty2 = Types.liftArray(aty, DAE.DIM_INTEGER(length)); // The size can be unknown before the reduction...
-        exp = Expression.makeArray(inExps, ty2, not Types.isArray(aty,{}));
+        exp = Expression.makeArray(inExps, ty2, not Types.isArray(aty));
       then exp;
 
     case (_,_,_,_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
