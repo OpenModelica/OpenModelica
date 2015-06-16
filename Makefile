@@ -83,6 +83,7 @@ gitlibraries.log
 # Sorted by time it takes to run the tests...
 # DO NOT ADD ANYTHING HERE THAT YOU EXPECT WILL TAKE MORE THAN 5 SECONDS TO RUN IN THE NEXT 18 YEARS
 FASTLOGS= \
+modelicaexternal-objects.log \
 simulationalgorithms-functions.log \
 simulationarrays.log \
 simulationasserts.log \
@@ -207,6 +208,9 @@ modelicaothers.log: omc-diff
 	@echo $@ done
 modelicaexternal-functions.log: omc-diff
 	$(MAKE) -C flattening/modelica/external-functions -f Makefile test > $@
+	@echo $@ done
+modelicaexternal-objects.log: omc-diff
+	$(MAKE) -C flattening/modelica/external-objects -f Makefile test > $@
 	@echo $@ done
 modelicaequations.log: omc-diff
 	$(MAKE) -C flattening/modelica/equations -f Makefile test > $@
@@ -525,7 +529,12 @@ failingtest: omc-diff
 	cd ../msl31; $(MAKE) -f Makefile failingtest;
 	cd ../msl32; $(MAKE) -f Makefile failingtest;
 
-clean: clean_g_1 clean_g_2 clean_g_3 clean_g_4
+clean:
+	test -e .git || $(MAKE) clean_g_1 clean_g_2 clean_g_3 clean_g_4
+	test ! -e .git || $(MAKE) git-clean
+
+git-clean:
+	git clean -fdxq -e 'runtest.db*'
 
 clean_g_1  :
 	$(MAKE) -C flattening/modelica/algorithms-functions -f Makefile clean
@@ -615,3 +624,27 @@ clean_g_4:
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile clean
 	$(MAKE) -C simulation/libraries/msl32 -f Makefile clean
+
+git-sanity-check: git-clean
+	find -name "*.cpp" > invalid-files.log
+	find -name "*.h" >> invalid-files.log
+	find -name "*.c" >> invalid-files.log
+	find -name "*.xml" >> invalid-files.log
+	find -name "*.graphml" >> invalid-files.log
+	find -name "*~*" >> invalid-files.log
+	find -name "*.fmu" >> invalid-files.log
+	find -name "*.libs" >> invalid-files.log
+	find -name "*.log" >> invalid-files.log
+	find -name "*.makefile" >> invalid-files.log
+	find -name "*.sh" >> invalid-files.log
+	find -name "*.o" >> invalid-files.log
+	find -name "*.so" >> invalid-files.log
+	find -name "*.lib" >> invalid-files.log
+	find -name "*.a" >> invalid-files.log
+	find -name "*.mat" >> invalid-files.log
+	find -name "*.csv" >> invalid-files.log
+	sort invalid-files.log > invalid-files.sorted
+	sort .gitvalidfiles > .gitvalidfiles.sorted
+	comm --check-order -23 invalid-files.sorted .gitvalidfiles.sorted > invalid-files.log
+	cat invalid-files.log
+	test ! -s invalid-files.log

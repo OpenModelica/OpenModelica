@@ -98,6 +98,24 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
+//   <variable name=\"der(x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
 //   <variable name=\"der(xd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
@@ -108,6 +126,24 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.der(xd)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
+//       <part-of>within Real;</part-of>
+//       <type>testModel</type>
+//       <type>Real</type>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
@@ -296,25 +332,25 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </variable>
-//   <variable name=\"$TMP$VAR$19$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"$TMP$VAR$20$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.$TMP$VAR$19$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.$TMP$VAR$20$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$TMP$VAR$15$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//   <variable name=\"$TMP$VAR$16$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"$PRE.$TMP$VAR$15$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//   <variable name=\"$PRE.$TMP$VAR$16$0X$ABS\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
@@ -378,46 +414,6 @@ readFile("testModel_info.xml");getErrorString();
 //     <Integer useStart=\"true\" start=\"0\" fixed=\"true\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"der(x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <alias>xd</alias>
-//     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
-//       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.der(x)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <alias>xd</alias>
-//     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
-//       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
-//     </source>
-//   </variable>
-//   <variable name=\"der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <alias>yd</alias>
-//     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
-//       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.der(y)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <alias>yd</alias>
-//     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"10\" lineEnd=\"10\" colStart=\"3\" colEnd=\"35\"/>
-//       <part-of>within Real;</part-of>
-//       <type>testModel</type>
-//       <type>Real</type>
 //     </source>
 //   </variable>
 //   <variable name=\"L\" comment=\"\" variability = \"parameter\" isDiscrete = \"false\">
@@ -558,18 +554,6 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </variable>
-//   <variable name=\"der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
-//   <variable name=\"$PRE.der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
-//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
-//     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </variable>
 //   <variable name=\"der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
@@ -577,6 +561,18 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </variable>
 //   <variable name=\"$PRE.der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"false\">
+//     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </variable>
+//   <variable name=\"$PRE.der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" comment=\"\" variability = \"continuous\" isDiscrete = \"true\">
 //     <Real useStart=\"false\" fixed=\"false\" useNominal=\"false\" />
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
@@ -595,39 +591,18 @@ readFile("testModel_info.xml");getErrorString();
 //     </source>
 //   </variable>
 // </variables>
-// <initial-equations size=\"14\">
+// <initial-equations size=\"13\">
 //   <equation index=\"1\">
 //     <assign>
-//       <defines name=\"$STATESET2.x\" />
-//       <depends name=\"$STATESET2.x\" />
-//       <rhs>$_start($STATESET2.x)</rhs>
+//       <defines name=\"$STATESET1.x\" />
+//       <depends name=\"$STATESET1.x\" />
+//       <rhs>$_start($STATESET1.x)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"2\" parent=\"4\">
-//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
-//     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
-//       <part-of>within testModel;</part-of>
-//     </source>
-//   </equation>
-//   <equation index=\"3\" parent=\"4\">
-//     <residual>/*Real*/($STATESET2.A[2]) * x + /*Real*/($STATESET2.A[1]) * y - $STATESET2.x</residual>
-//     <source>
-//       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
-//     </source>
-//   </equation>
-//   <equation index=\"4\">
-//     <nonlinear indexNonlinear=\"0\">
-//       <defines name=\"y\" />
-//       <defines name=\"x\" />
-//       <eq index=\"3\"/>
-//       <eq index=\"2\"/>
-//     </nonlinear>
-//   </equation>
-//   <equation index=\"5\">
+//   <equation index=\"2\">
 //     <assign>
 //       <defines name=\"der(yd)\" />
 //       <rhs>-9.0</rhs>
@@ -637,20 +612,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"6\">
-//     <assign>
-//       <defines name=\"Fo\" />
-//       <depends name=\"y\" />
-//       <depends name=\"L\" />
-//       <depends name=\"der(yd)\" />
-//       <rhs>DIVISION((-4.91 - 0.5 * $DER.yd) * L, y)</rhs>
-//     </assign>
-//     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
-//       <part-of>within testModel;</part-of>
-//     </source>
-//   </equation>
-//   <equation index=\"7\">
+//   <equation index=\"3\" parent=\"9\">
 //     <assign>
 //       <defines name=\"der(xd)\" />
 //       <depends name=\"L\" />
@@ -663,40 +625,74 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"8\">
-//     <assign>
-//       <defines name=\"der($STATESET1.x)\" />
-//       <depends name=\"der(xd)\" />
-//       <depends name=\"$STATESET1.A[2]\" />
-//       <depends name=\"der(yd)\" />
-//       <depends name=\"$STATESET1.A[1]\" />
-//       <rhs>/*Real*/($STATESET1.A[1]) * $DER.yd + /*Real*/($STATESET1.A[2]) * $DER.xd</rhs>
-//     </assign>
+//   <equation index=\"4\" parent=\"9\">
+//     <residual>-4.91 + -0.5 * $DER.yd - Fo * DIVISION(y, L)</residual>
 //     <source>
-//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
+//       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"9\" parent=\"11\">
+//   <equation index=\"5\" parent=\"9\">
+//     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"6\" parent=\"9\">
 //     <residual>2.0 * (x * xd + y * yd)</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"10\" parent=\"11\">
+//   <equation index=\"7\" parent=\"9\">
+//     <residual>/*Real*/($STATESET1.A[2]) * xd + /*Real*/($STATESET1.A[1]) * yd - $STATESET1.x</residual>
+//     <source>
+//       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"8\" parent=\"9\">
 //     <residual>2.0 * (x * $DER.xd + xd ^ 2.0 + y * $DER.yd + yd ^ 2.0)</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"11\">
-//     <nonlinear indexNonlinear=\"1\">
-//       <defines name=\"xd\" />
+//   <equation index=\"9\">
+//     <nonlinear indexNonlinear=\"0\">
+//       <defines name=\"Fo\" />
+//       <defines name=\"x\" />
+//       <defines name=\"y\" />
 //       <defines name=\"yd\" />
-//       <eq index=\"10\"/>
-//       <eq index=\"9\"/>
+//       <defines name=\"xd\" />
+//       <eq index=\"3\"/>
+//       <eq index=\"8\"/>
+//       <eq index=\"7\"/>
+//       <eq index=\"6\"/>
+//       <eq index=\"5\"/>
+//       <eq index=\"4\"/>
 //     </nonlinear>
+//   </equation>
+//   <equation index=\"10\">
+//     <assign>
+//       <defines name=\"der(y)\" />
+//       <depends name=\"yd\" />
+//       <rhs>yd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"11\">
+//     <assign>
+//       <defines name=\"der(x)\" />
+//       <depends name=\"xd\" />
+//       <rhs>xd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
 //   </equation>
 //   <equation index=\"12\">
 //     <assign>
@@ -713,18 +709,31 @@ readFile("testModel_info.xml");getErrorString();
 //   </equation>
 //   <equation index=\"13\">
 //     <assign>
-//       <defines name=\"$STATESET1.x\" />
-//       <depends name=\"xd\" />
+//       <defines name=\"der($STATESET1.x)\" />
+//       <depends name=\"der(xd)\" />
 //       <depends name=\"$STATESET1.A[2]\" />
-//       <depends name=\"yd\" />
+//       <depends name=\"der(yd)\" />
 //       <depends name=\"$STATESET1.A[1]\" />
-//       <rhs>/*Real*/($STATESET1.A[1]) * yd + /*Real*/($STATESET1.A[2]) * xd</rhs>
+//       <rhs>/*Real*/($STATESET1.A[1]) * $DER.yd + /*Real*/($STATESET1.A[2]) * $DER.xd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"14\">
+//     <assign>
+//       <defines name=\"$STATESET2.x\" />
+//       <depends name=\"x\" />
+//       <depends name=\"$STATESET2.A[2]\" />
+//       <depends name=\"y\" />
+//       <depends name=\"$STATESET2.A[1]\" />
+//       <rhs>/*Real*/($STATESET2.A[1]) * y + /*Real*/($STATESET2.A[2]) * x</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"14\">
+//   <equation index=\"15\">
 //     <assign>
 //       <defines name=\"b\" />
 //       <depends name=\"a\" />
@@ -737,9 +746,9 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </equation>
-//   <equation index=\"15\">
+//   <equation index=\"16\">
 //     <assign>
-//       <defines name=\"$TMP$VAR$15$0X$ABS\" />
+//       <defines name=\"$TMP$VAR$16$0X$ABS\" />
 //       <depends name=\"s\" />
 //       <rhs>if initial() then $_start(s) else $_initialGuess(s)</rhs>
 //     </assign>
@@ -747,19 +756,19 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"16\">
+//   <equation index=\"17\">
 //     <assign>
 //       <defines name=\"s\" />
 //       <depends name=\"time\" />
-//       <depends name=\"$TMP$VAR$15$0X$ABS\" />
-//       <rhs>$_signNoNull($TMP$VAR$15$0X$ABS) * abs(time ^ 0.5)</rhs>
+//       <depends name=\"$TMP$VAR$16$0X$ABS\" />
+//       <rhs>$_signNoNull($TMP$VAR$16$0X$ABS) * abs(time ^ 0.5)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"16\" lineEnd=\"16\" colStart=\"3\" colEnd=\"11\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"17\">
+//   <equation index=\"18\">
 //     <assign>
 //       <defines name=\"t\" />
 //       <depends name=\"b\" />
@@ -772,7 +781,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"18\">
+//   <equation index=\"19\">
 //     <linear size=\"2\" nnz=\"4\">
 //       <defines name=\"v\" />
 //       <defines name=\"u\" />
@@ -808,10 +817,10 @@ readFile("testModel_info.xml");getErrorString();
 // </initial-equations>
 // <removed-initial-equations size=\"0\">
 // </removed-initial-equations>
-// <equations size=\"9\">
-//   <equation index=\"19\">
+// <equations size=\"11\">
+//   <equation index=\"20\">
 //     <assign>
-//       <defines name=\"$TMP$VAR$19$0X$ABS\" />
+//       <defines name=\"$TMP$VAR$20$0X$ABS\" />
 //       <depends name=\"s\" />
 //       <rhs>if initial() then $_start(s) else $_initialGuess(s)</rhs>
 //     </assign>
@@ -819,19 +828,19 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"20\">
+//   <equation index=\"21\">
 //     <assign>
 //       <defines name=\"s\" />
 //       <depends name=\"time\" />
-//       <depends name=\"$TMP$VAR$19$0X$ABS\" />
-//       <rhs>$_signNoNull($TMP$VAR$19$0X$ABS) * abs(time ^ 0.5)</rhs>
+//       <depends name=\"$TMP$VAR$20$0X$ABS\" />
+//       <rhs>$_signNoNull($TMP$VAR$20$0X$ABS) * abs(time ^ 0.5)</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"16\" lineEnd=\"16\" colStart=\"3\" colEnd=\"11\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"21\">
+//   <equation index=\"22\">
 //     <assign>
 //       <defines name=\"t\" />
 //       <depends name=\"b\" />
@@ -844,7 +853,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"22\" parent=\"26\">
+//   <equation index=\"23\" parent=\"27\">
 //     <assign>
 //       <defines name=\"u\" />
 //       <depends name=\"a\" />
@@ -857,14 +866,14 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"23\" parent=\"26\">
+//   <equation index=\"24\" parent=\"27\">
 //     <residual>t * v + s * u - time</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"17\" lineEnd=\"17\" colStart=\"3\" colEnd=\"15\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"24\" parent=\"26\">
+//   <equation index=\"25\" parent=\"27\">
 //     <assign>
 //       <defines name=\"u.$pDERNLSJac0.dummyVarNLSJac0\" />
 //       <depends name=\"a\" />
@@ -877,7 +886,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"25\" parent=\"26\">
+//   <equation index=\"26\" parent=\"27\">
 //     <assign>
 //       <defines name=\"$res1.$pDERNLSJac0.dummyVarNLSJac0\" />
 //       <depends name=\"u.$pDERNLSJac0.dummyVarNLSJac0\" />
@@ -891,7 +900,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"26\">
+//   <equation index=\"27\">
 //     <linear size=\"1\" nnz=\"0\">
 //       <defines name=\"v\" />
 //       <row>
@@ -900,53 +909,53 @@ readFile("testModel_info.xml");getErrorString();
 //       <matrix>
 //       </matrix>
 //       <residuals>
-//       <eq index=\"22\"/>
 //       <eq index=\"23\"/>
+//       <eq index=\"24\"/>
 //       </residuals>
 //       <jacobian>
-//       <eq index=\"24\"/>
 //       <eq index=\"25\"/>
+//       <eq index=\"26\"/>
 //       </jacobian>
 //     </linear>
 //   </equation>
-//   <equation index=\"27\" parent=\"29\">
+//   <equation index=\"28\" parent=\"30\">
 //     <residual>/*Real*/($STATESET2.A[2]) * x + /*Real*/($STATESET2.A[1]) * y - $STATESET2.x</residual>
 //     <source>
 //       <info file=\"stateselection\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"28\" parent=\"29\">
+//   <equation index=\"29\" parent=\"30\">
 //     <residual>x ^ 2.0 + y ^ 2.0 + -1.0</residual>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"29\">
-//     <nonlinear indexNonlinear=\"2\">
-//       <defines name=\"x\" />
+//   <equation index=\"30\">
+//     <nonlinear indexNonlinear=\"1\">
 //       <defines name=\"y\" />
+//       <defines name=\"x\" />
+//       <eq index=\"29\"/>
 //       <eq index=\"28\"/>
-//       <eq index=\"27\"/>
 //     </nonlinear>
 //   </equation>
-//   <equation index=\"30\">
+//   <equation index=\"31\">
 //     <linear size=\"2\" nnz=\"4\">
-//       <defines name=\"xd\" />
 //       <defines name=\"yd\" />
+//       <defines name=\"xd\" />
 //       <row>
 //         <cell>-0.0</cell>
 //         <cell>-$STATESET1.x</cell>
 //       </row>
 //       <matrix>
 //         <cell row=\"0\" col=\"0\">
-//           <residual>2.0 * x</residual>
-//         </cell><cell row=\"0\" col=\"1\">
 //           <residual>2.0 * y</residual>
+//         </cell><cell row=\"0\" col=\"1\">
+//           <residual>2.0 * x</residual>
 //         </cell><cell row=\"1\" col=\"0\">
-//           <residual>-/*Real*/($STATESET1.A[2])</residual>
-//         </cell><cell row=\"1\" col=\"1\">
 //           <residual>-/*Real*/($STATESET1.A[1])</residual>
+//         </cell><cell row=\"1\" col=\"1\">
+//           <residual>-/*Real*/($STATESET1.A[2])</residual>
 //         </cell>
 //       </matrix>
 //       <residuals>
@@ -962,7 +971,17 @@ readFile("testModel_info.xml");getErrorString();
 //       </source>
 //     </linear>
 //   </equation>
-//   <equation index=\"31\">
+//   <equation index=\"32\">
+//     <assign>
+//       <defines name=\"der(y)\" />
+//       <depends name=\"yd\" />
+//       <rhs>yd</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
+//     </source>
+//   </equation>
+//   <equation index=\"33\">
 //     <assign>
 //       <defines name=\"der($STATESET2.x)\" />
 //       <depends name=\"xd\" />
@@ -975,20 +994,17 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"32\" parent=\"38\">
+//   <equation index=\"34\">
 //     <assign>
-//       <defines name=\"der(yd)\" />
-//       <depends name=\"L\" />
-//       <depends name=\"y\" />
-//       <depends name=\"Fo\" />
-//       <rhs>-9.82 - 2.0 * Fo * y / L</rhs>
+//       <defines name=\"der(x)\" />
+//       <depends name=\"xd\" />
+//       <rhs>xd</rhs>
 //     </assign>
 //     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
-//       <part-of>within testModel;</part-of>
+//       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"33\" parent=\"38\">
+//   <equation index=\"35\" parent=\"41\">
 //     <assign>
 //       <defines name=\"der(xd)\" />
 //       <depends name=\"L\" />
@@ -1001,27 +1017,27 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"34\" parent=\"38\">
-//     <residual>2.0 * (x * $DER.xd + xd ^ 2.0 + y * $DER.yd + yd ^ 2.0)</residual>
-//     <source>
-//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
-//       <part-of>within testModel;</part-of>
-//     </source>
-//   </equation>
-//   <equation index=\"35\" parent=\"38\">
+//   <equation index=\"36\" parent=\"41\">
 //     <assign>
-//       <defines name=\"der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" />
+//       <defines name=\"der(yd)\" />
 //       <depends name=\"L\" />
 //       <depends name=\"y\" />
-//       <depends name=\"FoSeedNLSJac1\" />
-//       <rhs>2.0 * (-FoSeedNLSJac1) * y / L</rhs>
+//       <depends name=\"Fo\" />
+//       <rhs>-9.82 - 2.0 * Fo * y / L</rhs>
 //     </assign>
 //     <source>
 //       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"36\" parent=\"38\">
+//   <equation index=\"37\" parent=\"41\">
+//     <residual>2.0 * (x * $DER.xd + xd ^ 2.0 + y * $DER.yd + yd ^ 2.0)</residual>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"23\" lineEnd=\"23\" colStart=\"3\" colEnd=\"12\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"38\" parent=\"41\">
 //     <assign>
 //       <defines name=\"der(xd.$pDERNLSJac1.dummyVarNLSJac1)\" />
 //       <depends name=\"L\" />
@@ -1034,7 +1050,20 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"37\" parent=\"38\">
+//   <equation index=\"39\" parent=\"41\">
+//     <assign>
+//       <defines name=\"der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" />
+//       <depends name=\"L\" />
+//       <depends name=\"y\" />
+//       <depends name=\"FoSeedNLSJac1\" />
+//       <rhs>2.0 * (-FoSeedNLSJac1) * y / L</rhs>
+//     </assign>
+//     <source>
+//       <info file=\"&lt;interactive&gt;\" lineStart=\"22\" lineEnd=\"22\" colStart=\"3\" colEnd=\"33\"/>
+//       <part-of>within testModel;</part-of>
+//     </source>
+//   </equation>
+//   <equation index=\"40\" parent=\"41\">
 //     <assign>
 //       <defines name=\"$res1.$pDERNLSJac1.dummyVarNLSJac1\" />
 //       <depends name=\"der(yd.$pDERNLSJac1.dummyVarNLSJac1)\" />
@@ -1048,7 +1077,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"38\">
+//   <equation index=\"41\">
 //     <linear size=\"1\" nnz=\"0\">
 //       <defines name=\"Fo\" />
 //       <row>
@@ -1057,18 +1086,18 @@ readFile("testModel_info.xml");getErrorString();
 //       <matrix>
 //       </matrix>
 //       <residuals>
-//       <eq index=\"32\"/>
-//       <eq index=\"33\"/>
-//       <eq index=\"34\"/>
-//       </residuals>
-//       <jacobian>
 //       <eq index=\"35\"/>
 //       <eq index=\"36\"/>
 //       <eq index=\"37\"/>
+//       </residuals>
+//       <jacobian>
+//       <eq index=\"38\"/>
+//       <eq index=\"39\"/>
+//       <eq index=\"40\"/>
 //       </jacobian>
 //     </linear>
 //   </equation>
-//   <equation index=\"39\">
+//   <equation index=\"42\">
 //     <assign>
 //       <defines name=\"der($STATESET1.x)\" />
 //       <depends name=\"der(xd)\" />
@@ -1083,7 +1112,7 @@ readFile("testModel_info.xml");getErrorString();
 //   </equation>
 // </equations>
 // <start-equations size=\"4\">
-//   <equation index=\"40\">
+//   <equation index=\"43\">
 //     <assign>
 //       <defines name=\"u\" />
 //       <depends name=\"b\" />
@@ -1097,7 +1126,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </equation>
-//   <equation index=\"41\">
+//   <equation index=\"44\">
 //     <assign>
 //       <defines name=\"s\" />
 //       <depends name=\"b\" />
@@ -1111,7 +1140,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <type>Real</type>
 //     </source>
 //   </equation>
-//   <equation index=\"42\">
+//   <equation index=\"45\">
 //     <assign>
 //       <defines name=\"$STATESET1.x\" />
 //       <depends name=\"xd\" />
@@ -1124,7 +1153,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <info file=\"\" lineStart=\"0\" lineEnd=\"0\" colStart=\"0\" colEnd=\"0\"/>
 //     </source>
 //   </equation>
-//   <equation index=\"43\">
+//   <equation index=\"46\">
 //     <assign>
 //       <defines name=\"$STATESET2.x\" />
 //       <depends name=\"x\" />
@@ -1145,7 +1174,7 @@ readFile("testModel_info.xml");getErrorString();
 // <max-equations size=\"0\">
 // </max-equations>
 // <parameter-equations size=\"1\">
-//   <equation index=\"44\">
+//   <equation index=\"47\">
 //     <assign>
 //       <defines name=\"b\" />
 //       <depends name=\"a\" />
@@ -1162,7 +1191,7 @@ readFile("testModel_info.xml");getErrorString();
 // <assertions size=\"0\">
 // </assertions>
 // <jacobian-equations>
-//   <equation index=\"45\">
+//   <equation index=\"48\">
 //     <assign>
 //       <defines name=\"$STATESET2.J.$pDERStateSetJac2.dummyVarStateSetJac2\" />
 //       <depends name=\"ySeedStateSetJac2\" />
@@ -1176,7 +1205,7 @@ readFile("testModel_info.xml");getErrorString();
 //       <part-of>within testModel;</part-of>
 //     </source>
 //   </equation>
-//   <equation index=\"46\">
+//   <equation index=\"49\">
 //     <assign>
 //       <defines name=\"$STATESET1.J.$pDERStateSetJac3.dummyVarStateSetJac3\" />
 //       <depends name=\"ydSeedStateSetJac3\" />

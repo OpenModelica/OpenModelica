@@ -11,6 +11,7 @@ Bug2788.mos \
 Bug2833.mos \
 Bug3023.mos \
 Bug3261.mos \
+Bug3323.mos \
 BugTest1830.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \

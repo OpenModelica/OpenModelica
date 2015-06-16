@@ -1284,6 +1284,89 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// post-optimization module simplifyConstraints:
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
 // post-optimization module CSE:
 //
 //

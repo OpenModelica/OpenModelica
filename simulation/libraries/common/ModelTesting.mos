@@ -19,6 +19,7 @@ compareVars := {"revolute1.phi","revolute1.w","revolute1.a","revolute2.phi","rev
 */
 
 echo(false);
+// setCommandLineOptions("+d=failtrace,showStatement +showErrorMessages"); getErrorString();
 
 b:=loadModel(packageName,{packageVersion});
 if not b then
@@ -205,7 +206,14 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
         print("Files Equal!\n");
       end if;
       if not res then
-        print("Failed variables: " + sum(var for var in failVars));
+        print("Failed variables: " + sum(var for var in failVars) + "\n");
+        print(error);
+        print(getErrorString());
+        minimalResult := OpenModelica.Scripting.stringReplace(resultFile, "_res.mat", ".minimal.mat");
+        OpenModelica.Scripting.filterSimulationResults(resultFile,minimalResult,vars=compareVars);
+        system("xz --best --keep --force '" + minimalResult + "'");
+        system("ls -lh '" + resultFile + "' '" + minimalResult + "'* '" + referenceFile + "'*");
+        print("Failed variables: " + sum(var for var in failVars) + "\n");
         print(error);
         print(getErrorString());
         info:=checkSettings();

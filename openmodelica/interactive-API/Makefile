@@ -49,6 +49,7 @@ setComponentComment.mos \
 setComponentModifierValue.mos \
 showDoc.mos \
 simplify.mos \
+stringSplit.mos \
 strings.mos  \
 variables.mos \
 

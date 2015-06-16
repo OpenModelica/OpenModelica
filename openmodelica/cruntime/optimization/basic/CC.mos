@@ -17,39 +17,31 @@ end CheckConstraintViolation;
 ");
 getErrorString();
 
-optimize(CheckConstraintViolation,numberOfIntervalls=200, tolerance = 1e-12, simflags="-lv LOG_IPOPT_ERROR -ipopt_max_iter 2");
+echo(false);
+res := optimize(CheckConstraintViolation,numberOfIntervalls=200, tolerance = 1e-12, simflags="-lv LOG_IPOPT -ipopt_max_iter 2");
+messages:=res.messages;
+
+echo(true);
+res.resultFile;
+
+  if regexBool(messages, "EXIT: Problem has inconsistent variable bounds or constraint sides.") then
+    print("EXIT: Problem has inconsistent variable bounds or constraint sides.\n");
+  else
+    print("\nCheck test!\n");
+    exit(1);
+  end if;
 getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
 // ""
-// record SimulationResult
-//     resultFile = "CheckConstraintViolation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'CheckConstraintViolation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -ipopt_max_iter 2'",
-//     messages = "
-// Optimizer Variables
-// ========================================================
-// State[0]:x(start = 0, nominal = 1e-05, min = -Inf, max = +Inf, init = 0)
-// Input[1]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
-// --------------------------------------------------------
-// number of nonlinear constraints: 2
-// ========================================================
+// true
+// "CheckConstraintViolation_res.mat"
+// EXIT: Problem has inconsistent variable bounds or constraint sides.
 //
-// max_iter = 2
-// ******************************************************************************
-// This program contains Ipopt, a library for large-scale nonlinear optimization.
-//  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
-// ******************************************************************************
-//
-// LOG_IPOPT_ERROR   | info    | max violation is 3 for the constraint $OMC$constarintTerm2(time = 0.00310102)
-// LOG_IPOPT_ERROR   | info    | max violation is 3 for the constraint $OMC$constarintTerm2(time = 0.00310102)
-// LOG_IPOPT_ERROR   | info    | max violation is 3 for the constraint $OMC$constarintTerm2(time = 0.00310102)
-// stdout            | warning | No optimal solution found!
-// |                 | |       | Use -lv=LOG_IPOPT for more information.
+// "Warning: Alias variables $OMC$constarintTerm2 = x with invalid limits min 3.0 > max 0.0
 // "
-// end SimulationResult;
-// ""
 // endResult

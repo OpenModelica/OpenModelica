@@ -37,13 +37,13 @@ runScript(modelTesting);getErrorString();
 //  * Number of equations: 9016
 //  * Number of variables: 9016
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
+//  * Number of independent subsystems: 20
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1047):
-//  * Single equations (assignments): 1046
+// Notification: Strong component statistics for simulation (1215):
+//  * Single equations (assignments): 1214
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -53,16 +53,16 @@ runScript(modelTesting);getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {1 355}
+//  * Linear torn systems: 1 {1 331}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1794
+//  * Number of independent subsystems: 1986
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 369 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3510):
-//  * Single equations (assignments): 3503
+// Notification: Strong component statistics for initialization (3852):
+//  * Single equations (assignments): 3845
 //  * Array equations: 6
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -72,7 +72,7 @@ runScript(modelTesting);getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 1 {1 355}
+//  * Linear torn systems: 1 {1 331}
 //  * Non-linear torn systems: 0
 //
 // "true

@@ -52,6 +52,7 @@ Overwriting1.mo \
 Overwriting2.mo \
 Shadow1.mo \
 UsertypeModifications.mo \
+UsertypeArrayMod.mo \
 TestMissingModifiers.mos
 
 

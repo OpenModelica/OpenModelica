@@ -13,7 +13,7 @@ buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullSteadyS
 // true
 // ""
 // {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullSteadyState","OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullSteadyState_init.xml"}
-// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.x2 = 0.0
+// "Notification: The following equation is consistent and got removed from the initialization problem: $DER.x1 = 0.0
 // Notification: The following equation is consistent and got removed from the initialization problem: $DER.v2 = 0.0
 // Warning: The initial conditions are over specified. Use +d=initialization for more information.
 // "

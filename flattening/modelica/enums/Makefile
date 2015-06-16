@@ -16,10 +16,12 @@ Enum11.mo \
 Enum12.mo \
 Enum13.mo \
 EnumArrayDimBinding.mo \
+EnumArrayMod1.mo \
 EnumConnectArray.mo \
 EnumDimSum.mo \
 EnumFor.mo \
 EnumFor2.mo \
+EnumInnerOuterDim.mo \
 EnumInvalidLiteral.mo \
 EnumMatrixProduct.mo \
 EnumRange.mo \

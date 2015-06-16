@@ -40,13 +40,13 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit3_res.m
 //  * Number of equations: 65
 //  * Number of variables: 65
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
+//  * Number of independent subsystems: 2
 //  * Number of states: 2 (capacitor.v,capacitor1.v)
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (14):
-//  * Single equations (assignments): 12
+// Notification: Strong component statistics for simulation (15):
+//  * Single equations (assignments): 13
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -60,13 +60,13 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit3_res.m
 //  * Non-linear torn systems: 0
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 3
+//  * Number of independent subsystems: 4
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (30):
-//  * Single equations (assignments): 28
+// Notification: Strong component statistics for initialization (31):
+//  * Single equations (assignments): 29
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

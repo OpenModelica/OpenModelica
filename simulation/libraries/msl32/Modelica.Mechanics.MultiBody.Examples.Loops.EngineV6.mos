@@ -61,13 +61,13 @@ runScript(modelTesting);getErrorString();
 //  * candidate: cylinder6.gasForce.s_rel(start = -0.0)
 // => select value from cylinder6.Cylinder.s(start = -0.3) for variable: cylinder6.Cylinder.s
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
+//  * Number of independent subsystems: 40
 //  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
 //  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1035):
-//  * Single equations (assignments): 1010
+// Notification: Strong component statistics for simulation (1326):
+//  * Single equations (assignments): 1301
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -82,16 +82,16 @@ runScript(modelTesting);getErrorString();
 //  * Non-linear Jacobian: 0
 //  * Without analytic Jacobian: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 7 {31 385,1 5,1 5,1 5,1 5,1 5,1 5}
+//  * Linear torn systems: 7 {31 373,1 3,1 3,1 3,1 3,1 3,1 3}
 //  * Non-linear torn systems: 6 {1 13,1 13,1 13,1 13,1 13,1 13}
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2572
+//  * Number of independent subsystems: 2820
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 481 ('+d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (4254):
-//  * Single equations (assignments): 4229
+// Notification: Strong component statistics for initialization (4744):
+//  * Single equations (assignments): 4719
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -106,7 +106,7 @@ runScript(modelTesting);getErrorString();
 //  * Non-linear Jacobian: 0
 //  * Without analytic Jacobian: 0
 // Notification: Torn system details:
-//  * Linear torn systems: 7 {31 385,1 5,1 5,1 5,1 5,1 5,1 5}
+//  * Linear torn systems: 7 {31 373,1 3,1 3,1 3,1 3,1 3,1 3}
 //  * Non-linear torn systems: 6 {1 13,1 13,1 13,1 13,1 13,1 13}
 //
 // "true

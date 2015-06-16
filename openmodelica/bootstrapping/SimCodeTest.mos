@@ -5,7 +5,7 @@
 
 runScript("LoadCompilerSources.mos"); getErrorString();
 loadFile("SimCodeTest.mo");getErrorString();
-setCommandLineOptions("+d=rml");
+setCommandLineOptions("+d=noevalfunc,rml");
 
 SimCodeTest.test(); getErrorString();
 
@@ -98,11 +98,11 @@ readFile("SimCodeC_abc.c");
 //
 //   {
 //     MMC_TRY_TOP()
-//   
+//
 //     MMC_TRY_STACK()
-//   
+//
 //     omc_SimCodeC_abc(threadData, lst);
-//     
+//
 //     MMC_ELSE()
 //     rml_execution_failed();
 //     fprintf(stderr, \"Stack overflow detected and was not caught.\\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\\n    Include the following trace:\\n\");
@@ -110,11 +110,11 @@ readFile("SimCodeC_abc.c");
 //     fflush(NULL);
 //     return 1;
 //     MMC_CATCH_STACK()
-//     
+//
 //     MMC_CATCH_TOP(return rml_execution_failed());
 //   }
 //   }
-//   
+//
 //   fflush(NULL);
 //   EXIT(0);
 //   return 0;
