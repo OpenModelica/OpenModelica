@@ -63,3 +63,7 @@ git clone https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica-mi
 cd OpenModelica-minimal
 git submodule update --init --recursive libraries testsuite OMCompiler common
 ```
+
+## OpenModelica User's Guide
+The [User's Guide](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/)
+is automatically generated from the documentation repository.
