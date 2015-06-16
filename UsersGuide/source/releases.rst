@@ -5,20 +5,22 @@ This Appendix lists the most important OpenModelica releases and a brief
 description of their contents. Right now the versions from 1.3.1 to
 1.9.2 are described.
 
+.. _openmodelica_1.9.2 :
+
 OpenModelica 1.9.2, February 2015
 ---------------------------------
 
 The most important enhancements in the OpenModelica 1.9.2 release:
 
 -  The OpenModelica compiler has moved to a new development and release
-       platform: the bootstrapped OpenModelica compiler. This gives
-       advantages in terms of better programmability, maintenance,
-       debugging, modularity and current/future performance increases.
+   platform: the bootstrapped OpenModelica compiler. This gives
+   advantages in terms of better programmability, maintenance,
+   debugging, modularity and current/future performance increases.
 
 -  The OpenModelica graphic connection editor OMEdit has become 3-5
-       times faster due to faster communication with the OpenModelica
-       compiler linked as a DLL. This was made possible by moving to the
-       bootstrapped compiler.
+   times faster due to faster communication with the OpenModelica
+   compiler linked as a DLL. This was made possible by moving to the
+   bootstrapped compiler.
 
 -  Further improved simulation coverage for a number of libraries.
 
@@ -31,12 +33,12 @@ This release mainly includes improvements of the OpenModelica Compiler
 (OMC), including, but not restricted to the following:
 
 -  The OpenModelica compiler has moved to a new development and release
-       platform: the bootstrapped OpenModelica compiler. This gives
-       advantages in terms of better programmability, maintenance,
-       debugging, modularity and current/future performance increases.
+   platform: the bootstrapped OpenModelica compiler. This gives
+   advantages in terms of better programmability, maintenance,
+   debugging, modularity and current/future performance increases.
 
 -  Further improved simulation coverage for a number of libraries
-       compared to 1.9.1 (Oct 25, 2014). For example:
+   compared to :ref:`openmodelica_1.9.1`. For example:
 
    -  MSL 3.2.1 100% compilation, 97% simulation (3% increase)
 
@@ -55,7 +57,7 @@ This release mainly includes improvements of the OpenModelica Compiler
       increase)
 
 -  Further enhanced OMC compiler front-end coverage, scalability, speed
-       and memory.
+   and memory.
 
 -  Better initialization.
 
@@ -64,9 +66,10 @@ This release mainly includes improvements of the OpenModelica Compiler
 -  Improved non-linear, linear and mixed system solving.
 
 -  Common subexpression elimination support - drastically increases
-       performance of some models.
+   performance of some models.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes apart from bug fixing.
 
@@ -89,23 +92,23 @@ Graphic Editor OMEdit
 ~~~~~~~~~~~~~~~~~~~~~
 
 -  The OpenModelica graphic connection editor OMEdit has become 3-5
-       times faster due to faster communication with the OpenModelica
-       compiler linked as a DLL. This was made possible by moving to the
-       bootstrapped compiler.
+   times faster due to faster communication with the OpenModelica
+   compiler linked as a DLL. This was made possible by moving to the
+   bootstrapped compiler.
 
 -  Enhanced simulation setup window in OMEdit, which among other things
-       include better support for integration methods and dassl options.
+   include better support for integration methods and dassl options.
 
 -  Support for running multiple simultaneous simulation.
 
 -  Improved handling of modifiers.
 
 -  Re-simulate with changed options, including history support and
-       re-simulating with previous options possibly edited.
+   re-simulating with previous options possibly edited.
 
 -  More user friendly user interface by improved connection line
-       drawing, added snap to grid for icons and conversion of icons
-       from PNG to SVG, and some additional fixes.
+   drawing, added snap to grid for icons and conversion of icons
+   from PNG to SVG, and some additional fixes.
 
 Optimization
 ~~~~~~~~~~~~
@@ -120,6 +123,8 @@ Further improved for FMI 2.0 model exchange import and export, now
 compliant according to the FMI compliance tests. FMI 1.0 support has
 been further improved.
 
+.. _openmodelica_1.9.1 :
+
 OpenModelica 1.9.1, October 2014
 --------------------------------
 
@@ -130,13 +135,13 @@ The most important enhancements in the OpenModelica 1.9.1 release:
 -  Further enhanced OMC compiler front-end coverage and scalability
 
 -  Significant improved simulation support for libraries using Fluid and
-       Media.
+   Media.
 
 -  Dynamic model debugger for equation-based models integrated with
-       OMEdit.
+   OMEdit.
 
 -  Dynamic algorithm model debugger with OMEdit; including support for
-       MetaModelica when using the bootstrapped compiler.
+   MetaModelica when using the bootstrapped compiler.
 
 New features: Dynamic debugger for equation-based models; Dynamic
 Optimization with collocation built into OpenModelica, performance
@@ -149,11 +154,11 @@ This release mainly includes improvements of the OpenModelica Compiler
 (OMC), including, but not restricted to the following:
 
 -  Further improved OMC model compiler support for a number of libraries
-       including MSL 3.2.1, ModelicaTest 3.2.1, PetriNet, Buildings,
-       PowerSystems, OpenHydraulics, ThermoPower, and ThermoSysPro.
+   including MSL 3.2.1, ModelicaTest 3.2.1, PetriNet, Buildings,
+   PowerSystems, OpenHydraulics, ThermoPower, and ThermoSysPro.
 
 -  Further enhanced OMC compiler front-end coverage, scalability, speed
-       and memory.
+   and memory.
 
 -  Better coverage of Modelica libraries using Fluid and Media.
 
@@ -162,26 +167,26 @@ This release mainly includes improvements of the OpenModelica Compiler
 -  Improved testing facilities and library coverage reporting.
 
 -  Improved model compilation speed by compiling model parts in parallel
-       (bootstrapped compiler).
+   (bootstrapped compiler).
 
 -  Support for running model simulations in a web browser.
 
 -  New faster initialization that handles over-determined systems,
-       under-determined systems, or both.
+   under-determined systems, or both.
 
 -  Compiler back-end partly redesigned for improved scalability and
-       better modularity.
+   better modularity.
 
 -  Better tearing support.
 
 -  The first run-time Modelica equation-based model debugger, not
-       available in any other Modelica tool, integrated with OMEdit.
+   available in any other Modelica tool, integrated with OMEdit.
 
 -  Enhanced performance profiler integrated with the debugger.
 
 -  Improved parallelization prototype with several parallelization
-       strategies, task merging and duplication, shorter critical paths,
-       several scheduling strategies.
+   strategies, task merging and duplication, shorter critical paths,
+   several scheduling strategies.
 
 -  Some support for general solving of mixed systems of equations.
 
@@ -196,17 +201,17 @@ This release mainly includes improvements of the OpenModelica Compiler
 -  Better support for partial functions.
 
 -  Better support for function tail recursion, which reduces memory
-       usage.
+   usage.
 
 -  Partial function evaluation in the back-end to improve solving
-       singular systems.
+   singular systems.
 
 -  Better handling of events/zero crossings.
 
 -  Support for colored Jacobians.
 
 -  New differentiation package that can handle a much larger number of
-       expressions.
+   expressions.
 
 -  Support for sparse solvers.
 
@@ -235,7 +240,7 @@ This release mainly includes improvements of the OpenModelica Compiler
 -  Better support for calling functions via instance.
 
 -  New text template based unparsing for DAE, Absyn, SCode, TaskGraphs,
-       etc.
+   etc.
 
 -  Better support for external objects.
 
@@ -246,9 +251,10 @@ This release mainly includes improvements of the OpenModelica Compiler
 -  New unit checking implementation.
 
 -  Support for model rewriting expressions via rewriting rules in an
-       external file.
+   external file.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes apart from bug fixing.
 
@@ -303,7 +309,7 @@ The three most important enhancements in the OpenModelica 1.9.0 release:
 -  OpenModelica compiler support for most of the Fluid library.
 
 -  Support for the significantly updated library MSL 3.2.1 final
-       version.
+   version.
 
 -  Significantly enhanced graphical user interface in OMEdit.
 
@@ -317,64 +323,64 @@ This release mainly includes improvements of the OpenModelica Compiler
 (OMC), including, but not restricted to the following:
 
 -  A more stable and complete OMC model compiler. The 1.9.0 final
-       version simulates many more models than the previous 1.8.1
-       version and OpenModelica 1.9.0 beta versions.
+   version simulates many more models than the previous 1.8.1
+   version and OpenModelica 1.9.0 beta versions.
 
 -  Much better simulation support for MSL 3.2.1, now 270 out of 274
-       example models compile (98%) and 247 (90%) simulate, compared to
-       30% simulating in the 1.9.0 beta1 release.
+   example models compile (98%) and 247 (90%) simulate, compared to
+   30% simulating in the 1.9.0 beta1 release.
 
 -  Much better simulation for the ModelicaTest 3.2.1 library, now 412
-       out of 428 models compile (96%), and 380 (88%) simulate, compared
-       to 32% in November 2012.
+   out of 428 models compile (96%), and 380 (88%) simulate, compared
+   to 32% in November 2012.
 
 -  Improved tearing algorithm for the compiler backend. Tearing is by
-       default used.
+   default used.
 
 -  Much faster matching and dynamic state selection algorithms for the
-       compiler backend.
+   compiler backend.
 
 -  New index reduction algorithm implementation.
 
 -  New default initialization method that symbolically solves the
-       initialization problem much faster and more accurately. This is
-       the first version that in general initialize hybrid models
-       correctly.
+   initialization problem much faster and more accurately. This is
+   the first version that in general initialize hybrid models
+   correctly.
 
 -  Better class loading from files. The package.order file is now
-       respected and the file structure is more thoroughly examined.
+   respected and the file structure is more thoroughly examined.
 
 -  Basic support for pure/impure functions.
 
 -  It is now possible to translate the error messages in the omc kernel.
 
 -  Enhanced ModelicaML version with support for value bindings in
-       requirements-driven modeling available for the latest Eclipse and
-       Papyrus versions. GUI specific adaptations. Automated model
-       composition workflows (used for model-based design verification
-       against requirements) are modularized and have improved in terms
-       of performance.
+   requirements-driven modeling available for the latest Eclipse and
+   Papyrus versions. GUI specific adaptations. Automated model
+   composition workflows (used for model-based design verification
+   against requirements) are modularized and have improved in terms
+   of performance.
 
 -  FMI for co-simulation with OMC as master. Improved FMI import/export,
-       model exchange.
+   model exchange.
 
 -  Checking (when possible) that variables have been assigned to before
-       they are used in algorithmic code.
+   they are used in algorithmic code.
 
 -  Full version of Python scripting.
 
 -  3D graphics visualization using the Modelica3D library.
 
 -  The PySimulator package from DLR for additional analysis is
-       integrated with OpenModelica (see Modelica2012 paper), and
-       included in the OpenModelica distribution.
+   integrated with OpenModelica (see Modelica2012 paper), and
+   included in the OpenModelica distribution.
 
 -  Prototype support for uncertainty computations, special feature
-       enabled by special flag.
+   enabled by special flag.
 
 -  Parallel algorithmic Modelica support (ParModelica) for efficient
-       portable parallel algorithmic programming based on the OpenCL
-       standard, for CPUs and GPUs.
+   portable parallel algorithmic programming based on the OpenCL
+   standard, for CPUs and GPUs.
 
 -  Support for optimization of semiLinear according to :ref:`modelicaspec:operator-semiLinear`.
 
@@ -406,66 +412,66 @@ Graphic Editor OMEdit
 ~~~~~~~~~~~~~~~~~~~~~
 
 -  General GUI: backward and forward navigation support in Documentation
-       view, enhanced parameters window with support for Dialog
-       annotation. Most of the images are converted from raster to
-       vector graphics i.e PNG to SVG.
+   view, enhanced parameters window with support for Dialog
+   annotation. Most of the images are converted from raster to
+   vector graphics i.e PNG to SVG.
 
 -  Libraries Browser: better loading of libraries, library tree can now
-       show protected classes, show library items class names as middle
-       ellipses if the class name text is larger, more options via the
-       right click menu for quick usage.
+   show protected classes, show library items class names as middle
+   ellipses if the class name text is larger, more options via the
+   right click menu for quick usage.
 
 -  ModelWidget: add the partial class as a replaceable component, look
-       for the default component prefixes and name when adding the
-       component.
+   for the default component prefixes and name when adding the
+   component.
 
 -  GraphicsView: coordinate system manipulation for icon and diagram
-       layers. Show red box for models that do not exist. Show default
-       graphical annotation for the components that doesn’t have any
-       graphical annotations. Better resizing of the components.
-       Properties dialog for primitive shapes i.e Line, Polygon,
-       Rectangle, Ellipse, Text and Bitmap.
+   layers. Show red box for models that do not exist. Show default
+   graphical annotation for the components that doesn’t have any
+   graphical annotations. Better resizing of the components.
+   Properties dialog for primitive shapes i.e Line, Polygon,
+   Rectangle, Ellipse, Text and Bitmap.
 
 -  File Opening: open one or more Modelica files, allow users to select
-       the encoding while opening the file, convert files to UTF-8
-       encoding, allow users to open the OpenModelica result files.
+   the encoding while opening the file, convert files to UTF-8
+   encoding, allow users to open the OpenModelica result files.
 
 -  Variables Browser: find variables in the variables browser, sorting
-       in the variables browser.
+   in the variables browser.
 
 -  Plot Window: clear all curves of the plot window, preserve the old
-       selected variable and update its value with the new simulation
-       result.
+   selected variable and update its value with the new simulation
+   result.
 
 -  Simulation: support for all the simulation flags, read the simulation
-       output as soon as is is obtained, output window for simulations,
-       options to set matching algorithm and index reduction method for
-       simulation. Display all the files generated during the simulation
-       is now supported. Options to set OMC command line flags.
+   output as soon as is is obtained, output window for simulations,
+   options to set matching algorithm and index reduction method for
+   simulation. Display all the files generated during the simulation
+   is now supported. Options to set OMC command line flags.
 
 -  Options: options for loading libraries via loadModel and loadFile
-       each time GUI starts, save the last open file directory location,
-       options for setting line wrap mode and syntax highlighting.
+   each time GUI starts, save the last open file directory location,
+   options for setting line wrap mode and syntax highlighting.
 
 -  Modelica Text Editor: preserving user customizations, new search &
-       replace functionality, support for comment/uncomment.
+   replace functionality, support for comment/uncomment.
 
 -  Notifications: show custom dialogs to users allowing them to choose
-       whether they want to see this dialog again or not.
+   whether they want to see this dialog again or not.
 
 -  Model Creation: Better support for creating new classes. Easy
-       creation of extends classes or nested classes.
+   creation of extends classes or nested classes.
 
 -  Messages Widget: Multi line error messages are now supported.
 
 -  Crash Detection: The GUI now automatically detects the crash and
-       writes a stack trace file. The user is given an option to send a
-       crash report along with the stack trace file and few other useful
-       files via email.
+   writes a stack trace file. The user is given an option to send a
+   crash report along with the stack trace file and few other useful
+   files via email.
 
 -  Autosave: OMEdit saves the currently edited model regularly, in order
-       to avoid losing edits after GUI or compiler crash. The save
-       interval can be set in the Options menu.
+   to avoid losing edits after GUI or compiler crash. The save
+   interval can be set in the Options menu.
 
 Optimization
 ~~~~~~~~~~~~
@@ -502,62 +508,63 @@ frontend part of the OpenModelica Compiler (OMC) and several
 improvements of the backend, including, but not restricted to:
 
 -  A faster and more stable OMC model compiler. The 1.8.1 version
-       flattens and simulates more models than the previous 1.8.0
-       version.
+   flattens and simulates more models than the previous 1.8.0
+   version.
 
 -  Support for operator overloading (except Complex numbers).
 
 -  New ModelicaML version with support for value bindings in
-       requirements-driven modeling and importing Modelica library
-       models into ModelicaML models.
+   requirements-driven modeling and importing Modelica library
+   models into ModelicaML models.
 
 -  Faster plotting in OMNotebook. The feature sendData has been removed
-       from OpenModelica. As a result, the kernel no longer depends on
-       Qt. The plot3() family of functions have now replaced to plot(),
-       which in turn have been removed. The non-standard visualize()
-       command has been removed in favour of more recent alternatives.
+   from OpenModelica. As a result, the kernel no longer depends on
+   Qt. The plot3() family of functions have now replaced to plot(),
+   which in turn have been removed. The non-standard visualize()
+   command has been removed in favour of more recent alternatives.
 
 -  Store OpenModelica documentation as Modelica Documentation
-       annotations.
+   annotations.
 
 -  Re-implementation of the simulation runtime using C instead of C++
-       (this was needed to export FMI source-based packages).
+   (this was needed to export FMI source-based packages).
 
 -  FMI import/export bug fixes.
 
 -  Changed the internal representation of various structures to share
-       more memory. This significantly improved the performance for very
-       large models that use records.
+   more memory. This significantly improved the performance for very
+   large models that use records.
 
 -  Faster model flattening, Improved simulation, some graphical API bug
-       fixes.
+   fixes.
 
 -  More robust and general initialization, but currently time-consuming.
 
 -  New initialization flags to omc and options to simulate(), to control
-       whether fast or robust initialization is selected, or
-       initialization from an external (.mat) data file.
+   whether fast or robust initialization is selected, or
+   initialization from an external (.mat) data file.
 
 -  New options to API calls list, loadFile, and more.
 
 -  Enforce the restriction that input arguments of functions may not be
-       assigned to.
+   assigned to.
 
 -  Improved the scripting environment. cl :=
-       $TypeName(Modelica);getClassComment(cl); now works as expected.
-       As does looping over lists of typenames and using reduction
-       expressions.
+   $TypeName(Modelica);getClassComment(cl); now works as expected.
+   As does looping over lists of typenames and using reduction
+   expressions.
 
 -  Beta version of Python scripting.
 
 -  Various bugfixes.
 
 -  NOTE: interactive simulation is not operational in this release. It
-       will be put back again in the near future, first available as a
-       nightly build. It is also available in the previous 1.8.0
-       release.
+   will be put back again in the near future, first available as a
+   nightly build. It is also available in the previous 1.8.0
+   release.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Faster and more stable plottning.
 
@@ -610,41 +617,42 @@ frontend part of the OpenModelica Compiler (OMC) and several
 improvements of the backend, including, but not restricted to:
 
 -  A faster and more stable OMC model compiler. The 1.8.1 version
-       flattens and simulates more models than the previous 1.7.0
-       version.
+   flattens and simulates more models than the previous 1.7.0
+   version.
 
 -  Flattening of the whole Media library, and about half of the Fluid
-       library. Simulation of approximately 20% of the Media library
-       example models.
+   library. Simulation of approximately 20% of the Media library
+   example models.
 
 -  Functional Mockup Interface FMI 1.0 for model exchange, export and
-       import, for the Windows platform.
+   import, for the Windows platform.
 
 -  Bug fixes in the OpenModelica graphical model connection editor
-       OMEdit, supporting easy-to-use graphical drag-and-drop modeling
-       and MSL 3.1.
+   OMEdit, supporting easy-to-use graphical drag-and-drop modeling
+   and MSL 3.1.
 
 -  Bug fixes in the OMOptim optimization subsystem.
 
 -  Beta version of compiler support for a new Eclipse-based very
-       efficient algorithmic code debugger for functions in
-       MetaModelica/Modelica, available in the development environment
-       when using the bootstrapped OpenModelica compiler.
+   efficient algorithmic code debugger for functions in
+   MetaModelica/Modelica, available in the development environment
+   when using the bootstrapped OpenModelica compiler.
 
 -  Improvements in initialization of simulations.
 
 -  Improved index reduction with dynamic state selection, which improves
-       simulation.
+   simulation.
 
 -  Better error messages from several parts of the compiler, including a
-       new API call for giving better error messages.
+   new API call for giving better error messages.
 
 -  Automatic partitioning of equation systems and multi-core parallel
-       simulation of independent parts based on the shared-memory OpenMP
-       model. This version is a preliminary experimental version without
-       load balancing.
+   simulation of independent parts based on the shared-memory OpenMP
+   model. This version is a preliminary experimental version without
+   load balancing.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 No changes.
 
@@ -705,30 +713,30 @@ flattening frontend part of the OpenModelica Compiler (OMC) and several
 improvements of the backend, including, but not restricted to:
 
 -  Flattening of the whole Modelica Standard Library 3.1 (MSL 3.1),
-       except Media and Fluid.
+   except Media and Fluid.
 
 -  Progress in supporting the Media library, some models now flatten.
 
 -  Much faster simulation of many models through more efficient handling
-       of alias variables, binary output format, and faster event
-       handling.
+   of alias variables, binary output format, and faster event
+   handling.
 
 -  Faster and more stable simulation through new improved event
-       handling, which is now default.
+   handling, which is now default.
 
 -  Simulation result storage in binary .mat files, and plotting from
-       such files.
+   such files.
 
 -  Support for Unicode characters in quoted Modelica identifiers,
-       including Japanese and Chinese.
+   including Japanese and Chinese.
 
 -  Preliminary MetaModelica 2.0 support. (use
-       setCommandLineOptions({"+g=MetaModelica"}) ). Execution is as
-       fast as MetaModelica 1.0, except for garbage collection.
+   setCommandLineOptions({"+g=MetaModelica"}) ). Execution is as
+   fast as MetaModelica 1.0, except for garbage collection.
 
 -  Preliminary bootstrapped OpenModelica compiler: OMC now compiles
-       itself, and the bootstrapped compiler passes the test suite. A
-       garbage collector is still missing.
+   itself, and the bootstrapped compiler passes the test suite. A
+   garbage collector is still missing.
 
 -  Many bug fixes.
 
@@ -795,31 +803,31 @@ flattening frontend part of the OpenModelica Compiler (OMC) and some
 improvements of the backend, including, but not restricted to:
 
 -  Flattening of the whole Modelica Standard Library 3.1 (MSL 3.1),
-       except Media and Fluid.
+   except Media and Fluid.
 
 -  Improved flattening speed of a factor of 5-20 compared to
-       OpenModelica 1.5 for a number of models, especially in the
-       MultiBody library.
+   OpenModelica 1.5 for a number of models, especially in the
+   MultiBody library.
 
 -  Reduced memory consumption by the OpenModelica compiler frontend, for
-       certain large models a reduction of a factor 50.
+   certain large models a reduction of a factor 50.
 
 -  Reorganized, more modular OpenModelica compiler backend, can now
-       handle approximately 30 000 equations, compared to previously
-       approximately 10 000 equations.
+   handle approximately 30 000 equations, compared to previously
+   approximately 10 000 equations.
 
 -  Better error messages from the compiler, especially regarding
-       functions.
+   functions.
 
 -  Improved simulation coverage of MSL 3.1. Many models that did not
-       simulate before are now simulating. However, there are still many
-       models in certain sublibraries that do not simulate.
+   simulate before are now simulating. However, there are still many
+   models in certain sublibraries that do not simulate.
 
 -  Progress in supporting the Media library, but simulation is not yet
-       possible.
+   possible.
 
 -  Improved support for enumerations, both in the frontend and the
-       backend.
+   backend.
 
 -  Implementation of stream connectors.
 
@@ -882,18 +890,18 @@ of the OpenModelica Compiler (OMC) and some improvements of the backend,
 including, but not restricted to:
 
 -  Improved flattening speed of at least a factor of 10 or more compared
-       to the 1.4.5 release, primarily for larger models with
-       inner-outer, but also speedup for other models, e.g. the robot
-       model flattens in approximately 2 seconds.
+   to the 1.4.5 release, primarily for larger models with
+   inner-outer, but also speedup for other models, e.g. the robot
+   model flattens in approximately 2 seconds.
 
 -  Flattening of all MultiBody models, including all elementary models,
-       breaking connection graphs, world object, etc. Moreover,
-       simulation is now possible for at least five MultiBody models:
-       Pendulum, DoublePendulum, InitSpringConstant, World,
-       PointGravityWithPointMasses.
+   breaking connection graphs, world object, etc. Moreover,
+   simulation is now possible for at least five MultiBody models:
+   Pendulum, DoublePendulum, InitSpringConstant, World,
+   PointGravityWithPointMasses.
 
 -  Progress in supporting the Media library, but simulation is not yet
-       possible.
+   possible.
 
 -  Support for enumerations, both in the frontend and the backend.
 
@@ -902,7 +910,7 @@ including, but not restricted to:
 -  Support for the inline and late inline annotations in functions.
 
 -  Complete support for record constructors, also for records containing
-       other records.
+   other records.
 
 -  Full support for iterators, including nested ones.
 
@@ -913,10 +921,10 @@ including, but not restricted to:
 -  Prototype of interactive simulation.
 
 -  Prototype of integrated UML-Modelica modeling and simulation with
-       ModelicaML.
+   ModelicaML.
 
 -  A new bidirectional external Java interface for calling external Java
-       functions, or for calling Modelica functions from Java.
+   functions, or for calling Modelica functions from Java.
 
 -  Complete implementation of replaceable model extends.
 
@@ -933,16 +941,16 @@ including, but not restricted to:
 -  OpenModelica works also under 64-bit Linux and Mac 64-bit OSX.
 
 -  Parallel builds and running test suites in parallel on multi-core
-       platforms.
+   platforms.
 
 -  New OpenModelica text template language for easier implementation of
-       code generators, XML generators, etc.
+   code generators, XML generators, etc.
 
 -  New OpenModelica code generators to C and C# using the text template
-       language.
+   language.
 
 -  Faster simulation result data file output optionally as
-       comma-separated values.
+   comma-separated values.
 
 -  Many bug fixes.
 
@@ -992,22 +1000,21 @@ This release includes small improvements and some bugfixes of the
 OpenModelica Compiler (OMC):
 
 -  Less memory consumption and better memory management over time. This
-       also includes a better API supporting automatic memory management
-       when calling C functions from within the compiler.
+   also includes a better API supporting automatic memory management
+   when calling C functions from within the compiler.
 
 -  Modelica 3.0 parsing support.
 
 -  Export of DAE to XML and MATLAB.
 
--  Support for several platforms Linux, MacOS, Windows (2000, Xp,
-       Vista).
+-  Support for several platforms Linux, MacOS, Windows (2000, Xp, Vista).
 
 -  Support for record and strings as function arguments.
 
 -  Many bug fixes.
 
 -  (Not part of OMC): Additional free graphic editor SimForge can be
-       used with OpenModelica.
+   used with OpenModelica.
 
 OpenModelica Notebook (OMNotebook)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1016,14 +1023,14 @@ A number of improvements, primarily in the plotting functionality and
 platform availability.
 
 -  A number of improvements in the plotting functionality: scalable
-       plots, zooming, logarithmic plots, grids, etc.
+   plots, zooming, logarithmic plots, grids, etc.
 
 -  Programmable plotting accessible through a Modelica API.
 
 -  Simple 3D visualization.
 
 -  Support for several platforms Linux, MacOS, Windows (2000, Xp,
-       Vista).
+   Vista).
 
 OpenModelica Shell (OMShell)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1060,7 +1067,7 @@ OpenModelica Compiler (OMC):
 -  Better support for if-equations, also inside when.
 
 -  Better support for calling functions in parameter expressions and
-       interactively through dynamic loading of functions.
+   interactively through dynamic loading of functions.
 
 -  Less memory consumtion during compilation and interactive evaluation.
 
@@ -1073,9 +1080,9 @@ Test release of improvements, primarily in the plotting functionality
 and platform availability.
 
 -  Preliminary version of improvements in the plotting functionality:
-       scalable plots, zooming, logarithmic plots, grids, etc.,
-       currently available in a preliminary version through the plot2
-       function.
+   scalable plots, zooming, logarithmic plots, grids, etc.,
+   currently available in a preliminary version through the plot2
+   function.
 
 -  Programmable plotting accessible through a Modelica API.
 
@@ -1112,51 +1119,51 @@ This release includes a number of improvements of the OpenModelica
 Compiler (OMC):
 
 -  Significantly increased compilation speed, especially with large
-       models and many packages.
+   models and many packages.
 
 -  Now available also for Linux and Macintosh platforms.
 
 -  Support for when-equations in algorithm sections, including elsewhen.
 
 -  Support for inner/outer prefixes of components (but without type
-       error checking).
+   error checking).
 
 -  Improved solution of nonlinear systems.
 
 -  Added ability to compile generated simulation code using Visual
-       Studio compiler.
+   Studio compiler.
 
 -  Added "smart setting of fixed attribute to false. If initial
-       equations, OMC instead has fixed=true as default for states due
-       to allowing overdetermined initial equation systems.
+   equations, OMC instead has fixed=true as default for states due
+   to allowing overdetermined initial equation systems.
 
 -  Better state select heuristics.
 
 -  New function getIncidenceMatrix(ClassName) for dumping the incidence
-       matrix.
+   matrix.
 
 -  Builtin functions String(), product(), ndims(), implemented.
 
 -  Support for terminate() and assert() in equations.
 
 -  In emitted flat form: protected variables are now prefixed with
-       protected when printing flat class.
+   protected when printing flat class.
 
 -  Some support for tables, using omcTableTimeIni instead of
-       dymTableTimeIni2.
+   dymTableTimeIni2.
 
 -  Better support for empty arrays, and support for matrix operations
-       like a\*[1,2;3,4].
+   like a\*[1,2;3,4].
 
 -  Improved val() function can now evaluate array elements and record
-       fields, e.g. val(x[n]), val(x.y) .
+   fields, e.g. val(x[n]), val(x.y) .
 
 -  Support for reinit in algorithm sections.
 
 -  String support in external functions.
 
 -  Double precision floating point precision now also for interpreted
-       expressions
+   expressions
 
 -  Better simulation error messages.
 
@@ -1168,34 +1175,37 @@ Compiler (OMC):
 
 -  A number of bug fixes, including sample and event handling bugs.
 
-   1. OpenModelica Notebook (OMNotebook)
+OpenModelica Notebook (OMNotebook)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A number of improvements, primarily in the platform availability.
 
 -  Available on the Linux and Macintosh platforms, in addition to
-       Windows.
+   Windows.
 
 -  Fixed cell copying bugs, plotting of derivatives now works, etc.
 
-   1. OpenModelica Shell (OMShell)
+OpenModelica Shell (OMShell)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now available also on the Macintosh platform.
 
-1. OpenModelica Eclipse Plug-in (MDT)
+OpenModelica Eclipse Plug-in (MDT)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release includes major improvements of MDT and the associated
 MetaModelica debugger:
 
 -  Greatly improved browsing and code completion works both for standard
-       Modelica and for MetaModelica.
+   Modelica and for MetaModelica.
 
 -  Hovering over identifiers displays type information.
 
 -  A new and greatly improved implementation of the debugger for
-       MetaModelica algorithmic code, operational in Eclipse. Greatly
-       improved performance – only approx 10% speed reduction even for
-       100 000 line programs. Greatly improved single stepping, step
-       over, data structure browsing, etc.
+   MetaModelica algorithmic code, operational in Eclipse. Greatly
+   improved performance – only approx 10% speed reduction even for
+   100 000 line programs. Greatly improved single stepping, step
+   over, data structure browsing, etc.
 
 -  Many bug fixes.
 
@@ -1223,14 +1233,14 @@ This release includes further improvements of the OpenModelica Compiler
 -  Support for integer arrays is now largely implemented.
 
 -  The val(variable,time) scripting function for accessing the value of
-       a simulation result variable at a certain point in the simulated
-       time.
+   a simulation result variable at a certain point in the simulated
+   time.
 
 -  Interactive evalution of for-loops, while-loops, if-statements,
        if-expressions, in the interactive scripting mode.
 
 -  Improved documentation and examples of calling the Model Query and
-       Manipulation API.
+   Manipulation API.
 
 -  Many bug fixes.
 
@@ -1249,10 +1259,10 @@ OpenModelica Eclipse Plug-in (MDT)
 Two major improvements are added in this release:
 
 -  Browsing and code completion works both for standard Modelica and for
-       MetaModelica.
+   MetaModelica.
 
 -  The debugger for algorithmic code is now available and operational in
-       Eclipse for debugging of MetaModelica programs.
+   Eclipse for debugging of MetaModelica programs.
 
 OpenModelica Development Environment (OMDev)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1275,7 +1285,7 @@ This release includes further improvements of the OpenModelica Compiler
 -  Support for external objects.
 
 -  OMC now reports the version number (via command line switches or
-       CORBA API getVersion()).
+   CORBA API getVersion()).
 
 -  Implemented caching for faster instantiation of large models.
 
@@ -1312,16 +1322,16 @@ This release includes further improvements of the OpenModelica Compiler
 -  Partial support for mixed system of equations.
 
 -  New initialization routine, based on optimization (minimizing
-       residuals of initial equations).
+   residuals of initial equations).
 
 -  Symbolic simplification of builtin operators for vectors and
-       matrices.
+   matrices.
 
 -  Improved code generation in simulation code to support e.g. Modelica
-       functions.
+   functions.
 
 -  Support for classes extending basic types, e.g. connectors (support
-       for MSL 2.2 block connectors).
+   for MSL 2.2 block connectors).
 
 -  Support for parametric plotting via the plotParametric command.
 
@@ -1363,18 +1373,20 @@ development.
 -  A separate web page for OMDev (OpenModelica Development Environment).
 
 -  A pre-packaged OMDev zip-file with precompiled binaries for
-       development under Windows using the mingw Gnu compiler from the
-       Eclipse MDT plug-in. (Development is also possible using Visual
-       Studio).
+   development under Windows using the mingw Gnu compiler from the
+   Eclipse MDT plug-in. (Development is also possible using Visual
+   Studio).
 
 -  All source code of the OpenModelica compiler has recently been
-       translated to an extended subset of Modelica, currently called
-       MetaModelica. The current size of OMC is approximately 100 000
-       lines All development is now done in this version.
+   translated to an extended subset of Modelica, currently called
+   MetaModelica. The current size of OMC is approximately 100 000
+   lines All development is now done in this version.
 
 -  A new tutorial and users guide for development in MetaModelica.
 
 -  Successful builds and tests of OMC under Linux and Solaris.
+
+.. _openmodelica_1.3.1 :
 
 OpenModelica 1.3.1, November 2005
 ---------------------------------
@@ -1393,25 +1405,25 @@ This release includes a significantly improved OpenModelica Compiler
 (OMC):
 
 -  Support for hybrid and discrete-event simulation (if-equations,
-       if-expressions, when-equations; not yet if-statements and
-       when-statements).
+   if-expressions, when-equations; not yet if-statements and
+   when-statements).
 
 -  Parsing of full Modelica 2.2
 
 -  Improved support for external functions.
 
 -  Vectorization of function arguments; each-modifiers, better
-       implementation of replaceable, better handling of structural
-       parameters, better support for vector and array operations, and
-       many other improvements.
+   implementation of replaceable, better handling of structural
+   parameters, better support for vector and array operations, and
+   many other improvements.
 
 -  Flattening of the Modelica Block library version 1.5 (except a few
-       models), and simulation of most of these.
+   models), and simulation of most of these.
 
 -  Automatic index reduction (present also in previous release).
 
 -  Updated User's Guide including examples of hybrid simulation and
-       external functions.
+   external functions.
 
 OpenModelica Shell (OMShell)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1442,11 +1454,11 @@ The following mechanisms have been put in place to support OpenModelica
 development.
 
 -  Bugzilla support for OpenModelica bug tracking, accessible to
-       anybody.
+   anybody.
 
 -  A system for automatic regression testing of the compiler and
-       simulator, (+ other system parts) usually run at check in time.
+   simulator, (+ other system parts) usually run at check in time.
 
 -  Version handling is done using SVN, which is better than the
-       previously used CVS system. For example, name change of modules
-       is now possible within the version handling system.
+   previously used CVS system. For example, name change of modules
+   is now possible within the version handling system.
