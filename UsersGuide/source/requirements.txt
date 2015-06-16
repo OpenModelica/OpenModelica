@@ -1,4 +1,5 @@
 bibtexparser
+gitpython
 sphinx
 sphinxcontrib-bibtex
 sphinxcontrib-inlinesyntaxhighlight
