@@ -1919,21 +1919,21 @@ algorithm
         print("*\n* The casual tearing set is not smaller\n* than the strict tearing set and there-\n* fore it is discarded.\n*" + BORDER + "\n");
       end if;
 
-      if not Flags.getConfigBool(Flags.FORCE_TEARING) then
+      if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nNote:\n=====\nTearing set is discarded because it is not smaller than the original set. Use +forceTearing to prevent this.\n\n");
         end if;
-        true := b;
+        fail();
       end if;
       casualTearingSet := NONE();
     end if;
 
   else
-    if not Flags.getConfigBool(Flags.FORCE_TEARING) then
+    if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nNote:\n=====\nTearing set is discarded because it is not smaller than the original set. Use +forceTearing to prevent this.\n\n");
         end if;
-        true := b;
+        fail();
     end if;
     casualTearingSet := NONE();
   end if;
