@@ -236,3 +236,9 @@ test :
 	@echo Running tests...
 	@echo
 	@$(TEST) $(TESTFILES)
+
+failingtest :
+	@echo
+	@echo Running failing tests...
+	@echo
+	@$(TEST) $(FAILINGTESTFILES)

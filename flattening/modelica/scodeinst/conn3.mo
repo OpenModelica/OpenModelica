@@ -10,7 +10,7 @@ connector C
 end C;
 
 model A
-  C c1;
+  C c1(e(start = 1.0));
 end A;
 
 model B
