@@ -125,6 +125,7 @@ typedef uBlas::compressed_matrix<double, uBlas::row_major, 0, uBlas::unbounded_a
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
 #include <Core/Math/Utility.h>
+#include <Core/DataExchange/IPropertyReader.h>
 #include <Core/DataExchange/Writer.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>

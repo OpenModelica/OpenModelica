@@ -2,7 +2,7 @@ package CodegenCpp
 
 import interface SimCodeTV;
 import CodegenUtil.*;
-// SECTION: SIMULATION TARGET, ROOT TEMPLATE
+import CodegenCppInit.*;
 
 
 
@@ -58,6 +58,7 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationWriteOutputParameterCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", false),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
         let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
         let()= textFile(simulationFactoryFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
+        let()= textFile(modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars),'OMCpp<%fileNamePrefix%>Init.xml')
         let()= textFile(simulationMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
         let jac =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
           (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode , &extraFuncs , &extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, false) ;separator="")
@@ -2137,6 +2138,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/Modelica.h>
     #include <Core/System/FactoryExport.h>
     #include <Core/DataExchange/SimData.h>
+    #include <Core/DataExchange/XmlPropertyReader.h>
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
@@ -2611,7 +2613,7 @@ case "gcc" then
 
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
             LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%> -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
-            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
+            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory -lOMCppDataExchange $(LDSYSTEMFLAGS_COMMON)
             LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS_COMMON)
             <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'LDSYSTEMFLAGS=$(LDSYSTEMFLAGS_STATIC)' else 'LDSYSTEMFLAGS=$(LDSYSTEMFLAGS_DYNAMIC)'%>
 
@@ -5067,10 +5069,14 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
 
       initializeMemory();
-
-      initializeFreeVariables();
+      IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
+      reader->readInitialValues(_sim_vars);
+      //initializeFreeVariables();
+      initializeStringParameterVars();
+      initializeStringAliasVars();
       initializeBoundVariables();
       saveAll();
+      delete reader;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()
