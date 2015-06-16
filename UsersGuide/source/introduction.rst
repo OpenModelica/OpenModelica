@@ -178,9 +178,11 @@ Interactive Session with Examples
 The following is an interactive session using the interactive session
 handler in the OpenModelica environment, called OMShell – the
 OpenModelica Shell). Most of these examples are also available in the
-OpenModelica notebook UsersGuideExamples.onb in the testmodels
-(C:/OpenModelica/share/doc/omc/testmodels/) directory, see also Chapter
-4.
+:ref:`omnotebook` UsersGuideExamples.onb as well as the testmodels in:
+
+.. omc-mos ::
+
+  getInstallationDirectoryPath() + "/share/doc/omc/testmodels/"
 
 The following commands were run using OpenModelica version:
 

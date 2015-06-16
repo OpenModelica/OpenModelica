@@ -376,8 +376,7 @@ This release mainly includes improvements of the OpenModelica Compiler
        portable parallel algorithmic programming based on the OpenCL
        standard, for CPUs and GPUs.
 
--  Support for optimization of semiLinear according to MSL 3.3 chapter
-       3.7.2.5 semiLinear.
+-  Support for optimization of semiLinear according to :ref:`modelicaspec:operator-semiLinear`.
 
 OpenModelica Notebook (OMNotebook)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

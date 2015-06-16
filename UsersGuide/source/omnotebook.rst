@@ -1,3 +1,5 @@
+.. _omnotebook :
+
 OMNotebook with DrModelica and DrControl
 ========================================
 

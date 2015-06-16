@@ -393,7 +393,7 @@ epub_exclude_files = ['search.html']
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'modelicaspec': ('https://modelica.readthedocs.org/en/latest/', None)}
 
 numfig = True
 numfig_format = {'figure': "Figure %s", 'table': "Table %s", 'code-block': "Listing %s"}
