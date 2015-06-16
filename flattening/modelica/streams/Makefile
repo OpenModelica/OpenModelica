@@ -2,6 +2,7 @@ TEST=../../../rtest -v
 
 TESTFILES=\
 ActualStream.mo \
+ActualStreamMinMax.mo \
 InStreamInsideOutside.mo \
 InStreamInvalidArgument.mo \
 InStreamPipeline.mo \
