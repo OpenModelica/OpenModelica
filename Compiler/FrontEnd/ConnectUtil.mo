@@ -581,46 +581,40 @@ protected function daeVarToCrefs
   "Converts a DAE.Var to a list of crefs."
   input DAE.Var inVar;
   output list<DAE.ComponentRef> outCrefs;
+protected
+  String name;
+  DAE.Type ty;
+  list<DAE.ComponentRef> crefs;
+  DAE.Dimensions dims;
+  DAE.ComponentRef cr;
 algorithm
-  outCrefs := match(inVar)
-    local
-      String name;
-      list<DAE.Var> vars;
-      list<DAE.ComponentRef> crefs;
-      DAE.Type ty;
-      DAE.Dimensions dims;
-      DAE.ComponentRef cr;
+  DAE.TYPES_VAR(name = name, ty = ty) := inVar;
+  ty := Types.derivedBasicType(ty);
 
+  outCrefs := match ty
     // Scalar
-    case (DAE.TYPES_VAR(name = name, ty = DAE.T_REAL()))
-      then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
-    case (DAE.TYPES_VAR(name = name, ty = DAE.T_SUBTYPE_BASIC(complexType = DAE.T_REAL())))
-      then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
+    case DAE.T_REAL() then {DAE.CREF_IDENT(name, ty, {})};
 
     // Complex type
-    case (DAE.TYPES_VAR(name = name,
-        ty = DAE.T_COMPLEX(varLst = vars)))
-      equation
-        crefs = List.mapFlat(vars, daeVarToCrefs);
-        cr = DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {});
-        crefs = List.map1r(crefs, ComponentReference.joinCrefs, cr);
+    case DAE.T_COMPLEX()
+      algorithm
+        crefs := listAppend(daeVarToCrefs(v) for v in listReverse(ty.varLst));
+        cr := DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {});
       then
-        crefs;
+        list(ComponentReference.joinCrefs(cr, c) for c in crefs);
 
     // Array
-    case (DAE.TYPES_VAR(name = name,
-        ty = ty as DAE.T_ARRAY()))
-      equation
-        dims = Types.getDimensions(ty);
-        cr = DAE.CREF_IDENT(name, ty, {});
-        crefs = expandArrayCref(cr, dims, {});
+    case DAE.T_ARRAY()
+      algorithm
+        dims := Types.getDimensions(ty);
+        cr := DAE.CREF_IDENT(name, ty, {});
       then
-        crefs;
+        expandArrayCref(cr, dims, {});
 
     else
-      equation
-        name = Types.unparseVar(inVar);
-        Error.addInternalError("Unknown var " + name + " in ConnectUtil.daeVarToCrefs", sourceInfo());
+      algorithm
+        Error.addInternalError("Unknown var " + name +
+          " in ConnectUtil.daeVarToCrefs", sourceInfo());
       then
         fail();
 
@@ -3276,31 +3270,73 @@ public function evaluateActualStream
   input Connect.Sets inSets;
   input array<Set> inSetArray;
   output DAE.Exp outExp;
+protected
+  DAE.ComponentRef flow_cr;
+  DAE.Exp e, flow_exp, stream_exp, instream_exp, rel_exp;
+  DAE.Type ety;
+  Integer flow_dir;
 algorithm
-  outExp := match(inStreamCref, inSets, inSetArray)
-    local
-      DAE.ComponentRef flow_cr;
-      DAE.Exp e, flow_exp, stream_exp, instream_exp;
-      DAE.Type ety;
-      Connect.Sets sets;
+  flow_cr := getStreamFlowAssociation(inStreamCref, inSets);
+  ety := ComponentReference.crefLastType(flow_cr);
+  flow_dir := evaluateFlowDirection(ety);
 
-    case (_, _, _)
-      equation
-        flow_cr = getStreamFlowAssociation(inStreamCref, inSets);
-        ety = ComponentReference.crefLastType(flow_cr);
-        flow_exp = Expression.crefExp(flow_cr);
-        stream_exp = Expression.crefExp(inStreamCref);
-        instream_exp = evaluateInStream(inStreamCref, (true, false, inSets, inSetArray));
-        // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
-        //                                            else stream_var);
-        e = DAE.CALL(Absyn.IDENT("smooth"), {
-              DAE.ICONST(0),
-              DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0), -1, NONE()),
-                          instream_exp, stream_exp)}, DAE.callAttrBuiltinReal);
-      then
-        e;
-  end match;
+  // Select a branch if we know the flow direction, otherwise generate the whole
+  // if-equation.
+  if flow_dir == 1 then
+    rel_exp := evaluateInStream(inStreamCref, (true, false, inSets, inSetArray));
+  elseif flow_dir == -1 then
+    rel_exp := Expression.crefExp(inStreamCref);
+  else
+    flow_exp := Expression.crefExp(flow_cr);
+    stream_exp := Expression.crefExp(inStreamCref);
+    instream_exp := evaluateInStream(inStreamCref, (true, false, inSets, inSetArray));
+    rel_exp := DAE.IFEXP(
+      DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0), -1, NONE()),
+      instream_exp, stream_exp);
+  end if;
+
+  // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
+  //                                                      else stream_var);
+  outExp := DAE.CALL(Absyn.IDENT("smooth"), {DAE.ICONST(0), rel_exp},
+    DAE.callAttrBuiltinReal);
 end evaluateActualStream;
+
+protected function evaluateFlowDirection
+  "Checks the min/max attributes of a flow variables type to try and determine
+  the flow direction. If the flow is positive 1 is returned, if it is negative
+  -1, otherwise 0 if the direction can't be decided."
+  input DAE.Type inType;
+  output Integer outDirection = 0;
+protected
+  list<DAE.Var> attr;
+  Option<Values.Value> min_oval, max_oval;
+  Real min_val, max_val;
+algorithm
+  attr := Types.getAttributes(inType);
+  if listEmpty(attr) then return; end if;
+
+  min_oval := Types.lookupAttributeValue(attr, "min");
+  max_oval := Types.lookupAttributeValue(attr, "max");
+
+  outDirection := match (min_oval, max_oval)
+    // No attributes, flow direction can't be decided.
+    case (NONE(), NONE()) then 0;
+    // Flow is positive if min is positive.
+    case (SOME(Values.REAL(min_val)), NONE())
+      then if min_val >= 0 then 1 else 0;
+    // Flow is negative if max is negative.
+    case (NONE(), SOME(Values.REAL(max_val)))
+      then if max_val <= 0 then -1 else 0;
+    // Flow is positive if both min and max are positive, negative if they are
+    // both negative, otherwise undecideable.
+    case (SOME(Values.REAL(min_val)), SOME(Values.REAL(max_val)))
+      then
+        if min_val >= 0 and max_val >= min_val then 1
+        elseif max_val <= 0 and min_val <= max_val then -1
+        else 0;
+    else 0;
+  end match;
+end evaluateFlowDirection;
 
 protected function evaluateCardinality
   input DAE.ComponentRef inCref;
