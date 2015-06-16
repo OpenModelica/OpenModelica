@@ -1,7 +1,12 @@
 # Makefile for Sphinx documentation
 #
 
+OPENMODELICA_ROOT = $(CURDIR)/../../
+# OMPython needs this
+OPENMODELICAHOME := $(OPENMODELICA_ROOT)/build/
+
 # You can set these variables from the command line.
+
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
@@ -217,11 +222,11 @@ source/media/systemoverview.pdf: source/media/systemoverview.svg
 %.pdf: %.svg
 	inkscape -f $< --export-pdf $@
 	FNAME=`echo $@ | sed "s/[.]/-/g" | sed "s/-pdf/.pdf/g"`; if test "$$FNAME" != "$@"; then cp -a "$@" "$$FNAME"; fi
-source/openmodelica.bib: resolve-crossref.py $(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib
-	python resolve-crossref.py "$(OPENMODELICAHOME)/../doc/bibliography/openmodelica.bib" source/openmodelica.bib
+source/openmodelica.bib: resolve-crossref.py ../bibliography/openmodelica.bib
+	python resolve-crossref.py "../bibliography/openmodelica.bib" source/openmodelica.bib
 source/interface.inc: interface.mos
 	@mkdir -p tmp
-	$(OPENMODELICAHOME)/bin/omc +g=MetaModelica +d=nogen interface.mos
+	$(OPENMODELICA_ROOT)/build/bin/omc +g=MetaModelica +d=nogen interface.mos
 	mv interface.inc $@
 
 OMEDIT_ICONS_BASE=connect-mode.svg parametric-plot-window.svg plot-window.svg re-simulate.svg
@@ -235,7 +240,7 @@ OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
 all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf
 
-source/media/omedit-icons/%.svg: $(OPENMODELICAHOME)/../OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
+source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
 	cp -a "$<" "$@"
 
@@ -244,7 +249,7 @@ source/media/omedit-icons/%.png: source/media/omedit-icons/%.svg
 source/media/omedit-icons/%.pdf: source/media/omedit-icons/%.svg
 	inkscape "$<" --export-pdf="$@"
 
-source/media/omoptim-icons/%.png: $(OPENMODELICAHOME)/../OMOptim/OMOptim/GUI/Resources/icons/%.png
+source/media/omoptim-icons/%.png: $(OPENMODELICA_ROOT)/OMOptim/OMOptim/GUI/Resources/icons/%.png
 	@mkdir -p source/media/omoptim-icons
 	cp -a "$<" "$@"
 
