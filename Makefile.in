@@ -69,6 +69,71 @@ utf8-iconv:
 clean:
 	test ! -d build || rm -r build/
 
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+datarootdir = @datarootdir@
+datadir = @datadir@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+docdir = @docdir@
+INSTALL_APPDIR     = ${DESTDIR}/Applications/MacPorts/
+INSTALL_BINDIR     = ${DESTDIR}${bindir}
+INSTALL_LIBDIR     = ${DESTDIR}${libdir}
+INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}
+INSTALL_DATADIR    = ${DESTDIR}${datadir}
+INSTALL_DOCDIR     = ${DESTDIR}${docdir}
+INSTALL_SHAREDIR   = ${DESTDIR}${datadir}
+INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
+INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
+INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
+
+install-dirs:
+	@test ! "${DESTDIR}/@prefix@" -ef "@OMBUILDDIR@" || (echo Error: Install and build dirs are the same && false)
+	if [ "@APP@" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
+	mkdir -p ${INSTALL_BINDIR}
+	mkdir -p ${INSTALL_LIBDIR}
+	mkdir -p ${INSTALL_INCLUDEDIR}/omc
+	mkdir -p ${INSTALL_INCLUDEDIR}/@host_short@/omc/antlr3
+	mkdir -p ${INSTALL_DOCDIR}/omc/testmodels
+	mkdir -p ${INSTALL_MANDIR}/man1/
+	mkdir -p ${INSTALL_LOCALEDIR}
+	test ! -d "@OMBUILDDIR@"/share/omnotebook/ || mkdir -p ${INSTALL_SHAREDIR}/omnotebook/
+	test ! -d "@OMBUILDDIR@"/share/omshell/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omshell/nls/
+	test ! -d "@OMBUILDDIR@"/share/omedit/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omedit/nls/
+	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
+
+install: install-dirs
+	echo Installing OpenModelica...
+	# Application directory (OSX)
+	if [ "@APP@" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
+	# Binaries
+	cp -a "@OMBUILDDIR@"/bin/* ${INSTALL_BINDIR}
+	# Libraries
+	cp -a "@OMBUILDDIR@"/lib/* ${INSTALL_LIBDIR}
+	# Includes
+	cp -a "@OMBUILDDIR@"/include/* ${INSTALL_INCLUDEDIR}/omc
+	cp -a "@OMBUILDDIR@"/include/@host_short@/omc/antlr3 ${INSTALL_INCLUDEDIR}/@host_short@/omc/antlr3
+	# License
+	cp -p OMCompiler/COPYING ${INSTALL_DOCDIR}/omc/
+	# Documents
+	test -z "$(HAVE_DOCDIR)" || cp -p "@OMBUILDDIR@"/share/doc/omc/*.pdf ${INSTALL_DOCDIR}/omc/
+	cp -p "@OMBUILDDIR@"/share/doc/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
+	# man pages
+	# cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
+	# Shared data
+	cp -p "@OMBUILDDIR@"/share/omc/*.* ${INSTALL_SHAREDIR}/omc/
+	test ! -d "@OMBUILDDIR@"/share/omnotebook/ || cp -rp "@OMBUILDDIR@"/share/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
+	test ! -d "@OMBUILDDIR@"/share/omshell/ || cp -p "@OMBUILDDIR@"/share/omshell/*.xml ${INSTALL_SHAREDIR}/omshell/
+	test ! -d "@OMBUILDDIR@"/share/omshell/nls/ || cp -p "@OMBUILDDIR@"/share/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/
+	test ! -d "@OMBUILDDIR@"/share/omedit/nls/ || cp -p "@OMBUILDDIR@"/share/omedit/nls/*.qm ${INSTALL_SHAREDIR}/omedit/nls/
+	# Scripts
+	cp -rp "@OMBUILDDIR@"/share/omc/scripts/*.* "@OMBUILDDIR@"/share/omc/scripts/OpenTurns ${INSTALL_SHAREDIR}/omc/scripts
+	# Java
+	cp -p "@OMBUILDDIR@"/share/omc/java/* ${INSTALL_JAVADIR}
+	# Translations
+	cp -rp "@OMBUILDDIR@"/share/locale/* ${INSTALL_LOCALEDIR}/
+
 Makefile: Makefile.in config.status
 	./config.status
 config.status: configure
