@@ -31,20 +31,21 @@ void Initialization::initializeSystem()
 
   _system->initialize();
   _solver->stateSelection();
-  bool restart = true;
-  int iter = 0;
-  bool cond_restart = true;
-  while((restart /*|| cond_restart*/) && !(iter++ > 15))
-  {
-    event_system->getConditions(conditions0);
-    _system->initEquations();    // vxworksupdate
-    restart = event_system->checkForDiscreteEvents();
-    event_system->getConditions(conditions1);
-    //Deactivated: event_system->saveDiscreteVars();
-    event_system->saveAll();
+  /*deactivated initialization loop*/
+  //bool restart = true;
+  //int iter = 0;
+  //bool cond_restart = true;
+  //while((restart /*|| cond_restart*/) && !(iter++ > 15))
+  //{
+  //  event_system->getConditions(conditions0);
+  //  _system->initEquations();    // vxworksupdate
+  //  restart = event_system->checkForDiscreteEvents();
+  //  event_system->getConditions(conditions1);
+  //  //Deactivated: event_system->saveDiscreteVars();
+  //  event_system->saveAll();
 
-    cond_restart = !std::equal (conditions1, conditions1+dim, conditions0);
-  }
+  //  cond_restart = !std::equal (conditions1, conditions1+dim, conditions0);
+  //}
 
   event_system->saveAll();
   _system->setInitial(false);

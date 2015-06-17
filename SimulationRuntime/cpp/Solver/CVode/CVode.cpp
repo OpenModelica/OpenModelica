@@ -432,7 +432,7 @@ void Cvode::solve(const SOLVERCALL action)
       flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
       MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nfe, netf);
-      measureTimeFunctionsArray[6].numCalcs += nst;
+      measureTimeFunctionsArray[6].sumMeasuredValues->_numCalcs += nst;
       measureTimeFunctionsArray[6].sumMeasuredValues->add(&solverVals);
   }
   #endif
@@ -659,7 +659,7 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
         if(MeasureTime::getInstance() != NULL)
         {
-            measureTimeFunctionsArray[2].numCalcs--;
+            measureTimeFunctionsArray[2].sumMeasuredValues->_numCalcs--;
             MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
         }
         #endif

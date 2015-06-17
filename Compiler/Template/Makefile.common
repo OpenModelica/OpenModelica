@@ -1,6 +1,6 @@
 .PHONY : all
 
-GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
+GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenCppInit.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo GenerateAPIFunctionsTpl.mo VisualXMLTpl.mo
 
 all : $(GENERATED_FILES)
 
@@ -82,18 +82,23 @@ CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo
+CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo CodegenUtil.tpl CodegenCppInit.tpl
 	@echo " ** CodegenCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
 CodegenCppHpcom.mo : CodegenCppHpcom.tpl SimCodeTV.mo CodegenCpp.tpl CodegenUtil.tpl
-	@echo " ** CodegenCppHpcom.mo template compilation ** "
+	@echo " ** CodegenCppHpcom template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
 CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCpp template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+
+CodegenCppInit.mo : CodegenCppInit.tpl SimCodeTV.mo CodegenUtil.tpl
+	@echo " ** CodegenCppInit template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 

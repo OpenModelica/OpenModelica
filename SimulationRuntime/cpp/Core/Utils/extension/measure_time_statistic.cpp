@@ -1,3 +1,5 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Core/Utils/extension/measure_time_statistic.hpp>
 #include <limits>
 #include <cmath>

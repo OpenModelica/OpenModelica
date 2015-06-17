@@ -1344,7 +1344,7 @@ class StatRefArrayDim1 : public StatRefArray<T, size>
    */
   virtual StatRefArrayDim1<T, size>& operator=(BaseArray<T>& b)
   {
-    StatRefArrayDim1<T, size>::operator=(b);
+    StatRefArray<T, size>::operator=(b);
     return *this;
   }
   /**

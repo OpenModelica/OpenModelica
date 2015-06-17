@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8.6)
 
 project(${DataExchangeName})
 
-add_library(${DataExchangeName} SHARED SimData.cpp FactoryExport.cpp )
+add_library(${DataExchangeName} SHARED SimData.cpp FactoryExport.cpp XmlPropertyReader.cpp)
 
 IF(NOT BOOST_STATIC_LINKING)
 	target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES})
@@ -11,7 +11,7 @@ ENDIF(NOT BOOST_STATIC_LINKING)
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h)
 
-add_library(${DataExchangeName}_static STATIC SimData.cpp  )
+add_library(${DataExchangeName}_static STATIC SimData.cpp XmlPropertyReader.cpp)
 
 IF(NOT BOOST_STATIC_LINKING)
 	target_link_libraries (${DataExchangeName}_static ${Boost_LIBRARIES})
@@ -29,6 +29,8 @@ install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IHistory.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimData.h
 				${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Writer.h
                 ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimDouble.h
+                ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/XmlPropertyReader.h
+                ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IPropertyReader.h
   DESTINATION include/omc/cpp/Core/DataExchange)
 
 
