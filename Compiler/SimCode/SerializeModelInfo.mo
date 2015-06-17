@@ -426,8 +426,8 @@ algorithm
       Integer i,j;
       DAE.Statement stmt;
       list<SimCode.SimEqSystem> eqs,jeqs;
-      SimCode.LinearSystem lSystem;
-      SimCode.NonlinearSystem nlSystem;
+      SimCode.LinearSystem lSystem, atL;
+      SimCode.NonlinearSystem nlSystem, atNL;
     case SimCode.SES_RESIDUAL()
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -486,7 +486,8 @@ algorithm
         serializeSource(file,eq.source,withOperations);
         File.write(file, "}");
       then true;
-    case SimCode.SES_LINEAR(lSystem = lSystem as SimCode.LINEARSYSTEM())
+    // no dynamic tearing
+    case SimCode.SES_LINEAR(lSystem = lSystem as SimCode.LINEARSYSTEM(), alternativeTearing = NONE())
       equation
         i = listLength(lSystem.beqs);
         j = listLength(lSystem.simJac);
@@ -524,6 +525,87 @@ algorithm
         serializeList1(file,lSystem.simJac,withOperations,serializeLinearCell);
         File.write(file,"],\"b\":[");
         serializeList(file,lSystem.beqs,serializeExp);
+        File.write(file,"]}]}");
+      then true;
+    // dynamic tearing
+    case SimCode.SES_LINEAR(lSystem = lSystem as SimCode.LINEARSYSTEM(), alternativeTearing = SOME(atL as SimCode.LINEARSYSTEM()))
+      equation
+        // for strict tearing set
+        i = listLength(lSystem.beqs);
+        j = listLength(lSystem.simJac);
+
+        jeqs = match lSystem.jacobianMatrix
+          case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then jeqs;
+          else {};
+        end match;
+        eqs = SimCodeUtil.sortEqSystems(listAppend(lSystem.residual,jeqs));
+        if listEmpty(eqs) then
+          File.write(file, "\n{\"eqIndex\":");
+        else
+          serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true);
+          min(serializeEquation(file,e,section,withOperations,parent=lSystem.index) for e in listRest(eqs));
+          File.write(file, ",\n{\"eqIndex\":");
+        end if;
+        File.write(file, intString(lSystem.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        // Ax=b
+        File.write(file, "\",\"tag\":\"container\",\"display\":\"linear\",\"defines\":[");
+        serializeUses(file,list(match v case SimCodeVar.SIMVAR() then v.name; end match
+                                for v in lSystem.vars));
+        File.write(file, "],\"equation\":[{\"size\":");
+        File.write(file,intString(i));
+        if i <> 0 then
+          File.write(file,",\"density\":");
+          File.write(file,realString(j / (i*i)));
+        end if;
+        File.write(file,",\"A\":[");
+        serializeList1(file,lSystem.simJac,withOperations,serializeLinearCell);
+        File.write(file,"],\"b\":[");
+        serializeList(file,lSystem.beqs,serializeExp);
+        File.write(file,"]}]},");
+
+        // for casual tearing set
+        i = listLength(atL.beqs);
+        j = listLength(atL.simJac);
+
+        jeqs = match atL.jacobianMatrix
+          case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then jeqs;
+          else {};
+        end match;
+        eqs = SimCodeUtil.sortEqSystems(listAppend(atL.residual,jeqs));
+        if listEmpty(eqs) then
+          File.write(file, "\n{\"eqIndex\":");
+        else
+          serializeEquation(file,listHead(eqs),section,withOperations,parent=atL.index,first=true);
+          min(serializeEquation(file,e,section,withOperations,parent=atL.index) for e in listRest(eqs));
+          File.write(file, ",\n{\"eqIndex\":");
+        end if;
+        File.write(file, intString(atL.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        // Ax=b
+        File.write(file, "\",\"tag\":\"container\",\"display\":\"linear\",\"defines\":[");
+        serializeUses(file,list(match v case SimCodeVar.SIMVAR() then v.name; end match
+                                for v in atL.vars));
+        File.write(file, "],\"equation\":[{\"size\":");
+        File.write(file,intString(i));
+        if i <> 0 then
+          File.write(file,",\"density\":");
+          File.write(file,realString(j / (i*i)));
+        end if;
+        File.write(file,",\"A\":[");
+        serializeList1(file,atL.simJac,withOperations,serializeLinearCell);
+        File.write(file,"],\"b\":[");
+        serializeList(file,atL.beqs,serializeExp);
         File.write(file,"]}]}");
       then true;
     case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSIGN()})
@@ -574,7 +656,8 @@ algorithm
         File.write(file, section);
         File.write(file, "\",\"tag\":\"algorithm\",\"equation\":[]}");
       then true;
-    case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM())
+    // no dynamic tearing
+    case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = NONE())
       equation
         eqs = SimCodeUtil.sortEqSystems(nlSystem.eqs);
         serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
@@ -596,6 +679,63 @@ algorithm
         File.write(file, "\",\"tag\":\"container\",\"display\":\"non-linear\"");
         File.write(file, ",\"defines\":[");
         serializeUses(file,nlSystem.crefs);
+        File.write(file, "],\"equation\":[[");
+        serializeList(file,eqs,serializeEquationIndex);
+        File.write(file, "],[");
+        serializeList(file,jeqs,serializeEquationIndex);
+        File.write(file, "]]}");
+      then true;
+    // dynamic tearing
+    case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = SOME(atNL as SimCode.NONLINEARSYSTEM()))
+      equation
+        // for strict tearing set
+        eqs = SimCodeUtil.sortEqSystems(nlSystem.eqs);
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true);
+        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index) for e in List.rest(eqs));
+        jeqs = match nlSystem.jacobianMatrix
+          case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
+          else {};
+        end match;
+        min(serializeEquation(file,e,section,withOperations) for e in jeqs);
+
+        File.write(file, ",\n{\"eqIndex\":");
+        File.write(file, intString(nlSystem.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        File.write(file, "\",\"tag\":\"container\",\"display\":\"non-linear\"");
+        File.write(file, ",\"defines\":[");
+        serializeUses(file,nlSystem.crefs);
+        File.write(file, "],\"equation\":[[");
+        serializeList(file,eqs,serializeEquationIndex);
+        File.write(file, "],[");
+        serializeList(file,jeqs,serializeEquationIndex);
+        File.write(file, "]]},");
+
+        // for casual tearing set
+        eqs = SimCodeUtil.sortEqSystems(atNL.eqs);
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=atNL.index,first=true);
+        min(serializeEquation(file,e,section,withOperations,parent=atNL.index) for e in List.rest(eqs));
+        jeqs = match atNL.jacobianMatrix
+          case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
+          else {};
+        end match;
+        min(serializeEquation(file,e,section,withOperations) for e in jeqs);
+
+        File.write(file, ",\n{\"eqIndex\":");
+        File.write(file, intString(atNL.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        File.write(file, "\",\"tag\":\"container\",\"display\":\"non-linear\"");
+        File.write(file, ",\"defines\":[");
+        serializeUses(file,atNL.crefs);
         File.write(file, "],\"equation\":[[");
         serializeList(file,eqs,serializeEquationIndex);
         File.write(file, "],[");

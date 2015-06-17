@@ -149,15 +149,21 @@ template dumpAlias(AliasVariable alias)
   case NEGATEDALIAS(__) then ' <alias negated="true"><%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(varName))%></alias>'
 end dumpAlias;
 
-template eqIndex(SimEqSystem eq)
+template eqIndex(SimEqSystem eq, Boolean alternativeSet)
 ::=
 match eq
     case SES_RESIDUAL(__)
     case SES_SIMPLE_ASSIGN(__)
     case SES_ARRAY_CALL_ASSIGN(__)
     case SES_ALGORITHM(__) then index
-    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then ls.index
-    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then nls.index
+    // no dynamic tearing
+    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then ls.index
+    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then nls.index
+    // dynamic tearing
+    case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
+      if alternativeSet then at.index else ls.index
+    case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+      if alternativeSet then at.index else nls.index
     case SES_MIXED(__)
     case SES_WHEN(__)
     case SES_IFEQUATION(__) then index
@@ -174,14 +180,14 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
   match eq
     case e as SES_RESIDUAL(__) then
       <<
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <residual><%printExpStrEscaped(e.exp)%></residual>
         <%dumpElementSource(e.source,withOperations)%>
       </equation><%\n%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <assign>
           <defines name="<%crefStrNoUnderscore(e.cref)%>" />
           <% extractUniqueCrefsFromExp(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
@@ -192,7 +198,7 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       >>
     case e as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       <<
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <assign type="array">
           <defines name="<%crefStrNoUnderscore(lhs.componentRef)%>" />
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
@@ -204,18 +210,19 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
     case e as SES_ALGORITHM(statements=first::_)
       then
       <<
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <statement>
           <%e.statements |> stmt => escapeModelicaStringToXmlString(ppStmtStr(stmt,2)) %>
         </statement>
         <%dumpElementSource(getStatementSource(first),withOperations)%>
       </equation><%\n%>
       >>
-    case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__)) then
+    // no dynamic tearing
+    case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
       <<
       <%dumpEqs(SimCodeUtil.sortEqSystems(ls.residual),ls.index,withOperations)%>
       <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),ls.index,withOperations) else ''%>
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <linear size="<%listLength(ls.vars)%>" nnz="<%listLength(ls.simJac)%>">
           <%ls.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
           <row>
@@ -231,23 +238,98 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
             %>
           </matrix>
           <residuals>
-          <%ls.residual |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+          <%ls.residual |> eq => '<eq index="<%eqIndex(eq,false)%>"/>' ; separator = "\n" %>
           </residuals>
           <jacobian>
-          <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n") else ''%>
+          <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq,false)%>"/>' ; separator = "\n") else ''%>
           </jacobian>
           <%ls.sources |> source => dumpElementSource(source,withOperations) %>
         </linear>
       </equation><%\n%>
       >>
-    case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__)) then
+    case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
       <<
       <%dumpEqs(SimCodeUtil.sortEqSystems(nls.eqs),nls.index,withOperations)%>
       <%match nls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),nls.index,withOperations) else ''%>
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <nonlinear indexNonlinear="<%nls.indexNonLinearSystem%>">
           <%nls.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
-          <%nls.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
+          <%nls.eqs |> eq => '<eq index="<%eqIndex(eq,false)%>"/>' ; separator = "\n" %>
+        </nonlinear>
+      </equation><%\n%>
+      >>
+    // dynamic tearing
+    case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=SOME(at as LINEARSYSTEM(__))) then
+      <<
+      <%dumpEqs(SimCodeUtil.sortEqSystems(ls.residual),ls.index,withOperations)%>
+      <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),ls.index,withOperations) else ''%>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
+        <linear size="<%listLength(ls.vars)%>" nnz="<%listLength(ls.simJac)%>">
+          <%ls.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <row>
+            <%ls.beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
+          </row>
+          <matrix>
+            <%ls.simJac |> (i1,i2,eq) =>
+            <<
+            <cell row="<%i1%>" col="<%i2%>">
+              <%match eq case e as SES_RESIDUAL(__) then '<residual><%printExpStrEscaped(exp)%></residual>' %>
+            </cell>
+            >>
+            %>
+          </matrix>
+          <residuals>
+          <%ls.residual |> eq => '<eq index="<%eqIndex(eq,false)%>"/>' ; separator = "\n" %>
+          </residuals>
+          <jacobian>
+          <%match ls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq,false)%>"/>' ; separator = "\n") else ''%>
+          </jacobian>
+          <%ls.sources |> source => dumpElementSource(source,withOperations) %>
+        </linear>
+      </equation><%\n%>
+      <%dumpEqs(SimCodeUtil.sortEqSystems(at.residual),at.index,withOperations)%>
+      <%match at.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),at.index,withOperations) else ''%>
+      <equation index="<%eqIndex(eq,true)%>"<%hasParent(parent)%>>
+        <linear size="<%listLength(at.vars)%>" nnz="<%listLength(at.simJac)%>">
+          <%at.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <row>
+            <%at.beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
+          </row>
+          <matrix>
+            <%at.simJac |> (i1,i2,eq) =>
+            <<
+            <cell row="<%i1%>" col="<%i2%>">
+              <%match eq case e as SES_RESIDUAL(__) then '<residual><%printExpStrEscaped(exp)%></residual>' %>
+            </cell>
+            >>
+            %>
+          </matrix>
+          <residuals>
+          <%at.residual |> eq => '<eq index="<%eqIndex(eq,true)%>"/>' ; separator = "\n" %>
+          </residuals>
+          <jacobian>
+          <%match at.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then (eqns |> eq => '<eq index="<%eqIndex(eq,true)%>"/>' ; separator = "\n") else ''%>
+          </jacobian>
+          <%at.sources |> source => dumpElementSource(source,withOperations) %>
+        </linear>
+      </equation><%\n%>
+      >>
+    case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+      <<
+      <%dumpEqs(SimCodeUtil.sortEqSystems(nls.eqs),nls.index,withOperations)%>
+      <%match nls.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),nls.index,withOperations) else ''%>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
+        <nonlinear indexNonlinear="<%nls.indexNonLinearSystem%>">
+          <%nls.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <%nls.eqs |> eq => '<eq index="<%eqIndex(eq,false)%>"/>' ; separator = "\n" %>
+        </nonlinear>
+      </equation><%\n%>
+      <%dumpEqs(SimCodeUtil.sortEqSystems(at.eqs),at.index,withOperations)%>
+      <%match at.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),at.index,withOperations) else ''%>
+      <equation index="<%eqIndex(eq,true)%>"<%hasParent(parent)%>>
+        <nonlinear indexNonlinear="<%at.indexNonLinearSystem%>">
+          <%at.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
+          <%at.eqs |> eq => '<eq index="<%eqIndex(eq,true)%>"/>' ; separator = "\n" %>
         </nonlinear>
       </equation><%\n%>
       >>
@@ -255,17 +337,17 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       <<
       <%dumpEqs(fill(e.cont,1),e.index,withOperations)%>
       <%dumpEqs(e.discEqs,e.index,withOperations)%><%\n%>
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <mixed>
-          <continuous index="<%eqIndex(e.cont)%>" />
+          <continuous index="<%eqIndex(e.cont,false)%>" />
           <%e.discVars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = ","%>
-          <%e.discEqs |> eq => '<discrete index="<%eqIndex(eq)%>" />'%>
+          <%e.discEqs |> eq => '<discrete index="<%eqIndex(eq,false)%>" />'%>
         </mixed>
       </equation>
       >>
     case e as SES_WHEN(__) then
       <<
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
         <when>
           <%conditions |> cond => '<cond><%crefStrNoUnderscore(cond)%></cond>' ; separator="\n" %>
           <defines name="<%crefStrNoUnderscore(e.left)%>" />
@@ -280,7 +362,7 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
       <<
       <%branches%>
       <%elsebr%>
-      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+      <equation index="<%eqIndex(eq,false)%>"<%hasParent(parent)%>>
       <ifequation /> <!-- TODO: Fix me -->
       <%dumpElementSource(e.source,withOperations)%>
       </equation><%\n%>
