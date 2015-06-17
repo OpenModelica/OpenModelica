@@ -2453,17 +2453,6 @@ end paramInit3;
 
 
 
-template notparamInit(Variable var, String outStruct, Integer i, Text &varDecls, Text &varInits, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
-::=
-let dump  = match var
-case VARIABLE(__) then
-  match kind
-    case VARIABLE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, true)
-    case DISCRETE(__) then  varInit(var, "", i, &varDecls /*BUFD*/, &varInits /*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, true)
-  end match
-end match
-""
-end notparamInit;
 
 
 
@@ -2539,9 +2528,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /LIBPATH: - Directories where libs can be found
   #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib
   #LDSYSTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
-  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib <%timeMeasureLink%>
+  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory_static.lib <%timeMeasureLink%>
   #LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
-  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
+  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" OMCppOMCFactory_static.lib OMCppModelicaUtilities.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
@@ -4045,7 +4034,7 @@ case FUNCTION(__) then
   let &varInits = buffer "" /*BUFD*/
   //let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
   //let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
-  let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
+  let _ = (variableDeclarations |> var as  VARIABLE(__) hasindex i1 fromindex 1 =>
       varInit(var, "", i1, &varDecls, &varInits, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ; empty /* increase the counter! */)
 
   //let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
@@ -4125,18 +4114,22 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
   let fname = underscorePath(name)
   let retType = if outVars then '<%fname%>RetType' else "void"
   let &preExp = buffer "" /*BUFD*/
-  let &varDecls = buffer "" /*BUFD*/
+  let &varDeclsInit = buffer "" /*BUFD*/
+  let &varDeclsExtFunCall = buffer "" /*BUFD*/
+  let &varDeclsOutput = buffer "" /*BUFD*/
+  let &varDeclsvOutputTuple = buffer "" /*BUFD*/
+
   let &inputAssign = buffer "" /*BUFD*/
   let &outputAssign = buffer "" /*BUFD*/
   // make sure the variable is named "out", doh!
    let retVar = if outVars then '_<%fname%>'
   let &outVarInits = buffer ""
   let callPart =  match outVars   case {var} then
-                    extFunCall(fn, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
+                    extFunCall(fn, &preExp, &varDeclsExtFunCall, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false)
                   else
-                    extFunCall(fn, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, true)
-  let _ = ( outVars |> var hasindex i1 fromindex 1 =>
-            varInit(var, retVar, i1, &varDecls, &outVarInits, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ///TOODOO
+                    extFunCall(fn, &preExp, &varDeclsExtFunCall, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, true)
+  let _ = ( outVars |> var as  VARIABLE(__)  hasindex i1 fromindex 1 =>
+            varInit(var, retVar, i1, &varDeclsInit, &outVarInits, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ///TOODOO
             ; empty /* increase the counter! */
           )
   let &outVarAssign = buffer ""
@@ -4145,13 +4138,13 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
   case {var} then
      //(outVars |> var hasindex i1 fromindex 0 =>
-      varOutput(fn, var,0, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      varOutput(fn, var,0, &varDeclsOutput, &outVarInits, &outVarCopy, &outVarAssign, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      // ;separator="\n"; empty /* increase the counter! */
 
 
 
   else
-    (List.restOrEmpty(outVars) |> var hasindex i1 fromindex 1 =>  varOutputTuple(fn, var, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    (List.restOrEmpty(outVars) |> var hasindex i1 fromindex 1 =>  varOutputTuple(fn, var, i1, &varDeclsvOutputTuple, &outVarInits, &outVarCopy, &outVarAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n"; empty /* increase the counter! */
     )
    end match
@@ -4169,7 +4162,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
    else
      //(List.restOrEmpty(outVars) |> var hasindex i1 fromindex 1 =>  varOutputTuple(fn, var,i1, &varDecls1, &outVarInits1, &outVarCopy1, &outVarAssign1, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)
-     (outVars |> var hasindex i1 fromindex 0 =>  varOutputTuple(fn, var, i1, &varDecls, &outVarInits, &outVarCopy1, &outVarAssign1, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+     (outVars |> var hasindex i1 fromindex 0 =>  varOutputTuple(fn, var, i1, &varDeclsvOutputTuple, &outVarInits, &outVarCopy1, &outVarAssign1, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      ;separator="\n"; empty /* increase the counter! */)
   end match
     let functionBodyExternalFunctionreturn = match outVarAssign1
@@ -4181,7 +4174,14 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
   {
     /* functionBodyExternalFunction: varDecls */
-    <%varDecls%>
+    /*1*/
+    <%varDeclsInit%>
+    /*2*/
+    <%varDeclsExtFunCall%>
+    /*3*/
+    <%varDeclsOutput%>
+    /*4*/
+    <%varDeclsvOutputTuple%>
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
     <%inputAssign%>
@@ -4189,6 +4189,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     <%outVarInits%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
+    /*output assign*/
     <%outputAssign%>
     /* functionBodyExternalFunction: return */
     <%functionBodyExternalFunctionreturn%>
@@ -4350,16 +4351,20 @@ case EXTERNAL_FUNCTION(__) then
       extArg(arg, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator=", ")
   let returnAssign = match extReturn case SIMEXTARG(cref=c) then
-      '<%extVarName2(c)%> = '
+     '<%contextCref2(c,contextFunction)%> ='// '<%extVarName2(c)%> = '
     else
       ""
   <<
   <%varDecs%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
   <%dynamicCheck%>
+  /*test0*/
   <%returnAssign%><%extName%>(<%args%>);
+  /*test1*/
   <%extArgs |> arg => extFunCallVarcopy(arg,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n"%>
+  /*test2*/
   <%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+  /*test3*/
   >>
 end extFunCallC;
 
@@ -4369,9 +4374,9 @@ template extFunCallVarcopy(SimExtArg arg, String fnName,Boolean useTuple, SimCod
 match arg
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
   match oi case 0 then
-  ""
+  "/*no ouput index */"
   else
-   let cr = '<%extVarName2(c)%>'
+   let cr = contextCref2(c,contextFunction)//'<%extVarName2(c)%>'
     match useTuple
     case true then
     let assginBegin = 'boost::get<<%intAdd(-1,oi)%>>('
@@ -4385,6 +4390,28 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     else
     <<
      _<%fnName%> = <%cr%>;
+    >>
+  case SIMEXTARG(outputIndex=oi, isArray=true, type_=ty, cref=c) then
+  match oi case 0 then
+  "/*no ouput index */"
+  else
+   let cr = contextCref2(c,contextFunction)//'<%extVarName2(c)%>'
+    match useTuple
+    case true then
+    let assginBegin = 'boost::get<<%intAdd(-1,oi)%>>('
+      let assginEnd = ')'
+
+
+    /* <%assginBegin%>  output.data<%assginEnd%> = <%cr%>;*/
+    <<
+     /*array assign*/
+      <%contextCref(c,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>.assign(<%cr%>);
+    >>
+
+    else
+    <<
+    /*array assign*/
+     _<%fnName%>.assign(<%cr%>);
     >>
 
     end match
@@ -4424,11 +4451,9 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &inputAssig
   match extArg
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
     //let name = if oi then 'out.targTest5<%oi%>' else contextCref2(c,contextFunction)
-  let name = contextCref2(c,contextFunction)
-    let shortTypeStr = expTypeShort(t)
   let arrayArg = extCArrayArg(extArg, &preExp, &varDecls, &inputAssign /*BUFD*/, &outputAssign /*BUFD*/)
   <<
-  <%arrayArg%>
+  <%arrayArg%>/*testarray*/
   >>
 
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
@@ -4474,7 +4499,7 @@ case SIMEXTARG(cref=c, isInput =iI, outputIndex=oi, isArray=true, type_=t)then
       let arg = if extCStr then 'CStrArray(<%tmp%>)' else '<%tmp%>.getData()'
       '<%arg%>'
     else
-      let arg = if extCStr then 'CStrArray(<%name%>)' else '<%name%>.getData()'
+      let arg = if extCStr then 'CStrArray(<%name%>)' else '<%name%>.getData()/*testconvert*/'
       '<%arg%>'
 end extCArrayArg;
 
@@ -4715,13 +4740,13 @@ case var as VARIABLE(__) then
   else
    // let &varInits += initRecordMembers(var)
     let &varAssign += ' <%assginBegin%>(/*_<%fname%>*/output.data) = <%contextCref(var.name,contextFunction,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>/*TestVarAssign5*/;<%\n%> '
-    ""
+    "/*testcase1*/"
 case var as FUNCTION_PTR(__) then
     let &varAssign += '/*_<%fname%>*/ output = (modelica_fnptr) _<%var.name%>;<%\n%>'
-    ""
+    "/*testcase2*/"
 else
 let &varAssign += '/*iregendwas*/'
-    ""
+    "/*testcase3*/"
 end varOutputTuple;
 
 
@@ -10372,16 +10397,17 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
     ;separator=" || ")C*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
-    let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
-    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+
+
     <<
     <%preExp%>
     <%cref1(lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>=<%expPart%>;
     >>
   case "int" then
-    let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
+
     <<
     <%preExp%>
+
     <%cref1(lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>=<%expPart%>;
     >>
   case "double" then
@@ -14915,7 +14941,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     >>
     */
     <<
-    _discrete_events->save(<%expPart1%>,"<%expPart1%>");
+    _discrete_events->save(<%expPart1%>);
      <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>
