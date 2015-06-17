@@ -7,6 +7,9 @@ add_library(${FMUName}_static STATIC FMULogger.cpp)
 
 set_target_properties(${FMUName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
 
+target_link_libraries (${FMUName} ${ExtensionUtilitiesName} )
+target_link_libraries (${FMUName}_static ${ExtensionUtilitiesName}_static )
+
 add_precompiled_header(${FMUName} Include/Core/Modelica.h)
 add_precompiled_header(${FMUName}_static Include/Core/Modelica.h)
 
