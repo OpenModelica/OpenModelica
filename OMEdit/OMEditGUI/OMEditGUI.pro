@@ -241,6 +241,7 @@ INCLUDEPATH += . \
   $$OPENMODELICAHOME/include/omc/scripting-API
 
 OTHER_FILES += Resources/css/stylesheet.qss \
+  Resources/XMLSchema/tlmModelDescription.xsd \
   Debugger/Parser/GDBMIOutput.g \
   Debugger/Parser/GDBMIParser.h \
   Debugger/Parser/GDBMIParser.cpp \

@@ -380,7 +380,7 @@ QAction* GraphicsView::getFlipVerticalAction()
   return mpFlipVerticalAction;
 }
 
-bool GraphicsView::addComponent(QString className, QPointF position)
+bool GraphicsView::addComponent(QString className, QString fileName, QPointF position)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   LibraryTreeNode *pLibraryTreeNode;
@@ -388,90 +388,102 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   if (!pLibraryTreeNode) {
     return false;
   }
-  StringHandler::ModelicaClasses type = pLibraryTreeNode->getRestriction();
-  QString name = pLibraryTreeNode->getName();
-  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
-  // item not to be dropped on itself; if dropping an item on itself
-  if (mpModelWidget->getLibraryTreeNode()->getNameStructure().compare(pLibraryTreeNode->getNameStructure()) == 0) {
-    if (pOptionsDialog->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->isChecked()) {
-      NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ItemDroppedOnItself,
-                                                                          NotificationsDialog::InformationIcon,
-                                                                          mpModelWidget->getModelWidgetContainer()->getMainWindow());
-      pNotificationsDialog->exec();
+  // if we are dropping something on meta-model editor then we can skip Modelica stuff.
+  if (mpModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::TLM) {
+    if (fileName.isEmpty()) {
+      QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                               tr("The class <b>%1</b> is not saved. You can only drag & drop saved classes.").arg(className),
+                               Helper::ok);
+      return false;
+    } else {
+      // item not to be dropped on itself; if dropping an item on itself
+      if (isClassDroppedOnItself(pLibraryTreeNode)) {
+        return false;
+      }
+      QString name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeNode->getName()));
+      addComponentToView(name, className, "", position, new ComponentInfo(""), StringHandler::Connector, true, false, false, "", fileName);
+      return true;
     }
-    return false;
-  } else { // check if the model is partial
-    if (pMainWindow->getOMCProxy()->isPartial(className)) {
-      if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
-        NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial,
-                                                                            NotificationsDialog::InformationIcon,
-                                                                            mpModelWidget->getModelWidgetContainer()->getMainWindow());
-        pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
-                                                         .arg(StringHandler::getModelicaClassType(type).toLower()).arg(name));
-        if (!pNotificationsDialog->exec()) {
-          return false;
+  } else {
+    StringHandler::ModelicaClasses type = pLibraryTreeNode->getRestriction();
+    QString name = pLibraryTreeNode->getName();
+    OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
+    // item not to be dropped on itself; if dropping an item on itself
+    if (isClassDroppedOnItself(pLibraryTreeNode)) {
+      return false;
+    } else { // check if the model is partial
+      if (pMainWindow->getOMCProxy()->isPartial(className)) {
+        if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
+          NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial,
+                                                                              NotificationsDialog::InformationIcon,
+                                                                              mpModelWidget->getModelWidgetContainer()->getMainWindow());
+          pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
+                                                           .arg(StringHandler::getModelicaClassType(type).toLower()).arg(name));
+          if (!pNotificationsDialog->exec()) {
+            return false;
+          }
         }
       }
-    }
-    // get the model defaultComponentPrefixes
-    QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(className);
-    // get the model defaultComponentName
-    QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(className);
-    if (defaultName.isEmpty()) {
-      name = getUniqueComponentName(StringHandler::toCamelCase(name));
-    } else {
-      if (checkComponentName(defaultName)) {
-        name = defaultName;
+      // get the model defaultComponentPrefixes
+      QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(className);
+      // get the model defaultComponentName
+      QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(className);
+      if (defaultName.isEmpty()) {
+        name = getUniqueComponentName(StringHandler::toCamelCase(name));
       } else {
-        name = getUniqueComponentName(defaultName);
-        // show the information to the user if we have changed the name of some inner component.
-        if (defaultPrefix.contains("inner")) {
-          if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
-            NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
-                                                                                NotificationsDialog::InformationIcon,
-                                                                                mpModelWidget->getModelWidgetContainer()->getMainWindow());
-            pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
-                                                             .arg(defaultName).arg(name));
-            if (!pNotificationsDialog->exec()) {
-              return false;
+        if (checkComponentName(defaultName)) {
+          name = defaultName;
+        } else {
+          name = getUniqueComponentName(defaultName);
+          // show the information to the user if we have changed the name of some inner component.
+          if (defaultPrefix.contains("inner")) {
+            if (pOptionsDialog->getNotificationsPage()->getInnerModelNameChangedCheckBox()->isChecked()) {
+              NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::InnerModelNameChanged,
+                                                                                  NotificationsDialog::InformationIcon,
+                                                                                  mpModelWidget->getModelWidgetContainer()->getMainWindow());
+              pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
+                                                               .arg(defaultName).arg(name));
+              if (!pNotificationsDialog->exec()) {
+                return false;
+              }
             }
           }
         }
       }
-    }
-    // if dropping an item on the diagram layer
-    if (mViewType == StringHandler::Diagram) {
-      // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
-      if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
-          (type == StringHandler::Connector) || (type == StringHandler::Record)) {
+      // if dropping an item on the diagram layer
+      if (mViewType == StringHandler::Diagram) {
+        // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
+        if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
+            (type == StringHandler::Connector) || (type == StringHandler::Record)) {
+          if (type == StringHandler::Connector) {
+            addComponentToView(name, className, "", position, new ComponentInfo(""), type, false);
+            mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
+            /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
+            pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
+          } else {
+            addComponentToView(name, className, "", position, new ComponentInfo(""), type);
+          }
+          return true;
+        } else {
+          QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                                   GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(className)
+                                   .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+          return false;
+        }
+      } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
+        // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector) {
           addComponentToView(name, className, "", position, new ComponentInfo(""), type, false);
-          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
+          mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
           /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
           pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
+          return true;
         } else {
-          addComponentToView(name, className, "", position, new ComponentInfo(""), type);
+          QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                                   GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(className)
+                                   .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
+          return false;
         }
-        return true;
-      } else {
-        QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(className)
-                                 .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
-        return false;
-      }
-    } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
-      // if item is a connector. then we can drop it to the graphicsview
-      if (type == StringHandler::Connector) {
-        addComponentToView(name, className, "", position, new ComponentInfo(""), type, false);
-        mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, new ComponentInfo(""), type);
-        /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
-        pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
-        return true;
-      } else {
-        QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(className)
-                                 .arg(StringHandler::getModelicaClassType(type)), Helper::ok);
-        return false;
       }
     }
   }
@@ -480,37 +492,36 @@ bool GraphicsView::addComponent(QString className, QPointF position)
 
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
                                       ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type, bool addObject, bool openingClass,
-                                      bool inheritedClass, QString inheritedClassName)
+                                      bool inheritedClass, QString inheritedClassName, QString fileName)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotation;
-  // if the component is a connector then we nned to get the diagram annotation of it.
-  if (type == StringHandler::Connector && mViewType == StringHandler::Diagram) {
-    annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
-    // if diagram annotation is empty then use the icon annotation of the connector.
-    if (StringHandler::removeFirstLastCurlBrackets(annotation).isEmpty()) {
+  if (mpModelWidget->getLibraryTreeNode()->getLibraryType() == LibraryTreeNode::Modelica) {
+    // if the component is a connector then we need to get the diagram annotation of it.
+    if (type == StringHandler::Connector && mViewType == StringHandler::Diagram) {
+      annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
+      // if diagram annotation is empty then use the icon annotation of the connector.
+      if (StringHandler::removeFirstLastCurlBrackets(annotation).isEmpty()) {
+        annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
+      }
+    } else {
       annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
     }
-  } else {
-    annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
   }
-  Component *pComponent = new Component(annotation, name, className, pComponentInfo, type, transformationString, point, inheritedClass,
-                                        inheritedClassName, pMainWindow->getOMCProxy(), this);
-  if (!openingClass)
-  {
+  Component *pComponent = new Component(annotation, name, className, fileName, pComponentInfo, type, transformationString, point,
+                                        inheritedClass, inheritedClassName, pMainWindow->getOMCProxy(), this);
+  if (!openingClass) {
     // unselect all items
-    foreach (QGraphicsItem *pItem, items())
-    {
+    foreach (QGraphicsItem *pItem, items()) {
       pItem->setSelected(false);
     }
     pComponent->setSelected(true);
   }
-  if (addObject)
-  {
+  if (addObject) {
     addComponentObject(pComponent);
-  }
-  else
+  } else {
     mComponentsList.append(pComponent);
+  }
 }
 
 void GraphicsView::addComponentObject(Component *pComponent)
@@ -533,10 +544,18 @@ void GraphicsView::addComponentObject(Component *pComponent)
       }
     QDomElement subModel = doc.createElement("SubModel");
     subModel.setAttribute("Name", pComponent->getName());
-    subModel.setAttribute("StartCommand", "StartTLMOpenModelica");
     subModel.setAttribute("ExactStep", "false");
-    subModel.setAttribute("ModelFile", pComponent->getClassName());
-
+    QFileInfo fileInfo(pComponent->getFileName());
+    subModel.setAttribute("ModelFile", fileInfo.fileName());
+    // create StartCommand depending on the external model file extension.
+    if (fileInfo.suffix().compare("mo") == 0) {
+      subModel.setAttribute("StartCommand", "StartTLMOpenModelica");
+    } else if (fileInfo.suffix().compare("in") == 0) {
+      subModel.setAttribute("StartCommand", "StartTLMBeast");
+    } else {
+      subModel.setAttribute("StartCommand", "");
+    }
+    // create annotation
     QDomElement annotation = doc.createElement("Annotation");
     annotation.setAttribute("Visible", pComponent->getTransformation()->getVisible()? "true" : "false");
     annotation.setAttribute("Origin", pComponent->getTransformationOrigin());
@@ -1141,6 +1160,27 @@ void GraphicsView::createActions()
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
 }
 
+/*!
+ * \brief GraphicsView::isItemDroppedOnItself
+ * Checks if item is dropped on itself.
+ * \param pLibraryTreeNode
+ * \return
+ */
+bool GraphicsView::isClassDroppedOnItself(LibraryTreeNode *pLibraryTreeNode)
+{
+  OptionsDialog *pOptionsDialog = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
+  if (mpModelWidget->getLibraryTreeNode()->getNameStructure().compare(pLibraryTreeNode->getNameStructure()) == 0) {
+    if (pOptionsDialog->getNotificationsPage()->getItemDroppedOnItselfCheckBox()->isChecked()) {
+      NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ItemDroppedOnItself,
+                                                                          NotificationsDialog::InformationIcon,
+                                                                          mpModelWidget->getModelWidgetContainer()->getMainWindow());
+      pNotificationsDialog->exec();
+    }
+    return true;
+  }
+  return false;
+}
+
 void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
@@ -1406,9 +1446,9 @@ void GraphicsView::dropEvent(QDropEvent *event)
     }
     QByteArray itemData = event->mimeData()->data(Helper::modelicaComponentFormat);
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-    QString className;
-    dataStream >> className;
-    if (addComponent(className, mapToScene(event->pos()))) {
+    QString className, fileName;
+    dataStream >> className >> fileName;
+    if (addComponent(className, fileName, mapToScene(event->pos()))) {
       event->accept();
     } else {
       event->ignore();
@@ -2503,7 +2543,7 @@ void ModelWidget::getTLMComponents()
         transformation.append(",0,0,0,-,-,-,-,").append(annotation.attribute("Rotation")).append(")");
         // add the component to the the diagram view.
         mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), subModel.attribute("ModelFile"), transformation,
-                                                 QPointF(0.0, 0.0), 0, StringHandler::Connector, false);
+                                                  QPointF(0.0, 0.0), 0, StringHandler::Connector, false);
       }
     }
     subModel = subModel.nextSiblingElement();

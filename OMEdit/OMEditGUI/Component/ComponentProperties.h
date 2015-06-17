@@ -196,11 +196,11 @@ public slots:
   void updateComponentAttributes();
 };
 
-class TLMComponentAttributes : public QDialog
+class SubModelAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  TLMComponentAttributes(Component *pComponent, MainWindow *pMainWindow);
+  SubModelAttributes(Component *pComponent, MainWindow *pMainWindow);
   void setUpDialog();
   void initializeDialog();
 private:

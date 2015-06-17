@@ -96,6 +96,7 @@ public:
   StringHandler::ViewType mViewType;
 };
 
+class LibraryTreeNode;
 class GraphicsView : public QGraphicsView
 {
   Q_OBJECT
@@ -178,10 +179,10 @@ public:
   QAction* getRotateAntiClockwiseAction();
   QAction* getFlipHorizontalAction();
   QAction* getFlipVerticalAction();
-  bool addComponent(QString className, QPointF position);
+  bool addComponent(QString className, QString fileName, QPointF position);
   void addComponentToView(QString name, QString className, QString transformationString, QPointF point, ComponentInfo *pComponentInfo,
                           StringHandler::ModelicaClasses type, bool addObject = true, bool openingClass = false, bool inheritedClass = false,
-                          QString inheritedClassName = QString());
+                          QString inheritedClassName = QString(), QString fileName = QString());
   void addComponentObject(Component *pComponent);
   void deleteComponentObject(Component *pComponent);
   Component* getComponentObject(QString componentName);
@@ -213,6 +214,7 @@ public:
   QPointF roundPoint(QPointF point);
 private:
   void createActions();
+  bool isClassDroppedOnItself(LibraryTreeNode *pLibraryTreeNode);
 signals:
   void keyPressDelete();
   void keyPressRotateClockwise();
@@ -294,7 +296,6 @@ private slots:
   void openLatestNewsItem(QListWidgetItem *pItem);
 };
 
-class LibraryTreeNode;
 class ModelWidgetContainer;
 class ModelicaTextHighlighter;
 class TLMHighlighter;

@@ -102,7 +102,7 @@
         </xs:element>
       </xs:sequence>
       <xs:attribute name="Name" type="xs:string" use="required"/>
-      <xs:attribute name="StartCommand" type="xs:string" use="required" fixed="StartTLMOpenModelica"/>
+      <xs:attribute name="StartCommand" type="xs:string" use="required"/>
       <xs:attribute name="ExactStep" type="xs:boolean" use="required"/>
       <xs:attribute name="ModelFile" type="xs:string" use="required"/>
       <xs:attribute name="Position" type="xs:string" use="optional"/>

@@ -2094,7 +2094,7 @@ void LibraryTreeWidget::startDrag(Qt::DropActions supportedActions)
   }
   QByteArray itemData;
   QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-  dataStream << pLibraryTreeNode->getNameStructure();
+  dataStream << pLibraryTreeNode->getNameStructure() << pLibraryTreeNode->getFileName();
   QMimeData *mimeData = new QMimeData;
   mimeData->setData(Helper::modelicaComponentFormat, itemData);
   qreal adjust = 35;

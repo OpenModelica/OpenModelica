@@ -1177,19 +1177,20 @@ void ComponentAttributes::updateComponentAttributes()
 }
 
 /*!
-  \class TLMComponentAttributes
-  \brief A dialog for displaying TLM components attributes
-  */
+ * \class SubModelAttributes
+ * \brief A dialog for displaying SubModel attributes.
+ */
 /*!
-  \param pComponent - pointer to Component
-  \param pMainWindow - pointer to MainWindow
-  */
-TLMComponentAttributes::TLMComponentAttributes(Component *pComponent, MainWindow *pMainWindow)
+ * \brief SubModelAttributes::SubModelAttributes
+ * \param pComponent - pointer to Component
+ * \param pMainWindow - pointer to MainWindow
+ */
+SubModelAttributes::SubModelAttributes(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("TLM Component Attributes")));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
+  setMinimumWidth(250);
   mpComponent = pComponent;
   mpMainWindow = pMainWindow;
   setUpDialog();
@@ -1197,9 +1198,10 @@ TLMComponentAttributes::TLMComponentAttributes(Component *pComponent, MainWindow
 }
 
 /*!
-  Creates the Dialog and set up attributes .
-  */
-void TLMComponentAttributes::setUpDialog()
+ * \brief SubModelAttributes::setUpDialog
+ * Creates the Dialog and set up attributes.
+ */
+void SubModelAttributes::setUpDialog()
 {
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
@@ -1228,20 +1230,20 @@ void TLMComponentAttributes::setUpDialog()
   pMainLayout->addWidget(mpStartCommandTextBox, 1, 1);
   pMainLayout->addWidget(mpModelFileLabel, 2, 0);
   pMainLayout->addWidget(mpModelFileTextBox, 2, 1);
-  pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
 /*!
   Initialize the fields with default values.
   */
-void TLMComponentAttributes::initializeDialog()
+void SubModelAttributes::initializeDialog()
 {
   // get component Name
   mpNameTextBox->setText(mpComponent->getName());
-  mpNameTextBox->setCursorPosition(0);
   mpStartCommandTextBox->setText("StartTLMOpenModelica");
-  mpModelFileTextBox->setText(mpComponent->getClassName()+".mo");
+  QFileInfo fileInfo(mpComponent->getFileName());
+  mpModelFileTextBox->setText(fileInfo.fileName());
 }
 
 TLMInterfacePointInfo::TLMInterfacePointInfo(QString name, QString className, QString interfaceName)

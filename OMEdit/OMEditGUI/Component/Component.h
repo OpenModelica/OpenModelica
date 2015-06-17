@@ -74,9 +74,9 @@ public:
     Extend,  /* Inherited Component. */
     Port  /* Port Component. */
   };
-  Component(QString annotation, QString name, QString className, ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type,
-            QString transformation, QPointF position, bool inheritedComponent, QString inheritedClassName, OMCProxy *pOMCProxy,
-            GraphicsView *pGraphicsView, Component *pParent = 0);
+  Component(QString annotation, QString name, QString className, QString fileName, ComponentInfo *pComponentInfo,
+            StringHandler::ModelicaClasses type, QString transformation, QPointF position, bool inheritedComponent, QString inheritedClassName,
+            OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent = 0);
   Component(QString annotation, QString className, StringHandler::ModelicaClasses type, Component *pParent);
   Component(QString annotation, QString transformationString, ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type,
             Component *pParent);
@@ -102,6 +102,7 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   QString getName();
   QString getClassName();
+  QString getFileName() {return mFileName;}
   StringHandler::ModelicaClasses getType();
   OMCProxy* getOMCProxy();
   GraphicsView* getGraphicsView();
@@ -140,6 +141,7 @@ public:
 private:
   QString mName;
   QString mClassName;
+  QString mFileName;
   ComponentInfo *mpComponentInfo;
   StringHandler::ModelicaClasses mType;
   OMCProxy *mpOMCProxy;
