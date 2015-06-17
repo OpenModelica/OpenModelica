@@ -112,8 +112,7 @@ install: install-dirs
 	# Libraries
 	cp -a "@OMBUILDDIR@"/lib/* ${INSTALL_LIBDIR}
 	# Includes
-	cp -a "@OMBUILDDIR@"/include/* ${INSTALL_INCLUDEDIR}/omc
-	cp -a "@OMBUILDDIR@"/include/@host_short@/omc/antlr3 ${INSTALL_INCLUDEDIR}/@host_short@/omc/antlr3
+	cp -a "@OMBUILDDIR@"/include/* ${INSTALL_INCLUDEDIR}
 	# License
 	cp -p OMCompiler/COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
