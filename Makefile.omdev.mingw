@@ -63,6 +63,7 @@ CMINPACKLIB_SHARED = OFF
 CONFIG_REVISION = $(shell git describe --match "v*.*" --always)
 
 revision:
+	test ! -e .git || cp -puf common/pre-commit.sh `git rev-parse --git-dir`/hooks/pre-commit
 	@echo Current revision: $(CONFIG_REVISION)
 ifeq ($(CONFIG_REVISION),)
 	@if test -f revision.h; \
