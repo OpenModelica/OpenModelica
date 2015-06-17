@@ -598,7 +598,6 @@ int Arkode::calcFunction(const double& time, const double* y, double* f)
   int returnValue = 0;
   try
   {
-   
     f[0] = 0.0; // in case of dummy state
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
