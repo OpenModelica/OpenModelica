@@ -28,7 +28,7 @@ $ autoconf
 $ ./configure CC=clang CXX=clang++
 $ make -j8
 $ build/bin/omc --version
-$ (cd testsuite/partest && ./runtests.pl -j8)
+$ (cd testsuite/partest && ./runtests.pl)
 ```
 
 ## Working with the repository
