@@ -2587,7 +2587,7 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
-            let staticLibs = '-lOMCppOMCFactory_static -lOMCppSimController_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppIDA_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppOMCFactory_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+            let staticLibs = '-lOMCppOMCFactory_static -lOMCppSimController_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppIDA_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppOMCFactory_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
@@ -2616,7 +2616,7 @@ case "gcc" then
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
 
-            CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+            CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
             CFLAGS_DYNAMIC=$(CFLAGS_COMMON)
             CFLAGS_STATIC=$(CFLAGS_COMMON) <%staticIncludes%> -DRUNTIME_STATIC_LINKING
             <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'CFLAGS=$(CFLAGS_STATIC)' else 'CFLAGS=$(CFLAGS_DYNAMIC)'%>
