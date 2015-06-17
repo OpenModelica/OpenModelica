@@ -39,11 +39,11 @@
 #include "Component.h"
 #include "ComponentProperties.h"
 
-Component::Component(QString annotation, QString name, QString className, ComponentInfo *pComponentInfo,
+Component::Component(QString annotation, QString name, QString className, QString fileName, ComponentInfo *pComponentInfo,
                      StringHandler::ModelicaClasses type, QString transformation, QPointF position, bool inheritedComponent,
                      QString inheritedClassName, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent)
-  : QGraphicsItem(pParent), mName(name), mClassName(className), mpComponentInfo(pComponentInfo), mType(type), mpOMCProxy(pOMCProxy),
-    mpGraphicsView(pGraphicsView), mpParentComponent(pParent)
+  : QGraphicsItem(pParent), mName(name), mClassName(className), mFileName(fileName), mpComponentInfo(pComponentInfo), mType(type),
+    mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView), mpParentComponent(pParent)
 {
   setZValue(3000);
   mIsLibraryComponent = false;
@@ -1063,7 +1063,7 @@ void Component::duplicate()
 {
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  if (mpGraphicsView->addComponent(mClassName, scenePos() + gridStep)) {
+  if (mpGraphicsView->addComponent(mClassName, mFileName, scenePos() + gridStep)) {
     if (mType == StringHandler::Connector) {
       if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
         duplicateHelper(mpGraphicsView);
@@ -1437,12 +1437,15 @@ void Component::viewDocumentation()
   mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getDocumentationDockWidget()->show();
 }
 
-//! Slot that opens up the TLM component attributes dialog.
+/*!
+ * \brief Component::showTLMAttributes
+ * Slot that opens up the SubModelAttributes Dialog.
+ */
 void Component::showTLMAttributes()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  TLMComponentAttributes *pTLMComponentAttributes = new TLMComponentAttributes(this, pMainWindow);
-  pTLMComponentAttributes->show();
+  SubModelAttributes *pTLMComponentAttributes = new SubModelAttributes(this, pMainWindow);
+  pTLMComponentAttributes->exec();
 }
 
 /*! Event when mouse is double clicked on a component.
