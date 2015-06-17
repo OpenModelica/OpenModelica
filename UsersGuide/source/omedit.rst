@@ -286,12 +286,11 @@ Making Connections
 ~~~~~~~~~~~~~~~~~~
 
 In order to connect one component model to another the user first needs
-to enable the connect mode from the toolbar. See :numref:`omedit-connect-mode`.
+to enable the connect mode (|connect-mode|) from the toolbar.
 
-.. figure :: media/omedit-icons/connect-mode.*
-  :name: omedit-connect-mode
-
-  Connect/Unconnect Mode toolbar button.
+.. |connect-mode| image:: media/omedit-icons/connect-mode.*
+  :height: 14pt
+  :alt: OMEdit connect mode icon
 
 Simulating a Model
 ------------------
@@ -445,26 +444,22 @@ Time Plot
 ^^^^^^^^^
 
 Plots the variable over the simulation time. You can have multiple Time
-Plot windows by clicking on New Plot Window toolbar button.
-See :numref:`omedit-plot-window`.
+Plot windows by clicking on New Plot Window toolbar button (|plot-window|).
 
-.. figure :: media/omedit-icons/plot-window.*
-  :name: omedit-plot-window
-
-  New Plot Window toolbar button.
+.. |plot-window| image:: media/omedit-icons/plot-window.*
+  :alt: OMEdit New Plot Window Icon
+  :height: 14pt
 
 Plot Parametric
 ^^^^^^^^^^^^^^^
 
 Draws a two-dimensional parametric diagram, between variables x and y,
 with *y* as a function of *x*. You can have multiple Plot Parametric
-windows by clicking on the New Plot Parametric toolbar button. See
-:numref:`omedit-parametric-plot-window`.
+windows by clicking on the New Plot Parametric toolbar button (|parametric-plot-window|).
 
-.. figure :: media/omedit-icons/parametric-plot-window.*
-  :name: omedit-parametric-plot-window
-
-  New Plot Parametric toolbar button.
+.. |parametric-plot-window| image:: media/omedit-icons/parametric-plot-window.*
+  :alt: OMEdit New Parametric Plot Window Icon
+  :height: 14pt
 
 .. _omedit-resimulation :
 
@@ -474,12 +469,12 @@ Re-simulating a Model
 The :ref:`omedit-variables-browser` allows manipulation of changeable
 parameters for re-simulation.
 After changing the parameter values user can click on the re-simulate
-toolbar button, or right click the model in Variables Browser and choose
+toolbar button (|re-simulate|), or right click the model in Variables Browser and choose
 re-simulate from the menu.
 
-.. figure :: media/omedit-icons/re-simulate.*
-
-  Re-simulate toolbar button.
+.. |re-simulate| image:: media/omedit-icons/re-simulate.*
+  :alt: OMEdit Re-simulate button
+  :height: 14pt
 
 How to Create User Defined Shapes – Icons
 -----------------------------------------
