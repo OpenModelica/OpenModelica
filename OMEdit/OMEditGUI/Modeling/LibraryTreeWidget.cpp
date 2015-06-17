@@ -1264,8 +1264,8 @@ bool LibraryTreeWidget::saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     textStream.setCodec(Helper::utf8.toStdString().data());
-    textStream.setGenerateByteOrderMark(false);
-    textStream << pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+    textStream.setGenerateByteOrderMark(false);QString metaModelXml = pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+    textStream << metaModelXml;
     file.close();
     /* mark the file as saved and update the labels. */
     pLibraryTreeNode->setIsSaved(true);
@@ -1273,6 +1273,21 @@ bool LibraryTreeWidget::saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode
     if (pLibraryTreeNode->getModelWidget()) {
       pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
       pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
+    }
+    // Create folders for the submodels and copy there source file in them.
+    QDomDocument xml;
+    xml.setContent(metaModelXml);
+    QDomNodeList subModels = xml.elementsByTagName("SubModel");
+    for (int i = 0; i < subModels.size(); i++) {
+      QDomElement subModel = subModels.at(i).toElement();
+      QString directoryName = subModel.attribute("Name");
+      /*! @todo We need to have a complete filename here to copy the file. */
+      QString modelFile = subModel.attribute("ModelFile");
+      QFileInfo fileInfo(fileName);
+      QString directoryPath = fileInfo.absoluteDir().absolutePath() + "/" + directoryName;
+      if (!QDir().exists(directoryPath)) {
+        QDir().mkpath(directoryPath);
+      }
     }
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
