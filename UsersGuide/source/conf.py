@@ -77,11 +77,17 @@ if os.path.exists('../../../.git'):
   release = r.git.describe(["--tags","--match=v*.*.*"])
   version = re.search("^v[0-9]+[.][0-9]+[.][0-9]+", release).group(0)
   if version == release or re.match("^v[0-9]+[.][0-9]+[.][0-9]+-[A-Za-z]+$", release):
-    link = "`%s <https://github.com/OpenModelica/OpenModelica/releases/tag/%s>`__" % (release,release)
+    docrepo = git.repo.Repo('../../')
+    docprevrelease = re.search("^v[0-9]+[.][0-9]+[.][0-9]+", docrepo.git.describe(["--tags","--match=v*.*.*[0-9]", release + "~1"])).group(0)
+    link = "`%s <https://github.com/OpenModelica/OpenModelica/releases/tag/%s>`__ `(diff) <https://github.com/OpenModelica/OpenModelica-doc/compare/%s...%s>`__" % (release,release,docprevrelease,release)
   else:
     releasex = re.search("^(v[0-9]+[.][0-9]+[.][0-9]+-[A-Za-z]*)-([0-9]+)-(.*)$", release)
     release = "%s.%d+%s" % (releasex.group(1),int(releasex.group(2)),releasex.group(3))
-    link = "`%s <https://github.com/OpenModelica/OpenModelica/releases/tag/%s>`__\ `.%d+%s <https://github.com/OpenModelica/OpenModelica/compare/%s...%s>`__" % (releasex.group(1),releasex.group(1),int(releasex.group(2)),releasex.group(3),releasex.group(1),release[-7:])
+    docrepo = git.repo.Repo('../../')
+    doctag = re.search("^v[0-9]+[.][0-9]+[.][0-9]+", docrepo.git.describe(["--tags","--match=v*.*.*[0-9]"])).group(0)
+    docheadcommit = r.commit('HEAD').tree['doc'].hexsha
+
+    link = "`%s <https://github.com/OpenModelica/OpenModelica/releases/tag/%s>`__\ `.%d+%s <https://github.com/OpenModelica/OpenModelica/compare/%s...%s>`__ `(doc diff) <https://github.com/OpenModelica/OpenModelica-doc/compare/%s...%s>`__" % (releasex.group(1),releasex.group(1),int(releasex.group(2)),releasex.group(3),releasex.group(1),release[-7:],doctag,docheadcommit)
   releaselink = """.. only :: html or epub
 
     *Version:* %s""" % link
