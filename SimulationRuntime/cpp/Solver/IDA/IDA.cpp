@@ -397,7 +397,7 @@ void Ida::solve(const SOLVERCALL action)
       flag = IDAGetNonlinSolvStats(_idaMem, &nni, &ncfn);
 
       MeasureTimeValuesSolver solverVals = MeasureTimeValuesSolver(nfe, netf);
-      measureTimeFunctionsArray[6].numCalcs += nst;
+      measureTimeFunctionsArray[6].sumMeasuredValues->_numCalcs += nst;
       measureTimeFunctionsArray[6].sumMeasuredValues->add(&solverVals);
   }
   #endif
@@ -625,7 +625,7 @@ void Ida::writeIDAOutput(const double &time, const double &h, const int &stp)
         MEASURETIME_REGION_DEFINE(idaWriteOutputHandler, "IDAWriteOutput");
         if(MeasureTime::getInstance() != NULL)
         {
-            measureTimeFunctionsArray[2].numCalcs--;
+            measureTimeFunctionsArray[2].sumMeasuredValues->_numCalcs--;
             MEASURETIME_START(measuredFunctionStartValues, idaWriteOutputHandler, "IDAWriteOutput");
         }
         #endif
