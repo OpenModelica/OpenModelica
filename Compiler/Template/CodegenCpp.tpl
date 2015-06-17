@@ -2587,7 +2587,7 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
-            let staticLibs = '-lOMCppOMCFactory_static -lOMCppSimController_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppIDA_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -lOMCppOMCFactory_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+            let staticLibs = '-lOMCppOMCFactory_static -lOMCppSimController_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppIDA_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppOMCFactory_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
@@ -2623,12 +2623,12 @@ case "gcc" then
             CPPFLAGS=$(CFLAGS)
 
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
-            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%> -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
-            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory -lOMCppDataExchange $(LDSYSTEMFLAGS_COMMON)
+            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%> -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
             LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS_COMMON)
             <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'LDSYSTEMFLAGS=$(LDSYSTEMFLAGS_STATIC)' else 'LDSYSTEMFLAGS=$(LDSYSTEMFLAGS_DYNAMIC)'%>
 
-            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%>
+            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%>
             LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities $(LDMAINFLAGS_COMMON)
             LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS_COMMON)
             <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'LDMAINFLAGS=$(LDMAINFLAGS_STATIC)' else 'LDMAINFLAGS=$(LDMAINFLAGS_DYNAMIC)'%>
