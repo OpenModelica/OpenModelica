@@ -87,6 +87,7 @@ SimulationRuntime/c/util/java_interface/src/org/openmodelica/corba/parser/OMCorb
 SimulationRuntime/cpp/Makefile
 SimulationRuntime/cpp/Build/
 SimulationRuntime/cpp/Debug/
+SimulationRuntime/cpp/.cproject
 SimulationRuntime/ParModelica/Makefile
 SimulationRuntime/ParModelica/auto/Makefile
 SimulationRuntime/ParModelica/explicit/Makefile
@@ -109,6 +110,7 @@ Compiler/Template/CodegenC.mo.log
 Compiler/Template/CodegenCSharp.mo
 Compiler/Template/CodegenCpp.mo
 Compiler/Template/CodegenCppHpcom.mo
+Compiler/Template/CodegenCppInit.mo
 Compiler/Template/CodegenFMU.mo
 Compiler/Template/CodegenFMU1.mo
 Compiler/Template/CodegenFMU2.mo
@@ -134,6 +136,7 @@ Compiler/Template/TaskSystemDump.mo
 Compiler/Template/TplCodegen.mo
 Compiler/Template/Unparsing.mo
 Compiler/Template/VisualXMLTpl.mo
+Compiler/Template/*.err.mo
 Compiler/boot/LoadCompilerInterface.mos
 Compiler/boot/Makefile
 Compiler/boot/Makefile.depends

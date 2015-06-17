@@ -5095,8 +5095,8 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
       initializeMemory();
       IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
-      reader->readInitialValues(_sim_vars);
-      //initializeFreeVariables();
+      //reader->readInitialValues(_sim_vars);
+      initializeFreeVariables();
       initializeStringParameterVars();
       initializeStringAliasVars();
       initializeBoundVariables();
