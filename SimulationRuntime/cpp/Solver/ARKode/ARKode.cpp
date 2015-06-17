@@ -59,7 +59,6 @@ Arkode::~Arkode()
   if (_zWrite)
       delete[] _zWrite;
   //add free arkode
-  
   if (_arkode_initialized)
   {
     N_VDestroy_Serial(_ARK_y0);
@@ -68,7 +67,7 @@ Arkode::~Arkode()
     N_VDestroy_Serial(_ARK_absTol);
     ARKodeFree(&_arkodeMem);
   }
-  
+
 
   // free Cvode
   /*
@@ -174,13 +173,12 @@ void Arkode::initialize()
     for (int i = 0; i < _dimSys; i++)
       _absTol[i] *= dynamic_cast<ISolverSettings*>(_arkodesettings)->getATol();
 
-    
     _ARK_y0 = N_VMake_Serial(_dimSys, _zInit);
     _ARK_y = N_VMake_Serial(_dimSys, _z);
     _ARK_yWrite = N_VMake_Serial(_dimSys, _zWrite);
     _ARK_absTol = N_VMake_Serial(_dimSys, _absTol);
-    
-    
+
+
     /*
     if (check_flag((void*) _CV_y0, "N_VMake_Serial", 0))
     {
@@ -188,25 +186,23 @@ void Arkode::initialize()
       throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
     }
     */
-    
     // Initialize Cvode (Initial values are required)
-    
     _idid = ARKodeInit(_arkodeMem, NULL, ARK_fCallback, _tCurrent, _ARK_y0);
     if (_idid < 0)
     {
       _idid = -5;
       throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
     }
-    
-    
+
+
     // Set Tolerances
-    
+
     _idid = ARKodeSVtolerances(_arkodeMem, dynamic_cast<ISolverSettings*>(_arkodesettings)->getRTol(), _ARK_absTol);    // RTOL and ATOL
     if (_idid < 0)
       throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
-    
+
     // Set the pointer to user-defined data
-    
+
     _idid = ARKodeSetUserData(_arkodeMem, _data);
     if (_idid < 0)
       throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
@@ -237,7 +233,7 @@ void Arkode::initialize()
     _idid = ARKodeSetMaxNumSteps(_arkodeMem, 1000);            // Max Number of steps
     if (_idid < 0)
       throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
-    
+
     // Initialize linear solver
     /*
     #ifdef USE_SUNDIALS_LAPACK
@@ -250,10 +246,10 @@ void Arkode::initialize()
     */
     if (_idid < 0)
       throw ModelicaSimulationError(SOLVER,"Cvode::initialize()");
-    
+
   // Use own jacobian matrix
   // Check if Colored Jacobians are worth to use
-  
+
   if (_idid < 0)
       throw ModelicaSimulationError(SOLVER,"ARKode::initialize()");
 
@@ -267,9 +263,9 @@ void Arkode::initialize()
         throw ModelicaSimulationError(SOLVER,"CVode::initialize()");
       memset(_zeroSign, -1, _dimZeroFunc * sizeof(int));
       memset(_zeroVal, -1, _dimZeroFunc * sizeof(int));
-    
+
     }
-    
+
 
     _arkode_initialized = true;
 
@@ -290,7 +286,6 @@ void Arkode::solve(const SOLVERCALL action)
     // Solver und System fÃ¼r Integration vorbereiten
     if ((action & RECORDCALL) && (action & FIRST_CALL))
     {
- 
         initialize();
 
         if (writeOutput)
@@ -351,7 +346,7 @@ void Arkode::solve(const SOLVERCALL action)
       // Abbruchkriterium (erreichen der Endzeit)
       else if ((_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_arkodesettings)->getEndTimeTol())
         _solverStatus = DONE;
-    
+
     }
 
     _firstCall = false;
@@ -427,7 +422,7 @@ void Arkode::ArkodeCore()
     }*/
 
     // A root was found
-    
+
     if ((_ark_rt == ARK_ROOT_RETURN) && !isInterrupted())
     {
       // CVode is setting _tCurrent to the time where the first event occurred
@@ -484,8 +479,7 @@ void Arkode::ArkodeCore()
         _continuous_system->getContinuousStates(_z);
       }
     }
-    
-    
+
     if ((_zeroFound || state_selection)&& !isInterrupted())
     {
       // Write the values of (P2)
@@ -504,13 +498,11 @@ void Arkode::ArkodeCore()
       if (_tCurrent == _tEnd)
         _ark_rt = ARK_TSTOP_RETURN;
     }
-    
-    
+
     // ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen
     ++_outStps;
     _tLastSuccess = _tCurrent;
-    
-    
+
     if (_ark_rt == ARK_TSTOP_RETURN)
     {
       _time_system->setTime(_tEnd);
@@ -523,8 +515,8 @@ void Arkode::ArkodeCore()
       _accStps += _locStps;
       _solverStatus = DONE;
     }
-    
-  }
+
+    }
 }
 void Arkode::setTimeOut(unsigned int time_out)
   {
@@ -580,7 +572,7 @@ void Arkode::writeArkodeOutput(const double &time, const double &h, const int &s
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         SolverDefaultImplementation::writeToFile(stp, _tEnd, h);
       }
-      
+
     }
     else
     {
@@ -901,5 +893,3 @@ int Arkode::check_flag(void *flagvalue, const char *funcname, int opt)
 
   return (0);
 }
-
-
