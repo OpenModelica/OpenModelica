@@ -16,7 +16,7 @@ public:
   MeasureTimeValuesScoreP();
   virtual ~MeasureTimeValuesScoreP();
 
-  virtual std::string serializeToJson(unsigned int numCalcs);
+  virtual std::string serializeToJson();
 
   virtual void add(MeasureTimeValues *values);
   virtual void sub(MeasureTimeValues *values);

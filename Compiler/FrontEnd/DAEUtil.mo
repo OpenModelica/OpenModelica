@@ -7174,5 +7174,16 @@ algorithm
   end match;
 end getSubscriptIndex;
 
+public function bindingValue
+  input DAE.Binding inBinding;
+  output Option<Values.Value> outValue;
+algorithm
+  outValue := match inBinding
+    case DAE.EQBOUND() then inBinding.evaluatedExp;
+    case DAE.VALBOUND() then SOME(inBinding.valBound);
+    else NONE();
+  end match;
+end bindingValue;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;

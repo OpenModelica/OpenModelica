@@ -260,10 +260,15 @@ Function for getting the name of a DAE.Var"
   input DAE.Var v;
   output String s;
 algorithm
-  s := match(v)
-    case(DAE.TYPES_VAR(name = s)) then s;
-  end match;
+  DAE.TYPES_VAR(name = s) := v;
 end varName;
+
+public function varBinding
+  input DAE.Var inVar;
+  output DAE.Binding outBinding;
+algorithm
+  DAE.TYPES_VAR(binding = outBinding) := inVar;
+end varBinding;
 
 public function varEqualName
   input DAE.Var inVar1;
@@ -8804,6 +8809,34 @@ algorithm
     case DAE.T_METATYPE() then metaArrayElementType(inType.ty);
   end match;
 end metaArrayElementType;
+
+public function getAttributes
+  input DAE.Type inType;
+  output list<DAE.Var> outAttributes;
+algorithm
+  outAttributes := match inType
+    case DAE.T_REAL() then inType.varLst;
+    case DAE.T_INTEGER() then inType.varLst;
+    case DAE.T_STRING() then inType.varLst;
+    case DAE.T_BOOL() then inType.varLst;
+    case DAE.T_ENUMERATION() then inType.attributeLst;
+    case DAE.T_SUBTYPE_BASIC() then getAttributes(inType.complexType);
+    else {};
+  end match;
+end getAttributes;
+
+public function lookupAttributeValue
+  input list<DAE.Var> inAttributes;
+  input String inName;
+  output Option<Values.Value> outValue = NONE();
+algorithm
+  for attr in inAttributes loop
+    if inName == varName(attr) then
+      outValue := DAEUtil.bindingValue(varBinding(attr));
+      break;
+    end if;
+  end for;
+end lookupAttributeValue;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

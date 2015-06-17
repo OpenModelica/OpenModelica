@@ -1816,7 +1816,7 @@ algorithm
     i := i + 1;
 
     (outCache, outEnv, outIH, outStore, dae, outSets, outType, outGraph) :=
-      instVar2(outCache, outEnv, outIH, outStore, inState, mod, inPrefix,
+      instVar2(outCache, inEnv, outIH, outStore, inState, mod, inPrefix,
         inName, inClass, inAttributes, inPrefixes, inRestDimensions,
         DAE.INDEX(e) :: inSubscripts, inInstDims, inImpl, inComment, inInfo,
         outGraph, outSets);

@@ -61,6 +61,9 @@ allocateUmfPackData(int n_row, int n_col, int nz, void** voiddata)
   DATA_UMFPACK* data = (DATA_UMFPACK*) malloc(sizeof(DATA_UMFPACK));
   assertStreamPrint(NULL, 0 != data, "Could not allocate data for linear solver UmfPack.");
 
+  data->symbolic = NULL;
+  data->numeric = NULL;
+
   data->n_col = n_col;
   data->n_row = n_row;
   data->nnz = nz;
@@ -94,6 +97,8 @@ allocateUmfPackData(int n_row, int n_col, int nz, void** voiddata)
 int
 freeUmfPackData(void **voiddata)
 {
+  TRACE_PUSH
+
   DATA_UMFPACK* data = (DATA_UMFPACK*) *voiddata;
 
   free(data->Ap);
@@ -101,9 +106,12 @@ freeUmfPackData(void **voiddata)
   free(data->Ax);
   free(data->work);
 
-  umfpack_di_free_symbolic (&data->symbolic);
-  umfpack_di_free_numeric (&data->numeric);
+  if(data->symbolic)
+    umfpack_di_free_symbolic (&data->symbolic);
+  if(data->numeric)
+    umfpack_di_free_numeric (&data->numeric);
 
+  TRACE_POP
   return 0;
 }
 

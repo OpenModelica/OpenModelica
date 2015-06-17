@@ -798,7 +798,7 @@ algorithm
       DAE.InstDims dims;
       DAE.ElementSource src;
       Option<DAE.VariableAttributes> va;
-    Option<BackendDAE.TearingSelect> ts;
+      Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> c;
       DAE.ConnectorType ct;
       Values.Value v;
@@ -4042,7 +4042,7 @@ public function getAdjacencyMatrixEnhancedScalar
   and add some information how the variable occure in the equation(see BackendDAE.BackendDAE.Solvability)."
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input Boolean trytosolve "determine the solvability by solving for the variable intead of deriving, needed for 'Casual Tearing Set'";
+  input Boolean trytosolve "determine the solvability by solving for the variable instead of deriving, needed for 'Casual Tearing Set'";
   output BackendDAE.AdjacencyMatrixEnhanced outIncidenceMatrix;
   output BackendDAE.AdjacencyMatrixTEnhanced outIncidenceMatrixT;
   output array<list<Integer>> outMapEqnIncRow;

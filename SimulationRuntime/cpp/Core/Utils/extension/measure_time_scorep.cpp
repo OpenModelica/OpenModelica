@@ -6,7 +6,7 @@ MeasureTimeValuesScoreP::MeasureTimeValuesScoreP() : MeasureTimeValues() {}
 
 MeasureTimeValuesScoreP::~MeasureTimeValuesScoreP() {}
 
-std::string MeasureTimeValuesScoreP::serializeToJson(unsigned int numCalcs)
+std::string MeasureTimeValuesScoreP::serializeToJson()
 {
   return "";
 }

@@ -1007,12 +1007,12 @@ algorithm
   oMapping := matchcontinue(iEquation, iMapping)
     case(_,_)
       equation
-        simEqIdx = getIndexBySimCodeEq(iEquation);
+        (simEqIdx,_) = getIndexBySimCodeEq(iEquation);
         tmpMapping = arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
       then tmpMapping;
     else
       equation
-        simEqIdx = getIndexBySimCodeEq(iEquation);
+        (simEqIdx,_) = getIndexBySimCodeEq(iEquation);
         //print("getSimEqIdxSimEqMapping1: Can't access idx " + intString(simEqIdx) + "\n");
       then iMapping;
   end matchcontinue;
@@ -1159,15 +1159,15 @@ public function getSimCodeEqByIndex "function getSimCodeEqByIndex
 protected
   list<SimCode.SimEqSystem> rest;
   SimCode.SimEqSystem head;
-  Integer headIdx;
+  Integer headIdx,headIdx2;
 
 algorithm
   oEq := matchcontinue(iEqs,iIdx)
     case(head::rest,_)
       equation
-        headIdx = getIndexBySimCodeEq(head);
+        (headIdx,headIdx2) = getIndexBySimCodeEq(head);
         //print("getSimCodeEqByIndex listLength: " + intString(listLength(iEqs)) + " head idx: " + intString(headIdx) + "\n");
-        true = intEq(headIdx,iIdx);
+        true = intEq(headIdx,iIdx) or intEq(headIdx2,iIdx);
       then head;
     case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
     else
@@ -1183,21 +1183,26 @@ protected function getIndexBySimCodeEq "function getIndexBySimCodeEq
   Just a small helper function to get the index of a SimEqSystem."
   input SimCode.SimEqSystem iEq;
   output Integer oIdx;
+  output Integer oIdx2;
 
 protected
-  Integer index;
+  Integer index,index2;
 
 algorithm
-  oIdx := match(iEq)
-    case(SimCode.SES_RESIDUAL(index=index)) then index;
-    case(SimCode.SES_SIMPLE_ASSIGN(index=index)) then index;
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then index;
-    case(SimCode.SES_IFEQUATION(index=index)) then index;
-    case(SimCode.SES_ALGORITHM(index=index)) then index;
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index))) then index;
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index))) then index;
-    case(SimCode.SES_MIXED(index=index)) then index;
-    case(SimCode.SES_WHEN(index=index)) then index;
+  (oIdx,oIdx2) := match(iEq)
+    case(SimCode.SES_RESIDUAL(index=index)) then (index,0);
+    case(SimCode.SES_SIMPLE_ASSIGN(index=index)) then (index,0);
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then (index,0);
+    case(SimCode.SES_IFEQUATION(index=index)) then (index,0);
+    case(SimCode.SES_ALGORITHM(index=index)) then (index,0);
+    // no dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), NONE())) then (index,0);
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), NONE())) then (index,0);
+    // dynamic tearing
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), SOME(SimCode.LINEARSYSTEM(index=index2)))) then (index,index2);
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), SOME(SimCode.NONLINEARSYSTEM(index=index2)))) then (index,index2);
+    case(SimCode.SES_MIXED(index=index)) then (index,0);
+    case(SimCode.SES_WHEN(index=index)) then (index,0);
     else fail();
   end match;
 end getIndexBySimCodeEq;

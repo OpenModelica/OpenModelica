@@ -1860,16 +1860,31 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let solver    = settings.method
   let moLib     = makefileParams.compileDir
   let home      = makefileParams.omhome
+  let &includeMeasure = buffer "" /*BUFD*/
   <<
   #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
   #include <Core/SimController/ISimController.h>
 
-
   <%
   match(getConfigString(PROFILING_LEVEL))
      case("none") then ''
-     case("all_perf") then '#include <Core/Utils/extension/measure_time_papi.hpp>'
+     case("all_perf") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_papi.hpp>
+       #endif
+       >>
+     case("all_stat") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_statistic.hpp>
+       #endif
+       >>
      else
        <<
        #ifdef USE_SCOREP
@@ -1880,7 +1895,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
        >>
   end match
   %>
-
   <%additionalIncludes%>
 
   #ifdef USE_BOOST_THREAD
@@ -1928,6 +1942,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
              MeasureTimePAPI::initialize(getThreadNumber);
            #endif
            >>
+          case("all_stat") then
+          <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimeStatistic::initialize();
+           #endif
+          >>
           else
            <<
            #ifdef USE_SCOREP
@@ -6043,7 +6065,22 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <%
   match(getConfigString(PROFILING_LEVEL))
      case("none") then ''
-     case("all_perf") then '#include <Core/Utils/extension/measure_time_papi.hpp>'
+     case("all_perf") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_papi.hpp>
+       #endif
+       >>
+     case("all_stat") then
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_statistic.hpp>
+       #endif
+       >>
      else
        <<
        #ifdef USE_SCOREP
