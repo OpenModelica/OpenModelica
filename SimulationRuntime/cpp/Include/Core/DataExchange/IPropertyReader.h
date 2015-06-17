@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Core/Modelica.h>
+#include <Core/ModelicaDefine.h>
 #include <boost/shared_ptr.hpp>
 #include <Core/System/ISimVars.h>
 

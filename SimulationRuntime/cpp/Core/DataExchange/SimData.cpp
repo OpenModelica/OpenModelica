@@ -4,7 +4,7 @@
  */
 
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/DataExchange/SimData.h>
 
 SimData::SimData(void)

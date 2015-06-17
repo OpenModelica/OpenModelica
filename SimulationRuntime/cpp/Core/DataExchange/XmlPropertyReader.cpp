@@ -1,7 +1,8 @@
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
 #include <Core/DataExchange/XmlPropertyReader.h>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/foreach.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -17,7 +18,7 @@ XmlPropertyReader::~XmlPropertyReader()
 void XmlPropertyReader::readInitialValues(boost::shared_ptr<ISimVars> sim_vars)
 {
   using boost::property_tree::ptree;
-  std::ifstream file(propertyFile);
+  std::ifstream file(propertyFile.c_str());
 
   if(file)
   {
