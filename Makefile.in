@@ -116,7 +116,7 @@ install: install-dirs
 	# License
 	cp -p OMCompiler/COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
-	test -z "$(HAVE_DOCDIR)" || cp -p "@OMBUILDDIR@"/share/doc/omc/*.pdf ${INSTALL_DOCDIR}/omc/
+	test ! -e "doc" || cp -p doc/*.pdf ${INSTALL_DOCDIR}/omc/
 	cp -p "@OMBUILDDIR@"/share/doc/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	# man pages
 	# cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
