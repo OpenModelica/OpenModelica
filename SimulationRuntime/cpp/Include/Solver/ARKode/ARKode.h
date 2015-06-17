@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "FactoryExport.h"
@@ -10,7 +9,6 @@
 //#include <cvode/cvode.h>
 
 /*
-
 */
 
 
@@ -147,8 +145,6 @@ double
   bool
     _bWritten,                  ///< Temp      - Is output already written
     _zeroFound;
-
-
 
 
   N_Vector

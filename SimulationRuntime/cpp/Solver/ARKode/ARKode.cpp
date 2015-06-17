@@ -5,7 +5,6 @@
 
 #include <Core/Math/Functions.h>
 #include <arkode/arkode.h>
-
 #include <arkode/arkode_dense.h>      // prototype for ARKDense solver
 #include <sundials/sundials_dense.h>  // defs. of DlsMat and DENSE_ELEM
 #include <sundials/sundials_types.h>  // def. of type 'realtype'
