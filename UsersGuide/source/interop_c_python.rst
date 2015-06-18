@@ -71,12 +71,55 @@ And plot the results:
   x
   y
 
-Calling Python Code
--------------------
+Calling external Python Code from a Modelica model
+--------------------------------------------------
+
+The following calls external Python code through a very simplistic
+external function (no data is retrieved from the Python code).
+By making it a dynamically linked library, you might get the code to
+work without changing the linker settings.
+
+.. omc-loadstring ::
+
+  function pyRunString
+    input String s;
+  external "C" annotation(Include="
+  #include <Python.h>
+
+  void pyRunString(const char *str)
+  {
+    Py_SetProgramName(\"pyRunString\");  /* optional but recommended */
+    Py_Initialize();
+    PyRun_SimpleString(str);
+    Py_Finalize();
+  }
+  ");
+  end pyRunString;
+
+  model CallExternalPython
+  algorithm
+    pyRunString("
+  print 'Python says: simulation time',"+String(time)+"
+  ");
+  end CallExternalPython;
+
+.. omc-mos ::
+  :erroratend:
+
+  system("python-config --cflags > pycflags")
+  system("python-config --ldflags > pyldflags")
+  pycflags := stringReplace(readFile("pycflags"),"\n","");
+  pyldflags := stringReplace(readFile("pyldflags"),"\n","");
+  setCFlags(getCFlags()+pycflags)
+  setLinkerFlags(getLinkerFlags()+pyldflags)
+  simulate(CallExternalPython, stopTime=2)
+
+Calling OpenModelica from Python Code
+-------------------------------------
 
 This section describes a simple-minded approach to calling Python code
 from OpenModelica. For a description of Python scripting with
-OpenModelica, see Chapter 13.
+OpenModelica, see :ref:`ompython`.
 
 The interaction with Python can be perfomed in four different ways
 whereas one is illustrated below. Assume that we have the following
@@ -151,3 +194,5 @@ compiler via this interface.
 
 The fourth variant is to use external function calls to directly
 communicate with the executing simulation process.
+
+.. omc-reset ::
