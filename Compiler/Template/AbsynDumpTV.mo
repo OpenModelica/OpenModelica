@@ -843,6 +843,21 @@ package Dump
     input Boolean inLhs;
     output Boolean outShouldParenthesize;
   end shouldParenthesize;
+
+  uniontype DumpOptions
+    record DUMPOPTIONS
+      String fileName;
+    end DUMPOPTIONS;
+  end DumpOptions;
+
+  constant DumpOptions defaultDumpOptions;
+
+  function boolUnparseFileFromInfo
+    input builtin.SourceInfo info;
+    input DumpOptions options;
+    output Boolean b;
+  end boolUnparseFileFromInfo;
+
 end Dump;
 
 package System
@@ -853,10 +868,14 @@ package System
 end System;
 
 package Tpl
+  function addSourceTemplateError
+    input String inErrMsg;
+    input builtin.SourceInfo inInfo;
+  end addSourceTemplateError;
+
   function addTemplateError
     input String inErrMsg;
   end addTemplateError;
 end Tpl;
-
 
 end AbsynDumpTV;
