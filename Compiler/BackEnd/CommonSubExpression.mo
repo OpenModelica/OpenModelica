@@ -930,7 +930,7 @@ protected
 algorithm
   BackendDAE.SHARED(aliasVars=aliasVars) := sharedIn;
   (aliasVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceBindings, repl);
-  sharedOut := BackendDAEUtil.replaceAliasVarsInShared(sharedIn, aliasVars);
+  sharedOut := BackendDAEUtil.setSharedAliasVars(sharedIn, aliasVars);
 end updateAllAliasVars;
 
 protected function replaceBindings"traversal function to replace bidning exps.

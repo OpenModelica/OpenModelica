@@ -156,7 +156,7 @@ algorithm
   outSyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
   // do matching
   (outSyst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_,_) := matchingFunc(outSyst,iShared,true,(BackendDAE.INDEX_REDUCTION(),eqnConstr),foundSingularSystem,arg);
-  outSyst := BackendDAEUtil.setEqSystemMatching(iSyst,BackendDAE.MATCHING(ass1,ass2,{}));
+  outSyst := BackendDAEUtil.setEqSystMatching(iSyst,BackendDAE.MATCHING(ass1,ass2,{}));
   /*
     print("singularSystemCheck:\n");
     BackendDump.printEqSystem(outSyst);
@@ -241,7 +241,7 @@ algorithm
     BackendDump.printEqSystem(isyst);
     BackendDump.dumpMatching(inAssignments1);
     BackendDump.dumpMatching(inAssignments2);
-    syst := BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
+    syst := BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
   //  DumpGraphML.dumpSystem(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
   */
   // get from scalar eqns indexes the indexes in the equation array

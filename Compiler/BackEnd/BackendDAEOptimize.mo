@@ -1537,7 +1537,7 @@ algorithm
 
       case (SOME((bdae, _, _, _, _)), _, _)
         equation
-          bdae = BackendDAEUtil.addBackendDAEFunctionTree(inFunctions, bdae);
+          bdae = BackendDAEUtil.setFunctionTree(bdae, inFunctions);
           BackendDAE.DAE(shared = BackendDAE.SHARED(functionTree = usedfuncs)) =
             removeUnusedFunctions(bdae);
           outUsedFunctions = DAEUtil.joinAvlTrees(outUsedFunctions, usedfuncs);

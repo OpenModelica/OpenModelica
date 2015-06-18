@@ -873,7 +873,7 @@ algorithm
       end if;
     end for;
 
-    shared := BackendDAEUtil.replaceKnownVarsInShared(shared, knownVars);
+    shared := BackendDAEUtil.setSharedKnVars(shared, knownVars);
     outDAE := BackendDAE.DAE(new_systlst, shared);
   else
     outDAE := inDAE;

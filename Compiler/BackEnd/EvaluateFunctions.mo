@@ -130,7 +130,7 @@ algorithm
   varLst := BackendVariable.varList(knVars);
   varLst := List.map1(varLst,evaluateParameter,funcTree);
   knVars := BackendVariable.listVar(varLst);
-  sharedOut := BackendDAEUtil.replaceKnownVarsInShared(sharedIn,knVars);
+  sharedOut := BackendDAEUtil.setSharedKnVars(sharedIn,knVars);
 end evaluateShared;
 
 protected function evaluateParameter "evaluates a parameter"
@@ -243,7 +243,7 @@ algorithm
         changed = changed or changed1;
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
-        shared = BackendDAEUtil.addFunctionTree(funcs,shared);
+        shared = BackendDAEUtil.setSharedFunctionTree(shared, funcs);
         sizeL = getScalarExpSize(lhsExp);
         sizeR = getScalarExpSize(rhsExp);
         size = intMax(sizeR,sizeL);
