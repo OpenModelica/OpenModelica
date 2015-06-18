@@ -15057,7 +15057,11 @@ algorithm
         gcStr = GC.profStatsStr(GC.getProfStats(), head="");
         timeStr = System.snprintff("%.4g",20,t);
         totalTimeStr = System.snprintff("%.4g",20,total);
-        Error.addMessage(Error.EXEC_STAT,{name,timeStr,totalTimeStr,gcStr});
+        if Flags.isSet(Flags.GC_PROF) then
+          Error.addMessage(Error.EXEC_STAT_GC,{name,timeStr,totalTimeStr,gcStr});
+        else
+          Error.addMessage(Error.EXEC_STAT,{name,timeStr,totalTimeStr});
+        end if;
         System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
       then ();
   end match;
