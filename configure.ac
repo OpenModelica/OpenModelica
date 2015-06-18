@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OpenModelica],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMCompiler],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
 AC_SUBST(date)
 AC_SUBST(host_short)
 AC_SUBST(omc_antlr_jar)
@@ -754,13 +754,8 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
     USE_PATOH=0;
 ])
 
-AC_MSG_CHECKING([for revision])
-SOURCE_REVISION=""
-test -f REVISION && SOURCE_REVISION=`test -f REVISION && head -n1 REVISION`
-test -z "$SOURCE_REVISION" && test -e .git && SOURCE_REVISION=`git describe --dirty --match "v*.*" --always`
-test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
+m4_include([common/m4/semver.m4])
 
-AC_MSG_RESULT([$SOURCE_REVISION])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
 AC_MSG_CHECKING([for OpenModelica platform name])
