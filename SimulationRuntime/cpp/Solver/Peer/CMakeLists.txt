@@ -4,7 +4,7 @@ project(${PeerName})
 
 # add the solver default implementation library
 add_library(${PeerName}_static STATIC Peer.cpp PeerSettings.cpp FactoryExport.cpp)
-set_target_properties(${PeerName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${PeerName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 add_precompiled_header(${PeerName}_static Include/Core/Modelica.h )
 install (TARGETS ${PeerName}_static DESTINATION ${LIBINSTALLEXT})
 

@@ -4,7 +4,7 @@ project(${OMCFactoryName})
 
 add_library(${OMCFactoryName} SHARED OMCFactory.cpp)
 add_library(${OMCFactoryName}_static STATIC StaticOMCFactory.cpp OMCFactory.cpp)
-set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
 
 install (TARGETS ${OMCFactoryName}_static DESTINATION ${LIBINSTALLEXT})

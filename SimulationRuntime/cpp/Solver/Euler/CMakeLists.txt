@@ -5,7 +5,7 @@ project(${EulerName})
 
 add_library(${EulerName}_static STATIC Euler.cpp EulerSettings.cpp FactoryExport.cpp )
 add_precompiled_header(${EulerName}_static Include/Core/Modelica.h )
-set_target_properties(${EulerName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${EulerName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 
 add_library(${EulerName} SHARED Euler.cpp EulerSettings.cpp FactoryExport.cpp )

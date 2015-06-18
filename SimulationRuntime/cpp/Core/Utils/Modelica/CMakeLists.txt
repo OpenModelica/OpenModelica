@@ -4,7 +4,7 @@ project(${ModelicaUtilitiesName})
 # add the solver default implementation library
 
 add_library(${ModelicaUtilitiesName}_static STATIC ModelicaUtilities.cpp ModelicaSimulationError.cpp)
-set_target_properties(${ModelicaUtilitiesName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${ModelicaUtilitiesName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 add_library(${ModelicaUtilitiesName} SHARED ModelicaUtilities.cpp ModelicaSimulationError.cpp)
 add_precompiled_header(${ModelicaUtilitiesName} Include/Core/Modelica.h )
 
