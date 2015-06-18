@@ -8092,6 +8092,34 @@ algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars=outKnownVars)) := inDAE;
 end getKnownVars;
 
+public function setVars
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(syst::systs, shared) := inDAE;
+  syst := setEqSystVars(syst, inVars);
+  outDAE := BackendDAE.DAE(syst::systs, shared);
+end setVars;
+
+public function setEqs
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.EquationArray inEqs;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(syst::systs, shared) := inDAE;
+  syst := setEqSystEqs(syst, inEqs);
+  outDAE := BackendDAE.DAE(syst::systs, shared);
+end setEqs;
+
 public function setAliasVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.Variables inAliasVars;
