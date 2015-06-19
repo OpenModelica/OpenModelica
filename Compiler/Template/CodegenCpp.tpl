@@ -2588,11 +2588,7 @@ case "gcc" then
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
-            let &timeMeasureLink +=
-                match(getConfigString(PROFILING_LEVEL))
-                    case("all_perf") then " -lOMCppExtensionUtilities_papi -lpapi"
-                    else ""
-                end match
+            let papiLibs = ' -lOMCppExtensionUtilities_papi -lpapi'
             let CC = if (compileForMPI) then "mpicc" else '<%makefileParams.ccompiler%>'
             let CXX = if (compileForMPI) then "mpicxx" else '<%makefileParams.cxxcompiler%>'
             let extraCppFlags = (getConfigStringList(CPP_FLAGS) |> flag => '<%flag%>'; separator=" ")
@@ -2610,25 +2606,34 @@ case "gcc" then
             RUNTIME_STATIC_LINKING=<%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'ON' else 'OFF'%>
             <%MPIEnvVars%>
 
-            ifeq ($(USE_SCOREP),ON)
-            $(eval CC=scorep --user --nocompiler --thread=pthread $(CC))
-            $(eval CXX=scorep --user --nocompiler --thread=pthread $(CXX))
-            endif
-
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
 
             CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+
+            ifeq ($(USE_SCOREP),ON)
+            $(eval CC=scorep --user --nocompiler $(CC))
+            $(eval CXX=scorep --user --nocompiler $(CXX))
+            else
+            $(eval CFLAGS_COMMON=$(CFLAGS_COMMON) -DMEASURETIME_PROFILEBLOCKS)
+            endif
+
             CFLAGS_DYNAMIC=$(CFLAGS_COMMON)
             CFLAGS_STATIC=$(CFLAGS_COMMON) <%staticIncludes%> -DRUNTIME_STATIC_LINKING
 
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
 
             LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%> -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
+
+            ifeq ($(USE_PAPI),ON)
+            $(eval LDMAINFLAGS_COMMON=$(LDMAINFLAGS_COMMON) <%papiLibs%>)
+            $(eval LDSYSTEMFLAGS_COMMON=$(LDSYSTEMFLAGS_COMMON) <%papiLibs%>)
+            endif
+
             LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
             LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS_COMMON)
 
-            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%>
             LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities $(LDMAINFLAGS_COMMON)
             LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS_COMMON) $(SUNDIALS_LIBRARIES) $(LAPACK_LIBRARIES)
 
@@ -6198,7 +6203,6 @@ match modelInfo
   <<
   <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
   <<
-  #define MEASURETIME_PROFILEBLOCKS
   #define MEASURETIME_MODELFUNCTIONS
   >>%>
 
