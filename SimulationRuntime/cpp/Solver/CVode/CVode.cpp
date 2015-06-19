@@ -656,12 +656,8 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         #endif
         SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
         #ifdef RUNTIME_PROFILING
-        MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
         if(MeasureTime::getInstance() != NULL)
-        {
             measureTimeFunctionsArray[2].sumMeasuredValues->_numCalcs--;
-            MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
-        }
         #endif
       }      //end if time -_tLastWritten
       if (_bWritten)
@@ -671,6 +667,12 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         _continuous_system->setRHS(oldValues);
         delete[] oldValues;
         //_continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+        #ifdef RUNTIME_PROFILING
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+        }
+        #endif
       }
       else if (time == _tEnd && _tLastWrite != time)
       {
