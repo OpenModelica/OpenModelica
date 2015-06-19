@@ -6,6 +6,7 @@ bug2718.mos \
 bug2752.mos \
 bug2808.mos \
 bug3092.mos \
+bug3358.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
