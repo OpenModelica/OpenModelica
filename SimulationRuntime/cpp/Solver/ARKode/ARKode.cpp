@@ -1,7 +1,8 @@
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
  
 #include <Solver/ARKode/ARKode.h>
+
 
 #include <Core/Math/Functions.h>
 #include <arkode/arkode.h>
@@ -282,7 +283,7 @@ void Arkode::solve(const SOLVERCALL action)
 
   if (_arkodesettings && _system)
   {
-    // Solver und System fÃ¼r Integration vorbereiten
+    // Solver und System für Integration vorbereiten
     if ((action & RECORDCALL) && (action & FIRST_CALL))
     {
         initialize();
@@ -323,7 +324,7 @@ void Arkode::solve(const SOLVERCALL action)
       // Solveraufruf
       if (_idid == 0)
       {
-        // ZÃ¤hler zurÃ¼cksetzen
+        // Zähler zurücksetzen
         _accStps = 0;
         _locStps = 0;
 
@@ -493,12 +494,12 @@ void Arkode::ArkodeCore()
       if (_idid < 0)
         throw ModelicaSimulationError(SOLVER,"CVode::ReInit()");
 
-      // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
+      // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmei�t
       if (_tCurrent == _tEnd)
         _ark_rt = ARK_TSTOP_RETURN;
     }
 
-    // ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen
+    // Zähler für die Anzahl der ausgegebenen Schritte erhöhen
     ++_outStps;
     _tLastSuccess = _tCurrent;
 
@@ -852,7 +853,7 @@ void Arkode::writeSimulationInfo()
   //  << "ausgegebene Schritte:                     " << _outStps << "\n"
   //  << "Anfangsschrittweite:                      " << _cvodesettings->dH_init << "\n"
   //  << "Ausgabeschrittweite:                      " << dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput() << "\n"
-  //  << "Obere Grenze fÃ¼r Schrittweite:            " << _hUpLim << "\n\n";
+  //  << "Obere Grenze für Schrittweite:            " << _hUpLim << "\n\n";
   //// Status
   //outputStream
   //  << "Solver-Status:                            " << _idid << "\n\n";
