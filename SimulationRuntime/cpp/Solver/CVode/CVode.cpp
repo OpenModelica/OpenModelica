@@ -648,17 +648,7 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         _time_system->setTime(_tLastWrite);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_yWrite));
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-        }
-        #endif
         SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-            measureTimeFunctionsArray[2].sumMeasuredValues->_numCalcs--;
-        #endif
       }      //end if time -_tLastWritten
       if (_bWritten)
       {
@@ -667,12 +657,6 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         _continuous_system->setRHS(oldValues);
         delete[] oldValues;
         //_continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-        }
-        #endif
       }
       else if (time == _tEnd && _tLastWrite != time)
       {
@@ -680,35 +664,20 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-        }
-        #endif
         SolverDefaultImplementation::writeToFile(stp, _tEnd, h);
       }
     }
     else
     {
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-        }
-        #endif
         SolverDefaultImplementation::writeToFile(stp, time, h);
     }
   }
-  else
+  #ifdef RUNTIME_PROFILING
+  if(MeasureTime::getInstance() != NULL)
   {
-    #ifdef RUNTIME_PROFILING
-    if(MeasureTime::getInstance() != NULL)
-    {
-        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-    }
-    #endif
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
   }
+  #endif
 }
 
 bool Cvode::stateSelection()
