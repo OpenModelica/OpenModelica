@@ -3862,31 +3862,6 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String 
   >>
 end functionAnalyticJacobians;
 
-
-template mkSparseFunction(String matrixname, String matrixIndex, Integer i, list<Integer> indexes, String modelNamePrefix)
-"generate "
-::=
-match matrixname
- case _ then
-    let indexrows = ( indexes |> indexrow hasindex index0 =>
-      <<
-      i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%i%>] - <%listLength(indexes)%>;
-      data->simulationInfo.analyticJacobians[index].sparsePattern.index[i+<%index0%>] = <%indexrow%>;
-      >>
-      ;separator="\n")
-
-    <<
-    static void <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%matrixIndex%>(DATA* data, int index)
-    {
-      int i;
-      /* write index for cref: <%i%> */
-      <%indexrows%>
-    }
-    <%\n%>
-    >>
-end match
-end mkSparseFunction;
-
 template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
@@ -3910,18 +3885,19 @@ case _ then
       let sizeleadindex = listLength(sparsepattern)
       let leadindex = (sparsepattern |> (i, indexes) =>
       <<
-      data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%i%>] = <%listLength(indexes)%>;
+      <%listLength(indexes)%>
       >>
-      ;separator="\n")
+      ;separator=",")
       let indexElems = ( sparsepattern |> (i, indexes) hasindex index0 =>
-        let &eachCrefParts += mkSparseFunction(matrixname, index0, i, indexes, modelNamePrefix)
+        ( indexes |> indexrow =>
         <<
-        <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%index0%>(data, index);
+        <%indexrow%>
         >>
-      ;separator="\n")
+        ;separator=",")
+      ;separator=",")
       let colorArray = (colorList |> (indexes) hasindex index0 =>
         let colorCol = ( indexes |> i_index =>
-        'data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%i_index%>] = <%intAdd(index0,1)%>;'
+         <<data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%i_index%>] = <%intAdd(index0,1)%>;>>
         ;separator="\n")
       '<%colorCol%>'
       ;separator="\n")
@@ -3929,8 +3905,6 @@ case _ then
       let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
       <<
-
-      <%eachCrefParts%>
 
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
       {
@@ -3953,18 +3927,19 @@ case _ then
         data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors = <%maxColor%>;
         data->simulationInfo.analyticJacobians[index].jacobian = NULL;
 
-        /* write column ptr of compressed sparse column*/
-        <%leadindex%>
+        /* write lead index of compressed sparse column*/
+        const int tmp[<%sizeleadindex%>] = {<%leadindex%>};
+        memcpy(data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex, tmp, <%sizeleadindex%>*sizeof(int));
+
         for(i=1;i<<%sizeleadindex%>;++i)
             data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[i] += data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[i-1];
 
-
-        /* call functions to write index for each cref */
-        <%indexElems%>
+        /* call sparse index */
+        const int tmpElem[<%sp_size_index%>] = {<%indexElems%>};
+        memcpy(data->simulationInfo.analyticJacobians[index].sparsePattern.index, tmpElem, <%sp_size_index%>*sizeof(int));
 
         /* write color array */
         <%colorArray%>
-
         TRACE_POP
         return 0;
       }

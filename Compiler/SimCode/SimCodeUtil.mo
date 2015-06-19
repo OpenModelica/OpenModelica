@@ -5511,7 +5511,6 @@ algorithm
        j := BaseHashTable.get(cr, ht);
        intLst := j :: intLst;
      end for;
-     intLst := List.sort(intLst, intGt);
      outColoring := intLst :: outColoring;
   end for;
   end if;
