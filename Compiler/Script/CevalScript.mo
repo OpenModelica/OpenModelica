@@ -1235,6 +1235,19 @@ algorithm
 
     case (cache,_,"list",_,st,_) then (cache,Values.STRING(""),st);
 
+    case (cache,_,"listFile",{Values.CODE(Absyn.C_TYPENAME(className))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        path = match className
+          case Absyn.FULLYQUALIFIED() then className.path;
+          else className;
+        end match;
+        (absynClass as Absyn.CLASS(info=SOURCEINFO(fileName=str))) = Interactive.getPathedClassInProgram(className, p);
+        str = Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(Absyn.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
+      then
+        (cache,Values.STRING(str),st);
+
+    case (cache,_,"listFile",_,st,_) then (cache,Values.STRING(""),st);
+
     case (cache,_,"sortStrings",{Values.ARRAY(valueLst=vals)},(st as GlobalScript.SYMBOLTABLE()),_)
       equation
         strs = List.map(vals, ValuesUtil.extractValueString);

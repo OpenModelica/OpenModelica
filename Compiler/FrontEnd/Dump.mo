@@ -57,6 +57,27 @@ import Print;
 import Tpl;
 import Util;
 
+public
+
+uniontype DumpOptions
+  record DUMPOPTIONS
+    String fileName;
+  end DUMPOPTIONS;
+end DumpOptions;
+
+constant DumpOptions defaultDumpOptions = DUMPOPTIONS("");
+
+function boolUnparseFileFromInfo "Returns true if the filename in the SOURCEINFO should be unparsed"
+  input SourceInfo info;
+  input DumpOptions options;
+  output Boolean b;
+algorithm
+  b := match (options,info)
+    case (DUMPOPTIONS(fileName=""),_) then true; // The default is to not filter
+    case (DUMPOPTIONS(),SOURCEINFO()) then options.fileName == info.fileName;
+  end match;
+end boolUnparseFileFromInfo;
+
 public function dumpExpStr
   input Absyn.Exp exp;
   output String str;
@@ -107,9 +128,10 @@ public function unparseStr
     Note: This will be used for a different purpose in OpenModelica once we redesign Dump to use templates
           ... by sending in DumpOptions (for example to add markup, etc)
     ";
+  input DumpOptions options = defaultDumpOptions;
   output String outString;
 algorithm
-  outString := Tpl.tplString(AbsynDumpTpl.dump, inProgram);
+  outString := Tpl.tplString2(AbsynDumpTpl.dump, inProgram, options);
 end unparseStr;
 
 public function unparseClassList
@@ -117,7 +139,7 @@ public function unparseClassList
   input list<Absyn.Class> inClasses;
   output String outString;
 algorithm
-  outString := Tpl.tplString(AbsynDumpTpl.dump, Absyn.PROGRAM(inClasses, Absyn.TOP()));
+  outString := Tpl.tplString2(AbsynDumpTpl.dump, Absyn.PROGRAM(inClasses, Absyn.TOP()), defaultDumpOptions);
 end unparseClassList;
 
 public function unparseClassStr
@@ -125,7 +147,7 @@ public function unparseClassStr
   input Absyn.Class inClass;
   output String outString;
 algorithm
-  outString := Tpl.tplString(AbsynDumpTpl.dumpClass, inClass);
+  outString := Tpl.tplString2(AbsynDumpTpl.dumpClass, inClass, defaultDumpOptions);
 end unparseClassStr;
 
 public function unparseWithin
@@ -758,7 +780,7 @@ public function unparseElementItemStr
   input Absyn.ElementItem inElementItem;
   output String outString;
 algorithm
-  outString := Tpl.tplString(AbsynDumpTpl.dumpElementItem, inElementItem);
+  outString := Tpl.tplString2(AbsynDumpTpl.dumpElementItem, inElementItem, defaultDumpOptions);
 end unparseElementItemStr;
 
 public function unparseAnnotation
@@ -1508,7 +1530,7 @@ public function unparseClassPart
   input Absyn.ClassPart classPart;
   output String outString;
 algorithm
-  outString := Tpl.tplString2(AbsynDumpTpl.dumpClassPart, classPart, 0);
+  outString := Tpl.tplString3(AbsynDumpTpl.dumpClassPart, classPart, 0, defaultDumpOptions);
 end unparseClassPart;
 
 public function unparseEquationStr
