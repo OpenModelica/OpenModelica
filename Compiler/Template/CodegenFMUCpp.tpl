@@ -92,6 +92,7 @@ template fmuCalcHelperMainfile(SimCode simCode)
     #include <Core/Modelica.h>
     #include <Core/System/FactoryExport.h>
     #include <Core/DataExchange/SimData.h>
+    #include <Core/DataExchange/XmlPropertyReader.h>
     #include <Core/System/SimVars.h>
     #include <Core/System/DiscreteEvents.h>
     #include <Core/System/EventHandling.h>
@@ -735,7 +736,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -DRUNTIME_STATIC_LINKING="true" -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
   CPPFLAGS = $(CFLAGS)
   LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(BOOST_LIBS)"
   PLATFORM="<%platformstr%>"
@@ -760,7 +761,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) "binaries/$(PLATFORM)/"
   <%\t%>cp $(SUNDIALS_LIBRARIES_KINSOL) "binaries"
-  <%\t%>cp $(LIBOMCPPKINSOL) "binaries"
   <%\t%>rm -f <%modelName%>.fmu
   <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries
   <%\t%>rm -rf binaries

@@ -698,6 +698,15 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         SolverDefaultImplementation::writeToFile(stp, time, h);
     }
   }
+  else
+  {
+    #ifdef RUNTIME_PROFILING
+    if(MeasureTime::getInstance() != NULL)
+    {
+        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+    }
+    #endif
+  }
 }
 
 bool Cvode::stateSelection()
