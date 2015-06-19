@@ -485,7 +485,6 @@ void Arkode::ArkodeCore()
       // Write the values of (P2)
       if (writeEventOutput)
       {
-        // If we want to write the event-results, we should evaluate the whole system again
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         writeToFile(0, _tCurrent, _h);
       }
