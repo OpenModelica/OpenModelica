@@ -19,7 +19,7 @@ RUNTIME_PROFILING_COMMAND="-DRUNTIME_PROFILING=ON"
 SCOREP_COMMAND="-DUSE_SCOREP=ON"
 SCOREP_HOME=""
 SUNDIALS_LAPACK_COMMAND="-DSUNDIALS_LAPACK=ON"
-CMAKE_COMMANDS=CC="scorep --user --nocompiler --thread=pthread gcc" CXX="scorep --user --nocompiler --thread=pthread g++"
+CMAKE_COMMANDS=CC="scorep --user --nocompiler gcc" CXX="scorep --user --nocompiler g++"
 CMAKE_ARGS=$(patsubst CMAKE_%, -D%, $(filter CMAKE_%, $(MAKEFLAGS)))
 
 runtimeCpp:
