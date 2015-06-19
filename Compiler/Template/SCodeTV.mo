@@ -486,6 +486,7 @@ package SCode
     record EQ_EQUALS
       Absyn.Exp expLeft;
       Absyn.Exp expRight;
+      Option<ComponentRef> domainOpt;
       Comment comment;
       SourceInfo info;
     end EQ_EQUALS;

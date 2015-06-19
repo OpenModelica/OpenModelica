@@ -2494,6 +2494,7 @@ uniontype EEquation
   record EQ_EQUALS "the equality equation"
     Absyn.Exp expLeft  "the expression on the left side of the operator";
     Absyn.Exp expRight "the expression on the right side of the operator";
+    Option<ComponentRef> domainOpt;
     Option<Comment> comment;
     builtin.SourceInfo info;
   end EQ_EQUALS;

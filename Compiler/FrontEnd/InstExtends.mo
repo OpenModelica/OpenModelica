@@ -1230,11 +1230,17 @@ algorithm
         (cache,eqll) = fixListList(cache,env,eqll,ht,fixEEquation);
         (cache,eql) = fixList(cache,env,eql,ht,fixEEquation);
       then (cache,SCode.EQ_IF(expl,eqll,eql,comment,info));
-    case (cache,env,SCode.EQ_EQUALS(exp1,exp2,comment,info),ht)
+    case (cache,env,SCode.EQ_EQUALS(exp1,exp2,NONE(),comment,info),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,SCode.EQ_EQUALS(exp1,exp2,comment,info));
+      then (cache,SCode.EQ_EQUALS(exp1,exp2,NONE(),comment,info));
+    case (cache,env,SCode.EQ_EQUALS(exp1,exp2,SOME(cref),comment,info),ht)
+      equation
+        (cache,exp1) = fixExp(cache,env,exp1,ht);
+        (cache,exp2) = fixExp(cache,env,exp2,ht);
+        (cache,cref) = fixCref(cache,env,cref,ht);
+      then (cache,SCode.EQ_EQUALS(exp1,exp2,SOME(cref),comment,info));
     case (cache,env,SCode.EQ_CONNECT(cref1,cref2,comment,info),ht)
       equation
         (cache,cref1) = fixCref(cache,env,cref1,ht);

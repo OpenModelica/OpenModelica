@@ -270,6 +270,7 @@ uniontype EEquation
   record EQ_EQUALS "the equality equation"
     Absyn.Exp expLeft  "the expression on the left side of the operator";
     Absyn.Exp expRight "the expression on the right side of the operator";
+    Option<Absyn.ComponentRef> domainOpt "domain for PDEs" ;
     Comment comment;
     SourceInfo info;
   end EQ_EQUALS;
@@ -1460,10 +1461,18 @@ algorithm
       then
         true;
 
-    case(EQ_EQUALS(expLeft = e11, expRight = e12),EQ_EQUALS(expLeft = e21, expRight = e22))
+    case(EQ_EQUALS(expLeft = e11, expRight = e12, domainOpt = NONE()),EQ_EQUALS(expLeft = e21, expRight = e22, domainOpt = NONE()))
       equation
         true = Absyn.expEqual(e11,e21);
         true = Absyn.expEqual(e12,e22);
+      then
+        true;
+
+    case(EQ_EQUALS(expLeft = e11, expRight = e12, domainOpt = SOME(cr1)),EQ_EQUALS(expLeft = e21, expRight = e22, domainOpt = SOME(cr2)))
+      equation
+        true = Absyn.expEqual(e11,e21);
+        true = Absyn.expEqual(e12,e22);
+        true = Absyn.crefEqual(cr1,cr2);
       then
         true;
 
@@ -2557,6 +2566,7 @@ algorithm
       SourceInfo info;
       Absyn.ComponentRef cr1, cr2;
       Ident index;
+      Option<Absyn.ComponentRef> domainOpt;
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), traverser, arg)
       equation
@@ -2564,12 +2574,12 @@ algorithm
       then
         (EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
-    case (EQ_EQUALS(e1, e2, comment, info), traverser, arg)
+    case (EQ_EQUALS(e1, e2, domainOpt, comment, info), traverser, arg)
       equation
         (e1, arg) = traverser(e1, arg);
         (e2, arg) = traverser(e2, arg);
       then
-        (EQ_EQUALS(e1, e2, comment, info), arg);
+        (EQ_EQUALS(e1, e2, domainOpt, comment, info), arg);
 
     case (EQ_CONNECT(cr1, cr2, comment, info), _, _)
       equation
