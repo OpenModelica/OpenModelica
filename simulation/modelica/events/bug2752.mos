@@ -63,15 +63,15 @@ val(y[3], 4.0);
 // "Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 // "
 // 4.0
-// 2.0
+// 4.0
 // 6.0
-// 3.0
+// 6.0
+// 8.0
 // 8.0
 // 4.0
 // 4.0
-// 2.0
 // 6.0
-// 3.0
+// 6.0
 // 8.0
-// 4.0
+// 8.0
 // endResult
