@@ -4124,6 +4124,127 @@ algorithm
   outDAE := BackendDAE.DAE(osystlst, oshared);
 end addedScaledVarsWork;
 
+// =============================================================================
+// section for sortEqnsVars
+//
+// author: Vitalij Ruge
+// =============================================================================
+
+public function sortEqnsVars
+  input BackendDAE.BackendDAE iDAE;
+  output BackendDAE.BackendDAE oDAE;
+algorithm
+  oDAE := if true then sortEqnsVarsWork(iDAE) else iDAE;
+end sortEqnsVars;
+
+protected function sortEqnsVarsWork
+  input BackendDAE.BackendDAE iDAE;
+  output BackendDAE.BackendDAE oDAE = iDAE;
+protected
+  list<BackendDAE.EqSystem> systlst, new_systlst = {};
+  BackendDAE.Shared shared;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mT;
+  Integer ne,nv;
+  array<Integer> w_vars, w_eqns;
+  DAE.FunctionTree functionTree;
+  array<Option<BackendDAE.Var>> varOptArr;
+  array<Option<BackendDAE.Equation>> equOptArr;
+  list<tuple<Integer,Integer>> tplIndexWeight;
+  list<Integer> indexs;
+  list<BackendDAE.Var> var_lst;
+  list<BackendDAE.Equation> eqn_lst;
+algorithm
+  //BackendDump.bltdump("START:", oDAE);
+  BackendDAE.DAE(systlst, shared) := iDAE;
+  BackendDAE.SHARED(functionTree=functionTree) := shared;
+  for syst in systlst loop
+    BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind) := syst;
+    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(functionTree));
+
+    BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr = varOptArr, numberOfElements = nv)) := vars;
+    BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr, numberOfElement = ne) := eqns;
+
+    //init weights
+    w_vars := arrayCreate(nv, -1);
+    w_eqns := arrayCreate(ne, -1);
+
+    //weights vars, TODO: improve me!
+    sortEqnsVarsWeights(w_vars, nv, mT);
+    //weights eqns, TODO: improve me!
+    sortEqnsVarsWeights(w_eqns, ne, m);
+
+    //sort vars
+    tplIndexWeight := list( (i, w_vars[i]) for i in 1:nv);
+    //sorted vars
+    tplIndexWeight := List.sort(tplIndexWeight, compWeightsVars);
+    //new order vars indexs
+    indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
+    var_lst := list(BackendVariable.getVarAt(vars, i) for i in indexs);
+    // new vars
+    vars := BackendVariable.listVar1(var_lst);
+
+    //sort eqns
+    tplIndexWeight := list((i, w_eqns[i]) for i in 1:ne);
+    //sorted eqns
+    tplIndexWeight := List.sort(tplIndexWeight, compWeightsEqns);
+    //new order eqns indexs
+    indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
+    eqn_lst := list(BackendEquation.equationNth1(eqns, i) for i in indexs);
+    //new eqns
+    eqns := BackendEquation.listEquation(eqn_lst);
+
+    new_systlst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) :: new_systlst;
+  end for; //syst
+
+  oDAE:= BackendDAE.DAE(new_systlst, shared);
+  //BackendDump.bltdump("ENDE:", oDAE);
+end sortEqnsVarsWork;
+
+protected function sortEqnsVarsWorkTpl
+  input list<tuple<Integer,Integer>> tplIndexWeight;
+  output list<Integer> outIndexs;
+algorithm
+  outIndexs := list(Util.tuple21(elem) for elem in tplIndexWeight);
+end sortEqnsVarsWorkTpl;
+
+protected function sortEqnsVarsWeights
+  input array<Integer> inW;
+  input Integer n;
+  input BackendDAE.IncidenceMatrix m;
+  output array<Integer> outW = inW;
+protected
+  Integer i;
+algorithm
+  for i in 1:n loop
+    try
+      outW[i] := listLength(m[i]);
+    else
+      outW[i] := -1;
+    end try;
+  end for;
+end sortEqnsVarsWeights;
+
+protected function compWeightsVars
+  input tuple<Integer,Integer> inTpl1;
+  input tuple<Integer,Integer> inTpl2;
+  output Boolean b;
+algorithm
+  b := Util.tuple22(inTpl1) < Util.tuple22(inTpl2);
+end compWeightsVars;
+
+protected function compWeightsEqns
+  input tuple<Integer,Integer> inTpl1;
+  input tuple<Integer,Integer> inTpl2;
+  output Boolean b;
+algorithm
+  b := Util.tuple22(inTpl1) > Util.tuple22(inTpl2);
+end compWeightsEqns;
+
 
 // =============================================================================
 // section for symEuler

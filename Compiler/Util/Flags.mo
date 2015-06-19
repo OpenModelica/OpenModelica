@@ -664,7 +664,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "comSubExp",
     // "addInitialStmtsToAlgorithms",
     "resolveLoops",
-    "evalFunc"
+    "evalFunc",
+    "sortEqnsVars"
     }),
   SOME(STRING_DESC_OPTION({
     ("CSE_EachCall", Util.gettext("Common Function Call Elimination")),
