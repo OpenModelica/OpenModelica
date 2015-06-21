@@ -618,6 +618,7 @@ AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
 ])
 FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 
+AC_SUBST(CMAKE_LDFLAGS)
 if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
@@ -646,6 +647,7 @@ if test "$DARWIN" = "1"; then
   AR_SH="sh -x ar.sh"
   OMC_LIBS="$(OMC_LIBS) -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
+  CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
 elif test "$host" = "i586-pc-mingw32msvc"; then
   APP=".exe"
   EXE=".exe"
