@@ -7335,68 +7335,60 @@ algorithm
 end preCalculateStartValues;
 
 protected function preCalculateStartValues1"try to solve the start equation for a var and set the resulting start value for it."
-  input list<Integer> eqIdcs; // to be analyzed
+  input list<Integer> eqIndexes; // to be analyzed
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrix mT;
   input array<Integer> varMap;
   input BackendDAE.EquationArray eqs;
   input BackendDAE.Variables varsIn;
-  output BackendDAE.Variables varsOut;
+  output BackendDAE.Variables varArr = varsIn;
+protected
+  Integer eqIdx, varIdx, varIdx0;
+  list<Integer> rest, newEqIdcs;
+  list<list<Integer>> mEntries;
+  BackendDAE.Equation eq;
+  BackendDAE.EquationArray eqArr;
+  BackendDAE.Var var;
+  list<BackendDAE.Equation> eqLst;
+  DAE.ComponentRef cref;
+  DAE.Exp lhs,rhs;
 algorithm
-  varsOut := matchcontinue(eqIdcs,m,mT,varMap,eqs,varsIn)
-  local
-    Integer eqIdx,varIdx, varIdx0;
-    list<Integer> rest, newEqIdcs, newVarIdcs;
-    list<list<Integer>> mEntries;
-    BackendDAE.Equation eq;
-    BackendDAE.EquationArray eqArr;
-    BackendDAE.Var var;
-    BackendDAE.Variables varArr;
-    list<BackendDAE.Equation> eqLst;
-    DAE.ComponentRef cref;
-    DAE.Exp lhs,rhs;
-  case({},_,_,_,_,_)
-    equation
-   then varsIn;
-  case(eqIdx::rest,_,_,_,_,_)
-    equation
-      {varIdx0} = arrayGet(m,eqIdx);
-      varIdx = arrayGet(varMap,intAbs(varIdx0));
-      var = BackendVariable.getVarAt(varsIn,varIdx);
-      cref = BackendVariable.varCref(var);
-      eq = BackendEquation.equationNth1(eqs,eqIdx);
-        //print("solve eq("+intString(eqIdx)+"): ");
-        //BackendDump.printEquationList({eq});
-        //print(" for var("+intString(varIdx0)+"): "+ComponentReference.printComponentRefStr(cref)+"\n");
-      rhs = BackendEquation.getEquationRHS(eq);
-      lhs = BackendEquation.getEquationLHS(eq);
-      (rhs,{}) = ExpressionSolve.solve(lhs,rhs,Expression.crefExp(cref));
-      true = Expression.isScalarConst(rhs); // if this equation solves a variable, set this as a start value
-      var = BackendVariable.setVarStartValue(var,rhs);
-      varArr = BackendVariable.setVarAt(varsIn,varIdx,var);
+  rest := eqIndexes;
+  while not listEmpty(rest) loop
+    eqIdx::rest := rest;
+    try
+      {varIdx0} := arrayGet(m,eqIdx);
+      varIdx := arrayGet(varMap,intAbs(varIdx0));
+      var := BackendVariable.getVarAt(varArr,varIdx);
+      cref := BackendVariable.varCref(var);
+      eq := BackendEquation.equationNth1(eqs,eqIdx);
+      //print("solve eq("+intString(eqIdx)+"): ");
+      //BackendDump.printEquationList({eq});
+      //print(" for var("+intString(varIdx0)+"): "+ComponentReference.printComponentRefStr(cref)+"\n");
+      rhs := BackendEquation.getEquationRHS(eq);
+      lhs := BackendEquation.getEquationLHS(eq);
+      (rhs, {}) := ExpressionSolve.solve(lhs,rhs,Expression.crefExp(cref));
+      true := Expression.isScalarConst(rhs); // if this equation solves a variable, set this as a start value
+      var := BackendVariable.setVarStartValue(var,rhs);
+      // Side-effect here. What if the rest fails?
+      varArr := BackendVariable.setVarAt(varArr,varIdx,var);
 
       //check these equations again
-      newEqIdcs = arrayGet(mT,varIdx0);
-      newEqIdcs = List.deleteMember(newEqIdcs,eqIdx);
-      rest = listAppend(rest,newEqIdcs);
-        //print("check these equations again: "+stringDelimitList(List.map(newEqIdcs,intString),", ")+"\n");
+      newEqIdcs := arrayGet(mT,varIdx0);
+      newEqIdcs := List.deleteMember(newEqIdcs,eqIdx);
+      rest := listAppend(rest,newEqIdcs); // Appending to the end of the list is slow :(
+      //print("check these equations again: "+stringDelimitList(List.map(newEqIdcs,intString),", ")+"\n");
       // replace the var with the new start value in these equations
-      eqLst = List.map1r(newEqIdcs,BackendEquation.equationNth1,eqs);
-      (eqLst,_) = BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,varArr);
-      eqArr = List.threadFold(newEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
+      eqLst := List.map1r(newEqIdcs,BackendEquation.equationNth1,eqs);
+      (eqLst,_) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,varArr);
+      eqArr := List.threadFold(newEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
       // update the incidenceMatrix m and remove the idcs for the calculated var
-      mEntries = List.map1(newEqIdcs,Array.getIndexFirst,m);
-      mEntries = List.map1(mEntries,List.deleteMember,varIdx0);
+      mEntries := List.map1(newEqIdcs,Array.getIndexFirst,m);
+      mEntries := List.map1(mEntries,List.deleteMember,varIdx0);
       List.threadMap1_0(newEqIdcs,mEntries,Array.updateIndexFirst,m);
-      varArr = preCalculateStartValues1(rest,m,mT,varMap,eqArr,varArr);
-    then
-      varArr;
-  case(_::rest,_,_,_,_,_)
-    equation
-       varArr = preCalculateStartValues1(rest,m,mT,varMap,eqs,varsIn);
-      then
-        varArr;
-  end matchcontinue;
+    else
+    end try;
+  end while;
 end preCalculateStartValues1;
 
 protected function replaceCrefWithStartValue"replaces a cref with its constant start value.
