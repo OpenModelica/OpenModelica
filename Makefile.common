@@ -411,7 +411,6 @@ git-clean:
 
 git-sanity-check: git-clean
 	test "./Compiler/boot/bootstrap-sources.tar.xz" = `find . -type f -size +684k | grep -v 3rdParty`
-	git rev-list origin/master..HEAD | grep -q ^
 	for commit in `git rev-list origin/master..HEAD`; do \
 	  (! git ls-tree --name-only -r $$commit | egrep "(.*[.](html|png|svg|o|so|la|stamp|a|dll|exe|cab|lnk|msi|log|class|jar|pyc|db|zip|DS_Store|pdf|tex|md5|dep)$$)|SimulationRuntime/cpp/Doc" || exit 1) \
 	done
