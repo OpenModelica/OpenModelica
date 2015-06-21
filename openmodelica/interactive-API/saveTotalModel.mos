@@ -3098,8 +3098,6 @@ readFile("BranchingDynamicPipes.mo");
 //             algorithm
 //               y := if singleState then h_T(x) else h_pT(p, x);
 //             end f_nonlinear;
-//
-//             redeclare function extends solve  end solve;
 //           end Internal;
 //         algorithm
 //           T := Internal.solve(h, T_min, T_max, p, {1}, Internal.f_nonlinear_Data());
@@ -3124,8 +3122,6 @@ readFile("BranchingDynamicPipes.mo");
 //             algorithm
 //               y := s_T(x);
 //             end f_nonlinear;
-//
-//             redeclare function extends solve  end solve;
 //           end Internal;
 //         algorithm
 //           T := Internal.solve(s, T_min, T_max, p, {1}, Internal.f_nonlinear_Data());
