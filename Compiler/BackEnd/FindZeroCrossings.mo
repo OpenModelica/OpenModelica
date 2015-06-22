@@ -236,8 +236,7 @@ algorithm
   end match;
 end encapsulateWhenConditions_WhenClause;
 
-protected function encapsulateWhenConditions_EqSystem "author: lochel
-  This is a helper function for encapsulateWhenConditions."
+protected function encapsulateWhenConditions_EqSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input Integer inIndex;
   input HashTableExpToIndex.HashTable inHT;
@@ -262,8 +261,7 @@ algorithm
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end encapsulateWhenConditions_EqSystem;
 
-protected function encapsulateWhenConditions_Equation "author: lochel
-  This is a helper function for encapsulateWhenConditions_EqSystem."
+protected function encapsulateWhenConditions_Equation "author: lochel"
   input BackendDAE.Equation inEq;
   input tuple<BackendDAE.EquationArray, list<BackendDAE.Var>, list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> inTpl;
   output BackendDAE.Equation outEq;
@@ -332,8 +330,7 @@ algorithm
   end match;
 end encapsulateWhenConditions_Equation;
 
-protected function encapsulateWhenConditions_Equations "author: lochel
-  This is a helper function for encapsulateWhenConditions_Equation."
+protected function encapsulateWhenConditions_Equations "author: lochel"
   input BackendDAE.WhenEquation inWhenEquation;
   input DAE.ElementSource inSource;
   input Integer inIndex;
@@ -378,8 +375,7 @@ algorithm
   end matchcontinue;
 end encapsulateWhenConditions_Equations;
 
-protected function encapsulateWhenConditions_Equations1 "author: lochel
-  This is a helper function for encapsulateWhenConditions_Equations."
+protected function encapsulateWhenConditions_Equations1 "author: lochel"
   input DAE.Exp inCondition;
   input DAE.ElementSource inSource;
   input Integer inIndex;
@@ -442,8 +438,7 @@ algorithm
   end matchcontinue;
 end encapsulateWhenConditions_Equations1;
 
-protected function encapsulateWhenConditions_EquationsWithArrayConditions "author: lochel
-  This is a helper function for encapsulateWhenConditions_Equations1."
+protected function encapsulateWhenConditions_EquationsWithArrayConditions "author: lochel"
   input list<DAE.Exp> inConditionList;
   input DAE.ElementSource inSource;
   input Integer inIndex;
@@ -481,8 +476,7 @@ algorithm
   end matchcontinue;
 end encapsulateWhenConditions_EquationsWithArrayConditions;
 
-protected function encapsulateWhenConditions_Algorithms "author: lochel
-  This is a helper function for encapsulateWhenConditions_Equation."
+protected function encapsulateWhenConditions_Algorithms "author: lochel"
   input list<DAE.Statement> inStmts;
   input list<BackendDAE.Var> inVars;
   input Integer inIndex;
@@ -573,8 +567,7 @@ algorithm
   end matchcontinue;
 end encapsulateWhenConditions_Algorithms;
 
-protected function encapsulateWhenConditions_Algorithms1 "author: lochel
-  This is a helper function for encapsulateWhenConditions_Equations."
+protected function encapsulateWhenConditions_Algorithms1 "author: lochel"
   input DAE.Exp inCondition;
   input DAE.ElementSource inSource;
   input Integer inIndex;
@@ -636,8 +629,7 @@ algorithm
   end matchcontinue;
 end encapsulateWhenConditions_Algorithms1;
 
-protected function encapsulateWhenConditions_AlgorithmsWithArrayConditions "author: lochel
-  This is a helper function for encapsulateWhenConditions_Algorithms1."
+protected function encapsulateWhenConditions_AlgorithmsWithArrayConditions "author: lochel"
   input list<DAE.Exp> inConditionList;
   input DAE.ElementSource inSource;
   input Integer inIndex;
@@ -999,9 +991,8 @@ algorithm
   (eres, ((outZeroCrossings, outrelationsinZC, outSamplesLst, outCountRelations, outCountMathFunctions), _)) := Expression.traverseExpTopDown(e, collectZC, ((inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions), (counteq, countwc, vars, knvars)));
 end findZeroCrossings3;
 
-protected function collectZC "author: unknown
-  modified: 2011-01 by wbraun
-  Collects zero crossings in equations"
+protected function collectZC
+  "Collects zero crossings in equations"
   input DAE.Exp inExp;
   input tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, Integer, BackendDAE.Variables, BackendDAE.Variables>> inTpl;
   output DAE.Exp outExp;
@@ -1209,9 +1200,8 @@ algorithm
   end matchcontinue;
 end collectZC;
 
-protected function collectZCAlgsFor "Collects zero crossings in for loops
-  added: 2011-01 by wbraun
-  lochel: merged this with function collectZCAlgs"
+protected function collectZCAlgsFor
+  "Collects zero crossings in for loops"
   input DAE.Exp inExp;
   input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> inTpl;
   output DAE.Exp outExp;
@@ -1505,8 +1495,7 @@ algorithm
   end matchcontinue;
 end collectZCAlgsFor;
 
-protected function replaceIteratorWithStaticValues "
-  Helper function for collectZCAlgFor "
+protected function replaceIteratorWithStaticValues
   input DAE.Exp inExp;
   input DAE.Exp inIterator;
   input list<DAE.Exp> inExpLst;
@@ -1514,7 +1503,7 @@ protected function replaceIteratorWithStaticValues "
   output list<DAE.Exp> outZeroCrossings;
   output Integer outIndex;
 algorithm
-  (outZeroCrossings, outIndex) := matchcontinue(inExp, inExpLst)
+  (outZeroCrossings, outIndex) := match(inExp, inExpLst)
     local
       DAE.Exp e, e1, e2, res1, e_1;
       DAE.Operator op;
@@ -1548,11 +1537,10 @@ algorithm
     else equation
       Error.addInternalError("function replaceIteratorWithStaticValues failed", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end replaceIteratorWithStaticValues;
 
-protected function zcIndex "
-  "
+protected function zcIndex
   input DAE.Exp inRelation;
   input Integer inIndex;
   input list<BackendDAE.ZeroCrossing> inZeroCrossings;
@@ -1604,7 +1592,7 @@ protected function mergeZeroCrossings "
   output list<BackendDAE.ZeroCrossing> outZeroCrossingLst;
 algorithm
   //BackendDump.dumpZeroCrossingList(inZeroCrossingLst, "mergeZeroCrossings input:");
-  outZeroCrossingLst := matchcontinue (inZeroCrossingLst)
+  outZeroCrossingLst := match (inZeroCrossingLst)
     local
       BackendDAE.ZeroCrossing zc, same_1;
       list<BackendDAE.ZeroCrossing> samezc, diff, res, xs;
@@ -1617,37 +1605,25 @@ algorithm
       same_1 = List.fold(samezc, mergeZeroCrossing, zc);
       res = mergeZeroCrossings(diff, same_1::inAccum);
     then res;
-
-    else equation
-      Error.addInternalError("function mergeZeroCrossings failed", sourceInfo());
-    then fail();
-  end matchcontinue;
+  end match;
 end mergeZeroCrossings;
 
 protected function mergeZeroCrossing "
   Merges two zero crossings into one by makeing the union of the lists of
-  equaions and when clauses they appear in.
-  modified: 2011-01 by wbraun
-  merge to ZeroCrosssing with the lowest index"
+  equations and when clauses they appear in."
   input BackendDAE.ZeroCrossing inZeroCrossing1;
   input BackendDAE.ZeroCrossing inZeroCrossing2;
   output BackendDAE.ZeroCrossing outZeroCrossing;
+protected
+  list<Integer> eq, wc, eq1, wc1, eq2, wc2;
+  DAE.Exp e1, e2, res;
 algorithm
-  outZeroCrossing := matchcontinue (inZeroCrossing1, inZeroCrossing2)
-    local
-      list<Integer> eq, wc, eq1, wc1, eq2, wc2;
-      DAE.Exp e1, e2, res;
-
-    case (BackendDAE.ZERO_CROSSING(relation_=e1, occurEquLst=eq1, occurWhenLst=wc1), BackendDAE.ZERO_CROSSING(relation_=e2, occurEquLst=eq2, occurWhenLst=wc2)) equation
-      res = getMinZeroCrossings(e1, e2);
-      eq = List.union(eq1, eq2);
-      wc = List.union(wc1, wc2);
-    then BackendDAE.ZERO_CROSSING(res, eq, wc);
-
-    case (BackendDAE.ZERO_CROSSING(relation_=e1), BackendDAE.ZERO_CROSSING(relation_=e2)) equation
-      Error.addInternalError("function mergeZeroCrossing failed for " + ExpressionDump.printExpStr(e1) + " and " + ExpressionDump.printExpStr(e2), sourceInfo());
-    then fail();
-  end matchcontinue;
+  BackendDAE.ZERO_CROSSING(relation_=e1, occurEquLst=eq1, occurWhenLst=wc1) := inZeroCrossing1;
+  BackendDAE.ZERO_CROSSING(relation_=e2, occurEquLst=eq2, occurWhenLst=wc2) := inZeroCrossing2;
+  res := getMinZeroCrossings(e1, e2);
+  eq := List.union(eq1, eq2);
+  wc := List.union(wc1, wc2);
+  outZeroCrossing := BackendDAE.ZERO_CROSSING(res, eq, wc);
 end mergeZeroCrossing;
 
 protected function getMinZeroCrossings "
@@ -1656,7 +1632,7 @@ protected function getMinZeroCrossings "
   input DAE.Exp inZCexp2;
   output DAE.Exp outMinZC;
 algorithm
-  outMinZC := matchcontinue (inZCexp1, inZCexp2)
+  outMinZC := match (inZCexp1, inZCexp2)
     local
       DAE.Exp e1, e2, e3, e4, res, res2;
       DAE.Operator op;
@@ -1684,7 +1660,7 @@ algorithm
     else equation
       Error.addInternalError("function getMinZeroCrossings failed for {" + ExpressionDump.printExpStr(inZCexp1) + "} and {" + ExpressionDump.printExpStr(inZCexp2) + "}", sourceInfo());
     then fail();
-  end matchcontinue;
+  end match;
 end getMinZeroCrossings;
 
 protected function zcEqual "
