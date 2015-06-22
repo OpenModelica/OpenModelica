@@ -3924,11 +3924,11 @@ protected
   list<Integer> unassigned,assigned;
 algorithm
   vars := BackendVariable.listVar1(inVarLst);
-  (eqnslst,_) := InlineArrayEquations.getScalarArrayEqns(inEqnsLst);
+  (eqnslst, _) := InlineArrayEquations.getScalarArrayEqns(inEqnsLst);
   eqns := BackendEquation.listEquation(eqnslst);
-  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-  (me,_,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared,false);
-  m := incidenceMatrixfromEnhanced2(me,vars);
+  syst := BackendDAEUtil.createEqSystem(vars, eqns);
+  (me, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared, false);
+  m := incidenceMatrixfromEnhanced2(me, vars);
   // match the equations, umatched are constrained equations
   nv := BackendVariable.varsSize(vars);
   ne := BackendDAEUtil.equationSize(eqns);

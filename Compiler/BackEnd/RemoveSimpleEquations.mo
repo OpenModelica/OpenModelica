@@ -260,11 +260,6 @@ protected
 
   BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
   BackendDAE.EquationArray orderedEqs "ordered Equations";
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets "the statesets of the system";
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   try
     binding := BackendVariable.varBindExp(inVar);
@@ -275,11 +270,11 @@ algorithm
     var := BackendVariable.setVarFixed(var, false) "??? should we do this ???";
     eqn := BackendDAE.EQUATION(BackendVariable.varExp(var), binding, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
     for eq in eqs loop
-      BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) := eq;
+      BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := eq;
       if BackendVariable.existsVar(rightCref, orderedVars, false) then
         orderedVars := BackendVariable.addVar(var, orderedVars);
         orderedEqs := BackendEquation.addEquation(eqn, orderedEqs);
-        eqs1 := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind)::eqs1;
+        eqs1 := BackendDAEUtil.setEqSystEqs(BackendDAEUtil.setEqSystVars(eq, orderedVars), orderedEqs)::eqs1;
         false := done;
         done := true;
       else
@@ -289,7 +284,8 @@ algorithm
 
     // if no partition was selected, create a new one
     if not done then
-      eqs1 := BackendDAE.EQSYSTEM(BackendVariable.listVar({var}), BackendEquation.listEquation({eqn}), NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNSPECIFIED_PARTITION())::eqs1;
+      eqs1 := BackendDAEUtil.createEqSystem( BackendVariable.listVar({var}), BackendEquation.listEquation({eqn}),
+                                         {}, BackendDAE.UNSPECIFIED_PARTITION() )::eqs1;
     end if;
     outDAE := BackendDAE.DAE(listReverse(eqs1), shared);
     //BackendDump.dumpVarList({inVar}, "fixAliasVarsCausal2 done for ...");
@@ -372,7 +368,7 @@ protected
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   try
-    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets,partitionKind=partitionKind) := outSystem;
+    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := outSystem;
     ((repl, globalFindSimple, unReplaceable, traversals)) := inTpl;
     // transform to list, this is later not neccesary because the acausal system should save the equations as list
     eqnslst := BackendEquation.equationList(eqns);
@@ -403,7 +399,8 @@ protected function causalFinder "author: Frenkel TUD 2012-12"
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean globalFoundSimple;
-  output tuple<Integer, BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean> oTpl;
+  output tuple< Integer, BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements,
+                HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean > oTpl;
 protected
   BackendDAE.Variables vars;
   BackendVarTransform.VariableReplacements repl;
@@ -3499,7 +3496,7 @@ algorithm
         // replace unoptimized equations with optimized
         eqns = BackendEquation.listEquation(listReverse(iEqnslst));
       then
-        BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, inPartitionKind);
+        BackendDAEUtil.createEqSystem(vars, eqns, stateSets, inPartitionKind);
   end match;
 end updateSystem;
 
@@ -3727,7 +3724,7 @@ algorithm
         eqnslst = if b then listReverse(eqnslst) else eqnslst;
         eqns = if b then BackendEquation.listEquation(eqnslst) else eqns;
         (stateSets, b1, statesetrepl1) = removeAliasVarsStateSets(stateSets, statesetrepl, v, aliasVars, {}, false);
-        syst = if b or b1 then BackendDAE.EQSYSTEM(v, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else syst;
+        syst = if b or b1 then BackendDAEUtil.createEqSystem(v, eqns, stateSets, partitionKind) else syst;
       then
         removeSimpleEquationsShared1(rest, syst::inSysts1, repl, statesetrepl1, aliasVars);
     end match;
@@ -5057,33 +5054,14 @@ values of the alias variables.
   output BackendDAE.Shared outShared = inShared;
 protected
   BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-
-  BackendDAE.Variables knvars, exobj;
   BackendDAE.Variables aliasVars;
-  BackendDAE.EquationArray remeqns, inieqns;
-  list<DAE.Constraint> constraintsLst;
-  list<DAE.ClassAttributes> clsAttrsLst;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree funcTree;
-  BackendDAE.ExternalObjectClasses eoc;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.BackendDAEType btp;
-  BackendDAE.ExtraInfo ei;
-  BackendDAE.EventInfo eventInfo;
 
   HashTableCrToCrEqLst.HashTable HTAliasLst;
   list<tuple<DAE.ComponentRef,list<tuple<DAE.ComponentRef,BackendDAE.Equation>>>> tplAliasLst;
   Integer size;
 algorithm
-   BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets,partitionKind):= inSystem;
-   BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei) := inShared;
+   BackendDAE.EQSYSTEM(orderedVars=orderedVars):= inSystem;
+   BackendDAE.SHARED(aliasVars=aliasVars) := inShared;
 
    size := BackendVariable.varsSize(orderedVars);
    size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
@@ -5093,8 +5071,7 @@ algorithm
    (tplAliasLst) := BaseHashTable.hashTableList(HTAliasLst);
    orderedVars := setAttributes(tplAliasLst, orderedVars, aliasVars);
 
-   outShared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei);
-   outSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind);
+   outSystem := BackendDAEUtil.setEqSystVars(inSystem, orderedVars);
 end getAliasAttributes;
 
 protected function setAttributes "BB

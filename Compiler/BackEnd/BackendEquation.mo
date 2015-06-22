@@ -1266,16 +1266,11 @@ public function equationAddDAE "author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
 protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs, newOrderedEqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EquationArray eqs;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, _, stateSets, partitionKind) := inEqSystem;
-  newOrderedEqs := addEquation(inEquation, orderedEqs);
-  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, newOrderedEqs, m, mT, BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+  BackendDAE.EQSYSTEM(orderedEqs=eqs) := inEqSystem;
+  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, addEquation(inEquation, eqs));
+  outEqSystem := BackendDAEUtil.setEqSystMatching(outEqSystem, BackendDAE.NO_MATCHING());
 end equationAddDAE;
 
 public function equationsAddDAE "author: Frenkel TUD 2011-05"
@@ -1283,16 +1278,11 @@ public function equationsAddDAE "author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
 protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs, newOrderedEqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EquationArray eqs;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, _, stateSets, partitionKind) := inEqSystem;
-  newOrderedEqs := List.fold(inEquations, addEquation, orderedEqs);
-  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, newOrderedEqs, m, mT, BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+  BackendDAE.EQSYSTEM(orderedEqs=eqs) := inEqSystem;
+  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, List.fold(inEquations, addEquation, eqs));
+  outEqSystem := BackendDAEUtil.setEqSystMatching(outEqSystem, BackendDAE.NO_MATCHING());
 end equationsAddDAE;
 
 public function requationsAddDAE "author: Frenkel TUD 2012-10
@@ -1304,57 +1294,27 @@ public function requationsAddDAE "author: Frenkel TUD 2012-10
 algorithm
   outShared := match (inEquations, inShared)
     local
-      BackendDAE.Variables knvars, exobj, aliasVars;
-      BackendDAE.EquationArray remeqns, inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph env;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
-
+      BackendDAE.EquationArray eqs;
     case ({}, _)
-    then inShared;
-
-    case (_, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)) equation
-      remeqns = List.fold(inEquations, addEquation, remeqns);
-    then BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei);
+      then inShared;
+    case (_, BackendDAE.SHARED(removedEqs=eqs)) equation
+      then BackendDAEUtil.setSharedRemovedEqns(inShared, List.fold(inEquations, addEquation, eqs));
   end match;
 end requationsAddDAE;
 
-public function removeRemovedEqs
-"
-remove removedEqs
-"
+public function removeRemovedEqs "remove removedEqs"
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 protected
-      BackendDAE.Variables knvars, exobj, aliasVars;
-      BackendDAE.EquationArray remeqns, inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph env;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
-      Integer n;
+  BackendDAE.EquationArray eqs;
+  Integer n;
 algorithm
-  (BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)) := inShared;
-  BackendDAE.EQUATION_ARRAY(numberOfElement=n) := remeqns;
+  BackendDAE.SHARED(removedEqs=eqs) := inShared;
+  BackendDAE.EQUATION_ARRAY(numberOfElement=n) := eqs;
   for ind in 1:n loop
-    remeqns := equationRemove(ind, remeqns);
+    eqs := equationRemove(ind, eqs);
   end for;
-
-  outShared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei);
-
+  outShared := BackendDAEUtil.setSharedRemovedEqns(inShared, eqs);
 end removeRemovedEqs;
 
 public function setAtIndex "author: lochel

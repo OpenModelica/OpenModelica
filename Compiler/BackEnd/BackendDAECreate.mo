@@ -135,11 +135,7 @@ algorithm
   ieqnarr := BackendEquation.listEquation(ieqns);
   einfo := BackendDAE.EVENT_INFO(timeEvents, whenclauses_1, {}, {}, {}, 0, arrayCreate(0, DAE.INFERRED_CLOCK()));
   symjacs := {(NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {})};
-  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,
-                                                      eqnarr,
-                                                      NONE(),
-                                                      NONE(),
-                                                      BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{},
+  outBackendDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(vars_1, eqnarr)::{},
                                   BackendDAE.SHARED(knvars,
                                                     extVars,
                                                     aliasVars,

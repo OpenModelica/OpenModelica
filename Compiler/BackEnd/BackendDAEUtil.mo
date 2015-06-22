@@ -8070,6 +8070,21 @@ algorithm
                                   inStateSets, inPartitionKind );
 end createEqSystem;
 
+public function createEmptyShared
+  input BackendDAE.BackendDAEType backendDAEType;
+  input BackendDAE.ExtraInfo ei;
+  input FCore.Cache cache;
+  input FCore.Graph graph;
+  output BackendDAE.Shared shared;
+protected
+  BackendDAE.Variables emptyVars = BackendVariable.emptyVars();
+  BackendDAE.EquationArray emptyEqs = BackendEquation.emptyEqns();
+  DAE.FunctionTree functions = DAEUtil.avlTreeNew();
+algorithm
+  shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
+                               DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei);
+end createEmptyShared;
+
 public function makeSingleEquationComp
   input Integer eqIdx;
   input Integer varIdx;
@@ -8266,6 +8281,32 @@ algorithm
                                   symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
 end setSharedInitialEqns;
 
+public function setSharedSymJacs
+  input BackendDAE.Shared inShared;
+  input BackendDAE.SymbolicJacobians symjacs;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.ExtraInfo info;
+  BackendDAE.EquationArray removedEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, initialEqs=initialEqs, info=info,
+                     removedEqs=removedEqs, eventInfo=eventInfo, aliasVars=aliasVars, functionTree=functionTree ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+end setSharedSymJacs;
+
 public function setSharedFunctionTree "replaces the aliasVars in the BackendDAE.Shared
 author:Waurich TUD 2014-11"
   input BackendDAE.Shared inShared;
@@ -8292,6 +8333,8 @@ algorithm
                                   graph=graph, functionTree=inFunctionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType, aliasVars=aliasVars,
                                   symjacs=symjacs, info=info, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
 end setSharedFunctionTree;
+
+
 
 public function setSharedEventInfo
   input BackendDAE.Shared inShared;

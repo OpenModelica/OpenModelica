@@ -507,7 +507,7 @@ protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs=eqns) := eqs;
+  BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs=eqns) := eqs;
   notZero := BackendVariable.varsSize(vars) > 0 and BackendDAEUtil.equationArraySize(eqns) > 0;
 end eqnSystemNotZero;
 
@@ -523,7 +523,7 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets = stateSets, partitionKind=partitionKind)  := eqsys;
   vars := stripCorrelationVars(vars);
   eqns := stripCorrelationEqns(eqns);
-  outEqsys := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
+  outEqsys := BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind);
 end stripCorrelationVarsAndEqns;
 
 protected function stripCorrelationEqns "help function "

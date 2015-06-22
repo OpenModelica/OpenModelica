@@ -163,30 +163,21 @@ protected function evalFunctions_main "traverses the eqSystems for function call
 protected
   Boolean changed;
   Integer sysIdx;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.IncidenceMatrix m1,m2;
   BackendDAE.Shared sharedIn, shared;
   BackendDAE.EquationArray eqs;
-  BackendDAE.Matching matching;
-  BackendDAE.Variables vars;
-  list<BackendDAE.Var> varLst;
   list<BackendDAE.Equation> eqLst, addEqs;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   (sharedIn,sysIdx,changed) := tplIn;
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := eqSysIn;
+  BackendDAE.EQSYSTEM(orderedEqs=eqs) := eqSysIn;
   eqLst := BackendEquation.equationList(eqs);
-  varLst := BackendVariable.varList(vars);
 
   //traverse the eqSystem for function calls
-  (eqLst,(shared,addEqs,_,changed)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{},1,changed));
-  eqLst := listAppend(eqLst,addEqs);
+  (eqLst, (shared, addEqs, _, changed)) := List.mapFold(eqLst, evalFunctions_findFuncs, (sharedIn, {}, 1, changed));
+  eqLst := listAppend(eqLst, addEqs);
   eqs := BackendEquation.listEquation(eqLst);
-  eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
+  eqSysOut := BackendDAEUtil.setEqSystEqs(eqSysIn, eqs);
 
-  tplOut := (shared,sysIdx+1,changed);
+  tplOut := (shared, sysIdx+1, changed);
 end evalFunctions_main;
 
 protected function evalFunctions_findFuncs "traverses the lhs and rhs exps of an equation and tries to evaluate function calls "
@@ -2974,27 +2965,23 @@ protected
   BackendDAE.Variables vars;
   list<BackendDAE.Var> states,varLst,ssVarLst;
   BackendDAE.EquationArray eqs, initEqs;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.Matching matching;
   list<DAE.ComponentRef> derVars,ssVars,derVarsInit;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := sysIn;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs) := sysIn;
   varLst := BackendVariable.varList(vars);
   initEqs := BackendEquation.getInitialEqnsFromShared(shared);
-  states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
-  ((_,derVarsInit)) := BackendDAEUtil.traverseBackendDAEExpsEqns(initEqs,Expression.traverseSubexpressionsHelper,(findDerVarCrefs,{}));
-  ((_,derVars)) := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,Expression.traverseSubexpressionsHelper,(findDerVarCrefs,derVarsInit));
+  states := List.filterOnTrue(varLst, BackendVariable.isStateorStateDerVar);
+  ((_, derVarsInit)) := BackendDAEUtil.traverseBackendDAEExpsEqns(initEqs, Expression.traverseSubexpressionsHelper, (findDerVarCrefs, {}));
+  ((_, derVars)) := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs, Expression.traverseSubexpressionsHelper, (findDerVarCrefs, derVarsInit));
     //print("derVars\n"+stringDelimitList(List.map(derVars,ComponentReference.printComponentRefStr),"\n")+"\n\n");
-  ssVarLst := List.filterOnTrue(varLst,varSSisPreferOrHigher);
+  ssVarLst := List.filterOnTrue(varLst, varSSisPreferOrHigher);
   ssVars := List.map(ssVarLst,BackendVariable.varCref);
     //print("ssVars\n"+stringDelimitList(List.map(ssVars,ComponentReference.printComponentRefStr),"\n")+"\n\n");
-  derVars := listAppend(derVars,ssVars);
+  derVars := listAppend(derVars, ssVars);
   derVars := List.unique(derVars);
-  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,derVars);
-  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
+  (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, setVarKindForStates, derVars);
+  sysOut := BackendDAEUtil.setEqSystVars(sysIn, vars);
 end updateVarKinds_eqSys;
 
 protected function varSSisPreferOrHigher "outputs true if the stateSelect attribute is prefer or always

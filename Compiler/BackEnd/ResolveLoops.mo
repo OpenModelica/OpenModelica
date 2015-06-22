@@ -113,7 +113,7 @@ algorithm
       BackendDAE.BaseClockPartitionKind partitionKind;
 
     case(_) equation
-      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,stateSets=stateSets,partitionKind=partitionKind) = inEqSys;
+      BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind) = inEqSys;
       eqLst = BackendEquation.equationList(eqs);
       varLst = BackendVariable.varList(vars);
 
@@ -174,7 +174,7 @@ algorithm
       eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
       HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+intString(inSysIdx));
 
-      eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
+      eqSys = BackendDAEUtil.createEqSystem(vars, eqs, stateSets, partitionKind);
     then (eqSys, inSysIdx+1);
 
     else (inEqSys, inSysIdx+1);
@@ -1822,27 +1822,25 @@ protected
   Integer size;
   list<list<Integer>> resEqs;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn,ass1,ass2,ass1_,ass2_,ass1Sys,ass2Sys;
+  array<Integer> mapIncRowEqn,ass1, ass2, ass1Sys, ass2Sys;
   list<tuple<Boolean,String>> varAtts,eqAtts;
   BackendDAE.EquationArray eqs,replEqs,daeEqs;
-  BackendDAE.Variables vars,daeVars;
+  BackendDAE.Variables vars, daeVars;
   BackendDAE.EqSystem subSys;
   BackendDAE.AdjacencyMatrixEnhanced me, me2, meT;
   DAE.FunctionTree funcs;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
   list<BackendDAE.Equation> eqLst,eqsInLst;
   list<BackendDAE.Var> varLst;
 algorithm
   //prepare everything
   size := listLength(varIdcs);
-  BackendDAE.EQSYSTEM(orderedVars=daeVars,orderedEqs=daeEqs,matching=BackendDAE.MATCHING(ass1=ass1Sys,ass2=ass2Sys),stateSets=stateSets,partitionKind=partitionKind) := dae;
+  BackendDAE.EQSYSTEM(orderedVars=daeVars, orderedEqs=daeEqs, matching=BackendDAE.MATCHING(ass1=ass1Sys,ass2=ass2Sys)) := dae;
   funcs := BackendDAEUtil.getFunctions(shared);
   eqLst := BackendEquation.getEqns(eqIdcs,daeEqs);
   eqs := BackendEquation.listEquation(eqLst);
   varLst := List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
   vars := BackendVariable.listVar1(varLst);
-  subSys := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  subSys := BackendDAEUtil.createEqSystem(vars, eqs);
   (me,meT,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared,false);
   ass1 := arrayCreate(size,-1);
   ass2 := arrayCreate(size,-1);
@@ -1859,13 +1857,15 @@ algorithm
   eqsInLst := reshuffling_post4_resolveAndReplace(resEqs,eqLst,varLst,me,meT);
 
   // dump system as graphML
-  //subSys := BackendDAE.EQSYSTEM(vars,replEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  //subSys := BackendDAEUtil.createEqSystem(vars, replEqs);
   //(me2,_,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared,false);
   //HpcOmEqSystems.dumpEquationSystemBipartiteGraphSolve2(vars,replEqs,me2,varAtts,eqAtts,"shuffle_post");
 
   // the new eqSystem
   daeEqs := List.threadFold(eqIdcs,eqsInLst,BackendEquation.setAtIndexFirst,daeEqs);
-  daeOut := BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.MATCHING(ass1Sys,ass2Sys,{}),stateSets,partitionKind);
+  daeOut := BackendDAEUtil.setEqSystEqs(dae, daeEqs);
+  daeOut := BackendDAEUtil.setEqSystMatching(daeOut, BackendDAE.MATCHING(ass1Sys, ass2Sys, {}));
+
   (daeOut,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs));
 
   outRunMatching := true;
@@ -2134,7 +2134,7 @@ algorithm
         vars = BackendVariable.listVar1(BackendVariable.varList(vars));
         eqns = BackendEquation.listEquation(BackendEquation.equationList(eqns));
       then
-        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
+        BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind);
     end match;
   end if;
 end solveLinearSystem1;
@@ -2167,7 +2167,9 @@ algorithm
       BackendDAE.Shared shared;
       Integer toffset;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_LINEAR())))
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), shared,
+           (BackendDAE.EQUATIONSYSTEM( eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(SOME(jac)), jacType=BackendDAE.JAC_LINEAR()))
+         )
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
@@ -2193,7 +2195,7 @@ protected function solveLinearSystem3
   output Integer offset_;
 algorithm
   (osyst,oshared, offset_):=
-  match (syst,ishared,eqn_lst,eqn_indxs,var_lst,var_indxs,jac)
+  match (syst, ishared)
     local
       BackendDAE.Variables vars,v;
       BackendDAE.EquationArray eqns, eqns1;
@@ -2208,7 +2210,8 @@ algorithm
       BackendDAE.BaseClockPartitionKind partitionKind;
       Integer n;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind), shared as BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
+    case ( BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=matching, stateSets=stateSets, partitionKind=partitionKind),
+           shared as BackendDAE.SHARED(functionTree=funcs) )
       equation
         v = BackendVariable.listVar1(var_lst);
         eqns1 = BackendEquation.listEquation(eqn_lst);
@@ -2219,7 +2222,7 @@ algorithm
         (eqns,vars, n, shared) = solveLinearSystem4(beqs, jac, names, var_lst, n, eqns, vars, offset, shared);
         //eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),matching,stateSets,partitionKind),shared,n);
+        (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), matching, stateSets, partitionKind), shared, n);
   end match;
 end solveLinearSystem3;
 

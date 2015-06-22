@@ -443,7 +443,7 @@ algorithm
       end for;
       _ := BackendVariable.daeKnVars(outShared);
        //BackendDump.printVariables(vars);
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(),NONE(),BackendDAE.NO_MATCHING(), stateSets, partitionKind), true);
+    then (BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind), true);
 
     else (isyst, inChanged);
   end matchcontinue;
@@ -596,13 +596,13 @@ algorithm
       if l2p_l then
       end if;
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
-    then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
+    then (BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind), shared);
 
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex,tearingvars=vindx),linear=linear)))
     guard l2p_all or (if l2p_l then linear else not linear)
     equation
       (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
-    then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
+    then (BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind), shared);
 
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,BackendDAE.SINGLEEQUATION(eqn=eindex_,var=vindx_))
     guard l2p_all or not l2p_l
@@ -614,7 +614,7 @@ algorithm
         BackendDAE.SHARED(functionTree = funcs) = shared;
         failure(ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE()));
         (eqns,vars,shared) = res2Con(eqns, vars, {eindex_}, {vindx_},shared);
-    then (BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), shared);
+    then (BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind), shared);
 
 
     else (isyst,ishared);
@@ -867,7 +867,7 @@ algorithm
         // remove empty entries from vars/eqns
         //vars := BackendVariable.listVar1(BackendVariable.varList(vars));
         //eqns := BackendEquation.listEquation(BackendEquation.equationList(eqns));
-        new_systlst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind) :: new_systlst;
+        new_systlst := BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind) :: new_systlst;
       else
        new_systlst := syst :: new_systlst;
       end if;

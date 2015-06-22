@@ -145,8 +145,6 @@ algorithm
       BackendDAE.Shared shared;
       DAE.ElementSource source;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> solveEqns;
       DAE.Exp e1,e2,varexp,e;
@@ -155,11 +153,9 @@ algorithm
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents comps;
       array<Integer> ass1, ass2;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
 
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind, m=m,mT=mT),shared,BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared,BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx))
       algorithm
         (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr)) := BackendEquation.equationNth1(eqns, eindex);
         (var_ as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx);
@@ -198,12 +194,12 @@ algorithm
           comps := List.replaceAt(comp, iter, comps);
           matching := BackendDAE.MATCHING(ass1, ass2, comps);
         end try;
-        eqns_ := BackendEquation.setAtIndex(eqns,eindex,eqn_);
-        syst := BackendDAE.EQSYSTEM(vars,eqns_,m,mT,matching,stateSets,partitionKind);
+        eqns_ := BackendEquation.setAtIndex(eqns, eindex, eqn_);
+        syst := BackendDAEUtil.setEqSystEqs(isyst, eqns_);
+        syst := BackendDAEUtil.setEqSystMatching(syst, matching);
+        then(syst, shared, tmpvars);
 
-        then(syst,shared,tmpvars);
-
-    else (isyst,ishared, iNewVars);
+    else (isyst, ishared, iNewVars);
   end matchcontinue;
 end findSimpleEquationWork;
 

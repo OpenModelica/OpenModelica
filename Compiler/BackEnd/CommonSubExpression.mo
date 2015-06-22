@@ -135,7 +135,7 @@ algorithm
         BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
         BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
       end if;
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
+    then (BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind), (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
 
     else (inSystem, inTpl);
   end matchcontinue;
@@ -686,7 +686,7 @@ algorithm
     varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
     vars := BackendVariable.listVar1(List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn));
     eqs := BackendEquation.listEquation(BackendEquation.getEqns(eqIdcs, eqsIn));
-    eqSys := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+    eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
     (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE());
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 2");
         //BackendDump.dumpIncidenceMatrix(m);
@@ -704,7 +704,7 @@ algorithm
     varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
     vars := BackendVariable.listVar1(List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn));
     eqs := BackendEquation.listEquation(BackendEquation.getEqns(eqIdcs, eqsIn));
-    eqSys := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+    eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
     (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE());
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 3");
         //BackendDump.dumpIncidenceMatrix(m);
@@ -876,9 +876,11 @@ algorithm
 
     // remove alias from vars
     vars = BackendVariable.deleteCrefs(deleteCrefsIn, vars);
-    eqSys = BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+    eqSys = BackendDAEUtil.createEqSystem(vars, eqs, stateSets, partitionKind);
     then (eqSys, sharedIn);
-  case(ASSIGNMENT_CSE(eqIdcs={eqIdx1, eqIdx2}, aliasVars={varIdx1, varIdx2})::rest, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind), _, _, _)
+  case ( ASSIGNMENT_CSE(eqIdcs={eqIdx1, eqIdx2}, aliasVars={varIdx1, varIdx2})::rest, _, _,
+         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind),
+         _, _, _ )
     equation
      // update the equations
      repl = BackendVarTransform.emptyReplacements();
@@ -912,7 +914,7 @@ algorithm
      var2 = BackendVariable.setBindExp(var2, SOME(varExp));
      shared = updateAllAliasVars(sharedIn, repl);
      shared = BackendVariable.addAliasVarDAE(var2, shared);
-     eqSys = BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+     eqSys = BackendDAEUtil.createEqSystem(vars, eqs, stateSets, partitionKind);
     then commonSubExpressionUpdate(rest, m, mT, eqSys, shared, eqIdxDel::deleteEqLstIn, cref::deleteCrefsIn);
  case(_::rest, _, _, _, _, _, _)
   then commonSubExpressionUpdate(rest, m, mT, sysIn, sharedIn, deleteEqLstIn, deleteCrefsIn);

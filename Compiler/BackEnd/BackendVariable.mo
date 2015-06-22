@@ -2809,47 +2809,20 @@ public function removeVarDAE
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Var outVar;
 algorithm
-  (osyst,outVar) := match (inVarPos,syst)
+  (osyst,outVar) := match syst
     local
-      BackendDAE.Var var;
-      BackendDAE.Variables ordvars,ordvars1;
-      BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets=stateSets,partitionKind=partitionKind))
-      equation
-        (ordvars1,outVar) = removeVar(inVarPos,ordvars);
-      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets,partitionKind),outVar);
+      BackendDAE.Variables vars;
+    case BackendDAE.EQSYSTEM(orderedVars=vars)
+      equation (vars, outVar) = removeVar(inVarPos, vars);
+      then (BackendDAEUtil.setEqSystVars(syst, vars), outVar);
   end match;
 end removeVarDAE;
 
-public function removeAliasVars
-"
-remove alias Vars
-"
+public function removeAliasVars "remove alias Vars"
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
-protected
-      BackendDAE.Variables knvars, exobj, aliasVars;
-      BackendDAE.EquationArray remeqns, inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph env;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
 algorithm
-  (BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)) := inShared;
-  aliasVars := emptyVars();
-  outShared := BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei);
-
+  outShared := BackendDAEUtil.setSharedAliasVars(inShared, emptyVars());
 end removeAliasVars;
 
 public function removeVar
@@ -2919,19 +2892,11 @@ public function addVarDAE
   input BackendDAE.EqSystem syst;
   output BackendDAE.EqSystem osyst;
 algorithm
-  osyst := match (inVar,syst)
+  osyst := match syst
     local
-      BackendDAE.Variables ordvars,ordvars1;
-      BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets,partitionKind))
-      equation
-        ordvars1 = addVar(inVar,ordvars);
-      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets,partitionKind);
+      BackendDAE.Variables vars;
+    case BackendDAE.EQSYSTEM(orderedVars=vars)
+      then BackendDAEUtil.setEqSystVars(syst, addVar(inVar, vars));
   end match;
 end addVarDAE;
 
@@ -2943,26 +2908,11 @@ public function addKnVarDAE
   input BackendDAE.Shared shared;
   output BackendDAE.Shared oshared;
 algorithm
-  oshared := match (inVar,shared)
+  oshared := match shared
     local
-      BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei))
-      equation
-        knvars1 = addVar(inVar,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei);
-
+      BackendDAE.Variables knvars;
+    case BackendDAE.SHARED(knownVars=knvars)
+      then BackendDAEUtil.setSharedKnVars(shared, addVar(inVar, knvars));
   end match;
 end addKnVarDAE;
 
@@ -2974,26 +2924,11 @@ public function addNewKnVarDAE
   input BackendDAE.Shared shared;
   output BackendDAE.Shared oshared;
 algorithm
-  oshared := match (inVar,shared)
+  oshared := match shared
     local
-      BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei))
-      equation
-        knvars1 = addNewVar(inVar,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei);
-
+      BackendDAE.Variables knvars;
+    case BackendDAE.SHARED(knownVars=knvars)
+      then BackendDAEUtil.setSharedKnVars(shared, addNewVar(inVar, knvars));
   end match;
 end addNewKnVarDAE;
 
@@ -3005,26 +2940,11 @@ public function addAliasVarDAE
   input BackendDAE.Shared shared;
   output BackendDAE.Shared oshared;
 algorithm
-  oshared := match (inVar,shared)
+  oshared := match shared
     local
-      BackendDAE.Variables knvars,exobj,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei))
-      equation
-        aliasVars = addVar(inVar,aliasVars);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei);
-
+      BackendDAE.Variables aliasVars;
+    case BackendDAE.SHARED(aliasVars=aliasVars)
+      then BackendDAEUtil.setSharedAliasVars(shared, addVar(inVar, aliasVars));
   end match;
 end addAliasVarDAE;
 
@@ -3036,26 +2956,11 @@ public function addNewAliasVarDAE
   input BackendDAE.Shared shared;
   output BackendDAE.Shared oshared;
 algorithm
-  oshared := match (inVar,shared)
+  oshared := match shared
     local
-      BackendDAE.Variables knvars,exobj,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei))
-      equation
-        aliasVars = addNewVar(inVar,aliasVars);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei);
-
+      BackendDAE.Variables aliasVars;
+    case BackendDAE.SHARED(aliasVars=aliasVars)
+      then BackendDAEUtil.setSharedAliasVars(shared, addNewVar(inVar, aliasVars));
   end match;
 end addNewAliasVarDAE;
 
