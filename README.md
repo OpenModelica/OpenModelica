@@ -51,7 +51,7 @@ In order to push to the repository, you will push to your own fork of OMCompiler
 
 ### How to contribute to the OpenModelica Compiler
 
-See [OMCompiler.git](https://github.com/OpenModelica/OMCompiler/blob/master/README.md#how-to-contribute-to-the-openmodelica-compiler).
+See [CONTRIBUTING.md](https://github.com/OpenModelica/OpenModelica/blob/master/CONTRIBUTING.md).
 
 ### To checkout a minimal version of OpenModelica
 ```bash
