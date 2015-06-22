@@ -46,7 +46,7 @@
 // build MODEL_CLASS from MODEL_IDENTIFIER
 #define FMU2_PASTER(a, b) a ## b
 #define FMU2_CONCAT(a, b) FMU2_PASTER(a, b)
-#define MODEL_CLASS FMU2_CONCAT(MODEL_IDENTIFIER, FMU)
+#define MODEL_CLASS FMU2_CONCAT(MODEL_IDENTIFIER_SHORT, FMU)
 
 // define logger as macro that passes through variadic args
 #define FMU2_LOG(w, status, category, ...) \
