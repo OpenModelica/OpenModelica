@@ -40,15 +40,6 @@ OpenModelica.git is a superproject. Clone the project using one of:
 # The default choice is to push to your fork on github.com (SSH). Replace MY_FORK with OpenModelica to push directly to the OpenModelica repositories (if you have access)
 MY_FORK=MyName ; git clone https://openmodelica.org/git-readonly/OpenModelica.git --recursive && (cd OpenModelica && git remote set-url --push origin git@github.com:$MY_FORK/OpenModelica.git && git submodule foreach --recursive 'git remote set-url --push origin `git config --get remote.origin.url | sed s,^.*/,git@github.com:'$MY_FORK'/,`')
 ```
-To keep the project updated, use something like:
-```bash
-# Note: Changes the head to the latest one; your changes might be lost
-git pull --recurse-submodules && git submodule update --recursive
-```
-If you have push access to the submodules, you can push them all together and let [hudson](https://test.openmodelica.org/hudson/) run the tests before this project is updated (only necessary if you change an interface or the test suite at the same time as [OMCompiler](https://github.com/OpenModelica/OMCompiler)):
-```bash
-git submodule foreach --recursive "git push"
-```
 If you are a developer and want to track the latest heads, use:
 ```bash
 # After cloning
@@ -56,6 +47,10 @@ git submodule foreach --recursive "git checkout master"
 # To update; you will need to merge each submodule, but your changes will remain
 git submodule foreach --recursive "git pull"
 ```
+
+### How to contribute to the OpenModelica Compiler
+
+See [OMCompiler.git](https://github.com/OpenModelica/OMCompiler/blob/master/README.md#how-to-contribute-to-the-openmodelica-compiler).
 
 ### To checkout a minimal version of OpenModelica
 ```bash
