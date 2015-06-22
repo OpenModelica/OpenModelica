@@ -112,13 +112,14 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 	(cd 3rdParty/gc && autoreconf -vif && automake --add-missing && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt/Makefile: $(LAPACK_TARGET)
-	(cd 3rdParty/Ipopt && ./configure --with-pic "CC=$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" F77="$(FC)" LDFLAGS="-L$(OMBUILDDIR)/$(LIB_OMC) $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
+	@# Note: CXX is passed LDFLAGS, which is wrong. However, Ipopt does not respect LDFLAGS and fails to link OSX C++ code if we do not do this.
+	(cd 3rdParty/Ipopt && ./configure --with-pic "CC=$(CC)" CFLAGS="$(CFLAGS)" CXX="$(CXX) $(LDFLAGS)" CXXFLAGS="$(CXXFLAGS)" F77="$(FC)" LDFLAGS="-L$(OMBUILDDIR)/$(LIB_OMC) $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
 
 $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 	$(MAKE) -C 3rdParty/Ipopt
 	$(MAKE) -C 3rdParty/Ipopt install
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.1.9.6.dylib 3rdParty/Ipopt/lib/libipopt.1.9.6.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.4.11.dylib 3rdParty/Ipopt/lib/libcoinmumps.1.4.11.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.0.0.0.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.5.2.dylib 3rdParty/Ipopt/lib/libcoinmumps.1.5.2.dylib
 	cp -a 3rdParty/Ipopt/lib*/*.* $(OMBUILDDIR)/$(LIB_OMC)
 
 ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
