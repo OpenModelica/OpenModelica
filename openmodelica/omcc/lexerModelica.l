@@ -1,5 +1,5 @@
 %{
-  
+
 %}
 
 %x c_comment
@@ -11,11 +11,11 @@ letter       [a-zA-Z]
 wild         [_]
 digit        [0-9]
 digits       {digit}+
-ident        (({letter}|{wild})|['\'']({letter}|{digit}|[-*+/^=])*['\''])({letter}|{digit}|{wild})* 
+ident        (({letter}|{wild})|['\'']({letter}|{digit}|[-*+/^=])*['\''])({letter}|{digit}|{wild})*
 exponent     ([e]|[E])([+]|[-])?{digits}
-real         {digits}[\.]({digits})?({exponent})? 
+real         {digits}[\.]({digits})?({exponent})?
 real2        {digits}{exponent}
-real3        [\.]{digits}({exponent})? 
+real3        [\.]{digits}({exponent})?
 endif        "end"{whitespace}"if"
 endfor        "end"{whitespace}"for"
 endparfor     "end"{whitespace}"parfor"
@@ -24,12 +24,12 @@ endwhen        "end"{whitespace}"when"
 endmatch        "end"{whitespace}"match"
 endmatchcontinue  "end"{whitespace}"matchcontinue"
 initialequation   "initial"{whitespace}"equation"
-initialalgorithm  "initial"{whitespace}"algorithm" 
+initialalgorithm  "initial"{whitespace}"algorithm"
 endident          "end"{whitespace}{ident}
 
 /* Lex style lexical syntax of tokens in the MODELICA language */
-        
-  
+
+
 
 
 %%
@@ -37,7 +37,7 @@ endident          "end"{whitespace}{ident}
 {real}      return UNSIGNED_REAL;
 {real2}      return UNSIGNED_REAL;
 {real3}     { sToken = LexerModelica.printBuffer(listReverse(buffer));
-              Error.addSourceMessage(6000,{"Treating "+ sToken +" as 0"+sToken+". This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future."},info);  
+              Error.addSourceMessage(6000,{"Treating "+ sToken +" as 0"+sToken+". This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future."},info);
               ;} return UNSIGNED_REAL; // throw a warning
 {endif}     return ENDIF;
 {endfor}     return ENDFOR;
@@ -133,15 +133,15 @@ endident          "end"{whitespace}{ident}
 "impure" return IMPURE;
 "optimization" return T_OPTIMIZATION;
 "parallel" return T_PARALLEL;
-"parkernel"  return  T_KERNEL;
-"parfor"  return  PARFOR;
+"parkernel"  return T_KERNEL;
+"parfor"  return PARFOR;
 "parlocal" return T_PARLOCAL;
 "parglobal" return T_PARGLOBAL;
 
 ".+" return PLUS_EW;
-".-" return MINUS_EW; 
+".-" return MINUS_EW;
 ".*" return STAR_EW;
-"./" return SLASH_EW; 
+"./" return SLASH_EW;
 ".^" return POWER_EW;
 
 "*"  return STAR;
@@ -174,13 +174,13 @@ endident          "end"{whitespace}{ident}
 
 "\." return DOT;
 
-%"[\"][^\"]*[\"]"	return STRING;
+%"[\"][^\"]*[\"]" return STRING;
 
 {ident}      return IDENT;
 {digits}     return UNSIGNED_INTEGER;
 
-"\""	     {
-		BEGIN(c_string) keepBuffer;
+"\""       {
+    BEGIN(c_string) keepBuffer;
              }
 <c_string>
 {
@@ -191,8 +191,8 @@ endident          "end"{whitespace}{ident}
     \n       {keepBuffer; }
 }
 
-"/\*"	     {
-		BEGIN(c_comment);
+"/\*"      {
+    BEGIN(c_comment);
              }
 <c_comment>
 {
@@ -202,20 +202,20 @@ endident          "end"{whitespace}{ident}
     \n       ;
     <<EOF>>  {
          yyerror("Unterminated comment");
-	       yyterminate();
-	     }
+         yyterminate();
+       }
 }
 
-"//"	     {
-		BEGIN(c_linecomment) keepBuffer;
+"//"       {
+    BEGIN(c_linecomment) keepBuffer;
              }
-             
+
 <c_linecomment>
 {
     \n    { BEGIN(INITIAL); }
     [^\n]  ;
 }
 
- 
+
 
 %%

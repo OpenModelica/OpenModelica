@@ -24,6 +24,13 @@ if min(res) == false then
   exit(1);
 end if;
 getErrorString();
+loadString("package OpenModelicaSettings
+  constant String OPENMODELICAHOME = \""+getInstallationDirectoryPath()+"\";
+end OpenModelicaSettings;");
 // OMCC.main({"Modelica"});getErrorString();
-generateCode(OMCC.main);
-generateEntryPoint("omccMain.c", OMCC.main);
+if not generateCode(OMCC.main) then
+  print(getErrorString());
+  exit(1);
+else
+  print(getErrorString());
+end if;

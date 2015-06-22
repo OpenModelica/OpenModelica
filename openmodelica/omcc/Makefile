@@ -6,10 +6,11 @@ default: parser
 
 all: $(GEN_FILES)
 
-LexerModelica.mo: OMCC.mos lexerModelica.l parserModelica.y LexerGenerator.mo ParserGenerator.mo OMCC.mo Absyn.mo LexerCode.tmo ParseCode.tmo Lexer.mo Types.mo Parser.mo
+LexerModelica.mo: OMCC.mos lexerModelica.l parserModelica.y LexerGenerator.mo ParserGenerator.mo OMCC.mo LexerCode.tmo ParseCode.tmo Lexer.mo Types.mo Parser.mo
 	$(OMC) $<
 
 omcc:
+	rm -f OMCC_main.makefile
 	$(OMC) OMCC.mos
 	$(MAKE) -f OMCC_main.makefile MODELICAUSERCFLAGS='-DGENERATE_MAIN_EXECUTABLE -Os'
 	$(CC) -o OMCC OMCC_main.so '-Wl,-rpath,$$ORIGIN'
@@ -19,7 +20,18 @@ Main_main.so: GenerateParser.mos $(GEN_FILES) Main.mo
 	$(OMC) $<
 
 parser: Main_main.so
-	$(CC) -g -O2 -o $@ $< -lhwloc '-Wl,-rpath,$$ORIGIN'
+	$(CC) -g -O2 -o $@ $< '-Wl,-rpath,$$ORIGIN'
+
+lexer: LexerTest_main.so
+	$(CC) -g -O2 -o $@ $< '-Wl,-rpath,$$ORIGIN'
+
+LexerTest_main.so: LexerTest.mos LexerTest.mo LexerModelica.mo LexerCodeModelica.mo LexTableModelica.mo TokenModelica.mo
+	rm -f LexerTest_main.makefile
+	$(OMC) $<
+	$(MAKE) -f LexerTest_main.makefile
+lexer-all: omcc
+	./OMCC --lexer-only Modelica
+	$(MAKE) lexer
 
 .PHONY: ModelicaParserTests
 

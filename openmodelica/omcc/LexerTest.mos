@@ -1,0 +1,28 @@
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+loadFile("Types.mo");
+
+compilerSources := "../../../OMCompiler/Compiler/";
+
+loadFile(compilerSources + "Util/Error.mo");
+loadFile(compilerSources + "Util/ErrorExt.mo");
+loadFile(compilerSources + "FrontEnd/Dump.mo");
+loadFile(compilerSources + "Util/Print.mo");
+loadFile(compilerSources + "Util/Flags.mo");
+loadFile(compilerSources + "Global/Global.mo");
+loadFile(compilerSources + "Util/Config.mo");
+loadFile(compilerSources + "Util/Debug.mo");
+loadFile(compilerSources + "Util/List.mo");
+loadFile(compilerSources + "Util/Settings.mo");
+loadFile(compilerSources + "Util/Corba.mo");
+loadFile(compilerSources + "Util/Util.mo");
+loadFile(compilerSources + "Util/StringUtil.mo");
+loadFile(compilerSources + "Util/System.mo");
+loadFile("LexTableModelica.mo");
+loadFile("LexerCodeModelica.mo");
+loadFile("LexerModelica.mo");
+loadFile("TokenModelica.mo");
+loadFile("LexerTest.mo");
+getErrorString();
+
+setCFlags(getCFlags() + " -O2 -g -DGENERATE_MAIN_EXECUTABLE "); getErrorString();
+generateCode(LexerTest.main); getErrorString();

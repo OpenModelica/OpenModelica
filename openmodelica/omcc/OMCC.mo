@@ -6,6 +6,7 @@ import System;
 import Absyn;
 import LexerGenerator;
 import ParserGenerator;
+import OpenModelicaSettings;
 constant String copyright = "OMCCp v0.10.0 OpenModelica lexer and parser generator (2014)";
 
 public function main
@@ -25,16 +26,17 @@ algorithm
       equation
         {parser} = Flags.new(args);
         print("Generating FLEX grammar file lexer" + parser +".c ...\n");
-        0 = System.systemCall("flex -t -l lexer" + parser +".l > lexer" + parser +".c");
+        0 = System.systemCall(OpenModelicaSettings.OPENMODELICAHOME + "/bin/flex -t -l lexer" + parser +".l > lexer" + parser +".c");
         str = LexerGenerator.genLexer("lexer"+ parser +".c", "lexer"+ parser +".l", parser);
         print("Result:" + str + "\n");
-        print("\nGenerated files:\n" + sum("  " + s + "Modelica.mo\n" for s in {"LexerCode","Lexer","LexTable"}));
+        true = LexerGenerator.buildTokens("Token"+ parser, "lexer"+ parser +".l");
+        print("\nGenerated files:\n" + sum("  " + s + "Modelica.mo\n" for s in {"Token","LexerCode","Lexer","LexTable"}));
       then ();
     case args as _::_
       equation
         {parser} = Flags.new(args);
         print("Generating FLEX grammar file lexer" + parser +".c ...\n");
-        0 = System.systemCall("flex -t -l lexer" + parser +".l > lexer" + parser +".c");
+        0 = System.systemCall(OpenModelicaSettings.OPENMODELICAHOME + "/bin/flex -t -l lexer" + parser +".l > lexer" + parser +".c");
         print("Generating BISON grammar file parser" + parser +".c ...\n");
         0 = System.systemCall("bison parser" + parser +".y --output=parser" + parser +".c");
         str = LexerGenerator.genLexer("lexer"+ parser +".c", "lexer"+ parser +".l", parser);
