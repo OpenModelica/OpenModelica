@@ -5120,18 +5120,13 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
-
-
-
       initializeMemory();
-      IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
+      //IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
       //reader->readInitialValues(_sim_vars);
       initializeFreeVariables();
-      initializeStringParameterVars();
-      initializeStringAliasVars();
       initializeBoundVariables();
       saveAll();
-      delete reader;
+      //delete reader;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()
