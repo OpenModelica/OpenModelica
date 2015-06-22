@@ -1199,6 +1199,79 @@ buildModel(testOptdaedump); getErrorString();
 // Constraints (0)
 // ========================================
 //
+//
+// pre-optimization module sortEqnsVars:
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: x:VARIABLE() .testOptdaedump, .Real type: Real []
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)    [binding]
+// 2/2 (1): y = exp(time ^ 3.0) + x    [binding]
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
 // pre-optimization done.
 //
 // post-optimization module lateInlineFunction:
