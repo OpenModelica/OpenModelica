@@ -69,6 +69,7 @@ template translateModel(SimCode simCode)
         let()= textFile(calcHelperMainfile(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
     match target
     case "vxworks69" then
+    let()= textFile(functionBlock(simCode), '<%fileNamePrefix%>_spsblock.txt')
     let()= textFile(ftp_script(simCode), '<%fileNamePrefix%>_ftp.bat')
         ""
      else ""
@@ -1451,6 +1452,26 @@ template crefType(ComponentRef cr) "template crefType
   end match
 end crefType;
 
+template crefTypeST(ComponentRef cr) "template crefType
+  Like cref but with cast if type is integer."
+::=
+  match cr
+    case CREF_IDENT(__) then '<%expTypeShortSPS(identType)%>'
+    case CREF_QUAL(__)  then '<%crefTypeST(componentRef)%>'
+    else "crefType:ERROR"
+  end match
+end crefTypeST;
+
+template crefTypeMLPI(ComponentRef cr) "template crefType
+  Like cref but with cast if type is integer."
+::=
+  match cr
+    case CREF_IDENT(__) then '<%expTypeShortMLPI(identType)%>'
+    case CREF_QUAL(__)  then '<%crefTypeMLPI(componentRef)%>'
+    else "crefType:ERROR"
+  end match
+end crefTypeMLPI;
+
 
 template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String preRunCommandLinux, String preRunCommandWindows, String execCommandLinux)
  "Generates code for header file for simulation target."
@@ -1550,6 +1571,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = identOfPath(modelInfo.name)
 
 <<
+//Includes
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <stdio.h>
@@ -1574,22 +1597,109 @@ let modelname = identOfPath(modelInfo.name)
 #include <mlpiParameterLib.h>
 
 
-extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path);
 
-extern "C"  int runSimulation(void)
+extern "C"  ISimController* createSimController(PATH library_path, PATH modelicasystem_path);
+
+// functions implemented in this file
+extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, double cycletime);
+extern "C"  int motionTriggered(ISimController* &controller, ISimData* &data);
+extern "C"  void runSimulation(void);
+extern "C"  int getMotionCycle(double &cycletime);
+
+// Structs
+<%mlpiStructs(simCode)%>
+
+extern "C"  int getMotionCycle(double &cycletime)
 {
+  MLPIHANDLE connection = MLPI_INVALIDHANDLE;
+  MLPIRESULT result;
+  ULONG cycletime_us = 0;
+
+   result = mlpiApiConnect(MLPI_LOCALHOST, &connection); // replace localhost with control IP to connect to another control
+  if (MLPI_FAILED(result))
+  {
+    printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
+    return result;
+  }
+
+  result = mlpiParameterReadDataUlong(connection, 0, MLPI_SIDN_C(400), &cycletime_us);
+  if (MLPI_FAILED(result))
+  {
+    printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
+    return result;
+  }
+
+  // Convert mu_s to s
+  cycletime = (double)cycletime_us/(1e6);
+
+  result = mlpiApiDisconnect(&connection);
+  {
+    return result;
+  }
+  return 0;
+}
+
+extern "C"  void debugSimulation(void)
+{
+  ISimController* simController;
+  ISimData* simData;
+  double cycletime;
+  getMotionCycle(cycletime);
+
+  initSimulation(simController, simData, cycletime);
+  for(int i = 0; i < 1000; i++)
+  {
+    simController->calcOneStep();
+  }
+  delete simController;
+
+}
+
+extern "C"  void runSimulation(void)
+{
+  timespec delay;
+  delay.tv_sec =  1;
+  delay.tv_nsec = 0;
+  nanosleep( &delay ,NULL);
   // Enable Telnet and Floatingpoint Unit
   enableTelnetPrintf();
   enableFpuSupport();
 
-  // Wait 10 seconds
-  timespec delay;
-  delay.tv_sec = 10;
-  delay.tv_nsec = 0;
-  nanosleep( &delay ,NULL);
+  ISimController* simController;
+  ISimData* simData;
 
+  double cycletime;
+  getMotionCycle(cycletime);
+
+  initSimulation(simController, simData, cycletime);
+  motionTriggered(simController, simData);
+
+  delete simController;
+}
+
+extern "C"  void spawnTask(void)
+{
+  taskSpawn("<%lastIdentOfPath(modelInfo.name)%>",    // name of task
+            200,                                      // priority of task
+            VX_FP_TASK,                               // options (executes with the floating-point coprocessor)
+            0x200000,                                 // stacksize
+            (FUNCPTR)& runSimulation,                 // entry point (function)
+            0,                                        // arguments 1
+            0,                                        // arguments 2
+            0,                                        // arguments 3
+            0,                                        // arguments 4
+            0,                                        // arguments 5
+            0,                                        // arguments 6
+            0,                                        // arguments 7
+            0,                                        // arguments 8
+            0,                                        // arguments 9
+            0);                                       // arguments 10
+}
+
+
+extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, double cycletime)
+{
   MLPIHANDLE connection = MLPI_INVALIDHANDLE;
-
   MLPIRESULT result;
 
   // connect to API
@@ -1597,30 +1707,24 @@ extern "C"  int runSimulation(void)
   if (MLPI_FAILED(result))
   {
     printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
-
-    //////////////////////////////////////
-    //  Place error handling here       //
-    //////////////////////////////////////
-
     return result;
   }
 
   // Get MotionCycle time
+  /*
   ULONG cycletime_us = 0;
   result = mlpiParameterReadDataUlong(connection, 0, MLPI_SIDN_C(400), &cycletime_us);
   if (MLPI_FAILED(result))
   {
     printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
 
-    //////////////////////////////////////
-    //  Place error handling here       //
-    //////////////////////////////////////
 
     return result;
   }
+  */
 
   // Convert mu_s to s
-  double cycletime = (double)cycletime_us/(1e6);
+  //double cycletime = (double)cycletime_us/(1e6);
 
   /*
   =============================================================================================================
@@ -1639,17 +1743,14 @@ extern "C"  int runSimulation(void)
   boost::weak_ptr<IMixedSystem> system = sim_controller->LoadSystem("<%lastIdentOfPath(modelInfo.name)%>","<%lastIdentOfPath(modelInfo.name)%>");
   boost::shared_ptr<ISimData> simData_shared = simData.lock();
 
-
-
   // Declare Input specify initial_values if needed!!!
   <%defineInputVars(simCode)%>
 
   // Declare Output
   <%defineOutputVars(simCode)%>
 
-
   // Set simulation Settings: mainly stepsize important
-    SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",EMPTY, 100,EMPTY2, OFF};
+  SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",EMPTY, 100,EMPTY2, OFF};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
@@ -1669,40 +1770,41 @@ extern "C"  int runSimulation(void)
     for (int i = 0 ; i < lengthOfString ; i++ )
     {
       result = mlpiSystemSetDiagnosis(connection, MLPI_DIAGNOSIS_ERROR_FATAL, 1, A2W16( error.substr(0 + i * 60 ,60 + i * 60).c_str()) );
-    //////////////////////////////////////
-    //  Place error handling here       //
-    //////////////////////////////////////
     }
-
-
     return -1;
   }
+
   printf("StartVxWorks finished");
   wvEvent(1,NULL,0);
+  data = simData_shared.get();
+  controller = sim_controller;
+  return 0;
+}
 
+extern "C" int motionTriggered(ISimController* &controller, ISimData* &data)
+{
+  MLPIHANDLE connection = MLPI_INVALIDHANDLE;
 
+  MLPIRESULT result;
 
-
-  result = mlpiSystemSetTargetMode(connection, MLPI_SYSTEMMODE_P2);
+  // connect to API
+  result = mlpiApiConnect(MLPI_LOCALHOST, &connection); // replace localhost with control IP to connect to another control
   if (MLPI_FAILED(result))
   {
-    printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-    //////////////////////////////////////
-    //  Place error handling here       //
-    //////////////////////////////////////
+    printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
     return result;
   }
 
 
+  WCHAR16* application = L"Application";
+  MlpiApplicationState state = MLPI_STATE_NONE;
+  result = mlpiLogicGetStateOfApplication(connection, application, &state);
 
   // Set Priority of Task
-  result = mlpiTaskSetCurrentPriority(connection,  MLPI_PRIORITY_HIGH_MAX );
+  result = mlpiTaskSetCurrentPriority(connection,  MLPI_PRIORITY_HIGH_MAX);
   if (MLPI_FAILED(result))
   {
     printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-    //////////////////////////////////////
-    //  Place error handling here       //
-    //////////////////////////////////////
     return result;
   }
 
@@ -1710,15 +1812,14 @@ extern "C"  int runSimulation(void)
   // run simulation
   while(true)
   {
-
-    // Wait for motion interrupt
+   // Wait for motion interrupt
     result = mlpiTaskWaitForEvent(connection, MLPI_TASKEVENT_MOTION_CYCLE, MLPI_INFINITE);
+
+    MLPIRESULT result = mlpiLogicGetStateOfApplication(connection, application, &state);
+
     if (MLPI_FAILED(result))
     {
       printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-      //////////////////////////////////////
-      //  Place error handling here       //
-      //////////////////////////////////////
       return result;
     }
     // Get Current Mode of PLC
@@ -1726,14 +1827,13 @@ extern "C"  int runSimulation(void)
     if (MLPI_FAILED(result))
     {
       printf("\ncall of MLPI function failed with 0x%08x!", (unsigned)result);
-      //////////////////////////////////////
-      //  Place error handling here       //
-      //////////////////////////////////////
       return result;
     }
+    if(state == MLPI_STATE_STOP)
+    {
+      break;
+    }
 
-
-    // Only compute one step if PLC is in mode P4
     if(mode == MLPI_SYSTEMMODE_BB) //
     {
       //Write input
@@ -1741,15 +1841,13 @@ extern "C"  int runSimulation(void)
       /*
       <%setInputVars(simCode)%>
       */
-
-      //Calculate one step
       try
       {
-        sim_controller->calcOneStep();
+        controller->calcOneStep();
       }
-        catch(ModelicaSimulationError& ex)
-        {
-        string arg1 = string("Simulation failed for ") + settings.outputfile_name;
+      catch(ModelicaSimulationError& ex)
+      {
+        string arg1 = string("Simulation failed for ") + "<%lastIdentOfPath(modelInfo.name)%>";
         string arg2 = ex.what();//ex.what();
         SIMULATION_ERROR arg3 = ex.getErrorID();
         std::string error = add_error_info(arg1,arg2,arg3);
@@ -1757,40 +1855,104 @@ extern "C"  int runSimulation(void)
         int lengthOfString = error.length();
         lengthOfString = (int) (lengthOfString / 60 ) + 1;
 
-
-
         for (int i = 0 ; i < lengthOfString ; i++ )
         {
           result = mlpiSystemSetDiagnosis(connection, MLPI_DIAGNOSIS_ERROR_FATAL, 1, A2W16( error.substr(0 + i * 60 ,60 + i * 60).c_str()) );
-          //////////////////////////////////////
-          //  Place error handling here       //
-          //////////////////////////////////////
-
         }
         return -1;
-        }
-
+      }
       //Write output
       <%getOutputVars(simCode)%>
-
     }
   }
 
-  delete sim_controller;
-
   result = mlpiApiDisconnect(&connection);
   {
-    //////////////////////////////////////
-    //  Place error handling here       //
-    //////////////////////////////////////
     return result;
   }
+
   return 0;
 }
 
+extern "C" void <%modelname%>__Main(<%modelname%>_Main_struct* p)
+{
+
+  if (p->instance->controller != NULL)
+  {
+
+    // Eingangswerte aus IndraWorks FB lesen
+
+    <%setMainFBInputVars(simCode)%>
 
 
+    // Berechnung eines Controllersteps
 
+    try
+    {
+      p->instance->controller->calcOneStep();
+    }
+    catch(ModelicaSimulationError& ex)
+    {
+      MLPIHANDLE connection;
+      MLPIRESULT result = mlpiApiConnect(MLPI_LOCALHOST, &connection); // replace localhost with control IP to connect to another control
+      if (MLPI_FAILED(result))
+      {
+        printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) result);
+      }
+
+      string arg1 = string("Simulation failed for ") + "<%lastIdentOfPath(modelInfo.name)%>";
+      string arg2 = ex.what();//ex.what();
+      SIMULATION_ERROR arg3 = ex.getErrorID();
+      std::string error = add_error_info(arg1,arg2,arg3);
+
+      int lengthOfString = error.length();
+      lengthOfString = (int) (lengthOfString / 60 ) + 1;
+
+      for (int i = 0 ; i < lengthOfString ; i++ )
+      {
+        MLPIRESULT result = mlpiSystemSetDiagnosis(connection, MLPI_DIAGNOSIS_ERROR_FATAL, 1, A2W16( error.substr(0 + i * 60 ,60 + i * 60).c_str()) );
+      }
+      result = mlpiApiDisconnect(&connection);
+      p->instance->bErrorOccured = TRUE;
+    }
+
+    <%setMainFBOutputVars(simCode)%>
+
+  }
+
+}
+
+extern "C" void <%modelname%>__FB_Init(<%modelname%>_FB_Init_struct* p)
+{
+  p->instance->bErrorOccured = FALSE;
+  ISimController* simController;
+  ISimData* simData;
+
+  double cycletime = p->instance->cycletime;
+
+  int result = initSimulation(simController, simData, cycletime);
+  if (result < 0)
+  {
+    p->instance->bErrorOccured = TRUE;
+  }
+
+  p->instance->simdata = simData;
+  p->instance->controller = simController;
+  p->instance->bAlreadyInitialized = TRUE;
+  p->FB_Init = TRUE;
+}
+
+extern "C" void <%modelname%>__FB_Reinit(<%modelname%>_FB_Reinit_struct* p)
+{
+}
+
+extern "C" void <%modelname%>__FB_Exit(<%modelname%>_FB_Exit_struct* p)
+{
+  if (p->instance->controller)
+  {
+    delete p->instance->controller;
+  }
+}
 
 
 BUNDLE_INFO_BEGIN(com_boschrexroth_<%modelname%>)
@@ -1802,6 +1964,39 @@ BUNDLE_INFO_END(com_boschrexroth_<%modelname%>)
 
 BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_create(int param1, int param2, int param3)
 {
+  MLPIHANDLE connection = MLPI_INVALIDHANDLE;
+
+  // connect to API
+  MLPIRESULT resultconnect = mlpiApiConnect(MLPI_LOCALHOST, &connection); // replace localhost with control IP to connect to another control
+  if (MLPI_FAILED(resultconnect))
+  {
+    printf("\nERROR: failed to connect to MLPI. ErrorCode: 0x%08x", (unsigned) resultconnect);
+    return resultconnect;
+  }
+
+  WCHAR16 name[MLPI_APPLICATION_MAX_LENGTH_OF_POU_NAME] = L"<%modelname%>__Main";
+  MLPIPOUFNCPTR function = (MLPIPOUFNCPTR) <%modelname%>__Main;
+  MLPIRESULT result = mlpiLogicPouExtensionRegister(connection, name, function);
+  if(MLPI_SUCCEEDED(result))
+  {
+    wcscpy16(name, L"<%modelname%>__FB_Init");
+    function = (MLPIPOUFNCPTR) <%modelname%>__FB_Init;
+    result = mlpiLogicPouExtensionRegister(connection, name, function);
+  }
+  if(MLPI_SUCCEEDED(result))
+  {
+    wcscpy16(name, L"<%modelname%>__FB_Reinit");
+    function = (MLPIPOUFNCPTR) <%modelname%>__FB_Reinit;
+    result = mlpiLogicPouExtensionRegister(connection, name, function);
+  }
+  if(MLPI_SUCCEEDED(result))
+  {
+    wcscpy16(name, L"<%modelname%>__FB_Exit");
+    function = (MLPIPOUFNCPTR) <%modelname%>__FB_Exit;
+    result = mlpiLogicPouExtensionRegister(connection, name, function);
+  }
+mlpiApiDisconnect(&connection);
+
 printf("\n###################################################################");
 printf("\n## onCreate #######################################################");
 printf("\n###################################################################");
@@ -1810,21 +2005,6 @@ return 0;
 
 BUNDLE_EXPORT int com_boschrexroth_<%modelname%>_start(int param1, int param2, int param3)
 {
-taskSpawn(  "<%lastIdentOfPath(modelInfo.name)%>",           // name of task
-      200,                      // priority of task
-      VX_FP_TASK,                         // options (executes with the floating-point coprocessor)
-      0x200000,               // stacksize
-      (FUNCPTR)& runSimulation,        // entry point (function)
-      0,                   // arguments 1
-      0,                  // arguments 2
-      0,                                  // arguments 3
-      0,                                  // arguments 4
-      0,                                  // arguments 5
-      0,                                  // arguments 6
-      0,                                  // arguments 7
-      0,                                  // arguments 8
-      0,                                  // arguments 9
-      0);                                 // arguments 10
 
 printf("\n###################################################################");
 printf("\n## onStart ########################################################");
@@ -2069,7 +2249,7 @@ then
 
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      (dynamic_cast<SimDouble*>(simData_shared->Get("<%cref(name, false)%>")))->getValue()   = //place variable here ;
+      dynamic_cast<SimDouble*>(data->Get("<%cref(name, false)%>"))->getValue()   = //place variable here ;
       >>
       ;separator="\n"
 
@@ -2082,6 +2262,184 @@ then
   >>
 
 end setInputVars;
+
+template setMainFBOutputVars(SimCode simCode )
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+   let outputs = match simCode
+             case simCode as SIMCODE(__) then
+                 match modelInfo
+                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+                    let &varOptDecls = buffer "" /*BUFD*/
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
+      <<
+      p->instance-><%crefST(name, false)%> = dynamic_cast<SimDouble*>(p->instance->simdata->Get("<%cref(name, false)%>"))->getValue();
+      >>
+      ;separator="\n"
+
+    <<
+    <%outputnames%>
+    >>
+
+  <<
+  <%outputs%>
+  >>
+
+end setMainFBOutputVars;
+
+template setMainFBInputVars(SimCode simCode )
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+   let inputs = match simCode
+             case simCode as SIMCODE(__) then
+                 match modelInfo
+                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+                    let &varOptDecls = buffer "" /*BUFD*/
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
+      <<
+      dynamic_cast<SimDouble*>(p->instance->simdata->Get("<%cref(name, false)%>"))->getValue() = p->instance-><%crefST(name, false)%>;
+      >>
+      ;separator="\n"
+
+    <<
+    <%inputnames%>
+    >>
+
+  <<
+  <%inputs%>
+  >>
+
+end setMainFBInputVars;
+
+template spsOutputVars(SimCode simCode )
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+   let outputs = match simCode
+             case simCode as SIMCODE(__) then
+                 match modelInfo
+                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+                    let &varOptDecls = buffer "" /*BUFD*/
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
+      <<
+      <%crefST(name, false)%> : <%crefTypeST(name)%>;
+      >>
+      ;separator="\n"
+
+    <<
+    <%outputnames%>
+    >>
+
+  <<
+  <%outputs%>
+  >>
+
+end spsOutputVars;
+
+template spsInputVars(SimCode simCode )
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+   let inputs = match simCode
+             case simCode as SIMCODE(__) then
+                 match modelInfo
+                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+                    let &varOptDecls = buffer "" /*BUFD*/
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
+      <<
+      <%crefST(name, false)%> : <%crefTypeST(name)%> ;
+      >>
+      ;separator="\n"
+
+    <<
+    <%inputnames%>
+    >>
+
+  <<
+  <%inputs%>
+  >>
+
+end spsInputVars;
+
+
+
+
+
+
+template mlpiOutputVars(SimCode simCode )
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+   let outputs = match simCode
+             case simCode as SIMCODE(__) then
+                 match modelInfo
+                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+                    let &varOptDecls = buffer "" /*BUFD*/
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
+      <<
+      <%crefTypeMLPI(name)%> <%crefST(name, false)%>;
+      >>
+      ;separator="\n"
+
+    <<
+    <%outputnames%>
+    >>
+
+  <<
+  <%outputs%>
+  >>
+
+end mlpiOutputVars;
+
+template mlpiInputVars(SimCode simCode )
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+   let inputs = match simCode
+             case simCode as SIMCODE(__) then
+                 match modelInfo
+                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+                    let &varOptDecls = buffer "" /*BUFD*/
+          let &optpreExp = buffer "" /*BUFD*/
+
+          let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
+      <<
+      <%crefTypeMLPI(name)%> <%crefST(name, false)%>;
+      >>
+      ;separator="\n"
+
+    <<
+    <%inputnames%>
+    >>
+
+  <<
+  <%inputs%>
+  >>
+end mlpiInputVars;
 
 template defineOutputVars(SimCode simCode )
 ::=
@@ -2129,7 +2487,7 @@ then
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
       <<
-      place variable here  = dynamic_cast<SimDouble*>simData_shared->Get("<%cref(name, false)%>"))->getValue();
+      place variable here  = dynamic_cast<SimDouble*>(data->Get("<%cref(name, false)%>"))->getValue();
       >>
       ;separator="\n"
 
@@ -7545,6 +7903,16 @@ template cref(ComponentRef cr, Boolean useFlatArrayNotation)
   else "_"+crefToCStr(cr, useFlatArrayNotation)
 end cref;
 
+template crefST(ComponentRef cr, Boolean useFlatArrayNotation)
+ "Generates C equivalent name for component reference."
+::=
+  match cr
+  case CREF_IDENT(ident = "time") then "_simTime"
+  case WILD(__) then ''
+  else crefToCStr(cr, useFlatArrayNotation)
+end crefST;
+
+
 template varToString(ComponentRef cr,Context context, Boolean useFlatArrayNotation)
  "Generates C equivalent name for component reference."
 ::=
@@ -9078,6 +9446,47 @@ template expTypeShort(DAE.Type type)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else "expTypeShort:ERROR"
 end expTypeShort;
+
+template expTypeShortSPS(DAE.Type type)
+::=
+  match type
+  case T_INTEGER(__)         then "INT"
+  case T_REAL(__)        then "REAL"
+  case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
+  case T_BOOL(__)        then "BOOL"
+  case T_ENUMERATION(__) then "INT"
+  /* assumming real for uknown type! */
+  case T_UNKNOWN(__)     then "REAL"
+  case T_ANYTYPE(__)     then "type not supported"
+  case T_ARRAY(__)       then expTypeShortSPS(ty)
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+                      then "type not supported"
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
+  case T_FUNCTION_REFERENCE_VAR(__) then "type not supported"
+  else "expTypeShort:ERROR"
+end expTypeShortSPS;
+
+template expTypeShortMLPI(DAE.Type type)
+::=
+  match type
+  case T_INTEGER(__)     then "MLPI_IEC_INT"
+  case T_REAL(__)        then "MLPI_IEC_REAL"
+  case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
+  case T_BOOL(__)        then "MLPI_IEC_BOOL"
+  case T_ENUMERATION(__) then "MLPI_IEC_INT"
+  /* assumming real for uknown type! */
+  case T_UNKNOWN(__)     then "MLPI_IEC_REAL"
+  case T_ANYTYPE(__)     then "type not supported"
+  case T_ARRAY(__)       then expTypeShortSPS(ty)
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+                      then "type not supported"
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
+  case T_FUNCTION_REFERENCE_VAR(__) then "type not supported"
+  else "expTypeShort:ERROR"
+end expTypeShortMLPI;
+
 
 template dimension(Dimension d,Context context)
 ::=
@@ -12364,6 +12773,76 @@ case LBINARY(__) then
   case OR(__)  then '(<%e1%> || <%e2%>)'
   else "daeExpLbinary:ERR"
 end daeExpLbinary;
+
+template functionBlock(SimCode simCode)
+::=
+let  inputVars = spsInputVars(simCode)
+let outputVars = spsOutputVars(simCode)
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+let modelname = identOfPath(modelInfo.name)
+'FUNCTION_BLOCK <%modelname%>
+VAR
+    <%inputVars%>
+    <%outputVars%>
+    cycletime : REAL(0.05);
+    bAlreadyInitialized : BOOL;
+    bErrorOccured : BOOL(FALSE);
+    controller : DWORD;
+    simdata : DWORD;
+END_VAR
+'
+end functionBlock;
+
+template mlpiStructs(SimCode simCode)
+::=
+let  inputVars = mlpiInputVars(simCode)
+let outputVars = mlpiOutputVars(simCode)
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+let modelname = identOfPath(modelInfo.name)
+'
+typedef struct <%modelname%>_struct
+{
+  <%inputVars%>
+  <%outputVars%>
+  MLPI_IEC_REAL cycletime;
+  MLPI_IEC_BOOL bAlreadyInitialized;
+  MLPI_IEC_BOOL bErrorOccured;
+  ISimController* controller;
+  ISimData* simdata;
+}<%modelname%>_struct;
+
+typedef struct <%modelname%>_Main_struct
+{
+  <%modelname%>_struct* instance; // Declaration of instance pointer
+}<%modelname%>_Main_struct;
+
+typedef struct <%modelname%>_FB_Init_struct
+{
+  <%modelname%>_struct* instance; // Declaration of instance pointer
+  MLPI_IEC_BOOL bInitRetains; // Declaration of predefined method input (no matter if using BOOL8)
+  MLPI_IEC_BOOL bInCopyCode; // Declaration of predefined method input (no matter if using BOOL8)
+  MLPI_IEC_BOOL FB_Init; // Declaration of implicit method output (no matter if using BOOL8)
+}<%modelname%>_FB_Init_struct;
+
+typedef struct <%modelname%>_FB_Reinit_struct
+{
+  <%modelname%>_struct* instance; // Declaration of instance pointer
+  MLPI_IEC_BOOL FB_Reinit; // Declaration of implicit method output (no matter if using BOOL8)
+}<%modelname%>_FB_Reinit_struct;
+
+
+typedef struct <%modelname%>_FB_Exit_struct
+{
+  <%modelname%>_struct* instance; // Declaration of instance pointer
+  MLPI_IEC_BOOL bInCopyCode; // Declaration of predefined method input (no matter if using BOOL8)
+  MLPI_IEC_BOOL FB_Exit; // Declaration of implicit method output (no matter if using BOOL8)
+}<%modelname%>_FB_Exit_struct;
+'
+end mlpiStructs;
+
+
 
 template ftp_script(SimCode simCode)
 ::=
