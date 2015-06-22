@@ -1246,7 +1246,8 @@ algorithm
       eqs = {alg_indx};
       zc = createZeroCrossing(inExp, eqs, {});
       samples = listAppend(samples, {zc});
-      samples = mergeZeroCrossings(samples, {});
+      // lochel: don't merge zero crossings in algorithms (see #3358)
+      // samples = mergeZeroCrossings(samples, {});
       if Flags.isSet(Flags.RELIDX) then
         print("sample index algotihm: " + intString(alg_indx) + "\n");
       end if;
@@ -1269,7 +1270,8 @@ algorithm
       (explst, itmp) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, numRelations);
       zc_lst = createZeroCrossings(explst, {alg_indx}, {});
       zc_lst = listAppend(zeroCrossings, zc_lst);
-      zc_lst = mergeZeroCrossings(zc_lst, {});
+      // lochel: don't merge zero crossings in algorithms (see #3358)
+      // zc_lst = mergeZeroCrossings(zc_lst, {});
       itmp = (listLength(zc_lst)-listLength(zeroCrossings));
       zeroCrossings = if itmp>0 then zc_lst else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
@@ -1316,7 +1318,8 @@ algorithm
       (explst, itmp) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, numRelations1);
       zc_lst = createZeroCrossings(explst, {alg_indx}, {});
       zc_lst = listAppend(zeroCrossings, zc_lst);
-      zc_lst = mergeZeroCrossings(zc_lst, {});
+      // lochel: don't merge zero crossings in algorithms (see #3358)
+      // zc_lst = mergeZeroCrossings(zc_lst, {});
       itmp = (listLength(zc_lst)-listLength(zeroCrossings));
       zeroCrossings = if itmp>0 then zc_lst else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
@@ -1358,14 +1361,15 @@ algorithm
       stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
       istart = BackendDAEUtil.expInt(startvalue, knvars);
       istep = BackendDAEUtil.expInt(stepvalue, knvars);
-      e_1 = DAE.RELATION(e1, op, e2, numRelations, SOME((iterator, istart, istep)));
+      eres = DAE.RELATION(e1, op, e2, numRelations, SOME((iterator, istart, istep)));
       (explst, itmp) = replaceIteratorWithStaticValues(inExp, iterator, inExpLst, numRelations);
       if Flags.isSet(Flags.RELIDX) then
         print(" number of new zc: " + intString(listLength(explst)) + "\n");
       end if;
       zcLstNew = createZeroCrossings(explst, {alg_indx}, {});
       zc_lst = listAppend(relations, zcLstNew);
-      zc_lst = mergeZeroCrossings(zc_lst, {});
+      // lochel: don't merge zero crossings in algorithms (see #3358)
+      // zc_lst = mergeZeroCrossings(zc_lst, {});
       if Flags.isSet(Flags.RELIDX) then
         print(" number of new zc: " + intString(listLength(zc_lst)) + "\n");
       end if;
@@ -1374,9 +1378,9 @@ algorithm
         print(" itmp: " + intString(itmp) + "\n");
       end if;
       numRelations = intAdd(itmp, numRelations);
-      eres = if itmp>0 then e_1 else inExp;
       zeroCrossings = listAppend(zeroCrossings, zcLstNew);
-      zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
+      // lochel: don't merge zero crossings in algorithms (see #3358)
+      // zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
       if Flags.isSet(Flags.RELIDX) then
         print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(numRelations) + "\n");
       end if;
@@ -1387,15 +1391,16 @@ algorithm
       b1 = Expression.expContains(e1, iterator);
       b2 = Expression.expContains(e2, iterator);
       false = Util.boolOrList({b1, b2});
-      e_1 = DAE.RELATION(e1, op, e2, numRelations, NONE());
-      zc = createZeroCrossing(e_1, {alg_indx}, {});
+      eres = DAE.RELATION(e1, op, e2, numRelations, NONE());
+      zc = createZeroCrossing(eres, {alg_indx}, {});
       zc_lst = listAppend(relations, {zc});
-      zc_lst = mergeZeroCrossings(zc_lst, {});
+      // lochel: don't merge zero crossings in algorithms (see #3358)
+      // zc_lst = mergeZeroCrossings(zc_lst, {});
       itmp = (listLength(zc_lst)-listLength(relations));
       numRelations = numRelations + itmp;
-      eres = if itmp>0 then e_1 else inExp;
       zeroCrossings = listAppend(zeroCrossings, {zc});
-      zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
+      // lochel: don't merge zero crossings in algorithms (see #3358)
+      // zeroCrossings = mergeZeroCrossings(zeroCrossings, {});
       if Flags.isSet(Flags.RELIDX) then
         print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(numRelations) + "\n");
       end if;
@@ -1677,7 +1682,7 @@ algorithm
     then inZCexp2;
 
     else equation
-      Error.addInternalError("function getMinZeroCrossings failed for " + ExpressionDump.printExpStr(inZCexp1) + " and " + ExpressionDump.printExpStr(inZCexp2), sourceInfo());
+      Error.addInternalError("function getMinZeroCrossings failed for {" + ExpressionDump.printExpStr(inZCexp1) + "} and {" + ExpressionDump.printExpStr(inZCexp2) + "}", sourceInfo());
     then fail();
   end matchcontinue;
 end getMinZeroCrossings;

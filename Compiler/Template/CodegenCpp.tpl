@@ -2547,7 +2547,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /LIBPATH: - Directories where libs can be found
   #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib
   #LDSYSTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
-  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory_static.lib <%timeMeasureLink%>
+  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange_static.lib  OMCppOMCFactory_static.lib <%timeMeasureLink%>
   #LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/cpp/msvc" OMCppOMCFactory_static.lib OMCppModelicaUtilities.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   # /MDd link with MSVCRTD.LIB debug lib
@@ -2584,7 +2584,11 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
+<<<<<<< HEAD
             let staticLibs = '-lOMCppOMCFactory_static -lOMCppSimController_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppIDA_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+=======
+            let staticLibs = '-lOMCppOMCFactory_static -lOMCppSimController_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppNewton_static -lOMCppEuler_static -lOMCppIDA_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppOMCFactory_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+>>>>>>> origin/master
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
@@ -2610,6 +2614,7 @@ case "gcc" then
             DLLEXT=<%makefileParams.dllext%>
 
             CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+<<<<<<< HEAD
 
             ifeq ($(USE_SCOREP),ON)
             $(eval CC=scorep --user --nocompiler $(CC))
@@ -2618,10 +2623,13 @@ case "gcc" then
             $(eval CFLAGS_COMMON=$(CFLAGS_COMMON) -DMEASURETIME_PROFILEBLOCKS)
             endif
 
+=======
+>>>>>>> origin/master
             CFLAGS_DYNAMIC=$(CFLAGS_COMMON)
             CFLAGS_STATIC=$(CFLAGS_COMMON) <%staticIncludes%> -DRUNTIME_STATIC_LINKING
 
             MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
+<<<<<<< HEAD
 
             LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%> -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
             LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
@@ -2631,9 +2639,13 @@ case "gcc" then
             $(eval LDSYSTEMFLAGS_COMMON=$(LDSYSTEMFLAGS_COMMON) <%papiLibs%>)
             endif
 
+=======
+            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%> -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+>>>>>>> origin/master
             LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
             LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS_COMMON)
 
+<<<<<<< HEAD
             LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities -lOMCppExtensionUtilities $(LDMAINFLAGS_COMMON)
             LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS_COMMON) $(SUNDIALS_LIBRARIES) $(LAPACK_LIBRARIES)
 
@@ -2648,6 +2660,12 @@ case "gcc" then
             endif
 
             CPPFLAGS=$(CFLAGS)
+=======
+            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  -lOMCppDataExchange_static -Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" <%timeMeasureLink%>
+            LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities $(LDMAINFLAGS_COMMON)
+            LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS_COMMON)
+            <%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'LDMAINFLAGS=$(LDMAINFLAGS_STATIC)' else 'LDMAINFLAGS=$(LDMAINFLAGS_DYNAMIC)'%>
+>>>>>>> origin/master
 
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
@@ -4179,9 +4197,6 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
      //(outVars |> var hasindex i1 fromindex 0 =>
       varOutput(fn, var,0, &varDeclsOutput, &outVarInits, &outVarCopy, &outVarAssign, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      // ;separator="\n"; empty /* increase the counter! */
-
-
-
   else
     (List.restOrEmpty(outVars) |> var hasindex i1 fromindex 1 =>  varOutputTuple(fn, var, i1, &varDeclsvOutputTuple, &outVarInits, &outVarCopy, &outVarAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n"; empty /* increase the counter! */
@@ -4205,8 +4220,10 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
      ;separator="\n"; empty /* increase the counter! */)
   end match
     let functionBodyExternalFunctionreturn = match outVarAssign1
-   case "" then << <%if retVar then 'output = <%retVar%>;' %> >>
+   case "" then << <%if retVar then 'output = <%retVar%>;' else '/*no output*/' %> >>
    else outVarAssign1
+
+
 
 
   let fnBody = <<
@@ -4228,10 +4245,9 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     <%outVarInits%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
-    /*output assign*/
-    <%outputAssign%>
-    /* functionBodyExternalFunction: return */
-    <%functionBodyExternalFunctionreturn%>
+
+    <%outVarAssign%>
+
   }
   >>
   <<
@@ -4260,6 +4276,13 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
   >>
 end functionBodyExternalFunction;
 
+template funArgName(Variable var)
+::=
+  let &auxFunction = buffer ""
+  match var
+  case VARIABLE(__) then contextCref2(name,contextFunction)
+  case FUNCTION_PTR(__) then '_' + name
+end funArgName;
 
 template writeOutVar(Variable var, Integer index)
  "Generates code for writing a variable to outVar."
@@ -4393,20 +4416,23 @@ case EXTERNAL_FUNCTION(__) then
      '<%contextCref2(c,contextFunction)%> ='// '<%extVarName2(c)%> = '
     else
       ""
+
+
+
   <<
   <%varDecs%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
   <%dynamicCheck%>
   /*test0*/
   <%returnAssign%><%extName%>(<%args%>);
-  /*test1*/
-  <%extArgs |> arg => extFunCallVarcopy(arg,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n"%>
-  /*test2*/
-  <%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-  /*test3*/
   >>
-end extFunCallC;
+   /*test1*/
+ // <%extArgs |> arg => extFunCallVarcopy(arg,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n"%>
+  /*test2*/
+  //<%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn,fname,useTuple, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+  /*test3*/
 
+end extFunCallC;
 template extFunCallVarcopy(SimExtArg arg, String fnName,Boolean useTuple, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Helper to extFunCall."
 ::=
@@ -4715,7 +4741,7 @@ case var as VARIABLE(ty = T_STRING(__)) then
         >>
       ""
     else
-      let &varAssign += 'output /*_<%fname%> */= <%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
+      let &varAssign += /*_<%fname%> */'output = <%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
       ""
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
@@ -4723,11 +4749,11 @@ case var as VARIABLE(__) then
   //let &varAssign += '// varOutput varAssign(<%marker%>) <%\n%>'
 
   if instDims then
-    let &varAssign += '/*_<%fname%>*/ output.assign(<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);<%\n%>'
+    let &varAssign += /*_<%fname%>*/'output.assign(<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);<%\n%>'
     //let &varAssign += '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
     ""
   else
-    let &varAssign += 'output /*_<%fname%>*/ = <%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
+    let &varAssign += /*_<%fname%>*/ 'output  = <%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
     //let &varAssign += '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
     ""
   case var as FUNCTION_PTR(__) then
@@ -5129,18 +5155,13 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
-
-
-
       initializeMemory();
-      IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
+      //IPropertyReader *reader = new XmlPropertyReader("OMCpp<%fileNamePrefix%>Init.xml");
       //reader->readInitialValues(_sim_vars);
       initializeFreeVariables();
-      initializeStringParameterVars();
-      initializeStringAliasVars();
       initializeBoundVariables();
       saveAll();
-      delete reader;
+      //delete reader;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()

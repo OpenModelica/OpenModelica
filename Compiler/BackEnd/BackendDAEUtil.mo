@@ -6905,6 +6905,7 @@ algorithm
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
+  SimCodeUtil.execStat("matching and sorting");
 
   if Flags.isSet(Flags.GRAPHML) then
     HpcOmTaskGraph.dumpBipartiteGraph(sode, fileNamePrefix);
@@ -7036,7 +7037,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
-  SimCodeUtil.execStat("matching");
+  //SimCodeUtil.execStat("matching");
   // do late inline
   outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
   // do state selection
@@ -7044,7 +7045,7 @@ algorithm
   // sort assigned equations to blt form
   systs := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
-  SimCodeUtil.execStat("sorting");
+  //SimCodeUtil.execStat("sorting");
 end causalizeDAE;
 
 protected function mapCausalizeDAE "
@@ -7164,7 +7165,7 @@ algorithm
       equation
         // do state selection
         outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
-        SimCodeUtil.execStat("transformDAE -> state selection " + methodstr);
+        //SimCodeUtil.execStat("transformDAE -> state selection " + methodstr);
       then
          outDAE;
     else inDAE;

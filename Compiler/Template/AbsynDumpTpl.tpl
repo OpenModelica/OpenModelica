@@ -6,18 +6,18 @@ template spaceString(String str)
 ::= if str then ' <%str%>'
 end spaceString;
 
-template dump(Absyn.Program program)
+template dump(Absyn.Program program, DumpOptions options)
 ::=
 match program
   case PROGRAM(classes = {}) then ""
   case PROGRAM(__) then
     let within_str = dumpWithin(within_)
-    let cls_str = (classes |> cls => dumpClass(cls) ;separator=";\n\n")
+    let cls_str = (classes |> cls => dumpClass(cls, options) ;separator=";\n\n")
     '<%within_str%><%cls_str%>;'
 end dump;
 
-template dumpClass(Absyn.Class cls)
-::= dumpClassElement(cls, "", "", "" , "")
+template dumpClass(Absyn.Class cls, DumpOptions options)
+::= dumpClassElement(cls, "", "", "" , "", options)
 end dumpClass;
 
 template dumpWithin(Absyn.Within within)
@@ -30,6 +30,7 @@ match within
     within <%path_str%>;
 
     >>
+  else Tpl.addSourceTemplateError("Unknown operation", sourceInfo())
 end dumpWithin;
 
 template dumpClassHeader(Absyn.Class cls, String final_str,
@@ -43,16 +44,16 @@ match cls
 end dumpClassHeader;
 
 template dumpClassElement(Absyn.Class cls, String final_str,
-    String redecl_str, String repl_str, String io_str)
+    String redecl_str, String repl_str, String io_str, DumpOptions options)
 ::=
 match cls
   case CLASS(__) then
     let header_str = dumpClassHeader(cls, final_str, redecl_str, repl_str, io_str)
-    let body_str = dumpClassDef(body, name)
+    let body_str = dumpClassDef(body, name, options)
     '<%header_str%> <%body_str%>'
 end dumpClassElement;
 
-template dumpClassDef(Absyn.ClassDef cdef, String cls_name)
+template dumpClassDef(Absyn.ClassDef cdef, String cls_name, DumpOptions options)
 ::=
 match cdef
   case PARTS(__) then
@@ -60,7 +61,7 @@ match cdef
     let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=";\n")
     let cmt_str = dumpStringCommentOption(comment)
     let body_str = (classParts |> class_part hasindex idx =>
-        dumpClassPart(class_part, idx) ;separator="")
+        dumpClassPart(class_part, idx, options) ;separator="")
     <<
     <%cls_name%><%tvs_str%><%cmt_str%><%\n%>
     <%body_str%>
@@ -76,7 +77,7 @@ match cdef
     '<%cls_name%> = <%attr_str%><%ty_str%><%mod_str%><%cmt_str%>'
   case CLASS_EXTENDS(__) then
     let body_str = (parts |> class_part hasindex idx =>
-      dumpClassPart(class_part, idx) ;separator="\n")
+      dumpClassPart(class_part, idx, options) ;separator="\n")
     let mod_str = if modifications then
       '(<%(modifications |> mod => dumpElementArg(mod) ;separator=", ")%>)'
     let cmt_str = dumpStringCommentOption(comment)
@@ -162,19 +163,19 @@ match restriction
   case R_UNKNOWN(__) then "*unknown*"
 end dumpRestriction;
 
-template dumpClassPart(Absyn.ClassPart class_part, Integer idx)
+template dumpClassPart(Absyn.ClassPart class_part, Integer idx, DumpOptions options)
 ::=
 match class_part
   case PUBLIC(__) then
     // Skip printing out "public" if it's the first section.
     let section_str = if idx then "public" else ""
-    let el_str = dumpElementItems(contents, "", true)
+    let el_str = dumpElementItems(contents, "", true, options)
     <<
     <%section_str%>
       <%el_str%>
     >>
   case PROTECTED(__) then
-    let el_str = dumpElementItems(contents, "", true)
+    let el_str = dumpElementItems(contents, "", true, options)
     <<
     protected
       <%el_str%>
@@ -220,15 +221,15 @@ match class_part
         >>
 end dumpClassPart;
 
-template dumpElementItems(list<Absyn.ElementItem> items, String prevSpacing, Boolean first)
+template dumpElementItems(list<Absyn.ElementItem> items, String prevSpacing, Boolean first, DumpOptions options)
 ::=
 match items
   case item :: rest_items then
     let spacing = dumpElementItemSpacing(item)
     let pre_spacing = if not first then
       dumpElementItemPreSpacing(spacing, prevSpacing)
-    let item_str = dumpElementItem(item)
-    let rest_str = dumpElementItems(rest_items, spacing, false)
+    let item_str = dumpElementItem(item, options)
+    let rest_str = dumpElementItems(rest_items, spacing, false, options)
     let post_spacing = if rest_str then spacing
     <<
     <%pre_spacing%>
@@ -255,28 +256,30 @@ match cdef
   case CLASS_EXTENDS(__) then '<%\n%>'
 end dumpClassDefSpacing;
 
-template dumpElementItem(Absyn.ElementItem eitem)
+template dumpElementItem(Absyn.ElementItem eitem, DumpOptions options)
 ::=
 match eitem
-  case ELEMENTITEM(__) then dumpElement(element)
+  case ELEMENTITEM(__) then dumpElement(element, options)
   case LEXER_COMMENT(__) then System.trimWhitespace(comment)
 end dumpElementItem;
 
-template dumpElement(Absyn.Element elem)
+template dumpElement(Absyn.Element elem, DumpOptions options)
 ::=
 match elem
   case ELEMENT(__) then
+    if boolUnparseFileFromInfo(info, options) then
     let final_str = dumpFinal(finalPrefix)
     let redecl_str = match redeclareKeywords case SOME(re) then dumpRedeclare(re)
     let repl_str = match redeclareKeywords case SOME(re) then dumpReplaceable(re)
     let io_str = dumpInnerOuter(innerOuter)
-    let ec_str = dumpElementSpec(specification, final_str, redecl_str, repl_str, io_str)
+    let ec_str = dumpElementSpec(specification, final_str, redecl_str, repl_str, io_str, options)
     let cc_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc)
     '<%ec_str%><%cc_str%>;'
   case DEFINEUNIT(__) then
     let args_str = if args then '(<%(args |> arg => dumpNamedArg(arg))%>)'
     'defineunit <%name%><%args_str%>;'
   case TEXT(__) then
+    if boolUnparseFileFromInfo(info, options) then
     let name_str = match optName case SOME(name) then name
     let info_str = dumpInfo(info)
     '/* Absyn.TEXT(SOME("<%name_str%>"), "<%string%>", "<%info_str%>"); */'
@@ -331,7 +334,7 @@ match earg
     let redecl_str = dumpRedeclare(redeclareKeywords)
     let repl_str = dumpReplaceable(redeclareKeywords)
     let eredecl_str = '<%redecl_str%><%each_str%>'
-    let elem_str = dumpElementSpec(elementSpec, final_str, eredecl_str, repl_str, "")
+    let elem_str = dumpElementSpec(elementSpec, final_str, eredecl_str, repl_str, "", defaultDumpOptions)
     let cc_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc)
     '<%elem_str%><%cc_str%>'
 end dumpElementArg;
@@ -381,10 +384,10 @@ template dumpEqMod(Absyn.EqMod eqmod)
 end dumpEqMod;
 
 template dumpElementSpec(Absyn.ElementSpec elem, String final, String redecl,
-    String repl, String io)
+    String repl, String io, DumpOptions options)
 ::=
 match elem
-  case CLASSDEF(__) then dumpClassElement(class_, final, redecl, repl, io)
+  case CLASSDEF(__) then dumpClassElement(class_, final, redecl, repl, io, options)
   case EXTENDS(__) then
     let bc_str = dumpPath(path)
     let args_str = (elementArg |> earg => dumpElementArg(earg) ;separator=", ")
@@ -874,7 +877,7 @@ match code
     <%initial_str%>algorithm
       <%algs_str%>
     >>
-  case C_ELEMENT(__) then dumpElement(element)
+  case C_ELEMENT(__) then dumpElement(element, Dump.defaultDumpOptions)
   case C_EXPRESSION(__) then dumpExp(exp)
   case C_MODIFICATION(__) then dumpModification(modification)
 end dumpCodeNode;
@@ -907,7 +910,7 @@ template dumpMatchLocals(list<ElementItem> locals)
 ::= if locals then
   <<
     local
-      <%(locals |> decl => dumpElementItem(decl) ;separator="\n")%>
+      <%(locals |> decl => dumpElementItem(decl, defaultDumpOptions) ;separator="\n")%>
 
   >>
 end dumpMatchLocals;

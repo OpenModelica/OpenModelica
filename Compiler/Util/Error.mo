@@ -771,8 +771,6 @@ public constant Message INVALID_FLAG_TYPE_STRINGS = MESSAGE(545, SCRIPTING(), ER
   Util.gettext("Invalid type of flag %s, expected one of %s but got %s."));
 public constant Message FUNCTION_RETURN_EXT_OBJ = MESSAGE(546, TRANSLATION(), ERROR(),
   Util.gettext("Function %s returns an external object, but the only function allowed to return this object is %s."));
-public constant Message EXEC_STAT = MESSAGE(547, TRANSLATION(), NOTIFICATION(),
-  Util.gettext("Performance of %s: time %s/%s, GC stats:%s"));
 public constant Message NON_STANDARD_OPERATOR = MESSAGE(547, TRANSLATION(), WARNING(),
   Util.gettext("Usage of non-standard operator (not specified in the Modelica specification): %s. Functionality might be partially supported but is not guaranteed."));
 public constant Message CONNECT_ARRAY_SIZE_ZERO = MESSAGE(548, TRANSLATION(), WARNING(),
@@ -823,6 +821,11 @@ public constant Message SUBCLOCK_CONFLICT = MESSAGE(570, TRANSLATION(), ERROR(),
   Util.gettext("Partition have different sub-clocks."));
 public constant Message CLOCK_CONFLICT = MESSAGE(571, TRANSLATION(), ERROR(),
   Util.gettext("Partition have different base clocks."));
+public constant Message EXEC_STAT = MESSAGE(572, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Performance of %s: time %s/%s"));
+public constant Message EXEC_STAT_GC = MESSAGE(573, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Performance of %s: time %s/%s, GC stats:%s"));
+
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

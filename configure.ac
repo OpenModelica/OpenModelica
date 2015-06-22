@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OpenModelica],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMCompiler],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
 AC_SUBST(date)
 AC_SUBST(host_short)
 AC_SUBST(omc_antlr_jar)
@@ -195,8 +195,11 @@ else # Is Darwin
 
 AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
+OLD_LDFLAGS=$LDFLAGS
 for flag in -stdlib=libstdc++; do
-  AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+  CXXFLAGS="$OLD_CXXFLAGS $flag"
+  LDFLAGS="$OLD_LDFLAGS $flag"
+  AC_TRY_LINK([], [return 0;], [],[CXXFLAGS="$OLD_CXXFLAGS"; LDFLAGS="$OLD_LDFLAGS"])
 done
 AC_LANG_POP([C++])
 
@@ -618,6 +621,7 @@ AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
 ])
 FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 
+AC_SUBST(CMAKE_LDFLAGS)
 if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
@@ -640,12 +644,13 @@ if test "$DARWIN" = "1"; then
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
-  MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
+  MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --enable-shared"
   OS_TARGET="osx"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
   OMC_LIBS="$(OMC_LIBS) -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
+  CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
 elif test "$host" = "i586-pc-mingw32msvc"; then
   APP=".exe"
   EXE=".exe"
@@ -754,13 +759,8 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
     USE_PATOH=0;
 ])
 
-AC_MSG_CHECKING([for revision])
-SOURCE_REVISION=""
-test -f REVISION && SOURCE_REVISION=`test -f REVISION && head -n1 REVISION`
-test -z "$SOURCE_REVISION" && test -e .git && SOURCE_REVISION=`git describe --dirty --match "v*.*" --always`
-test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
+m4_include([common/m4/semver.m4])
 
-AC_MSG_RESULT([$SOURCE_REVISION])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
 AC_MSG_CHECKING([for OpenModelica platform name])

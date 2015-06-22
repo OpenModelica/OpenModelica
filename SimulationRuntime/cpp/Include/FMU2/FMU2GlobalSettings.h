@@ -37,6 +37,10 @@
 
 #include <Core/SimulationSettings/IGlobalSettings.h>
 
+#ifdef OFF
+#undef OFF // avoid name clash with enum LogType
+#endif
+
 class FMU2GlobalSettings : public IGlobalSettings
 {
  public:

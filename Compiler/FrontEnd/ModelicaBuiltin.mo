@@ -2123,6 +2123,22 @@ empty string is returned.</p>
   preferredView="text");
 end list;
 
+function listFile "Lists the contents of the file given by the class."
+  input TypeName class_;
+  output String contents;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Lists the contents of the file given by the class.
+See also <a href=\"modelica://OpenModelica.Scripting.list\">list()</a>.</p>
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>1.9.3-dev</td><td>sjoelund.se</td><td>Introduced the API.</td></tr>
+</table>
+</html>"),
+  preferredView="text");
+end listFile;
+
 // exportToFigaro added by Alexander Carlqvist
 function exportToFigaro
   input TypeName path;

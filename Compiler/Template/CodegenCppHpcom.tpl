@@ -1291,8 +1291,8 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> t
     let &mainThreadCode +=
       '
        #ifdef MEASURETIME_MODELFUNCTIONS
-       MeasureTimeValues *measuredSchedulerStartValues = measuredSchedulerStartValues_0%>;
-       MeasureTimeValues *measuredSchedulerEndValues = measuredSchedulerEndValues_0%>;
+       MeasureTimeValues *measuredSchedulerStartValues = measuredSchedulerStartValues_0;
+       MeasureTimeValues *measuredSchedulerEndValues = measuredSchedulerEndValues_0;
        #endif //MEASURETIME_MODELFUNCTIONS
        if(_evaluateODE)
        {
