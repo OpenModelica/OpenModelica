@@ -39,8 +39,6 @@ runScript(modelTesting);getErrorString();
 // stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 //
 // Files Equal!
-// [Modelica 3.2.1/Magnetic/FundamentalWave.mo:3086:14-3086:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
-// [Modelica 3.2.1/Magnetic/FundamentalWave.mo:3124:14-3124:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
 // Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 //
 // "true
