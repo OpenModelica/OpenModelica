@@ -901,32 +901,10 @@ void Component::updatePlacementAnnotation()
 {
   // Add component annotation.
   LibraryTreeNode *pLibraryTreeNode = mpGraphicsView->getModelWidget()->getLibraryTreeNode();
-  if(pLibraryTreeNode->getLibraryType()== LibraryTreeNode::TLM) {
-    QDomDocument doc;
-    doc.setContent(mpGraphicsView->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
-    // Get the "Root" element
-    QDomElement docElem = doc.documentElement();
-    QDomElement subModels = docElem.firstChildElement();
-    while (!subModels.isNull()) {
-      if(subModels.tagName() == "SubModels")
-        break;
-      subModels = subModels.nextSiblingElement();
-    }
-    QDomElement subModel = subModels.firstChildElement();
-    while (!subModel.isNull()) {
-      if(subModel.tagName() == "SubModel" && subModel.attribute("Name") == mName) {
-        QDomElement annotation = subModel.firstChildElement("Annotation");
-        annotation.setAttribute("Visible", getTransformation()->getVisible()? "true" : "false");
-        annotation.setAttribute("Origin", getTransformationOrigin());
-        annotation.setAttribute("Extent", getTransformationExtent());
-        annotation.setAttribute("Rotation", QString::number(getTransformation()->getRotateAngle()));
-        break;
-      }
-      subModel = subModel.nextSiblingElement();
-    }
-    QString metaModelText = doc.toString();
-    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+  if (pLibraryTreeNode->getLibraryType()== LibraryTreeNode::TLM) {
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+    pTLMEditor->updateSubModelPlacementAnnotation(mName, getTransformation()->getVisible()? "true" : "false", getTransformationOrigin(),
+                                                  getTransformationExtent(), QString::number(getTransformation()->getRotateAngle()));
   } else {
     mpOMCProxy->updateComponent(mName, mClassName, mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
                                 getPlacementAnnotation());
@@ -1052,8 +1030,7 @@ void Component::deleteMe()
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();
   /* When something is deleted from the icon layer then update the LibraryTreeNode in the Library Browser */
-  if (mpGraphicsView->getViewType() == StringHandler::Icon)
-  {
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
     pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpGraphicsView->getModelWidget()->getLibraryTreeNode());
   }

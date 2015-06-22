@@ -68,9 +68,13 @@ void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdde
 
 bool TLMEditor::validateMetaModelText()
 {
-   if (mTextChanged) {
-      emit focusOut();
-   }
+  if (mTextChanged) {
+    if (!emit focusOut()) {
+      return false;
+    } else {
+      mTextChanged = false;
+    }
+  }
   return true;
 }
 
@@ -85,8 +89,109 @@ void TLMEditor::setPlainText(const QString &text)
   if (text != mpPlainTextEdit->toPlainText()) {
     mForceSetPlainText = true;
     mpPlainTextEdit->setPlainText(text);
+    mXmlDocument.setContent(text);
     mForceSetPlainText = false;
   }
+}
+
+QDomElement TLMEditor::getSubModelsElement()
+{
+  QDomNodeList subModels = mXmlDocument.elementsByTagName("SubModels");
+  if (subModels.size() > 0) {
+    return subModels.at(0).toElement();
+  }
+  return QDomElement();
+}
+
+QDomNodeList TLMEditor::getSubModels()
+{
+  return mXmlDocument.elementsByTagName("SubModel");
+}
+
+bool TLMEditor::addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin,
+                            QString extent, QString rotation)
+{
+  QDomElement subModels = getSubModelsElement();
+  if (!subModels.isNull()) {
+    QDomElement subModel = mXmlDocument.createElement("SubModel");
+    subModel.setAttribute("Name", name);
+    subModel.setAttribute("ExactStep", exactStep);
+    subModel.setAttribute("ModelFile", modelFile);
+    subModel.setAttribute("StartCommand", startCommand);
+    // create Annotation Element
+    QDomElement annotation = mXmlDocument.createElement("Annotation");
+    annotation.setAttribute("Visible", visible);
+    annotation.setAttribute("Origin", origin);
+    annotation.setAttribute("Extent", extent);
+    annotation.setAttribute("Rotation", rotation);
+    subModel.appendChild(annotation);
+    subModels.appendChild(subModel);
+    mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    return true;
+  }
+  return false;
+}
+
+bool TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModel = subModelList.at(i).toElement();
+    if (subModel.attribute("Name").compare(name) == 0) {
+      QDomNodeList subModelChildren = subModel.childNodes();
+      for (int j = 0 ; j < subModelChildren.size() ; j++) {
+        QDomElement annotationElement = subModelChildren.at(j).toElement();
+        if (annotationElement.tagName().compare("Annotation") == 0) {
+          annotationElement.setAttribute("Visible", visible);
+          annotationElement.setAttribute("Origin", origin);
+          annotationElement.setAttribute("Extent", extent);
+          annotationElement.setAttribute("Rotation", rotation);
+          mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+          return true;
+        }
+      }
+      break;
+    }
+  }
+  return false;
+}
+
+void TLMEditor::addInterfacesData(QDomElement interfaces)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModel = subModelList.at(i).toElement();
+    QDomElement interfaceDataElement = interfaces.firstChildElement();
+    while (!interfaceDataElement.isNull()) {
+      if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0) {
+        QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
+        interfacePoint.setAttribute("Name",interfaceDataElement.attribute("name"));
+        interfacePoint.setAttribute("Position",interfaceDataElement.attribute("Position"));
+        interfacePoint.setAttribute("Angle321",interfaceDataElement.attribute("Angle321"));
+        subModel.appendChild(interfacePoint);
+        mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+      }
+      interfaceDataElement = interfaceDataElement.nextSiblingElement();
+    }
+  }
+}
+
+bool TLMEditor::deleteSubModel(QString name)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModel = subModelList.at(i).toElement();
+    if (subModel.attribute("Name").compare(name) == 0) {
+      QDomElement subModels = getSubModelsElement();
+      if (!subModels.isNull()) {
+        subModels.removeChild(subModel);
+        mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+        return true;
+      }
+      break;
+    }
+  }
+  return false;
 }
 
 //! @class TLMHighlighter

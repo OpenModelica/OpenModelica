@@ -49,9 +49,17 @@ public:
   TLMEditor(ModelWidget *pModelWidget);
   bool validateMetaModelText();
   void setPlainText(const QString &text);
+  QDomElement getSubModelsElement();
+  QDomNodeList getSubModels();
+  bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
+                   QString rotation);
+  bool updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
+  void addInterfacesData(QDomElement interfaces);
+  bool deleteSubModel(QString name);
 private:
   bool mForceSetPlainText;
   bool mTextChanged;
+  QDomDocument mXmlDocument;
 signals:
   bool focusOut();
 private slots:
