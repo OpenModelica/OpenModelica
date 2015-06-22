@@ -45,6 +45,7 @@ ConnectorSubtypeComp.mo \
 ConnectTheSameConnector.mo \
 ConnectTwoSources.mo \
 ConnectTypes.mo \
+EnumArrayConnector.mo \
 EqualityConstraintLookup1.mo \
 HeatTank.mo \
 HeatTankExpanded.mo \
