@@ -642,30 +642,6 @@ function cat "Concatenate arrays along given dimension"
 </html>"));
 end cat;
 
-function rooted "Not yet standard Modelica, but in the MSL since 3-4 years now."
-  external "builtin";
-  annotation(Documentation(info="<html>
-<p><b>Not yet standard Modelica, but in the MSL since 3-4 years now.</b></p>
-<h4>Syntax</h4>
-<blockquote>
-<pre><b>rooted</b>(x)</pre>
-</blockquote>
-<h4>Description</h4>
-<p>The operator \"rooted\" was introduced to improve efficiency:
-A tool that constructs the graph with the Connections.branch/.root etc.
-built-in operators has to cut the graph in order to arrive at \"spanning trees\".
-If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true,
-if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned.
-For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
-</p>
-<h4>Known Bugs</h4>
-<p>
-OpenModelica, <b>rooted</b>(x) always returns true.
-See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a> for details.
-</p>
-</html>"),version="Deprecated in the upcoming Modelica 3.2 rev2");
-end rooted;
-
 function actualStream
   external "builtin";
 end actualStream;
@@ -731,6 +707,29 @@ encapsulated package Connections
     // adrpo: I would like an assert here: size(nodes) <= size (roots)
     external "builtin";
   end uniqueRootIndices;
+
+  function rooted
+    external "builtin";
+    annotation(Documentation(info="<html>
+  <h4>Syntax</h4>
+  <blockquote>
+  <pre><b>Connections.rooted</b>(x)</pre>
+  </blockquote>
+  <h4>Description</h4>
+  <p>The operator \"rooted\" was introduced to improve efficiency:
+  A tool that constructs the graph with the Connections.branch/.root etc.
+  built-in operators has to cut the graph in order to arrive at \"spanning trees\".
+  If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true,
+  if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned.
+  For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
+  </p>
+  <h4>Known Bugs</h4>
+  <p>
+  OpenModelica, <b>rooted</b>(x) always returns true.
+  See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a> for details.
+  </p>
+  </html>"));
+  end rooted;
 end Connections;
 
 encapsulated package Subtask
