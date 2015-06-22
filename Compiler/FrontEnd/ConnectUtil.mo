@@ -3693,37 +3693,38 @@ protected function sizeOfVariable2
   input DAE.Type inType;
   output Integer outSize;
 algorithm
-  outSize := match(inType)
+  outSize := match inType
     local
       Integer n;
       DAE.Type t;
       list<DAE.Var> v;
 
     // Scalar values consist of one element.
-    case (DAE.T_INTEGER(_, _)) then 1;
-    case (DAE.T_REAL(_, _)) then 1;
-    case (DAE.T_STRING(_, _)) then 1;
-    case (DAE.T_BOOL(_, _)) then 1;
-    case (DAE.T_ENUMERATION(index = NONE())) then 1;
+    case DAE.T_INTEGER() then 1;
+    case DAE.T_REAL() then 1;
+    case DAE.T_STRING() then 1;
+    case DAE.T_BOOL() then 1;
+    case DAE.T_ENUMERATION(index = NONE()) then 1;
     // The size of an array is its dimension multiplied with the size of its type.
-    case (DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = n)}, ty = t))
-      then n * sizeOfVariable2(t);
+    case DAE.T_ARRAY()
+      then intMul(Expression.dimensionSize(dim) for dim in inType.dims) *
+           sizeOfVariable2(inType.ty);
     // The size of a complex type without an equalityConstraint (such as a
     // record), is the sum of the sizes of its components.
-    case (DAE.T_COMPLEX(varLst = v, equalityConstraint = NONE()))
+    case DAE.T_COMPLEX(varLst = v, equalityConstraint = NONE())
       then sizeOfVariableList(v);
     // The size of a complex type with an equalityConstraint function is
     // determined by the size of the return value of that function.
-    case (DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _)))) then n;
+    case DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _))) then n;
     // The size of a basic subtype with equality constraint is ZERO.
-    case (DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_))) then 0;
+    case DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) then 0;
     // The size of a basic subtype is the size of the extended type.
-    case (DAE.T_SUBTYPE_BASIC(complexType = t)) then sizeOfVariable2(t);
+    case DAE.T_SUBTYPE_BASIC(complexType = t) then sizeOfVariable2(t);
     // Anything we forgot?
     case t
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.sizeOfVariable failed on " + Types.printTypeStr(t));
+        Debug.traceln("- ConnectUtil.sizeOfVariable failed on " + Types.printTypeStr(t));
       then
         fail();
   end match;
