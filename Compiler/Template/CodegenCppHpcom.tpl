@@ -1203,7 +1203,7 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
            //Release locks after calculation
            #pragma omp barrier
            <%threadReleaseLocksOde%>
-           <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayOdeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
+           <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayOdeHpcom[threadNum]", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
          }
          else
          {

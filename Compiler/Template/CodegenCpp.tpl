@@ -3131,7 +3131,7 @@ match simCode
             measuredFunctionEndValues = MeasureTime::getZeroValues();
 
             measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
-            measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll_wo_ODE");
+            measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
             measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
             measureTimeFunctionsArray[3] = MeasureTimeData("handleTimeEvents");
             #endif //MEASURETIME_MODELFUNCTIONS
@@ -14069,7 +14069,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   <<
   bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
-    <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
+    <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
     bool state_var_reinitialized = false;
 
     <%varDecls%>
@@ -14078,7 +14078,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     // Reinits
     <%reinit%>
 
-    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
+    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""%>
     return state_var_reinitialized;
   }
   >>
