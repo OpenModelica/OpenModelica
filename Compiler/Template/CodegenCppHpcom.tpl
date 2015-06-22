@@ -1215,7 +1215,7 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
            //Release locks after calculation
            #pragma omp barrier
            <%threadReleaseLocksDae%>
-           <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayOdeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
+           <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayDaeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
          }
          delete measuredSchedulerStartValues;
          delete measuredSchedulerEndValues;
@@ -1238,11 +1238,15 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       <<
       if(_evaluateOde)
       {
+        <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
         <%odeEqs%>
+        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayOdeHpcom[threadNum]", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
       }
       else
       {
+        <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
         <%daeEqs%>
+        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayDaeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
       }
       >>
   end match
@@ -1259,6 +1263,10 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> t
     <<
     void <%modelNamePrefixStr%>::evaluateThreadFunc<%iThreadIdx%>()
     {
+      #ifdef MEASURETIME_MODELFUNCTIONS
+      MeasureTimeValues *measuredSchedulerStartValues = measuredSchedulerStartValues_<%intSub(iThreadIdx,1)%>;
+      MeasureTimeValues *measuredSchedulerEndValues = measuredSchedulerEndValues_<%intSub(iThreadIdx,1)%>;
+      #endif //MEASURETIME_MODELFUNCTIONS
       <%&varDeclsLoc%>
       while(1)
       {
@@ -1281,7 +1289,12 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> t
   else
     let &mainThreadCode += &varDeclsLoc
     let &mainThreadCode +=
-      'if(_evaluateODE)
+      '
+       #ifdef MEASURETIME_MODELFUNCTIONS
+       MeasureTimeValues *measuredSchedulerStartValues = measuredSchedulerStartValues_0%>;
+       MeasureTimeValues *measuredSchedulerEndValues = measuredSchedulerEndValues_0%>;
+       #endif //MEASURETIME_MODELFUNCTIONS
+       if(_evaluateODE)
        {
          <%taskEqsOde%>
        }
