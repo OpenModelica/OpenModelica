@@ -67,6 +67,11 @@ AC_MSG_RESULT([yes])
 MODELICA3D_TARGET="omlibrary-modelica3d"
 fi
 
+AC_SUBST(CMAKE_LDFLAGS)
+if echo $host | grep -i darwin; then
+  CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
+fi
+
 AC_SUBST(ALL_TARGETS)
 for dir_target in OMCompiler-omc OMPlot-omplot OMEdit-omedit OMNotebook-omnotebook OMOptim-omoptim OMShell-omshell; do
   dir=`echo $dir_target | cut -d- -f1`
