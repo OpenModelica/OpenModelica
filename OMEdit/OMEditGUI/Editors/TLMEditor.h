@@ -53,7 +53,8 @@ public:
   QDomNodeList getSubModels();
   bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
                    QString rotation);
-  bool updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
+  void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
+  void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
   void addInterfacesData(QDomElement interfaces);
   bool deleteSubModel(QString name);
 private:

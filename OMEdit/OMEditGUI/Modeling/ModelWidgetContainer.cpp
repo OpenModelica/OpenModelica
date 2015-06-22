@@ -2467,39 +2467,35 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
   */
 void ModelWidget::getTLMComponents()
 {
-  // get the components and thier annotation
-  QDomDocument TLMMetaModel;
-  TLMMetaModel.setContent(getEditor()->getPlainTextEdit()->toPlainText());
-
-  // Get the "Root" element
-  QDomElement rootElement = TLMMetaModel.documentElement();
-
-  QDomElement subModels = rootElement.firstChildElement();
-  while (!subModels.isNull())
-  {
-    if(subModels.tagName() == "SubModels")
-      break;
-    subModels = subModels.nextSiblingElement();
-  }
-
-  QDomElement subModel = subModels.firstChildElement();
-  while (!subModel.isNull())
-  {
-    if(subModel.tagName() == "SubModel")
-    {
-      QDomElement annotation = subModel.firstChildElement("Annotation");
-      if(annotation.tagName() == "Annotation" )
-      {
-        QString transformation = "Placement(";
-        transformation.append(annotation.attribute("Visible")).append(",").append(StringHandler::removeFirstLastCurlBrackets(annotation.attribute("Origin")));
-        transformation.append(",").append(StringHandler::removeFirstLastCurlBrackets(annotation.attribute("Extent")));
-        transformation.append(",0,0,0,-,-,-,-,").append(annotation.attribute("Rotation")).append(")");
-        // add the component to the the diagram view.
-        mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), subModel.attribute("ModelFile"), transformation,
-                                                  QPointF(0.0, 0.0), 0, StringHandler::Connector, false);
+  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
+  QDomNodeList subModels = pTLMEditor->getSubModels();
+  for (int i = 0; i < subModels.size(); i++) {
+    QString transformation;
+    bool annotationFound = false;
+    QDomElement subModel = subModels.at(i).toElement();
+    QDomNodeList subModelChildren = subModel.childNodes();
+    for (int j = 0 ; j < subModelChildren.size() ; j++) {
+      QDomElement annotationElement = subModelChildren.at(j).toElement();
+      if (annotationElement.tagName().compare("Annotation") == 0) {
+        annotationFound = true;
+        transformation = "Placement(";
+        transformation.append(annotationElement.attribute("Visible")).append(",");
+        transformation.append(StringHandler::removeFirstLastCurlBrackets(annotationElement.attribute("Origin"))).append(",");
+        transformation.append(StringHandler::removeFirstLastCurlBrackets(annotationElement.attribute("Extent"))).append(",");
+        transformation.append(StringHandler::removeFirstLastCurlBrackets(annotationElement.attribute("Rotation"))).append(",");
+        transformation.append("-,-,-,-,-,-,");
       }
     }
-    subModel = subModel.nextSiblingElement();
+    if (!annotationFound) {
+      transformation = "Placement(true, 0.0, 0.0, -10.0, -10.0, 10.0, 10.0, 0.0, -, -, -, -, -, -,";
+      pTLMEditor->createAnnotationElement(subModel, "true", "{0,0}", "{-10,-10,10,10}", "0");
+      setModelModified();
+    }
+    QFileInfo fileInfo(mpLibraryTreeNode->getFileName());
+    QString fileName = fileInfo.absolutePath() + "/" + subModel.attribute("Name") + "/" + subModel.attribute("ModelFile");
+    // add the component to the the diagram view.
+    mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), subModel.attribute("Name"), transformation, QPointF(0.0, 0.0),
+                                              new ComponentInfo(""), StringHandler::Connector, false, false, false, "", fileName);
   }
 }
 
