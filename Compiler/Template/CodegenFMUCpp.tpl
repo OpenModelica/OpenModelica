@@ -701,6 +701,8 @@ end match
 case "gcc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
+  let libsExtra = (makefileParams.libs |> lib => lib ;separator=" ")
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
   // Note: FMI 1.0 did not distinguish modelIdentifier from fileNamePrefix
   let modelName = if isFMIVersion20(FMUVersion) then dotPath(modelInfo.name) else fileNamePrefix
@@ -728,11 +730,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
+  EXTRA_LIBS= <%dirExtra%> <%libsExtra%>
   OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppFMU_static -lOMCppExtensionUtilities_static -lOMCppModelicaUtilities_static
   OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
-  LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+  LIBS= $(EXTRA_LIBS) $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
 
   CPPFILES=$(CALCHELPERMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
