@@ -4,4 +4,4 @@
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 //outputFormat :="mat";
-referenceFile := "ReferenceFiles/" + typeNameString(modelName) + ".mat";
+//referenceFile := "ReferenceFiles/" + typeNameString(modelName) + ".mat";
