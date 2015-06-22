@@ -7,7 +7,7 @@ AC_CHECK_PROGS(LRELEASE,lrelease-qt4 lrelease,"")
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
-  if test "$DARWIN" = "1"; then
+  if echo $host | grep darwin; then
     echo "#!/bin/sh -x" > ./qmake.sh
     echo "$QMAKE \$*" >> ./qmake.sh
     echo 'MAKEFILE=`echo -- $* | grep -o "Makefile@<:@A-Z.a-z@:>@*"`' >> ./qmake.sh
@@ -16,7 +16,8 @@ if test -n "$QMAKE"; then
     echo 'cat $MAKEFILE | \
       sed "s/-arch i386//g" | \
       sed "s/-arch x86_64//g" | \
-      sed "s/-arch//g" > $MAKEFILE.fixed && \
+      sed "s/-arch//g" | \
+      sed "s/-Xarch@<:@^ @:>@*//g" > $MAKEFILE.fixed && \
       mv $MAKEFILE.fixed $MAKEFILE' >> qmake.sh
     QMAKE="sh `pwd`/qmake.sh"
   # Needed? Maybe
