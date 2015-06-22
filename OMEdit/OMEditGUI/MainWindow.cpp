@@ -2199,47 +2199,14 @@ void MainWindow::readInterfaceData(LibraryTreeNode *pLibraryTreeNode)
     QDomDocument interfaceData;
     interfaceData.setContent(&file);
     file.close();
-    // Get the "Root" element
+    // Get the interfaces element
     QDomElement interfaces = interfaceData.documentElement();
-    QDomElement interfaceDataElement = interfaces.firstChildElement();
-    while (!interfaceDataElement.isNull()) {
-      if (interfaceDataElement.tagName() == "Interface")
-        break;
-      interfaceDataElement = interfaceDataElement.nextSiblingElement();
-    }
-
     // if we don't have ModelWidget then show it.
     if (!pLibraryTreeNode->getModelWidget()) {
       mpLibraryTreeWidget->showModelWidget(pLibraryTreeNode);
     }
-    QDomDocument doc;
-    doc.setContent(pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
-    // Get the "Root" element
-    QDomElement docElem = doc.documentElement();
-    QDomElement subModels = docElem.firstChildElement();
-    while (!subModels.isNull()) {
-      if(subModels.tagName() == "SubModels")
-        break;
-      subModels = subModels.nextSiblingElement();
-    }
-    QDomElement subModel = subModels.firstChildElement();
-    while (!subModel.isNull()) {
-      QDomElement interfaceDataElement = interfaces.firstChildElement();
-      while(!interfaceDataElement.isNull()){
-        if(subModel.tagName() == "SubModel" && subModel.attribute("Name") == interfaceDataElement.attribute("model") )  {
-          QDomElement interfacePoint = doc.createElement("InterfacePoint");
-          interfacePoint.setAttribute("Name",interfaceDataElement.attribute("name") );
-          interfacePoint.setAttribute("Position",interfaceDataElement.attribute("Position") );
-          interfacePoint.setAttribute("Angle321",interfaceDataElement.attribute("Angle321") );
-          subModel.appendChild(interfacePoint);
-          break;
-        }
-        interfaceDataElement = interfaceDataElement.nextSiblingElement();
-      }
-      subModel = subModel.nextSiblingElement();
-    }
-    QString metaModelText = doc.toString();
-    pLibraryTreeNode->getModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    pTLMEditor->addInterfacesData(interfaces);
   }
 }
 
@@ -2964,6 +2931,13 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
  */
 void MainWindow::fetchInterfaceDataHelper(LibraryTreeNode *pLibraryTreeNode)
 {
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeNode->getModelWidget()) {
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+    if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
+      return;
+    }
+  }
   FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeNode, this);
   connect(pFetchInterfaceDataDialog, SIGNAL(readInterfaceData(LibraryTreeNode*)), SLOT(readInterfaceData(LibraryTreeNode*)));
   pFetchInterfaceDataDialog->exec();
