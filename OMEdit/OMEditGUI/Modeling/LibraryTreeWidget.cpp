@@ -1292,7 +1292,12 @@ bool LibraryTreeWidget::saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode
         // copy the submodel file to the created directory
         QString modelFile = pComponent->getFileName();
         QFileInfo modelFileInfo(modelFile);
-        QFile::copy(modelFileInfo.absoluteFilePath(), directoryPath + "/" + modelFileInfo.fileName());
+        QString newFileName = directoryPath + "/" + modelFileInfo.fileName();
+        if (modelFileInfo.absoluteFilePath().compare(newFileName) != 0) {
+          // first try to remove the file because QFile::copy will not override the file.
+          QFile::remove(newFileName);
+        }
+        QFile::copy(modelFileInfo.absoluteFilePath(), newFileName);
       }
     }
   } else {

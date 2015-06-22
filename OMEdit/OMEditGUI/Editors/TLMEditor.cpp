@@ -94,6 +94,11 @@ void TLMEditor::setPlainText(const QString &text)
   }
 }
 
+/*!
+ * \brief TLMEditor::getSubModelsElement
+ * Returns the SubModels element tag.
+ * \return
+ */
 QDomElement TLMEditor::getSubModelsElement()
 {
   QDomNodeList subModels = mXmlDocument.elementsByTagName("SubModels");
@@ -103,11 +108,29 @@ QDomElement TLMEditor::getSubModelsElement()
   return QDomElement();
 }
 
+/*!
+ * \brief TLMEditor::getSubModels
+ * Returns the list of SubModel tags.
+ * \return
+ */
 QDomNodeList TLMEditor::getSubModels()
 {
   return mXmlDocument.elementsByTagName("SubModel");
 }
 
+/*!
+ * \brief TLMEditor::addSubModel
+ * Adds a SubModel tag with Annotation tag as child of it.
+ * \param name
+ * \param exactStep
+ * \param modelFile
+ * \param startCommand
+ * \param visible
+ * \param origin
+ * \param extent
+ * \param rotation
+ * \return
+ */
 bool TLMEditor::addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin,
                             QString extent, QString rotation)
 {
@@ -132,7 +155,36 @@ bool TLMEditor::addSubModel(QString name, QString exactStep, QString modelFile, 
   return false;
 }
 
-bool TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation)
+/*!
+ * \brief TLMEditor::createAnnotationElement
+ * Creates an Annotation tag for SubModel.
+ * \param subModel
+ * \param visible
+ * \param origin
+ * \param extent
+ * \param rotation
+ */
+void TLMEditor::createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation)
+{
+  QDomElement annotation = mXmlDocument.createElement("Annotation");
+  annotation.setAttribute("Visible", visible);
+  annotation.setAttribute("Origin", origin);
+  annotation.setAttribute("Extent", extent);
+  annotation.setAttribute("Rotation", rotation);
+  subModel.insertBefore(annotation, QDomNode());
+  mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+}
+
+/*!
+ * \brief TLMEditor::updateSubModelPlacementAnnotation
+ * Updates the SubModel annotation.
+ * \param name
+ * \param visible
+ * \param origin
+ * \param extent
+ * \param rotation
+ */
+void TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
   for (int i = 0 ; i < subModelList.size() ; i++) {
@@ -147,15 +199,21 @@ bool TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible,
           annotationElement.setAttribute("Extent", extent);
           annotationElement.setAttribute("Rotation", rotation);
           mpPlainTextEdit->setPlainText(mXmlDocument.toString());
-          return true;
+          return;
         }
       }
+      // create annotation element
+      createAnnotationElement(subModel, visible, origin, extent, rotation);
       break;
     }
   }
-  return false;
 }
 
+/*!
+ * \brief TLMEditor::addInterfacesData
+ * Adds the InterfacePoint tag to SubModel.
+ * \param interfaces
+ */
 void TLMEditor::addInterfacesData(QDomElement interfaces)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
@@ -176,6 +234,12 @@ void TLMEditor::addInterfacesData(QDomElement interfaces)
   }
 }
 
+/*!
+ * \brief TLMEditor::deleteSubModel
+ * Delets a SubModel.
+ * \param name
+ * \return
+ */
 bool TLMEditor::deleteSubModel(QString name)
 {
   QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
