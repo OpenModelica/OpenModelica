@@ -736,7 +736,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -DRUNTIME_STATIC_LINKING="true" -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -DRUNTIME_STATIC_LINKING -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
   CPPFLAGS = $(CFLAGS)
   LDFLAGS=-L"$(OMHOME)/lib/<%getTriple()%>/omc/cpp" -L"$(BOOST_LIBS)"
   PLATFORM="<%platformstr%>"
@@ -744,11 +744,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
-  OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppFMU_static -lOMCppExtensionUtilities_static -lOMCppModelicaUtilities_static
+  #OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -OMCppSimulationSettings_static -lOMCppMath_static -lOMCppFMU_static -lOMCppExtensionUtilities_static -lOMCppModelicaUtilities_static
+  OMCPP_LIBS=-lOMCppOMCFactory_static -lOMCppSimulationSettings_static -lOMCppSystem_static -lOMCppMath_static -lOMCppFMU_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static
   OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
-  LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+  LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES)
 
   CPPFILES=$(CALCHELPERMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
