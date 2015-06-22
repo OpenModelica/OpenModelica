@@ -195,8 +195,11 @@ else # Is Darwin
 
 AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
+OLD_LDFLAGS=$LDFLAGS
 for flag in -stdlib=libstdc++; do
-  AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+  CXXFLAGS="$OLD_CXXFLAGS $flag"
+  LDFLAGS="$OLD_LDFLAGS $flag"
+  AC_TRY_LINK([], [return 0;], [],[CXXFLAGS="$OLD_CXXFLAGS"; LDFLAGS="$OLD_LDFLAGS"])
 done
 AC_LANG_POP([C++])
 
@@ -618,6 +621,7 @@ AC_CHECK_HEADER([CL/cl.h],[OPENCL="Yes"],[
 ])
 FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 
+AC_SUBST(CMAKE_LDFLAGS)
 if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
@@ -646,6 +650,7 @@ if test "$DARWIN" = "1"; then
   AR_SH="sh -x ar.sh"
   OMC_LIBS="$(OMC_LIBS) -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
+  CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
 elif test "$host" = "i586-pc-mingw32msvc"; then
   APP=".exe"
   EXE=".exe"

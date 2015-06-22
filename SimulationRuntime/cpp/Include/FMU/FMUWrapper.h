@@ -99,7 +99,11 @@ public:
 
     virtual fmiStatus setBoolean             (const fmiValueReference vr[], size_t nvr, const fmiBoolean value[])
     {
-      _model->setBoolean(vr, nvr, value);
+      int val;
+      for (size_t i = 0; i < nvr; i++) {
+        val = value[i];
+        _model->setBoolean(vr + i, 1, &val);
+      }
       _need_update = true;
       return fmiOK;
     }
@@ -116,6 +120,7 @@ public:
     {
       // TODO: here is some code duplication to SimulationRuntime/cpp/Core/Solver/Initailization.cpp
       _model->initialize();
+      _model->initializeBoundVariables();
       _model->setInitial(true);
 
       bool restart=true;
@@ -178,8 +183,12 @@ public:
 
     virtual fmiStatus getBoolean(const fmiValueReference vr[], size_t nvr, fmiBoolean value[])
     {
+      int val;
       updateModel();
-      _model->getBoolean(vr, nvr, value);
+      for (size_t i = 0; i < nvr; i++) {
+        _model->getBoolean(vr + i, 1, &val);
+        value[i] = (fmiBoolean)val;
+      }
       return fmiOK;
     }
 

@@ -46,7 +46,7 @@
 #include <Core/DataExchange/SimData.h>
 
 /*end workarround*/
-#include <System/AlgLoopSolverFactory.h>
+#include <Core/System/AlgLoopSolverFactory.h>
 
 static fmi2String const _logCategoryNames[] = {
   "logEvents",

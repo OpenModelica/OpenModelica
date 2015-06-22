@@ -235,13 +235,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     // getters for given value references
     virtual void getReal(const unsigned int vr[], int nvr, double value[]);
     virtual void getInteger(const unsigned int vr[], int nvr, int value[]);
-    virtual void getBoolean(const unsigned int vr[], int nvr, char value[]);
+    virtual void getBoolean(const unsigned int vr[], int nvr, int value[]);
     virtual void getString(const unsigned int vr[], int nvr, string value[]);
 
     // setters for given value references
     virtual void setReal(const unsigned int vr[], int nvr, const double value[]);
     virtual void setInteger(const unsigned int vr[], int nvr, const int value[]);
-    virtual void setBoolean(const unsigned int vr[], int nvr, const char value[]);
+    virtual void setBoolean(const unsigned int vr[], int nvr, const int value[]);
     virtual void setString(const unsigned int vr[], int nvr, const string value[]);
   };
   >>
@@ -294,12 +294,11 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   // initialization
   void <%modelShortName%>FMU::initialize() {
-    Logger::writeInfo("Initialization started");
     <%modelShortName%>WriteOutput::initialize();
-    <%modelShortName%>Initialize::initialize();
+    <%modelShortName%>Initialize::initializeMemory();
+    <%modelShortName%>Initialize::initializeFreeVariables();
     <%modelShortName%>Jacobian::initialize();
     <%modelShortName%>Jacobian::initializeColoredJacobianA();
-    Logger::writeInfo("Initialization finished");
   }
 
   // getters
@@ -510,7 +509,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   <%accessRealFunction(simCode, direction, modelShortName, modelInfo)%>
   <%accessVarsFunction(simCode, direction, modelShortName, "Integer", "int", vars.intAlgVars, vars.intParamVars, vars.intAliasVars)%>
-  <%accessVarsFunction(simCode, direction, modelShortName, "Boolean", "char", vars.boolAlgVars, vars.boolParamVars, vars.boolAliasVars)%>
+  <%accessVarsFunction(simCode, direction, modelShortName, "Boolean", "int", vars.boolAlgVars, vars.boolParamVars, vars.boolAliasVars)%>
   <%accessVarsFunction(simCode, direction, modelShortName, "String", "string", vars.stringAlgVars, vars.stringParamVars, vars.stringAliasVars)%>
   >>
 end accessFunctions;
@@ -535,7 +534,6 @@ case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numA
         default:
           message.str("");
           message << "<%direction%>Real with wrong value reference " << vr[i];
-          Logger::writeError(message.str());
           throw std::invalid_argument(message.str());
       }
   }
@@ -558,7 +556,6 @@ template accessVarsFunction(SimCode simCode, String direction, String modelShort
         default:
           message.str("");
           message << "<%direction%><%typeName%> with wrong value reference " << vr[i];
-          Logger::writeError(message.str());
           throw std::invalid_argument(message.str());
       }
   }
@@ -578,17 +575,11 @@ match simVar
   if stringEq(direction, "get") then
   <<
   case <%intAdd(offset, index)%>: <%description%>
-    value[i] = <%cppSign%><%cppName%>;
-    message.str("");
-    message << "Getting variable <%descName%> with value " << value[i];
-    Logger::writeInfo(message.str()); break;
+    value[i] = <%cppSign%><%cppName%>; break;
   >>
   else
   <<
   case <%intAdd(offset, index)%>: <%description%>
-    message.str("");
-    message << "Setting variable <%descName%> to value " << <%cppSign%>value[i];
-    Logger::writeInfo(message.str());
     <%cppName%> = <%cppSign%>value[i]; break;
   >>
 end accessVar;
@@ -632,17 +623,11 @@ match simVar
   else if stringEq(direction, "get") then
   <<
   case <%intAdd(offset, index)%>: <%description%>
-    value[i] = <%vecName%>[<%index%>];
-    message.str("");
-    message << "Getting variable <%descName%> with value " << value[i];
-    Logger::writeInfo(message.str()); break;
+    value[i] = <%vecName%>[<%index%>]; break;
   >>
   else
   <<
   case <%intAdd(offset, index)%>: <%description%>
-    message.str("");
-    message << "Setting variable <%descName%> to value " << value[i];
-    Logger::writeInfo(message.str());
     <%vecName%>[<%index%>] = value[i]; break;
   >>
 end accessVecVar;
@@ -716,6 +701,8 @@ end match
 case "gcc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
+  let libsExtra = (makefileParams.libs |> lib => lib ;separator=" ")
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
   // Note: FMI 1.0 did not distinguish modelIdentifier from fileNamePrefix
   let modelName = if isFMIVersion20(FMUVersion) then dotPath(modelInfo.name) else fileNamePrefix
@@ -743,11 +730,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
   ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
+  EXTRA_LIBS= <%dirExtra%> <%libsExtra%>
   OMCPP_LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory_static -lOMCppMath_static -lOMCppFMU_static -lOMCppExtensionUtilities_static -lOMCppModelicaUtilities_static
   OMCPP_SOLVER_LIBS=-Wl,-rpath,"$(OMHOME)/lib/<%getTriple()%>/omc/cpp"
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -L$(LAPACK_LIBS) $(LAPACK_LIBRARIES)
   BOOST_LIBRARIES = -l$(BOOST_SYSTEM_LIB) -l$(BOOST_FILESYSTEM_LIB) -l$(BOOST_PROGRAM_OPTIONS_LIB)
-  LIBS= $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
+  LIBS= $(EXTRA_LIBS) $(OMCPP_LIBS) $(OMCPP_SOLVER_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
 
   CPPFILES=$(CALCHELPERMAINFILE)
   OFILES=$(CPPFILES:.cpp=.o)
