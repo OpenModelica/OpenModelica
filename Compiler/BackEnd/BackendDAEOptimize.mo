@@ -4134,7 +4134,7 @@ public function sortEqnsVars
   input BackendDAE.BackendDAE iDAE;
   output BackendDAE.BackendDAE oDAE;
 algorithm
-  oDAE := if true then sortEqnsVarsWork(iDAE) else iDAE;
+  oDAE := if Flags.isSet(Flags.SORT_EQNS_AND_VARS)  then sortEqnsVarsWork(iDAE) else iDAE;
 end sortEqnsVars;
 
 protected function sortEqnsVarsWork
@@ -4164,7 +4164,7 @@ algorithm
   BackendDAE.SHARED(functionTree=functionTree) := shared;
   for syst in systlst loop
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind) := syst;
-    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(functionTree));
+    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.SPARSE(), SOME(functionTree));
 
     BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr = varOptArr, numberOfElements = nv)) := vars;
     BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr, numberOfElement = ne) := eqns;
@@ -4179,13 +4179,13 @@ algorithm
     sortEqnsVarsWeights(w_eqns, ne, m);
 
     //sort vars
-    tplIndexWeight := list( (i, w_vars[i]) for i in 1:nv);
+    tplIndexWeight := list((i, w_vars[i]) for i in 1:nv);
     //sorted vars
     tplIndexWeight := List.sort(tplIndexWeight, compWeightsVars);
     //new order vars indexs
     indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
     var_lst := list(BackendVariable.getVarAt(vars, i) for i in indexs);
-    // new vars
+   // new vars
     vars := BackendVariable.listVar1(var_lst);
 
     //sort eqns
@@ -4221,30 +4221,36 @@ protected
   Integer i;
 algorithm
   for i in 1:n loop
-    try
-      outW[i] := listLength(m[i]);
-    else
-      outW[i] := -1;
-    end try;
+    outW[i] := listLength(m[i]);
   end for;
 end sortEqnsVarsWeights;
 
+// sort({2, 1, 3}, intGt) => {1, 2, 3}
+// sort({2, 1, 3}, intLt) => {3, 2, 1}
 protected function compWeightsVars
   input tuple<Integer,Integer> inTpl1;
   input tuple<Integer,Integer> inTpl2;
   output Boolean b;
+protected
+  Integer i1,i2;
 algorithm
-  b := Util.tuple22(inTpl1) < Util.tuple22(inTpl2);
+  (_,i1) := inTpl1;
+  (_,i2) := inTpl2;
+  b := intGt(i1 ,i2);
 end compWeightsVars;
 
 protected function compWeightsEqns
   input tuple<Integer,Integer> inTpl1;
   input tuple<Integer,Integer> inTpl2;
   output Boolean b;
+protected
+  Integer i1,i2;
 algorithm
-  b := Util.tuple22(inTpl1) > Util.tuple22(inTpl2);
+  (_,i1) := inTpl1;
+  (_,i2) := inTpl2;
+  //b := intLt(i1 ,i2);
+  b := intGt(i1 ,i2);
 end compWeightsEqns;
-
 
 // =============================================================================
 // section for symEuler

@@ -446,6 +446,8 @@ constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(138, "runtimeStaticLinkin
   Util.gettext("Use the static simulation runtime libraries (C++ simulation runtime)."));
 constant DebugFlag DYNAMIC_TEARING_INFO = DEBUG_FLAG(139, "dynamicTearingInfo", false,
   Util.gettext("Dumps information about the strict and casual sets of the tearing system."));
+constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(140, "sortEqnsAndVars", false,
+  Util.gettext("Heuristical sorting for equations and variables. Influenced: removeSimpleEquations and tearing."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -591,7 +593,8 @@ constant list<DebugFlag> allDebugFlags = {
   VECTORIZE,
   CHECK_EXT_LIBS,
   RUNTIME_STATIC_LINKING,
-  DYNAMIC_TEARING_INFO
+  DYNAMIC_TEARING_INFO,
+  SORT_EQNS_AND_VARS
 };
 
 public
