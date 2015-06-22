@@ -1,21 +1,29 @@
 OpenModelica.Scripting.setCFlags("-g " + getCFlags());getErrorString();
+compilerSources := "../../../OMCompiler/Compiler/";
 files := {
   "OMCC.mo",
-  "../../../Compiler/FrontEnd/Absyn.mo",
-  "../../../Compiler/Util/List.mo",
-  "../../../Compiler/Util/Config.mo",
-  "../../../Compiler/Global/Global.mo",
-  "../../../Compiler/Util/Debug.mo",
-  "../../../Compiler/Util/ErrorExt.mo",
-  "../../../Compiler/Util/Error.mo",
-  "../../../Compiler/Util/Print.mo",
-  "../../../Compiler/Util/Corba.mo",
-  "../../../Compiler/Util/Settings.mo",
-  "../../../Compiler/Util/Flags.mo",
-  "../../../Compiler/Util/Util.mo",
-  "../../../Compiler/Util/System.mo",
+  compilerSources + "/Util/List.mo",
+  compilerSources + "/Util/Config.mo",
+  compilerSources + "/Global/Global.mo",
+  compilerSources + "/Util/Debug.mo",
+  compilerSources + "/Util/ErrorExt.mo",
+  compilerSources + "/Util/Error.mo",
+  compilerSources + "/Util/Print.mo",
+  compilerSources + "/Util/Corba.mo",
+  compilerSources + "/Util/Settings.mo",
+  compilerSources + "/Util/Flags.mo",
+  compilerSources + "/Util/Util.mo",
+  compilerSources + "/Util/StringUtil.mo",
+  compilerSources + "/Util/System.mo",
   "LexerGenerator.mo",
   "ParserGenerator.mo"};getErrorString();
 setCommandLineOptions({"+g=MetaModelica","+d=rml"});
-loadFile(files);getErrorString();
-OMCC.main({"Modelica"});getErrorString();
+res:=loadFile(files);
+if min(res) == false then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+// OMCC.main({"Modelica"});getErrorString();
+generateCode(OMCC.main);
+generateEntryPoint("omccMain.c", OMCC.main);

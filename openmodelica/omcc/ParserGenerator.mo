@@ -425,7 +425,7 @@ package ParserGenerator
     end if;
     rest := substring(rest,pos1+2,pos2-4);
     tokens := System.strtok(rest,",");
-    while (List.isEmpty(tokens)==false) loop
+    while (listEmpty(tokens)==false) loop
        cp := "\n constant Integer ";
        resTable := cp::resTable;
        cp::tokens := tokens;

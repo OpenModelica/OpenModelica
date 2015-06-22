@@ -9,6 +9,11 @@ all: $(GEN_FILES)
 LexerModelica.mo: OMCC.mos lexerModelica.l parserModelica.y LexerGenerator.mo ParserGenerator.mo OMCC.mo Absyn.mo LexerCode.tmo ParseCode.tmo Lexer.mo Types.mo Parser.mo
 	$(OMC) $<
 
+omcc:
+	$(OMC) OMCC.mos
+	$(MAKE) -f OMCC_main.makefile MODELICAUSERCFLAGS='-DGENERATE_MAIN_EXECUTABLE -Os'
+	$(CC) -o OMCC OMCC_main.so '-Wl,-rpath,$$ORIGIN'
+
 Main_main.so: GenerateParser.mos $(GEN_FILES) Main.mo
 	@rm -f $@
 	$(OMC) $<
