@@ -10958,7 +10958,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     then
       let &unboxBuf = buffer ""
       let urhs = (match p.ty
-        case SOME(et) then unboxVariable(rhs, et, &unboxBuf, &varDecls)
+        case SOME(et) then '/* unbox <%unparseType(et)%> */<%\n%>' + unboxVariable(rhs, et, &unboxBuf, &varDecls)
         else rhs
       )
       <<<%unboxBuf%><%match p.exp
@@ -10970,7 +10970,8 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as BCONST(__) then 'if (<%if c.bool then 1 else 0%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
-        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN')
+        case c as ENUM_LITERAL() then 'if (<%c.index%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN <%printExpStr(p.exp)%>')
       %>>>
   case p as PAT_SOME(__) then
     let tvar = tempDecl("modelica_metatype", &varDecls)
