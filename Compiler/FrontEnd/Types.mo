@@ -2055,6 +2055,7 @@ algorithm
     local
       Type ty;
     case (DAE.T_METALIST(ty = ty)) then (boxIfUnboxedType(ty),DAE.DIM_UNKNOWN());
+    case (DAE.T_METAARRAY(ty = ty)) then (boxIfUnboxedType(ty),DAE.DIM_UNKNOWN());
     case (DAE.T_ARRAY(dims = {dim},ty = ty)) then (ty,dim);
     case (DAE.T_SUBTYPE_BASIC(complexType = ty))
       equation
@@ -8815,6 +8816,17 @@ algorithm
     case DAE.T_METATYPE() then metaArrayElementType(inType.ty);
   end match;
 end metaArrayElementType;
+
+public function isMetaArray
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match inType
+    case DAE.T_METAARRAY() then true;
+    case DAE.T_METATYPE() then isMetaArray(inType.ty);
+    else false;
+  end match;
+end isMetaArray;
 
 public function getAttributes
   input DAE.Type inType;

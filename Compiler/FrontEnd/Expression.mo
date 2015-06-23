@@ -8112,6 +8112,13 @@ algorithm
   end match;
 end isArray;
 
+public function isMetaArray "returns true if expression is a MM array."
+  input DAE.Exp inExp;
+  output Boolean outB;
+algorithm
+  outB := Types.isMetaArray(typeof(inExp));
+end isMetaArray;
+
 public function isMatrix "returns true if expression is an matrix.
 "
   input DAE.Exp inExp;

@@ -10032,12 +10032,11 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let &tmpVarDecls += (match identType
       case "modelica_metatype" then 'modelica_metatype <%loopVar%> = 0;<%\n%>'
       else '<%arrayType%> <%loopVar%>;<%\n%>')
-    let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
+    let firstIndex = match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls)
     let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction)
     let &rangeExpPre += '<%loopVar%> = <%rangeExp%>;<%\n%>'
     let &rangeExpPre += if firstIndex then '<%firstIndex%> = 1;<%\n%>'
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "1")
-    let empty = (match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)')
     let iteratorName = contextIteratorName(iter.id, context)
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
     let guardExp =
@@ -10050,13 +10049,22 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       >>
     (match identType
       case "modelica_metatype" then
-      <<
-      while(!<%empty%>) {
-        <%iteratorName%> = MMC_CAR(<%loopVar%>);
-        <%loopVar%> = MMC_CDR(<%loopVar%>);
-        <%guardExp%>
-      }
-      >>
+      (if isMetaArray(iter.exp) then
+        <<
+        while (<%firstIndex%> <= arrayLength(<%loopVar%>)) {
+          <%iteratorName%> = arrayGet(<%loopVar%>, <%firstIndex%>++);
+          <%guardExp%>
+        }
+        >>
+      else
+        <<
+        while (!listEmpty(<%loopVar%>)) {
+          <%iteratorName%> = MMC_CAR(<%loopVar%>);
+          <%loopVar%> = MMC_CDR(<%loopVar%>);
+          <%guardExp%>
+        }
+        >>
+      )
       else
       let addr = match iter.ty
         case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
@@ -10077,7 +10085,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let loopVar = '<%iter.id%>_loopVar'
          let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
+         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then 'arrayLength(<%loopVar%>)' else 'listLength(<%loopVar%>)') else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
          "")
        <<
        <%arrIndex%> = 1;
