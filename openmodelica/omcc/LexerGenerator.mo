@@ -138,12 +138,12 @@ algorithm
     resTable := cp::resTable;
 
     re := "case " + intString(i) + ":";
-    (numMatches,_::rest::_) := System.regex(flexCode,"case " + intString(i) + ":[^#]*(#[^#]*)YY_BREAK[^#]*",2,extended=true,sensitive=false);
+    (numMatches,_::rest::_) := System.regex(flexCode,"case " + intString(i) + ":[^#]*(#[^#]*)YY_BREAK[^#]*",2,extended=true);
     if (numMatches < 2) then
       print("Failed to find lexer case " + intString(i) + "\n");
       fail();
     end if;
-    (numMatches,_::tokenName::_) := System.regex(rest,"return *([^;]*);",2,extended=true,sensitive=false);
+    (numMatches,_::tokenName::_) := System.regex(rest,"return *([^;]*);",2,extended=true);
 print(intString(i) + " is token " + tokenName + "\n");
     re := "#line";
     pos := System.stringFind(rest,re);
@@ -252,7 +252,7 @@ end buildLexerCode;
 
     stTime := copyright;
 
-    cp := "encapsulated package " + outFileName +" // " + stTime + " \n\nconstant Integer yy_limit := ";
+    cp := "encapsulated package " + outFileName +" // " + stTime + " \n\nconstant Integer yy_limit = ";
 
     resTable := cp::{};
 
@@ -281,7 +281,7 @@ end buildLexerCode;
     ar1 := substring2(rest,stringLength(re)+1,pos2-1);
     resTable := ar1::resTable;
 
-    cp := ";\n\nconstant Integer yy_finish := ";
+    cp := ";\n\nconstant Integer yy_finish = ";
     resTable := cp::resTable;
     re := "while ( yy_base[yy_current_state] != ";
     rest := System.stringFindString(flexCode,re);
@@ -289,7 +289,7 @@ end buildLexerCode;
     ar1 := substring2(rest,stringLength(re)+1,pos2-1);
     resTable := ar1::resTable;
 
-    cp := ";\n\nconstant list<Integer> yy_acclist := {";
+    cp := ";\n\nconstant list<Integer> yy_acclist = {";
     resTable := cp::resTable;
 
     // match acclist
@@ -306,7 +306,7 @@ end buildLexerCode;
     resTable := ar1::resTable;
 
 
-    cp := "};\n\nconstant list<Integer> yy_accept := {";
+    cp := "};\n\nconstant list<Integer> yy_accept = {";
     resTable := cp::resTable;
     re := "yy_accept\\[[0-9]*\\] =[^}]*}";
     (numMatches,resultRegex) := System.regex(flexCode,re,1,false,false);
@@ -318,7 +318,7 @@ end buildLexerCode;
       ar1 := substring2(rest,pos1+2,pos2-1);
       resTable := ar1::resTable;
     end if;
-    cp := "};\n\nconstant list<Integer> yy_ec := {";
+    cp := "};\n\nconstant list<Integer> yy_ec = {";
     resTable := cp::resTable;
     //re := "static yyconst int yy_ec";
     re := "yy_ec\\[[0-9]*\\] =[^}]*}";
@@ -331,7 +331,7 @@ end buildLexerCode;
       ar1 := substring2(rest,pos1+2,pos2-1);
       resTable := ar1::resTable;
     end if;
-    cp := "};\n\nconstant list<Integer> yy_meta := {";
+    cp := "};\n\nconstant list<Integer> yy_meta = {";
     resTable := cp::resTable;
     //re := "static yyconst int yy_meta";
     re := "yy_meta\\[[0-9]*\\] =[^}]*}";
@@ -345,7 +345,7 @@ end buildLexerCode;
       resTable := ar1::resTable;
     end if;
 
-    cp := "};\n\nconstant list<Integer> yy_base := {";
+    cp := "};\n\nconstant list<Integer> yy_base = {";
     resTable := cp::resTable;
 
     //re := "static yyconst short int yy_base";
@@ -360,7 +360,7 @@ end buildLexerCode;
       resTable := ar1::resTable;
     end if;
 
-    cp := "};\n\nconstant list<Integer> yy_def := {";
+    cp := "};\n\nconstant list<Integer> yy_def = {";
     resTable := cp::resTable;
     //re := "static yyconst short int yy_def";
     re := "yy_def\\[[0-9]*\\] =[^}]*}";
@@ -374,7 +374,7 @@ end buildLexerCode;
       resTable := ar1::resTable;
     end if;
 
-    cp := "};\n\nconstant list<Integer> yy_nxt := {";
+    cp := "};\n\nconstant list<Integer> yy_nxt = {";
     resTable := cp::resTable;
     //re := "static yyconst short int yy_nxt";
     re := "yy_nxt\\[[0-9]*\\] =[^}]*}";
@@ -391,7 +391,7 @@ end buildLexerCode;
       resTable := ar1::resTable;
     end if;
 
-    cp := "};\n\nconstant list<Integer> yy_chk := {";
+    cp := "};\n\nconstant list<Integer> yy_chk = {";
     resTable := cp::resTable;
     re := "static yyconst short int yy_chk";
     re := "yy_chk\\[[0-9]*\\] =[^}]*}";
@@ -434,22 +434,60 @@ public function substring2
   input Integer start;
   input Integer stop;
   output String outString;
-  protected
+protected
   list<String> chars, result;
   String c;
   Integer i;
-  algorithm
-    outString := System.substring(inString,start,stop);
-    /* result :={};
-     chars := stringListStringChar(inString);
-     for i in 1:stop loop
-        c::chars := chars;
-        if (i>=start) then
-           result := c::result;
-        end if;
-     end for;
-     result := listReverse(result);
-     outString := stringCharListString(result);  */
-  end substring2;
+algorithm
+  outString := System.substring(inString,start,stop);
+  /* result :={};
+   chars := stringListStringChar(inString);
+   for i in 1:stop loop
+      c::chars := chars;
+      if (i>=start) then
+         result := c::result;
+      end if;
+   end for;
+   result := listReverse(result);
+   outString := stringCharListString(result);  */
+end substring2;
+
+function buildTokens
+  input String outFileName;
+  input String flexFile;
+  output Boolean buildResult;
+protected
+  String cp,re,flexCode,s;
+  Integer numMatches=0;
+  list<String> resTable,tokens,tokens2,tmp;
+algorithm
+  cp := "encapsulated package " + outFileName +" // " + copyright;
+  resTable := cp::{};
+  tokens := {};
+
+  flexCode := System.readFile(flexFile);
+  for str in System.strtok(flexCode, "return ") loop
+    tmp := System.strtok(str,";");
+    s := if listEmpty(tmp) then "" else System.trim(listGet(tmp,1));
+    if 1==System.regex(s, "^[A-Z_]{2,}$",0,extended=true) then
+      tokens := s :: tokens;
+    end if;
+  end for;
+  tokens2 := List.sortedUnique(List.sort(tokens, Util.strcmpBool), stringEqual);
+  numMatches := listLength(tokens2);
+  tokens := {};
+  for str in tokens2 loop
+    tokens := ("\n  constant Integer " + str + "=" + String(numMatches) + ";") :: tokens;
+    numMatches := numMatches - 1;
+  end for;
+  cp := stringAppendList(listReverse(tokens));
+  resTable := cp::resTable;
+  cp := "\nend " + outFileName + ";";
+  resTable := cp::resTable;
+
+  resTable := listReverse(resTable);
+  System.writeFile(outFileName + ".mo", stringAppendList(resTable));
+  buildResult := true;
+end buildTokens;
 
 end LexerGenerator;

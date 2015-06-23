@@ -20,7 +20,7 @@ end Token;
 
 constant Token noToken = TOKEN("",-1,"",0,0,0,0,0,0);
 
-type Info = Absyn.Info;
+type Info = SourceInfo;
 
 function getTimeStamp
   output Absyn.TimeStamp timeStamp;
@@ -38,7 +38,6 @@ protected
 algorithm
   TOKEN(name=tokName,id=idtk,lineNumberStart=lns,columnNumberStart=cns,lineNumberEnd=lne,columnNumberEnd=cne) := token;
   contents := getStringValue(token);
-
   strTk := "[TOKEN:" + tokName + " '" +  contents + "' (" + intString(lns) + ":" + intString(cns) + "-"+ intString(lne) + ":" + intString(cne) +")]";
 end printToken;
 
@@ -91,7 +90,7 @@ function printErrorLine // TODO: Make this print the context of the error... Get
   input Token token;
   output String strTk;
   protected
-  Token token1:=token;
+  Token token1=token;
   String tokName,fileNm;
   String str,str1,str2;
   Integer idtk,lns,cns,lne,cne,errline;
@@ -107,7 +106,7 @@ function printInfoError
   input Info info;
   output String strTk;
   protected
-  Info info1:=info;
+  Info info1=info;
   String tokName,fileNm;
   Integer idtk,lns,cns,lne,cne;
  algorithm
@@ -126,7 +125,7 @@ function printShortToken2
   input Token token;
   output String strTk;
 protected
-  Token token1:=token;
+  Token token1=token;
   String tokName;
   Integer idtk,lns,cns,lne,cne;
   Info info;
@@ -138,53 +137,53 @@ algorithm
 end printShortToken2;
 
 function printTokens
-    input list<Token> inList;
-    input String cBuff;
-    output String outList;
-    protected
-    list<Token> inList1:=inList;
-    Token c;
-   algorithm
-     outList := "";
-     while (List.isEmpty(inList1)==false) loop
-       c::inList1 := inList1;
-       outList := outList + printToken(c);
-     end while;
-  end printTokens;
+  input list<Token> inList;
+  input String cBuff;
+  output String outList;
+  protected
+  list<Token> inList1=inList;
+  Token c;
+algorithm
+  outList := "";
+  while (List.isEmpty(inList1)==false) loop
+    c::inList1 := inList1;
+    outList := outList + printToken(c);
+  end while;
+end printTokens;
 
- function countTokens
-    input list<Token> inList;
-    input Integer sValue;
-    output Integer outTotal;
-    protected
-    list<Token> inList1:=inList;
-   algorithm
-     //printAny("\nhere1");
-    (outTotal) := match(inList,sValue)
-      local
-        Token c;
-        Integer new,tout;
-        list<Token> rest;
-      case ({},_)
-        then (sValue+1);
-      else
-        equation
-           //printAny("\nhere2");
-           c::rest = inList1;
-           //printAny("\nhere3");
-           new = sValue + 1;
-           (tout) = countTokens(rest,new);
-        then (tout);
-     end match;
-     //printAny("\nhere4");
-  end countTokens;
+function countTokens
+  input list<Token> inList;
+  input Integer sValue;
+  output Integer outTotal;
+protected
+  list<Token> inList1=inList;
+algorithm
+  //printAny("\nhere1");
+  (outTotal) := match(inList,sValue)
+    local
+      Token c;
+      Integer new,tout;
+      list<Token> rest;
+    case ({},_)
+      then (sValue+1);
+    else
+      algorithm
+        //printAny("\nhere2");
+        c::rest := inList1;
+        //printAny("\nhere3");
+        new := sValue + 1;
+        tout := countTokens(rest,new);
+      then tout;
+ end match;
+ //printAny("\nhere4");
+end countTokens;
 
 function printBuffer
   input list<Integer> inList;
   input String cBuff;
   output String outList;
-  protected
-  list<Integer> inList1:=inList;
+protected
+  list<Integer> inList1=inList;
 algorithm
   (outList) := match(inList,cBuff)
     local
@@ -194,11 +193,11 @@ algorithm
     case ({},_)
     then (cBuff);
       else
-      equation
-        c::rest = inList1;
-        new = cBuff + intStringChar(c);
-        (tout) = printBuffer(rest,new);
-      then (tout);
+      algorithm
+        c::rest := inList1;
+        new := cBuff + intStringChar(c);
+        tout := printBuffer(rest,new);
+      then tout;
   end match;
 end printBuffer;
 

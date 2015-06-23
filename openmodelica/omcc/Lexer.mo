@@ -7,7 +7,7 @@ import System;
 import List;
 import Util;
 
-import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking;
+import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds checked with debug=true
 import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
 import MetaModelica.Dangerous.listReverseInPlace;
 
@@ -121,7 +121,7 @@ function consume
   input Integer inNumStates;
   input String fileName;
   output list<OMCCTypes.Token> resToken;
-  output Integer bkBuffer := 0;
+  output Integer bkBuffer = 0;
   output Integer mm_startSt;
   output Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
   output Integer buffer;
@@ -198,7 +198,16 @@ algorithm
 
     (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(lexTables, fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
 
+    if (debug==true) then
+      print("\nFound rule: " + String(act));
+    end if;
+
     (tok,mm_startSt,buffer2) := LexerCode.action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,debug,fileName,fileContents);
+
+    if (debug==true) then
+      print("\nDid action");
+    end if;
+
     mm_currSt := mm_startSt;
     arrayUpdate(states,1,mm_startSt);
     numStates := 1;
@@ -282,6 +291,10 @@ algorithm
       list<Integer> restBuff;
     case (_,true)
       equation
+        if debug then
+          checkArray(mm_accept,stCmp,sourceInfo());
+          checkArray(mm_acclist,lp,sourceInfo());
+        end if;
         lp = arrayGet(mm_accept,stCmp);
         act = arrayGet(mm_acclist,lp);
       then (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates);
@@ -295,6 +308,9 @@ algorithm
         if (cp==10) then
           mm_sPos = mm_ePos;
           mm_linenr = mm_linenr-1;
+        end if;
+        if debug then
+          checkArray(states,numStates,sourceInfo());
         end if;
         mm_currSt = arrayGet(states,numStates);
         numStates = numStates - 1;
@@ -310,9 +326,9 @@ function evalState
   input Integer c;
   output Integer new_state;
   output Integer new_c;
-  protected
-  Integer cState1:=cState;
-  Integer c1:=c;
+protected
+  Integer cState1=cState;
+  Integer c1=c;
   array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
   Integer val,val2,chk;
 algorithm
@@ -376,9 +392,9 @@ function printBuffer2
   input list<Integer> inList;
   input String cBuff;
   output String outList;
-  protected
-  list<Integer> inList1:=inList;
-  String cBuff1:=cBuff;
+protected
+  list<Integer> inList1=inList;
+  String cBuff1=cBuff;
 algorithm
   (outList) := match(inList,cBuff)
     local
@@ -399,8 +415,8 @@ end printBuffer2;
 function printBuffer
   input list<Integer> inList;
   output String outList;
-  protected
-  list<Integer> inList1:=inList;
+protected
+  list<Integer> inList1=inList;
   Integer c;
 algorithm
   outList := "";
@@ -411,29 +427,42 @@ algorithm
 end printBuffer;
 
 function printStack
-    input list<Integer> inList;
-    input String cBuff;
-    output String outList;
-    protected
-    list<Integer> inList1:=inList;
-    String cBuff1:=cBuff;
-   algorithm
-    (outList) := match(inList,cBuff)
-      local
-        Integer c;
-        String new,tout;
-        list<Integer> rest;
-      case ({},_)
-        then (cBuff1);
-      else
-        equation
-           c::rest = inList1;
-           new = cBuff1 + "|" + intString(c);
-           (tout) = printStack(rest,new);
-        then (tout);
-     end match;
-  end printStack;
+  input list<Integer> inList;
+  input String cBuff;
+  output String outList;
+protected
+  list<Integer> inList1=inList;
+  String cBuff1=cBuff;
+algorithm
+  (outList) := match(inList,cBuff)
+    local
+      Integer c;
+      String new,tout;
+      list<Integer> rest;
+    case ({},_)
+      then (cBuff1);
+    else
+      equation
+        c::rest = inList1;
+        new = cBuff1 + "|" + intString(c);
+        (tout) = printStack(rest,new);
+      then (tout);
+ end match;
+end printStack;
 
-
+function checkArray<T>
+  input array<T> arr;
+  input Integer index;
+  input SourceInfo info;
+protected
+  String filename;
+  Integer lineStart;
+algorithm
+  if index<1 or index>arrayLength(arr) then
+    SOURCEINFO(fileName=filename, lineNumberStart=lineStart) := info;
+    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(arrayLength(arr))+" index=" + String(index) + "\n");
+    fail();
+  end if;
+end checkArray;
 
 end Lexer;

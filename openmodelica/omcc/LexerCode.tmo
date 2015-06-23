@@ -1,5 +1,5 @@
 encapsulated package %LexerCode% // Generated %time%
-  /* 
+  /*
    Template for Lexer Code
    replace keywords:
    %LexerCode
@@ -41,17 +41,18 @@ algorithm
   act2 := act;
   bufferRet := 0;
   (token) := match (act)
-    local 
+    local
       OMCCTypes.Token tok;
 %caseAction%
     else
       equation
-        tok = OMCCTypes.TOKEN("",act,fileContents,mm_pos,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        print("\nLexer unknown rule, action="+String(act)+"\n");
+        tok = OMCCTypes.TOKEN("",act,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
         print(OMCCTypes.printToken(tok));
-      then (OMCCTypes.noToken);
+      then fail();
   end match;
-end action;  
-   
+end action;
+
 %epilogue%
 
 end %LexerCode%;
