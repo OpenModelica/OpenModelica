@@ -293,7 +293,7 @@ algorithm
       vars_1 = BackendVariable.listVar1(var_lst_1);
       eqns_1 = BackendEquation.listEquation(eqn_lst1);
       (mixedSystem, _) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
-      syst = BackendDAE.EQSYSTEM(vars_1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      syst = BackendDAEUtil.createEqSystem(vars_1, eqns_1);
       (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
       // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
       (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);

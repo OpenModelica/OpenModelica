@@ -555,88 +555,6 @@ algorithm
   end match;
 end copyMatching;
 
-public function addBackendDAEKnVars
-"  That function replace the KnownVars in BackendDAE.
-  author:  wbraun"
-  input BackendDAE.Variables inKnVars;
-  input BackendDAE.BackendDAE inBDAE;
-  output BackendDAE.BackendDAE outBDAE;
-protected
-  BackendDAE.Variables exobj,av;
-  BackendDAE.EquationArray remeqns,inieqns;
-  list<DAE.Constraint> constrs;
-  list<DAE.ClassAttributes> clsAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree funcTree;
-  BackendDAE.EventInfo einfo;
-  ExternalObjectClasses eoc;
-  BackendDAEType btp;
-  BackendDAE.SymbolicJacobians symjacs;
-  EqSystems eqs;
-  BackendDAE.ExtraInfo ei;
-algorithm
-  BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(_, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei)) := inBDAE;
-  outBDAE := BackendDAE.DAE(eqs, BackendDAE.SHARED(inKnVars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei));
-end addBackendDAEKnVars;
-
-public function addBackendDAEFunctionTree
-"  That function replace the FunctionTree in BackendDAE.
-  author:  wbraun"
-  input DAE.FunctionTree inFunctionTree;
-  input BackendDAE.BackendDAE inBDAE;
-  output BackendDAE.BackendDAE outBDAE;
-algorithm
-  outBDAE := match (inFunctionTree, inBDAE)
-    local
-      BackendDAE.Variables knvars,exobj,av;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      EqSystems eqs;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.DAE(eqs=eqs,shared=BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,_,einfo,eoc,btp,symjacs,ei)))
-      then BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,inFunctionTree,einfo,eoc,btp,symjacs,ei));
-
-  end match;
-end addBackendDAEFunctionTree;
-
-public function addFunctionTree
-" function: addBackendDAEFunctionTree
-  That function replace the FunctionTree in shared object.
-  author:  wbraun"
-  input DAE.FunctionTree inFunctionTree;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
-algorithm
-  outShared := match (inFunctionTree, inShared)
-    local
-      BackendDAE.Variables knvars,exobj,av;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      EqSystems eqs;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,_,einfo,eoc,btp,symjacs,ei))
-      then BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,inFunctionTree,einfo,eoc,btp,symjacs,ei);
-
-  end match;
-end addFunctionTree;
-
 public function addVarsToEqSystem
   input BackendDAE.EqSystem syst;
   input list<BackendDAE.Var> varlst;
@@ -5101,81 +5019,6 @@ algorithm
   end matchcontinue;
 end replaceVartraverser;
 
-public function replaceKnownVarsInShared"replaces the knownVars in the BackendDAE.Shared
-author:Waurich TUD 2014-04"
-  input BackendDAE.Shared sharedIn;
-  input BackendDAE.Variables knVars;
-  output BackendDAE.Shared sharedOut;
-protected
-  BackendDAE.Variables knownVars,externalObjects,aliasVars;
-  BackendDAE.EquationArray initialEqs,removedEqs;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.EventInfo eventInfo;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
-algorithm
-  BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,
-  constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
-  backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
-  sharedOut := BackendDAE.SHARED(knVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
-end replaceKnownVarsInShared;
-
-public function replaceAliasVarsInShared"replaces the aliasVars in the BackendDAE.Shared
-author:Waurich TUD 2014-11"
-  input BackendDAE.Shared sharedIn;
-  input BackendDAE.Variables aliasVars;
-  output BackendDAE.Shared sharedOut;
-protected
-    BackendDAE.Variables knownVars,externalObjects;
-    BackendDAE.EquationArray initialEqs,removedEqs;
-    list<DAE.Constraint> constraints;
-    list<DAE.ClassAttributes> classAttrs;
-    FCore.Cache cache;
-    FCore.Graph graph;
-    DAE.FunctionTree functionTree;
-    BackendDAE.EventInfo eventInfo;
-    BackendDAE.ExternalObjectClasses extObjClasses;
-    BackendDAE.BackendDAEType backendDAEType;
-    BackendDAE.SymbolicJacobians symjacs;
-    BackendDAE.ExtraInfo info;
-algorithm
-  BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,initialEqs=initialEqs,removedEqs=removedEqs,
-  constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
-  backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
-  sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
-end replaceAliasVarsInShared;
-
-public function replaceRemovedEqsInShared"replaces the aliasVars in the BackendDAE.Shared
-author:Waurich TUD 2014-11"
-  input BackendDAE.Shared sharedIn;
-  input BackendDAE.EquationArray remEqs;
-  output BackendDAE.Shared sharedOut;
-protected
-    BackendDAE.Variables knownVars,externalObjects,aliasVars;
-    BackendDAE.EquationArray initialEqs,removedEqs;
-    list<DAE.Constraint> constraints;
-    list<DAE.ClassAttributes> classAttrs;
-    FCore.Cache cache;
-    FCore.Graph graph;
-    DAE.FunctionTree functionTree;
-    BackendDAE.EventInfo eventInfo;
-    BackendDAE.ExternalObjectClasses extObjClasses;
-    BackendDAE.BackendDAEType backendDAEType;
-    BackendDAE.SymbolicJacobians symjacs;
-    BackendDAE.ExtraInfo info;
-algorithm
-  BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,
-  constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
-  backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
-  sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,remEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
-end replaceRemovedEqsInShared;
-
 protected function adjacencyRowExpEnhanced
 "author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced, investigates expressions for
@@ -7576,6 +7419,7 @@ algorithm
                        (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
                        (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
+                       (BackendDAEOptimize.sortEqnsVars, "sortEqnsVars", false),
                        (SynchronousFeatures.clockPartitioning, "clockPartitioning", true),
                        (StateMachineFeatures.stateMachineElab, "stateMachineElab", true),
                        (BackendDAEOptimize.expandDerOperator, "expandDerOperator", false),
@@ -7923,22 +7767,6 @@ algorithm
   nonEmpty := num <> 0;
 end nonEmptySystem;
 
-public function setEqSystemMatching
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Matching matching;
-  output BackendDAE.EqSystem osyst;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,stateSets=stateSets,partitionKind=partitionKind) := syst;
-  osyst := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
-end setEqSystemMatching;
-
 public function filterEmptySystems
   "Filter out equation systems leaving at least one behind"
   input BackendDAE.EqSystems systs;
@@ -8242,6 +8070,21 @@ algorithm
                                   inStateSets, inPartitionKind );
 end createEqSystem;
 
+public function createEmptyShared
+  input BackendDAE.BackendDAEType backendDAEType;
+  input BackendDAE.ExtraInfo ei;
+  input FCore.Cache cache;
+  input FCore.Graph graph;
+  output BackendDAE.Shared shared;
+protected
+  BackendDAE.Variables emptyVars = BackendVariable.emptyVars();
+  BackendDAE.EquationArray emptyEqs = BackendEquation.emptyEqns();
+  DAE.FunctionTree functions = DAEUtil.avlTreeNew();
+algorithm
+  shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
+                               DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei);
+end createEmptyShared;
+
 public function makeSingleEquationComp
   input Integer eqIdx;
   input Integer varIdx;
@@ -8264,17 +8107,45 @@ algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars=outKnownVars)) := inDAE;
 end getKnownVars;
 
+public function setVars
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(syst::systs, shared) := inDAE;
+  syst := setEqSystVars(syst, inVars);
+  outDAE := BackendDAE.DAE(syst::systs, shared);
+end setVars;
+
+public function setEqs
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.EquationArray inEqs;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(syst::systs, shared) := inDAE;
+  syst := setEqSystEqs(syst, inEqs);
+  outDAE := BackendDAE.DAE(syst::systs, shared);
+end setEqs;
+
 public function setAliasVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.Variables inAliasVars;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.EqSystems eqs;
+  BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(eqs, shared) := inDAE;
-  shared := replaceAliasVarsInShared(shared, inAliasVars);
-  outDAE := BackendDAE.DAE(eqs, shared);
+  BackendDAE.DAE(systs, shared) := inDAE;
+  shared := setSharedAliasVars(shared, inAliasVars);
+  outDAE := BackendDAE.DAE(systs, shared);
 end setAliasVars;
 
 public function setKnownVars "author: lochel"
@@ -8282,22 +8153,195 @@ public function setKnownVars "author: lochel"
   input BackendDAE.Variables inKnownVars;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.EqSystems eqs;
+  BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(eqs, shared) := inDAE;
-  shared := replaceKnownVarsInShared(shared, inKnownVars);
-  outDAE := BackendDAE.DAE(eqs, shared);
+  BackendDAE.DAE(systs, shared) := inDAE;
+  shared := setSharedKnVars(shared, inKnownVars);
+  outDAE := BackendDAE.DAE(systs, shared);
 end setKnownVars;
 
-public function setEventInfo
+public function setFunctionTree "author: lochel"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(systs, shared) := inDAE;
+  shared := setSharedFunctionTree(shared, inFunctionTree);
+  outDAE := BackendDAE.DAE(systs, shared);
+end setFunctionTree;
+
+public function setEqSystEqs
+"  That function replace the KnownVars in BackendDAE.
+  author:  wbraun"
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.EquationArray inEqs;
+  output BackendDAE.EqSystem outSyst;
+protected
+  BackendDAE.Variables vars;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
+  outSyst := BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=inEqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind);
+end setEqSystEqs;
+
+public function setEqSystVars
+"  That function replace the KnownVars in BackendDAE.
+  author:  wbraun"
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.EqSystem outSyst;
+protected
+  BackendDAE.EquationArray eqs;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
+  outSyst := BackendDAE.EQSYSTEM(orderedVars=inVars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind);
+end setEqSystVars;
+
+public function setEqSystMatching
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Matching matching;
+  output BackendDAE.EqSystem outSyst;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqs;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
+  outSyst := BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, stateSets=stateSets, matching=matching, partitionKind=partitionKind);
+end setEqSystMatching;
+
+public function setSharedRemovedEqns
+  input BackendDAE.Shared inShared;
+  input BackendDAE.EquationArray removedEqs;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs, info=info,
+                     initialEqs=initialEqs, eventInfo=eventInfo, aliasVars=aliasVars, functionTree=functionTree ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+end setSharedRemovedEqns;
+
+public function setSharedInitialEqns
+  input BackendDAE.Shared inShared;
+  input BackendDAE.EquationArray initialEqs;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
+  BackendDAE.EquationArray removedEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs, info=info,
+                     removedEqs=removedEqs, eventInfo=eventInfo, aliasVars=aliasVars, functionTree=functionTree ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+end setSharedInitialEqns;
+
+public function setSharedSymJacs
+  input BackendDAE.Shared inShared;
+  input BackendDAE.SymbolicJacobians symjacs;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.ExtraInfo info;
+  BackendDAE.EquationArray removedEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, initialEqs=initialEqs, info=info,
+                     removedEqs=removedEqs, eventInfo=eventInfo, aliasVars=aliasVars, functionTree=functionTree ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+end setSharedSymJacs;
+
+public function setSharedFunctionTree "replaces the aliasVars in the BackendDAE.Shared
+author:Waurich TUD 2014-11"
+  input BackendDAE.Shared inShared;
+  input DAE.FunctionTree inFunctionTree;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs, info=info,
+                     initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo, aliasVars=aliasVars ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                                  graph=graph, functionTree=inFunctionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType, aliasVars=aliasVars,
+                                  symjacs=symjacs, info=info, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+end setSharedFunctionTree;
+
+
+
+public function setSharedEventInfo
   input BackendDAE.Shared inShared;
   input BackendDAE.EventInfo eventInfo;
   output BackendDAE.Shared outShared;
 protected
-  BackendDAE.Variables knownVars;
-  BackendDAE.Variables externalObjects;
-  BackendDAE.Variables aliasVars;
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
   BackendDAE.EquationArray initialEqs;
   BackendDAE.EquationArray removedEqs;
   list<DAE.Constraint> constraints;
@@ -8310,21 +8354,84 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.ExtraInfo info;
 algorithm
-  BackendDAE.SHARED( knownVars = knownVars, externalObjects = externalObjects, aliasVars = aliasVars,
-                     initialEqs = initialEqs, removedEqs = removedEqs, constraints = constraints, classAttrs = classAttrs,
-                     cache = cache, graph = graph, functionTree = functionTree, extObjClasses = extObjClasses,
-                     backendDAEType = backendDAEType, symjacs = symjacs, info = info ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars = knownVars, externalObjects = externalObjects, aliasVars = aliasVars,
-                     initialEqs = initialEqs, removedEqs = removedEqs, constraints = constraints, classAttrs = classAttrs,
-                     cache = cache, graph = graph, functionTree = functionTree, extObjClasses = extObjClasses, info = info,
-                     eventInfo = eventInfo, backendDAEType = backendDAEType, symjacs = symjacs );
-end setEventInfo;
+  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,
+                     initialEqs=initialEqs, removedEqs=removedEqs, constraints=constraints, classAttrs=classAttrs,
+                     cache=cache, graph=graph, functionTree=functionTree, extObjClasses=extObjClasses,
+                     backendDAEType=backendDAEType, symjacs=symjacs, info=info ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,
+                                  initialEqs=initialEqs, removedEqs=removedEqs, constraints=constraints, classAttrs=classAttrs,
+                                  cache=cache, graph=graph, functionTree =functionTree, extObjClasses=extObjClasses, info=info,
+                                  eventInfo=eventInfo, backendDAEType=backendDAEType, symjacs=symjacs );
+end setSharedEventInfo;
+
+public function setSharedKnVars
+"  That function replace the KnownVars in BackendDAE.
+  author:  wbraun"
+  input BackendDAE.Shared inShared;
+  input BackendDAE.Variables knownVars;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables aliasVars, externalObjects;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.SHARED( externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                     graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                     symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo  );
+end setSharedKnVars;
+
+public function setSharedAliasVars "replaces the aliasVars in the BackendDAE.Shared
+author:Waurich TUD 2014-11"
+  input BackendDAE.Shared inShared;
+  input BackendDAE.Variables aliasVars;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knownVars, externalObjects;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  BackendDAE.EventInfo eventInfo;
+algorithm
+  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                     graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                     symjacs=symjacs, info=info, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo ) := inShared;
+  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
+                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
+                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+end setSharedAliasVars;
 
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, arrayCreate(0, DAE.INFERRED_CLOCK()));
+  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, emptyClocks());
 end emptyEventInfo;
+
+public function emptyClocks
+  output array<DAE.ClockKind> clocks;
+algorithm
+  clocks := arrayCreate(0, DAE.INFERRED_CLOCK());
+end emptyClocks;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

@@ -130,7 +130,7 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching,stateSets=stateSets,partitionKind=partitionKind),_)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs,matching=matching,stateSets=stateSets,partitionKind=partitionKind),_)
       equation
         (orderedVars,b1) = inlineVariables(orderedVars,tpl);
         (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);

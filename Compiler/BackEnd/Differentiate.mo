@@ -103,7 +103,7 @@ algorithm
       knvars = BackendDAEUtil.getknvars(ishared);
       diffData = BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), SOME({}), NONE(), NONE());
       (deqn, funcs) = differentiateEquation(inEquation, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
-      oshared = BackendDAEUtil.addFunctionTree(funcs, ishared);
+      oshared = BackendDAEUtil.setSharedFunctionTree(ishared, funcs);
       then (deqn, oshared);
     else
     equation
@@ -138,7 +138,7 @@ algorithm
       diffData = BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), SOME(inVariables), SOME({}), NONE(), NONE());
       (dexp, funcs) = differentiateExp(inExp, DAE.crefTime, diffData, BackendDAE.DIFFERENTIATION_TIME(), funcs);
       (dexp,_) = ExpressionSimplify.simplify(dexp);
-      oshared = BackendDAEUtil.addFunctionTree(funcs, ishared);
+      oshared = BackendDAEUtil.setSharedFunctionTree(ishared, funcs);
       then (dexp, oshared);
     else
     equation
@@ -221,7 +221,7 @@ algorithm
       diffData = BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), NONE(), SOME({}), NONE(), NONE());
       (dexp, funcs) = differentiateExp(inExp, inCref, diffData, BackendDAE.DIFF_FULL_JACOBIAN(), funcs);
       (dexp,_) = ExpressionSimplify.simplify(dexp);
-      oshared = BackendDAEUtil.addFunctionTree(funcs, ishared);
+      oshared = BackendDAEUtil.setSharedFunctionTree(ishared, funcs);
       then (dexp, oshared);
     else
     equation

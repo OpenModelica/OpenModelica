@@ -190,7 +190,7 @@ algorithm
     shared = addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-    shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
+    shared = BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
     outBackendDAE = BackendDAE.DAE(eqs,shared);
     _ = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
@@ -255,12 +255,11 @@ algorithm
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    BackendDAE.SHARED() = shared;
     (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
-    shared = addBackendDAESharedJacobians(linearModelMatrixes, shared);
+    shared = BackendDAEUtil.setSharedSymJacs(shared, linearModelMatrixes);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-    shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
+    shared = BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
     outBackendDAE = BackendDAE.DAE(eqs,shared);
     _  = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
@@ -293,21 +292,14 @@ protected function inputDerivativesUsedWork "author: Frenkel TUD 2012-10"
 algorithm
   (osyst, outChanged) := matchcontinue(isyst)
     local
-      BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
-      BackendDAE.EquationArray orderedEqs "ordered Equations";
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;
+      BackendDAE.EquationArray orderedEqs;
       list<DAE.Exp> explst;
       String s;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-
-    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) equation
+    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) equation
       ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeKnVars(inShared), {}));
       s = stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), true);
+    then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);
 
     else (isyst, inChanged);
   end matchcontinue;
@@ -697,13 +689,13 @@ algorithm
 
     case (false,_) then isyst;
 //    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()))
-    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind))
+    case (true,BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind))
       equation
         // remove empty entries from vars/eqns
         vars = BackendVariable.listVar1(BackendVariable.varList(vars));
         eqns = BackendEquation.listEquation(BackendEquation.equationList(eqns));
       then
-        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
+        BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind);
 /*    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)))
       then
         updateEquationSystemMatching(vars,eqns,ass1,ass2,comps);
@@ -1545,7 +1537,7 @@ algorithm
 
         // Differentiate the System w.r.t states for matrices A
         (linearModelMatrix, sparsePattern, sparseColoring, functionTree) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
-        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
+        backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
@@ -1554,7 +1546,7 @@ algorithm
         // Differentiate the System w.r.t inputs for matrices B
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
+        backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
@@ -1563,7 +1555,7 @@ algorithm
         // Differentiate the System w.r.t states for matrices C
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
+        backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
@@ -1624,7 +1616,7 @@ algorithm
         // Differentiate the System w.r.t states for matrices A
         (linearModelMatrix, sparsePattern, sparseColoring, functionTree) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
 
-        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
+        backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
@@ -1638,7 +1630,7 @@ algorithm
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
+        backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
@@ -1650,7 +1642,7 @@ algorithm
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
+        backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
@@ -1752,8 +1744,8 @@ algorithm
           print("analytical Jacobians -> sorted know vars(" + intString(listLength(knvarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
         knvars = BackendVariable.listVar1(knvarsTmp);
-        backendDAE = BackendDAEUtil.addBackendDAEKnVars(knvars,backendDAE);
-        //SimCodeUtil.execStat("analytical Jacobians -> generated optimized jacobians");
+        backendDAE = BackendDAEUtil.setKnownVars(backendDAE, knvars);
+        SimCodeUtil.execStat("analytical Jacobians -> generated optimized jacobians");
 
         // generate sparse pattern
         (sparsepattern,colsColors) = generateSparsePattern(reduceDAE, inDiffVars, diffedVars);
@@ -1865,15 +1857,8 @@ algorithm
       // BackendDAE
       BackendDAE.Variables orderedVars, jacOrderedVars; // ordered Variables, only states and alg. vars
       BackendDAE.Variables knownVars, jacKnownVars; // Known variables, i.e. constants and parameters
-      BackendDAE.Variables jacExternalObjects; // External object variables
-      BackendDAE.Variables jacAliasVars; // mappings of alias-variables to real-variables
       BackendDAE.EquationArray orderedEqs, jacOrderedEqs; // ordered Equations
       BackendDAE.EquationArray removedEqs, jacRemovedEqs; // Removed equations a=b
-      BackendDAE.EquationArray jacInitialEqs; // Initial equations
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      BackendDAE.EventInfo jacEventInfo; // eventInfo
-      BackendDAE.ExternalObjectClasses jacExtObjClasses; // classes of external objects, contains constructor & destructor
       // end BackendDAE
 
       list<BackendDAE.Var> diffVars, derivedVariables, diffvars, diffedVarLst;
@@ -1884,6 +1869,7 @@ algorithm
 
       FCore.Cache cache;
       FCore.Graph graph;
+      BackendDAE.Shared shared;
 
       String matrixName;
       array<Integer> ass2;
@@ -1894,22 +1880,14 @@ algorithm
       BackendDAE.ExtraInfo ei;
       Integer size;
 
-    case(BackendDAE.DAE(shared=BackendDAE.SHARED(cache=cache,graph=graph,info=ei)), {}, _, _, _, _, _, _) equation
-      jacOrderedVars = BackendVariable.emptyVars();
-      jacKnownVars = BackendVariable.emptyVars();
-      jacExternalObjects = BackendVariable.emptyVars();
-      jacAliasVars =  BackendVariable.emptyVars();
-      jacOrderedEqs = BackendEquation.emptyEqns();
-      jacRemovedEqs = BackendEquation.emptyEqns();
-      jacInitialEqs = BackendEquation.emptyEqns();
-      functions = DAEUtil.avlTreeNew();
-      jacEventInfo = BackendDAEUtil.emptyEventInfo();
-      jacExtObjClasses = {};
-
-      jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, graph, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{},ei));
+    case(BackendDAE.DAE(shared=BackendDAE.SHARED(cache=cache, graph=graph, info=ei)), {}, _, _, _, _, _, _) equation
+      jacobian = BackendDAE.DAE( {BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())},
+                                 BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
     then (jacobian, DAE.emptyFuncTree);
 
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, cache=cache,graph=graph,  functionTree=functions, info=ei)), diffVars, diffedVars, _, _, _, _, matrixName) equation
+    case( BackendDAE.DAE( BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, matching=BackendDAE.MATCHING(ass2=ass2))::{},
+                         BackendDAE.SHARED(knownVars=knownVars, cache=cache,graph=graph, functionTree=functions, info=ei) ),
+          diffVars, diffedVars, _, _, _, _, matrixName ) equation
       // Generate tmp varibales
       dummyVarName = ("dummyVar" + matrixName);
       x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
@@ -1947,18 +1925,18 @@ algorithm
       jacKnownVars = BackendVariable.addVariables(knownVars, jacKnownVars);
       jacKnownVars = BackendVariable.addVariables(inseedVars, jacKnownVars);
       (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars, BackendVariable.setVarDirectionTpl, (DAE.INPUT()));
-      jacExternalObjects = BackendVariable.emptyVars();
-      jacAliasVars =  BackendVariable.emptyVars();
       jacOrderedEqs = BackendEquation.listEquation(derivedEquations);
-      jacRemovedEqs = BackendEquation.emptyEqns();
-      jacInitialEqs = BackendEquation.emptyEqns();
-      jacEventInfo = BackendDAEUtil.emptyEventInfo();
-      jacExtObjClasses = {};
 
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, graph, DAE.emptyFuncTree, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}, ei));
+
+      shared = BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph);
+
+      jacobian = BackendDAE.DAE( BackendDAEUtil.createEqSystem(jacOrderedVars, jacOrderedEqs)::{},
+                                 BackendDAEUtil.setSharedKnVars(shared, jacKnownVars) );
     then (jacobian, functions);
 
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, functionTree=functions)), diffVars, diffedVars, _, _, _, _, matrixName) equation
+    case( BackendDAE.DAE( BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, matching=BackendDAE.MATCHING(ass2=ass2))::{},
+                          BackendDAE.SHARED(knownVars=knownVars, functionTree=functions) ),
+          diffVars, diffedVars, _, _, _, _, matrixName ) equation
 
       // Generate tmp varibales
       dummyVarName = ("dummyVar" + matrixName);
@@ -2580,11 +2558,10 @@ algorithm
         emptyEqns = BackendEquation.listEquation({});
         cache = FCore.emptyCache();
         graph = FGraph.empty();
-        backendDAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(dependentVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())},
-          BackendDAE.SHARED(knvars, emptyVars, emptyVars,
-            emptyEqns, emptyEqns, {}, {},
-            cache, graph, funcs, BackendDAEUtil.emptyEventInfo(),
-            {}, BackendDAE.ALGEQSYSTEM(), {}, einfo));
+        shared = BackendDAEUtil.createEmptyShared(BackendDAE.ALGEQSYSTEM(), einfo, cache, graph);
+        shared = BackendDAEUtil.setSharedKnVars(shared, knvars);
+        shared = BackendDAEUtil.setSharedFunctionTree(shared, funcs);
+        backendDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(dependentVars, eqns)}, shared);
 
         backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
         BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(knownVars = knvars)) = backendDAE;
@@ -2601,7 +2578,7 @@ algorithm
           inResVars,
           dependentVarsLst,
           inName);
-        shared = BackendDAEUtil.addFunctionTree(funcs, inShared);
+        shared = BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
 
       then (BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring), shared);
 
@@ -3182,32 +3159,11 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei) := inShared;
-  symjacs := {(SOME(inSymJac), inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {})};
-  outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei);
+  symjacs := { (SOME(inSymJac), inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {})), {}),
+               (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}) };
+  outShared := BackendDAEUtil.setSharedSymJacs(inShared, symjacs);
 end addBackendDAESharedJacobian;
 
-protected function addBackendDAESharedJacobians
-  input BackendDAE.SymbolicJacobians inSymJac;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables knvars,exobj,av;
-  BackendDAE.EquationArray remeqns,inieqns;
-  list<DAE.Constraint> constrs;
-  list<DAE.ClassAttributes> clsAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree funcTree;
-  BackendDAE.EventInfo einfo;
-  BackendDAE.ExternalObjectClasses eoc;
-  BackendDAE.BackendDAEType btp;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo ei;
-algorithm
-  BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, _, ei) := inShared;
-  outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, inSymJac, ei);
-end addBackendDAESharedJacobians;
 
 protected function addBackendDAESharedJacobianSparsePattern
   input BackendDAE.SparsePattern inSparsePattern;
@@ -3230,10 +3186,10 @@ protected
   Option<BackendDAE.SymbolicJacobian> symJac;
   BackendDAE.ExtraInfo ei;
 algorithm
-  BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei) := inShared;
+  BackendDAE.SHARED(symjacs=symjacs) := inShared;
   ((symJac, _, _)) := listGet(symjacs, inIndex);
   symjacs := List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring)));
-  outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei);
+  outShared := BackendDAEUtil.setSharedSymJacs(inShared, symjacs);
 end addBackendDAESharedJacobianSparsePattern;
 
 public function analyzeJacobian "author: PA

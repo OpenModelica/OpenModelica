@@ -139,7 +139,7 @@ algorithm
   eventInfo := BackendDAE.EVENT_INFO( timeEvents=timeEvents, whenClauseLst=whenClauseLst,
                                       zeroCrossingLst=zeroCrossingLst, relationsLst=relationsLst,
                                       numberMathEvents=numberMathEvents, sampleLst=sampleLst, clocks = inClocks );
-  outShared := BackendDAEUtil.setEventInfo(inShared, eventInfo);
+  outShared := BackendDAEUtil.setSharedEventInfo(inShared, eventInfo);
 end setClocks;
 
 protected type UnresolvedPartitionData = tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.SubClock>;
@@ -1494,7 +1494,7 @@ protected
   BackendDAE.EventInfo eventInfo;
 algorithm
   BackendDAE.EQSYSTEM( orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inSyst;
-  outSyst := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets,  inPartitionKind);
+  outSyst := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, inPartitionKind);
 end setSystPartition;
 
 protected function getPartitionConflictError

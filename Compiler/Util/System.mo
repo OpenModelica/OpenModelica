@@ -109,12 +109,12 @@ public function regex "Fails and sets Error.mo if the regex does not compile.
   input String str;
   input String re;
   input Integer maxMatches "The maximum number of matches that will be returned";
-  input Boolean extended "Use POSIX extended or regular syntax";
-  input Boolean sensitive;
+  input Boolean extended=false "Use POSIX extended or regular syntax";
+  input Boolean ignoreCase=false;
   output Integer numMatches "0 means no match, else returns a number 1..maxMatches (1 if maxMatches<0)";
   output list<String> strs "This list has length = maxMatches. Substrings that did not match are filled with the empty string";
 
-  external "C" strs=System_regex(str,re,maxMatches,extended,sensitive,numMatches) annotation(Library = "omcruntime");
+  external "C" strs=System_regex(str,re,maxMatches,extended,ignoreCase,numMatches) annotation(Library = "omcruntime");
 end regex;
 
 public function strncmp

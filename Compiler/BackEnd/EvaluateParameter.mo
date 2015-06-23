@@ -999,9 +999,9 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := isyst;
-  (vars,outTypeA) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceEvaluatedParameterTraverser,inTypeA);
-  osyst := BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets,partitionKind);
+  BackendDAE.EQSYSTEM(orderedVars=vars) := isyst;
+  (vars,outTypeA) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceEvaluatedParameterTraverser, inTypeA);
+  osyst := BackendDAEUtil.setEqSystVars(isyst, vars);
 end replaceEvaluatedParametersSystem;
 
 protected function replaceEvaluatedParameterTraverser
@@ -1106,11 +1106,11 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind) := isyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := isyst;
   lsteqns := BackendEquation.equationList(eqns);
-  (eqns_1,b) := BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
+  (eqns_1,b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
   eqns1 := if b then BackendEquation.listEquation(eqns_1) else eqns;
-  osyst := if b then BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind) else isyst;
+  osyst := if b then BackendDAEUtil.createEqSystem(vars, eqns1, stateSets, partitionKind) else isyst;
 end replaceEvaluatedParametersSystemEqns;
 
 annotation(__OpenModelica_Interface="backend");

@@ -170,7 +170,7 @@ algorithm
                                 ei);
 
     // generate initial system and pre-balance it
-    initsyst := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+    initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
     (initsyst, dumpVars) := preBalanceInitialSystem(initsyst);
     SimCodeUtil.execStat("created initial system");
 
@@ -345,7 +345,7 @@ algorithm
   //print("After: " + intString(listLength(eqnlst)) + "\n");
   eqns := BackendEquation.listEquation(eqnlst);
 
-  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+  outEqSystem := BackendDAEUtil.createEqSystem(orderedVars, eqns, stateSets, partitionKind);
 end inlineWhenForInitializationSystem;
 
 protected function inlineWhenForInitializationEquation "author: lochel"
@@ -789,7 +789,7 @@ algorithm
     //BackendDump.dumpVariables(allParameters, "all parameters");
     //BackendDump.dumpEquationArray(allParameterEqns, "all parameter equations");
 
-    paramSystem := BackendDAE.EQSYSTEM(allParameters, allParameterEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+    paramSystem := BackendDAEUtil.createEqSystem(allParameters, allParameterEqns);
     (m, mT) := BackendDAEUtil.incidenceMatrix(paramSystem, BackendDAE.NORMAL(), NONE());
     //BackendDump.dumpIncidenceMatrix(m);
     //BackendDump.dumpIncidenceMatrixT(mT);
@@ -1056,7 +1056,7 @@ algorithm
   (_, mt) := BackendDAEUtil.incidenceMatrix(inSystem, BackendDAE.NORMAL(), NONE());
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inSystem;
   (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
-  outSystem := if b then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else inSystem;
+  outSystem := if b then BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind) else inSystem;
 end preBalanceInitialSystem;
 
 protected function preBalanceInitialSystem1 "author: lochel"
@@ -1236,7 +1236,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      system = BackendDAEUtil.createEqSystem(vars, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-1) mixed-determined system
@@ -1248,7 +1248,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      system = BackendDAEUtil.createEqSystem(vars, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-2) mixed-determined system
@@ -1260,7 +1260,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      system = BackendDAEUtil.createEqSystem(vars, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-3) mixed-determined system
@@ -1272,7 +1272,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      system = BackendDAEUtil.createEqSystem(vars, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     else fail();
@@ -1305,7 +1305,7 @@ algorithm
   // nVars = nEqns
   nVars := BackendVariable.varsSize(inVars);
   nEqns := BackendDAEUtil.equationSize(inEqns);
-  syst := BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+  syst := BackendDAEUtil.createEqSystem(inVars, inEqns);
   funcs := BackendDAEUtil.getFunctions(inShared);
   (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
 //BackendDump.dumpEqSystem(syst, "fixInitialSystem");
@@ -1930,7 +1930,7 @@ algorithm
       list_inEqns = List.set(list_inEqns, inUnassignedEqn, eqn);
       eqns = BackendEquation.listEquation(list_inEqns);
       funcs = BackendDAEUtil.getFunctions(shared);
-      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      system = BackendDAEUtil.createEqSystem(vars, eqns);
       (m, _) = BackendDAEUtil.incidenceMatrix(system, BackendDAE.NORMAL(), SOME(funcs));
       listVar=m[inUnassignedEqn];
       false = listEmpty(listVar);

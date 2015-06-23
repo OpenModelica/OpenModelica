@@ -62,11 +62,11 @@ modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelic
   return m ? (1 / result) : result;
 }
 
-extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int sensitive, void*(*mystrdup)(const char*), void **outMatches)
+extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int ignoreCase, void*(*mystrdup)(const char*), void **outMatches)
 {
   regex_t myregex;
   int nmatch=0,i,rc,res;
-  int flags = (extended ? REG_EXTENDED : 0) | (sensitive ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
+  int flags = (extended ? REG_EXTENDED : 0) | (ignoreCase ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
 #if !defined(_MSC_VER)
   regmatch_t matches[maxn < 1 ? 1 : maxn];
 #else
