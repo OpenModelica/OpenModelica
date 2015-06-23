@@ -11,6 +11,12 @@ set_target_properties(${KinsolName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTI
 
 add_library(${KinsolName} SHARED Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp)
 add_precompiled_header(${KinsolName} Include/Core/Modelica.h )
+
+if (UNIX)
+	set_target_properties(${KinsolName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${KinsolName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
 target_link_libraries(${KinsolName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES})
 
 install (TARGETS ${KinsolName} ${KinsolName}_static DESTINATION ${LIBINSTALLEXT})

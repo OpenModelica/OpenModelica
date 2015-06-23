@@ -1191,8 +1191,12 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       #pragma omp parallel num_threads(<%arrayLength(threadTasksOde)%>)
       {
          int threadNum = omp_get_thread_num();
+         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+         <<
          MeasureTimeValues *measuredSchedulerStartValues = MeasureTime::getZeroValues();
          MeasureTimeValues *measuredSchedulerEndValues = MeasureTime::getZeroValues();
+         >>
+         %>
          if(_evaluateODE)
          {
            <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
@@ -1217,8 +1221,12 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
            <%threadReleaseLocksDae%>
            <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayDaeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
          }
+         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+         <<
          delete measuredSchedulerStartValues;
          delete measuredSchedulerEndValues;
+         >>
+         %>
       }
       >>
     case ("mpi") then

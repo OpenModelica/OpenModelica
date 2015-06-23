@@ -16,6 +16,11 @@ add_precompiled_header(${CVodeName} Include/Core/Modelica.h )
 
 install (TARGETS ${CVodeName} ${CVodeName}_static DESTINATION ${LIBINSTALLEXT})
 
+if (UNIX)
+	set_target_properties(${CVodeName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${CVodeName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
 #target_link_libraries( Euler ${Boost_serialization_LIBRARY})
 
 

@@ -10,6 +10,12 @@ install (TARGETS ${PeerName}_static DESTINATION ${LIBINSTALLEXT})
 
 add_library(${PeerName} SHARED Peer.cpp PeerSettings.cpp FactoryExport.cpp  )
 target_link_libraries (${PeerName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES})
+
+if (UNIX)
+	set_target_properties(${PeerName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${PeerName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
 add_precompiled_header(${PeerName} Include/Core/Modelica.h )
 
 install (TARGETS ${PeerName} ${PeerName}_static DESTINATION ${LIBINSTALLEXT})

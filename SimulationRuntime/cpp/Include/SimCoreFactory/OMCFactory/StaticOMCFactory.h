@@ -5,7 +5,7 @@
  */
 
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 
@@ -16,7 +16,7 @@ class StaticOMCFactory : public OMCFactory
     StaticOMCFactory(PATH library_path, PATH modelicasystem_path);
     virtual ~StaticOMCFactory();
 
-    void UnloadAllLibs(void);
+    void UnloadAllLibs();
     LOADERRESULT LoadLibrary(string libName, type_map& current_map);
     LOADERRESULT UnloadLibrary(shared_library lib);
 

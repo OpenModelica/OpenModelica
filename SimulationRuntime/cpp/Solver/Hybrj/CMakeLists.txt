@@ -11,6 +11,11 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvect
 add_library(${HybrjName} SHARED Hybrj.cpp HybrjSettings.cpp FactoryExport.cpp )
 add_precompiled_header(${HybrjName} Include/Core/Modelica.h )
 
+if (UNIX)
+	set_target_properties(${HybrjName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${HybrjName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
 target_link_libraries( ${HybrjName} ${Boost_LIBRARIES})
 target_link_libraries( ${HybrjName} ${LAPACK_LIBRARIES} ${CMINPACK_LIBRARY})
 message(STATUS ${CMINPACK_LIBRARY})

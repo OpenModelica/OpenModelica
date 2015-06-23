@@ -19,7 +19,7 @@ public:
   OMCFactory(PATH library_path, PATH modelicasystem_path);
   virtual ~OMCFactory();
 
-  void UnloadAllLibs(void);
+  virtual void UnloadAllLibs();
   virtual LOADERRESULT LoadLibrary(string libName, type_map& current_map);
   virtual LOADERRESULT UnloadLibrary(shared_library lib);
 

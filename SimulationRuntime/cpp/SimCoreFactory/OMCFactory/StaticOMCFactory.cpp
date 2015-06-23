@@ -20,7 +20,7 @@ StaticOMCFactory::~StaticOMCFactory()
 
 }
 
-void StaticOMCFactory::UnloadAllLibs(void)
+void StaticOMCFactory::UnloadAllLibs()
 {
 }
 

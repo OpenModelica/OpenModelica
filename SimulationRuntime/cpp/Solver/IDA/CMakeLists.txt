@@ -12,6 +12,11 @@ add_library(${IDAName} SHARED IDA.cpp IDASettings.cpp FactoryExport.cpp)
 target_link_libraries (${IDAName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${IDAName} Include/Core/Modelica.h )
 
+if (UNIX)
+	set_target_properties(${IDAName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${IDAName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
 install (TARGETS ${IDAName} ${IDAName}_static DESTINATION ${LIBINSTALLEXT})
 
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/IDA/IDA.h

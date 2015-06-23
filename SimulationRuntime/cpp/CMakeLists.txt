@@ -234,14 +234,14 @@ ENDIF(PAPI_FOUND)
 #  - Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
 FIND_PACKAGE(Boost COMPONENTS log log_setup)
 
-SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
-IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-  ADD_DEFINITIONS(-DUSE_BOOST_LOG)
-  MESSAGE(STATUS "Using boost log")
-ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-  MESSAGE(STATUS "Boost log disabled")
-  UNSET(Boost_LOG_LIBRARY)
-ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
+#SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
+#IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
+#  ADD_DEFINITIONS(-DUSE_BOOST_LOG)
+#  MESSAGE(STATUS "Using boost log")
+#ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
+#  MESSAGE(STATUS "Boost log disabled")
+#  UNSET(Boost_LOG_LIBRARY)
+#ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
 FIND_PACKAGE(Boost COMPONENTS thread atomic)
 
