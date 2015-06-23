@@ -4,8 +4,8 @@ TESTFILES = \
 BouncingBall_mcp_omp.mos \
 Modelica.Electrical.Spice3.Examples.CoupledInductors_level.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_memory.mos
-
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_memory.mos \
+Modelica.Thermal.HeatTransfer.Examples.Motor.mos
 
 TESTFILES_ALL = $(TESTFILES) \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix.mos \
@@ -19,8 +19,8 @@ Modelica.Electrical.Spice3.Examples.CoupledInductors_list_pthreads_spin.mos \
 Modelica.Electrical.Spice3.Examples.CoupledInductors_mcp_omp.mos \
 Modelica.Electrical.Spice3.Examples.CoupledInductors_tbb.mos \
 Modelica.Fluid.Examples.BranchingDynamicPipes_levelfix.mos \
-Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_mcp_pthreads.mos
-
+Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_mcp_pthreads.mos \
+Modelica.Thermal.HeatTransfer.Examples.Motor.mos
 
 
 # Run make failingtest
