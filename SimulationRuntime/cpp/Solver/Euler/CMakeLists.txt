@@ -19,5 +19,4 @@ endif(UNIX)
 target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
 
 install (TARGETS ${EulerName} ${EulerName}_static DESTINATION ${LIBINSTALLEXT})
-install (FILES "config/EulerSettings.xml"
-DESTINATION share/omc/runtime/cpp/config)
+install (FILES "config/EulerSettings.xml" DESTINATION share/omc/runtime/cpp/config)

@@ -593,10 +593,10 @@ ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
 
+install (FILES "Licenses/sundials.license" DESTINATION share/omc/runtime/cpp/licenses)
 
-
- #copy Utils/extension
- SET(HS Include/Core/Object/IObject.h
+#copy Utils/extension
+SET(HS Include/Core/Object/IObject.h
         Include/Core/Object/Object.h
         Include/Core/Utils/extension/adaptable_factory.hpp
         Include/Core/Utils/extension/common.hpp
@@ -610,7 +610,7 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/Core/Utils/extension/registry.hpp
         Include/Core/Utils/extension/shared_library.hpp
         Include/Core/Utils/extension/type_map.hpp
-	Include/Core/Utils/extension/logger.hpp
+        Include/Core/Utils/extension/logger.hpp
         Include/Core/Utils/extension/impl/adaptable_factory.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
