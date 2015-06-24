@@ -536,6 +536,7 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);

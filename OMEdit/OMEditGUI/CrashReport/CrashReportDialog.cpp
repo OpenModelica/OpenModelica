@@ -39,9 +39,12 @@
 #include "Helper.h"
 
 /*!
-  \class CrashReportDialog
-  \brief Interface for sending crash reports.
-  */
+ * \class CrashReportDialog
+ * \brief Interface for sending crash reports.
+ */
+/*!
+ * \brief CrashReportDialog::CrashReportDialog
+ */
 CrashReportDialog::CrashReportDialog()
   : QDialog(0, Qt::WindowTitleHint)
 {
@@ -128,11 +131,32 @@ CrashReportDialog::CrashReportDialog()
 }
 
 /*!
-  Slot activated when mpSendReportButton clicked signal is raised.\n
-  Sends the crash report alongwith selected log files.
-  */
+ * \brief CrashReportDialog::sendReport
+ * Slot activated when mpSendReportButton clicked signal is raised.\n
+ * Sends the crash report alongwith selected log files.
+ */
 void CrashReportDialog::sendReport()
 {
+  // ask for e-mail address.
+  if (mpEmailTextBox->text().isEmpty()) {
+    QMessageBox *pMessageBox = new QMessageBox;
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+    pMessageBox->setIcon(QMessageBox::Critical);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(tr("We can't contact you with a possible solution if you don't provide a valid e-mail address."));
+    pMessageBox->addButton(tr("Send without e-mail"), QMessageBox::AcceptRole);
+    pMessageBox->addButton(tr("Let me enter e-mail"), QMessageBox::RejectRole);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::RejectRole:
+        mpEmailTextBox->setFocus();
+        return;
+      case QMessageBox::AcceptRole:
+      default:
+        break;
+    }
+  }
+  // create the report.
   QHttpMultiPart *pHttpMultiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
   // email
   QHttpPart emailHttpPart;
@@ -188,10 +212,12 @@ void CrashReportDialog::sendReport()
 }
 
 /*!
-  Slot activated when QNetworkAccessManager finished signal is raised.\n
-  Shows an error message if crash report was not send correctly.\n
-  Deletes QNetworkReply object which deletes the QHttpMultiPart and QFile objects attached with it.
-  */
+ * \brief CrashReportDialog::reportSent
+ * \param pNetworkReply
+ * Slot activated when QNetworkAccessManager finished signal is raised.\n
+ * Shows an error message if crash report was not send correctly.\n
+ * Deletes QNetworkReply object which deletes the QHttpMultiPart and QFile objects attached with it.
+ */
 void CrashReportDialog::reportSent(QNetworkReply *pNetworkReply)
 {
   if (pNetworkReply->error() != QNetworkReply::NoError) {

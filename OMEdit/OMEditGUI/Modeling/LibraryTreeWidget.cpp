@@ -888,6 +888,7 @@ bool LibraryTreeWidget::unloadClass(LibraryTreeNode *pLibraryTreeNode, bool askQ
     QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_CLASS_MSG).arg(pLibraryTreeNode->getNameStructure()));
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
@@ -933,6 +934,7 @@ bool LibraryTreeWidget::unloadTextFile(LibraryTreeNode *pLibraryTreeNode, bool a
     QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeNode->getNameStructure()));
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
@@ -961,6 +963,7 @@ bool LibraryTreeWidget::unloadTLMFile(LibraryTreeNode *pLibraryTreeNode, bool as
     QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeNode->getNameStructure()));
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
@@ -1906,6 +1909,7 @@ void LibraryTreeWidget::openModelicaFile(QString fileName, QString encoding, boo
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
                                       .arg(classesList.join(",")));
@@ -1926,6 +1930,7 @@ void LibraryTreeWidget::openModelicaFile(QString fileName, QString encoding, boo
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                       .arg(existingmodelsList.join(",")).append("\n")
@@ -1967,6 +1972,7 @@ void LibraryTreeWidget::openTLMFile(QFileInfo fileInfo, bool showProgress)
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                       .arg(fileInfo.fileName()).append("\n")
@@ -2008,6 +2014,7 @@ void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
     QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
     pMessageBox->setIcon(QMessageBox::Information);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).arg("")));
     pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                     .arg(className).append("\n")
