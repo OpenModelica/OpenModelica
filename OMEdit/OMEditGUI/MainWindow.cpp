@@ -916,6 +916,12 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
  */
 void MainWindow::fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode)
 {
+  if (pLibraryTreeNode->getModelWidget()) {
+      TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+      if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
+          return;
+        }
+    }
   if (mpOptionsDialog->getTLMPage()->getTLMManagerProcessTextBox()->text().isEmpty()) {
     QString message;
 #ifdef Q_OS_MAC
@@ -956,27 +962,33 @@ void MainWindow::fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode)
  */
 void MainWindow::TLMSimulate(LibraryTreeNode *pLibraryTreeNode)
 {
-  if (pLibraryTreeNode->isSaved()) {
-    mpTLMCoSimulationDialog->show(pLibraryTreeNode);
-  } else {
-    QMessageBox *pMessageBox = new QMessageBox(this);
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeNode->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer) {
-      case QMessageBox::Yes:
-        if (mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode)) {
-          mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+  if (pLibraryTreeNode->getModelWidget()) {
+      TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
+      if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
+          return;
         }
-        break;
-      case QMessageBox::No:
-      default:
-        break;
     }
-  }
+  if (pLibraryTreeNode->isSaved()) {
+      mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+    } else {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+      pMessageBox->setIcon(QMessageBox::Question);
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeNode->getNameStructure()));
+      pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+      pMessageBox->setDefaultButton(QMessageBox::Yes);
+      int answer = pMessageBox->exec();
+      switch (answer) {
+        case QMessageBox::Yes:
+          if (mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode)) {
+              mpTLMCoSimulationDialog->show(pLibraryTreeNode);
+            }
+          break;
+        case QMessageBox::No:
+        default:
+          break;
+        }
+    }
 }
 
 void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
