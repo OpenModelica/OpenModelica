@@ -2033,7 +2033,13 @@ void MainWindow::openConfigurationOptions()
  */
 void MainWindow::openUsersGuide()
 {
-
+  QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
+                       .append("/share/doc/omc/OpenModelicaUsersGuide/index.html"));
+  if (!QDesktopServices::openUrl(usersGuidePath)) {
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                  Helper::scriptingKind, Helper::errorLevel));
+  }
 }
 
 /*!
