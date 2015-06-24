@@ -120,6 +120,16 @@ QDomNodeList TLMEditor::getSubModels()
 }
 
 /*!
+ * \brief TLMEditor::getConnections
+ * Returns the list of Connection tags.
+ * \return
+ */
+QDomNodeList TLMEditor::getConnections()
+{
+  return mXmlDocument.elementsByTagName("Connection");
+}
+
+/*!
  * \brief TLMEditor::addSubModel
  * Adds a SubModel tag with Annotation tag as child of it.
  * \param name

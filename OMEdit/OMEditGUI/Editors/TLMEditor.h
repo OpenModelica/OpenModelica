@@ -51,6 +51,7 @@ public:
   void setPlainText(const QString &text);
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
+  QDomNodeList getConnections();
   bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
                    QString rotation);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
