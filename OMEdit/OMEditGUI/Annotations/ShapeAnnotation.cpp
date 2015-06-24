@@ -1832,7 +1832,8 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
   */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView) return;
+  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
+    return;
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   ShapePropertiesDialog *pShapePropertiesDialog = new ShapePropertiesDialog(this, pMainWindow);
   pShapePropertiesDialog->exec();
@@ -1855,33 +1856,37 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   }
 
   QMenu menu(mpGraphicsView);
-  menu.addAction(mpShapePropertiesAction);
-  menu.addSeparator();
-  if (isInheritedShape()) {
-    mpGraphicsView->getDeleteAction()->setDisabled(true);
-    mpGraphicsView->getDuplicateAction()->setDisabled(true);
-    mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
-    mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
-  }
-  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-  if (pLineAnnotation) {
-    lineType = pLineAnnotation->getLineType();
-    menu.addAction(mpManhattanizeShapeAction);
-  }
-  if (lineType == LineAnnotation::ConnectionType) {
+  if(mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM){
     menu.addAction(mpGraphicsView->getDeleteConnectionAction());
   } else {
-    menu.addAction(mpGraphicsView->getDeleteAction());
-    menu.addAction(mpGraphicsView->getDuplicateAction());
+    menu.addAction(mpShapePropertiesAction);
     menu.addSeparator();
-    menu.addAction(mpGraphicsView->getBringToFrontAction());
-    menu.addAction(mpGraphicsView->getBringForwardAction());
-    menu.addAction(mpGraphicsView->getSendToBackAction());
-    menu.addAction(mpGraphicsView->getSendBackwardAction());
-    menu.addSeparator();
-    menu.addAction(mpGraphicsView->getRotateClockwiseAction());
-    menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
+    if (isInheritedShape()) {
+      mpGraphicsView->getDeleteAction()->setDisabled(true);
+      mpGraphicsView->getDuplicateAction()->setDisabled(true);
+      mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
+      mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
+    }
+    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
+    LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
+    if (pLineAnnotation) {
+      lineType = pLineAnnotation->getLineType();
+      menu.addAction(mpManhattanizeShapeAction);
+    }
+    if (lineType == LineAnnotation::ConnectionType) {
+      menu.addAction(mpGraphicsView->getDeleteConnectionAction());
+    } else {
+      menu.addAction(mpGraphicsView->getDeleteAction());
+      menu.addAction(mpGraphicsView->getDuplicateAction());
+      menu.addSeparator();
+      menu.addAction(mpGraphicsView->getBringToFrontAction());
+      menu.addAction(mpGraphicsView->getBringForwardAction());
+      menu.addAction(mpGraphicsView->getSendToBackAction());
+      menu.addAction(mpGraphicsView->getSendBackwardAction());
+      menu.addSeparator();
+      menu.addAction(mpGraphicsView->getRotateClockwiseAction());
+      menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
+    }
   }
   menu.exec(pEvent->screenPos());
 }
