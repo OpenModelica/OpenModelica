@@ -190,23 +190,23 @@
 <context>
     <name>Component</name>
     <message>
-        <location filename="../../Component/Component.cpp" line="387"/>
+        <location filename="../../Component/Component.cpp" line="391"/>
         <source>Shows the component parameters</source>
         <translation>显示组件参数</translation>
     </message>
     <message>
-        <location filename="../../Component/Component.cpp" line="391"/>
-        <location filename="../../Component/Component.cpp" line="403"/>
+        <location filename="../../Component/Component.cpp" line="395"/>
+        <location filename="../../Component/Component.cpp" line="407"/>
         <source>Shows the component attributes</source>
         <translation>显示组件属性</translation>
     </message>
     <message>
-        <location filename="../../Component/Component.cpp" line="1333"/>
+        <location filename="../../Component/Component.cpp" line="1381"/>
         <source>Opening %1 %2 parameters window</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../Component/Component.cpp" line="1347"/>
+        <location filename="../../Component/Component.cpp" line="1395"/>
         <source>Opening %1 %2 attributes window</source>
         <translation>打开 %1 %2 属性窗口</translation>
     </message>
@@ -289,33 +289,41 @@
     </message>
 </context>
 <context>
-    <name>CopyClassDialog</name>
-    <message>
-        <source>Select Path</source>
-        <translation type="obsolete">选择路径</translation>
-    </message>
-</context>
-<context>
     <name>CrashReportDialog</name>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="58"/>
+        <location filename="../../CrashReport/CrashReportDialog.cpp" line="61"/>
         <source>Your Email (in case you want us to contact you regarding this error):</source>
         <translation>你的电子邮件（在你希望我们就此错误与你联系的情况下）：</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="61"/>
+        <location filename="../../CrashReport/CrashReportDialog.cpp" line="64"/>
         <source>Describe in a few words what you were doing when the error occurred:</source>
         <translation>简单描述出错时你在做什么：</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="64"/>
+        <location filename="../../CrashReport/CrashReportDialog.cpp" line="67"/>
         <source>Following selected files will be sent alongwith the crash report,</source>
         <translation>下列选择的文件将与崩溃报告一起发送，</translation>
     </message>
     <message>
-        <location filename="../../CrashReport/CrashReportDialog.cpp" line="91"/>
+        <location filename="../../CrashReport/CrashReportDialog.cpp" line="94"/>
         <source>Send Report</source>
         <translation>发送报告</translation>
+    </message>
+    <message>
+        <location filename="../../CrashReport/CrashReportDialog.cpp" line="146"/>
+        <source>We can&apos;t contact you with a possible solution if you don&apos;t provide a valid e-mail address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../CrashReport/CrashReportDialog.cpp" line="147"/>
+        <source>Send without e-mail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../CrashReport/CrashReportDialog.cpp" line="148"/>
+        <source>Let me enter e-mail</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -496,7 +504,7 @@
 <context>
     <name>DuplicateClassDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="816"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="804"/>
         <source>Select Path</source>
         <translation>选择路径</translation>
     </message>
@@ -504,12 +512,12 @@
 <context>
     <name>ExportFigaroDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1284"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1268"/>
         <source>Figaro Mode:</source>
         <translation>Figaro模式：</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1325"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1309"/>
         <source>Exporting model as Figaro</source>
         <translation>导出模型为Figaro</translation>
     </message>
@@ -528,23 +536,48 @@
     </message>
 </context>
 <context>
+    <name>FetchInterfaceDataDialog</name>
+    <message>
+        <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="36"/>
+        <source>Fetch Interface Data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="50"/>
+        <source>Fetch Again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="102"/>
+        <source>Fetching interface data for &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="124"/>
+        <source>Fetching interface data for &lt;b&gt;%1&lt;/b&gt;...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../TLM/FetchInterfaceDataDialog.cpp" line="171"/>
+        <source>Fetched interface data for &lt;b&gt;%1&lt;/b&gt;...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FetchInterfaceDataThread</name>
+    <message>
+        <location filename="../../TLM/FetchInterfaceDataThread.cpp" line="113"/>
+        <source>TLMManager process failed. Exited with code %1.</source>
+        <translation type="unfinished">TLM 管理器进程失败，退出错误码 %1 。</translation>
+    </message>
+    <message>
+        <location filename="../../TLM/FetchInterfaceDataThread.cpp" line="115"/>
+        <source>TLMManager process finished successfully.</source>
+        <translation type="unfinished">TLM 管理器进程已成功结束。</translation>
+    </message>
+</context>
+<context>
     <name>FigaroPage</name>
-    <message>
-        <source>Figaro Database File:</source>
-        <translation type="obsolete">Figaro数据文件：</translation>
-    </message>
-    <message>
-        <source>Figaro Mode:</source>
-        <translation type="obsolete">Figaro模式：</translation>
-    </message>
-    <message>
-        <source>Figaro Options File:</source>
-        <translation type="obsolete">Figaro选项文件：</translation>
-    </message>
-    <message>
-        <source>Figaro Process:</source>
-        <translation type="obsolete">Figaro处理：</translation>
-    </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3164"/>
         <source>Figaro Library:</source>
@@ -559,65 +592,6 @@
         <location filename="../../Options/OptionsDialog.cpp" line="3176"/>
         <source>Figaro Processor:</source>
         <translation>Figaro处理器：</translation>
-    </message>
-</context>
-<context>
-    <name>FindReplaceDialog</name>
-    <message>
-        <source>Find/Replace</source>
-        <translation type="obsolete">查找/替换</translation>
-    </message>
-    <message>
-        <source>Find:</source>
-        <translation type="obsolete">查找：</translation>
-    </message>
-    <message>
-        <source>Replace With:</source>
-        <translation type="obsolete">替换为：</translation>
-    </message>
-    <message>
-        <source>Direction</source>
-        <translation type="obsolete">方向</translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation type="obsolete">向前</translation>
-    </message>
-    <message>
-        <source>Backward</source>
-        <translation type="obsolete">向后</translation>
-    </message>
-    <message>
-        <source>Options</source>
-        <translation type="obsolete">选项</translation>
-    </message>
-    <message>
-        <source>Case Sensitive</source>
-        <translation type="obsolete">大小写敏感</translation>
-    </message>
-    <message>
-        <source>Whole Words</source>
-        <translation type="obsolete">完整单词</translation>
-    </message>
-    <message>
-        <source>Regular Expressions</source>
-        <translation type="obsolete">正则表达式</translation>
-    </message>
-    <message>
-        <source>Find</source>
-        <translation type="obsolete">查找</translation>
-    </message>
-    <message>
-        <source>Replace</source>
-        <translation type="obsolete">替换</translation>
-    </message>
-    <message>
-        <source>Replace All</source>
-        <translation type="obsolete">全部替换</translation>
-    </message>
-    <message>
-        <source>Can&apos;t find the text &apos;</source>
-        <translation type="obsolete">未找到</translation>
     </message>
 </context>
 <context>
@@ -661,22 +635,22 @@
 <context>
     <name>GDBAdapter</name>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1479"/>
+        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1484"/>
         <source>%1 GDB arguments are &quot;%2&quot;</source>
         <translation>GDB启动失败：文件或路径 %1 不存在，GDB参数为 &quot;%2&quot;</translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1482"/>
+        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1487"/>
         <source>GDB crashed with the error %1. GDB arguments are &quot;%2&quot;</source>
         <translation>GDB崩溃，错误 %1 ，GDB参数为 &quot;%2&quot;</translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1485"/>
+        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1490"/>
         <source>Following error has occurred %1. GDB arguments are &quot;%2&quot;</source>
         <translation>产生错误 %1 。程序参数为 &quot;%2&quot;</translation>
     </message>
     <message numerus="yes">
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1536"/>
+        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1541"/>
         <source>The gdb process has not responded to a command within %n second(s). This could mean it is stuck in an endless loop or taking longer than expected to perform the operation.
 You can choose between waiting longer or abort debugging.</source>
         <translation>
@@ -685,17 +659,17 @@ You can choose between waiting longer or abort debugging.</source>
         </translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1542"/>
+        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1547"/>
         <source>Debugger not responding</source>
         <translation>调试器无响应</translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1545"/>
+        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1550"/>
         <source>Give GDB more time</source>
         <translation>给予GDB更多时间</translation>
     </message>
     <message>
-        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1546"/>
+        <location filename="../../Debugger/GDB/GDBAdapter.cpp" line="1551"/>
         <source>Stop debugging</source>
         <translation>停止调试</translation>
     </message>
@@ -711,57 +685,57 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>GUIMessages</name>
     <message>
-        <location filename="../../Util/Helper.cpp" line="488"/>
+        <location filename="../../Util/Helper.cpp" line="500"/>
         <source>A Component with the same name already exists. Please choose another Name.</source>
         <translation>已存在同名部件，请另选一个名称。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="486"/>
+        <location filename="../../Util/Helper.cpp" line="498"/>
         <source>Please check the Messages Browser for more error specific details.</source>
         <translation>请查看信息浏览器以获得更具体的错误信息。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="490"/>
+        <location filename="../../Util/Helper.cpp" line="502"/>
         <source>You cannot connect a component to itself.</source>
         <translation>不能连接一个组件到它自身。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="492"/>
+        <location filename="../../Util/Helper.cpp" line="504"/>
         <source>There is no Modelica Class opened for %1.</source>
         <translation>没有为%1打开的Modelica类。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="494"/>
+        <location filename="../../Util/Helper.cpp" line="506"/>
         <source>Simulation Start Time should be less than or equal to Stop Time.</source>
         <translation>仿真开始时间应该小于或等于停止时间。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="496"/>
+        <location filename="../../Util/Helper.cpp" line="508"/>
         <source>Please enter &lt;b&gt;%1&lt;/b&gt; Name.</source>
         <translation>请输入&lt;b&gt;%1&lt;/b&gt;名称。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="498"/>
+        <location filename="../../Util/Helper.cpp" line="510"/>
         <source>Extends class &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
         <translation>继承类&lt;b&gt;%1&lt;/b&gt;不存在。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="500"/>
+        <location filename="../../Util/Helper.cpp" line="512"/>
         <source>Insert in class &lt;b&gt;%1&lt;/b&gt; does not exist.</source>
         <translation>插入类&lt;b&gt;%1&lt;/b&gt;不存在。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="502"/>
+        <location filename="../../Util/Helper.cpp" line="514"/>
         <source>Insert in class &lt;b&gt;%1&lt;/b&gt; is a system library. System libraries are read-only.</source>
         <translation>插入类&lt;b&gt;%1&lt;/b&gt;属系统库，系统库是只读的。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="504"/>
+        <location filename="../../Util/Helper.cpp" line="516"/>
         <source>&lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; already exists in &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>&lt;b&gt;%1&lt;b&gt; &lt;i&gt;%2&lt;/i&gt;已存在于&lt;b&gt;%3&lt;/b&gt;中。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="510"/>
+        <location filename="../../Util/Helper.cpp" line="522"/>
         <source>Following error has occurred. 
 
 %1</source>
@@ -770,225 +744,219 @@ You can choose between waiting longer or abort debugging.</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="512"/>
+        <location filename="../../Util/Helper.cpp" line="524"/>
         <source>Problems are found in Modelica Text. &lt;br /&gt;</source>
         <translation>Modelica文本中发现问题。&lt;br /&gt;</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="514"/>
+        <location filename="../../Util/Helper.cpp" line="526"/>
         <source>&lt;br /&gt;&lt;br /&gt;For normal users it is recommended to choose &lt;b&gt;Revert from previous&lt;/b&gt;. You can also choose &lt;b&gt;Fix errors manually&lt;/b&gt; if you want to fix them by your own.</source>
         <translation>&lt;br./&gt;&lt;br./&gt;对一般使用人员推荐选择&lt;b&gt;恢复以前&lt;/b&gt;，如果你打算自己修复他们也可以选择&lt;b&gt;手工修复&lt;/b&gt;。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="520"/>
+        <location filename="../../Util/Helper.cpp" line="532"/>
         <source>The file &lt;b&gt;%1&lt;/b&gt; not found.</source>
         <translation>未找到文件&lt;b&gt;%1&lt;/b&gt;。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="522"/>
+        <location filename="../../Util/Helper.cpp" line="534"/>
         <source>Error opening the file &lt;b&gt;%1&lt;/b&gt;. %2</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; %2文件打开错误</translation>
     </message>
     <message>
-        <source>Redefining class(es) &lt;b&gt;%1&lt;/b&gt; which already exists.</source>
-        <translation type="obsolete">重定义的类&lt;b&gt;%1&lt;/b&gt;已存在。</translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="548"/>
+        <location filename="../../Util/Helper.cpp" line="560"/>
         <source>The FMU %1.fmu is generated at %2</source>
         <translation>在 %2 位置生成FMU文件 %1.fmu</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="560"/>
+        <location filename="../../Util/Helper.cpp" line="572"/>
         <source>The operations were not generated. Check Generate Operations in %1 OR you must set the +d=infoXmlOperations flag via %2 and simulate again.</source>
         <translation>操作未生成。在 %1 中检查操作生成，或者必须通过 %2 设置 +d=infoXmlOperations 标志，然后再次仿真。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="562"/>
+        <location filename="../../Util/Helper.cpp" line="574"/>
         <source>Tools-&gt;Options-&gt;Debugger-&gt;Transformational Debugger</source>
         <translation>工具→选项→调试器转换</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="564"/>
+        <location filename="../../Util/Helper.cpp" line="576"/>
         <source>OMEdit-&gt;Preferences-&gt;Debugger-&gt;Transformational Debugger</source>
         <translation>OMEdit→偏好设置→调试器→调试器转换</translation>
     </message>
     <message>
-        <source>Are you sure you want to close &lt;b&gt;%1&lt;/b&gt; interactive simulation?</source>
-        <translation type="obsolete">确定要关闭&lt;b&gt;%1&lt;/b&gt;的交换仿真？</translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="532"/>
+        <location filename="../../Util/Helper.cpp" line="544"/>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;model&lt;/b&gt;, &lt;b&gt;class&lt;/b&gt;, &lt;b&gt;connector&lt;/b&gt;, &lt;b&gt;record&lt;/b&gt; or &lt;b&gt;block&lt;/b&gt; is allowed on the diagram layer.</source>
         <translation>不能插入&lt;b&gt;%1&lt;/b&gt;，这是一个&lt;b&gt;%2&lt;/b&gt;。组件视图层只允许有&lt;b&gt;model&lt;/b&gt;、&lt;b&gt;class&lt;/b&gt;、&lt;b&gt;connector&lt;/b&gt;或者&lt;b&gt;block&lt;/b&gt;。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="534"/>
+        <location filename="../../Util/Helper.cpp" line="546"/>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;connector&lt;/b&gt; is allowed on the icon layer.</source>
         <translation>
 这是一个&lt;b&gt;%2&lt;/b&gt;，不允许插入&lt;b&gt;%1&lt;/b&gt;，图标层只允许&lt;b&gt;connector&lt;/b&gt;。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="538"/>
+        <location filename="../../Util/Helper.cpp" line="550"/>
         <source>The file &lt;b&gt;%1&lt;/b&gt; is not a valid Modelica file. The file format is not supported. You can only open &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>文件&lt;b&gt;%1&lt;/b&gt;不是一个有效的Modelica文件，该文件格式不被支持，你只能打开&lt;b&gt;%2&lt;/b&gt;。</translation>
     </message>
     <message>
-        <source>Enter a valid positive integer index value for &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">为&lt;b&gt;%1&lt;/b&gt;输入一个有效的整数索引值。</translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="540"/>
+        <location filename="../../Util/Helper.cpp" line="552"/>
         <source>Enter a valid number value for &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>为&lt;b&gt;%1&lt;/b&gt;输入一个有效数值。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="544"/>
+        <location filename="../../Util/Helper.cpp" line="556"/>
         <source>The &lt;b&gt;%1&lt;/b&gt; &lt;i&gt;%2&lt;/i&gt; is defined as &lt;b&gt;partial&lt;/b&gt;.&lt;br /&gt;The component will be added as a &lt;b&gt;replaceable&lt;/b&gt; component.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; &lt;b&gt;%2&lt;/b&gt;被定义为&lt;b&gt;partial&lt;/b&gt;， 组件将被加成&lt;/b&gt;replaceable&lt;/b&gt;组件。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="546"/>
+        <location filename="../../Util/Helper.cpp" line="558"/>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists. The name is changed from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;This is probably wrong because the component is declared as &lt;b&gt;inner&lt;/b&gt;.</source>
         <translation>名为&lt;b&gt;%1&lt;/b&gt;的组件已存在，名称由&lt;b&gt;%1&lt;/b&gt;改为&lt;b&gt;%2&lt;/b&gt;。通常这种错误是因为组件被声明为&lt;b&gt;inner&lt;/b&gt;。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="550"/>
+        <location filename="../../Util/Helper.cpp" line="562"/>
         <source>The XML is generated at %1/%2.xml</source>
         <translation>在%1/%2中生成XML文件</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="552"/>
+        <location filename="../../Util/Helper.cpp" line="564"/>
         <source>The FIGARO is generated.</source>
         <translation>FIGARO已生成。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="554"/>
+        <location filename="../../Util/Helper.cpp" line="566"/>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;? Everything contained inside this class will also be unloaded.</source>
         <translation>确定要移除&lt;b&gt;%1&lt;/b&gt;？所有包含在该类中的内容都将被移除。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="556"/>
+        <location filename="../../Util/Helper.cpp" line="568"/>
         <source>Are you sure you want to unload &lt;b&gt;%1&lt;/b&gt;?</source>
         <translation>你确定要卸载 &lt;b&gt;%1&lt;b&gt; ？</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="558"/>
+        <location filename="../../Util/Helper.cpp" line="570"/>
         <source>The Modifier &lt;b&gt;%1&lt;/b&gt; format is invalid. The correct format is &lt;b&gt;phi(start=1)&lt;/b&gt;</source>
         <translation>格式 &lt;b&gt;%1&lt;b&gt; 修改无效。正确格式为  &lt;b&gt;phi(start=1)&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="566"/>
+        <location filename="../../Util/Helper.cpp" line="578"/>
         <source>Tools-&gt;Options-&gt;Simulation-&gt;OMC Flags</source>
         <translation>工具-&gt;选项-&gt;仿真-&gt;OMC选项</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="568"/>
+        <location filename="../../Util/Helper.cpp" line="580"/>
         <source>OMEdit-&gt;Preferences-&gt;Simulation-&gt;OMC Flags</source>
         <translation>OMEdit-&gt;设置-&gt;仿真-&gt;OMC选项</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="570"/>
+        <location filename="../../Util/Helper.cpp" line="582"/>
         <source>A debug configuration with name &lt;b&gt;%1&lt;/b&gt; already exists. Error occurred while saving the debug configuration &lt;b&gt;%2&lt;b&gt;.</source>
         <translation>名为 &lt;b&gt;%1&lt;b&gt;的调试配置已存在。保持调试配置 &lt;b&gt;%2&lt;b&gt; 时出错。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="572"/>
+        <location filename="../../Util/Helper.cpp" line="584"/>
         <source>Maximum &lt;b&gt;%1&lt;/b&gt; debug configurations are allowed.</source>
         <translation>调试配置最大运行 &lt;b&gt;%1&lt;b&gt; 。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="574"/>
+        <location filename="../../Util/Helper.cpp" line="586"/>
         <source>Are you sure you want to delete &lt;b&gt;%1&lt;/b&gt; debug configuration?</source>
         <translation>你确定要删除 &lt;b&gt;%1&lt;b&gt; 调试配置？</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="576"/>
+        <location filename="../../Util/Helper.cpp" line="588"/>
         <source>A debugging session is already running. Only one debugging session is allowed.</source>
         <translation>已有一个调试任务在运行。只允许一个调试任务。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="578"/>
+        <location filename="../../Util/Helper.cpp" line="590"/>
         <source>Unable to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>无法找到类 &lt;b&gt;%1&lt;b&gt; 。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="580"/>
+        <location filename="../../Util/Helper.cpp" line="592"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. Breakpoints are only allowed on saved classes.</source>
         <translation>类 &lt;b&gt;%1&lt;b&gt; 未保存。只有保持的类才允许设置断点。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="582"/>
+        <location filename="../../Util/Helper.cpp" line="594"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not a modelica class. Breakpoints are only allowed on modelica classes.</source>
         <translation>类 &lt;b&gt;%1&lt;b&gt; 不是modelica类。只有modelica类才允许断点。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="584"/>
+        <location filename="../../Util/Helper.cpp" line="596"/>
+        <source>TLM Manager executable path is not set. Set it via &lt;b&gt;%1&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="598"/>
+        <source>Tools-&gt;Options-&gt;TLM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="600"/>
+        <source>OMEdit-&gt;Preferences-&gt;TLM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="602"/>
+        <source>Metamodel &lt;b&gt;%1&lt;/b&gt; has unsaved changes. Do you want to save?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="604"/>
         <source>TLM co-simulation session is already running. Only one session is allowed.</source>
         <translation>TLM联合仿真任务已运行，只允许一个任务。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="506"/>
+        <location filename="../../Util/Helper.cpp" line="518"/>
         <source>An item with the same name already exists. Please try some other name.</source>
         <translation>已存在同名项目，请试试其他名称。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="508"/>
+        <location filename="../../Util/Helper.cpp" line="520"/>
         <source>Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.</source>
         <translation>未找到环境变量OPENMODELICAHOME，请确认OpenModelica已正确安装。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="516"/>
+        <location filename="../../Util/Helper.cpp" line="528"/>
         <source>Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)</source>
         <translation>请确认没有使用OpenModelica关键词（例如model、package、record、class等）</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="518"/>
+        <location filename="../../Util/Helper.cpp" line="530"/>
         <source>Error has occurred while loading the file/library &lt;b&gt;%1&lt;/b&gt;. Unable to load the file/library.</source>
         <translation>加载文件/库&lt;b&gt;%1&lt;/b&gt;出现错误，未能加载文件/库。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="524"/>
+        <location filename="../../Util/Helper.cpp" line="536"/>
         <source>Error has occurred while loading the model : 
 %1.</source>
         <translation>加载模型时出现错误：\n%1。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="526"/>
+        <location filename="../../Util/Helper.cpp" line="538"/>
         <source>Delete the existing class(es) before loading the file/library &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>加载文件/库&lt;b&gt;%1&lt;/b&gt;前删除现存类。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="528"/>
+        <location filename="../../Util/Helper.cpp" line="540"/>
         <source>Redefining class(es) &lt;b&gt;%1&lt;/b&gt; which already exist(s).</source>
         <translation>重定义的类 &lt;b&gt;%1&lt;/b&gt; 已存在。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="530"/>
+        <location filename="../../Util/Helper.cpp" line="542"/>
         <source>Only single nonstructured entity is allowed to be stored in the file. &lt;b&gt;%1&lt;/b&gt; contains following classes &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>只有一个非结构化入口保存到文件中。 &lt;b&gt;%1&lt;b&gt; 包含如下类 &lt;b&gt;%2&lt;b&gt; 。</translation>
     </message>
     <message>
-        <source>You cannot recover this window once it is closed.</source>
-        <translation type="obsolete">窗口关闭后不能恢复。</translation>
-    </message>
-    <message>
-        <source>You already have one interactive simulation running. Only one interactive simulation session is allowed at a time. 
-
- Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.</source>
-        <translation type="obsolete">已有一个交互仿真再运行，同时只允许有一个交互仿真任务。\n\n运行新仿真前请终止或停止已运行的仿真。</translation>
-    </message>
-    <message>
-        <source>Please select a variable to plot before starting.</source>
-        <translation type="obsolete">绘图前请先选择一个变量。</translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="536"/>
+        <location filename="../../Util/Helper.cpp" line="548"/>
         <source>You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.</source>
         <translation>不能用两个仿真结果文件数据绘一张图。请确认是从一个结果文件中选择变量。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="542"/>
+        <location filename="../../Util/Helper.cpp" line="554"/>
         <source>You cannot drop an item on itself.</source>
         <translation>不能将一个项目拖放到它自身。</translation>
     </message>
@@ -1074,10 +1042,6 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Options/OptionsDialog.cpp" line="1164"/>
         <source>Modeling View Mode</source>
         <translation>建模模式</translation>
-    </message>
-    <message>
-        <source>Plotting View Mode</source>
-        <translation type="obsolete">绘图模式</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1181"/>
@@ -1189,70 +1153,107 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>GraphicsView</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1042"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1039"/>
         <source>Delete Connection</source>
         <translation>删除连接</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1043"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1040"/>
         <source>Deletes the connection</source>
         <translation>删除连接</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1049"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1046"/>
         <source>Deletes the item</source>
         <translation>删除项目</translation>
     </message>
     <message>
-        <source>Duplicate</source>
-        <translation type="obsolete">复制</translation>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="395"/>
+        <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. You can only drag &amp; drop saved classes.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Duplicates the item</source>
-        <translation type="obsolete">复制项目</translation>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1055"/>
+        <source>Bring to Front</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1058"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1056"/>
+        <source>Brings the item to front</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1059"/>
+        <source>Bring Forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1060"/>
+        <source>Brings the item one level forward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1063"/>
+        <source>Send to Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1064"/>
+        <source>Sends the item to back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1067"/>
+        <source>Send Backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1068"/>
+        <source>Sends the item one level backward</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1071"/>
         <source>Rotate Clockwise</source>
         <translation>顺时针旋转</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1059"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1072"/>
         <source>Rotates the item clockwise</source>
         <translation>顺时针旋转项目</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1064"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1077"/>
         <source>Rotates the item anticlockwise</source>
         <translation>逆时针旋转项目</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1068"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1081"/>
         <source>Flip Horizontal</source>
         <translation>水平翻转</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1069"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1082"/>
         <source>Flips the item horizontally</source>
         <translation>水平翻转项目</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1072"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1085"/>
         <source>Flip Vertical</source>
         <translation>垂直翻转</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1073"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1086"/>
         <source>Flips the item vertically</source>
         <translation>垂直翻转项目</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1286"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1320"/>
         <source>Error in class annotation </source>
         <translation>类注解错误</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1063"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1076"/>
         <source>Rotate Anticlockwise</source>
         <translation>逆时针旋转</translation>
     </message>
@@ -1260,12 +1261,12 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>GraphicsViewProperties</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1084"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1074"/>
         <source>Copy properties to Diagram layer</source>
         <translation>复制属性到组件层</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1086"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1076"/>
         <source>Copy properties to Icon layer</source>
         <translation>复制属性到图标层</translation>
     </message>
@@ -1273,890 +1274,912 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>Helper</name>
     <message>
-        <location filename="../../Util/Helper.cpp" line="312"/>
+        <location filename="../../Util/Helper.cpp" line="318"/>
         <source>Browse...</source>
         <translation>浏览…</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="313"/>
+        <location filename="../../Util/Helper.cpp" line="319"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="314"/>
+        <location filename="../../Util/Helper.cpp" line="320"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="316"/>
+        <location filename="../../Util/Helper.cpp" line="322"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="317"/>
+        <location filename="../../Util/Helper.cpp" line="323"/>
         <source>Choose File</source>
         <translation>选择文件</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="319"/>
+        <location filename="../../Util/Helper.cpp" line="325"/>
         <source>Attributes</source>
         <translation>属性</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="320"/>
+        <location filename="../../Util/Helper.cpp" line="326"/>
         <source>Properties</source>
         <translation>属性</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="322"/>
+        <location filename="../../Util/Helper.cpp" line="328"/>
         <source>Edit</source>
         <translation>编辑</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="323"/>
+        <location filename="../../Util/Helper.cpp" line="329"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="326"/>
+        <location filename="../../Util/Helper.cpp" line="332"/>
         <source>Choose Directory</source>
         <translation>选择路径</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="327"/>
+        <location filename="../../Util/Helper.cpp" line="333"/>
         <source>General</source>
         <translation>常规</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="329"/>
+        <location filename="../../Util/Helper.cpp" line="335"/>
         <source>Parameters</source>
         <translation>参数</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="330"/>
+        <location filename="../../Util/Helper.cpp" line="336"/>
         <source>Name:</source>
         <translation>名称：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="331"/>
+        <location filename="../../Util/Helper.cpp" line="337"/>
         <source>Comment:</source>
         <translation>注释：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="333"/>
+        <location filename="../../Util/Helper.cpp" line="339"/>
         <source>Type</source>
         <translation>类型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="334"/>
+        <location filename="../../Util/Helper.cpp" line="340"/>
         <source>Information</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="335"/>
+        <location filename="../../Util/Helper.cpp" line="341"/>
         <source>rename</source>
         <translation>重命名</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="336"/>
+        <location filename="../../Util/Helper.cpp" line="342"/>
         <source>Check Model</source>
         <translation>模型检查</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="340"/>
+        <location filename="../../Util/Helper.cpp" line="346"/>
         <source>Instantiate Model</source>
         <translation>实例化模型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="360"/>
+        <location filename="../../Util/Helper.cpp" line="366"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="361"/>
+        <location filename="../../Util/Helper.cpp" line="367"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="362"/>
+        <location filename="../../Util/Helper.cpp" line="368"/>
         <source>Paste</source>
         <translation>粘贴</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="363"/>
+        <location filename="../../Util/Helper.cpp" line="369"/>
         <source>Loading</source>
         <translation>加载</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="364"/>
+        <location filename="../../Util/Helper.cpp" line="370"/>
         <source>Question</source>
         <translation>问题</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="365"/>
+        <location filename="../../Util/Helper.cpp" line="371"/>
         <source>Search</source>
         <translation>查找</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="372"/>
+        <location filename="../../Util/Helper.cpp" line="378"/>
         <source>Simulate</source>
         <translation>仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="373"/>
+        <location filename="../../Util/Helper.cpp" line="379"/>
         <source>Simulates the Modelica class</source>
         <translation>仿真 modelica 类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="375"/>
+        <location filename="../../Util/Helper.cpp" line="381"/>
         <source>Re-simulates the Modelica class</source>
         <translation>重新仿真 modelica 类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="378"/>
+        <location filename="../../Util/Helper.cpp" line="384"/>
         <source>Simulate with Transformational Debugger</source>
         <translation>用转换调试器仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="379"/>
+        <location filename="../../Util/Helper.cpp" line="385"/>
         <source>Simulates the Modelica class with Transformational Debugger</source>
         <translation>用转换调试器仿真 modelica 类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="381"/>
+        <location filename="../../Util/Helper.cpp" line="387"/>
         <source>Simulates the Modelica class with Algorithmic Debugger</source>
         <translation>用算法调试器仿真 modelica 类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="384"/>
+        <location filename="../../Util/Helper.cpp" line="390"/>
         <source>Simulation</source>
         <translation>仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="386"/>
+        <location filename="../../Util/Helper.cpp" line="392"/>
         <source>Interactive Simulation</source>
         <translation>交互式仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="348"/>
+        <location filename="../../Util/Helper.cpp" line="354"/>
         <source>Export to OMNotebook</source>
         <translation>输出到OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="303"/>
+        <location filename="../../Util/Helper.cpp" line="309"/>
         <source>New Modelica Class</source>
         <translation>新建Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="304"/>
+        <location filename="../../Util/Helper.cpp" line="310"/>
         <source>Create New Modelica Class</source>
         <translation>创建新Modelica类</translation>
     </message>
     <message>
-        <source>New TLM File</source>
-        <translation type="obsolete">新 TLM 文件</translation>
-    </message>
-    <message>
-        <source>Create New TLM File</source>
-        <translation type="obsolete">创建新 TLM 文件</translation>
-    </message>
-    <message>
-        <location filename="../../Util/Helper.cpp" line="305"/>
+        <location filename="../../Util/Helper.cpp" line="311"/>
         <source>Find Classes</source>
         <translation>找到类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="307"/>
+        <location filename="../../Util/Helper.cpp" line="313"/>
         <source>Open/Convert Modelica File(s) With Encoding</source>
         <translation>打开/转换Modelica文件编码</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="308"/>
+        <location filename="../../Util/Helper.cpp" line="314"/>
         <source>Libraries</source>
         <translation>库</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="309"/>
+        <location filename="../../Util/Helper.cpp" line="315"/>
         <source>Clear Recent Files</source>
         <translation>清除最近文件</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="310"/>
+        <location filename="../../Util/Helper.cpp" line="316"/>
         <source>Encoding:</source>
         <translation>编码：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="311"/>
+        <location filename="../../Util/Helper.cpp" line="317"/>
         <source>File:</source>
         <translation>文件：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="315"/>
+        <location filename="../../Util/Helper.cpp" line="321"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="318"/>
+        <location filename="../../Util/Helper.cpp" line="324"/>
         <source>Choose File(s)</source>
         <translation>选择文件</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="321"/>
+        <location filename="../../Util/Helper.cpp" line="327"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="324"/>
+        <location filename="../../Util/Helper.cpp" line="330"/>
         <source>Apply</source>
         <translation>应用</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="325"/>
-        <location filename="../../Util/Helper.cpp" line="344"/>
+        <location filename="../../Util/Helper.cpp" line="331"/>
+        <location filename="../../Util/Helper.cpp" line="350"/>
         <source>Import FMU</source>
         <translation>导入FMU</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="328"/>
+        <location filename="../../Util/Helper.cpp" line="334"/>
         <source>Output</source>
         <translation>输出</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="332"/>
+        <location filename="../../Util/Helper.cpp" line="338"/>
         <source>Path:</source>
         <translation>路径：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="337"/>
+        <location filename="../../Util/Helper.cpp" line="343"/>
         <source>Check the Modelica class</source>
         <translation>检查Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="338"/>
+        <location filename="../../Util/Helper.cpp" line="344"/>
         <source>Check All Models</source>
         <translation>检查所有模型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="339"/>
+        <location filename="../../Util/Helper.cpp" line="345"/>
         <source>Checks all nested modelica classes</source>
         <translation>检查所有嵌套Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="341"/>
+        <location filename="../../Util/Helper.cpp" line="347"/>
         <source>Instantiate/Flatten the Modelica class</source>
         <translation>实例化/平坦化Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="342"/>
+        <location filename="../../Util/Helper.cpp" line="348"/>
         <source>Export FMU</source>
         <translation>导出FMU</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="343"/>
+        <location filename="../../Util/Helper.cpp" line="349"/>
         <source>Exports the model as Functional Mockup Unit (FMU)</source>
         <translation>导出为FMU</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="345"/>
+        <location filename="../../Util/Helper.cpp" line="351"/>
         <source>Imports the model from Functional Mockup Interface (FMU)</source>
         <translation>从FMU接口导入模型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="346"/>
+        <location filename="../../Util/Helper.cpp" line="352"/>
         <source>Export XML</source>
         <translation>导出XML</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="347"/>
+        <location filename="../../Util/Helper.cpp" line="353"/>
         <source>Exports the model as XML</source>
         <translation>导出模型为XML</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="349"/>
+        <location filename="../../Util/Helper.cpp" line="355"/>
         <source>Exports the current model to OMNotebook</source>
         <translation>导出当前模型到OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="350"/>
+        <location filename="../../Util/Helper.cpp" line="356"/>
         <source>Import from OMNotebook</source>
         <translation>从OMNotebook导入</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="351"/>
+        <location filename="../../Util/Helper.cpp" line="357"/>
         <source>Import ngspice netlist</source>
         <translation>导入 ngspice netlist</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="352"/>
+        <location filename="../../Util/Helper.cpp" line="358"/>
         <source>Imports the model(s) from OMNotebook</source>
         <translation>从OMNotebook导入模型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="353"/>
+        <location filename="../../Util/Helper.cpp" line="359"/>
         <source>Converts ngspice netlist(s) to Modelica code</source>
         <translation>转换 ngspice netlist(s) 为 Modelica 代码</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="354"/>
+        <location filename="../../Util/Helper.cpp" line="360"/>
         <source>Line</source>
         <translation>行</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="355"/>
+        <location filename="../../Util/Helper.cpp" line="361"/>
         <source>Export as an Image</source>
         <translation>导出为图形</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="356"/>
+        <location filename="../../Util/Helper.cpp" line="362"/>
         <source>Exports the current model to Image</source>
         <translation>导出当前模型为图形</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="357"/>
+        <location filename="../../Util/Helper.cpp" line="363"/>
         <source>Export Figaro</source>
         <translation>导出Figaro</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="358"/>
+        <location filename="../../Util/Helper.cpp" line="364"/>
         <source>Exports the current model to Figaro</source>
         <translation>导出当前模型到Figaro</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="359"/>
+        <location filename="../../Util/Helper.cpp" line="365"/>
         <source>OpenModelica Compiler CLI</source>
         <translation>OpenModelica 命令行编译器</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="366"/>
+        <location filename="../../Util/Helper.cpp" line="372"/>
         <source>Duplicate</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="367"/>
+        <location filename="../../Util/Helper.cpp" line="373"/>
         <source>Duplicates the item</source>
         <translation>复制项目</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="368"/>
+        <location filename="../../Util/Helper.cpp" line="374"/>
         <source>Unload</source>
         <translation>卸载</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="369"/>
+        <location filename="../../Util/Helper.cpp" line="375"/>
         <source>Unload the Modelica class</source>
         <translation>卸载Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="370"/>
+        <location filename="../../Util/Helper.cpp" line="376"/>
         <source>Unload the XML file</source>
         <translation>卸载 XML 文件</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="371"/>
+        <location filename="../../Util/Helper.cpp" line="377"/>
         <source>Refresh</source>
         <translation>刷新</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="374"/>
+        <location filename="../../Util/Helper.cpp" line="380"/>
         <source>Re-simulate</source>
         <translation>重新仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="376"/>
+        <location filename="../../Util/Helper.cpp" line="382"/>
         <source>Re-simulate Setup</source>
         <translation>重新仿真设置</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="377"/>
+        <location filename="../../Util/Helper.cpp" line="383"/>
         <source>Setup re-simulation settings</source>
         <translation>设置重新仿真配置</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="380"/>
+        <location filename="../../Util/Helper.cpp" line="386"/>
         <source>Simulate with Algorithmic Debugger</source>
         <translation>使用算法调试器仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="382"/>
+        <location filename="../../Util/Helper.cpp" line="388"/>
         <source>Simulation Setup</source>
         <translation>仿真配置</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="383"/>
+        <location filename="../../Util/Helper.cpp" line="389"/>
         <source>Setup simulation settings</source>
         <translation>配置仿真设置</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="385"/>
+        <location filename="../../Util/Helper.cpp" line="391"/>
         <source>Re-simulation</source>
         <translation>重新仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="387"/>
+        <location filename="../../Util/Helper.cpp" line="393"/>
         <source>Options</source>
         <translation>选项</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="388"/>
+        <location filename="../../Util/Helper.cpp" line="394"/>
         <source>Extent</source>
         <translation>扩展</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="389"/>
+        <location filename="../../Util/Helper.cpp" line="395"/>
         <source>Bottom:</source>
         <translation>下：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="390"/>
+        <location filename="../../Util/Helper.cpp" line="396"/>
         <source>Top:</source>
         <translation>上：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="391"/>
+        <location filename="../../Util/Helper.cpp" line="397"/>
         <source>Grid</source>
         <translation>网格</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="394"/>
+        <location filename="../../Util/Helper.cpp" line="400"/>
         <source>Component</source>
         <translation>组件</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="395"/>
+        <location filename="../../Util/Helper.cpp" line="401"/>
         <source>Scale factor:</source>
         <translation>比例：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="396"/>
+        <location filename="../../Util/Helper.cpp" line="402"/>
         <source>Preserve aspect ratio</source>
         <translation>保存外观比例</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="397"/>
+        <location filename="../../Util/Helper.cpp" line="403"/>
         <source>OriginX:</source>
         <translation>初始X：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="398"/>
+        <location filename="../../Util/Helper.cpp" line="404"/>
         <source>OriginY:</source>
         <translation>初始Y：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="399"/>
+        <location filename="../../Util/Helper.cpp" line="405"/>
         <source>Rotation:</source>
         <translation>旋转：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="402"/>
+        <location filename="../../Util/Helper.cpp" line="408"/>
         <source>Bezier</source>
         <translation>贝塞尔</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="403"/>
+        <location filename="../../Util/Helper.cpp" line="409"/>
         <source>Start Arrow:</source>
         <translation>开始箭头：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="405"/>
+        <location filename="../../Util/Helper.cpp" line="411"/>
         <source>Arrow Size:</source>
         <translation>箭头大小：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="406"/>
+        <location filename="../../Util/Helper.cpp" line="412"/>
         <source>Size:</source>
         <translation>大小：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="407"/>
+        <location filename="../../Util/Helper.cpp" line="413"/>
         <source>Line Style</source>
         <translation>线型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="409"/>
+        <location filename="../../Util/Helper.cpp" line="415"/>
         <source>Font and Colors</source>
         <translation>字体与颜色</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="410"/>
+        <location filename="../../Util/Helper.cpp" line="416"/>
         <source>Font Family:</source>
         <translation>字体：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="411"/>
+        <location filename="../../Util/Helper.cpp" line="417"/>
         <source>Font Size:</source>
         <translation>字号：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="413"/>
+        <location filename="../../Util/Helper.cpp" line="419"/>
         <source>Fill Style</source>
         <translation>填充类型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="414"/>
+        <location filename="../../Util/Helper.cpp" line="420"/>
         <source>Pattern:</source>
         <translation>图案：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="415"/>
+        <location filename="../../Util/Helper.cpp" line="421"/>
         <source>Extent1X:</source>
         <translation>扩展1X：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="416"/>
+        <location filename="../../Util/Helper.cpp" line="422"/>
         <source>Extent1Y:</source>
         <translation>扩展1Y：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="417"/>
+        <location filename="../../Util/Helper.cpp" line="423"/>
         <source>Extent2X:</source>
         <translation>扩展2X：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="418"/>
+        <location filename="../../Util/Helper.cpp" line="424"/>
         <source>Extent2Y:</source>
         <translation>扩展2Y：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="419"/>
+        <location filename="../../Util/Helper.cpp" line="425"/>
         <source>Radius:</source>
         <translation>半径：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="420"/>
+        <location filename="../../Util/Helper.cpp" line="426"/>
         <source>Start Angle:</source>
         <translation>起始角度：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="421"/>
+        <location filename="../../Util/Helper.cpp" line="427"/>
         <source>End Angle:</source>
         <translation>结束角度：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="422"/>
+        <location filename="../../Util/Helper.cpp" line="428"/>
         <source>Curve Style</source>
         <translation>曲线类型</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="423"/>
+        <location filename="../../Util/Helper.cpp" line="429"/>
         <source>Figaro</source>
         <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="429"/>
+        <location filename="../../Util/Helper.cpp" line="435"/>
         <source>Working Directory:</source>
         <translation>工作位置：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="432"/>
+        <location filename="../../Util/Helper.cpp" line="438"/>
         <source>Text View</source>
         <translation>文本查看</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="444"/>
+        <location filename="../../Util/Helper.cpp" line="450"/>
         <source>Opens the class documentation</source>
         <translation>打开类文档</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="445"/>
+        <location filename="../../Util/Helper.cpp" line="451"/>
         <source>Don&apos;t show this message again</source>
         <translation>不再显示信息</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="446"/>
+        <location filename="../../Util/Helper.cpp" line="452"/>
         <source>Click and drag to resize</source>
         <translation>点击并拖动修改大小</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="447"/>
+        <location filename="../../Util/Helper.cpp" line="453"/>
         <source>Variables</source>
         <translation>变量</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="448"/>
+        <location filename="../../Util/Helper.cpp" line="454"/>
         <source>Variables Browser</source>
         <translation>变量浏览器</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="449"/>
+        <location filename="../../Util/Helper.cpp" line="455"/>
         <source>Description</source>
         <translation>描述</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="450"/>
+        <location filename="../../Util/Helper.cpp" line="456"/>
         <source>Previous</source>
         <translation>向前</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="451"/>
+        <location filename="../../Util/Helper.cpp" line="457"/>
         <source>Next</source>
         <translation>向后</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="452"/>
+        <location filename="../../Util/Helper.cpp" line="458"/>
         <source>Reload</source>
         <translation>重新加载</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="453"/>
+        <location filename="../../Util/Helper.cpp" line="459"/>
         <source>Index</source>
         <translation>索引</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="454"/>
+        <location filename="../../Util/Helper.cpp" line="460"/>
         <source>Equation</source>
         <translation>方程</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="455"/>
+        <location filename="../../Util/Helper.cpp" line="461"/>
         <source>Transformational Debugger</source>
         <translation>转换调式器</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="456"/>
+        <location filename="../../Util/Helper.cpp" line="462"/>
         <source>Executions</source>
         <translation>执行</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="457"/>
+        <location filename="../../Util/Helper.cpp" line="463"/>
         <source>Max time</source>
         <translation>最大时间</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="458"/>
+        <location filename="../../Util/Helper.cpp" line="464"/>
         <source>Time</source>
         <translation>时间</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="459"/>
+        <location filename="../../Util/Helper.cpp" line="465"/>
         <source>Fraction</source>
         <translation>小数</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="460"/>
+        <location filename="../../Util/Helper.cpp" line="466"/>
         <source>&lt;b&gt;Info: &lt;/b&gt;Update the actual model in &lt;b&gt;Modeling&lt;/b&gt; perspective and simulate again. This is only shown for debugging purpose. Your changes will not be saved.</source>
         <translation>&lt;b&gt; 信息： &lt;/b&gt; 在 &lt;b&gt; 建模 &lt;/b&gt; 中更新实际模型后再仿真。此信息仅用于调试目的。你的所有修改将不会被保存。</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="461"/>
+        <location filename="../../Util/Helper.cpp" line="467"/>
         <source>Algorithmic Debugger</source>
         <translation>算法调试器</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="462"/>
+        <location filename="../../Util/Helper.cpp" line="468"/>
         <source>Debug Configurations</source>
         <translation>调试配置</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="463"/>
+        <location filename="../../Util/Helper.cpp" line="469"/>
         <source>Resume</source>
         <translation>继续</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="464"/>
+        <location filename="../../Util/Helper.cpp" line="470"/>
         <source>Interrupt</source>
         <translation>中断</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="465"/>
+        <location filename="../../Util/Helper.cpp" line="471"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="466"/>
+        <location filename="../../Util/Helper.cpp" line="472"/>
         <source>Step Over</source>
         <translation>单步</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="467"/>
+        <location filename="../../Util/Helper.cpp" line="473"/>
         <source>Step Into</source>
         <translation>单步进入</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="468"/>
+        <location filename="../../Util/Helper.cpp" line="474"/>
         <source>Step Return</source>
         <translation>单步返回</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="469"/>
+        <location filename="../../Util/Helper.cpp" line="475"/>
         <source>Attach to Running Process</source>
         <translation>附加到运行进程</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="470"/>
+        <location filename="../../Util/Helper.cpp" line="476"/>
         <source>Crash Report</source>
         <translation>崩溃报告</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="471"/>
+        <location filename="../../Util/Helper.cpp" line="477"/>
         <source>Parsing of JSON file failed</source>
         <translation>解析 JSON 文件失败</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="472"/>
+        <location filename="../../Util/Helper.cpp" line="478"/>
         <source>Expand All</source>
         <translation>展开全部</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="473"/>
+        <location filename="../../Util/Helper.cpp" line="479"/>
         <source>Collapse All</source>
         <translation>折叠全部</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="474"/>
+        <location filename="../../Util/Helper.cpp" line="480"/>
         <source>Version:</source>
         <translation>版本：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="475"/>
+        <location filename="../../Util/Helper.cpp" line="481"/>
         <source>unlimited</source>
         <translation>无限制</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="476"/>
+        <location filename="../../Util/Helper.cpp" line="482"/>
         <source>Simulation Output</source>
         <translation>仿真输出</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="477"/>
+        <location filename="../../Util/Helper.cpp" line="483"/>
         <source>Cancel Simulation</source>
         <translation>取消仿真</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="478"/>
-        <source>TLM co-simulation</source>
-        <translation>TLM联合仿真</translation>
+        <location filename="../../Util/Helper.cpp" line="484"/>
+        <source>Fetch Interface Data</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="408"/>
+        <location filename="../../Util/Helper.cpp" line="485"/>
+        <source>Fetches the interface data for TLM co-simulation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="486"/>
+        <source>TLM Co-Simulation Setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="487"/>
+        <source>Opens the TLM co-simulation setup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="488"/>
+        <source>TLM Co-Simulation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="489"/>
+        <source>Running</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="490"/>
+        <source>Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Util/Helper.cpp" line="414"/>
         <source>Color:</source>
         <translation>颜色：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="412"/>
+        <location filename="../../Util/Helper.cpp" line="418"/>
         <source>Pick Color</source>
         <translation>颜色选取</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="400"/>
+        <location filename="../../Util/Helper.cpp" line="406"/>
         <source>Thickness:</source>
         <translation>粗细：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="401"/>
+        <location filename="../../Util/Helper.cpp" line="407"/>
         <source>Smooth:</source>
         <translation>平滑：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="392"/>
+        <location filename="../../Util/Helper.cpp" line="398"/>
         <source>Horizontal</source>
         <translation>水平</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="306"/>
+        <location filename="../../Util/Helper.cpp" line="312"/>
         <source>Open Model/Library File(s)</source>
         <translation>打开模型/库文件</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="393"/>
+        <location filename="../../Util/Helper.cpp" line="399"/>
         <source>Vertical</source>
         <translation>垂直</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="404"/>
+        <location filename="../../Util/Helper.cpp" line="410"/>
         <source>End Arrow:</source>
         <translation>结束箭头：</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="424"/>
+        <location filename="../../Util/Helper.cpp" line="430"/>
         <source>Remove</source>
         <translation>移除</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="425"/>
+        <location filename="../../Util/Helper.cpp" line="431"/>
         <source>Location</source>
         <comment>For files</comment>
         <translatorcomment>文件位置</translatorcomment>
         <translation>位置</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="426"/>
+        <location filename="../../Util/Helper.cpp" line="432"/>
         <source>Location</source>
         <comment>For errors</comment>
         <translatorcomment>错误位置</translatorcomment>
         <translation>位置</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="427"/>
+        <location filename="../../Util/Helper.cpp" line="433"/>
         <source>Read-Only</source>
         <translation>只读</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="428"/>
+        <location filename="../../Util/Helper.cpp" line="434"/>
         <source>Writable</source>
         <translation>可写</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="430"/>
+        <location filename="../../Util/Helper.cpp" line="436"/>
         <source>Icon View</source>
         <translation>图标视图</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="431"/>
+        <location filename="../../Util/Helper.cpp" line="437"/>
         <source>Diagram View</source>
         <translation>组件视图</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="433"/>
+        <location filename="../../Util/Helper.cpp" line="439"/>
         <source>Documentation View</source>
         <translation>文档视图</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="434"/>
+        <location filename="../../Util/Helper.cpp" line="440"/>
         <source>Search Modelica Class</source>
         <translation>查找Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="435"/>
+        <location filename="../../Util/Helper.cpp" line="441"/>
         <source>Find/Replace...</source>
         <translation>查找/替换…</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="439"/>
+        <location filename="../../Util/Helper.cpp" line="445"/>
         <source>Connect Array</source>
         <translation>连接数组</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="440"/>
+        <location filename="../../Util/Helper.cpp" line="446"/>
         <source>Find Variables</source>
         <translation>查找变量</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="441"/>
+        <location filename="../../Util/Helper.cpp" line="447"/>
         <source>View Class</source>
         <translation>查看类</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="442"/>
+        <location filename="../../Util/Helper.cpp" line="448"/>
         <source>Opens the class details</source>
         <translation>打开类细节</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="443"/>
+        <location filename="../../Util/Helper.cpp" line="449"/>
         <source>View Documentation</source>
         <translation>查看文档</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="436"/>
+        <location filename="../../Util/Helper.cpp" line="442"/>
         <source>Left</source>
         <translation>左</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="437"/>
+        <location filename="../../Util/Helper.cpp" line="443"/>
         <source>Center</source>
         <translation>中间</translation>
     </message>
     <message>
-        <location filename="../../Util/Helper.cpp" line="438"/>
+        <location filename="../../Util/Helper.cpp" line="444"/>
         <source>Right</source>
         <translation>右</translation>
     </message>
@@ -2247,10 +2270,6 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>LibrariesPage</name>
     <message>
-        <source>* The system libraries are read from the MODELICAPATH and are always read-only.</source>
-        <translation type="obsolete">*系统库从MODELICAPATH读取，且始终是只读的。</translation>
-    </message>
-    <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1417"/>
         <source>System Libraries *</source>
         <translation>系统库 *</translation>
@@ -2319,56 +2338,56 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>刷新Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="595"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="603"/>
         <source>Creating Components</source>
         <translation>建立组件</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="904"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="924"/>
         <source>while deleting </source>
         <translation>当删除时</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="995"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1015"/>
         <source>Saving %1</source>
         <translation>保存 %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1005"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1025"/>
         <source>Unable to save the file, unknown library type.</source>
         <translation>无法保持稳健，库类型未知。</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1075"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1102"/>
         <source>Parsing</source>
         <translation>语法分析</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1219"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1254"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1244"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1305"/>
         <source>Unable to save the file. %1</source>
         <translation>无法保存文件 %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1263"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1298"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1355"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1379"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1435"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1455"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1314"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1349"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1406"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1430"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1486"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1506"/>
         <source>Saving</source>
         <translation>正在保存</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1805"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1888"/>
         <source>Unable to open the file, unknown file type.</source>
         <translation>无法打开文件，文件类型未知。</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1192"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1230"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1267"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1302"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1219"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1255"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1318"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1353"/>
         <source>Save File</source>
         <translation>保存文件</translation>
     </message>
@@ -2402,698 +2421,684 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <source>Connecting to OpenModelica Compiler</source>
-        <translation type="obsolete">联接到OpenModelica编译器</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="78"/>
+        <location filename="../../MainWindow.cpp" line="79"/>
         <source>Reading Settings</source>
         <translation>读取配置</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="80"/>
+        <location filename="../../MainWindow.cpp" line="81"/>
         <source>Loading Widgets</source>
         <translation>加载物件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2131"/>
+        <location filename="../../MainWindow.cpp" line="2348"/>
         <source>Save a file</source>
         <translation>保存一个文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2134"/>
+        <location filename="../../MainWindow.cpp" line="2351"/>
         <source>Save As</source>
         <translation>另存为</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2135"/>
+        <location filename="../../MainWindow.cpp" line="2352"/>
         <source>Save As a File</source>
         <translation>保存为一个文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2138"/>
+        <location filename="../../MainWindow.cpp" line="2355"/>
         <source>Save All</source>
         <translation>保存所有</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2139"/>
+        <location filename="../../MainWindow.cpp" line="2356"/>
         <source>Save All Files</source>
         <translation>保存所有文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2167"/>
+        <location filename="../../MainWindow.cpp" line="2384"/>
         <source>Cut</source>
         <translation>剪切</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="234"/>
+        <location filename="../../MainWindow.cpp" line="235"/>
         <source>Modeling</source>
         <translation>建模</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="239"/>
+        <location filename="../../MainWindow.cpp" line="240"/>
         <source>Plotting</source>
         <translation>绘图</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2101"/>
+        <location filename="../../MainWindow.cpp" line="2314"/>
         <source>Opens the Modelica file(s)</source>
         <translation>打开Modelica文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2178"/>
+        <location filename="../../MainWindow.cpp" line="2395"/>
         <source>Grid Lines</source>
         <translation>网格线</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2179"/>
+        <location filename="../../MainWindow.cpp" line="2396"/>
         <source>Show/Hide the grid lines</source>
         <translation>显示/隐藏网格线</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2185"/>
+        <location filename="../../MainWindow.cpp" line="2402"/>
         <source>Reset Zoom</source>
         <translation>重置缩放</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2186"/>
+        <location filename="../../MainWindow.cpp" line="2403"/>
         <source>Resets the zoom</source>
         <translation>重置缩放</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2191"/>
+        <location filename="../../MainWindow.cpp" line="2408"/>
         <source>Zoom In</source>
         <translation>放大</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2197"/>
+        <location filename="../../MainWindow.cpp" line="2414"/>
         <source>Zoom Out</source>
         <translation>缩小</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2212"/>
+        <location filename="../../MainWindow.cpp" line="2425"/>
+        <source>Close Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2426"/>
+        <source>Closes the active window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2429"/>
+        <source>Close All Windows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2430"/>
+        <source>Closes all windows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2433"/>
+        <source>Close All Windows But This</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2434"/>
+        <source>Closes all windows except active window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2441"/>
         <source>Tile Windows Horizontally</source>
         <translation>水平平铺窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2213"/>
+        <location filename="../../MainWindow.cpp" line="2442"/>
         <source>Arranges all child windows in a horizontally tiled pattern</source>
         <translation>水平平铺组织所有子窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2216"/>
+        <location filename="../../MainWindow.cpp" line="2445"/>
         <source>Tile Windows Vertically</source>
         <translation>垂直平铺窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2217"/>
+        <location filename="../../MainWindow.cpp" line="2446"/>
         <source>Arranges all child windows in a vertically tiled pattern</source>
         <translation>垂直平铺所有子窗口</translation>
     </message>
     <message>
-        <source>OMC Logger</source>
-        <translation type="obsolete">OMC日志</translation>
-    </message>
-    <message>
-        <source>Shows OMC Logger Window</source>
-        <translation type="obsolete">显示OMC日志窗口</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2297"/>
+        <location filename="../../MainWindow.cpp" line="2526"/>
         <source>Shows the options window</source>
         <translation>显示选项窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2311"/>
+        <location filename="../../MainWindow.cpp" line="2540"/>
         <source>OpenModelica Scripting Documentation</source>
         <translation>OpenModelica脚本文档</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2312"/>
+        <location filename="../../MainWindow.cpp" line="2541"/>
         <source>Opens the OpenModelica Scripting Documentation</source>
         <translation>打开OpenModelica脚本文档</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2315"/>
+        <location filename="../../MainWindow.cpp" line="2544"/>
         <source>Modelica Documentation</source>
         <translation>Modelica文档</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2316"/>
+        <location filename="../../MainWindow.cpp" line="2545"/>
         <source>Opens the Modelica Documentation</source>
         <translation>打开Modelica文档</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2327"/>
+        <location filename="../../MainWindow.cpp" line="2556"/>
         <source>About OMEdit</source>
         <translation>关于OMEdit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2328"/>
+        <location filename="../../MainWindow.cpp" line="2557"/>
         <source>Information about OMEdit</source>
         <translation>关于OMEdit的信息</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2340"/>
+        <location filename="../../MainWindow.cpp" line="2569"/>
         <source>Polygon</source>
         <translation>多边形</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2345"/>
+        <location filename="../../MainWindow.cpp" line="2574"/>
         <source>Rectangle</source>
         <translation>矩形</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2350"/>
+        <location filename="../../MainWindow.cpp" line="2579"/>
         <source>Ellipse</source>
         <translation>椭圆</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2360"/>
+        <location filename="../../MainWindow.cpp" line="2589"/>
         <source>Bitmap</source>
         <translation>位图</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2366"/>
+        <location filename="../../MainWindow.cpp" line="2595"/>
         <source>Changes to/from connect mode</source>
         <translation>修改为/修改自连接模式</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2385"/>
+        <location filename="../../MainWindow.cpp" line="2614"/>
         <source>New Plot Window</source>
         <translation>新绘图窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2386"/>
+        <location filename="../../MainWindow.cpp" line="2615"/>
         <source>Inserts new plot window</source>
         <translation>插入新绘图窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2421"/>
+        <location filename="../../MainWindow.cpp" line="2654"/>
         <source>&amp;File</source>
         <translation>文件(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="84"/>
+        <location filename="../../MainWindow.cpp" line="85"/>
         <source>Messages Browser</source>
         <translation>消息浏览器</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="124"/>
+        <location filename="../../MainWindow.cpp" line="125"/>
         <source>Search Browser</source>
         <translation>查找浏览器</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="137"/>
+        <location filename="../../MainWindow.cpp" line="138"/>
         <source>Libraries Browser</source>
         <translation>库浏览器</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="147"/>
+        <location filename="../../MainWindow.cpp" line="148"/>
         <source>Documentation Browser</source>
         <translation>文档浏览器</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="163"/>
+        <location filename="../../MainWindow.cpp" line="164"/>
         <source>Creating Widgets</source>
         <translation>建立物件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="229"/>
+        <location filename="../../MainWindow.cpp" line="230"/>
         <source>Welcome</source>
         <translation>欢迎</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="855"/>
+        <location filename="../../MainWindow.cpp" line="856"/>
         <source>Exporting model as FMU</source>
         <translation>导出模型为FMU</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="883"/>
+        <location filename="../../MainWindow.cpp" line="884"/>
         <source>Exporting model as XML</source>
         <translation>导出模型为XML</translation>
     </message>
     <message>
-        <source>Exporting model as Figaro</source>
-        <translation type="obsolete">导出模型为Figaro</translation>
-    </message>
-    <message>
-        <source>Parsing</source>
-        <translation type="obsolete">语法分析</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="1472"/>
+        <location filename="../../MainWindow.cpp" line="1654"/>
         <source>instantiating</source>
         <translation>实例化</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1488"/>
-        <location filename="../../MainWindow.cpp" line="1504"/>
+        <location filename="../../MainWindow.cpp" line="1670"/>
+        <location filename="../../MainWindow.cpp" line="1686"/>
         <source>checking</source>
         <translation>检查</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1578"/>
+        <location filename="../../MainWindow.cpp" line="1760"/>
         <source>making FMU</source>
         <translation>编译FMU</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1595"/>
+        <location filename="../../MainWindow.cpp" line="1777"/>
         <source>making XML</source>
         <translation>编译XML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1612"/>
+        <location filename="../../MainWindow.cpp" line="1794"/>
         <source>exporting to Figaro</source>
         <translation>导出到Figaro</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1638"/>
+        <location filename="../../MainWindow.cpp" line="1820"/>
         <source>exporting to OMNotebook</source>
         <translation>导出到OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1654"/>
+        <location filename="../../MainWindow.cpp" line="1836"/>
         <source>Importing model(s) from OMNotebook</source>
         <translation>从OMNotebook导入模型</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1705"/>
+        <location filename="../../MainWindow.cpp" line="1887"/>
         <source>Importing ngspice netlist and converting to Modelica code</source>
         <translation>导入 ngspice netlist 并转换为 Modelica 代码</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1788"/>
+        <location filename="../../MainWindow.cpp" line="1970"/>
         <source>exporting to Image</source>
         <translation>导出到图形</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2105"/>
+        <location filename="../../MainWindow.cpp" line="2318"/>
         <source>Opens and converts the Modelica file(s) with encoding</source>
         <translation>用指定编码打开并且转Modelica文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2108"/>
+        <location filename="../../MainWindow.cpp" line="2321"/>
         <source>Load Library</source>
         <translation>加载库</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2109"/>
+        <location filename="../../MainWindow.cpp" line="2322"/>
         <source>Loads the Modelica library</source>
         <translation>加载Modelica库</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2112"/>
+        <location filename="../../MainWindow.cpp" line="2325"/>
         <source>Open Result File(s)</source>
         <translation>打开结果文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2114"/>
+        <location filename="../../MainWindow.cpp" line="2327"/>
         <source>Opens the OpenModelica Result file</source>
         <translation>打开OpenModelica结果文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2117"/>
+        <location filename="../../MainWindow.cpp" line="2330"/>
         <source>Open Transformations File</source>
         <translation>打开转换文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2118"/>
+        <location filename="../../MainWindow.cpp" line="2331"/>
         <source>Opens the class transformations file</source>
         <translation>打开类转换文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2129"/>
+        <location filename="../../MainWindow.cpp" line="2334"/>
+        <source>New MetaModel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2335"/>
+        <source>Create New MetaModel File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2338"/>
+        <source>Open MetaModel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2339"/>
+        <source>Opens the MetaModel file(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2342"/>
+        <source>Load External Model(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2343"/>
+        <source>Loads the External Model(s) for the TLM meta-modeling</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MainWindow.cpp" line="2346"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2142"/>
+        <location filename="../../MainWindow.cpp" line="2359"/>
         <source>Save Total Model</source>
         <translation>保存全部模型</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2143"/>
+        <location filename="../../MainWindow.cpp" line="2360"/>
         <source>Dumps the total model to a file</source>
         <translation>丢弃模型到文件</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2154"/>
+        <location filename="../../MainWindow.cpp" line="2371"/>
         <source>Clears the recent files list</source>
         <translation>清除最近文件列表</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2157"/>
+        <location filename="../../MainWindow.cpp" line="2374"/>
         <source>Print...</source>
         <translation>打印…</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2161"/>
+        <location filename="../../MainWindow.cpp" line="2378"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2162"/>
+        <location filename="../../MainWindow.cpp" line="2379"/>
         <source>Quit the </source>
         <translation>退出</translation>
     </message>
     <message>
-        <source>Copy</source>
-        <translation type="obsolete">复制</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2174"/>
+        <location filename="../../MainWindow.cpp" line="2391"/>
         <source>Paste</source>
         <translation>粘贴</translation>
     </message>
     <message>
-        <source>Shows the Find/Replace window</source>
-        <translation type="obsolete">显示查找/替换窗口</translation>
-    </message>
-    <message>
-        <source>Clear Find/Replace Texts</source>
-        <translation type="obsolete">清除查找/替换内容</translation>
-    </message>
-    <message>
-        <source>Clears the Find/Replace text items</source>
-        <translation type="obsolete">清除查找/替换内容</translation>
-    </message>
-    <message>
-        <source>Go to Line</source>
-        <translation type="obsolete">跳到行</translation>
-    </message>
-    <message>
-        <source>Shows the Go to Line Number window</source>
-        <translation type="obsolete">显示跳转行号窗口</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2192"/>
+        <location filename="../../MainWindow.cpp" line="2409"/>
         <source>Zoom in</source>
         <translation>放大</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2198"/>
+        <location filename="../../MainWindow.cpp" line="2415"/>
         <source>Zoom out</source>
         <translation>缩小</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2221"/>
+        <location filename="../../MainWindow.cpp" line="2450"/>
         <source>Instantiate Model</source>
         <translation>实例化模型</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2222"/>
+        <location filename="../../MainWindow.cpp" line="2451"/>
         <source>Instantiates the modelica model</source>
         <translation>实例化modleica模型</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2319"/>
+        <location filename="../../MainWindow.cpp" line="2548"/>
         <source>Modelica By Example</source>
         <translation>通过实例学Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2320"/>
+        <location filename="../../MainWindow.cpp" line="2549"/>
         <source>Opens the Modelica By Example online book</source>
         <translation>打开通过实例学Modelica在线书籍</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2323"/>
+        <location filename="../../MainWindow.cpp" line="2552"/>
         <source>Modelica Web Reference</source>
         <translation>Modelica网站参考</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2324"/>
+        <location filename="../../MainWindow.cpp" line="2553"/>
         <source>Opens the Modelica Web Reference</source>
         <translation>打开Modelica网站参考</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2389"/>
+        <location filename="../../MainWindow.cpp" line="2618"/>
         <source>New Parametric Plot Window</source>
         <translation>新建参数化绘图窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2390"/>
+        <location filename="../../MainWindow.cpp" line="2619"/>
         <source>Inserts new parametric plot window</source>
         <translation>插入新参数化绘图窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2541"/>
+        <location filename="../../MainWindow.cpp" line="2779"/>
         <source>&amp;Export</source>
         <translation>导出(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2296"/>
+        <location filename="../../MainWindow.cpp" line="2525"/>
         <source>Options</source>
         <translation>选项</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="102"/>
-        <location filename="../../MainWindow.cpp" line="117"/>
+        <location filename="../../MainWindow.cpp" line="103"/>
+        <location filename="../../MainWindow.cpp" line="118"/>
         <source>Can&apos;t open file %1.</source>
         <translation>不能打开文件 %1.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="232"/>
+        <location filename="../../MainWindow.cpp" line="233"/>
         <source>Changes to welcome perspective (%1)</source>
         <translation>切换到欢迎界面（%1）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="237"/>
+        <location filename="../../MainWindow.cpp" line="238"/>
         <source>Changes to modeling perspective (%1)</source>
         <translation>切换到建模界面（%1）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="242"/>
+        <location filename="../../MainWindow.cpp" line="243"/>
         <source>Changes to plotting perspective (%1)</source>
         <translation>切换到绘图界面（%1）</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1817"/>
-        <source>Meta model &lt;b&gt;%1&lt;/b&gt; has unsaved changes. Do you want to save?</source>
-        <translation>元模型 &lt;b&gt;%1&lt;/b&gt; 有尚未保持的修改，是否需要保持？</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2121"/>
-        <source>New TLM File</source>
-        <translation>新 TLM 文件</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2122"/>
-        <source>Create New TLM File</source>
-        <translation>创建新 TLM 文件</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2125"/>
-        <source>Open TLM File</source>
-        <translation>打开 TLM 文件</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2126"/>
-        <source>Opens the TLM file(s)</source>
-        <translation>打开 TLM 文件</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2208"/>
+        <location filename="../../MainWindow.cpp" line="2437"/>
         <source>Cascade Windows</source>
         <translation>堆叠窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2209"/>
+        <location filename="../../MainWindow.cpp" line="2438"/>
         <source>Arranges all the child windows in a cascade pattern</source>
         <translation>堆叠所有子窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2280"/>
+        <location filename="../../MainWindow.cpp" line="2509"/>
         <source>Shows OpenModelica Compiler CLI</source>
         <translation>显示OpenModelica编译器命令行界面</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2302"/>
+        <location filename="../../MainWindow.cpp" line="2531"/>
         <source>OpenModelica Users Guide</source>
         <translation>OpenModelica用户参考</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2303"/>
+        <location filename="../../MainWindow.cpp" line="2532"/>
         <source>Opens the OpenModelica Users Guide</source>
         <translation>打开OpenModelica用户参考</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2307"/>
+        <location filename="../../MainWindow.cpp" line="2536"/>
         <source>OpenModelica System Documentation</source>
         <translation>OpenModelica系统文档</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2308"/>
+        <location filename="../../MainWindow.cpp" line="2537"/>
         <source>Opens the OpenModelica System Documentation</source>
         <translation>打开OpenModelica系统文档</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2336"/>
+        <location filename="../../MainWindow.cpp" line="2565"/>
         <source>Draws a line shape</source>
         <translation>绘制直线</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2341"/>
+        <location filename="../../MainWindow.cpp" line="2570"/>
         <source>Draws a polygon shape</source>
         <translation>绘制多边形</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2346"/>
+        <location filename="../../MainWindow.cpp" line="2575"/>
         <source>Draws a rectangle shape</source>
         <translation>绘制矩形</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2351"/>
+        <location filename="../../MainWindow.cpp" line="2580"/>
         <source>Draws an ellipse shape</source>
         <translation>绘制椭圆</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2355"/>
+        <location filename="../../MainWindow.cpp" line="2584"/>
         <source>Text</source>
         <translation>文本</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2356"/>
+        <location filename="../../MainWindow.cpp" line="2585"/>
         <source>Draws a text shape</source>
         <translation>绘制文本框</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2361"/>
+        <location filename="../../MainWindow.cpp" line="2590"/>
         <source>Inserts a bitmap</source>
         <translation>插入位图</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2365"/>
+        <location filename="../../MainWindow.cpp" line="2594"/>
         <source>Connect/Unconnect Mode</source>
         <translation>连接/取消连接模式</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2393"/>
+        <location filename="../../MainWindow.cpp" line="2622"/>
         <source>Clear Plot Window</source>
         <translation>清除绘图窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2394"/>
+        <location filename="../../MainWindow.cpp" line="2623"/>
         <source>Clears all the curves from the plot window</source>
         <translation>清除绘图窗口所有曲线</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2402"/>
+        <location filename="../../MainWindow.cpp" line="2631"/>
         <source>Export to Clipboard</source>
         <translation>输出到粘贴板</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2408"/>
-        <source>starts the TLM co-simulation</source>
-        <translation>开始 TLM 联合仿真</translation>
-    </message>
-    <message>
-        <location filename="../../MainWindow.cpp" line="2440"/>
+        <location filename="../../MainWindow.cpp" line="2674"/>
         <source>&amp;System Libraries</source>
         <translation>系统库(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2453"/>
+        <location filename="../../MainWindow.cpp" line="2687"/>
         <source>Recent &amp;Files</source>
         <translation>最近打开的文件(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2466"/>
+        <location filename="../../MainWindow.cpp" line="2700"/>
         <source>&amp;Edit</source>
         <translation>编辑(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2479"/>
+        <location filename="../../MainWindow.cpp" line="2713"/>
         <source>&amp;View</source>
         <translation>视图(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2483"/>
+        <location filename="../../MainWindow.cpp" line="2717"/>
         <source>Toolbars</source>
         <translation>工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2487"/>
+        <location filename="../../MainWindow.cpp" line="2721"/>
         <source>Windows</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2520"/>
+        <location filename="../../MainWindow.cpp" line="2758"/>
         <source>&amp;Simulation</source>
         <translation>仿真(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2533"/>
+        <location filename="../../MainWindow.cpp" line="2771"/>
         <source>F&amp;MI</source>
         <translation>FMI(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2549"/>
+        <location filename="../../MainWindow.cpp" line="2787"/>
         <source>&amp;Tools</source>
         <translation>工具(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2563"/>
+        <location filename="../../MainWindow.cpp" line="2801"/>
         <source>&amp;Help</source>
         <translation>帮助(&amp;H)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2693"/>
+        <location filename="../../MainWindow.cpp" line="2966"/>
         <source>File Toolbar</source>
         <translation>文件工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2703"/>
+        <location filename="../../MainWindow.cpp" line="2976"/>
         <source>Edit Toolbar</source>
         <translation>编辑工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2711"/>
+        <location filename="../../MainWindow.cpp" line="2984"/>
         <source>View Toolbar</source>
         <translation>视图工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2721"/>
+        <location filename="../../MainWindow.cpp" line="2994"/>
         <source>Shapes Toolbar</source>
         <translation>形状工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2734"/>
+        <location filename="../../MainWindow.cpp" line="3007"/>
         <source>Simulation Toolbar</source>
         <translation>仿真工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2746"/>
+        <location filename="../../MainWindow.cpp" line="3019"/>
         <source>ModelSwitcher Toolbar</source>
         <translation>模型切换工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2763"/>
+        <location filename="../../MainWindow.cpp" line="3036"/>
         <source>Plot Toolbar</source>
         <translation>绘图工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2774"/>
+        <location filename="../../MainWindow.cpp" line="3047"/>
         <source>TLM Simulation Toolbar</source>
         <translation>TLM 仿真工具栏</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="930"/>
+        <location filename="../../MainWindow.cpp" line="1015"/>
         <source>Exporting model to OMNotebook</source>
         <translation>导出模型到OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1672"/>
+        <location filename="../../MainWindow.cpp" line="1854"/>
         <source>Error reading the xml file</source>
         <translation>读取XML文件错误</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1739"/>
+        <location filename="../../MainWindow.cpp" line="1921"/>
         <source>Exporting model as an Image</source>
         <translation>导出模型为图形</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1776"/>
+        <location filename="../../MainWindow.cpp" line="1958"/>
         <source>Error saving the image file</source>
         <translation>保存图形文件错误</translation>
     </message>
@@ -3162,32 +3167,28 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>ModelWidget</name>
     <message>
-        <source>Writeable</source>
-        <translation type="obsolete">可写</translation>
-    </message>
-    <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2111"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2140"/>
         <source>Writable</source>
         <translation>可写</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2121"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2150"/>
         <source>Make writable</source>
         <translation>使可写</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2121"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2903"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2150"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2920"/>
         <source>File is writable</source>
         <translation>文件可改写</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2899"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2916"/>
         <source>Cannot Set Permissions</source>
         <translation>不能修改权限</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2899"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2916"/>
         <source>Cannot set permissions to writable.</source>
         <translation>不能修改文件权限为可写。</translation>
     </message>
@@ -3195,23 +3196,23 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>ModelWidgetContainer</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3488"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3511"/>
         <source>save as</source>
         <translation>另存为</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3521"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3544"/>
         <source>Saving</source>
         <translation>正在保存</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3525"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3548"/>
         <source>Save Total Model</source>
         <translation>保存全部模型</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3468"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3508"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3491"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3531"/>
         <source>saving</source>
         <translation>正在保存</translation>
     </message>
@@ -3261,10 +3262,6 @@ You can choose between waiting longer or abort debugging.</source>
 </context>
 <context>
     <name>ModelicaTextEditor</name>
-    <message>
-        <source>Toggle Comment Selection</source>
-        <translation type="obsolete">切换注释选择</translation>
-    </message>
     <message>
         <location filename="../../Editors/ModelicaTextEditor.cpp" line="152"/>
         <source>Start and End modifiers are different</source>
@@ -3372,13 +3369,6 @@ You can choose between waiting longer or abort debugging.</source>
         <translation>从本地路径引用一个位图前必须保存类。</translation>
     </message>
     <message>
-        <source>Welcome to new enhanced OMEdit - OpenModelica Connection Editor.
-This version includes a lot of improvements and bug fixes. Check release notes for more details.&lt;br /&gt;&lt;br /&gt;It is highly recommended to delete the old OMEdit settings file. Click &quot;OK&quot; to delete.&lt;br /&gt;Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.</source>
-        <translation type="obsolete">欢迎来的新的增强OMEdit—OpenModelia连接编辑器。
-当前版本保护很多改进与缺陷修复，查看发布说明可得到具体信息。强烈推荐删除旧版OMEdit设置文件按。点击【确认】删除。
-如有任何意见、建议或问题请连续我们[OpenModelica@ida.liu.se]或者Adeel Asghar [adeel.asghar@liu.se]。</translation>
-    </message>
-    <message>
         <location filename="../../Options/NotificationsDialog.cpp" line="199"/>
         <source>Always quit without prompt</source>
         <translation>退出时始终不提示</translation>
@@ -3420,10 +3410,6 @@ This version includes a lot of improvements and bug fixes. Check release notes f
 <context>
     <name>OMCProxy</name>
     <message>
-        <source>OMC Messages Log</source>
-        <translation type="obsolete">OMC日志</translation>
-    </message>
-    <message>
         <location filename="../../OMC/OMCProxy.cpp" line="108"/>
         <source>* To enable OpenModelica Compiler CLI start OMEdit with argument --OMCLogger=true</source>
         <translation>* 启动OMEdit时使用参数 --OMCLogger=true 可激活OpenModelica命令行编译器</translation>
@@ -3434,330 +3420,30 @@ This version includes a lot of improvements and bug fixes. Check release notes f
         <translation>发送</translation>
     </message>
     <message>
-        <source> will close.</source>
-        <translation type="obsolete">将关闭。</translation>
-    </message>
-    <message>
-        <source>Unable to communicate with OpenModelica Compiler.</source>
-        <translation type="obsolete">无法与OpenModelica编译器通讯。</translation>
-    </message>
-    <message>
         <location filename="../../OMC/OMCProxy.cpp" line="546"/>
         <source>Connection with the OpenModelica Compiler has been lost.</source>
         <translation>与OpenModelica连接丢失。</translation>
     </message>
 </context>
 <context>
-    <name>OMPlot::Legend</name>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/Legend.cpp" line="49"/>
-        <source>Setup</source>
-        <translation>设置</translation>
-    </message>
-</context>
-<context>
-    <name>OMPlot::PlotApplication</name>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotApplication.cpp" line="107"/>
-        <source>OMPlot - Error</source>
-        <translation>OPMlot—错误</translation>
-    </message>
-</context>
-<context>
-    <name>OMPlot::PlotMainWindow</name>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="43"/>
-        <source>OMPlot - OpenModelica Plot</source>
-        <translation>OMPlot—OpenModelica绘图</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="69"/>
-        <source>Close</source>
-        <translation>关闭</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="73"/>
-        <source>Tab View</source>
-        <translation>标签视图</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="89"/>
-        <source>&amp;File</source>
-        <translation>文件(&amp;F)</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="97"/>
-        <source>&amp;Options</source>
-        <translation>选项(&amp;O)</translation>
-    </message>
-</context>
-<context>
-    <name>OMPlot::PlotWindow</name>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="79"/>
-        <source>Plot by OpenModelica</source>
-        <translation>应用OpenModelica绘图</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="174"/>
-        <source>Zoom</source>
-        <translation>缩放</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="181"/>
-        <source>Pan</source>
-        <translation>平移</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="188"/>
-        <source>Auto Scale</source>
-        <translation>自动缩放</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="195"/>
-        <source>Fit in View</source>
-        <translation>适用</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="206"/>
-        <source>Save</source>
-        <translation>保存</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="213"/>
-        <source>Print</source>
-        <translation>打印</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="219"/>
-        <source>Grid</source>
-        <translation>网格</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="225"/>
-        <source>Detailed Grid</source>
-        <translation>删除网格</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="231"/>
-        <source>No Grid</source>
-        <translation>无网格</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="243"/>
-        <source>Log X</source>
-        <translation>Log X</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="247"/>
-        <source>Log Y</source>
-        <translation>Log Y</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="253"/>
-        <source>Setup</source>
-        <translation>设置</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="338"/>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="552"/>
-        <source>Failed to open simulation result file %1</source>
-        <translation>打开仿真结果文件按%1失败</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="344"/>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="356"/>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="563"/>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="570"/>
-        <source>Variable doesnt exist: %1</source>
-        <translation>变量不存在：%1</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="906"/>
-        <source>Save File As</source>
-        <translation>另存为</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="906"/>
-        <source>Image Files (*.png *.svg *.bmp)</source>
-        <translation>图形文件（*.png *.svg *.bmp）</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="913"/>
-        <source>OMPlot - OpenModelica Plot</source>
-        <translation>OMPlot—OpenModelica绘图</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="914"/>
-        <source>Generated by OpenModelica Plot Tool</source>
-        <translation>由OpenMdelica绘图工具生成</translation>
-    </message>
-</context>
-<context>
-    <name>OMPlot::SetupDialog</name>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1198"/>
-        <source>Plot Setup</source>
-        <translation>绘图设置</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1205"/>
-        <source>Select a variable, then edit its properties below:</source>
-        <translation>选择一个变量，然后编辑下列属性：</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1227"/>
-        <source>Plot Title</source>
-        <translation>标题</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1229"/>
-        <source>Vertical Axis Title</source>
-        <translation>纵轴标题</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1231"/>
-        <source>Horizontal Axis Title</source>
-        <translation>横轴标题</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1233"/>
-        <source>Plot Footer</source>
-        <translation>脚注</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1251"/>
-        <source>Legend Position</source>
-        <translation>图例位置</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1253"/>
-        <source>Top</source>
-        <translation>上</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1254"/>
-        <source>Right</source>
-        <translation>右</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1255"/>
-        <source>Bottom</source>
-        <translation>下</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1256"/>
-        <source>Left</source>
-        <translation>左</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1264"/>
-        <source>Variables</source>
-        <translation>变量</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1265"/>
-        <source>Titles</source>
-        <translation>标题</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1266"/>
-        <source>Legend</source>
-        <translation>图例</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1268"/>
-        <source>OK</source>
-        <translation>确认</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1271"/>
-        <source>Apply</source>
-        <translation>应用</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1274"/>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-</context>
-<context>
-    <name>OMPlot::VariablePageWidget</name>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1093"/>
-        <source>General</source>
-        <translation>常规</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1094"/>
-        <source>Legend</source>
-        <translation>图例</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1096"/>
-        <source>Reset</source>
-        <translation>复位</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1099"/>
-        <source>File</source>
-        <translation>文件</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1110"/>
-        <source>Appearance</source>
-        <translation>外观</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1111"/>
-        <source>Color</source>
-        <translation>颜色</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1112"/>
-        <source>Pick Color</source>
-        <translation>颜色选取</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1118"/>
-        <source>Automatic Color</source>
-        <translation>自动颜色</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1121"/>
-        <source>Pattern</source>
-        <translation>图案</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1133"/>
-        <source>Thickness</source>
-        <translation>粗细</translation>
-    </message>
-    <message>
-        <location filename="../../../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="1139"/>
-        <source>Hide</source>
-        <translation>隐藏</translation>
-    </message>
-</context>
-<context>
     <name>OpenModelicaFile</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="442"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="428"/>
         <source>Convert all files within the selected directory and sub-directories</source>
         <translation>转换所选路径和子路径中的所有文件</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="445"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="431"/>
         <source>Open with selected encoding</source>
         <translation>使用所选编码格式打开</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="450"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="436"/>
         <source>Open and convert to UTF-8</source>
         <translation>打开并转换到UTF-8</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="580"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="566"/>
         <source>Converting files to UTF-8</source>
         <translation>转换文件编码格式为UTF-8</translation>
     </message>
@@ -3898,17 +3584,17 @@ This version includes a lot of improvements and bug fixes. Check release notes f
 <context>
     <name>RenameClassDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="878"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="868"/>
         <source>New Name:</source>
         <translation>新名称：</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="880"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="870"/>
         <source>Rename</source>
         <translation>重命名</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="883"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="873"/>
         <source>&amp;Cancel</source>
         <translation>取消(&amp;C)</translation>
     </message>
@@ -3916,17 +3602,17 @@ This version includes a lot of improvements and bug fixes. Check release notes f
 <context>
     <name>SaveAsClassDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="619"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="605"/>
         <source>Save As Modelica Class</source>
         <translation>另存为Modelica类</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="628"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="614"/>
         <source>Insert in class (optional):</source>
         <translation>插入到类（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="642"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="628"/>
         <source>Save contents in one file</source>
         <translation>保存内容到一个文件</translation>
     </message>
@@ -3934,22 +3620,22 @@ This version includes a lot of improvements and bug fixes. Check release notes f
 <context>
     <name>SaveChangesDialog</name>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1167"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1157"/>
         <source>Save Changes</source>
         <translation>保存修改</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1170"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1160"/>
         <source>Save changes to the following classes?</source>
         <translation>保存修改到下列类？</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1177"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1167"/>
         <source>Yes</source>
         <translation>是</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1181"/>
+        <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1171"/>
         <source>No</source>
         <translation>否</translation>
     </message>
@@ -3970,17 +3656,17 @@ This version includes a lot of improvements and bug fixes. Check release notes f
 <context>
     <name>ShapeAnnotation</name>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="441"/>
+        <location filename="../../Annotations/ShapeAnnotation.cpp" line="442"/>
         <source>Shows the shape properties</source>
         <translation>显示形状属性</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="444"/>
+        <location filename="../../Annotations/ShapeAnnotation.cpp" line="445"/>
         <source>Manhattanize</source>
         <translation>曼哈顿化</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="445"/>
+        <location filename="../../Annotations/ShapeAnnotation.cpp" line="446"/>
         <source>Manhattanize the lines</source>
         <translation>曼哈顿化行</translation>
     </message>
@@ -4131,315 +3817,320 @@ This version includes a lot of improvements and bug fixes. Check release notes f
         <translation>输出格式：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="276"/>
-        <source>File Name (Optional):</source>
-        <translation>文件名称（可选）：</translation>
-    </message>
-    <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="278"/>
         <source>The name is used as a prefix for the output files. This is just a name not the path.
 If you want to change the output path then update the working directory in Options/Preferences.</source>
         <translation>这个名称用在输出文件前缀。该名称只是文件名称而不是路径。如果要修改输出文件路径，请在选项/偏好中设置工作位置。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="281"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="280"/>
+        <source>Result File (Optional):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="286"/>
         <source>Variable Filter (Optional):</source>
         <translation>变量过滤（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="284"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="289"/>
         <source>Protected Variables</source>
         <translation>保护变量</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="286"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="291"/>
         <source>Equidistant Time Grid</source>
         <translation>时间等距网格</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="289"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="294"/>
         <source>Store Variables at Events</source>
         <translation>存储变量事件</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="320"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="328"/>
         <source>Model Setup File (Optional):</source>
         <translation>模型配置文件（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="321"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="329"/>
         <source>Specifies a new setup XML file to the generated simulation code.</source>
         <translation>为生成的仿真代码指定一个新的XML配置文件。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="327"/>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="623"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="335"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="628"/>
         <source>Initialization Method (Optional):</source>
         <translation>初始化方法（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="328"/>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="624"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="336"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="629"/>
         <source>Specifies the initialization method.</source>
         <translation>指定初始化方法。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="332"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="340"/>
         <source>Equation System Initialization File (Optional):</source>
         <translation>方程初始化文件（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="333"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="341"/>
         <source>Specifies an external file for the initialization of the model.</source>
         <translation>指定初始化方法为一外部文件。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="339"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="347"/>
         <source>Equation System Initialization Time (Optional):</source>
         <translation>方程初始化时间（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="340"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="348"/>
         <source>Specifies a time for the initialization of the model.</source>
         <translation>指定模型的方程初始化时间。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="343"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="351"/>
         <source>Clock (Optional):</source>
         <translation>时钟（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="347"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="355"/>
         <source>Linear Solver (Optional):</source>
         <translation>线性求解器（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="351"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="359"/>
         <source>Non Linear Solver (Optional):</source>
         <translation>非线性求解器（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="355"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="363"/>
         <source>Linearization Time (Optional):</source>
         <translation>线性化时间（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="358"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="366"/>
         <source>Output Variables (Optional):</source>
         <translation>输出变量（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="359"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="367"/>
         <source>Comma separated list of variables. Output the variables at the end of the simulation to the standard output.</source>
         <translation>变量列表用逗号分割。仿真结束时输出变量到标准输出。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="362"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="370"/>
         <source>Profiling (enable performance measurements)</source>
         <translation>分析（激活性能测试）</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="371"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="379"/>
         <source>Enable All Warnings</source>
         <translation>激活全部警告</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="374"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="382"/>
         <source>DASSL Solver Information</source>
         <translation>DASSL求解器信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="375"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="383"/>
         <source>additional information about dassl solver</source>
         <translation>附加DASSL求解器信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="376"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="384"/>
         <source>Debug</source>
         <translation>调试</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="377"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="385"/>
         <source>additional debug information</source>
         <translation>附加调试信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="378"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="386"/>
         <source>Dynamic State Selection Information</source>
         <translation>动态状态选择信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="379"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="387"/>
         <source>outputs information about dynamic state selection</source>
         <translation>输出有过动态选择信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="380"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="388"/>
         <source>Jacobians Dynamic State Selection Information</source>
         <translation>雅可比动态选择信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="381"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="389"/>
         <source>outputs jacobain of the dynamic state selection</source>
         <translation>输出雅可比动态选择信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="382"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="390"/>
         <source>Event Iteration</source>
         <translation>事件积分</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="383"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="391"/>
         <source>additional information during event iteration</source>
         <translation>积分过程中附加信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="384"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="392"/>
         <source>Verbose Event System</source>
         <translation>详细事件系统</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="385"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="393"/>
         <source>verbose logging of event system</source>
         <translation>事件详细日志</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="386"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="394"/>
         <source>Initialization</source>
         <translation>初始化</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="387"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="395"/>
         <source>additional information during initialization</source>
         <translation>初始化时的附加信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="389"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="397"/>
         <source>outputs the jacobian matrix used by the integrator</source>
         <translation>输出积分器使用的雅可比矩阵</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="390"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="398"/>
         <source>Non Linear Systems</source>
         <translation>非线性系统</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="391"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="399"/>
         <source>logging for nonlinear systems</source>
         <translation>非线性系统日志</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="392"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="400"/>
         <source>Verbose Non Linear Systems</source>
         <translation>非线性系统详细信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="393"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="401"/>
         <source>verbose logging of nonlinear systems</source>
         <translation>非线性系统的详细日志</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="395"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="403"/>
         <source>outputs the jacobian of nonlinear systems</source>
         <translation>输出非线性系统雅可比矩阵</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="396"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="404"/>
         <source>Initialization Residuals</source>
         <translation>初始化残差</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="397"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="405"/>
         <source>outputs residuals of the initialization</source>
         <translation>输出初始化残差</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="398"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="406"/>
         <source>Simulation Process</source>
         <translation>仿真过程</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="399"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="407"/>
         <source>additional information about simulation process</source>
         <translation>仿真过程的附件信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="400"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="408"/>
         <source>Solver Process</source>
         <translation>求解过程</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="401"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="409"/>
         <source>additional information about solver process</source>
         <translation>求解过程附加信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="402"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="410"/>
         <source>Final Initialization Solution</source>
         <translation>最终初始化解决方法</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="403"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="411"/>
         <source>final solution of the initialization</source>
         <translation>初始化的最终解决方案</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="404"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="412"/>
         <source>Timer/Events/Solver Statistics</source>
         <translation>时间/事件/求解器 统计</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="406"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="414"/>
         <source>additional statistics about timer/events/solver</source>
         <translation>关于时间/事件/求解器的附加统计信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="407"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="415"/>
         <source>Util</source>
         <translation>功用</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="408"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="416"/>
         <source>outputs information about util</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="409"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="417"/>
         <source>Zero Crossings</source>
         <translation>0交叉点</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="410"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="418"/>
         <source>additional information about the zerocrossings</source>
         <translation>关于0交叉点的附加信息</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="431"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="439"/>
         <source>Logging (Optional)</source>
         <translation>日志（可选）</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="476"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="484"/>
         <source>Class</source>
         <translation>类</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="476"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="484"/>
         <source>DateTime</source>
         <translation>日期时间</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="476"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="484"/>
         <source>Start Time</source>
         <translation>开始时间</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="476"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="484"/>
         <source>Stop Time</source>
         <translation>结束时间</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1165"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="484"/>
+        <source>Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="1169"/>
         <source>Translating %1.</source>
         <translation>转换 %1 。</translation>
     </message>
@@ -4539,47 +4230,52 @@ If you want to change the output path then update the working directory in Optio
         <translation>启动算法调试器</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="292"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="276"/>
+        <source>File Name Prefix (Optional):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="297"/>
         <source>Show Generated Files</source>
         <translation>显示生成的文件</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="369"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="377"/>
         <source>CPU Time</source>
         <translation>处理器时间</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="388"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="396"/>
         <source>Jacobian Matrix</source>
         <translation>雅可比矩阵</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="394"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="402"/>
         <source>Jacobian Non Linear Systems</source>
         <translation>非线性系统雅可比</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="433"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="441"/>
         <source>Additional Simulation Flags (Optional):</source>
         <translation>附加仿真选项（可选）：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="434"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="442"/>
         <source>Space separated list of simulation flags</source>
         <translation>空格分割仿真选项</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="468"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="476"/>
         <source>Simulation Flags</source>
         <translation>仿真选项</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="485"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="493"/>
         <source>Archived Simulations</source>
         <translation>仿真存档</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="499"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="507"/>
         <source>Save simulation settings inside model</source>
         <translation>在模型中保存仿真设置</translation>
     </message>
@@ -4607,12 +4303,8 @@ If you want to change the output path then update the working directory in Optio
 <context>
     <name>SimulationOutputWidget</name>
     <message>
-        <source>Simulation Output</source>
-        <translation type="obsolete">仿真输出</translation>
-    </message>
-    <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="189"/>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="384"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="387"/>
         <source>Cancel Compilation</source>
         <translation>取消编译</translation>
     </message>
@@ -4622,36 +4314,32 @@ If you want to change the output path then update the working directory in Optio
         <translation>编译</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="381"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="384"/>
         <source>Compiling &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
         <translation>&lt;b&gt;%1&lt;b&gt; 编译中，请稍候。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="418"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="421"/>
         <source>Compilation of &lt;b&gt;%1&lt;/b&gt; is finished.</source>
         <translation>%1 编译结束。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="437"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="441"/>
         <source>Running simulation of &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
         <translation>&lt;b&gt;%1&lt;b&gt; v、仿真运行中，请稍候。</translation>
     </message>
     <message>
-        <source>Cancel Simulation</source>
-        <translation type="obsolete">取消仿真</translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="501"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="506"/>
         <source>Simulation of &lt;b&gt;%1&lt;/b&gt; is finished.</source>
         <translation>&lt;b&gt;%1&lt;b&gt; 仿真结束。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="515"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="521"/>
         <source>Compilation of &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
         <translation>&lt;b&gt;%1&lt;b&gt; 编译终止。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="521"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="528"/>
         <source>Simulation of &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
         <translation>&lt;b&gt;%1&lt;b&gt; 仿真终止。</translation>
     </message>
@@ -4815,101 +4503,110 @@ If you want to change the output path then update the working directory in Optio
         <source>Unknown</source>
         <translation>未知</translation>
     </message>
+</context>
+<context>
+    <name>SubModelAttributes</name>
     <message>
-        <source>Path</source>
-        <translation type="obsolete">路径</translation>
+        <location filename="../../Component/ComponentProperties.cpp" line="1191"/>
+        <source>SubModel Attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Component/ComponentProperties.cpp" line="1211"/>
+        <source>Start Command:</source>
+        <translation type="unfinished">启动命令：</translation>
+    </message>
+    <message>
+        <location filename="../../Component/ComponentProperties.cpp" line="1215"/>
+        <source>Model File:</source>
+        <translation type="unfinished">模型文件：</translation>
     </message>
 </context>
 <context>
     <name>TLMCoSimulationDialog</name>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="66"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="66"/>
         <source>TLM Plugin Path:</source>
         <translation>TLM 插件路径：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="72"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="72"/>
         <source>TLM Manager</source>
         <translation>TLM 管理器</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="74"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="74"/>
         <source>Manager Process:</source>
         <translation>管理进程：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="80"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="80"/>
         <source>Monitor Process:</source>
         <translation>监视进程：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="86"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="86"/>
         <source>Server Port:</source>
         <translation>服务端口:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="87"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="87"/>
         <source>Set the server network port for communication with the simulation tools</source>
         <translation>用仿真工具设置用于联合仿真的服务网络端口</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="90"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="90"/>
         <source>Monitor Port:</source>
         <translation>监视端口:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="91"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="91"/>
         <source>Set the port for monitoring connections</source>
         <translation>设置监视连接端口</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="94"/>
-        <source>Interface Request Mode</source>
-        <translation>需求界面模式</translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="95"/>
-        <source>Run manager in interface request mode, get information about interface locations</source>
-        <translation>以需求界面模式运行管理器，获取界面位置信息</translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="97"/>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="119"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="94"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="115"/>
         <source>Debug Mode</source>
         <translation>调试模式</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="111"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="107"/>
         <source>TLM Monitor</source>
         <translation>TLM 监视器</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="113"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="109"/>
         <source>Number Of Steps:</source>
         <translation>步数：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="116"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="112"/>
         <source>Time Step Size:</source>
         <translation>步长：</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="229"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="129"/>
+        <source>Show TLM Co-Simulation Output Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="232"/>
         <source>Enter manager process.</source>
         <translation>进入管理进程。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="235"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="238"/>
         <source>Enter monitor process.</source>
         <translation>进入建设进程。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="241"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="244"/>
         <source>Enter a monitor port.</source>
         <translation>进入监视端口。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationDialog.cpp" line="290"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="292"/>
         <source>Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1</source>
         <translation>获取主机名失败，检查域名解析，例如 /etc/hosts 是否有 %1</translation>
     </message>
@@ -4917,47 +4614,47 @@ If you want to change the output path then update the working directory in Optio
 <context>
     <name>TLMCoSimulationOutputWidget</name>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="57"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="57"/>
         <source>Manager Output</source>
         <translation>管理器输出</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="59"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="59"/>
         <source>Stop Manager</source>
         <translation>停止管理器</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="63"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="63"/>
         <source>Open Manager Log File</source>
         <translation>打开管理器日志文件</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="73"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="74"/>
         <source>Monitor Output</source>
         <translation>监视器输出</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="75"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="76"/>
         <source>Stop Monitor</source>
         <translation>停止监视器</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="79"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="80"/>
         <source>Open Monitor Log File</source>
         <translation>打开监视器日志文件</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="156"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="152"/>
         <source>Co-Simulation using &lt;b&gt;%1&lt;/b&gt; meta model is cancelled.</source>
         <translation>使用元模型 &lt;b&gt;%1&lt;/b&gt; 的联合仿真已终止。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="201"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="197"/>
         <source>Running co-simulation using the &lt;b&gt;%1&lt;/b&gt; meta model. Please wait for a while.</source>
         <translation>使用 &lt;b&gt;%1&lt;/b&gt; 元模型联合仿真正运行，请稍后。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationOutputWidget.cpp" line="244"/>
+        <location filename="../../TLM/TLMCoSimulationOutputWidget.cpp" line="240"/>
         <source>Co-simulation using the &lt;b&gt;%1&lt;/b&gt; meta model is finished.</source>
         <translation>使用 &lt;b&gt;%1&lt;/b&gt; 元模型的联合仿真已结束。</translation>
     </message>
@@ -4965,78 +4662,60 @@ If you want to change the output path then update the working directory in Optio
 <context>
     <name>TLMCoSimulationThread</name>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationThread.cpp" line="156"/>
+        <location filename="../../TLM/TLMCoSimulationThread.cpp" line="149"/>
         <source>TLMManager process failed. Exited with code %1.</source>
         <translation>TLM 管理器进程失败，退出错误码 %1 。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationThread.cpp" line="158"/>
+        <location filename="../../TLM/TLMCoSimulationThread.cpp" line="151"/>
         <source>TLMManager process finished successfully.</source>
         <translation>TLM 管理器进程已成功结束。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationThread.cpp" line="218"/>
+        <location filename="../../TLM/TLMCoSimulationThread.cpp" line="211"/>
         <source>TLMMonitor process failed. Exited with code %1.</source>
         <translation>TLM 监视器进程失败，退出错误码 %1 。</translation>
     </message>
     <message>
-        <location filename="../../Simulation/TLMCoSimulationThread.cpp" line="220"/>
+        <location filename="../../TLM/TLMCoSimulationThread.cpp" line="213"/>
         <source>TLMMonitor process finished successfully.</source>
         <translation>TLM 监视器进程已成功结束。</translation>
     </message>
 </context>
 <context>
-    <name>TLMComponentAttributes</name>
-    <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1190"/>
-        <source>TLM Component Attributes</source>
-        <translation>TLM 部件属性</translation>
-    </message>
-    <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1209"/>
-        <source>Start Command:</source>
-        <translation>启动命令：</translation>
-    </message>
-    <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1213"/>
-        <source>Model File:</source>
-        <translation>模型文件：</translation>
-    </message>
-</context>
-<context>
     <name>TLMConnectionAttributes</name>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1285"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1287"/>
         <source>TLM Connection Attributes</source>
         <translation>TLM 连接属性</translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1300"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1302"/>
         <source>From:</source>
         <translation>从：</translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1306"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1308"/>
         <source>To:</source>
         <translation>到：</translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1312"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1314"/>
         <source>Delay:</source>
         <translation>延时：</translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1315"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1317"/>
         <source>Zf:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1317"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1319"/>
         <source>Zfr:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1321"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1323"/>
         <source>Alpha:</source>
         <translation></translation>
     </message>
@@ -5249,7 +4928,7 @@ If you want to change the output path then update the working directory in Optio
         <translation>仿真结构文件： %1\n%2: %3/%4</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="536"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="538"/>
         <source>File: %1/%2
 Variable: %3</source>
         <translation>文件：%1/%2\n变量：%3</translation>
@@ -5258,67 +4937,67 @@ Variable: %3</source>
 <context>
     <name>VariablesWidget</name>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="773"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="775"/>
         <source>Case Sensitive</source>
         <translation>大小写敏感</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="777"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="779"/>
         <source>Regular Expression</source>
         <translation>正则表达式</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="778"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="780"/>
         <source>A rich Perl-like pattern matching syntax.</source>
         <translation>类Perl语法显示匹配。</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="779"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="781"/>
         <source>Wildcard</source>
         <translation>通配符</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="780"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="782"/>
         <source>A simple pattern matching syntax similar to that used by shells (command interpreters) for &quot;file globbing&quot;.</source>
         <translation>一个用于文件通配符的类似在命令行使用的简单匹配句法。</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="781"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="783"/>
         <source>Fixed String</source>
         <translation>固定字符串</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="782"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="784"/>
         <source>Fixed string matching.</source>
         <translation>固定字符串匹配。</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1310"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1311"/>
         <source>Delete Result</source>
         <translation>删除结果</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1312"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1313"/>
         <source>Delete the result</source>
         <translation>删除仿真结果</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="999"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1001"/>
         <source>You must select a class to re-simulate.</source>
         <translation>你必须选择一个类进行重新仿真。</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1017"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1019"/>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>该类不能进行重新仿真。 &lt;br /&gt;这只是一个通过菜单&lt;b&gt;文件→打开结果文件&lt;b&gt;加载的结果文件。</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1042"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1043"/>
         <source>Unable to set the content of QDomDocument from file %1</source>
         <translation>从文件%1不能设置QDomDocument内容</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1088"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1089"/>
         <source>No plot window is active for plotting. Please select a plot window or open a new.</source>
         <translation>没有活动的绘图窗口，请选择或打开一个新的绘图窗口。</translation>
     </message>
@@ -5326,32 +5005,32 @@ Variable: %3</source>
 <context>
     <name>WelcomePageWidget</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1837"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1866"/>
         <source>Recent Files</source>
         <translation>最近打开的文件</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1839"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1868"/>
         <source>No recent files found.</source>
         <translation>没有最近打开文件。</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1850"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1879"/>
         <source>Clear Recent Files</source>
         <translation>清除最近打开文件</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1870"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1899"/>
         <source>Latest News</source>
         <translation>最新新闻</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1885"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1914"/>
         <source>For more details visit our website &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</source>
         <translation>更多信息请浏览我们的网站 &lt;u&gt;&lt;a href=\&quot;http://www.openmodelica.org\&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2001"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2030"/>
         <source>Sorry, no internet no news items.</source>
         <translation>抱歉，没有网络，没有新闻项。</translation>
     </message>
