@@ -238,7 +238,7 @@ OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG) $(OMEDIT_ICONS_PDF)
 OMOPTIM_ICONS_BASE=Add.png
 OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
-all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf
+all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc
 
 source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
@@ -258,3 +258,6 @@ readme/sphinxcontribopenmodelica.py: source/sphinxcontribopenmodelica.py
 readme: readme/sphinxcontribopenmodelica.py
 	ln -sf ../source/aplot.svg readme
 	sphinx-build -b html -t nomathjax -d build/readme/doctrees readme build/readme/html
+source/simoptions.inc:
+	$(OPENMODELICA_ROOT)/build/bin/omc +help=simulation-sphinxoutput > "$@.tmp"
+	mv "$@.tmp" "$@"

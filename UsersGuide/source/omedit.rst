@@ -313,7 +313,7 @@ General Tab
 
 -  *Stop Time* – the simulation stop time.
 
--  *Method* – the simulation solver. See Appendix C for solver details.
+-  *Method* – the simulation solver. See section :ref:`cruntime-integration-methods` for solver details.
 
 -  *Tolerance* – the simulation tolerance.
 
