@@ -916,6 +916,7 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
  */
 void MainWindow::fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode)
 {
+  /* if MetaModel text is changed manually by user then validate it before fetaching the interface data. */
   if (pLibraryTreeNode->getModelWidget()) {
       TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
       if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
@@ -962,6 +963,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode)
  */
 void MainWindow::TLMSimulate(LibraryTreeNode *pLibraryTreeNode)
 {
+  /* if MetaModel text is changed manually by user then validate it before starting the TLM co-simulation. */
   if (pLibraryTreeNode->getModelWidget()) {
       TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(pLibraryTreeNode->getModelWidget()->getEditor());
       if (pTLMEditor && !pTLMEditor->validateMetaModelText()) {
