@@ -243,12 +243,12 @@ private:
   LineAnnotation *mpConnectionLineAnnotation;
   MainWindow *mpMainWindow;
   QList<TLMInterfacePointInfo*> mInterfacepointsList;
-  Label *mpStartComponentClassNameLabel;
-  QLineEdit *mpStartComponentClassNameTextBox;
-  QComboBox *mpStartComponentInterfacePointComboBox;
-  QComboBox *mpEndComponentInterfacePointComboBox;
-  Label *mpEndComponentClassNameLabel;
-  QLineEdit *mpEndComponentClassNameTextBox;
+  Label *mpStartSubModelNameLabel;
+  QLineEdit *mpStartSubModelNameTextBox;
+  QComboBox *mpStartSubModelInterfacePointComboBox;
+  QComboBox *mpEndSubModelInterfacePointComboBox;
+  Label *mpEndSubModelNameLabel;
+  QLineEdit *mpEndSubModelNameTextBox;
   Label *mpDelayLabel;
   QLineEdit *mpDelayTextBox;
   Label *mpZfLabel;
@@ -260,7 +260,7 @@ private:
   QPushButton *mpOkButton;
   QDialogButtonBox *mpButtonBox;
 public slots:
-  void updateTLMConnectionAttributes();
+  void createTLMConnection();
 };
 
 #endif // COMPONENTPROPERTIES_H

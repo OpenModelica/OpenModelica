@@ -235,6 +235,40 @@ void TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible,
 }
 
 /*!
+ * \brief TLMEditor::createConnection
+ * Adds a a connection tag with Annotation tag as child of it.
+ * \param from
+ * \param to
+ * \param delay
+ * \param alpha
+ * \param zf
+ * \param zfr
+ * \param points
+ * \return
+ */
+bool TLMEditor::createConnection(QString from, QString to, QString delay, QString alpha, QString zf, QString zfr, QString points)
+{
+  QDomElement connections = getConnectionsElement();
+  if (!connections.isNull()) {
+    QDomElement connection = mXmlDocument.createElement("Connection");
+    connection.setAttribute("From", from);
+    connection.setAttribute("To", to);
+    connection.setAttribute("Delay", delay);
+    connection.setAttribute("alpha", alpha);
+    connection.setAttribute("Zf", zf);
+    connection.setAttribute("Zfr", zfr);
+    // create Annotation Element
+    QDomElement annotation = mXmlDocument.createElement("Annotation");
+    annotation.setAttribute("Points", points);
+    connection.appendChild(annotation);
+    connections.appendChild(connection);
+    mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    return true;
+  }
+  return false;
+}
+
+/*!
  * \brief TLMEditor::addInterfacesData
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces

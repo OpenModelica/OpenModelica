@@ -57,6 +57,7 @@ public:
                    QString rotation);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
+  bool createConnection(QString From, QString To, QString delay, QString alpha, QString zf, QString zfr, QString points);
   void addInterfacesData(QDomElement interfaces);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName );
