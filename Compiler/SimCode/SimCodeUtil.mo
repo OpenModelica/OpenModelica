@@ -7262,9 +7262,9 @@ protected
   Integer numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions;
 algorithm
   (numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions) := BackendDAEUtil.numberOfZeroCrossings(dlow);
-  numZeroCrossings := filterNg(numZeroCrossings);
-  numTimeEvents := filterNg(numTimeEvents);
-  numRelations := filterNg(numRelations);
+  numZeroCrossings := numZeroCrossings;
+  numTimeEvents := numTimeEvents;
+  numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
           next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints);
 end createVarInfo;
