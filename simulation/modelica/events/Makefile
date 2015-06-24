@@ -19,6 +19,7 @@ EventTests3.mos \
 IntegerZeroCrossings.mos \
 MathEventFuncs1.mos \
 MathEventFuncs2.mos \
+TestNoEventsFlags.mos \
 sample1.mos \
 sample2.mos \
 ServerWithQueue.mos \
