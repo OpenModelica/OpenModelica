@@ -2317,7 +2317,7 @@ NOTE: inCrefExpansionStrategy is needed if we translate equations to algorithms 
   output list<BackendDAE.Equation> outREquations;
   output list<BackendDAE.Equation> outIEquations;
 algorithm
-  (outEquations, outREquations, outIEquations) :=  matchcontinue (inElement, functionTree, inEquations, inREquations, inIEquations, inCrefExpansion)
+  (outEquations, outREquations, outIEquations) :=  matchcontinue (inElement)
     local
       DAE.Exp cond, msg, level,e;
       DAE.Algorithm alg;
@@ -2332,62 +2332,60 @@ algorithm
       list<BackendDAE.Equation> eqns, reqns;
       list<DAE.Statement> assrtLst;
 
-    case (DAE.ALGORITHM(algorithm_=alg, source=source), _, _, _, _, _)
-      equation
-        // calculate the size of the algorithm by collecting the left hand sites of the statemens
-        (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
-        crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
-        size = listLength(crefLst);
-        (eqns, reqns) = List.consOnBool(intGt(size, 0), BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), inEquations, inREquations);
-      then (eqns, reqns, inIEquations);
+    // skipp empty algorithms
+    case DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS(statementLst={}))
+    then (inEquations, inREquations, inIEquations);
 
-    case (DAE.INITIALALGORITHM(algorithm_=alg, source=source), _, _, _, _, _)
-      equation
-        // calculate the size of the algorithm by collecting the left hand sites of the statemens
-        (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
-        crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
-        size = listLength(crefLst);
-      then (inEquations, inREquations, BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inIEquations);
+    // skipp empty initial algorithms
+    case DAE.INITIALALGORITHM(algorithm_=DAE.ALGORITHM_STMTS(statementLst={}))
+    then (inEquations, inREquations, inIEquations);
+
+    case DAE.ALGORITHM(algorithm_=alg, source=source) equation
+      // calculate the size of the algorithm by collecting the left hand sites of the statemens
+      (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
+      crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
+      size = listLength(crefLst);
+      (eqns, reqns) = List.consOnBool(intGt(size, 0), BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), inEquations, inREquations);
+    then (eqns, reqns, inIEquations);
+
+    case DAE.INITIALALGORITHM(algorithm_=alg, source=source) equation
+      // calculate the size of the algorithm by collecting the left hand sites of the statemens
+      (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
+      crefLst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, inCrefExpansion);
+      size = listLength(crefLst);
+    then (inEquations, inREquations, BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inIEquations);
 
     // skipp asserts with condition=true
-    case (DAE.ASSERT(condition=DAE.BCONST(true)), _, _, _, _, _)
-      then (inEquations, inREquations, inIEquations);
+    case DAE.ASSERT(condition=DAE.BCONST(true))
+    then (inEquations, inREquations, inIEquations);
 
-    case (DAE.ASSERT(condition=cond, message=msg, level=level, source=source), _, _, _, _, _)
-      equation
-        (cond, source, _,_) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        (msg, source, _,_) = Inline.inlineExp(msg, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        (level, source, _,_) = Inline.inlineExp(level, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        BackendDAEUtil.checkAssertCondition(cond, msg, level, DAEUtil.getElementSourceFileInfo(source));
-        alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
-      then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
+    case DAE.ASSERT(condition=cond, message=msg, level=level, source=source) equation
+      (cond, source, _,_) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+      (msg, source, _,_) = Inline.inlineExp(msg, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+      (level, source, _,_) = Inline.inlineExp(level, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+      BackendDAEUtil.checkAssertCondition(cond, msg, level, DAEUtil.getElementSourceFileInfo(source));
+      alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
+    then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
 
-    case (DAE.TERMINATE(message=msg, source=source), _, _, _, _, _)
-      then (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
+    case DAE.TERMINATE(message=msg, source=source)
+    then (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
 
-    case (DAE.NORETCALL(exp=e, source=source), _, _, _, _, _)
-      equation
-        (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
-      then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
+    case DAE.NORETCALL(exp=e, source=source) equation
+      (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+      alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
+    then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inREquations, inIEquations);
 
-    case (DAE.INITIAL_NORETCALL(exp=e, source=source), _, _, _, _, _)
-      equation
-        (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
-      then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inREquations, inIEquations);
+    case DAE.INITIAL_NORETCALL(exp=e, source=source) equation
+      (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+      alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
+    then (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, BackendDAE.EQ_ATTR_DEFAULT_INITIAL)::inREquations, inIEquations);
 
-    case (_, _, _, _, _, _)
-      equation
-        // only report error if no other error is in the queue!
-        0 = Error.getNumErrorMessages();
-        str = "BackendDAECreate.lowerAlgorithm failed for:\n" + DAEDump.dumpElementsStr({inElement});
-        Error.addSourceMessage(
-          Error.INTERNAL_ERROR,
-          {str},
-          DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
-      then fail();
-
+    else equation
+      // only report error if no other error is in the queue!
+      0 = Error.getNumErrorMessages();
+      str = "BackendDAECreate.lowerAlgorithm failed for:\n" + DAEDump.dumpElementsStr({inElement});
+      Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
+    then fail();
   end matchcontinue;
 end lowerAlgorithm;
 
