@@ -696,39 +696,10 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
 void GraphicsView::deleteConnection(QString startComponentName, QString endComponentName)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-
   if(mpModelWidget->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM)
   {
-    QDomDocument doc;
-    doc.setContent(pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
-    // Get the "Root" element
-    QDomElement docElem = doc.documentElement();
-    // remove the connection annotations from TLM editor
-    QDomElement connections = docElem.firstChildElement();
-    // remove the connection  from TLM editor
-    while (!connections.isNull())
-    {
-      if(connections.tagName() == "Connections")
-      {
-        QDomElement connection = connections.firstChildElement();
-        while (!connection.isNull()&& connection.tagName() == "Connection" )
-        {
-          QString startName = StringHandler::getSubStringBeforeDots(connection.attribute("From"));
-          QString endName = StringHandler::getSubStringBeforeDots(connection.attribute("To"));
-          if(startName == startComponentName && endName == endComponentName)
-          {
-            connections.removeChild(connection);
-            break;
-          }
-          connection = connection.nextSiblingElement();
-        }
-        break;
-      }
-      connections = connections.nextSiblingElement();
-    }
-
-    QString metaModelText = doc.toString();
-    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpModelWidget->getEditor());
+    pTLMEditor->deleteConnection(startComponentName, endComponentName);
   }
   else
     pMainWindow->getOMCProxy()->deleteConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure());

@@ -51,6 +51,7 @@ public:
   void setPlainText(const QString &text);
   QDomElement getSubModelsElement();
   QDomNodeList getSubModels();
+  QDomElement getConnectionsElement();
   QDomNodeList getConnections();
   bool addSubModel(QString name, QString exactStep, QString modelFile, QString startCommand, QString visible, QString origin, QString extent,
                    QString rotation);
@@ -58,6 +59,7 @@ public:
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
   void addInterfacesData(QDomElement interfaces);
   bool deleteSubModel(QString name);
+  bool deleteConnection(QString startComponentName, QString endComponentName );
 private:
   bool mForceSetPlainText;
   bool mTextChanged;
