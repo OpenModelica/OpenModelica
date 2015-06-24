@@ -2502,29 +2502,14 @@ void ModelWidget::getTLMComponents()
 
 void ModelWidget::getTLMConnections()
 {
-  // get the components and thier annotations
-  QDomDocument doc;
-  doc.setContent(getEditor()->getPlainTextEdit()->toPlainText());
-
-  // Get the "Root" element
-  QDomElement docElem = doc.documentElement();
-
-  QDomElement connections = docElem.firstChildElement();
-  while (!connections.isNull())
-  {
-    if(connections.tagName() == "Connections")
-      break;
-    connections = connections.nextSiblingElement();
-  }
-
-  QDomElement connection = connections.firstChildElement("Connection");
-  while (!connection.isNull())
-  {
-    if(connection.tagName() == "Connection" )
-    {
-      QDomElement annotation = connection.firstChildElement("Annotation");
-      if(annotation.tagName() == "Annotation" )
-      {
+  TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpEditor);
+  QDomNodeList connections = pTLMEditor->getConnections();
+  for (int i = 0; i < connections.size(); i++) {
+    QDomElement connection = connections.at(i).toElement();
+    QDomNodeList connectionChildren = connection.childNodes();
+    for (int j = 0 ; j < connectionChildren.size() ; j++) {
+      QDomElement annotationElement = connectionChildren.at(j).toElement();
+      if (annotationElement.tagName().compare("Annotation") == 0) {
         // get start component
         Component *pStartComponent = 0;
         pStartComponent = mpDiagramGraphicsView->getComponentObject(StringHandler::getSubStringBeforeDots(connection.attribute("From")));
@@ -2535,42 +2520,35 @@ void ModelWidget::getTLMConnections()
         Component *pStartConnectorComponent = 0;
         Component *pEndConnectorComponent = 0;
         if (pStartComponent)
-        {
           pStartConnectorComponent = pStartComponent;
-        }
-        if (pEndComponent)
-        {
-          pEndConnectorComponent = pEndComponent;
-        }
-        // get the connector annotations
-        QString connectionAnnotationString;
-        connectionAnnotationString.append("{Line(true, {0.0, 0.0}, 0, ").append(annotation.attribute("Points"));
-        connectionAnnotationString.append(", {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}");
-        QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
-        // Now parse the shapes available in list
-        foreach (QString shape, shapesList)
-        {
-          if (shape.startsWith("Line"))
-          {
-            shape = shape.mid(QString("Line").length());
-            shape = StringHandler::removeFirstLastBrackets(shape);
-            LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, false, pStartConnectorComponent,
-                                                                           pEndConnectorComponent, mpDiagramGraphicsView);
-            if (pStartConnectorComponent)
-              pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-            pConnectionLineAnnotation->setStartComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("From")));
-            if (pEndConnectorComponent)
-              pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-            pConnectionLineAnnotation->setEndComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("To")));
-            pConnectionLineAnnotation->addPoint(QPointF(0, 0));
-            pConnectionLineAnnotation->drawCornerItems();
-            pConnectionLineAnnotation->setCornerItemsPassive();
-            mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
+         if (pEndComponent)
+           pEndConnectorComponent = pEndComponent;
+         // get the connector annotations
+         QString connectionAnnotationString;
+         connectionAnnotationString.append("{Line(true, {0.0, 0.0}, 0, ").append(annotationElement.attribute("Points"));
+         connectionAnnotationString.append(", {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}");
+         QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
+         // Now parse the shapes available in list
+         foreach (QString shape, shapesList) {
+           if (shape.startsWith("Line")) {
+             shape = shape.mid(QString("Line").length());
+             shape = StringHandler::removeFirstLastBrackets(shape);
+             LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, false, pStartConnectorComponent,
+                                                                            pEndConnectorComponent, mpDiagramGraphicsView);
+             if (pStartConnectorComponent)
+               pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+             pConnectionLineAnnotation->setStartComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("From")));
+             if (pEndConnectorComponent)
+               pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+             pConnectionLineAnnotation->setEndComponentName(StringHandler::getSubStringBeforeDots(connection.attribute("To")));
+             pConnectionLineAnnotation->addPoint(QPointF(0, 0));
+             pConnectionLineAnnotation->drawCornerItems();
+             pConnectionLineAnnotation->setCornerItemsPassive();
+             mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);
           }
         }
       }
     }
-    connection = connection.nextSiblingElement();
   }
 }
 
