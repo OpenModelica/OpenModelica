@@ -269,6 +269,34 @@ bool TLMEditor::createConnection(QString from, QString to, QString delay, QStrin
 }
 
 /*!
+ * \brief TLMEditor::updateTLMConnectiontAnnotation
+ * Updates the TLM connection annotation.
+ * \param fromSubModel
+ * \param toSubModel
+ * \param points
+ */
+void TLMEditor::updateTLMConnectiontAnnotation(QString fromSubModel, QString toSubModel, QString points)
+{
+  QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
+  for (int i = 0 ; i < connectionList.size() ; i++) {
+    QDomElement connection = connectionList.at(i).toElement();
+    if (StringHandler::getSubStringBeforeDots(connection.attribute("From")).compare(fromSubModel) == 0
+        && StringHandler::getSubStringBeforeDots(connection.attribute("To")).compare(toSubModel) == 0) {
+      QDomNodeList connectionChildren = connection.childNodes();
+      for (int j = 0 ; j < connectionChildren.size() ; j++) {
+        QDomElement annotationElement = connectionChildren.at(j).toElement();
+        if (annotationElement.tagName().compare("Annotation") == 0) {
+          annotationElement.setAttribute("Points", points);
+          mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+          return;
+        }
+      }
+      break;
+    }
+  }
+}
+
+/*!
  * \brief TLMEditor::addInterfacesData
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces
