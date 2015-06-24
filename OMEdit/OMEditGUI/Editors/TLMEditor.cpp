@@ -110,6 +110,20 @@ QDomElement TLMEditor::getSubModelsElement()
 }
 
 /*!
+ * \brief TLMEditor::getConnectionsElement
+ * Returns the Connections element tag.
+ * \return
+ */
+QDomElement TLMEditor::getConnectionsElement()
+{
+  QDomNodeList connections = mXmlDocument.elementsByTagName("Connections");
+  if (connections.size() > 0) {
+    return connections.at(0).toElement();
+  }
+  return QDomElement();
+}
+
+/*!
  * \brief TLMEditor::getSubModels
  * Returns the list of SubModel tags.
  * \return
@@ -260,6 +274,32 @@ bool TLMEditor::deleteSubModel(QString name)
       QDomElement subModels = getSubModelsElement();
       if (!subModels.isNull()) {
         subModels.removeChild(subModel);
+        mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+        return true;
+      }
+      break;
+    }
+  }
+  return false;
+}
+
+/*!
+ * \brief TLMEditor::deleteConnection
+ * Delets a connection.
+ * \param name
+ * \return
+ */
+bool TLMEditor::deleteConnection(QString startSubModelName, QString endSubModelName)
+{
+  QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
+  for (int i = 0 ; i < connectionList.size() ; i++) {
+    QDomElement connection = connectionList.at(i).toElement();
+    QString startName = StringHandler::getSubStringBeforeDots(connection.attribute("From"));
+    QString endName = StringHandler::getSubStringBeforeDots(connection.attribute("To"));
+    if (startName.compare(startSubModelName) == 0 && endName.compare(endSubModelName) == 0 ) {
+      QDomElement connections = getConnectionsElement();
+      if (!connections.isNull()) {
+        connections.removeChild(connection);
         mpPlainTextEdit->setPlainText(mXmlDocument.toString());
         return true;
       }
