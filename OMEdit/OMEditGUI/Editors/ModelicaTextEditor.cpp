@@ -195,7 +195,7 @@ bool ModelicaTextEditor::validateModelicaText()
     // if the user makes few mistakes in the text then dont let him change the perspective
     if (!emit focusOut()) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
                            .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
