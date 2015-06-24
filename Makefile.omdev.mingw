@@ -143,6 +143,7 @@ copycppheader:
 	(cp -pufr $(BOOST_PATH)/boost/algorithm         $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/archive           $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/assign            $(OMBUILDDIR)/include/omc/cpp/boost)
+	(cp -pufr $(BOOST_PATH)/boost/atomic            $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/bind              $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/circular_buffer   $(OMBUILDDIR)/include/omc/cpp/boost)
 	(cp -pufr $(BOOST_PATH)/boost/chrono            $(OMBUILDDIR)/include/omc/cpp/boost)
