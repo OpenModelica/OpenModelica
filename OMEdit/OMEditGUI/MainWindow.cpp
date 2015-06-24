@@ -689,6 +689,7 @@ void MainWindow::openDroppedFile(QDropEvent *event)
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName())
                            .arg(Helper::omFileTypes));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
@@ -938,6 +939,7 @@ void MainWindow::fetchInterfaceData(LibraryTreeNode *pLibraryTreeNode)
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
       pMessageBox->setIcon(QMessageBox::Question);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeNode->getNameStructure()));
       pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
       pMessageBox->setDefaultButton(QMessageBox::Yes);
@@ -976,6 +978,7 @@ void MainWindow::TLMSimulate(LibraryTreeNode *pLibraryTreeNode)
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
       pMessageBox->setIcon(QMessageBox::Question);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::METAMODEL_UNSAVED).arg(pLibraryTreeNode->getNameStructure()));
       pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
       pMessageBox->setDefaultButton(QMessageBox::Yes);
@@ -1252,6 +1255,7 @@ void MainWindow::openModelicaFile()
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
@@ -1340,6 +1344,7 @@ void MainWindow::openMetaModelFile()
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
@@ -1377,6 +1382,7 @@ void MainWindow::loadExternalModels()
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
@@ -1405,6 +1411,7 @@ void MainWindow::loadSystemLibrary()
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(pAction->text())));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                       .arg(pAction->text()).append("\n")
