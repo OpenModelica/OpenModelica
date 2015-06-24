@@ -233,6 +233,9 @@ void TLMCoSimulationThread::progressFileChanged()
     }
     mProgressFile.close();
   } else {
-    qDebug() << QString("unable to open file %1").arg(mProgressFile.fileName());
+    MessagesWidget *pMessagesWidget = mpTLMCoSimulationOutputWidget->getMainWindow()->getMessagesWidget();
+    pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                               GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(mProgressFile.fileName()),
+                                               Helper::scriptingKind, Helper::errorLevel));
   }
 }

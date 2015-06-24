@@ -51,6 +51,7 @@ public:
   TLMCoSimulationOutputWidget(MainWindow *pMainWindow);
   ~TLMCoSimulationOutputWidget();
   TLMCoSimulationOptions getTLMCoSimulationOptions() {return mTLMCoSimulationOptions;}
+  MainWindow* getMainWindow() {return mpMainWindow;}
   void showTLMCoSimulationOutputWidget(TLMCoSimulationOptions tlmCoSimulationOptions);
   void clear();
 private:
