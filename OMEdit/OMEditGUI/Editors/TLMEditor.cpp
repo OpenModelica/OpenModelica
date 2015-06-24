@@ -69,7 +69,7 @@ void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdde
 bool TLMEditor::validateMetaModelText()
 {
   if (mTextChanged) {
-    mXmlDocument.setContent(getPlainTextEdit()->toPlainText());
+    mXmlDocument.setContent(mpPlainTextEdit->toPlainText());
     if (!emit focusOut()) {
       return false;
     } else {
