@@ -220,10 +220,8 @@ int main(int argc, char *argv[])
 #endif // #ifdef WIN32
 #endif // #ifdef QT_NO_DEBUG
   // if user asks for --help
-  for(int i = 1; i < argc; i++)
-  {
-    if (strcmp(argv[i], "--help") == 0)
-    {
+  for(int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--help") == 0) {
       printOMEditUsage();
       return 0;
     }
@@ -283,14 +281,9 @@ int main(int argc, char *argv[])
   Helper::initHelperVariables();
   /* Force C-style doubles */
   setlocale(LC_NUMERIC, "C");
-  // MainWindow Initialization
-  MainWindow mainwindow(&splashScreen);
-  if (mainwindow.getExitApplicationStatus()) {        // if there is some issue in running the application.
-    a.quit();
-    exit(1);
-  }
   // if user has requested to open the file by passing it in argument then,
   bool OMCLogger = false;
+  QStringList fileNames;
   if (a.arguments().size() > 1) {
     for (int i = 1; i < a.arguments().size(); i++) {
       if (strncmp(a.arguments().at(i).toStdString().c_str(), "--OMCLogger=",12) == 0) {
@@ -310,10 +303,20 @@ int main(int argc, char *argv[])
             fileName.prepend(QString(QDir::currentPath()).append("/"));
           }
           fileName = fileName.replace("\\", "/");
-          mainwindow.getLibraryTreeWidget()->openFile(fileName);
+          fileNames << fileName;
         }
       }
     }
+  }
+  // MainWindow Initialization
+  MainWindow mainwindow(&splashScreen);
+  if (mainwindow.getExitApplicationStatus()) {        // if there is some issue in running the application.
+    a.quit();
+    exit(1);
+  }
+  // open the files passed as command line arguments
+  foreach (QString fileName, fileNames) {
+    mainwindow.getLibraryTreeWidget()->openFile(fileName);
   }
   // hide OMCLogger send custom expression feature if OMCLogger is false
   mainwindow.getOMCProxy()->enableCustomExpression(OMCLogger);
