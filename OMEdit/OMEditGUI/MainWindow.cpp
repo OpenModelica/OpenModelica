@@ -2026,26 +2026,78 @@ void MainWindow::openConfigurationOptions()
   mpOptionsDialog->show();
 }
 
+/*!
+ * \brief MainWindow::openUsersGuide
+ * Slot activated when mpUsersGuideAction triggered signal is raised.\n
+ * Opens the html based version of OpenModelica users guide.
+ */
 void MainWindow::openUsersGuide()
+{
+
+}
+
+/*!
+ * \brief MainWindow::openUsersGuideNewPdf
+ * Slot activated when mpUsersGuideNewPdfAction triggered signal is raised.\n
+ * Opens the new pdf versions of OpenModelica users guide.
+ */
+void MainWindow::openUsersGuidePdf()
+{
+  QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
+                       .append("/share/doc/omc/OpenModelicaUsersGuide-latest.pdf"));
+  if (!QDesktopServices::openUrl(usersGuidePath)) {
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                  Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::openUsersGuideOldPdf
+ * Slot activated when mpUsersGuideOldPdfAction triggered signal is raised.\n
+ * Opens the old pdf versions of OpenModelica users guide.
+ */
+void MainWindow::openUsersGuideOldPdf()
 {
   QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
                        .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
-  QDesktopServices::openUrl(usersGuidePath);
+  if (!QDesktopServices::openUrl(usersGuidePath)) {
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                  GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                  Helper::scriptingKind, Helper::errorLevel));
+  }
 }
 
+/*!
+ * \brief MainWindow::openSystemDocumentation
+ * Slot activated when mpSystemDocumentationAction triggered signal is raised.\n
+ * Opens the OpenModelica system documentation.
+ */
 void MainWindow::openSystemDocumentation()
 {
   QUrl systemDocumentationPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
                                 .append("/share/doc/omc/OpenModelicaSystem.pdf"));
-  QDesktopServices::openUrl(systemDocumentationPath);
+  if (!QDesktopServices::openUrl(systemDocumentationPath)) {
+    mpMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
+                                                Helper::scriptingKind, Helper::errorLevel));
+  }
 }
 
+/*!
+ * \brief MainWindow::openOpenModelicaScriptingDocumentation
+ * Opens the OpenModelica scripting documentation.
+ */
 void MainWindow::openOpenModelicaScriptingDocumentation()
 {
   QUrl openModelicaScriptingUrl (QUrl("https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html"));
   QDesktopServices::openUrl(openModelicaScriptingUrl);
 }
 
+/*!
+ * \brief MainWindow::openModelicaDocumentation
+ * Opens the Modelica documentation.
+ */
 void MainWindow::openModelicaDocumentation()
 {
   QUrl modelicaDocumentationUrl (QUrl("https://build.openmodelica.org/Documentation/index.html"));
@@ -2539,6 +2591,14 @@ void MainWindow::createActions()
   mpUsersGuideAction->setStatusTip(tr("Opens the OpenModelica Users Guide"));
   mpUsersGuideAction->setShortcut(QKeySequence(Qt::Key_F1));
   connect(mpUsersGuideAction, SIGNAL(triggered()), SLOT(openUsersGuide()));
+  // users guide new pdf action
+  mpUsersGuidePdfAction = new QAction(tr("OpenModelica Users Guide (PDF)"), this);
+  mpUsersGuidePdfAction->setStatusTip(tr("Opens the OpenModelica Users Guide (PDF)"));
+  connect(mpUsersGuidePdfAction, SIGNAL(triggered()), SLOT(openUsersGuidePdf()));
+  // users guide old pdf action
+  mpUsersGuideOldPdfAction = new QAction(tr("OpenModelica Users Guide (Old PDF)"), this);
+  mpUsersGuideOldPdfAction->setStatusTip(tr("Opens the OpenModelica Users Guide (Old PDF)"));
+  connect(mpUsersGuideOldPdfAction, SIGNAL(triggered()), SLOT(openUsersGuideOldPdf()));
   // system documentation action
   mpSystemDocumentationAction = new QAction(tr("OpenModelica System Documentation"), this);
   mpSystemDocumentationAction->setStatusTip(tr("Opens the OpenModelica System Documentation"));
@@ -2808,6 +2868,8 @@ void MainWindow::createMenus()
   pHelpMenu->setTitle(tr("&Help"));
   // add actions to Help menu
   pHelpMenu->addAction(mpUsersGuideAction);
+  pHelpMenu->addAction(mpUsersGuidePdfAction);
+  pHelpMenu->addAction(mpUsersGuideOldPdfAction);
   pHelpMenu->addAction(mpSystemDocumentationAction);
   pHelpMenu->addAction(mpOpenModelicaScriptingAction);
   pHelpMenu->addAction(mpModelicaDocumentationAction);

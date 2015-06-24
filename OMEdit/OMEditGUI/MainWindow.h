@@ -263,6 +263,8 @@ private:
   QAction *mpOptionsAction;
   // Help Menu
   QAction *mpUsersGuideAction;
+  QAction *mpUsersGuidePdfAction;
+  QAction *mpUsersGuideOldPdfAction;
   QAction *mpSystemDocumentationAction;
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
@@ -354,6 +356,8 @@ public slots:
   void TLMSimulate();
   void openConfigurationOptions();
   void openUsersGuide();
+  void openUsersGuidePdf();
+  void openUsersGuideOldPdf();
   void openSystemDocumentation();
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();

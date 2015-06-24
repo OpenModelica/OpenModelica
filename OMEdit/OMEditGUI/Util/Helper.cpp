@@ -528,6 +528,10 @@ QString GUIMessages::getMessage(int type)
       return tr("Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)");
     case UNABLE_TO_LOAD_FILE:
       return tr("Error has occurred while loading the file/library <b>%1</b>. Unable to load the file/library.");
+    case UNABLE_TO_OPEN_FILE:
+      return tr("Unable to open file <b>%1</b>.");
+    case UNABLE_TO_SAVE_FILE:
+      return tr("Unable to save the file <b>%1</b>.");
     case FILE_NOT_FOUND:
       return tr("The file <b>%1</b> not found.");
     case ERROR_OPENING_FILE:

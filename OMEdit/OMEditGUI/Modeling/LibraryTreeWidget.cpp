@@ -1244,7 +1244,7 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
     }
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(tr("Unable to save the file. %1").arg(file.errorString())), Helper::ok);
+                             .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
     return false;
   }
   return true;
@@ -1305,7 +1305,7 @@ bool LibraryTreeWidget::saveTLMLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode
     }
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                             .arg(tr("Unable to save the file. %1").arg(file.errorString())), Helper::ok);
+                             .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(file.errorString())), Helper::ok);
     return false;
   }
   getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
