@@ -48,58 +48,6 @@
 
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
-const char *NLS_NAME[NLS_MAX+1] = {
-  "NLS_UNKNOWN",
-
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_HYBRID */       "hybrid",
-  /* NLS_KINSOL */       "kinsol",
-  /* NLS_NEWTON */       "newton",
-#endif
-  /* NLS_HOMOTOPY */     "homotopy",
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_MIXED */        "mixed",
-#endif
-  "NLS_MAX"
-};
-
-const char *NLS_DESC[NLS_MAX+1] = {
-  "unknown",
-
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
-  /* NLS_KINSOL */       "sundials/kinsol - prototype implementation",
-  /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
-#endif
-  /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried.",
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
-#endif
-  "NLS_MAX"
-};
-
-const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1] = {
-  "NEWTON_UNKNOWN",
-
-  /* NEWTON_DAMPED */       "damped",
-  /* NEWTON_DAMPED2 */      "damped2",
-  /* NEWTON_DAMPED_LS */    "damped_ls",
-  /* NEWTON_PURE */         "pure",
-
-  "NEWTON_MAX"
-};
-
-const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1] = {
-  "unknown",
-
-  /* NEWTON_DAMPED */       "Newton with a damping strategy",
-  /* NEWTON_DAMPED2 */      "Newton with a damping strategy 2",
-  /* NEWTON_DAMPED_LS */    "Newton with a damping line search",
-  /* NEWTON_PURE */         "Newton without damping strategy",
-
-  "NEWTON_MAX"
-};
-
 struct dataNewtonAndHybrid {
   void* newtonData;
   void* hybridData;

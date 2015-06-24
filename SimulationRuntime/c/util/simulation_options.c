@@ -142,60 +142,138 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
 
 const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "unknown",
-
-  /* FLAG_ABORT_SLOW */            "aborts if the simulation chatters",
-  /* FLAG_ALARM */                 "aborts after the given number of seconds (0 disables)",
-  /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU\n  RT=monotonic real-time clock, CPU=process-based CPU-time, CYC=cpu cycles measured with RDTSC",
-  /* FLAG_CPU */                   "  - dumps the cpu-time into the result-file\n  - $cpuTime is the variable name inside the result-file",
-  /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver:"
-      "\n\t -dasslJacobian=coloredNumerical  - colored numerical jacobian, also default setup."
-      "\n\t -dasslJacobian=internalNumerical  - internal dassl numerical jacobian."
-      "\n\t -dasslJacobian=coloredSymbolical - colored symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization."
-      "\n\t -dasslJacobian=numerical - numerical jacobian"
-      "\n\t -dasslJacobian=symbolical - symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization.",
-  /* FLAG_DASSL_NO_ROOTFINDING */  "flag deactivates the internal root finding procedure of dassl.",
-  /* FLAG_DASSL_NO_RESTART */      "flag deactivates the restart of dassl after an event is performed.",
-  /* FLAG_EMIT_PROTECTED */        "emits protected variables to the result-file",
-  /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
-  /* FLAG_HELP */                  "get detailed information that specifies the command-line flag\n  e.g. -help=f prints detailed information for command-line flag f",
-  /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
-  /* FLAG_IIM */                   "value specifies the initialization method",
-  /* FLAG_IIT */                   "value specifies a time for the initialization of the model",
-  /* FLAG_ILS */                   "value specifies the number of steps for homotopy method (required: -iim=symbolic) or\n'start value homotopy' method (required: -iim=numeric -iom=nelder_mead_ex)",
-  /* FLAG_INITIAL_STEP_SIZE */     "value specifies an initial stepsize for the dassl solver",
-  /* FLAG_INPUT_FILE */            "value specifies an external file with inputs for the simulation/optimization of the model",
-  /* FLAG_INPUT_FILE_STATES */     "value specifies an file with states start values for the optimization of the model",
-  /* FLAG_IPOPT_HESSE */           "value specifies the hessematrix for Ipopt(OMC, BFGS, const)",
-  /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt(SYM, NUM, NUMDENSE)",
-  /* FLAG_IPOPT_INIT */            "value specifies the initial guess for optimization (sim, const)",
-  /* FLAG_IPOPT_MAX_ITER */        "value specifies the max number of iteration for ipopt",
-  /* FLAG_IPOPT_WARM_START */      "value specifies lvl for a warm start in ipopt: 1,2,3,...",
-  /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
-  /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default) or -logFormat=xml",
-  /* FLAG_LS */                    "value specifies the linear solver method\n  lapack, lis, totalpivot",
-  /* FLAG_LS_IPOPT */              "value specifies the linear solver method for Ipopt, default mumps.\n Note: Use if you build ipopt with other linear solver like ma27",
-  /* FLAG_LV */                    "value specifies the logging level",
-  /* FLAG_MAX_STEP_SIZE */         "value specifies maximum absolute step size, used by dassl solver",
-  /* FLAG_MAX_ORDER */             "value specifies maximum integration order, used by dassl solver",
-  /* FLAG_MEASURETIMEPLOTFORMAT */ "value specifies the output format of the measure time functionality\n  svg\n  jpg\n  ps\n  gif\n  ...",
-  /* FLAG_NEWTON_STRATEGY */       "value specifies the damping strategy for the newton solver",
-  /* FLAG_NLS */                   "value specifies the nonlinear solver\n  hybrid, kinsol, newton, mixed",
-  /* FLAG_NOEMIT */                "do not emit any results to the result file",
-  /* FLAG_NOEQUIDISTANT_GRID */    "stores results not in equidistant time grid as given by stepSize or numberOfIntervals, instead the variable step size of dassl is used.",
-  /* FLAG_NOEQUIDISTANT_OUT_FREQ*/ "integer value n controls the output frequency in noEquidistantTimeGrid mode and outputs every n-th time step",
-  /* FLAG_NOEQUIDISTANT_OUT_TIME*/ "real value timeValue controls the output time point in noEquidistantOutputTime mode and outputs every time>=k*timeValue, where k is an integer",
-  /* FLAG_NOEVENTEMIT */           "do not emit event points to the result file",
-  /* FLAG_OPTDEBUGEJAC */          "value specifies the number of iter from the dyn. optimization, which will be debuge, creating *csv and *py file",
-  /* FLAG_OUTPUT */                "output the variables a, b and c at the end of the simulation to the standard output\n  time = value, a = value, b = value, c = value",
-  /* FLAG_OVERRIDE */              "override the variables or the simulation settings in the XML setup file\n  e.g. var1=start1,var2=start2,par3=start3,startTime=val1,stopTime=val2,stepSize=val3,\n       tolerance=val4,solver=\"see -s\",outputFormat=\"mat|plt|csv|empty\",variableFilter=\"filter\"",
-  /* FLAG_OVERRIDE_FILE */         "will override the variables or the simulation settings in the XML setup file with the values from the file\n  note that: -overrideFile CANNOT be used with -override\n  use when variables for -override are too many and do not fit in command line size\n  overrideFileName contains lines of the form: var1=start1",
-  /* FLAG_OPTIMIZER_NP */          "value specifies the number of points in a subinterval. Currently support number 1 and 3.",
-  /* FLAG_OPTIMIZER_TGRID */       "value specifies external file with time points.",
-  /* FLAG_UP_HESSIAN */            "value specifies the number of steps, which keep hessian matrix constant",
-  /* FLAG_PORT */                  "value specifies the port for simulation status (default disabled)",
-  /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
-  /* FLAG_S */                     "value specifies the solver",
-  /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
+  /* FLAG_ABORT_SLOW */
+  "  Aborts if the simulation chatters.",
+  /* FLAG_ALARM */
+  "  Aborts after the given number of seconds (default=0 disables the alarm).",
+  /* FLAG_CLOCK */
+  "  Selects the type of clock to use. Valid options include:\n\n"
+  "  * RT (monotonic real-time clock)\n"
+  "  * CYC (cpu cycles measured with RDTSC)\n"
+  "  * CPU (process-based CPU-time)",
+  /* FLAG_CPU */
+  "  Dumps the cpu-time into the result-file using the variable named $cpuTime",
+  /* FLAG_DASSL_JACOBIAN */
+  "  Selects the type of the Jacobian that is used for the dassl solver:\n\n"
+  "  * coloredNumerical (colored numerical Jacobian, the default).\n"
+  "  * internalNumerical (internal dassl numerical Jacobian).\n"
+  "  * coloredSymbolical (colored symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.\n"
+  "  * numerical - numerical Jacobian.\n\n"
+  "  * symbolical - symbolical Jacobian. Only usable if the simulation is compiled with --generateSymbolicJacobian or --generateSymbolicLinearization.",
+  /* FLAG_DASSL_NO_ROOTFINDING */
+  "  Deactivates the internal root finding procedure of dassl.",
+  /* FLAG_DASSL_NO_RESTART */
+  "  Deactivates the restart of dassl after an event is performed.",
+  /* FLAG_EMIT_PROTECTED */
+  "  Emits protected variables to the result-file.",
+  /* FLAG_F */
+  "  Value specifies a new setup XML file to the generated simulation code.\n",
+  /* FLAG_HELP */
+  "  Get detailed information that specifies the command-line flag\n"
+  "  For example, -help=f prints detailed information for command-line flag f.",
+  /* FLAG_IIF */
+  "  Value specifies an external file for the initialization of the model.",
+  /* FLAG_IIM */
+  "  Value specifies the initialization method.", /* TODO: Fill me in */
+  /* FLAG_IIT */
+  "  Value [Real] specifies a time for the initialization of the model.",
+  /* FLAG_ILS */
+  "  Value specifies the number of steps for homotopy method (required: -iim=symbolic) or 'start value homotopy' method (required: -iim=numeric -iom=nelder_mead_ex).\n"
+  "  The value is an Integer with default value 1.",
+  /* FLAG_INITIAL_STEP_SIZE */
+  "  Value specifies an initial stepsize for the dassl solver.",
+  /* FLAG_INPUT_FILE */
+  "  Value specifies an external file with inputs for the simulation/optimization of the model.",
+  /* FLAG_INPUT_FILE_STATES */
+  "  Value specifies an file with states start values for the optimization of the model.",
+  /* FLAG_IPOPT_HESSE */
+  "  Value specifies the hessematrix for Ipopt(OMC, BFGS, const).",
+  /* FLAG_IPOPT_JAC */
+  "  Value specifies the jacobian for Ipopt(SYM, NUM, NUMDENSE).",
+  /* FLAG_IPOPT_INIT */
+  "  Value specifies the initial guess for optimization (sim, const).",
+  /* FLAG_IPOPT_MAX_ITER */
+  "  Value specifies the max number of iteration for ipopt.",
+  /* FLAG_IPOPT_WARM_START */
+  "  Value specifies lvl for a warm start in ipopt: 1,2,3,...",
+  /* FLAG_L */
+  "  Value specifies a time where the linearization of the model should be performed.",
+  /* FLAG_LOG_FORMAT */
+  "  Value specifies the log format of the executable:\n\n"
+  "  * text (default)\n"
+  "  * xml",
+  /* FLAG_LS */
+  "  Value specifies the linear solver method",
+  /* FLAG_LS_IPOPT */
+  "  Value specifies the linear solver method for Ipopt, default mumps.\n"
+  "  Note: Use if you build ipopt with other linear solver like ma27",
+  /* FLAG_LV */
+  "  Value (a comma-separated String list) specifies which logging levels to\n"
+  "  enable. Multiple options can be enabled at the same time.",
+  /* FLAG_MAX_STEP_SIZE */
+  "  Value specifies maximum absolute step size, used by dassl solver.",
+  /* FLAG_MAX_ORDER */
+  "  Value specifies maximum integration order, used by dassl solver.",
+  /* FLAG_MEASURETIMEPLOTFORMAT */
+  "  Value specifies the output format of the measure time functionality\n\n"
+  "  * svg\n"
+  "  * jpg\n"
+  "  * ps\n"
+  "  * gif\n"
+  "  * ...",
+  /* FLAG_NEWTON_STRATEGY */
+  "  Value specifies the damping strategy for the newton solver.",
+  /* FLAG_NLS */
+  "  Value specifies the nonlinear solver:\n\n"
+  "  * hybrid\n"
+  "  * kinsol\n"
+  "  * newton\n"
+  "  * mixed",
+  /* FLAG_NOEMIT */
+  "  Do not emit any results to the result file.",
+  /* FLAG_NOEQUIDISTANT_GRID */
+  "  Output the internal steps given by dassl instead of interpolating results\n"
+  "  into an equidistant time grid as given by stepSize or numberOfIntervals.",
+  /* FLAG_NOEQUIDISTANT_OUT_FREQ*/
+  "  Integer value n controls the output frequency in noEquidistantTimeGrid mode\n"
+  "  and outputs every n-th time step",
+  /* FLAG_NOEQUIDISTANT_OUT_TIME*/
+  "  Real value timeValue controls the output time point in noEquidistantOutputTime\n"
+  "  mode and outputs every time>=k*timeValue, where k is an integer",
+  /* FLAG_NOEVENTEMIT */
+  "  Do not emit event points to the result file.",
+  /* FLAG_OPTDEBUGEJAC */
+  "  Value specifies the number of itereations from the dynamic optimization, which\n"
+  "  will be debugged, creating .csv and .py files.",
+  /* FLAG_OUTPUT */
+  "  Output the variables a, b and c at the end of the simulation to the standard\n"
+  "  output: time = value, a = value, b = value, c = value",
+  /* FLAG_OVERRIDE */
+  "  Override the variables or the simulation settings in the XML setup file\n"
+  "  For example: var1=start1,var2=start2,par3=start3,startTime=val1,stopTime=val2",
+  /* FLAG_OVERRIDE_FILE */
+  "  Will override the variables or the simulation settings in the XML setup file\n"
+  "  with the values from the file.\n"
+  "  Note that: -overrideFile CANNOT be used with -override.\n"
+  "  Use when variables for -override are too many.\n"
+  "  overrideFileName contains lines of the form: var1=start1",
+  /* FLAG_OPTIMIZER_NP */
+  "  Value specifies the number of points in a subinterval.\n"
+  "  Currently supports numbers 1 and 3.",
+  /* FLAG_OPTIMIZER_TGRID */
+  "  Value specifies external file with time points.",
+  /* FLAG_UP_HESSIAN */
+  "  Value specifies the number of steps, which keep hessian matrix constant.",
+  /* FLAG_PORT */
+  "  Value specifies the port for simulation status (default disabled).",
+  /* FLAG_R */
+  "  Value specifies the name of the output result file.\n"
+  "  The default file-name is based on the model name and output format.\n"
+  "  For example: Model_res.mat.",
+  /* FLAG_S */
+  "  Value specifies the solver (integration method).",
+  /* FLAG_W */
+  "  Shows all warnings even if a related log-stream is inactive.",
 
   "FLAG_MAX"
 };
@@ -251,4 +329,129 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_R */                     FLAG_TYPE_OPTION,
   /* FLAG_S */                     FLAG_TYPE_OPTION,
   /* FLAG_W */                     FLAG_TYPE_FLAG
+};
+
+const char *SOLVER_METHOD_NAME[S_MAX] = {
+  "unknown",
+  "euler",
+  "rungekutta",
+  "dassl",
+  "optimization",
+  "radau5",
+  "radau3",
+  "radau1",
+  "lobatto2",
+  "lobatto4",
+  "lobatto6",
+  "symEuler",
+  "qss"
+};
+
+const char *SOLVER_METHOD_DESC[S_MAX] = {
+  "unknown",
+  "euler",
+  "rungekutta",
+  "dassl with colored numerical jacobian, with interval root finding - default",
+  "optimization",
+  "radau5 [sundial/kinsol needed]",
+  "radau3 [sundial/kinsol needed]",
+  "radau1 [sundial/kinsol needed]",
+  "lobatto2 [sundial/kinsol needed]",
+  "lobatto4 [sundial/kinsol needed]",
+  "lobatto6 [sundial/kinsol needed]",
+  "symbolic implicit euler, [compiler flag +symEuler needed]",
+  "qss"
+};
+
+const char *INIT_METHOD_NAME[IIM_MAX] = {
+  "unknown",
+  "none",
+  "symbolic"
+};
+
+const char *INIT_METHOD_DESC[IIM_MAX] = {
+  "unknown",
+  "sets all variables to their start values and skips the initialization process",
+  "solves the initialization problem symbolically - default"
+};
+
+const char *LS_NAME[LS_MAX+1] = {
+  "LS_UNKNOWN",
+
+  /* LS_LAPACK */       "lapack",
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* LS_LIS */          "lis",
+#endif
+  /* LS_UMFPACK */      "umfpack",
+  /* LS_TOTALPIVOT */   "totalpivot",
+  /* LS_DEFAULT */      "default",
+
+  "LS_MAX"
+};
+
+const char *LS_DESC[LS_MAX+1] = {
+  "unknown",
+
+  /* LS_LAPACK */       "method using lapack LU factorization",
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* LS_LIS */          "method using iterativ solver Lis",
+#endif
+  /* LS_UMFPACK */      "method using umfpack sparse linear solver",
+  /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
+  /* LS_DEFAULT */      "default method - lapack with total pivoting as fallback",
+
+  "LS_MAX"
+};
+
+
+const char *NLS_NAME[NLS_MAX+1] = {
+  "NLS_UNKNOWN",
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* NLS_HYBRID */       "hybrid",
+  /* NLS_KINSOL */       "kinsol",
+  /* NLS_NEWTON */       "newton",
+#endif
+  /* NLS_HOMOTOPY */     "homotopy",
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* NLS_MIXED */        "mixed",
+#endif
+  "NLS_MAX"
+};
+
+const char *NLS_DESC[NLS_MAX+1] = {
+  "unknown",
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
+  /* NLS_KINSOL */       "sundials/kinsol - prototype implementation",
+  /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
+#endif
+  /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried.",
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
+#endif
+  "NLS_MAX"
+};
+
+const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1] = {
+  "NEWTON_UNKNOWN",
+
+  /* NEWTON_DAMPED */       "damped",
+  /* NEWTON_DAMPED2 */      "damped2",
+  /* NEWTON_DAMPED_LS */    "damped_ls",
+  /* NEWTON_PURE */         "pure",
+
+  "NEWTON_MAX"
+};
+
+const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1] = {
+  "unknown",
+
+  /* NEWTON_DAMPED */       "Newton with a damping strategy",
+  /* NEWTON_DAMPED2 */      "Newton with a damping strategy 2",
+  /* NEWTON_DAMPED_LS */    "Newton with a damping line search",
+  /* NEWTON_PURE */         "Newton without damping strategy",
+
+  "NEWTON_MAX"
 };

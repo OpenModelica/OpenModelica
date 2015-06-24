@@ -42,25 +42,6 @@ extern "C"
 {
 #endif
 
-  enum INIT_INIT_METHOD
-  {
-    IIM_UNKNOWN = 0,
-    IIM_NONE,
-    IIM_SYMBOLIC,
-    IIM_MAX
-  };
-
-  static const char *INIT_METHOD_NAME[IIM_MAX] = {
-    "unknown",
-    "none",
-    "symbolic"
-  };
-  static const char *INIT_METHOD_DESC[IIM_MAX] = {
-    "unknown",
-    "sets all variables to their start values and skips the initialization process",
-    "solves the initialization problem symbolically - default"
-  };
-
   extern int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps);
   int importStartValues(DATA *data, const char *pInitFile, const double initTime);
 

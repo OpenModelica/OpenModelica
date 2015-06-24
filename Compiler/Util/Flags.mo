@@ -2017,7 +2017,12 @@ algorithm
 
     case {"simulation"}
       equation
-        help = System.gettext("The simulation executable takes the following flags:\n") + System.getSimulationHelpText(true);
+        help = System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true);
+      then help;
+
+    case {"simulation-sphinxoutput"}
+      equation
+        help = System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true,sphinx=true);
       then help;
 
     case {"debug"}

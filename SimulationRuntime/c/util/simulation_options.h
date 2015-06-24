@@ -31,6 +31,7 @@
 /* Simulation help constants are available in the regular runtime so we can link omc with them */
 
 #ifndef OPENMODELICA_SIMULATION_OPTIONS_H
+#define OPENMODELICA_SIMULATION_OPTIONS_H
 
 #if defined(__cplusplus)
   extern "C" {
@@ -106,6 +107,92 @@ extern const char *FLAG_NAME[FLAG_MAX+1];
 extern const char *FLAG_DESC[FLAG_MAX+1];
 extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
 extern const int FLAG_TYPE[FLAG_MAX];
+
+enum SOLVER_METHOD
+{
+  S_UNKNOWN = 0,
+
+  S_EULER,         /*  1 */
+  S_RUNGEKUTTA,    /*  2 */
+  S_DASSL,         /*  3 */
+  S_OPTIMIZATION,  /*  4 */
+  S_RADAU5,        /*  5 */
+  S_RADAU3,        /*  6 */
+  S_RADAU1,        /*  7 */
+  S_LOBATTO2,      /*  8 */
+  S_LOBATTO4,      /*  9 */
+  S_LOBATTO6,      /* 10 */
+  S_SYM_EULER,     /* 11 */
+  S_QSS,
+
+  S_MAX
+};
+
+extern const char *SOLVER_METHOD_NAME[S_MAX];
+extern const char *SOLVER_METHOD_DESC[S_MAX];
+
+enum INIT_INIT_METHOD
+{
+  IIM_UNKNOWN = 0,
+  IIM_NONE,
+  IIM_SYMBOLIC,
+  IIM_MAX
+};
+
+extern const char *INIT_METHOD_NAME[IIM_MAX];
+extern const char *INIT_METHOD_DESC[IIM_MAX];
+
+enum LINEAR_SOLVER
+{
+  LS_NONE = 0,
+
+  LS_LAPACK,
+#if !defined(OMC_MINIMAL_RUNTIME)
+  LS_LIS,
+#endif
+  LS_UMFPACK,
+  LS_TOTALPIVOT,
+  LS_DEFAULT,
+
+  LS_MAX
+};
+
+extern const char *LS_NAME[LS_MAX+1];
+extern const char *LS_DESC[LS_MAX+1];
+
+enum NONLINEAR_SOLVER
+{
+  NLS_NONE = 0,
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  NLS_HYBRID,
+  NLS_KINSOL,
+#endif
+  NLS_NEWTON,
+  NLS_HOMOTOPY,
+  NLS_MIXED,
+
+  NLS_MAX
+};
+
+
+enum NEWTON_STRATEGY
+{
+  NEWTON_NONE = 0,
+
+  NEWTON_DAMPED,
+  NEWTON_DAMPED2,
+  NEWTON_DAMPED_LS,
+  NEWTON_PURE,
+
+  NEWTON_MAX
+};
+
+extern const char *NLS_NAME[NLS_MAX+1];
+extern const char *NLS_DESC[NLS_MAX+1];
+
+extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1];
+extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1];
 
 #if defined(__cplusplus)
   }
