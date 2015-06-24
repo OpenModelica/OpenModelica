@@ -643,33 +643,10 @@ void LineAnnotation::handleComponentRotation()
 void LineAnnotation::updateConnectionAnnotation()
 {
   if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getLibraryType()== LibraryTreeNode::TLM) {
-    QDomDocument doc;
-    doc.setContent(mpGraphicsView->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText());
+    TLMEditor *pTLMEditor = dynamic_cast<TLMEditor*>(mpGraphicsView->getModelWidget()->getEditor());
+    pTLMEditor->updateTLMConnectiontAnnotation(getStartComponentName(), getEndComponentName(), getTLMShapeAnnotation());
 
-    // Get the "Root" element
-    QDomElement docElem = doc.documentElement();
-
-    QDomElement connections = docElem.firstChildElement();
-    while (!connections.isNull()) {
-      if(connections.tagName() == "Connections")
-        break;
-      connections = connections.nextSiblingElement();
-    }
-    QDomElement connection = connections.firstChildElement();
-    while (!connection.isNull()) {
-      if(connection.tagName() == "Connection" &&
-         StringHandler::getSubStringBeforeDots(connection.attribute("From")) == getStartComponentName() &&
-         StringHandler::getSubStringBeforeDots(connection.attribute("To")) == getEndComponentName()) {
-        QDomElement annotation = connection.firstChildElement("Annotation");
-        annotation.setAttribute("Points",getTLMShapeAnnotation());
-        break;
-      }
-      connection = connection.nextSiblingElement();
-    }
-    QString metaModelText = doc.toString();
-    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    pMainWindow->getModelWidgetContainer()->getCurrentModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(metaModelText);
-  } else {
+   } else {
     // get the connection line annotation.
     QString annotationString = QString("annotate=").append(getShapeAnnotation());
     // update the connection
