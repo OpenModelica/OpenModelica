@@ -30,7 +30,7 @@ LexerTest_main.so: LexerTest.mos LexerTest.mo LexerModelica.mo LexerCodeModelica
 	$(OMC) $<
 	$(MAKE) -f LexerTest_main.makefile
 lexer-all: omcc
-	./OMCC --lexer-only ModelicaDiff
+	./OMCC --lexer-only Modelica
 	$(MAKE) lexer
 
 .PHONY: ModelicaParserTests

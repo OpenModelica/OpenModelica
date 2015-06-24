@@ -39,12 +39,17 @@ testTables2.txt \
 testTables2D.txt \
 hpcom \
 umfpack \
+fmu \
+staticLinking \
 ReferenceFiles \
 libraries
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 HPCOM_DIR = hpcom/
 UMFPACK_DIR = umfpack/
+FMI_1_0_DIR = fmu/modelExchange/1.0
+FMI_2_0_DIR = fmu/modelExchange/2.0
+STATIC_LINKING_DIR = staticLinking
 
 .PHONY : test clean getdeps
 
@@ -55,14 +60,22 @@ test:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 	@$(MAKE) -C $(HPCOM_DIR)
-	#@$(MAKE) -C $(UMFPACK_DIR)
+	@$(MAKE) -C $(UMFPACK_DIR)
+	@$(MAKE) -C $(FMI_1_0_DIR)
+	@$(MAKE) -C $(FMI_2_0_DIR)
+	@$(MAKE) -C $(STATIC_LINKING_DIR)
+
 
 # Cleans all files that are not listed as dependencies 
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
 	@$(MAKE) -C $(HPCOM_DIR) clean
-	#@$(MAKE) -C $(UMFPACK_DIR) clean
+	@$(MAKE) -C $(UMFPACK_DIR) clean
+	@$(MAKE) -C $(FMI_1_0_DIR) clean
+	@$(MAKE) -C $(FMI_2_0_DIR) clean
+	@$(MAKE) -C $(STATIC_LINKING_DIR) clean
+
 
 # Run this if you want to list out the files (dependencies).
 # do it after cleaning and updating the folder

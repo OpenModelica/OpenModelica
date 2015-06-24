@@ -20,6 +20,10 @@ flatteningPlanarMechanics.log \
 TestMedia.log \
 cppruntime.log \
 cppruntimeHpcom.log \
+cppruntimeFMU1.log \
+cppruntimeFMU2.log \
+cppruntimeUmfpack.log \
+cppruntimeStaticLinking.log \
 taskGraph.log \
 debugDumps.log \
 dumpCruntime.log \
@@ -368,6 +372,18 @@ cppruntime.log: omc-diff
 cppruntimeHpcom.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/hpcom -f Makefile test  > $@
 	@echo $@ done
+cppruntimeFMU1.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile test  > $@
+	@echo $@ done
+cppruntimeFMU2.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile test  > $@
+	@echo $@ done
+cppruntimeUmfpack.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/umfpack -f Makefile test  > $@
+	@echo $@ done
+cppruntimeStaticLinking.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/staticLinking -f Makefile test  > $@
+	@echo $@ done
 linearization.log: omc-diff
 	$(MAKE) -C openmodelica/linearization -f Makefile test > $@
 	@echo $@ done
@@ -567,6 +583,10 @@ clean_g_2 :
 	$(MAKE) -C metamodelica/meta -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/hpcom -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/umfpack -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/staticLinking -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean
@@ -643,7 +663,6 @@ git-sanity-check: git-clean
 	find -name "*.a" >> invalid-files.log
 	find -name "*.mat" >> invalid-files.log
 	find -name "*.csv" >> invalid-files.log
-	(find -type f -executable -exec file -i '{}' ";" | grep -s charset=binary >> invalid-files.log) || true
 	sort invalid-files.log > invalid-files.sorted
 	sort .gitvalidfiles > .gitvalidfiles.sorted
 	comm --check-order -23 invalid-files.sorted .gitvalidfiles.sorted > invalid-files.log
