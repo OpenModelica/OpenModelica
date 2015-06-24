@@ -69,6 +69,7 @@ void TLMEditor::contentsHasChanged(int position, int charsRemoved, int charsAdde
 bool TLMEditor::validateMetaModelText()
 {
   if (mTextChanged) {
+    mXmlDocument.setContent(mpPlainTextEdit->toPlainText());
     if (!emit focusOut()) {
       return false;
     } else {
@@ -109,6 +110,20 @@ QDomElement TLMEditor::getSubModelsElement()
 }
 
 /*!
+ * \brief TLMEditor::getConnectionsElement
+ * Returns the Connections element tag.
+ * \return
+ */
+QDomElement TLMEditor::getConnectionsElement()
+{
+  QDomNodeList connections = mXmlDocument.elementsByTagName("Connections");
+  if (connections.size() > 0) {
+    return connections.at(0).toElement();
+  }
+  return QDomElement();
+}
+
+/*!
  * \brief TLMEditor::getSubModels
  * Returns the list of SubModel tags.
  * \return
@@ -116,6 +131,16 @@ QDomElement TLMEditor::getSubModelsElement()
 QDomNodeList TLMEditor::getSubModels()
 {
   return mXmlDocument.elementsByTagName("SubModel");
+}
+
+/*!
+ * \brief TLMEditor::getConnections
+ * Returns the list of Connection tags.
+ * \return
+ */
+QDomNodeList TLMEditor::getConnections()
+{
+  return mXmlDocument.elementsByTagName("Connection");
 }
 
 /*!
@@ -210,6 +235,40 @@ void TLMEditor::updateSubModelPlacementAnnotation(QString name, QString visible,
 }
 
 /*!
+ * \brief TLMEditor::createConnection
+ * Adds a a connection tag with Annotation tag as child of it.
+ * \param from
+ * \param to
+ * \param delay
+ * \param alpha
+ * \param zf
+ * \param zfr
+ * \param points
+ * \return
+ */
+bool TLMEditor::createConnection(QString from, QString to, QString delay, QString alpha, QString zf, QString zfr, QString points)
+{
+  QDomElement connections = getConnectionsElement();
+  if (!connections.isNull()) {
+    QDomElement connection = mXmlDocument.createElement("Connection");
+    connection.setAttribute("From", from);
+    connection.setAttribute("To", to);
+    connection.setAttribute("Delay", delay);
+    connection.setAttribute("alpha", alpha);
+    connection.setAttribute("Zf", zf);
+    connection.setAttribute("Zfr", zfr);
+    // create Annotation Element
+    QDomElement annotation = mXmlDocument.createElement("Annotation");
+    annotation.setAttribute("Points", points);
+    connection.appendChild(annotation);
+    connections.appendChild(connection);
+    mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+    return true;
+  }
+  return false;
+}
+
+/*!
  * \brief TLMEditor::addInterfacesData
  * Adds the InterfacePoint tag to SubModel.
  * \param interfaces
@@ -249,6 +308,32 @@ bool TLMEditor::deleteSubModel(QString name)
       QDomElement subModels = getSubModelsElement();
       if (!subModels.isNull()) {
         subModels.removeChild(subModel);
+        mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+        return true;
+      }
+      break;
+    }
+  }
+  return false;
+}
+
+/*!
+ * \brief TLMEditor::deleteConnection
+ * Delets a connection.
+ * \param name
+ * \return
+ */
+bool TLMEditor::deleteConnection(QString startSubModelName, QString endSubModelName)
+{
+  QDomNodeList connectionList = mXmlDocument.elementsByTagName("Connection");
+  for (int i = 0 ; i < connectionList.size() ; i++) {
+    QDomElement connection = connectionList.at(i).toElement();
+    QString startName = StringHandler::getSubStringBeforeDots(connection.attribute("From"));
+    QString endName = StringHandler::getSubStringBeforeDots(connection.attribute("To"));
+    if (startName.compare(startSubModelName) == 0 && endName.compare(endSubModelName) == 0 ) {
+      QDomElement connections = getConnectionsElement();
+      if (!connections.isNull()) {
+        connections.removeChild(connection);
         mpPlainTextEdit->setPlainText(mXmlDocument.toString());
         return true;
       }
