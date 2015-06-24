@@ -308,10 +308,7 @@ void Cvode::initialize()
 
     _cvode_initialized = true;
 
-    //
-    // CVODE is ready for integration
-    //
-    // BOOST_LOG_SEV(cvode_lg::get(), cvode_info) << "CVode initialized";
+    Logger::writeDebug("Cvode: initialized");
   }
 }
 
@@ -928,12 +925,6 @@ int Cvode::reportErrorMessage(ostream& messageStream)
 
 void Cvode::writeSimulationInfo()
 {
-#ifdef USE_BOOST_LOG
-  src::logger lg;
-
-  // Now, let's try logging with severity
-  src::severity_logger<cvodeseverity_level> slg;
-
   long int nst, nfe, nsetups, nni, ncfn, netf;
   long int nfQe, netfQ;
   long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
@@ -948,15 +939,14 @@ void Cvode::writeSimulationInfo()
 
   flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Number steps: " << nst;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Function evaluations " << "f: " << nfe;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Error test failures " << "netf: " << netfS;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Linear solver setups " << "nsetups: " << nsetups;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Nonlinear iterations " << "nni: " << nni;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Convergence failures " << "ncfn: " << ncfn;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Number of evaluateODE calls " << "eODE: " << _numberOfOdeEvaluations;
+  Logger::writeInfo("Cvode: number steps = " + boost::lexical_cast<std::string>(nst));
+  Logger::writeInfo("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe));
+  Logger::writeInfo("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS));
+  Logger::writeInfo("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups));
+  Logger::writeInfo("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni));
+  Logger::writeInfo("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn));
+  Logger::writeInfo("Cvode: number of evaluateODE calls 'eODE' = " + boost::lexical_cast<std::string>(_numberOfOdeEvaluations));
 
-#endif
   //// Solver
   //outputStream  << "\nSolver: " << getName()
   //  << "\nVerfahren: ";

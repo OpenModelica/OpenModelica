@@ -13,12 +13,16 @@
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
     : _library_path(library_path)
     , _modelicasystem_path(modelicasystem_path)
+    , _defaultLinSolver("kinsol")
+    , _defaultNonLinSolver("kinsol")
 {
 }
 
 OMCFactory::OMCFactory()
     : _library_path("")
     , _modelicasystem_path("")
+    , _defaultLinSolver("kinsol")
+    , _defaultNonLinSolver("kinsol")
 {
 }
 
@@ -50,7 +54,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      int opt;
      int portnum;
      std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("buffer",BUFFER);("empty",EMPTY);
-     std::map<std::string,LogType> logTypeMap = map_list_of("stats", STATS)("nls", NLS)("ode",ODE)("off",OFF);
+     std::map<std::string,LogType> logTypeMap = map_list_of("debug", DEBUG)("stats", STATS)("nls", NLS)("ode",ODE)("off",OFF);
      std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", ALL)("step", STEP)("empty2",EMPTY2);
      po::options_description desc("Allowed options");
      desc.add_options()
@@ -64,12 +68,12 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
           ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
           ("step-size,f", po::value< double >()->default_value(0.0),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
-          ("lin-solver,L", po::value< string >()->default_value("kinsol"),  "linear solver method")
-          ("non-lin-solver,N", po::value< string >()->default_value("kinsol"),  "non linear solver method")
-          ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,empty]")
+          ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver),  "linear solver method")
+          ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
+          ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,mat,empty]")
           ("number-of-intervals,v", po::value< int >()->default_value(500),  "number of intervals")
           ("tolerance,y", po::value< double >()->default_value(1e-6),  "solver tolerance")
-          ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats,nls,ode,off")
+          ("log-type,l", po::value< string >()->default_value("off"),  "log information: debug,stats,nls,ode,off")
           ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("OMEdit", po::value<vector<string> >(), "OMEdit options")

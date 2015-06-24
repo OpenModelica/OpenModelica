@@ -905,12 +905,6 @@ int Ida::reportErrorMessage(ostream& messageStream)
 
 void Ida::writeSimulationInfo()
 {
-#ifdef USE_BOOST_LOG
-  src::logger lg;
-
-  // Now, let's try logging with severity
-  src::severity_logger<idaseverity_level> slg;
-
   long int nst, nfe, nsetups, nni, ncfn, netf;
   long int nfQe, netfQ;
   long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
@@ -925,15 +919,12 @@ void Ida::writeSimulationInfo()
 
   flag = IDAGetNonlinSolvStats(_idaMem, &nni, &ncfn);
 
-  BOOST_LOG_SEV(slg, ida_normal)<< " Number steps: " << nst;
-  BOOST_LOG_SEV(slg, ida_normal)<< " Function evaluations " << "f: " << nfe;
-  BOOST_LOG_SEV(slg, ida_normal)<< " Error test failures " << "netf: " << netfS;
-  BOOST_LOG_SEV(slg, ida_normal)<< " Linear solver setups " << "nsetups: " << nsetups;
-  BOOST_LOG_SEV(slg, ida_normal)<< " Nonlinear iterations " << "nni: " << nni;
-  BOOST_LOG_SEV(slg, ida_normal)<< " Convergence failures " << "ncfn: " << ncfn;
-
-#endif
-
+  Logger::writeInfo("Cvode: number steps = " + boost::lexical_cast<std::string>(nst));
+  Logger::writeInfo("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe));
+  Logger::writeInfo("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS));
+  Logger::writeInfo("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups));
+  Logger::writeInfo("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni));
+  Logger::writeInfo("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn));
 }
 
 int Ida::check_flag(void *flagvalue, const char *funcname, int opt)

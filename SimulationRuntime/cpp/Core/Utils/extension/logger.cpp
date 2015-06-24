@@ -36,6 +36,12 @@ void Logger::writeInfoInternal(std::string infoMsg)
     std::cout << "Info: " << infoMsg << std::endl;
 }
 
+void Logger::writeDebugInternal(std::string debugMsg)
+{
+  if(_isEnabled)
+    std::cout << "Debug: " << debugMsg << std::endl;
+}
+
 void Logger::setEnabledInternal(bool enabled)
 {
   _isEnabled = enabled;

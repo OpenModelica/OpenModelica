@@ -5,26 +5,6 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <Core/SimController/SimManager.h>
-/*
- #include <boost/log/common.hpp>
- #include <boost/log/expressions.hpp>
-
- #include <boost/log/utility/setup/file.hpp>
- #include <boost/log/utility/setup/console.hpp>
- #include <boost/log/utility/setup/common_attributes.hpp>
-
- #include <boost/log/attributes/timer.hpp>
- #include <boost/log/attributes/named_scope.hpp>
-
- #include <boost/log/sources/logger.hpp>
-
- #include <boost/log/support/date_time.hpp>
-
- namespace logging = boost::log;
- namespace attrs = boost::log::attributes;
- namespace src = boost::log::sources;
- namespace keywords = boost::log::keywords;
- */
 
 SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* config)
   : _mixed_system      (system)
@@ -122,9 +102,7 @@ void SimManager::initialize()
         return;
     }
 
-    /* Logs temporarily disabled
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "start init";*/
-
+    Logger::writeDebug("SimManager start init");
     // Flag für Endlossimulaton (wird gesetzt wenn Solver zurückkommt)
     _continueSimulation = true;
 
@@ -176,16 +154,8 @@ void SimManager::initialize()
         _events = new bool[_dimZeroFunc];
         memset(_events, false, _dimZeroFunc * sizeof(bool));
     }
-    /*
-     //Log initialisieren
-     logging::add_console_log(std::clog, keywords::format = "%TimeStamp%: %Message%");
-     // Also let's add some commonly used attributes, like timestamp and record counter.
-     logging::add_common_attributes();
-     logging::core::get()->add_thread_attribute("Scope", attrs::named_scope());
-     */
-    /* Logs vorübergehend deaktiviert
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "Assemble completed";*/
 
+    Logger::writeDebug("SimManager assemble completed");
 //#if defined(__TRICORE__) || defined(__vxworks)
     // Initialization for RT simulation
     if (_config->getGlobalSettings()->useEndlessSim())
@@ -287,35 +257,26 @@ void SimManager::runSimulation()
     #endif
     try
     {
-        /* Logs temporarily disabled
-         BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Start simulation at t= " << _tStart;
-         */
+        Logger::writeInfo("SimManager: start simulation at t = " + boost::lexical_cast<std::string>(_tStart));
         runSingleProcess();
         // Zeit messen, Ausgabe der SimInfos
         ISolver::SOLVERSTATUS status = _solver->getSolverStatus();
         if ((status & ISolver::DONE) || (status & ISolver::USER_STOP))
         {
-            /* Logs temporarily disabled
-             BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulation done at t= " << _tEnd;
-             BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0);
-             BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulationsdauer: " << (_tClockEnd-_tClockStart)/1000.0;
-             */
+            Logger::writeInfo("SimManager: simulation done at t = " + boost::lexical_cast<std::string>(_tEnd));
+            Logger::writeInfo("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps));
             writeProperties();
         }
     }
     catch (std::exception & ex)
     {
-        /* Logs temporarily disabled
-         BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulation finish with errors at t= " << _tEnd;
-         BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0);
-         */
+        Logger::writeError("SimManager: simulation finish with errors at t = " + boost::lexical_cast<std::string>(_tEnd));
+        Logger::writeInfo("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps));
         writeProperties();
 
-        /* Logs temporarily disabled
-         BOOST_LOG_SEV(simmgr_lg::get(), simmgr_critical) << "SimManger simmgr_error: " + simmgr_error_simmgr_info;
-         */
+        Logger::writeError("SimManager: error = " + boost::lexical_cast<std::string>(ex.what()));
         //ex << error_id(SIMMANAGER);
-       throw;
+        throw;
     }
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
@@ -582,6 +543,8 @@ void SimManager::runSingleProcess()
     _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
     /* Logs temporarily disabled
      BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
+    Logger::writeDebug("SimManager: run single process");
+
     // Zeitinvervall speichern
     //_H =_tEnd - _tStart;
 

@@ -23,7 +23,7 @@ using std::string;
 #endif
 */
 enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
-enum LogType {OFF, STATS, NLS, ODE};
+enum LogType {OFF, STATS, NLS, ODE, DEBUG};
 enum OutputPointType {ALL, STEP, EMPTY2};
 class IGlobalSettings
 {

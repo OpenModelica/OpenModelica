@@ -46,6 +46,11 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
       getInstance()->writeInfoInternal(infoMsg);
     }
 
+    static void writeDebug(std::string debugMsg)
+    {
+      getInstance()->writeDebugInternal(debugMsg);
+    }
+
     static void setEnabled(bool enabled)
     {
       getInstance()->setEnabledInternal(enabled);
@@ -62,6 +67,7 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
     virtual void writeErrorInternal(std::string errorMsg);
     virtual void writeWarningInternal(std::string warningMsg);
     virtual void writeInfoInternal(std::string infoMsg);
+    virtual void writeDebugInternal(std::string debugMsg);
     virtual void setEnabledInternal(bool enabled);
     virtual bool isEnabledInternal();
 

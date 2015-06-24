@@ -36,9 +36,9 @@ public:
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "euler"; }
     virtual void setSelectedSolver(string) {}
-    virtual string    getSelectedLinSolver() { return "kinsol"; }
+    virtual string    getSelectedLinSolver() { return "newton"; }
     virtual void setSelectedLinSolver(string) {}
-    virtual string    getSelectedNonLinSolver() { return "kinsol"; }
+    virtual string    getSelectedNonLinSolver() { return "newton"; }
     virtual void setSelectedNonLinSolver(string) {}
     virtual void load(string xml_file) {};
     virtual void setResultsFileName(string) {}
