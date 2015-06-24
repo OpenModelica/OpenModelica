@@ -8804,7 +8804,7 @@ case rel as RELATION(__) then
     case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
 
-    else error(sourceInfo(), 'daeExpRelation:ERR')
+    else error(sourceInfo(), 'daeExpRelation <%printExpStr(exp)%>')
 end daeExpRelation;
 
 
