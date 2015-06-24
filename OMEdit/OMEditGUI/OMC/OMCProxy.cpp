@@ -764,6 +764,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
         QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
         pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
         pMessageBox->setIcon(QMessageBox::Critical);
+        pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
         pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
         pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
                                         .arg(classesList.join(",")));
@@ -785,6 +786,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
         QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
         pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
         pMessageBox->setIcon(QMessageBox::Information);
+        pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
         pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(encoding)));
         pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
                                         .arg(existingmodelsList.join(",")).append("\n")

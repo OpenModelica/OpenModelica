@@ -620,6 +620,7 @@ void DebuggerConfigurationsDialog::removeConfiguration()
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
       pMessageBox->setIcon(QMessageBox::Question);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_DEBUG_CONFIGURATION_MSG).arg(configurationKey));
       pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
       pMessageBox->setDefaultButton(QMessageBox::Yes);
