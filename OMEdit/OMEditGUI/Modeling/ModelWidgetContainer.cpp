@@ -2327,6 +2327,7 @@ ModelWidget::ModelWidget(LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer
     if (!newClass) {
       getTLMComponents();
       getTLMConnections();
+      TLMEditorTextChanged();
     }
     mpIconGraphicsScene->clearSelection();
     mpDiagramGraphicsScene->clearSelection();
@@ -3135,7 +3136,6 @@ bool ModelWidget::TLMEditorTextChanged()
     pMessagesWidget->addGUIMessage(MessageItem(MessageItem::TLM, getLibraryTreeNode()->getName(), false, messageHandler.line(), messageHandler.column(), 0, 0, messageHandler.statusMessage(), Helper::syntaxKind, Helper::errorLevel));
     return false;
   }
-  setModelModified();
   /* get the model components and connectors */
   refresh();
   return true;
