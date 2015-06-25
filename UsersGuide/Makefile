@@ -61,13 +61,12 @@ clean:
 html: dvisvgm.sh all-dep
 	test -f dvisvgm.sh
 	$(SPHINXBUILD) -b html -t nomathjax -D pngmath_dvipng="`pwd`"/dvisvgm.sh $(ALLSPHINXOPTS) $(BUILDDIR)/html
-	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
+	./fix-math.sh build/html/*.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 htmlmathjax: all-dep
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/htmlmathjax
-	sed -i 's,\(_images/math/.*[.]\)png,\1svg,' build/html/*.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/htmlmathjax."
 
@@ -238,7 +237,7 @@ OMEDIT_ICONS=$(OMEDIT_ICONS_SVG) $(OMEDIT_ICONS_PNG) $(OMEDIT_ICONS_PDF)
 OMOPTIM_ICONS_BASE=Add.png
 OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
-all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc
+all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc source/omchelptext.rst
 
 source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
@@ -260,4 +259,7 @@ readme: readme/sphinxcontribopenmodelica.py
 	sphinx-build -b html -t nomathjax -d build/readme/doctrees readme build/readme/html
 source/simoptions.inc:
 	$(OPENMODELICA_ROOT)/build/bin/omc +help=simulation-sphinxoutput > "$@.tmp"
+	mv "$@.tmp" "$@"
+source/omchelptext.rst:
+	$(OPENMODELICA_ROOT)/build/bin/omc +help=omcall-sphinxoutput > "$@.tmp"
 	mv "$@.tmp" "$@"

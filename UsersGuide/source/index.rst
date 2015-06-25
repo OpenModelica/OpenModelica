@@ -22,6 +22,7 @@ OpenModelica User's Guide
   interop_c_python
   ompython
   scripting_api
+  omchelptext
   simulationflags
   faq
 
