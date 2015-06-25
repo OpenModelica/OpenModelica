@@ -1,9 +1,9 @@
 .PHONY: generated_pdfs/dyOptInitialGuess.pdf generated_pdfs/cruntimedraft.pdf usersguide
 all: generated_pdfs/dyOptInitialGuess.pdf
 generated_pdfs/cruntimedraft.pdf:
-	latexmk -outdir=generated_pdfs -lualatex SimulationRuntime/c/src/cruntimedraft.tex
+	latexmk -outdir=generated_pdfs -pdf SimulationRuntime/c/src/cruntimedraft.tex
 generated_pdfs/dyOptInitialGuess.pdf:
-	latexmk -outdir=generated_pdfs -lualatex SimulationRuntime/DynamicOptimization/src/dyOptInitialGuess.tex
+	latexmk -outdir=generated_pdfs -pdf SimulationRuntime/DynamicOptimization/src/dyOptInitialGuess.tex
 usersguide:
 	$(MAKE) -C UsersGuide html
 	@# OMPython sucks at cleaning up...
