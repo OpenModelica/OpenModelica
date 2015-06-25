@@ -12,6 +12,8 @@ OMShell/OMShellGUI/OMShellGUI.pro.*
 OMShell/OMShellGUI/*.qm
 OMShell/OMShellGUI/OMShell.config
 OMShell/OMShellGUI/omc_config.h
+OMShell/OMShellGUI/omc_communication.cc
+OMShell/OMShellGUI/omc_communication.h
 autom4te.cache/
 config.guess
 config.log
