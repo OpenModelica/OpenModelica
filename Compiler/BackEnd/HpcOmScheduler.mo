@@ -3549,7 +3549,7 @@ algorithm
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing,homotopySupport=homotopySupport,mixedSystem=mixedSystem)),_)
       equation
         eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
-        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
         newIdx = arrayGet(assIn,oldIdx);
         jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
         simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(newIdx,eqs,crefs,indexNonLinearSystem,jacobianMatrix,linearTearing,homotopySupport,mixedSystem), NONE());
@@ -3557,14 +3557,14 @@ algorithm
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=partOfMixed,vars=vars,beqs=beqs,simJac=simJac,residual=eqs,jacobianMatrix=jacobianMatrix,sources=sources,indexLinearSystem=indexLinearSystem)),ass)
       equation
         eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,ass);
-        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
         newIdx = arrayGet(ass,oldIdx);
         jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,ass);
         simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(newIdx,partOfMixed,vars,beqs,simJac,eqs,jacobianMatrix,sources,indexLinearSystem), NONE());
    then simEqSys;
     case(_,ass)
       equation
-        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
         newIdx = arrayGet(ass,oldIdx);
         simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then simEqSys;
@@ -3616,7 +3616,7 @@ algorithm
    then (simEqSys,(newIdx+1,ass));
     case(_,(newIdx,ass))
       equation
-        oldIdx = SimCodeUtil.eqIndex(simEqIn);
+        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
         ass = arrayUpdate(ass,oldIdx,newIdx);
         simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then (simEqSys,(newIdx+1,ass));
@@ -4154,7 +4154,7 @@ algorithm
       list<SimCode.SimEqSystem> eqSysLst;
     case(_,_)
       equation
-      _ = SimCodeUtil.eqIndex(eqSysIn);
+      _ = SimCodeUtil.simEqSystemIndex(eqSysIn);
       pos = List.position1OnTrue(eqSysLstIn,SimCodeUtil.equationIndexEqual,eqSysIn);
       eqSysLst = List.replaceAt(eqSysIn,pos,eqSysLstIn);
     then eqSysLst;

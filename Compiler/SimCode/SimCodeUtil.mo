@@ -486,7 +486,7 @@ protected function compareEqSystems
   input SimCode.SimEqSystem eq2;
   output Boolean b;
 algorithm
-  b := eqIndex(eq1) > eqIndex(eq2);
+  b := simEqSystemIndex(eq1) > simEqSystemIndex(eq2);
 end compareEqSystems;
 
 public function sortEqSystems
@@ -3108,11 +3108,12 @@ protected function addAssertEqn
   output list<SimCode.SimEqSystem> oequations;
   output Integer ouniqueEqIndex;
 algorithm
-  (oequations, ouniqueEqIndex) := match(asserts, iequations, iuniqueEqIndex)
-    case({}, _, _) then (iequations, iuniqueEqIndex);
+  (oequations, ouniqueEqIndex) := match(asserts)
+    case {}
+    then (iequations, iuniqueEqIndex);
+
     else
-     then
-       (SimCode.SES_ALGORITHM(iuniqueEqIndex, asserts)::iequations, iuniqueEqIndex+1);
+    then (SimCode.SES_ALGORITHM(iuniqueEqIndex, asserts)::iequations, iuniqueEqIndex+1);
   end match;
 end addAssertEqn;
 
@@ -6635,62 +6636,59 @@ protected function createSingleAlgorithmCode
   output list<SimCode.SimEqSystem> equations_;
   output Integer ouniqueEqIndex;
 algorithm
-  (equations_, ouniqueEqIndex) := matchcontinue (eqns, vars, skipDiscinAlgorithm, iuniqueEqIndex)
+  (equations_, ouniqueEqIndex) := matchcontinue (eqns, skipDiscinAlgorithm)
     local
       DAE.Algorithm alg;
-      list<DAE.ComponentRef> solvedVars, algOutVars;
+      list<DAE.ComponentRef> solvedVars, algOutVars, knownOutputCrefs;
       String message, algStr;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
       DAE.Expand crefExpand;
 
-      // normal call
-    case (BackendDAE.ALGORITHM(alg=alg, source = source, expand=crefExpand)::_, _, false, _)
-      equation
-        solvedVars = List.map(vars, BackendVariable.varCref);
-        algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        // The variables solved for musst all be part of the output variables of the algorithm.
-        List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-      then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
+    // normal call
+    case (BackendDAE.ALGORITHM(alg=alg, source = source, expand=crefExpand)::_, false) equation
+      solvedVars = List.map(vars, BackendVariable.varCref);
+      algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
+      // The variables solved for musst all be part of the output variables of the algorithm.
+      List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
+      DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
-        // remove discrete Vars
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _, true, _)
-      equation
-        solvedVars = List.map(vars, BackendVariable.varCref);
-        algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        // The variables solved for musst all be part of the output variables of the algorithm.
-        List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-        algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, BackendVariable.listVar1(vars));
-      then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
+    // remove discrete Vars
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, true) equation
+      solvedVars = List.map(vars, BackendVariable.varCref);
+      algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
+      // The variables solved for musst all be part of the output variables of the algorithm.
+      List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
+      DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+      algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, BackendVariable.listVar1(vars));
+    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
-        // inverse Algorithm for single variable.
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _, false, _)
-      equation
-        _ = List.map(vars, BackendVariable.varCref);
-        _ = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        // We need to solve an inverse problem of an algorithm section.
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-        algStatements = solveAlgorithmInverse(algStatements, vars);
-      then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
+    // inverse Algorithm for single variable.
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, false) equation
+      _ = List.map(vars, BackendVariable.varCref);
+      _ = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
+      // We need to solve an inverse problem of an algorithm section.
+      DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+      algStatements = solveAlgorithmInverse(algStatements, vars);
+    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
-        // Error message, inverse algorithms not supported yet
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _, _, _)
-      equation
-        solvedVars = List.map(vars, BackendVariable.varCref);
-        algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        // The variables solved for musst all be part of the output variables of the algorithm.
-        failure(List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare));
-        algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
-        message = ComponentReference.printComponentRefListStr(solvedVars);
-        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
-        Error.addInternalError(message, sourceInfo());
-      then
-         fail();
+    // inverse algorithms
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) equation
+      solvedVars = List.map(vars, BackendVariable.varCref);
+      algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
+      knownOutputCrefs = List.setDifference(algOutVars, solvedVars);
+
+      DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+    //then ({SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, solvedVars, solvedVars)}, iuniqueEqIndex+1);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, algOutVars, knownOutputCrefs)}, solvedVars, 0, NONE(), false, false, false), NONE())}, iuniqueEqIndex+2);
+
+    // inverse algorithms
+    //case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) equation
+    //  solvedVars = List.map(vars, BackendVariable.varCref);
+    //  DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+    //then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, solvedVars, 0, NONE(), false, false, false), NONE())}, iuniqueEqIndex+2);
+
     // failure
     else equation
       Error.addInternalError("function createSingleAlgorithmCode failed", sourceInfo());
@@ -6791,7 +6789,7 @@ protected function dlowEqToSimEqSystem
   output SimCode.SimEqSystem outEquation;
   output Integer ouniqueEqIndex;
 algorithm
-  (outEquation, ouniqueEqIndex) := match (inEquation, iuniqueEqIndex)
+  (outEquation, ouniqueEqIndex) := match (inEquation)
     local
       DAE.ComponentRef cr;
       DAE.Exp exp_;
@@ -6799,16 +6797,15 @@ algorithm
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=exp_, source=source), _) then (SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source), iuniqueEqIndex+1);
+    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=exp_, source=source)
+    then (SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source), iuniqueEqIndex+1);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=exp_, source=source), _) then (SimCode.SES_RESIDUAL(iuniqueEqIndex, exp_, source), iuniqueEqIndex+1);
+    case BackendDAE.RESIDUAL_EQUATION(exp=exp_, source=source)
+    then (SimCode.SES_RESIDUAL(iuniqueEqIndex, exp_, source), iuniqueEqIndex+1);
 
-    case (BackendDAE.ALGORITHM(alg=alg), _)
-      equation
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-      then
-        (SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements), iuniqueEqIndex+1);
-
+    case BackendDAE.ALGORITHM(alg=alg) equation
+      DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+    then (SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements), iuniqueEqIndex+1);
   end match;
 end dlowEqToSimEqSystem;
 
@@ -6817,16 +6814,12 @@ protected function dlowAlgToSimEqSystem
   input Integer iuniqueEqIndex;
   output SimCode.SimEqSystem outEquation;
   output Integer ouniqueEqIndex;
+protected
+  list<DAE.Statement> algStatements;
 algorithm
-  (outEquation, ouniqueEqIndex) := match (inAlg, iuniqueEqIndex)
-    local
-      list<DAE.Statement> algStatements;
-    case (_, _)
-      equation
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(inAlg, NONE());
-      then
-        (SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements), iuniqueEqIndex+1);
-  end match;
+  DAE.ALGORITHM_STMTS(algStatements) := BackendDAEUtil.collateAlgorithm(inAlg, NONE());
+  outEquation := SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements);
+  ouniqueEqIndex := iuniqueEqIndex+1;
 end dlowAlgToSimEqSystem;
 
 protected function createVarNominalAssertFromVars
@@ -8081,6 +8074,12 @@ algorithm
         s = intString(idx) +": "+ List.fold(sLst,stringAppend,"");
     then s;
 
+    case(SimCode.SES_INVERSE_ALGORITHM(index=idx,statements=stmts)) equation
+      sLst = List.map(stmts, DAEDump.ppStatementStr);
+      sLst = List.map1(sLst, stringAppend, "\t");
+      s = intString(idx) +": "+ List.fold(sLst, stringAppend, "");
+    then s;
+
     // no dynamic tearing
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx,indexLinearSystem=idxLS, residual=residual, jacobianMatrix=jac, simJac=simJac), NONE()))
       equation
@@ -8150,8 +8149,7 @@ algorithm
     then s;
 
     else
-      equation
-      then "SOMETHING DIFFERENT\n";
+    then "SOMETHING DIFFERENT\n";
   end matchcontinue;
 end dumpSimEqSystem;
 
@@ -11088,7 +11086,7 @@ algorithm
   end match;
 end eqInfo;
 
-public function eqIndex
+public function simEqSystemIndex
   input SimCode.SimEqSystem eq;
   output Integer index;
 algorithm
@@ -11098,6 +11096,7 @@ algorithm
     case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then index;
     case SimCode.SES_IFEQUATION(index=index) then index;
     case SimCode.SES_ALGORITHM(index=index) then index;
+    case SimCode.SES_INVERSE_ALGORITHM(index=index) then index;
     case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index)) then index;
     case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index)) then index;
     case SimCode.SES_MIXED(index=index) then index;
@@ -11105,10 +11104,10 @@ algorithm
     case SimCode.SES_FOR_LOOP(index=index) then index;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.eqIndex failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.simEqSystemIndex failed"});
       then fail();
   end match;
-end eqIndex;
+end simEqSystemIndex;
 
 function twodigit
   input Integer i;
@@ -11758,6 +11757,12 @@ algorithm
         (inSimEqSystem, files);
 
     case (SimCode.SES_ALGORITHM(statements=statements), files)
+      equation
+        files = getFilesFromStatements(statements, files);
+      then
+        (inSimEqSystem, files);
+
+    case (SimCode.SES_INVERSE_ALGORITHM(statements=statements), files)
       equation
         files = getFilesFromStatements(statements, files);
       then
@@ -12583,33 +12588,33 @@ protected function traverseExpsEqSystem
 algorithm
   (oeq, oa) := match (eq, func, ia)
     local
-      DAE.Exp exp, right, leftexp;
-      DAE.ComponentRef cr, left;
-      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-      list<DAE.Statement> stmts;
-      list<DAE.ElementSource> sources;
-      SimCode.SimEqSystem cont;
-      list<SimCode.SimEqSystem> discEqs, eqs;
-      Integer index, indexSys;
-      Boolean partOfMixed;
-      list<SimCodeVar.SimVar> vars, discVars;
-      list<DAE.Exp> beqs;
-      list<DAE.ComponentRef> crefs;
-      list<DAE.ComponentRef> conditions;
-      Boolean initialCall;
-      Option<SimCode.SimEqSystem> elseWhen;
-      list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> ifbranches;
-      list<SimCode.SimEqSystem> elsebranch;
-      DAE.ElementSource source;
       A a;
-      Option<SimCode.JacobianMatrix> symJac;
-      Boolean linearTearing;
       Boolean homotopySupport;
+      Boolean initialCall;
+      Boolean linearTearing;
       Boolean mixedSystem;
-      SimCode.LinearSystem lSystem;
-      SimCode.NonlinearSystem nlSystem;
+      Boolean partOfMixed;
+      DAE.ComponentRef cr, left;
+      DAE.ElementSource source;
+      DAE.Exp exp, right, leftexp;
+      Integer index, indexSys;
+      Option<SimCode.JacobianMatrix> symJac;
       Option<SimCode.LinearSystem> alternativeTearingL;
       Option<SimCode.NonlinearSystem> alternativeTearingNl;
+      Option<SimCode.SimEqSystem> elseWhen;
+      SimCode.LinearSystem lSystem;
+      SimCode.NonlinearSystem nlSystem;
+      SimCode.SimEqSystem cont;
+      list<DAE.ComponentRef> conditions;
+      list<DAE.ComponentRef> crefs, crefs2;
+      list<DAE.ElementSource> sources;
+      list<DAE.Exp> beqs;
+      list<DAE.Statement> stmts;
+      list<SimCode.SimEqSystem> discEqs, eqs;
+      list<SimCode.SimEqSystem> elsebranch;
+      list<SimCodeVar.SimVar> vars, discVars;
+      list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> ifbranches;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
 
     case (SimCode.SES_RESIDUAL(index, exp, source), _, a) equation
       (exp, a) = func(exp, a);
@@ -12631,6 +12636,10 @@ algorithm
     case (SimCode.SES_ALGORITHM(index, stmts), _, a)
       /* TODO: Me */
     then (SimCode.SES_ALGORITHM(index, stmts), a);
+
+    case (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs, crefs2), _, a)
+      /* TODO: Me */
+    then (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs, crefs2), a);
 
     case (SimCode.SES_LINEAR(lSystem, alternativeTearingL), _, a)
       /* TODO: Me */
@@ -13373,34 +13382,12 @@ algorithm
   b := stringCompare(variableName(v1),variableName(v2)) > 0;
 end compareVariable;
 
-public function equationIndex
-  input SimCode.SimEqSystem eq;
-  output Integer index;
-algorithm
-  index := match eq
-    case SimCode.SES_RESIDUAL(index=index) then index;
-    case SimCode.SES_SIMPLE_ASSIGN(index=index) then index;
-    case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then index;
-    case SimCode.SES_IFEQUATION(index=index) then index;
-    case SimCode.SES_ALGORITHM(index=index) then index;
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index)) then index;
-    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index)) then index;
-    case SimCode.SES_MIXED(index=index) then index;
-    case SimCode.SES_WHEN(index=index) then index;
-    case SimCode.SES_FOR_LOOP(index=index) then index;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.equationIndex failed"});
-      then fail();
-  end match;
-end equationIndex;
-
 public function equationIndexEqual
   input SimCode.SimEqSystem eq1;
   input SimCode.SimEqSystem eq2;
   output Boolean isEqual;
 algorithm
-  isEqual := intEq(eqIndex(eq1),eqIndex(eq2));
+  isEqual := intEq(simEqSystemIndex(eq1),simEqSystemIndex(eq2));
 end equationIndexEqual;
 
 //--------------------------
@@ -13809,7 +13796,7 @@ protected function indexIsEqual
 protected
   Integer idx2;
 algorithm
-  idx2 := equationIndex(ses);
+  idx2 := simEqSystemIndex(ses);
   b := intEq(idx,idx2);
 end indexIsEqual;
 
@@ -14014,7 +14001,7 @@ algorithm
   end match;
 end getAssignedCrefsOfSimEq;
 
-protected function getSimEqSystemCrefsLHS"gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
+protected function getSimEqSystemCrefsLHS "gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
 author:Waurich TUD 2014-05"
   input SimCode.SimEqSystem simEqSys;
   output list<DAE.ComponentRef> crefsOut;
@@ -14040,9 +14027,11 @@ algorithm
       equation
         print("implement SES_IFEQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
     then {};
-    case(SimCode.SES_ALGORITHM())
-      equation
-        print("implement SES_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+    case(SimCode.SES_ALGORITHM()) equation
+      print("implement SES_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+    then {};
+    case(SimCode.SES_INVERSE_ALGORITHM()) equation
+      print("implement SES_INVERSE_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
     then {};
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(vars=simVars,residual=residual)))
       equation
@@ -14444,7 +14433,7 @@ algorithm
   end match;
 end replaceModelInfo;
 
-public function replaceSimEqSysIndex"updated the index of the given SimEqSysIn.
+public function replaceSimEqSysIndex "updated the index of the given SimEqSysIn.
 author:Waurich TUD 2014-05"
   input SimCode.SimEqSystem simEqSysIn;
   input Integer idx;
@@ -14461,7 +14450,7 @@ algorithm
       SimCode.SimEqSystem simEqSys;
       list<DAE.Exp> expLst;
       list<DAE.Statement> stmts;
-      list<DAE.ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs, crefs2;
       list<DAE.ElementSource> sources;
       list<SimCode.SimEqSystem> simEqSysLst,elsebranch;
       list<SimCodeVar.SimVar> simVars;
@@ -14487,9 +14476,11 @@ algorithm
       equation
         simEqSys = SimCode.SES_IFEQUATION(idx,ifbranches,elsebranch,source);
     then simEqSys;
-    case(SimCode.SES_ALGORITHM(statements=stmts),_)
-      equation
-        simEqSys = SimCode.SES_ALGORITHM(idx,stmts);
+    case(SimCode.SES_ALGORITHM(statements=stmts), _) equation
+      simEqSys = SimCode.SES_ALGORITHM(idx,stmts);
+    then simEqSys;
+    case(SimCode.SES_INVERSE_ALGORITHM(statements=stmts, outputCrefs=crefs, knownOutputCrefs=crefs2), _) equation
+      simEqSys = SimCode.SES_INVERSE_ALGORITHM(idx, stmts, crefs, crefs2);
     then simEqSys;
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS)),_)
       equation
@@ -14525,29 +14516,29 @@ algorithm
                     parameterEquations=parameterEquations, removedEquations=removedEquations, algorithmAndEquationAsserts=algorithmAndEquationAsserts,
                    equationsForZeroCrossings=equationsForZeroCrossings, jacobianEquations=jacobianEquations) := simCode;
   idx := 0;
-  simEqSysIdcs := List.map(jacobianEquations,eqIndex);
+  simEqSysIdcs := List.map(jacobianEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(equationsForZeroCrossings,eqIndex);
+  simEqSysIdcs := List.map(equationsForZeroCrossings,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(algorithmAndEquationAsserts,eqIndex);
+  simEqSysIdcs := List.map(algorithmAndEquationAsserts,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(removedEquations,eqIndex);
+  simEqSysIdcs := List.map(removedEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(parameterEquations,eqIndex);
+  simEqSysIdcs := List.map(parameterEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(maxValueEquations,eqIndex);
+  simEqSysIdcs := List.map(maxValueEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(minValueEquations,eqIndex);
+  simEqSysIdcs := List.map(minValueEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(nominalValueEquations,eqIndex);
+  simEqSysIdcs := List.map(nominalValueEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(nominalValueEquations,eqIndex);
+  simEqSysIdcs := List.map(nominalValueEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(startValueEquations,eqIndex);
+  simEqSysIdcs := List.map(startValueEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(initialEquations,eqIndex);
+  simEqSysIdcs := List.map(initialEquations,simEqSystemIndex);
   idx := List.fold(simEqSysIdcs,intMax,idx);
-  simEqSysIdcs := List.map(allEquations,eqIndex);
+  simEqSysIdcs := List.map(allEquations,simEqSystemIndex);
   idxOut := List.fold(simEqSysIdcs,intMax,idx);
 end getMaxSimEqSystemIndex;
 
@@ -14601,7 +14592,7 @@ protected
   list<SimCode.SimEqSystem> remEqs;
 algorithm
   SimCode.SIMCODE(removedEquations=remEqs) := simCode;
-  simEqSysIdcs := List.map(remEqs,eqIndex);
+  simEqSysIdcs := List.map(remEqs,simEqSystemIndex);
 end getRemovedEquationSimEqSysIdxes;
 
 public function getDaeEqsNotPartOfOdeSystem "Get a list of eqSystem-objects that are solved in DAE, but not in the ODE-system.
@@ -14635,7 +14626,7 @@ protected
   Integer index, highestIdx;
   list<tuple<Integer, SimCode.SimEqSystem>> allEqIdxMapping;
 algorithm
-  index := equationIndex(iEqSystem);
+  index := simEqSystemIndex(iEqSystem);
   (allEqIdxMapping, highestIdx) := iMappingWithHighestIdx;
   allEqIdxMapping := (index, iEqSystem)::allEqIdxMapping;
   highestIdx := intMax(highestIdx, index);
@@ -14673,7 +14664,7 @@ protected
   Integer eqSysIdx;
   SimCode.SimEqSystem eqSys;
 algorithm
-  eqSysIdx := equationIndex(iEqSystem);
+  eqSysIdx := simEqSystemIndex(iEqSystem);
   oEqArray := arrayUpdate(iEqArray, eqSysIdx, NONE());
 end getDaeEqsNotPartOfOdeSystem3;
 
