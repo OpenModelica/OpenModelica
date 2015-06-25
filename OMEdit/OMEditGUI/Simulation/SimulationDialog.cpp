@@ -145,24 +145,19 @@ void SimulationDialog::setUpForm()
   // Integration
   mpIntegrationGroupBox = new QGroupBox(tr("Integration"));
   mpMethodLabel = new Label(tr("Method:"));
+  // get the solver methods
+  QStringList solverMethods, solverMethodsDesc;
+  mpMainWindow->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
   mpMethodComboBox = new QComboBox;
-  mpMethodComboBox->addItem("dassl");
-  mpMethodComboBox->setItemData(0, "dassl with colored numerical jacobian, with interval root finding", Qt::ToolTipRole);
-  mpMethodComboBox->addItem("euler");
-  mpMethodComboBox->addItem("rungekutta");
-  mpMethodComboBox->addItem("optimization");
-  mpMethodComboBox->addItem("radau1");
-  mpMethodComboBox->setItemData(4, "sundial/kinsol needed", Qt::ToolTipRole);
-  mpMethodComboBox->addItem("radau3");
-  mpMethodComboBox->setItemData(5, "sundial/kinsol needed", Qt::ToolTipRole);
-  mpMethodComboBox->addItem("radau5");
-  mpMethodComboBox->setItemData(6, "sundial/kinsol needed", Qt::ToolTipRole);
-  mpMethodComboBox->addItem("lobatto2");
-  mpMethodComboBox->setItemData(7, "sundial/kinsol needed", Qt::ToolTipRole);
-  mpMethodComboBox->addItem("lobatto4");
-  mpMethodComboBox->setItemData(8, "sundial/kinsol needed", Qt::ToolTipRole);
-  mpMethodComboBox->addItem("lobatto6");
-  mpMethodComboBox->setItemData(9, "sundial/kinsol needed", Qt::ToolTipRole);
+  mpMethodComboBox->addItems(solverMethods);
+  for (int i = 0 ; i < solverMethodsDesc.size() ; i++) {
+    mpMethodComboBox->setItemData(i, solverMethodsDesc.at(i), Qt::ToolTipRole);
+  }
+  // make dassl default solver method.
+  int currentIndex = mpMethodComboBox->findText("dassl", Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpMethodComboBox->setCurrentIndex(currentIndex);
+  }
   connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDasslOptions(QString)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));

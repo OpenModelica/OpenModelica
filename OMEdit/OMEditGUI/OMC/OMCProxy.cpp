@@ -58,6 +58,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #include <iostream>
 
 #include "OMCProxy.h"
+#include "simulation_options.h"
 
 static QVariant parseExpression(QString result)
 {
@@ -2305,6 +2306,19 @@ QStringList OMCProxy::getEnumerationLiterals(QString className)
   QStringList enumerationLiterals = StringHandler::unparseStrings(getResult());
   printMessagesStringInternal();
   return enumerationLiterals;
+}
+
+/*!
+ * \brief OMCProxy::getSolverMethods
+ * Returns the list of solvers name and their description.
+ * \return
+ */
+void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
+{
+  for (int i = S_UNKNOWN + 1 ; i < S_MAX ; i++) {
+    *methods << SOLVER_METHOD_NAME[i];
+    *descriptions << SOLVER_METHOD_DESC[i];
+  }
 }
 
 /*!
