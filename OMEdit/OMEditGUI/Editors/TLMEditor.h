@@ -60,6 +60,7 @@ public:
   bool createConnection(QString From, QString To, QString delay, QString alpha, QString zf, QString zfr, QString points);
   void updateTLMConnectiontAnnotation(QString fromSubModel, QString toSubModel, QString points);
   void addInterfacesData(QDomElement interfaces);
+  bool existInterfaceData(QString subModelName, QString interfaceName);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName );
 private:
