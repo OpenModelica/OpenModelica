@@ -30,6 +30,7 @@
  */
 
 #include "TLMEditor.h"
+#include "ComponentProperties.h"
 
 TLMEditor::TLMEditor(ModelWidget *pModelWidget)
   : BaseEditor(pModelWidget), mTextChanged(false)
@@ -316,6 +317,10 @@ void TLMEditor::addInterfacesData(QDomElement interfaces)
         interfacePoint.setAttribute("Angle321",interfaceDataElement.attribute("Angle321"));
         subModel.appendChild(interfacePoint);
         mpPlainTextEdit->setPlainText(mXmlDocument.toString());
+
+        TLMInterfacePointInfo *pTLMInterfacePointInfo;
+        pTLMInterfacePointInfo = new TLMInterfacePointInfo(subModel.attribute("Name"),"shaft3" , interfaceDataElement.attribute("name"));
+        getModelWidget()->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"))->addInterfacePoint(pTLMInterfacePointInfo);
       }
       interfaceDataElement = interfaceDataElement.nextSiblingElement();
     }
