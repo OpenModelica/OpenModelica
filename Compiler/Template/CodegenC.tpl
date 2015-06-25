@@ -323,8 +323,8 @@ template simulationFile_inz(SimCode simCode, String guid)
     extern "C" {
     #endif
 
-    <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>
-    <%functionRemovedInitialEquations(useSymbolicInitialization, removedInitialEquations, modelNamePrefix(simCode))%>
+    <%functionInitialEquations(initialEquations, modelNamePrefix(simCode))%>
+    <%functionRemovedInitialEquations(removedInitialEquations, modelNamePrefix(simCode))%>
 
     <%functionInitialMixedSystems(initialEquations, parameterEquations, allEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
 
@@ -664,7 +664,6 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
-       <%if useSymbolicInitialization then '1' else '0'%> /* useSymbolicInitialization */,
        <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
@@ -2408,7 +2407,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   >>
 end functionUpdateBoundParameters;
 
-template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations, String modelNamePrefix)
+template functionInitialEquations(list<SimEqSystem> initalEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -2434,8 +2433,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
               else
                 ""
 
-  let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, 0, "The symbolic initialization was not generated.");'
-
   <<
   <%eqfuncs%>
 
@@ -2446,7 +2443,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     TRACE_PUSH
     <%varDecls%>
 
-    <%errorMsg%>
     data->simulationInfo.discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, functionInitialEquations_systems);'
     else '<%fncalls%>' %>
@@ -2485,7 +2481,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
   end match
 end functionRemovedInitialEquationsBody;
 
-template functionRemovedInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> removedInitalEquations, String modelNamePrefix)
+template functionRemovedInitialEquations(list<SimEqSystem> removedInitalEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""

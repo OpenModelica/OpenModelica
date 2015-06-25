@@ -91,7 +91,6 @@ uniontype SimCode
     list<list<SimEqSystem>> algebraicEquations;
     list<BackendDAE.BaseClockPartitionKind> partitionsKind;
     list<DAE.ClockKind> baseClocks;
-    Boolean useSymbolicInitialization "true if a system to solve the initial problem symbolically is generated, otherwise false";
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> removedInitialEquations;

@@ -123,12 +123,6 @@ int (*function_storeDelayed)(DATA *data);
  */
 int (*updateBoundVariableAttributes)(DATA *data);
 
-/*! \var useSymbolicInitialization
- *
- * is 1 if a system to solve the initial problem symbolically is generated, otherwise 0
- */
-const int useSymbolicInitialization;
-
 /*! \var useHomotopy
  *
  * is 1 if homotopy(...) is used during initialization, otherwise 0
