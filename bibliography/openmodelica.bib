@@ -25,7 +25,8 @@
 %% [*4*] Journal articles
 %% [*5*] Peer-Review conference and workshop papers
 %% [*6*] Technical reports, etc
-%% [*7*] Proceedings/books for cross-references
+%% [*7*] References to OpenModelica documentation
+%% [*8*] Proceedings/books for cross-references
 %%       http://en.wikipedia.org/wiki/BibTeX#Cross-referencing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1478,7 +1479,7 @@ crossref  = {wasm2013}
  title = {OpenModelica - A Free Open-Source Environment for System Modeling, Simulation, and Teaching},
  booktitle={Computer Aided Control System Design, 2006 IEEE International Conference on Control Applications, 2006 IEEE International Symposium on Intelligent Control, 2006 IEEE},
  year={2006},
- month={oct.},
+ month=oct,
  pages={1588--1595},
  doi    = {10.1109/CACSD-CCA-ISIC.2006.4776878},
 }
@@ -1491,6 +1492,13 @@ crossref  = {wasm2013}
  Publisher = {Springer Berlin Heidelberg},
  year = {2006},
  doi   = {10.1007/11860990_14},
+}
+
+@inproceedings{openmodelica.org:bachmann:modelica:2006,
+ author = {Bernhard Bachmann and Peter Aronsson and Peter Fritzson},
+ title = { Robust Initialization of Differential Algebraic Equations},
+ crossref = {modelica2006},
+ pdf     = {https://www.modelica.org/events/modelica2006/Proceedings/sessions/Session6a2.pdf},
 }
 
 @inproceedings{openmodelica.org:jagudin:sims:2006,
@@ -1789,7 +1797,24 @@ urldate = {2011-10-07},
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% [*7*] Proceedings for cross-reference
+%% [*7*] References to OpenModelica documentation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@misc{openmodelica.org:doc:usersguide,
+title = {{OpenModelica User's Guide}},
+author = {{Open Source Modelica Consortium}},
+url = {https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/},
+}
+
+@misc{openmodelica.org:doc:system,
+title = {{OpenModelica System Documentation}},
+author = {Fritzson, Peter and others},
+year = {2010},
+month = {feb},
+url = {https://github.com/OpenModelica/OpenModelica-doc/blob/v1.9.1/OpenModelicaSystem.pdf},
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% [*8*] Proceedings for cross-reference
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 @PROCEEDINGS{aswec2008,
  key       = {ASWEC'2008},

@@ -40,6 +40,8 @@
 12pt
 ]{scrartcl}
 
+\usepackage[bookmarks,hidelinks,breaklinks]{hyperref}
+
 % Add some further packages
 \usepackage{amsmath, amssymb, amsfonts, amsthm, amsbsy}
 \usepackage{url}               % Handling of URL strings.
@@ -59,47 +61,21 @@
 
 %****************** Modelica Listings **********************************
 \usepackage{listings}
-\lstdefinelanguage{modelica}
-{morekeywords={model,package,equation,Real,Integer,String,Boolean,when,elsewhen,noEvent,der,sample,edge,pre,
-               then,if,else,elseif,end,class,function,initial,discrete, reinit,extends,
-               parameter, and, not, partial, flow, connector, connect, list,
-               matchcontinue, true, false, smooth, uniontype, record, input, output,
-               local, case, algorithm, type, time,assert,terminate},
-  sensitive=true,
-  morecomment=[l][\color{black}]{//},
-  morecomment=[s]{/*}{*/},
-  morestring=[b]",
-}
+\input{listings-modelica/listings-modelica.cfg}
 
-\lstset{numbers=none, numberstyle=\tiny, numbersep=2pt} 
-\lstset{language=modelica} 
+\lstset{language=modelica}
 
-\lstset{% general command to set parameter(s)
-    basicstyle=\small,          % print whole listing small
-    keywordstyle=\color{black}\bfseries,
-                                % underlined bold black keywords
-    identifierstyle=,           % nothing happens
-    commentstyle=\color{white}, % white comments
-    stringstyle=\ttfamily,      % typewriter type for strings
-    extendedchars=true,         % deutsche Taste            
-    showstringspaces=false,     % no special string spaces
-    %frame=false,               % Rahmen um Listing einstellen 
-    %numbers=none               % Keit Zeilennummern angeben
-    %breaklines=true,           % Automatische ZeilenumbrÃ¼che?
-    %breakautoindent=true,      % Automatisches EinrÃ¼cken umgebrochener Zeilen?
-    %captionpos=b,              % Beschriftung unten setzen
-    }     
-
+\usepackage{bibliography/biblatex}
 
 % begin the document
 \begin{document}
 \thispagestyle{empty}
 \title{\textbf{
-Draft for a simulation runtime in OpenModelica 
+Draft for a simulation runtime in OpenModelica
 }}
-% contributers, please add here your name if you have 
+% contributers, please add here your name if you have
 % contribute to this draft.
-\author{Willi Braun} 
+\author{Willi Braun}
 \date{\today} % <--- leave date empty
 \maketitle\thispagestyle{empty} %% <-- you need this for the first page
 
@@ -109,25 +85,8 @@ requirements of improvements for the current c-run-time. }
 
 \emph{Keywords: Simulation, c-run-time, solver, OpenModelica}
 
-\input{./src/content}
+\input{SimulationRuntime/c/src/content}
 
-\begin{thebibliography}{00}
-\addcontentsline{toc}{chapter}{References}
-
-\bibitem{FMI10} MODELISAR: Functional Mock-up Interface
-for Model Exchange,
-\url{http://modelisar.org/specifications/FMI_for_ModelExchange_v1.0.pdf}, Januar
-2010.
-
-\bibitem{OMSystemDoku} Fritzson P., et. al.: OpenModelica System
-Documentation, PELAB, Department of Computer and Information, Linköpings
-universitet, 2010.
-
-\bibitem{Pop2007} Pop, Adrian Dan Iosif and Fritzson, Peter (2007). Towards
-Run-time Debugging of Equation-based Object-oriented Languages. The 48th
-Conference on Simulation and Modeling SIMS,2007. s. 134-139
-
-\end{thebibliography}
-
+\printbibliography[heading=bibintoc]
 
 \end{document}

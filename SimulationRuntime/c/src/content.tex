@@ -46,7 +46,7 @@ library.
 \begin{itemize}
 \item c-runtime
 \item cpp-runtime
-\item adevs-runtime 
+\item adevs-runtime
 \item csharp-runtime
 \end{itemize}
 
@@ -61,10 +61,10 @@ also with respect to future tasks.
 The c-run-time is used for the following jobs:
 \begin{itemize}
   \item Simulation of a generated model.
-  \item FMI Export uses functions of the simulation run-time\cite{FMI10}.
+  \item FMI Export uses functions of the simulation run-time\cite{openmodelica.org:doc-extra:fmi1.0}.
   \item Interactive Simulation
   \item \ldots
-\end{itemize}       
+\end{itemize}
 
 Therefore, section \ref{sec:requirements} will state and describe all
 requirements on a simulation run-time. In the next section \ref{sec:goals} the
@@ -109,9 +109,9 @@ value, start value, fixed-value, pre-value, max-min-values, etc.).
 
 \begin{lstlisting}[label=lst:simDATA,caption={struct of the current sim\_DATA
 from the current c\_runtim} ,language=C,commentstyle=\itshape] typedef struct
-sim_DATA { /* this is the data structure for saving 
+sim_DATA { /* this is the data structure for saving
   important data for this simulation.
-  Each generated function has a DATA 
+  Each generated function has a DATA
   parameter which contains the data.
   An object for the data can be created using
   initializeDataStruc() function*/
@@ -131,7 +131,7 @@ sim_DATA { /* this is the data structure for saving
   modelica_boolean* aliasFilterOutput;
   /* Old values used for extrapolation */
   double* states_old, *states_old2, *states_saved, *states_start;
-  double* statesDerivatives_old, *statesDerivatives_old2, 
+  double* statesDerivatives_old, *statesDerivatives_old2,
   *statesDerivatives_saved, *statesDerivatives_start;
    double* algebraics_old, *algebraics_old2,
    *algebraics_saved,*algebraics_start;
@@ -161,7 +161,7 @@ sim_DATA { /* this is the data structure for saving
   const char* modelName; /* For error messages */
   const char* modelFilePrefix; /* For filenames, input/output */
   /* to check if the model_init.xml match the model */
-  const char* modelGUID; 
+  const char* modelGUID;
   const struct omc_varInfo* statesNames;
   const struct omc_varInfo* stateDerivativesNames;
   const struct omc_varInfo* algebraicsNames;
@@ -187,11 +187,11 @@ sim_DATA { /* this is the data structure for saving
   /* used in some generated function */
   /* this is not changed by initializeDataStruc */
   /* The last time value that has been emitted. */
-  double lastEmittedTime; 
-  /* when != 0 force emit, set e.g. 
+  double lastEmittedTime;
+  /* when != 0 force emit, set e.g.
   by newTime for equidistant output signal. */
-  int forceEmit; 
-  /* An array containing the initial data of 
+  int forceEmit;
+  /* An array containing the initial data of
   samples used in the sim */
   sample_raw_time* rawSampleExps;
   long nRawSamples;
@@ -206,13 +206,13 @@ All the variables in the listing \ref{lst:simDATA} and all other global
 variables in the \verb+simulation_*.cpp+ files should categorised and separated
 in of the categories in the figure \ref{fig:seperatedVariables}.
 Therefore could be create a new file \verb+simulation_data.h+ that contains all
-types. 
+types.
 $~~$\\
 
 
 \begin{figure}[htb]
 \begin{center}
-  \includegraphics[width=0.5\textwidth]{./img/newSimDATA.png}
+  \includegraphics[width=0.5\textwidth]{SimulationRuntime/c/img/newSimDATA.png}
   \caption{Schematic separation of variables used in c-run-time.}
   \label{fig:seperatedVariables}
 \end{center}
@@ -236,7 +236,7 @@ structure that is organized similar to all other variables.
 simulated model. The static information consists of varInfo and varAttributes.
 \item[equationInfo] a structure defined in \verb+simulation_varinfo.h+.
 \item[lookupVars] contains the indices for the categorised variables (states,
-der(states), algebraics, etc.) of the dynamicVar array. 
+der(states), algebraics, etc.) of the dynamicVar array.
 \item[SimData] contains all parameters to control the simulation process.
 \item[SolverData] contains all parameters to setup the used solver.
 \item[debugFlags] contains the flags for debugging the simulation.
@@ -259,10 +259,10 @@ creating one function with a parameter for the context in which this function
 is going to be executed. There are two different context where an equation
 can be executed: (1) during a continuous integration, where changing of
 relations and discrete variables is forbidden. (2) during an event, where the
-relations and discrete variables can be changed. 
+relations and discrete variables can be changed.
 Thus the size of the generated model will be reduced all in all and also the
 size of generated functions. Therefore this will result in a huge speed
-up of the compile time of the ``gcc'' for bigger models. 
+up of the compile time of the ``gcc'' for bigger models.
 
 to be continued in more detail \ldots
 
@@ -272,7 +272,7 @@ This subsection addresses the following two issues:
 \begin{itemize}
   \item Providing better information about the solving process to the users.
   \item Creating possibilities for debugging the solving process from the
-  point of view of a developer \cite{Pop2007}.
+  point of view of a developer \cite{openmodelica.org:pop:sims:2007}.
 \end{itemize}
 
 to be continued \ldots
@@ -282,13 +282,13 @@ future}\label{sec:runtimefuture}
 
 As some requirements in the future we could address the following issues:
 \begin{itemize}
-  \item Handling appropriate dynamic state selection.  
-  \item Handling varying structure problems. 
+  \item Handling appropriate dynamic state selection.
+  \item Handling varying structure problems.
   \item Preparing the run-time for parallelization of the simulation
-  process. 
+  process.
  \item \ldots
 \end{itemize}
-This topics should be discussed further at the developer week. 
+This topics should be discussed further at the developer week.
 
 to be continued \ldots
 
@@ -310,12 +310,12 @@ this redesign.
      by files.
      \item[Special Statements] \lstinline{assert()} and \lstinline{terminate()} are not handled
      appropriately. \\
-     \item[initial()] In the current run-time the expression 
+     \item[initial()] In the current run-time the expression
      \lstinline{when not initial() then ... } is not handled appropriately.
      \item[] \ldots
-   \end{description} 
+   \end{description}
    \item \ldots
-\end{itemize} 
+\end{itemize}
 
 to be continued \ldots
 
@@ -324,7 +324,7 @@ to be continued \ldots
 to be continued \ldots
 
 % In this section is summarized which files are located in the current c-run-time.
-% 
+%
 % \begin{tabular}{ l l }
 % base\_array.* & how base arrays are represented in C. \\
 % boolean\_array.* & how arrays of booleans are represented in C. \\
@@ -335,7 +335,7 @@ to be continued \ldots
 % memory\_pool.c & memory allocation for local variables. \\
 % read\_write.* & reading and writing of data to file. \\
 % utility.* & utility functions \\
-% modelica\_string.* & string functions 
+% modelica\_string.* & string functions
 % \end{tabular}
 
 
@@ -350,56 +350,56 @@ discrete-time behavior. This is done mathematically by the equation
 (\ref{eq:flat_dae_im}).
 
 \begin{equation}\label{eq:flat_dae_im}
-	F(	\underline{\dot x}(t),
-	\underline{x}(t),
-	\underline{u}(t),
-	\underline{y}(t),
-	\underline{q}(t_e),
-	\underline{q_{pre}}(t_e),
-	\underline{c}(t_e),
-	\underline{p_{P}},
-	\underline{p_{S}},
-	\underline{s_0},
-	t) = 0
+  F(  \underline{\dot x}(t),
+  \underline{x}(t),
+  \underline{u}(t),
+  \underline{y}(t),
+  \underline{q}(t_e),
+  \underline{q_{pre}}(t_e),
+  \underline{c}(t_e),
+  \underline{p_{P}},
+  \underline{p_{S}},
+  \underline{s_0},
+  t) = 0
 \end{equation}
 
 This implicit equation (\ref{eq:flat_dae_im}) is transformed to the explicit
 representation of equation (\ref{eq:flat_dae_ex}) by block-lower-triangular
 transformation.
 \begin{equation}\label{eq:flat_dae_ex}
-		%\underline{z} = 
-		 \left(  \begin{array}{c}
-		     \underline{\dot x}(t) \\
-		     \underline{y}(t) \\
-		     \underline{q}(t_e)
-		   \end{array} \right) =
-			\left( \begin{array}{c}
-			\underline{f_s}(\underline{x}(t),
-			 	\underline{u}(t),
-			 	\underline{q_{pre}}(t_e),
-			 	\underline{c}(t_e),
-		 		\underline{p_{P}},
-				\underline{p_{S}},
-				\underline{s_0},
-			 	t) \\
-			\underline{f_a}(\underline{x}(t),
-			 	\underline{u}(t),
-			 	\underline{q_{pre}}(t_e),
-			 	\underline{c}(t_e),
-			 	\underline{p_{P}},
-				\underline{p_{S}},
-				\underline{s_0},
-			 	t) \\
-			\underline{f_q}(\underline{x}(t),
-			 	\underline{u}(t),
-			 	\underline{p},
-			 	\underline{q_{pre}}(t_e),
-			 	\underline{c}(t_e),
-			 	\underline{p_{P}},
-				\underline{p_{S}},
-				\underline{s_0},
-			 	t)
-			\end{array} \right)
+    %\underline{z} =
+     \left(  \begin{array}{c}
+         \underline{\dot x}(t) \\
+         \underline{y}(t) \\
+         \underline{q}(t_e)
+       \end{array} \right) =
+      \left( \begin{array}{c}
+      \underline{f_s}(\underline{x}(t),
+        \underline{u}(t),
+        \underline{q_{pre}}(t_e),
+        \underline{c}(t_e),
+        \underline{p_{P}},
+        \underline{p_{S}},
+        \underline{s_0},
+        t) \\
+      \underline{f_a}(\underline{x}(t),
+        \underline{u}(t),
+        \underline{q_{pre}}(t_e),
+        \underline{c}(t_e),
+        \underline{p_{P}},
+        \underline{p_{S}},
+        \underline{s_0},
+        t) \\
+      \underline{f_q}(\underline{x}(t),
+        \underline{u}(t),
+        \underline{p},
+        \underline{q_{pre}}(t_e),
+        \underline{c}(t_e),
+        \underline{p_{P}},
+        \underline{p_{S}},
+        \underline{s_0},
+        t)
+      \end{array} \right)
 \end{equation}
 From this explicit form all necessary calculations can be educed for the
 simulation of the model. This is done by formulating the
@@ -417,7 +417,7 @@ applied to them somewhere in the model.
 other variables, of type \verb+Real+. They also belong to the set of algebraic
 variables since they do not appear differentiated.
 \item $\underline{y}(t)$, a vector of Modelica variables of type \verb+Real+
-which do not fall into any other category. 
+which do not fall into any other category.
 \item $\underline{q}(t_e)$, a vector of discrete-time Modelica variables of type
 discrete \verb+Real+, \verb+Boolean+, \verb+Integer+ or \verb+String+. These variables
 change their value only at event instants, i.e., at points $t_e$ in time.
@@ -447,40 +447,40 @@ time dependency, but with a dependence on other parameters.
 \subsection{Continuous Behavior}
 
 The continuous behavior of hybrid DAEs can be formulated with the
-following equations (\ref{eq:hybrid_con}). 
+following equations (\ref{eq:hybrid_con}).
 \begin{equation} \label{eq:hybrid_con}
 \left (    \begin{array}{c}
-		     \underline{\dot x}(t) \\
-		     \underline{y}(t)
-		   \end{array} \right) =
-			\left( \begin{array}{c}
-			\underline{f_s}(\underline{x}(t),
-			 	\underline{u}(t),
-			 	\underline{q_{pre}}(t_e),
-			 	\underline{c}(t_e),
-				\underline{p_{P}},
-				\underline{p_{S}},
-				\underline{s_0},
-			 	t) \\
-			\underline{f_a}(\underline{x}(t),
-			 	\underline{u}(t),
-			 	\underline{q_{pre}}(t_e),
-			 	\underline{c}(t_e),
-			 	\underline{p_{P}},
-				\underline{p_{S}},
-				\underline{s_0},
-			 	t)
-		 \end{array} \right)
+         \underline{\dot x}(t) \\
+         \underline{y}(t)
+       \end{array} \right) =
+      \left( \begin{array}{c}
+      \underline{f_s}(\underline{x}(t),
+        \underline{u}(t),
+        \underline{q_{pre}}(t_e),
+        \underline{c}(t_e),
+        \underline{p_{P}},
+        \underline{p_{S}},
+        \underline{s_0},
+        t) \\
+      \underline{f_a}(\underline{x}(t),
+        \underline{u}(t),
+        \underline{q_{pre}}(t_e),
+        \underline{c}(t_e),
+        \underline{p_{P}},
+        \underline{p_{S}},
+        \underline{s_0},
+        t)
+     \end{array} \right)
 \end{equation}
 The states $\underline{x}(t)$ are determined by an integration method, so that
 they are assumed to be known as the vectors $\underline{u}(t)$ and
-$\underline{p_{[P|S]}}$. 
+$\underline{p_{[P|S]}}$.
 For discrete variables and the condition expressions $t_e$ is used instead of
 $t$ to indicate that such variables may only change values at event points of
 time and are kept constant in the continuous parts of the simulation.
 
 Imported is also that all conditions $\underline{c}(t_e)$ are kept on there
-current value for the whole continuous step. If the continuous step cause   
+current value for the whole continuous step. If the continuous step cause
 
 \subsection{Discrete Behavior}
 
@@ -489,7 +489,7 @@ event conditions $\underline{c}(t_e)$ and can appear at any time
 as well as influence the system several times.
 
 An event occurs when a condition of $\underline{c}(t_e)$ changes it's value at
-time $t_e$ from \verb+false+ to \verb+true+ or the other way around. 
+time $t_e$ from \verb+false+ to \verb+true+ or the other way around.
 This occurs if and only if for a sufficient small $\epsilon$, one condition in
 $\underline{c}(t_e)$ is changed, for e.g. $\underline{c}(t_e - \epsilon)$ is
 \verb+false+ and for $\underline{c}(t_e + \epsilon)$ is \verb+true+. When an event
@@ -536,7 +536,7 @@ conditions have to be checked during the continuous solution as described in the
 next section.
 
 Additional, discontinuous changes can caused by the \verb+reinit()+ operator to
-the continuous states $\underline{x}(t)$. 
+the continuous states $\underline{x}(t)$.
 As for purely discrete conditions $\underline{c_d}(t_e)$ the \verb+reinit()+
 operator can only be activated at event times $t_e$ . This new allocation to
 the states could use the function (\ref{eq:reinit}).
@@ -551,22 +551,22 @@ x}(t), \underline{u}(t), \underline{q}(t_e), \underline{q_{pre}}(t_e),
 \subsection{Run-time Algorithm}
 
 A general approach for the simulation of hybrid systems has been developed by
-Cellier ( cf. \cite{Cellier1979}). In the following a schematic
+Cellier ( cf. \cite{openmodelica.org:doc-extra:cellier1979}). In the following a schematic
 Flowchart (see fig. \ref{fig:ablaufdiagramm}) for the simulation is shown and
 each step is described.
 
 First of all the simulation must be initialized consistently. For that the
 initial values are found with a simplex optimization method in OpenModelica
-(cf. \cite{Bachmann2006}). By use of the initial conditions the initial values
+(cf. \cite{openmodelica.org:bachmann:modelica:2006}). By use of the initial conditions the initial values
 for the entire system can be determined with the function
 (\ref{eq:flat_dae_ex}). This will also execute all initial events at time
-$t_0$. 
+$t_0$.
 %Further an initialization of the corresponding ZeroCrossing function to
 %the fullfilled condition at time $t_0$ is needed, to know its direction.
 
 \begin{figure}[htb]
 \begin{center}
-  \includegraphics[width=0.47\textwidth]{./img/activitydiagramm.png}
+  \includegraphics[width=0.47\textwidth]{SimulationRuntime/c/img/activitydiagramm.png}
   \caption{Schematic Flowchart for simulation hybrid models.}
   \label{fig:ablaufdiagramm}
 \end{center}
@@ -580,7 +580,7 @@ continuous system is determined.
 
 The continuous integration step is accepted if none of the
 Zero-Crossing functions has a zero-crossing, i.e in $\underline{c}(t_{i+1})$ no
-value has changed compared to $\underline{c}(t_i)$.  
+value has changed compared to $\underline{c}(t_i)$.
 If no event has occurred the values can be saved and the next step can be performed.
 
 However, if a value of $\underline{c}(t_{i+1})$ changes, an event occurred
