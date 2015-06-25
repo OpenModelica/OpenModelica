@@ -210,6 +210,9 @@ public:
   bool copyClass(QString className, QString newClassName, QString withIn);
   QStringList getEnumerationLiterals(QString className);
   void getSolverMethods(QStringList *methods, QStringList *descriptions);
+  void getInitializationMethods(QStringList *methods, QStringList *descriptions);
+  void getLinearSolvers(QStringList *methods, QStringList *descriptions);
+  void getNonLinearSolvers(QStringList *methods, QStringList *descriptions);
 signals:
   void commandFinished();
 public slots:

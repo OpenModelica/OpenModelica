@@ -81,11 +81,8 @@ public:
   static QString modelicaFileFormat;
   static qreal shapesStrokeWidth;
   static int headingFontSize;
-  static QString ModelicaInitializationMethods;
   static QString ModelicaSimulationOutputFormats;
   static QString clockOptions;
-  static QString linearSolvers;
-  static QString nonLinearSolvers;
   static QString notificationLevel;
   static QString warningLevel;
   static QString errorLevel;
