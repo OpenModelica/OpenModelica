@@ -1080,8 +1080,12 @@ void SimulationDialog::enableDasslOptions(QString method)
 void SimulationDialog::showIntegrationHelp()
 {
   QUrl integrationAlgorithmsPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                  .append("/share/doc/omc/SimulationRuntime/IntegrationAlgorithms/IntegrationAlgorithms.pdf"));
-  QDesktopServices::openUrl(integrationAlgorithmsPath);
+                                  .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods"));
+  if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
+    QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
+    mpMainWindow->getMessagesWidget()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
+                                                                 Helper::scriptingKind, Helper::errorLevel));
+  }
 }
 
 /*!
