@@ -308,7 +308,8 @@ void TLMEditor::addInterfacesData(QDomElement interfaces)
     QDomElement subModel = subModelList.at(i).toElement();
     QDomElement interfaceDataElement = interfaces.firstChildElement();
     while (!interfaceDataElement.isNull()) {
-      if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0) {
+      if (subModel.attribute("Name").compare(interfaceDataElement.attribute("model")) == 0
+          && !existInterfaceData(subModel.attribute("Name"), interfaceDataElement.attribute("name"))) {
         QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
         interfacePoint.setAttribute("Name",interfaceDataElement.attribute("name"));
         interfacePoint.setAttribute("Position",interfaceDataElement.attribute("Position"));
@@ -319,6 +320,30 @@ void TLMEditor::addInterfacesData(QDomElement interfaces)
       interfaceDataElement = interfaceDataElement.nextSiblingElement();
     }
   }
+}
+
+/*!
+  Checks whether the interface already exists in MetaModel or not.
+  \param interfaceName - the name for the interface to check.
+  \return true on success.
+  */
+bool TLMEditor::existInterfaceData(QString subModelName, QString interfaceName)
+{
+  QDomNodeList subModelList = mXmlDocument.elementsByTagName("SubModel");
+  for (int i = 0 ; i < subModelList.size() ; i++) {
+    QDomElement subModel = subModelList.at(i).toElement();
+    if (subModel.attribute("Name").compare(subModelName) == 0) {
+      QDomNodeList subModelChildren = subModel.childNodes();
+      for (int j = 0 ; j < subModelChildren.size() ; j++) {
+        QDomElement interfaceElement = subModelChildren.at(j).toElement();
+        if (interfaceElement.tagName().compare("InterfacePoint") == 0 && interfaceElement.attribute("Name").compare(interfaceName)== 0) {
+           return true;
+        }
+      }
+      break;
+    }
+  }
+  return false;
 }
 
 /*!
