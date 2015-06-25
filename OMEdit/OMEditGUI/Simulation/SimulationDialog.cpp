@@ -329,8 +329,16 @@ void SimulationDialog::setUpForm()
   // Initialization Methods
   mpInitializationMethodLabel = new Label(tr("Initialization Method (Optional):"));
   mpInitializationMethodLabel->setToolTip(tr("Specifies the initialization method."));
+  // get the initialization methods
+  QStringList initializationMethods, initializationMethodsDesc;
+  mpMainWindow->getOMCProxy()->getInitializationMethods(&initializationMethods, &initializationMethodsDesc);
+  initializationMethods.prepend("");
+  initializationMethodsDesc.prepend("");
   mpInitializationMethodComboBox = new QComboBox;
-  mpInitializationMethodComboBox->addItems(Helper::ModelicaInitializationMethods.toLower().split(","));
+  mpInitializationMethodComboBox->addItems(initializationMethods);
+  for (int i = 0 ; i < initializationMethodsDesc.size() ; i++) {
+    mpInitializationMethodComboBox->setItemData(i, initializationMethodsDesc.at(i), Qt::ToolTipRole);
+  }
   // Equation System Initialization File
   mpEquationSystemInitializationFileLabel = new Label(tr("Equation System Initialization File (Optional):"));
   mpEquationSystemInitializationFileLabel->setToolTip(tr("Specifies an external file for the initialization of the model."));
@@ -348,12 +356,28 @@ void SimulationDialog::setUpForm()
   mpClockComboBox->addItems(Helper::clockOptions.split(","));
   // Linear Solvers
   mpLinearSolverLabel = new Label(tr("Linear Solver (Optional):"));
+  // get the linear solvers
+  QStringList linearSolverMethods, linearSolverMethodsDesc;
+  mpMainWindow->getOMCProxy()->getLinearSolvers(&linearSolverMethods, &linearSolverMethodsDesc);
+  linearSolverMethods.prepend("");
+  linearSolverMethodsDesc.prepend("");
   mpLinearSolverComboBox = new QComboBox;
-  mpLinearSolverComboBox->addItems(Helper::linearSolvers.split(","));
+  mpLinearSolverComboBox->addItems(linearSolverMethods);
+  for (int i = 0 ; i < linearSolverMethodsDesc.size() ; i++) {
+    mpLinearSolverComboBox->setItemData(i, linearSolverMethodsDesc.at(i), Qt::ToolTipRole);
+  }
   // Non Linear Solvers
   mpNonLinearSolverLabel = new Label(tr("Non Linear Solver (Optional):"));
+  // get the non-linear solvers
+  QStringList nonLinearSolverMethods, nonLinearSolverMethodsDesc;
+  mpMainWindow->getOMCProxy()->getNonLinearSolvers(&nonLinearSolverMethods, &nonLinearSolverMethodsDesc);
+  nonLinearSolverMethods.prepend("");
+  nonLinearSolverMethodsDesc.prepend("");
   mpNonLinearSolverComboBox = new QComboBox;
-  mpNonLinearSolverComboBox->addItems(Helper::nonLinearSolvers.split(","));
+  mpNonLinearSolverComboBox->addItems(nonLinearSolverMethods);
+  for (int i = 0 ; i < nonLinearSolverMethodsDesc.size() ; i++) {
+    mpNonLinearSolverComboBox->setItemData(i, nonLinearSolverMethodsDesc.at(i), Qt::ToolTipRole);
+  }
   // time where the linearization of the model should be performed
   mpLinearizationTimeLabel = new Label(tr("Linearization Time (Optional):"));
   mpLinearizationTimeTextBox = new QLineEdit;

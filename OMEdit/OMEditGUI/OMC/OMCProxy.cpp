@@ -2311,13 +2311,56 @@ QStringList OMCProxy::getEnumerationLiterals(QString className)
 /*!
  * \brief OMCProxy::getSolverMethods
  * Returns the list of solvers name and their description.
- * \return
+ * \param methods
+ * \param descriptions
  */
 void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = S_UNKNOWN + 1 ; i < S_MAX ; i++) {
     *methods << SOLVER_METHOD_NAME[i];
     *descriptions << SOLVER_METHOD_DESC[i];
+  }
+}
+
+/*!
+ * \brief OMCProxy::getInitializationMethods
+ * Returns the list of initialization methods name and their description.
+ * \param methods
+ * \param descriptions
+ */
+void OMCProxy::getInitializationMethods(QStringList *methods, QStringList *descriptions)
+{
+  for (int i = IIM_UNKNOWN + 1 ; i < IIM_MAX ; i++) {
+    *methods << INIT_METHOD_NAME[i];
+    *descriptions << INIT_METHOD_DESC[i];
+  }
+}
+
+/*!
+ * \brief OMCProxy::getLinearSolvers
+ * Returns the list of linear solvers name and their description.
+ * \param methods
+ * \param descriptions
+ */
+void OMCProxy::getLinearSolvers(QStringList *methods, QStringList *descriptions)
+{
+  for (int i = LS_NONE + 1 ; i < LS_MAX ; i++) {
+    *methods << LS_NAME[i];
+    *descriptions << LS_DESC[i];
+  }
+}
+
+/*!
+ * \brief OMCProxy::getNonLinearSolvers
+ * Returns the list of non-linear solvers name and their description.
+ * \param methods
+ * \param descriptions
+ */
+void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptions)
+{
+  for (int i = NLS_NONE + 1 ; i < NLS_MAX ; i++) {
+    *methods << NLS_NAME[i];
+    *descriptions << NLS_DESC[i];
   }
 }
 
