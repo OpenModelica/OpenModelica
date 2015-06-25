@@ -238,7 +238,8 @@ INCLUDEPATH += . \
   TLM \
   TransformationalDebugger \
   Util \
-  $$OPENMODELICAHOME/include/omc/scripting-API
+  $$OPENMODELICAHOME/include/omc/scripting-API \
+  $$OPENMODELICAHOME/include/omc/c/util
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Resources/XMLSchema/tlmModelDescription.xsd \

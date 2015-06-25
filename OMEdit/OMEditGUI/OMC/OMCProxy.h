@@ -209,6 +209,7 @@ public:
   bool exportToFigaro(QString className, QString directory, QString database, QString mode, QString options, QString processor);
   bool copyClass(QString className, QString newClassName, QString withIn);
   QStringList getEnumerationLiterals(QString className);
+  void getSolverMethods(QStringList *methods, QStringList *descriptions);
 signals:
   void commandFinished();
 public slots:
