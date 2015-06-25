@@ -15,14 +15,12 @@ simulate(ParameterCycle); getErrorString();
 // record SimulationResult
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ParameterCycle', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: ParameterCycle
-// assert            | debug   | No system for the symbolic initialization was generated.
-// assert            | info    | simulation terminated by an assertion at initialization
-// "
+//     messages = "Failed to build model: ParameterCycle"
 // end SimulationResult;
 // "Error: Cyclically dependent parameters found:
 //          var1:PARAM(start = 0.1 )  = if bool then var0 else var0 / var2 .ParameterCycle, .Real type: Real []
 //          var2:PARAM(start = 0.1 )  = if bool then var0 / var1 else var0 .ParameterCycle, .Real type: Real []
-// Error: No system for the symbolic initialization was generated.
+// Error: No system for the symbolic initialization was generated
+// [SimCode/SimCodeUtil.mo:1807:7-1807:148:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
 // "
 // endResult
