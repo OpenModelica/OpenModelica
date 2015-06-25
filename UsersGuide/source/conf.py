@@ -152,6 +152,9 @@ todo_include_todos = True
 import alabaster
 html_theme_path = [alabaster.get_path()]
 html_theme = 'alabaster'
+html_theme_options = {
+  "font_family" : "Arial, Helvetica, sans-serif, 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro', serif",
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
