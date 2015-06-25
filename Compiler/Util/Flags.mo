@@ -2203,17 +2203,12 @@ algorithm
   Print.printBuf("Flags that determine which symbolic methods are used to produce the causalized equation system.\n\n");
 
   Print.printBuf(System.gettext("The :ref:`--preOptModules <omcflag-preOptModules>` flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list."));
-  Print.printBuf("\n");
-  Print.printBuf(printValidOptionsSphinx(PRE_OPT_MODULES));
   Print.printBuf("\n\n");
   Print.printBuf(System.gettext("The :ref:`--matchingAlgorithm <omcflag-matchingAlgorithm>` sets the method that is used for the matching algorithm, after the pre optimization modules."));
-  Print.printBuf(printValidOptionsSphinx(MATCHING_ALGORITHM));
   Print.printBuf("\n\n");
   Print.printBuf(System.gettext("The :ref:`--indexReductionMethod <omcflag-indexReductionMethod>` sets the method that is used for the index reduction, after the pre optimization modules."));
-  Print.printBuf(printValidOptionsSphinx(INDEX_REDUCTION_METHOD));
   Print.printBuf("\n\n");
   Print.printBuf(System.gettext("The :ref:`--postOptModules <omcflag-postOptModules>` then sets the optimization modules which are used after the index reduction, specified as a comma-separated list."));
-  Print.printBuf(printValidOptionsSphinx(POST_OPT_MODULES));
   Print.printBuf("\n\n");
 
   usage := Print.getString();
@@ -2345,20 +2340,48 @@ algorithm
       String opt_str;
       list<tuple<String, Util.TranslatableContent>> descl;
 
-    case CONFIG_FLAG(validOptions = NONE()) then "";
+    case CONFIG_FLAG(validOptions = NONE()) then "\n" + defaultFlagSphinx(inFlag.defaultValue) + "\n";
     case CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))
       equation
-        opt_str = "\n" + System.gettext("Valid options:") + "\n\n" +
+        opt_str = "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
           sum("* " + s + "\n" for s in strl);
       then opt_str;
     case CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))
       equation
-        opt_str = "\n" + System.gettext("Valid options:") + "\n\n" +
+        opt_str = "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
           sum(printFlagOptionDesc(s, sphinx=true) for s in descl);
       then
         opt_str;
   end match;
 end printValidOptionsSphinx;
+
+protected function defaultFlagSphinx
+  input FlagData flag;
+  output String str;
+algorithm
+  str := matchcontinue flag
+    local
+      Integer i;
+    case BOOL_FLAG() then System.gettext("Boolean (default")+" ``" + boolString(flag.data) + "``).";
+    case INT_FLAG() then System.gettext("Integer (default")+" ``" + intString(flag.data) + "``).";
+    case REAL_FLAG() then System.gettext("Real (default")+" ``" + realString(flag.data) + "``).";
+    case STRING_FLAG("") then System.gettext("String (default *empty*).");
+    case STRING_FLAG() then System.gettext("String (default")+" " + flag.data + ").";
+    case STRING_LIST_FLAG() then System.gettext("String list (default *empty*).");
+    case STRING_LIST_FLAG() then System.gettext("String list (default")+" " + stringDelimitList(flag.data, ",") + ").";
+    case ENUM_FLAG()
+      algorithm
+        for f in flag.validValues loop
+          (str,i) := f;
+          if i==flag.data then
+            str := System.gettext("String (default ")+" " + str + ").";
+            return;
+          end if;
+        end for;
+      then "#ENUM_FLAG Failed#" + anyString(flag);
+    else "Unknown default value" + anyString(flag);
+  end matchcontinue;
+end defaultFlagSphinx;
 
 protected function printFlagOptionDescShort
   "Prints out the name of a flag option."
