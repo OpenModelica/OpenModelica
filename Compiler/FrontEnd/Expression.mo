@@ -5097,7 +5097,7 @@ end traverseSubexpressionsDummyHelper;
 
 public function traverseSubexpressionsTopDownHelper
 "This function is used as input to a traverse function that does not traverse all subexpressions.
-The extra argument is a tuple of the actul function to call on each subexpression and the extra argument."
+The extra argument is a tuple of the actual function to call on each subexpression and the extra argument."
   replaceable type Type_a subtypeof Any;
   input DAE.Exp inExp;
   input tuple<FuncExpType2,Type_a> itpl;
@@ -5505,7 +5505,7 @@ algorithm
     case (_,DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),rel,ext_arg)
       equation
         (expl,ext_arg) = traverseExpListTopDown(expl,rel,ext_arg);
-        // TODO: Traverse cases
+        (cases, ext_arg) = Patternm.traverseCasesTopDown(cases, rel, ext_arg);
       then (DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),ext_arg);
 
     case (_,DAE.METARECORDCALL(fn,expl,fieldNames,i),rel,ext_arg)
@@ -6643,7 +6643,7 @@ algorithm
         localDecls = match_decls, cases = match_cases, et = ty)
       equation
         (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
-        /* TODO: Implement traverseMatchCase! */
+        Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {getInstanceName() + " not yet implemented for match expressions. Called using: " + System.dladdr(inEnterFunc) + " " + System.dladdr(inExitFunc)}, sourceInfo());
         //(cases, tup) = List.mapFold(cases, traverseMatchCase, tup);
       then
         (DAE.MATCHEXPRESSION(match_ty, expl, aliases, match_decls, match_cases, ty), arg);
@@ -6665,9 +6665,7 @@ algorithm
 
     else
       equation
-        error_msg = "in Expression.traverseExpBidirSubExps - Unknown expression: ";
-        error_msg = error_msg + ExpressionDump.printExpStr(inExp);
-        Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
+        Error.addInternalError(getInstanceName() + " - Unknown expression " + ExpressionDump.printExpStr(inExp) + ". Called using: " + System.dladdr(inEnterFunc) + " " + System.dladdr(inExitFunc), sourceInfo());
       then
         fail();
 

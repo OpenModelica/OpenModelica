@@ -2312,6 +2312,41 @@ algorithm
   end match;
 end traverseCases;
 
+public function traverseCasesTopDown<A>
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> cases = {};
+  output A a = inA;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output A outA;
+  end FuncExpType;
+protected
+  list<DAE.Pattern> patterns;
+  list<DAE.Element> decls;
+  list<DAE.Statement> body,body1;
+  Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
+  Integer jump;
+  SourceInfo resultInfo,info;
+  tuple<FuncExpType,A> tpl;
+algorithm
+  for c in inCases loop
+    DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info) := c;
+    tpl := (func,a);
+    body1 := body;
+    // (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsTopDownHelper,tpl); // TODO: Enable with new tarball
+    Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {getInstanceName() + " not yet (fully) implemented for match expressions. Can be enabled once we have a new bootstrapping tarball. Called using: " + System.dladdr(func)}, sourceInfo());
+    (patternGuard1,a) := Expression.traverseExpOptTopDown(patternGuard,func,a);
+    (result1,a) := Expression.traverseExpOptTopDown(result,func,a);
+    cases := DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases;
+  end for;
+  cases := listReverse(cases); // TODO: in-place reverse?
+end traverseCasesTopDown;
+
 protected function filterEmptyPattern
   input tuple<DAE.Pattern,String,DAE.Type> tpl;
 algorithm

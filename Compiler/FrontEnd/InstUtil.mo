@@ -2579,7 +2579,6 @@ algorithm
       SCode.Final finalPrefix;
       Boolean impl;
       SCode.Attributes attr;
-      Absyn.TypeSpec t;
       SCode.Mod m;
       SCode.Comment comment;
       list<tuple<SCode.Element, DAE.Mod>> allcomps;
@@ -2618,7 +2617,7 @@ algorithm
 
     /* A TPATH component */
     case (cache,env,ih,mod,pre,cistate,
-        (((SCode.COMPONENT(name = n,
+        (((comp as SCode.COMPONENT(name = n,
                                    prefixes = pf as SCode.PREFIXES(
                                      finalPrefix = finalPrefix
                                    ),
@@ -2631,11 +2630,11 @@ algorithm
         _,_,instdims,impl)
       equation
         compModLocal = Mod.lookupModificationP(mod, tpp);
-        m = traverseModAddFinal(m, finalPrefix);
-
-        (cache,env,ih,selem,smod) = Inst.redeclareType(cache,env,ih,compModLocal,
-        /*comp,*/ SCode.COMPONENT(n,pf,attr,tss,m,comment,aExp, aInfo),
-        pre, cistate, impl,cmod);
+        if SCode.finalBool(finalPrefix) then
+          m = traverseModAddFinal(m);
+          comp = SCode.COMPONENT(n,pf,attr,tss,m,comment,aExp,aInfo);
+        end if;
+        (cache,env,ih,selem,smod) = Inst.redeclareType(cache, env, ih, compModLocal, comp, pre, cistate, impl,cmod);
         // Debug.traceln(" adding comp: " + n + " " + Mod.printModStr(mod) + " cmod: " + Mod.printModStr(cmod) + " cmL: " + Mod.printModStr(compModLocal) + " smod: " + Mod.printModStr(smod));
         // print(" \t comp: " + n + " " + "selem: " + SCodeDump.printElementStr(selem) + " smod: " + Mod.printModStr(smod) + "\n");
         (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(selem,smod)}, instdims, impl);
@@ -2649,16 +2648,21 @@ algorithm
                                      finalPrefix = finalPrefix
                                    ),
                                    attributes = attr,
-                                   typeSpec = (t as Absyn.TCOMPLEX(_,_,_)),
+                                   typeSpec = (tss as Absyn.TCOMPLEX(tpp,_,_)),
                                    modifications = m,
                                    comment = comment,
                                    condition = aExp,
-                                   info = aInfo)),cmod as DAE.NOMOD())),
+                                   info = aInfo)),cmod)),
         _,_,instdims,impl)
       equation
-        m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,pf,attr,t,m,comment,aExp,aInfo);
-        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(comp,cmod)}, instdims, impl);
+        // TODO: cmod was enforced to be NOMOD earlier. A problem to change it?
+        compModLocal = Mod.lookupModificationP(mod, tpp);
+        if SCode.finalBool(finalPrefix) then
+          m = traverseModAddFinal(m);
+          comp = SCode.COMPONENT(n,pf,attr,tss,m,comment,aExp,aInfo);
+        end if;
+        (cache,env,ih,selem,smod) = Inst.redeclareType(cache, env, ih, compModLocal, comp, pre, cistate, impl,cmod);
+        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(selem,cmod)}, instdims, impl);
       then
         (cache,env_1,ih);
 
@@ -2679,7 +2683,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstUtil.addComponentToEnv failed");
+        Debug.traceln("- " + getInstanceName() + " failed\n");
       then
         fail();
   end matchcontinue;
@@ -6993,31 +6997,6 @@ algorithm (omod,restmods) := matchcontinue( smod , name , premod)
 end extractCorrectClassMod2;
 
 public function traverseModAddFinal
-"This function takes a modifer and a bool
- to represent wheter it is final or not.
- If it is final, traverses down in the
- modifier setting all final elements to true."
-  input SCode.Mod imod;
-  input SCode.Final finalPrefix;
-  output SCode.Mod omod;
-algorithm
-  omod := matchcontinue(imod,finalPrefix)
-    local SCode.Mod mod;
-    case(mod, SCode.NOT_FINAL()) then mod;
-    case(mod, SCode.FINAL())
-      equation
-        mod = traverseModAddFinal2(mod);
-      then
-        mod;
-    else
-      equation
-        print(" we failed with traverseModAddFinal\n");
-      then
-        fail();
-  end matchcontinue;
-end traverseModAddFinal;
-
-protected function traverseModAddFinal2
 "Helper function for traverseModAddFinal"
   input SCode.Mod mod;
   output SCode.Mod mod2;
@@ -7046,12 +7025,11 @@ algorithm
 
     else
       equation
-        print(" we failed with traverseModAddFinal2\n");
-      then
-        fail();
+        Error.addInternalError(getInstanceName(), sourceInfo());
+      then fail();
 
   end matchcontinue;
-end traverseModAddFinal2;
+end traverseModAddFinal;
 
 protected function traverseModAddFinal3
 "Helper function for traverseModAddFinal2"
@@ -7074,7 +7052,7 @@ algorithm
 
     case SCode.COMPONENT(name,prefixes,attr,tySpec,oldmod,cmt,cond,info)
       equation
-        mod = traverseModAddFinal2(oldmod);
+        mod = traverseModAddFinal(oldmod);
       then
         SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info);
 
@@ -7083,9 +7061,8 @@ algorithm
 
     case SCode.EXTENDS(p,vis,mod,ann,info)
       equation
-        mod = traverseModAddFinal2(mod);
-      then
-        SCode.EXTENDS(p,vis,mod,ann,info);
+        mod = traverseModAddFinal(mod);
+      then SCode.EXTENDS(p,vis,mod,ann,info);
 
     else
       equation
@@ -7110,7 +7087,7 @@ algorithm osubs:= matchcontinue(subs)
   case((SCode.NAMEMOD(ident,mod))::rest )
     equation
       rest = traverseModAddFinal4(rest);
-      mod = traverseModAddFinal2(mod);
+      mod = traverseModAddFinal(mod);
     then
       SCode.NAMEMOD(ident,mod)::rest;
   else
