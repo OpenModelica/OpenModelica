@@ -12924,6 +12924,7 @@ algorithm
           varIdx = intMul(varIdx,-1);
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Negated alias to unknown variable given."});
+          fail();
         end if;
       then (iCurrentVarIndices, varIdx);
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.ALIAS(varName)),_,_)
@@ -12932,6 +12933,7 @@ algorithm
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Alias to unknown variable given."});
+          fail();
         end if;
       then (iCurrentVarIndices, varIdx);
   end match;
