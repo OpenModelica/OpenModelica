@@ -104,7 +104,7 @@ install-dirs:
 install: install-dirs
 	echo Installing OpenModelica...
 	# Application directory (OSX)
-	if [ "@APP@" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
+	if [ "@APP@" = ".app" ]; then cp -a "@OMBUILDDIR@"/Applications/* $(INSTALL_APPDIR); fi
 	# Binaries
 	cp -a "@OMBUILDDIR@"/bin/* ${INSTALL_BINDIR}
 	# Libraries
@@ -117,7 +117,7 @@ install: install-dirs
 	test ! -e "doc" || cp -p doc/*.pdf ${INSTALL_DOCDIR}/omc/
 	cp -p "@OMBUILDDIR@"/share/doc/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	# man pages
-	# cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
+	# cp -p "@OMBUILDDIR@"/share/man/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
 	cp -p "@OMBUILDDIR@"/share/omc/*.* ${INSTALL_SHAREDIR}/omc/
 	test ! -d "@OMBUILDDIR@"/share/omnotebook/ || cp -rp "@OMBUILDDIR@"/share/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
