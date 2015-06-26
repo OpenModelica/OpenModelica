@@ -14,7 +14,7 @@ function genParser
   output String result;
 protected
   String bisonCode,re,ar1,rest;
-  Boolean res1,res2,res3,res4;
+  Boolean res1,res3,res4;
   list<String> resultRegex,resTable,chars;
   array<Integer> yyr2;
 algorithm
@@ -31,7 +31,6 @@ algorithm
        print("\nbuild Parse table");
     end if;
 
-    res2 := buildTokens(bisonCode,"Token" + outFileName);
     if (debug==true) then
        print("Generating Token from " + bisonFile + "\n");
     end if;
@@ -53,9 +52,6 @@ algorithm
     result := "Parser Built";
     if (res1==false) then
        result := result + "\nParseTable"+ outFileName +".mo could not be generated.";
-    end if;
-    if (res2==false) then
-       result := result + "\nToken"+ outFileName +".mo could not be generated.";
     end if;
     if (res3==false) then
        result := result + "\nParseCode"+ outFileName +".mo could not be generated.";
@@ -403,15 +399,14 @@ end findValue;
 
 function buildTokens
   input String bisonCode;
-  input String outFileName;
-  output Boolean buildResult;
+  output String result;
   protected
-  String cp,re,ar1,rest,result,stTime,rest2;
+  String cp,re,ar1,rest,stTime,rest2;
   Integer pos1,pos2,len,numMatches;
   list<String> resultRegex,resTable,chars,tokens;
 algorithm
   stTime := copyright;
-  cp := "encapsulated package " + outFileName +" // " + copyright + stTime;
+  cp := "encapsulated package Token\n";
   resTable := cp::{};
 
   //re := "enum yytokentype {";
@@ -435,13 +430,11 @@ algorithm
      resTable := cp::resTable;
   end while;
 
-  cp := "\nend " + outFileName + ";";
+  cp := "\nend Token;";
   resTable := cp::resTable;
 
   resTable := listReverse(resTable);
   result := stringCharListString(resTable);
-  System.writeFile(outFileName + ".mo",result);
-  buildResult := true;
 end buildTokens;
 
 function buildParseTable

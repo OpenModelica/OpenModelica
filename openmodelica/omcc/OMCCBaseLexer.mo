@@ -1,4 +1,4 @@
-encapsulated package Lexer "Implements the DFA of OMCC"
+encapsulated partial package OMCCBaseLexer "Implements the DFA of OMCC"
 import Types;
 import LexerCode;
 import LexTable;
@@ -11,20 +11,33 @@ import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds che
 import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
 import MetaModelica.Dangerous.listReverseInPlace;
 
-uniontype LexerTable
-  record LEXER_TABLE
-    array<Integer> accept;
-    array<Integer> ec;
-    array<Integer> meta;
-    array<Integer> base;
-    array<Integer> def;
-    array<Integer> nxt;
-    array<Integer> chk;
-    array<Integer> acclist;
-  end LEXER_TABLE;
-end LexerTable;
-
 constant Boolean debug = false;
+
+replaceable package LexTable
+  constant Integer yy_limit;
+  constant Integer yy_finish;
+  constant Integer yy_acclist[:];
+  constant Integer yy_accept[:];
+  constant Integer yy_ec[:];
+  constant Integer yy_meta[:];
+  constant Integer yy_base[:];
+  constant Integer yy_def[:];
+  constant Integer yy_nxt[:];
+  constant Integer yy_chk[:];
+end LexTable;
+
+replaceable partial function action
+  input Integer act;
+  input Integer startSt;
+  input Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
+  input Integer buffer;
+  input Boolean debug;
+  input String fileNm;
+  input String fileContents;
+  output OMCCTypes.Token token;
+  output Integer mm_startSt;
+  output Integer bufferRet;
+end action;
 
 function scan "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
   input String fileName "input source code file";
@@ -43,6 +56,8 @@ algorithm
   tokens := lex("<StringSource>",fileSource);
 end scanString;
 
+protected
+
 function loadSourceCode
   input String fileName "input source code file";
   output String contents;
@@ -60,21 +75,10 @@ protected
   Integer startSt,numStates,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
   list<Integer> cProg,cProg2;
   list<String> chars;
-  array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist,states;
-  LexerTable lexTables;
+  array<Integer> states;
   String s1,s2;
 algorithm
   // load arrays
-
-  mm_accept := listArray(LexTable.yy_accept);
-  mm_ec := listArray(LexTable.yy_ec);
-  mm_meta := listArray(LexTable.yy_meta);
-  mm_base := listArray(LexTable.yy_base);
-  mm_def := listArray(LexTable.yy_def);
-  mm_nxt := listArray(LexTable.yy_nxt);
-  mm_chk := listArray(LexTable.yy_chk);
-  mm_acclist := listArray(LexTable.yy_acclist);
-  lexTables := LEXER_TABLE(mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist);
 
   // Initialize the Env Variables
   startSt := 1;
@@ -103,7 +107,7 @@ algorithm
   i := 1;
   while i <= contentLen loop
      cTok := stringGet(contents,i);
-     (tokens,numBacktrack,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates) := consume(cTok,lexTables,tokens,contents,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates,fileName);
+     (tokens,numBacktrack,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates) := consume(cTok,tokens,contents,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates,fileName);
      i := i - numBacktrack + 1;
   end while;
   tokens := listReverseInPlace(tokens);
@@ -111,7 +115,6 @@ end lex;
 
 function consume
   input Integer cp;
-  input LexerTable lexTables;
   input list<OMCCTypes.Token> tokens;
   input String fileContents;
   input Integer startSt;
@@ -130,12 +133,8 @@ function consume
 protected
   OMCCTypes.Token tok;
   Integer act,buffer2;
-  array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
-  Integer c,mm_finish,baseCond;
+  Integer c,baseCond;
 algorithm
-  LEXER_TABLE(accept=mm_accept,ec=mm_ec,meta=mm_meta,base=mm_base,
-    def=mm_def,nxt=mm_nxt,chk=mm_chk,acclist=mm_acclist) := lexTables;
-
   mm_startSt := startSt;
   mm_currSt := currSt;
   mm_pos := pos;
@@ -147,8 +146,7 @@ algorithm
   states := inStates;
   numStates := inNumStates;
 
-  mm_finish := LexTable.yy_finish;
-  baseCond := arrayGet(mm_base,mm_currSt);
+  baseCond := LexTable.yy_base[mm_currSt];
   if (debug==true) then
     print("\nPROGRAM:{" + intString(cp) + "} ");
     print("\nBUFFER:{" + intString(buffer) + "} ");
@@ -167,22 +165,22 @@ algorithm
   if (debug==true) then
     print("\n[Reading:'"  + intStringChar(cp) +"' at p:" + intString(mm_pos-1) + " line:"+ intString(mm_linenr) + " rPos:" + intString(mm_sPos) +"]");
   end if;
-  c := arrayGet(mm_ec,cp);
+  c := LexTable.yy_ec[cp];
 
   if (debug==true) then
     print(" evalState Before[c" + intString(c) + ",s"+ intString(mm_currSt)+"]");
   end if;
-  (mm_currSt,c) := evalState(lexTables,mm_currSt,c);
+  (mm_currSt,c) := evalState(mm_currSt,c);
   if (debug==true) then
     print(" After[c" + intString(c) + ",s"+ intString(mm_currSt)+"]");
   end if;
   if (mm_currSt>0) then
-    mm_currSt := arrayGet(mm_base,mm_currSt);
+    mm_currSt := LexTable.yy_base[mm_currSt];
     // print("BASE:"+ intString(mm_currSt)+"]");
-    mm_currSt := arrayGet(mm_nxt,mm_currSt + c);
+    mm_currSt := LexTable.yy_nxt[mm_currSt + c];
     // print("NEXT:"+ intString(mm_currSt)+"]");
   else
-    mm_currSt := arrayGet(mm_nxt,c);
+    mm_currSt := LexTable.yy_nxt[c];
   end if;
   numStates := numStates+1; // TODO: BAD BAD BAD. At least arrayUpdate should be a safe operation... We need to grow the number of states on demand though.
   arrayUpdate(states,numStates,mm_currSt);
@@ -190,19 +188,19 @@ algorithm
   //  print("[c" + intString(c) + ",s"+ intString(mm_currSt)+"]");
   //  print("[B:" + intString(arrayGet(mm_base,mm_currSt))+"]");
 
-  baseCond := arrayGet(mm_base,mm_currSt);
-  if (baseCond==mm_finish) then
+  baseCond := LexTable.yy_base[mm_currSt];
+  if (baseCond==LexTable.yy_finish) then
     if (debug==true) then
-      print("\n[RESTORE=" + intString(arrayGet(mm_accept,mm_currSt)) + "]");
+      print("\n[RESTORE=" + intString(LexTable.yy_accept[mm_currSt]) + "]");
     end if;
 
-    (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(lexTables, fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
+    (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
 
     if (debug==true) then
       print("\nFound rule: " + String(act));
     end if;
 
-    (tok,mm_startSt,buffer2) := LexerCode.action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,debug,fileName,fileContents);
+    (tok,mm_startSt,buffer2) := action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,debug,fileName,fileContents);
 
     if (debug==true) then
       print("\nDid action");
@@ -223,7 +221,7 @@ algorithm
   _ := match otok
 local
 OMCCTypes.Token tok;
-case SOME(tok) equation print("Output token: " + OMCCTypes.printToken(tok) + "\n"); then ();
+case SOME(tok) algorithm print("Output token: " + OMCCTypes.printToken(tok) + "\n"); then ();
 else ();
 end match;
 */
@@ -242,9 +240,7 @@ end match;
 end consume;
 
 
-
 function findRule
-  input LexerTable lexTables;
   input String fileContents;
   input Integer currSt;
   input Integer pos;
@@ -269,8 +265,6 @@ protected
   Integer lp,lp1,stCmp;
   Boolean st;
 algorithm
-  LEXER_TABLE(accept=mm_accept,ec=mm_ec,meta=mm_meta,base=mm_base,
-    def=mm_def,nxt=mm_nxt,chk=mm_chk,acclist=mm_acclist) := lexTables;
   mm_currSt := currSt;
   mm_pos := pos;
   mm_sPos := sPos;
@@ -281,8 +275,8 @@ algorithm
   numStates := inNumStates;
 
   stCmp := arrayGet(states,numStates);
-  lp := arrayGet(mm_accept,stCmp);
-  lp1 := arrayGet(mm_accept,stCmp+1);
+  lp := LexTable.yy_accept[stCmp];
+  lp1 := LexTable.yy_accept[stCmp+1];
 
   st := intGt(lp,0) and intLt(lp,lp1);
   (action, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := match(numStates,st)
@@ -290,38 +284,37 @@ algorithm
       Integer act,cp;
       list<Integer> restBuff;
     case (_,true)
-      equation
+      algorithm
         if debug then
-          checkArray(mm_accept,stCmp,sourceInfo());
-          checkArray(mm_acclist,lp,sourceInfo());
+          checkArrayModelica(LexTable.yy_accept,stCmp,sourceInfo());
+          checkArrayModelica(LexTable.yy_acclist,lp,sourceInfo());
         end if;
-        lp = arrayGet(mm_accept,stCmp);
-        act = arrayGet(mm_acclist,lp);
+        lp := LexTable.yy_accept[stCmp];
+        act := LexTable.yy_acclist[lp];
       then (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates);
     case (_,false)
-      equation
-        cp = stringGet(fileContents,mm_pos-1);
-        buffer = buffer-1;
-        bkBuffer = bkBuffer+1;
-        mm_pos = mm_pos - 1;
-        mm_sPos = mm_sPos -1;
+      algorithm
+        cp := stringGet(fileContents,mm_pos-1);
+        buffer := buffer-1;
+        bkBuffer := bkBuffer+1;
+        mm_pos := mm_pos - 1;
+        mm_sPos := mm_sPos -1;
         if (cp==10) then
-          mm_sPos = mm_ePos;
-          mm_linenr = mm_linenr-1;
+          mm_sPos := mm_ePos;
+          mm_linenr := mm_linenr-1;
         end if;
         if debug then
           checkArray(states,numStates,sourceInfo());
         end if;
-        mm_currSt = arrayGet(states,numStates);
-        numStates = numStates - 1;
-        (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) = findRule(lexTables, fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
+        mm_currSt := arrayGet(states,numStates);
+        numStates := numStates - 1;
+        (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
       then (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates);
 
   end match;
 end findRule;
 
 function evalState
-  input LexerTable lexTables;
   input Integer cState;
   input Integer c;
   output Integer new_state;
@@ -329,15 +322,12 @@ function evalState
 protected
   Integer cState1=cState;
   Integer c1=c;
-  array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
   Integer val,val2,chk;
 algorithm
-  LEXER_TABLE(accept=mm_accept,ec=mm_ec,meta=mm_meta,base=mm_base,
-    def=mm_def,nxt=mm_nxt,chk=mm_chk,acclist=mm_acclist) := lexTables;
-  chk := arrayGet(mm_base,cState1);
+  chk := LexTable.yy_base[cState1];
   chk := chk + c1;
-  val := arrayGet(mm_chk,chk);
-  val2 := arrayGet(mm_base,cState1) + c1;
+  val := LexTable.yy_chk[chk];
+  val2 := LexTable.yy_base[cState1] + c1;
   //   print("{val2=" + intString(val2) + "}\n");
   (new_state,new_c) := match (cState1==val)
     local
@@ -345,18 +335,18 @@ algorithm
     case (true)
        then (cState1,c1);
     case (false)
-      equation
-        cState1 = arrayGet(mm_def,cState1);
+      algorithm
+        cState1 := LexTable.yy_def[cState1];
         //print("[newS:" + intString(cState)+"]");
         //c2 = c;
         if ( cState1 >= LexTable.yy_limit ) then
-          c1 = arrayGet(mm_meta,c1);
+          c1 := LexTable.yy_meta[c1];
           //     print("META[c:" + intString(c)+"]");
         end if;
-          if (cState1>0) then
-            (cState1,c1) = evalState(lexTables,cState1,c1);
-          end if;
-          then (cState1,c1);
+        if (cState1>0) then
+          (cState1,c1) := evalState(cState1,c1);
+        end if;
+      then (cState1,c1);
   end match;
 
 end evalState;
@@ -403,11 +393,11 @@ algorithm
       list<Integer> rest;
     case ({},_)
     then (cBuff1);
-      else
-      equation
-        c::rest = inList1;
-        new = cBuff1 + intStringChar(c);
-        (tout) = printBuffer2(rest,new);
+    else
+      algorithm
+        c::rest := inList1;
+        new := cBuff1 + intStringChar(c);
+        (tout) := printBuffer2(rest,new);
       then (tout);
   end match;
 end printBuffer2;
@@ -442,10 +432,10 @@ algorithm
     case ({},_)
       then (cBuff1);
     else
-      equation
-        c::rest = inList1;
-        new = cBuff1 + "|" + intString(c);
-        (tout) = printStack(rest,new);
+      algorithm
+        c::rest := inList1;
+        new := cBuff1 + "|" + intString(c);
+        (tout) := printStack(rest,new);
       then (tout);
  end match;
 end printStack;
@@ -465,4 +455,19 @@ algorithm
   end if;
 end checkArray;
 
-end Lexer;
+function checkArrayModelica
+  input Integer arr[:];
+  input Integer index;
+  input SourceInfo info;
+protected
+  String filename;
+  Integer lineStart;
+algorithm
+  if index<1 or index>size(arr,1) then
+    SOURCEINFO(fileName=filename, lineNumberStart=lineStart) := info;
+    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(size(arr,1))+" index=" + String(index) + "\n");
+    fail();
+  end if;
+end checkArrayModelica;
+
+end OMCCBaseLexer;

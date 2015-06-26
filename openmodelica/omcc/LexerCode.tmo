@@ -6,31 +6,23 @@ encapsulated package %LexerCode% // Generated %time%
    %time
    %Token
    %Lexer
-   %ParseTable
+   %LexTable
    %constant
    %nameSpan
    %functions
    %caseAction
   */
 import Types;
-import %Token%;
-import %Lexer%;
-import %ParseTable%;
+import OMCCBaseLexer;
 import OMCCTypes;
 import Error;
-%prologue%
 
-function action
-  input Integer act;
-  input Integer startSt;
-  input Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
-  input Integer buffer;
-  input Boolean debug;
-  input String fileNm;
-  input String fileContents;
-  output OMCCTypes.Token token;
-  output Integer mm_startSt;
-  output Integer bufferRet;
+extends OMCCBaseLexer;
+redeclare package LexTable
+%LexTable%
+end LexTable;
+%prologue%
+redeclare function extends action
 protected
   OMCCTypes.Info info;
   String sToken;
@@ -53,6 +45,5 @@ algorithm
   end match;
 end action;
 
-%epilogue%
-
+%Tokens%%epilogue%
 end %LexerCode%;

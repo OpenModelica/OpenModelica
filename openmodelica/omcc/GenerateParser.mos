@@ -16,6 +16,7 @@ loadFile(compilerSources + "Util/List.mo");
 loadFile(compilerSources + "Util/Settings.mo");
 loadFile(compilerSources + "Util/Corba.mo");
 loadFile(compilerSources + "Util/Util.mo");
+loadFile(compilerSources + "Util/StringUtil.mo");
 loadFile(compilerSources + "Util/System.mo");
 loadFile("TokenModelica.mo");
 loadFile("LexTableModelica.mo");

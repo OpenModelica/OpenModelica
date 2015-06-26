@@ -1,12 +1,10 @@
 OMC=../../../build/bin/omc
 
-GEN_FILES=LexerModelica.mo LexTableModelica.mo LexerCodeModelica.mo ParserModelica.mo ParseTableModelica.mo ParseCodeModelica.mo TokenModelica.mo
-
 default: parser
 
 all: $(GEN_FILES)
 
-LexerModelica.mo: OMCC.mos lexerModelica.l parserModelica.y LexerGenerator.mo ParserGenerator.mo OMCC.mo LexerCode.tmo ParseCode.tmo Lexer.mo Types.mo Parser.mo
+LexerModelica.mo: OMCC.mos lexerModelica.l parserModelica.y LexerGenerator.mo ParserGenerator.mo OMCC.mo LexerCode.tmo ParseCode.tmo OMCCBaseLexer.mo OMCCTypes.mo Parser.mo
 	$(OMC) $<
 
 omcc:
@@ -21,6 +19,10 @@ Main_main.so: GenerateParser.mos $(GEN_FILES) Main.mo
 
 parser: Main_main.so
 	$(CC) -g -O2 -o $@ $< '-Wl,-rpath,$$ORIGIN'
+
+parser-all: omcc
+	./OMCC Modelica
+	$(MAKE) parser
 
 lexer: LexerTest_main.so
 	$(CC) -g -O2 -o $@ $< '-Wl,-rpath,$$ORIGIN'

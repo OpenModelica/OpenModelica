@@ -20,7 +20,6 @@ public function main
   input list<String> inStringLst;
 protected
   list<OMCCTypes.Token> tokens;
-  Absyn.Program astTreeModelica;
   type Mcode_MCodeLst = list<Mcode.MCode>;
 algorithm
    _ := matchcontinue (inStringLst)
