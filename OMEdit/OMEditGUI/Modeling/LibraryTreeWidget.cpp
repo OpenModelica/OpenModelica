@@ -881,20 +881,29 @@ void LibraryTreeWidget::showProtectedClasses(bool enable)
   }
 }
 
+/*!
+ * \brief LibraryTreeWidget::unloadClass
+ * Helper function for unloading/deleting the Modelica class.
+ * \param pLibraryTreeNode
+ * \param askQuestion
+ * \return
+ */
 bool LibraryTreeWidget::unloadClass(LibraryTreeNode *pLibraryTreeNode, bool askQuestion)
 {
-  if (askQuestion)
-  {
+  if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_CLASS_MSG).arg(pLibraryTreeNode->getNameStructure()));
+    if (pLibraryTreeNode->getParentName().isEmpty()) {
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::UNLOAD_CLASS_MSG).arg(pLibraryTreeNode->getNameStructure()));
+    } else {
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_CLASS_MSG).arg(pLibraryTreeNode->getNameStructure()));
+    }
     pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     pMessageBox->setDefaultButton(QMessageBox::Yes);
     int answer = pMessageBox->exec();
-    switch (answer)
-    {
+    switch (answer) {
       case QMessageBox::Yes:
         // Yes was clicked. Don't return.
         break;
@@ -910,16 +919,13 @@ bool LibraryTreeWidget::unloadClass(LibraryTreeNode *pLibraryTreeNode, bool askQ
     Delete the class in OMC.
     If deleteClass is successfull remove the class from Library Browser and delete the corresponding ModelWidget.
     */
-  if (mpMainWindow->getOMCProxy()->deleteClass(pLibraryTreeNode->getNameStructure()))
-  {
+  if (mpMainWindow->getOMCProxy()->deleteClass(pLibraryTreeNode->getNameStructure())) {
     /* remove the child nodes first */
     unloadClassHelper(pLibraryTreeNode);
     mpMainWindow->getOMCProxy()->removeCachedOMCCommand(pLibraryTreeNode->getNameStructure());
     unloadLibraryTreeNodeAndModelWidget(pLibraryTreeNode);
     return true;
-  }
-  else
-  {
+  } else {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult())
                           .append(tr("while deleting ") + pLibraryTreeNode->getNameStructure()), Helper::ok);
@@ -1767,14 +1773,20 @@ void LibraryTreeWidget::duplicateClass()
   }
 }
 
+/*!
+ * \brief LibraryTreeWidget::unloadClass
+ * Unloads/Deletes the Modelica class.
+ */
 void LibraryTreeWidget::unloadClass()
 {
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
-  if (selectedItemsList.isEmpty())
+  if (selectedItemsList.isEmpty()) {
     return;
+  }
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
-  if (pLibraryTreeNode)
+  if (pLibraryTreeNode) {
     unloadClass(pLibraryTreeNode);
+  }
 }
 
 void LibraryTreeWidget::unloadTextFile()

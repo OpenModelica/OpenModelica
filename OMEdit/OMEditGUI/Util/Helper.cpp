@@ -563,8 +563,10 @@ QString GUIMessages::getMessage(int type)
       return tr("The XML is generated at %1/%2.xml");
     case FIGARO_GENERATED:
       return tr("The FIGARO is generated.");
-    case DELETE_CLASS_MSG:
+    case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
+    case DELETE_CLASS_MSG:
+      return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
     case DELETE_TEXT_FILE_MSG:
       return tr("Are you sure you want to unload <b>%1</b>?");
     case WRONG_MODIFIER:
