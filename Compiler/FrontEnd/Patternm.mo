@@ -41,6 +41,7 @@ encapsulated package Patternm
 
 public import Absyn;
 public import AvlTreeString;
+public import Ceval;
 public import ClassInf;
 public import ConnectionGraph;
 public import DAE;
@@ -198,6 +199,10 @@ algorithm
       FCore.Cache cache;
       Absyn.Exp lhs;
       DAE.Attributes attr;
+      DAE.Exp elabExp;
+      DAE.Properties prop;
+      DAE.Const const;
+      Values.Value val;
 
     case (cache,_,Absyn.INTEGER(i),_,_,_)
       equation
@@ -287,6 +292,15 @@ algorithm
       equation
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
+
+    case (cache,_,Absyn.CREF(),ty1,_,_) guard Types.isEnumeration(Types.unboxedType(ty1))
+      equation
+        (cache,elabExp,DAE.PROP(type_=ty2, constFlag=const),_) = Static.elabExp(cache,env,inLhs,false,NONE(),false,Prefix.NOPRE(),info);
+        et = validPatternType(ty1,ty2,inLhs,info);
+        true = Types.isConstant(const);
+        (cache, val) = Ceval.ceval(cache, env, elabExp, false, inMsg = Absyn.MSG(info));
+        elabExp = ValuesUtil.valueExp(val);
+      then (cache, DAE.PAT_CONSTANT(et, elabExp));
 
     case (cache,_,Absyn.AS(id,exp),ty2,_,_)
       equation

@@ -2968,6 +2968,10 @@ package Expression
   output list<Integer> outValues;
   end dimensionsList;
 
+  function isMetaArray
+    input DAE.Exp inExp;
+    output Boolean outB;
+  end isMetaArray;
 end Expression;
 
 package ExpressionDump

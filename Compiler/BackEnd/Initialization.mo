@@ -78,7 +78,7 @@ protected import SimCodeUtil;
 public function solveInitialSystem "author: lochel
   This function generates a algebraic system of equations for the initialization and solves it."
   input BackendDAE.BackendDAE inDAE "simulation system";
-  output Option<BackendDAE.BackendDAE> outInitDAE "initialization system";
+  output BackendDAE.BackendDAE outInitDAE "initialization system";
   output Boolean outUseHomotopy;
   output list<BackendDAE.Equation> outRemovedInitialEquations;
   output list<BackendDAE.Var> outPrimaryParameters "already sorted";
@@ -256,15 +256,12 @@ algorithm
       BackendDump.dumpCompShort(initdae);
     end if;
 
-    outInitDAE := SOME(initdae);
+    outInitDAE := initdae;
     outUseHomotopy := useHomotopy;
     outRemovedInitialEquations := removedEqns;
   else
-    outInitDAE := NONE();
-    outUseHomotopy := false;
-    outRemovedInitialEquations := {};
-    outPrimaryParameters := {};
-    outAllPrimaryParameters := {};
+    Error.addCompilerError("No system for the symbolic initialization was generated");
+    fail();
   end try;
 end solveInitialSystem;
 

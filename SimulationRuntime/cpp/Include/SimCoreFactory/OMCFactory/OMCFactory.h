@@ -19,9 +19,9 @@ public:
   OMCFactory(PATH library_path, PATH modelicasystem_path);
   virtual ~OMCFactory();
 
-  void UnloadAllLibs(void);
-  LOADERRESULT LoadLibrary(string libName, type_map& current_map);
-  LOADERRESULT UnloadLibrary(shared_library lib);
+  virtual void UnloadAllLibs();
+  virtual LOADERRESULT LoadLibrary(string libName, type_map& current_map);
+  virtual LOADERRESULT UnloadLibrary(shared_library lib);
 
   /**
    * Create SimController and SimSettings.

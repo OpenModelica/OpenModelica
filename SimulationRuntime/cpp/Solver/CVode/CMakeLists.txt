@@ -7,7 +7,7 @@ project(${CVodeName})
 
 add_library(${CVodeName}_static STATIC CVode.cpp CVodeSettings.cpp FactoryExport.cpp)
 add_precompiled_header(${CVodeName}_static Include/Core/Modelica.h )
-set_target_properties(${CVodeName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${CVodeName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 install (TARGETS ${CVodeName}_static DESTINATION ${LIBINSTALLEXT})
 
 add_library(${CVodeName} SHARED CVode.cpp CVodeSettings.cpp FactoryExport.cpp  )
@@ -15,6 +15,11 @@ target_link_libraries (${CVodeName} ${SolverName} ${ExtensionUtilitiesName} ${Bo
 add_precompiled_header(${CVodeName} Include/Core/Modelica.h )
 
 install (TARGETS ${CVodeName} ${CVodeName}_static DESTINATION ${LIBINSTALLEXT})
+
+if (UNIX)
+	set_target_properties(${CVodeName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${CVodeName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
 
 #target_link_libraries( Euler ${Boost_serialization_LIBRARY})
 

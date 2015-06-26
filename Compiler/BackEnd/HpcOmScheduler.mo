@@ -3420,7 +3420,7 @@ protected
                             maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts,
                             jacobianEquations, equationsForZeroCrossings;
   list<SimCode.StateSet> stateSets;
-  Boolean useSymbolicInitialization, useHomotopy;
+  Boolean useHomotopy;
   list<SimCode.SimEqSystem> initialEquations, removedInitialEquations, odes;
   list<DAE.Constraint> constraints;
   list<DAE.ClassAttributes> classAttributes;
@@ -3465,7 +3465,7 @@ protected
 
 algorithm
   SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations,
-                   algebraicEquations, partitionsKind, baseClocks, useSymbolicInitialization, useHomotopy,
+                   algebraicEquations, partitionsKind, baseClocks, useHomotopy,
                    initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
                    minValueEquations, maxValueEquations, parameterEquations, removedEquations,
                    algorithmAndEquationAsserts,equationsForZeroCrossings, jacobianEquations, stateSets, constraints,
@@ -3514,7 +3514,7 @@ algorithm
                               numOptimizeConstraints, numOptimizeFinalConstraints );
   modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels, maxDer);
   simCodeOut := SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations,
-                                 algebraicEquations, partitionsKind, baseClocks, useSymbolicInitialization, useHomotopy,
+                                 algebraicEquations, partitionsKind, baseClocks, useHomotopy,
                                  initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
                                  minValueEquations, maxValueEquations, parameterEquations, removedEquations,
                                  algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets,

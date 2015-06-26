@@ -1029,9 +1029,10 @@ public function realpath
 end realpath;
 
 public function getSimulationHelpText
-  input Boolean detailed;
+  input Boolean detailed=false;
+  input Boolean sphinx=false;
   output String text;
-  external "C" text = System_getSimulationHelpText(detailed) annotation(Library = {"omcruntime"});
+  external "C" text = System_getSimulationHelpTextSphinx(detailed,sphinx) annotation(Library = {"omcruntime"});
 end getSimulationHelpText;
 
 public function getTerminalWidth

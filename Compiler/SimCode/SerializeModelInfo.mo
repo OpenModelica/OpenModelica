@@ -428,6 +428,7 @@ algorithm
       list<SimCode.SimEqSystem> eqs,jeqs;
       SimCode.LinearSystem lSystem, atL;
       SimCode.NonlinearSystem nlSystem, atNL;
+
     case SimCode.SES_RESIDUAL()
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -446,6 +447,7 @@ algorithm
         serializeSource(file,eq.source,withOperations);
         File.write(file, "}");
       then true;
+
     case SimCode.SES_SIMPLE_ASSIGN()
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -466,6 +468,7 @@ algorithm
         serializeSource(file,eq.source,withOperations);
         File.write(file, "}");
       then true;
+
     case SimCode.SES_ARRAY_CALL_ASSIGN()
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -486,6 +489,7 @@ algorithm
         serializeSource(file,eq.source,withOperations);
         File.write(file, "}");
       then true;
+
     // no dynamic tearing
     case SimCode.SES_LINEAR(lSystem = lSystem as SimCode.LINEARSYSTEM(), alternativeTearing = NONE())
       equation
@@ -527,6 +531,7 @@ algorithm
         serializeList(file,lSystem.beqs,serializeExp);
         File.write(file,"]}]}");
       then true;
+
     // dynamic tearing
     case SimCode.SES_LINEAR(lSystem = lSystem as SimCode.LINEARSYSTEM(), alternativeTearing = SOME(atL as SimCode.LINEARSYSTEM()))
       equation
@@ -608,6 +613,7 @@ algorithm
         serializeList(file,atL.beqs,serializeExp);
         File.write(file,"]}]}");
       then true;
+
     case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSIGN()})
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -628,6 +634,7 @@ algorithm
         serializeSource(file,Algorithm.getStatementSource(stmt),withOperations);
         File.write(file, "}");
       then true;
+
     case SimCode.SES_ALGORITHM(statements=stmt::_)
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -644,18 +651,7 @@ algorithm
         serializeSource(file,Algorithm.getStatementSource(stmt),withOperations);
         File.write(file, "}");
       then true;
-    case SimCode.SES_ALGORITHM(statements={}) // TODO: This is stupid; don't generate these things :(
-      equation
-        File.write(file, "\n{\"eqIndex\":");
-        File.write(file, intString(eq.index));
-        if parent <> 0 then
-          File.write(file, ",\"parent\":");
-          File.write(file, intString(parent));
-        end if;
-        File.write(file, ",\"section\":\"");
-        File.write(file, section);
-        File.write(file, "\",\"tag\":\"algorithm\",\"equation\":[]}");
-      then true;
+
     // no dynamic tearing
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = NONE())
       equation
@@ -685,6 +681,7 @@ algorithm
         serializeList(file,jeqs,serializeEquationIndex);
         File.write(file, "]]}");
       then true;
+
     // dynamic tearing
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = SOME(atNL as SimCode.NONLINEARSYSTEM()))
       equation
@@ -742,6 +739,7 @@ algorithm
         serializeList(file,jeqs,serializeEquationIndex);
         File.write(file, "]]}");
       then true;
+
     case SimCode.SES_IFEQUATION()
       equation
         eqs = listAppend(List.flatten(list(Util.tuple22(e) for e in eq.ifbranches)), eq.elsebranch);
@@ -761,6 +759,7 @@ algorithm
         serializeIfBranch(file,(DAE.BCONST(true),eq.elsebranch));
         File.write(file, "]}");
       then true;
+
     case SimCode.SES_MIXED()
       equation
         serializeEquation(file,eq.cont,section,withOperations,first=true);
@@ -780,6 +779,7 @@ algorithm
         list(match () case () equation File.write(file,","); serializeEquationIndex(file,e); then (); end match for e in eq.discEqs);
         File.write(file, "]}");
       then true;
+
     case SimCode.SES_WHEN()
       equation
         File.write(file, "\n{\"eqIndex\":");
@@ -804,6 +804,7 @@ algorithm
           else ();
         end match;
       then true;
+
     case SimCode.SES_FOR_LOOP()
       equation
         File.write(file, "\n{\"eqIndex\":");

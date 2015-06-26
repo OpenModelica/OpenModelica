@@ -49,7 +49,7 @@ public:
     return std::make_pair(system,simData);
   }
    */
-  boost::shared_ptr<ISimData> createSimData()
+  virtual boost::shared_ptr<ISimData> createSimData()
   {
     std::map<std::string, factory<ISimData> >::iterator simdata_iter;
     std::map<std::string, factory<ISimData > >& simdata_factory(_system_type_map->get());
@@ -63,7 +63,7 @@ public:
 
   }
 
-  boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
+  virtual boost::shared_ptr<ISimVars> createSimVars(size_t dim_real,size_t dim_int,size_t dim_bool,size_t dim_pre_vars,size_t dim_z,size_t z_i)
   {
     std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t > >::iterator simvars_iter;
     std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t > >& simvars_factory(_system_type_map->get());
@@ -77,7 +77,7 @@ public:
 
   }
 
-  boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)
+  virtual boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData,boost::shared_ptr<ISimVars> simVars)
   {
     PATH modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;
     PATH modelica_name(modelLib);

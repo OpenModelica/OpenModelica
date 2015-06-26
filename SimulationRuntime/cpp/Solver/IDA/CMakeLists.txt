@@ -5,12 +5,17 @@ project(${IDAName})
 
 # add the solver default implementation library
 add_library(${IDAName}_static STATIC IDA.cpp IDASettings.cpp FactoryExport.cpp)
-set_target_properties(${SystemName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${SystemName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 add_precompiled_header(${IDAName}_static Include/Core/Modelica.h )
 
 add_library(${IDAName} SHARED IDA.cpp IDASettings.cpp FactoryExport.cpp)
 target_link_libraries (${IDAName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${IDAName} Include/Core/Modelica.h )
+
+if (UNIX)
+	set_target_properties(${IDAName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${IDAName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
 
 install (TARGETS ${IDAName} ${IDAName}_static DESTINATION ${LIBINSTALLEXT})
 

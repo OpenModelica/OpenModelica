@@ -323,8 +323,8 @@ template simulationFile_inz(SimCode simCode, String guid)
     extern "C" {
     #endif
 
-    <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>
-    <%functionRemovedInitialEquations(useSymbolicInitialization, removedInitialEquations, modelNamePrefix(simCode))%>
+    <%functionInitialEquations(initialEquations, modelNamePrefix(simCode))%>
+    <%functionRemovedInitialEquations(removedInitialEquations, modelNamePrefix(simCode))%>
 
     <%functionInitialMixedSystems(initialEquations, parameterEquations, allEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
 
@@ -664,7 +664,6 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
-       <%if useSymbolicInitialization then '1' else '0'%> /* useSymbolicInitialization */,
        <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
@@ -2408,7 +2407,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   >>
 end functionUpdateBoundParameters;
 
-template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations, String modelNamePrefix)
+template functionInitialEquations(list<SimEqSystem> initalEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -2434,8 +2433,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
               else
                 ""
 
-  let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, 0, "The symbolic initialization was not generated.");'
-
   <<
   <%eqfuncs%>
 
@@ -2446,7 +2443,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     TRACE_PUSH
     <%varDecls%>
 
-    <%errorMsg%>
     data->simulationInfo.discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, functionInitialEquations_systems);'
     else '<%fncalls%>' %>
@@ -2485,7 +2481,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
   end match
 end functionRemovedInitialEquationsBody;
 
-template functionRemovedInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> removedInitalEquations, String modelNamePrefix)
+template functionRemovedInitialEquations(list<SimEqSystem> removedInitalEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
@@ -8804,7 +8800,7 @@ case rel as RELATION(__) then
     case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
 
-    else error(sourceInfo(), 'daeExpRelation:ERR')
+    else error(sourceInfo(), 'daeExpRelation <%printExpStr(exp)%>')
 end daeExpRelation;
 
 
@@ -10032,12 +10028,11 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let &tmpVarDecls += (match identType
       case "modelica_metatype" then 'modelica_metatype <%loopVar%> = 0;<%\n%>'
       else '<%arrayType%> <%loopVar%>;<%\n%>')
-    let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
+    let firstIndex = match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls)
     let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction)
     let &rangeExpPre += '<%loopVar%> = <%rangeExp%>;<%\n%>'
     let &rangeExpPre += if firstIndex then '<%firstIndex%> = 1;<%\n%>'
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "1")
-    let empty = (match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)')
     let iteratorName = contextIteratorName(iter.id, context)
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
     let guardExp =
@@ -10050,13 +10045,22 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       >>
     (match identType
       case "modelica_metatype" then
-      <<
-      while(!<%empty%>) {
-        <%iteratorName%> = MMC_CAR(<%loopVar%>);
-        <%loopVar%> = MMC_CDR(<%loopVar%>);
-        <%guardExp%>
-      }
-      >>
+      (if isMetaArray(iter.exp) then
+        <<
+        while (<%firstIndex%> <= arrayLength(<%loopVar%>)) {
+          <%iteratorName%> = arrayGet(<%loopVar%>, <%firstIndex%>++);
+          <%guardExp%>
+        }
+        >>
+      else
+        <<
+        while (!listEmpty(<%loopVar%>)) {
+          <%iteratorName%> = MMC_CAR(<%loopVar%>);
+          <%loopVar%> = MMC_CDR(<%loopVar%>);
+          <%guardExp%>
+        }
+        >>
+      )
       else
       let addr = match iter.ty
         case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
@@ -10077,7 +10081,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let loopVar = '<%iter.id%>_loopVar'
          let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
+         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then 'arrayLength(<%loopVar%>)' else 'listLength(<%loopVar%>)') else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
          "")
        <<
        <%arrIndex%> = 1;
@@ -10958,7 +10962,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     then
       let &unboxBuf = buffer ""
       let urhs = (match p.ty
-        case SOME(et) then unboxVariable(rhs, et, &unboxBuf, &varDecls)
+        case SOME(et) then '/* unbox <%unparseType(et)%> */<%\n%>' + unboxVariable(rhs, et, &unboxBuf, &varDecls)
         else rhs
       )
       <<<%unboxBuf%><%match p.exp
@@ -10970,7 +10974,8 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as BCONST(__) then 'if (<%if c.bool then 1 else 0%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
-        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN')
+        case c as ENUM_LITERAL() then 'if (<%c.index%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN <%printExpStr(p.exp)%>')
       %>>>
   case p as PAT_SOME(__) then
     let tvar = tempDecl("modelica_metatype", &varDecls)

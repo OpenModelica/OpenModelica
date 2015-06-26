@@ -591,8 +591,6 @@ int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, d
   }
   else if(IIM_SYMBOLIC == initMethod)
   {
-    if(!data->callback->useSymbolicInitialization)
-      throwStreamPrint(data->threadData, "No system for the symbolic initialization was generated.");
     retVal = symbolic_initialization(data, lambda_steps);
   }
   else
