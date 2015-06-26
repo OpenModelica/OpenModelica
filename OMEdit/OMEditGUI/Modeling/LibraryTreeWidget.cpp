@@ -1622,6 +1622,13 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
         if (!((StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()).compare("OpenModelica") == 0)  || isSearchedTree())) {
           menu.addSeparator();
           menu.addAction(mpDuplicateClassAction);
+          if (pLibraryTreeNode->getParentName().isEmpty()) {
+            mpUnloadClassAction->setText(Helper::unloadClass);
+            mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+          } else {
+            mpUnloadClassAction->setText(Helper::deleteStr);
+            mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
+          }
           menu.addAction(mpUnloadClassAction);
           /* Only used for development testing. */
           /*menu.addAction(mpRefreshAction);*/
