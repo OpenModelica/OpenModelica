@@ -192,7 +192,7 @@ void Kinsol::solve()
 
     _iterationStatus = CONTINUE;
 
-    if(_algLoop->isLinear())
+    if(_algLoop->isLinear() && !_algLoop->isLinearTearing())
     {
         long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
         long int dimSys = _dimSys;
@@ -211,14 +211,17 @@ void Kinsol::solve()
         long int dimSys = _dimSys;
         long int irtrn  = 0;          // Retrun-flag of Fortran code
 
-        _algLoop->setReal(_zeroVec);
+         _algLoop->setReal(_zeroVec);
         _algLoop->evaluate();
         _algLoop->getRHS(_f);
-        _algLoop->getReal(_y);
+
+		_algLoop->getReal(_y);
         calcJacobian(_f,_y);
         dgesv_(&dimSys, &dimRHS, _jac, &dimSys, _ihelpArray, _f,&dimSys,&irtrn);
-        for(int i=0; i<_dimSys; i++)
+
+		for(int i=0; i<_dimSys; i++)
           _f[i]*=-1.0;
+
         memcpy(_y, _f, _dimSys*sizeof(double));
         _algLoop->setReal(_y);
         //_algLoop->evaluate();

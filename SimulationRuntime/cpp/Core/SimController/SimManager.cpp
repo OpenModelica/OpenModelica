@@ -605,7 +605,7 @@ void SimManager::runSingleProcess()
       if (_dimtimeevent)
       {
         // Find all time events at the current time
-        while(abs(iter->first - endTime) <1e4*UROUND)
+        while((iter !=_tStops[0].end()) && (abs(iter->first - endTime) <1e4*UROUND))
         {
           _timeeventcounter[iter->second]++;
           iter++;

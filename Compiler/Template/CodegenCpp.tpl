@@ -3226,7 +3226,7 @@ match eq
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%initAlgloopTemplate(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
-   <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context)%>
+   <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopLinear(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -3288,7 +3288,7 @@ match eq
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%initAlgloopTemplate(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
-   <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context)%>
+   <%updateAlgloop(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%upateAlgloopLinear(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, stateDerVectorName, useFlatArrayNotation)%>
    <%algloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
@@ -3312,6 +3312,15 @@ match simCode
        }
        >>
       case eq as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+      match ls.jacobianMatrix
+        case SOME(__) then
+        <<
+        float <%modelname%>Algloop<%ls.index%>::queryDensity()
+        {
+          return -1.;
+        }
+        >>
+       else
       let size=listLength(ls.simJac)
       <<
       float <%modelname%>Algloop<%ls.index%>::queryDensity()
@@ -3322,7 +3331,7 @@ match simCode
 end queryDensity;
 
 
-template updateAlgloop(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eqn,Context context)
+template updateAlgloop(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eqn,Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -3339,7 +3348,32 @@ match simCode
         }
         >>
       */
-      case eq as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+    match ls.jacobianMatrix
+       case SOME(__) then
+         let &varDecls = buffer "" /*BUFD*/
+
+     let prebody = (ls.residual |> eq2 =>
+         functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+     ;separator="\n")
+     let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+         let &preExp = buffer "" /*BUFD*/
+         let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+         '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
+
+       ;separator="\n")
+        <<
+
+        void <%modelname%>Algloop<%ls.index%>::evaluate()
+        {
+           <%varDecls%>
+           //prebody
+           <%prebody%>
+           //body
+           <%body%>
+        }
+        >>
+     else
         <<
         void <%modelname%>Algloop<%ls.index%>::evaluate()
         {
@@ -3435,6 +3469,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
  match eqn
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  match ls.jacobianMatrix
+       case SOME(__) then
+         ""
+  else
+
   let uid = System.tmpTick()
   let size = listLength(ls.vars)
   let aname = 'A<%uid%>'
@@ -5363,6 +5402,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      }
    >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  match ls.jacobianMatrix
+       case SOME(__) then
+       <<
+        void <%modelname%>Algloop<%ls.index%>::initialize()
+        {
+          <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+          AlgLoopDefaultImplementation::initialize();
+
+        }
+       >>
+   else
    <<
      void <%modelname%>Algloop<%ls.index%>::initialize()
      {
@@ -5402,8 +5452,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
   >>
   */
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)
-) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+ match ls.jacobianMatrix
+       case SOME(__) then
+       ""
+   else
    <<
      template <typename T>
      void <%modelname%>Algloop<%ls.index%>::initialize(T *__A)
@@ -5437,9 +5490,21 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    }
   >>
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)
-) then
+ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  match ls.jacobianMatrix
+     case SOME(__) then
    <<
+    void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(double* A_matrix)
+    {
+
+    }
+    void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix* A_matrix)
+    {
+
+    }
+   >>
+   else
+    <<
      void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(double* A_matrix)
      {
           <% match eq
@@ -5454,7 +5519,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           "*A_matrix=*__Asparse;"
           %>
      }
-   >>
+
+
+    >>
 
 end getAMatrixCode;
 
@@ -5470,40 +5537,31 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   match eq
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
-  <<
-  void <%modelname%>Algloop<%nls.index%>::getRHS(double* residuals)
+   <<
+    void <%modelname%>Algloop<%nls.index%>::getRHS(double* residuals)
     {
-
-        <% match eq
-        case SES_LINEAR(__) then
-        <<
-           memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);
-        >>
-        else
-        <<
-          AlgLoopDefaultImplementation::getRHS(residuals);
-        >>
-        %>
+         AlgLoopDefaultImplementation::getRHS(residuals);
     }
-  >>
 
+   >>
   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-  <<
-  void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals)
-    {
+    match ls.jacobianMatrix
+       case SOME(__) then
+      <<
+      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals)
+      {
+         AlgLoopDefaultImplementation::getRHS(residuals);
+      }
 
-        <% match eq
-        case SES_LINEAR(__) then
-        <<
-           memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);
-        >>
-        else
-        <<
-          AlgLoopDefaultImplementation::getRHS(residuals);
-        >>
-        %>
-    }
-  >>
+      >>
+      else
+      <<
+      void <%modelname%>Algloop<%ls.index%>::getRHS(double* residuals)
+      {
+        memcpy(residuals,__b.getData(),sizeof(double)* _dimAEq);
+      }
+      >>
+
 
 
 end algloopRHSCode;
@@ -5589,20 +5647,29 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   match eq
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
-  let lineartearing = if nls.linearTearing then 'true' else 'false'
+
   <<
   bool <%modelname%>Algloop<%nls.index%>::isLinearTearing()
   {
-        return <%lineartearing%>;
+        return false;
    }
   >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-   <<
+   match ls.jacobianMatrix
+     case SOME(__) then
+     <<
+     bool <%modelname%>Algloop<%ls.index%>::isLinearTearing()
+     {
+          return true;
+     }
+     >>
+     else
+     <<
      bool <%modelname%>Algloop<%ls.index%>::isLinearTearing()
      {
           return false;
      }
-   >>
+     >>
 
 end isLinearTearingCode;
 
@@ -5624,9 +5691,28 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   ;separator="\n"%>
    >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))then
-     let &varDecls = buffer "" /*BUFD*/
+   match ls.jacobianMatrix
+       case SOME(__) then
+       let &varDecls = buffer "" /*BUFD*/
+       let prebody = (ls.residual |> eq2 =>
+         functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+     ;separator="\n")
+     let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+         let &preExp = buffer "" /*BUFD*/
+         let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+         '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
+      ;separator="\n")
+       <<
 
- let Amatrix=
+           <%varDecls%>
+           //prebody
+           <%prebody%>
+           //body
+           <%body%>
+       >>
+  else
+   let &varDecls = buffer "" /*BUFD*/
+   let Amatrix=
     (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -5810,12 +5896,24 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    _xd_init.resize(<%size%>);
   >>
   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-  let size = listLength(ls.vars)
-  <<
-    // Number of unknowns/equations according to type (0: double, 1: int, 2: bool)
-    _dimAEq = <%size%>;
-    fill_array(__b,0.0);
-  >>
+    match ls.jacobianMatrix
+       case SOME(__) then
+
+       let size = listLength(ls.vars)
+       <<
+        // Number of unknowns equations
+        _dimAEq = <%size%>;
+        _constraintType = IAlgLoop::REAL;
+        __xd.resize(<%size%>);
+        _xd_init.resize(<%size%>);
+       >>
+      else
+       let size = listLength(ls.vars)
+       <<
+        // Number of unknowns/equations according to type (0: double, 1: int, 2: bool)
+        _dimAEq = <%size%>;
+         fill_array(__b,0.0);
+       >>
 
 end initAlgloopDimension;
 
