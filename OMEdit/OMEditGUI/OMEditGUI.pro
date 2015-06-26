@@ -55,6 +55,8 @@ win32 {
 
   DEFINES += IMPORT_INTO=1
 
+  QMAKE_CXXFLAGS += -Wl,--stack,16777216
+
   CONFIG(release, debug|release) {
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
     # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
