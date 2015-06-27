@@ -11019,7 +11019,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     then
       let &unboxBuf = buffer ""
       let urhs = (match p.ty
-        case SOME(et) then '/* unbox <%unparseType(et)%> */<%\n%>' + unboxVariable(rhs, et, &unboxBuf, &varDecls)
+        case SOME(et) then unboxVariable(rhs, et, &unboxBuf, &varDecls)
         else rhs
       )
       <<<%unboxBuf%><%match p.exp

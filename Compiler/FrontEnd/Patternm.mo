@@ -2337,9 +2337,7 @@ algorithm
   for c in inCases loop
     DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info) := c;
     tpl := (func,a);
-    body1 := body;
-    // (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsTopDownHelper,tpl); // TODO: Enable with new tarball
-    Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {getInstanceName() + " not yet (fully) implemented for match expressions. Can be enabled once we have a new bootstrapping tarball. Called using: " + System.dladdr(func)}, sourceInfo());
+    (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsTopDownHelper,tpl); // TODO: Enable with new tarball
     (patternGuard1,a) := Expression.traverseExpOptTopDown(patternGuard,func,a);
     (result1,a) := Expression.traverseExpOptTopDown(result,func,a);
     cases := DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases;
