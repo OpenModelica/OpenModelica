@@ -1,1 +1,11 @@
 OpenModelicaHome.mo
+System_*.*
+Settings_*.*
+Print_*.*
+Flags_*.*
+Error_*.*
+ErrorExt_*.*
+OMCC_main*
+LexerTest_main*
+*Modelica.mo
+OMCC
