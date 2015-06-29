@@ -85,7 +85,7 @@ extern "C"
       if (functions && functions->logger)
         functions->logger(functions->componentEnvironment,
                           instanceName, fmi2Error,
-                          FMU2Wrapper::logCategoryName(logStatusError),
+                          FMU2Wrapper::LogCategoryFMUName(logStatusError),
                           e.what());
       return NULL;
     }
