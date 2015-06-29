@@ -452,8 +452,7 @@ package SimCode
       "this should only occure inside SES_NONLINEAR"
       Integer index;
       list<DAE.Statement> statements;
-      list<DAE.ComponentRef> outputCrefs "this are the output crefs of the original algorithm - not of the inverted one";
-      list<DAE.ComponentRef> knownOutputCrefs "this is a subset of outputCrefs that contain only those that are already known";
+      list<DAE.ComponentRef> knownOutputCrefs "this is a subset of output crefs of the original algorithm, which are already known";
     end SES_INVERSE_ALGORITHM;
 
     record SES_LINEAR

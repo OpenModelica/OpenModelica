@@ -6640,7 +6640,7 @@ algorithm
     local
       DAE.Algorithm alg;
       list<DAE.ComponentRef> solvedVars, algOutVars, knownOutputCrefs;
-      String message, algStr;
+      String crefsStr, algStr;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
       DAE.Expand crefExpand;
@@ -6679,15 +6679,27 @@ algorithm
       algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
       knownOutputCrefs = List.setDifference(algOutVars, solvedVars);
 
-      DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-    //then ({SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, solvedVars, solvedVars)}, iuniqueEqIndex+1);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, algOutVars, knownOutputCrefs)}, solvedVars, 0, NONE(), false, false, false), NONE())}, iuniqueEqIndex+2);
+      //List.filterOnTrue(BackendVariable.varList(knVars),BackendVariable.isRecordVar);
+      solvedVars = List.map(List.filterOnTrue(vars, BackendVariable.isVarNonDiscrete), BackendVariable.varCref);
+      solvedVars = List.setDifference(solvedVars, algOutVars);
 
-    // inverse algorithms
-    //case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) equation
-    //  solvedVars = List.map(vars, BackendVariable.varCref);
-    //  DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-    //then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, solvedVars, 0, NONE(), false, false, false), NONE())}, iuniqueEqIndex+2);
+      true = intEq(listLength(solvedVars), listLength(knownOutputCrefs));
+
+      DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs)}, solvedVars, 0, NONE(), false, false, false), NONE())}, iuniqueEqIndex+2);
+
+    // Error message, inverse algorithms cannot be solved for discrete variables
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) equation
+      solvedVars = List.map(vars, BackendVariable.varCref);
+      algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
+
+      // The variables solved for must all be part of the output variables of the algorithm.
+      failure(List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare));
+
+      crefsStr = ComponentReference.printComponentRefListStr(solvedVars);
+      algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
+      Error.addInternalError("Inverse Algorithm needs to be solved for " + crefsStr + " in\n" + algStr + "Discrete variables are not supported yet.", sourceInfo());
+    then fail();
 
     // failure
     else equation
@@ -12606,7 +12618,7 @@ algorithm
       SimCode.NonlinearSystem nlSystem;
       SimCode.SimEqSystem cont;
       list<DAE.ComponentRef> conditions;
-      list<DAE.ComponentRef> crefs, crefs2;
+      list<DAE.ComponentRef> crefs;
       list<DAE.ElementSource> sources;
       list<DAE.Exp> beqs;
       list<DAE.Statement> stmts;
@@ -12637,9 +12649,9 @@ algorithm
       /* TODO: Me */
     then (SimCode.SES_ALGORITHM(index, stmts), a);
 
-    case (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs, crefs2), _, a)
+    case (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs), _, a)
       /* TODO: Me */
-    then (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs, crefs2), a);
+    then (SimCode.SES_INVERSE_ALGORITHM(index, stmts, crefs), a);
 
     case (SimCode.SES_LINEAR(lSystem, alternativeTearingL), _, a)
       /* TODO: Me */
@@ -14452,7 +14464,7 @@ algorithm
       SimCode.SimEqSystem simEqSys;
       list<DAE.Exp> expLst;
       list<DAE.Statement> stmts;
-      list<DAE.ComponentRef> crefs, crefs2;
+      list<DAE.ComponentRef> crefs;
       list<DAE.ElementSource> sources;
       list<SimCode.SimEqSystem> simEqSysLst,elsebranch;
       list<SimCodeVar.SimVar> simVars;
@@ -14481,8 +14493,8 @@ algorithm
     case(SimCode.SES_ALGORITHM(statements=stmts), _) equation
       simEqSys = SimCode.SES_ALGORITHM(idx,stmts);
     then simEqSys;
-    case(SimCode.SES_INVERSE_ALGORITHM(statements=stmts, outputCrefs=crefs, knownOutputCrefs=crefs2), _) equation
-      simEqSys = SimCode.SES_INVERSE_ALGORITHM(idx, stmts, crefs, crefs2);
+    case(SimCode.SES_INVERSE_ALGORITHM(statements=stmts, knownOutputCrefs=crefs), _) equation
+      simEqSys = SimCode.SES_INVERSE_ALGORITHM(idx, stmts, crefs);
     then simEqSys;
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS)),_)
       equation

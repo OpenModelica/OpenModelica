@@ -2099,7 +2099,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
       let innerEqs = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
       let backupOutputs = match nls.eqs
         case (alg as SES_INVERSE_ALGORITHM(__))::{} then
-          let body = (alg.outputCrefs |> cr =>
+          let body = (alg.knownOutputCrefs |> cr =>
             let &varDecls += '<%crefType(cr)%> $OLD_<%cref(cr)%>;<%\n%>'
             '$OLD_<%cref(cr)%> = <%cref(cr)%>;'
           ;separator="\n")
@@ -2116,37 +2116,19 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
           >>
       let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
       let body_initializeStaticNLSData = (nls.crefs |> cr hasindex i0 =>
-          match crefType(cr)
-            case "modelica_real" then
-              <<
-              /* static nls data for <%cref(cr)%> */
-              nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
-              nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
-              nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
-              >>
-            case "modelica_integer" then
-              <<
-              /* FIX ME */
-              /* static nls data for <%cref(cr)%> */
-              nlsData->nominal[i] = 1;
-              nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
-              nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
-              >>
-            else
-              <<
-              /* FIX ME */
-              /* static nls data for <%cref(cr)%> */
-              nlsData->nominal[i] = 1;
-              nlsData->min[i]     = 0;
-              nlsData->max[i++]   = 1;
-              >>
+        <<
+        /* static nls data for <%cref(cr)%> */
+        nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
+        nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
+        nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
+        >>
       ;separator="\n")
       let prebody = (nls.eqs |> eq2 =>
         functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
       ;separator="\n")
       let body = match nls.eqs
         case (alg as SES_INVERSE_ALGORITHM(__))::{} then
-          (alg.outputCrefs |> cr hasindex i0 => 'res[<%i0%>] = $OLD_<%cref(cr)%> - <%cref(cr)%>;' ;separator="\n")
+          (alg.knownOutputCrefs |> cr hasindex i0 => 'res[<%i0%>] = $OLD_<%cref(cr)%> - <%cref(cr)%>;' ;separator="\n")
         else
           (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
             let &preExp = buffer ""
@@ -4424,19 +4406,11 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       /* extrapolate data */
       <%nls.crefs |> name hasindex i0 =>
         let namestr = cref(name)
-        match crefType(name)
-          case "modelica_boolean" then
-            <<
-            data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
-            data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-            data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, 0.0, 1.0);
-            >>
-          else
-            <<
-            data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
-            data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-            data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, $P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
-            >>
+        <<
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, $P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
+        >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, <%nls.indexNonLinearSystem%>);
       /* check if solution process was sucessful */
@@ -4471,7 +4445,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
         <<
         data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
         data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/,$P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, $P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
         >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, <%nls.indexNonLinearSystem%>);
