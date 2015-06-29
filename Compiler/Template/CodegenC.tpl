@@ -11244,6 +11244,7 @@ template literalExpConstBoxedVal(Exp lit, Text index, Text &preLit)
   let tmp = '_OMC_LIT_STRUCT<%index%>'
   match lit
   case ICONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%integer%>))'
+  case ENUM_LITERAL(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%index%>))'
   case lit as BCONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%if lit.bool then 1 else 0%>))'
   case lit as RCONST(__) then
     let &preLit +=
