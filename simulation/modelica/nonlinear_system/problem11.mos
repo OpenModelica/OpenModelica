@@ -1,0 +1,100 @@
+// name: problem11
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem4* _nonlinear_system.problem4* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+
+setCommandLineOptions("+d=dumpSimplifyLoops +simplifyLoops=0");
+simulate(nonlinear_system.problem11, stopTime=5,method="euler" ); getErrorString();
+
+val(res,{0.0, 0.5, 1.0, 1.5, 5});
+val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
+
+
+setCommandLineOptions("+d=dumpSimplifyLoops +simplifyLoops=1");
+simulate(nonlinear_system.problem11, stopTime=5,method="euler" ); getErrorString();
+
+val(res,{0.0, 0.5, 1.0, 1.5, 5});
+val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
+
+
+setCommandLineOptions("+d=dumpSimplifyLoops +simplifyLoops=2");
+simulate(nonlinear_system.problem11, stopTime=5,method="euler" ); getErrorString();
+
+val(res,{0.0, 0.5, 1.0, 1.5, 5});
+val(x[1],{0.0, 0.5, 1.0, 1.5, 5});
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: nonlinear_system.problem11
+// assert            | debug   | Solving non-linear system 5 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+//
+//
+// true
+// START: simplifyLoops
+// ------ Tearing ------
+// ------ loop-vars ------
+// x[3]
+// x[1]
+// x[2]
+// ------------
+// update eqn[2]
+// x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time)) 
+// => b * (cos(time) + x[2] ^ 2.0 + x[3]) - x[1] = 0.0 
+// update eqn[3]
+// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0 
+// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = ((-b) - a) * b 
+// update eqn[4]
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b 
+// => (a ^ 2.0 + b ^ 2.0) * x[2] + ((-a ^ 2.0) - b ^ 2.0) * x[1] - x[3] = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a 
+// END: simplifyLoops
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem11_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.0,2.842170943040401e-16,5.861977570020825e-16,8.926193117986258e-16,2.260414078136817e-15}
+// {5.561552812808831,5.409227846355742,4.987172179760111,4.393026202256716,4.663465947951011}
+// true
+// START: simplifyLoops
+// ------ Tearing ------
+// ------ loop-vars ------
+// x[3]
+// x[1]
+// x[2]
+// ------------
+// update eqn[2]
+// x[1] = b * (x[2] ^ 2.0 + x[3] + cos(time)) 
+// __OMC__1$LOOPT = cos(time) 
+// => b * (__OMC__1$LOOPT + x[2] ^ 2.0 + x[3]) - x[1] = 0.0 
+// update eqn[3]
+// x[2] ^ 2.0 = b + x[1] / b + a - a * x[2] ^ 2.0 
+// __OMC__2$LOOPT = ((-b) - a) * b 
+// => x[1] - b * x[2] ^ 2.0 * (1.0 + a) = __OMC__2$LOOPT 
+// update eqn[4]
+// x[3] / a = (a ^ 2.0 + b ^ 2.0) * x[2] / a + log(1.0 + time) + ((-a ^ 2.0) - b ^ 2.0) * x[1] / a + 1.0 / a + (-a) - b 
+// __OMC__3$LOOPT = -1.0 + a ^ 2.0 + (b - log(1.0 + time)) * a 
+// __OMC__4$LOOPF = (-a ^ 2.0) - b ^ 2.0 
+// __OMC__5$LOOPF = a ^ 2.0 + b ^ 2.0 
+// => __OMC__5$LOOPF * x[2] + __OMC__4$LOOPF * x[1] - x[3] = __OMC__3$LOOPT 
+// END: simplifyLoops
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem11_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'nonlinear_system.problem11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.0,2.842170943040401e-16,5.861977570020825e-16,9.459100169806337e-16,2.393640841091836e-15}
+// {5.561552812808831,5.409227846355742,4.987172179760109,4.393026202256716,4.663465947951011}
+// endResult

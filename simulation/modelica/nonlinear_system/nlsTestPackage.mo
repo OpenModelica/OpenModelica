@@ -131,4 +131,22 @@ package nonlinear_system
     0 = f2*((y/yn)*exp(-(x/xn)+(y/yn))-1);
   end problem10;
 
+  model problem11
+    Real[3] x(each start = 1);
+    parameter Real b = 1;
+    parameter Real a = 0;
+    Real[3] y;
+    Real res(start = 0, fixed = true);
+  equation
+    der(res) = abs(max(y))  + abs(min(y));
+    x[1] = b*x[2]^2 + b * x[3] + cos(time)*b;
+    x[2]^2 = b + x[1]/b - a*x[2]^2 + a;
+    x[3]/a = -b + (a^2+ b^2)* x[2]/a - a + log(time+1) - (a^2+ b^2)* x[1]/a + 1/a;
+
+    y[1] = abs(x[1] - (b*x[2]^2 + b * x[3] + cos(time)*b));
+    y[2] = abs(x[2]^2*b - (b^2 + x[1] - a*b*x[2]^2 + a*b)); 
+    y[3] = abs(x[3] -( -b*a + (a^2+ b^2)* x[2] - a^2 + log(time+1)*a - (a^2+ b^2)* x[1] + 1));
+
+  end problem11;
+
 end nonlinear_system;
