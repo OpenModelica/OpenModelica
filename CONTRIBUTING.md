@@ -50,3 +50,4 @@ submission if the reviewer missed it):
 * No adding+deleting the same file or line (debug lines/etc). Do an interactive rebase to squash the commits into one.
 * If you have many added+deleted files/etc - squash all commits into a single commit instead.
 * For OpenModelica-testsuite: Any added or modified reference file needs to use [filterSimulationResults](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/scripting_api.html#filtersimulationresults) to create a file with a minimal number of trajectories and output points in order to reduce the file size. It is often possible to reduce a file from 20MB to 10kB without significant losses.
+* Use short lines in commit messages in order for github and git tools to display properly in terminal /web GUI. Hudson enforces a 50-character summary followed by 72-character lines.
