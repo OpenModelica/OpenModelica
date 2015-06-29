@@ -1,11 +1,6 @@
 encapsulated partial package OMCCBaseLexer "Implements the DFA of OMCC"
-import Types;
-import LexerCode;
-import LexTable;
-import OMCCTypes;
+
 import System;
-import List;
-import Util;
 
 import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds checked with debug=true
 import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
@@ -34,14 +29,14 @@ replaceable partial function action
   input Boolean debug;
   input String fileNm;
   input String fileContents;
-  output OMCCTypes.Token token;
+  output Token.Token token;
   output Integer mm_startSt;
   output Integer bufferRet;
 end action;
 
 function scan "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
   input String fileName "input source code file";
-  output list<OMCCTypes.Token> tokens "return list of tokens";
+  output list<Token.Token> tokens "return list of tokens";
 protected
   String contents;
 algorithm
@@ -51,7 +46,7 @@ end scan;
 
 function scanString "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
   input String fileSource "input source code file";
-  output list<OMCCTypes.Token> tokens "return list of tokens";
+  output list<Token.Token> tokens "return list of tokens";
 algorithm
   tokens := lex("<StringSource>",fileSource);
 end scanString;
@@ -70,7 +65,7 @@ end loadSourceCode;
 function lex "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
   input String fileName "input source code file";
   input String contents;
-  output list<OMCCTypes.Token> tokens "return list of tokens";
+  output list<Token.Token> tokens "return list of tokens";
 protected
   Integer startSt,numStates,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
   list<Integer> cProg,cProg2;
@@ -115,7 +110,7 @@ end lex;
 
 function consume
   input Integer cp;
-  input list<OMCCTypes.Token> tokens;
+  input list<Token.Token> tokens;
   input String fileContents;
   input Integer startSt;
   input Integer currSt,pos,sPos,ePos,linenr,inLineNrStart;
@@ -123,7 +118,7 @@ function consume
   input array<Integer> inStates;
   input Integer inNumStates;
   input String fileName;
-  output list<OMCCTypes.Token> resToken;
+  output list<Token.Token> resToken;
   output Integer bkBuffer = 0;
   output Integer mm_startSt;
   output Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
@@ -131,7 +126,7 @@ function consume
   output array<Integer> states;
   output Integer numStates;
 protected
-  OMCCTypes.Token tok;
+  Token.Token tok;
   Integer act,buffer2;
   Integer c,baseCond;
 algorithm
@@ -217,16 +212,8 @@ algorithm
     end if;
     buffer := buffer2;
 
-/*
-  _ := match otok
-local
-OMCCTypes.Token tok;
-case SOME(tok) algorithm print("Output token: " + OMCCTypes.printToken(tok) + "\n"); then ();
-else ();
-end match;
-*/
     resToken := match tok
-      case OMCCTypes.TOKEN(id=-1) then tokens;
+      case Token.TOKEN(id=-1) then tokens;
       else tok::tokens;
     end match;
     if(debug) then
@@ -358,24 +345,12 @@ function getInfo
   input Integer lineNrStart;
   input Integer mm_linenr;
   input String programName;
-  output OMCCTypes.Info info;
+  output SourceInfo info;
 protected
   Integer mm_sPos;
   Integer c;
 algorithm
-/*  for i in  (List.isEmpty(buff1)==false) loop
-      c::buff1 := buff1;
-      if (c==10) then
-          mm_linenr := mm_linenr - 1;
-          mm_sPos := 0;
-      else
-          mm_sPos := mm_sPos - 1;
-      end if;
-  end while; */
-  info := OMCCTypes.INFO(programName,false,lineNrStart,ePos+1,mm_linenr /* flineNr */, sPos+1 /* frPos+1 */,Absyn.dummyTimeStamp);
-  /*if (true) then
-     print("\nTOKEN file:" +programName + " p(" + intString(mm_sPos) + ":" + intString(mm_linenr) + ")-(" + intString(frPos) + ":" + intString(flineNr) + ")");
-  end if; */
+  info := SOURCEINFO(programName,false,lineNrStart,ePos+1,mm_linenr /* flineNr */, sPos+1 /* frPos+1 */,Absyn.dummyTimeStamp);
 end getInfo;
 
 function printBuffer2
@@ -410,7 +385,7 @@ protected
   Integer c;
 algorithm
   outList := "";
-  while (List.isEmpty(inList1)==false) loop
+  while (listEmpty(inList1)==false) loop
      c::inList1 := inList1;
      outList := outList + intStringChar(c);
   end while;

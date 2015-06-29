@@ -27,7 +27,7 @@ parser-all: omcc
 lexer: LexerTest_main.so
 	$(CC) -g -O2 -o $@ $< '-Wl,-rpath,$$ORIGIN'
 
-LexerTest_main.so: LexerTest.mos LexerTest.mo LexerModelica.mo LexerCodeModelica.mo LexTableModelica.mo TokenModelica.mo
+LexerTest_main.so: LexerTest.mos LexerTest.mo LexerModelica.mo
 	rm -f LexerTest_main.makefile
 	$(OMC) $<
 	$(MAKE) -f LexerTest_main.makefile

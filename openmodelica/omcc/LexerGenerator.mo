@@ -153,7 +153,7 @@ print(intString(i) + " is token " + tokenName + "\n");
       if (debug==true) then
          print("\n BEGIN at" + intString(valBegin));
       end if;
-      cp := "     mm_startSt = " + intString(valBegin) +";";
+      cp := "\n        mm_startSt = " + intString(valBegin) +";";
       resTable := cp::resTable;
     end if;
 
@@ -167,15 +167,13 @@ print(intString(i) + " is token " + tokenName + "\n");
     end if;
 
    if tokenName <> "" then
-     cp := "\n        act2 = Token.";
+     cp := "\n        tok = TOKEN(\"";
      resTable := tokenName::cp::resTable;
-     cp := ";\n        tok = OMCCTypes.TOKEN(\"";
-     resTable := tokenName::cp::resTable;
-     cp := "\",act2,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);\n      then tok;\n";
-     resTable := cp::resTable;
+     cp := ",fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);\n      then tok;\n";
+     resTable := cp::tokenName::"\",TokenId."::resTable;
    else
      //print("NONE");
-     cp := "\n      then OMCCTypes.noToken;\n";
+     cp := "\n      then noToken;\n";
      resTable := cp::resTable;
    end if;
 
@@ -423,10 +421,10 @@ function buildTokens
   output String result;
 protected
   String cp,re,flexCode,s;
-  Integer numMatches=0;
+  // Integer numMatches=0;
   list<String> resTable,tokens,tokens2,tmp;
 algorithm
-  cp := "encapsulated package Token";
+  cp := "type TokenId = enumeration(\n  ";
   resTable := cp::{};
   tokens := {};
 
@@ -438,16 +436,11 @@ algorithm
       tokens := s :: tokens;
     end if;
   end for;
-  tokens2 := List.sortedUnique(List.sort(tokens, Util.strcmpBool), stringEqual);
-  numMatches := listLength(tokens2);
-  tokens := {};
-  for str in tokens2 loop
-    tokens := ("\n  constant Integer " + str + "=" + String(numMatches) + ";") :: tokens;
-    numMatches := numMatches - 1;
-  end for;
-  cp := stringAppendList(listReverse(tokens));
+  tokens2 := "_NO_TOKEN"::List.sortedUnique(List.sort(tokens, Util.strcmpBool), stringEqual);
+  // numMatches := listLength(tokens2);
+  cp := stringDelimitList(tokens2, ",\n  ");
   resTable := cp::resTable;
-  cp := "\nend Token;";
+  cp := "\n);";
   resTable := cp::resTable;
 
   resTable := listReverse(resTable);

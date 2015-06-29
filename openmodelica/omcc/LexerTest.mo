@@ -4,12 +4,7 @@ import LexerModelica;
 import ParserModelica;
 import ParseCodeModelica;
 
-import Absyn;
-import Util;
-import RTOpts;
 import System;
-import Types;
-import OMCCTypes;
 import Flags;
 import Error;
 
@@ -19,7 +14,7 @@ public function main
   start the translation."
   input list<String> inStringLst;
 protected
-  list<OMCCTypes.Token> tokens;
+  list<LexerModelica.Token> tokens;
   type Mcode_MCodeLst = list<Mcode.MCode>;
 algorithm
    _ := matchcontinue (inStringLst)

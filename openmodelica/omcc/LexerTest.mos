@@ -1,8 +1,5 @@
 setCommandLineOptions({"+g=MetaModelica","+d=rml"});
 
-loadFile("OMCCTypes.mo");
-loadFile("OMCCBaseLexer.mo");
-
 compilerSources := "../../../OMCompiler/Compiler/";
 
 loadFiles({compilerSources + f for f in {

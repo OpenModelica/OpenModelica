@@ -29,7 +29,7 @@ algorithm
         tokens = LexerGenerator.buildTokens("lexer"+ parser +".l");
         str = LexerGenerator.genLexer("lexer"+ parser +".c", "lexer"+ parser +".l", parser, tokens=tokens);
         print("Result:" + str + "\n");
-        print("\nGenerated files:\n" + sum("  " + s + "Modelica.mo\n" for s in {"Lexer"}));
+        print("\nGenerated files:\n" + sum("  " + s + parser +".mo\n" for s in {"Lexer"}));
       then ();
     case args as _::_
       equation

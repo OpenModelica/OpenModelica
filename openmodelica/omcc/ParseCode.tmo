@@ -15,7 +15,7 @@ end AstStack;
 
 function initAstStack
   output AstStack astStack;
- algorithm 
+ algorithm
    astStack := ASTSTACK({},{});
 end initAstStack;
 
@@ -38,7 +38,7 @@ algorithm
   _ := match act
     local
       //local variables
-%caseAction%    
+%caseAction%
      else
        equation
           error = true;
@@ -48,7 +48,7 @@ algorithm
     print("reduce: " + intString(act) + " to " + intString(listLength(stack)) + " on stack\n");
   end if;
   outStack := ASTSTACK(stackToken=stackToken,stack=stack);
-end actionRed;  
+end actionRed;
 
 function mergeStackTokens
   input list<OMCCTypes.Token> skToken;
@@ -57,7 +57,7 @@ function mergeStackTokens
 protected
   list<OMCCTypes.Token> skToken1:=skToken;
   OMCCTypes.Token token;
-  OMCCTypes.Info tmpInfo;
+  SourceInfo tmpInfo;
   Integer lns,cns,lne,cne,i;
   String fn;
 algorithm
@@ -72,7 +72,7 @@ algorithm
   end for;
   // TODO: merge the contents also?
   token := OMCCTypes.TOKEN("grouped token",0,"",0,0,lns,cns,lne,cne);
-  skTokenRes := token::skToken1; 
+  skTokenRes := token::skToken1;
 end mergeStackTokens;
 
 function push
@@ -88,6 +88,44 @@ algorithm
   stack := TOKEN(token)::stack;
   astStk2 := ASTSTACK(stackToken=stackToken,stack=stack);
 end push;
+
+/* TODO: Add these.
+
+function makeInfo
+  input Token tok;
+  input String fileName;
+  output Info info;
+protected
+  Integer lns,cns,lne,cne;
+algorithm
+  TOKEN(lineNumberStart=lns,columnNumberStart=cns,lineNumberEnd=lne,columnNumberEnd=cne) := tok;
+  info := SOURCEINFO(fileName,false,lns,cns,lne,cne,Absyn.dummyTimeStamp);
+end makeInfo;
+
+function getMergeTokenValue
+  input Token token1;
+  input Token token2;
+  output String value;
+algorithm
+  value := getStringValue(token1) + getStringValue(token2);
+end getMergeTokenValue;
+
+function getInfo
+  input Integer len;
+  input Integer sPos;
+  input Integer ePos;
+  input Integer lineNrStart;
+  input Integer mm_linenr;
+  input String programName;
+  output SourceInfo info;
+protected
+  Integer mm_sPos;
+  Integer c;
+algorithm
+  info := SOURCEINFO(programName,false,lineNrStart,ePos+1,mm_linenr /* flineNr */, sPos+1 /* frPos+1 */,Absyn.dummyTimeStamp);
+end getInfo;
+
+*/
 
 %epilogue%
 
