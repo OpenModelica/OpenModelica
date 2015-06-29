@@ -653,6 +653,10 @@ algorithm
     case(DAE.BINARY(e1,op,e2)) guard(isSub(op))
     then DAE.BINARY(e2,op,e1);
 
+    case e // -0 = 0
+    guard isZero(e)
+    then e;
+
     case (DAE.ICONST(i))
       equation
         i_1 = 0 - i;
@@ -668,21 +672,16 @@ algorithm
 
     case(e)
       equation
-        if isZero(e) // -0 = 0
-        then
-          outExp = e;
+        t = typeof(e);
+        outExp = match (t)
+        case (DAE.T_BOOL()) // not e
+          then DAE.LUNARY(DAE.NOT(t),e);
         else
-          t = typeof(e);
-          outExp = match (t)
-            case (DAE.T_BOOL()) // not e
-              then DAE.LUNARY(DAE.NOT(t),e);
-            else
-              equation
-                b = DAEUtil.expTypeArray(t);
-                op = if b then DAE.UMINUS_ARR(t) else DAE.UMINUS(t);
-              then DAE.UNARY(op,e);
-          end match;
-        end if;
+          equation
+            b = DAEUtil.expTypeArray(t);
+            op = if b then DAE.UMINUS_ARR(t) else DAE.UMINUS(t);
+          then DAE.UNARY(op,e);
+        end match;
       then
         outExp;
 
@@ -3660,6 +3659,7 @@ makeSum => a + (b + c)
 
 
   input list<DAE.Exp> inExpLst;
+  input Boolean simplify = false;
   output DAE.Exp outExp;
 protected
   DAE.Exp e1,e2;
@@ -3668,7 +3668,7 @@ algorithm
             case({}) then DAE.RCONST(0.0);
             case({e1}) then e1;
             case({e1,e2}) then expAdd(e1,e2);
-            case(_)then makeSumWork(inExpLst);
+            case(_)then makeSumWork(inExpLst, simplify);
             else
               equation
                if Flags.isSet(Flags.FAILTRACE) then
@@ -3684,13 +3684,14 @@ protected function makeSumWork
 "Takes a list of expressions an makes a sum
   expression adding all elements in the list."
   input list<DAE.Exp> inExpLst;
+  input Boolean simplify = false;
   output DAE.Exp outExp;
 
 protected
   Type tp;
   list<DAE.Exp> rest;
   DAE.Exp eLst;
-  Operator op;
+  DAE.Operator op;
 
 algorithm
   eLst :: rest := inExpLst;
@@ -3699,7 +3700,7 @@ algorithm
 
   outExp := eLst;
   for elem in rest loop
-    outExp := if isZero(elem) then outExp elseif isZero(outExp) then elem else DAE.BINARY(outExp, op, elem);
+    outExp := if isZero(elem) then outExp elseif isZero(outExp) then elem elseif simplify then ExpressionSimplify.simplify1(DAE.BINARY(outExp, op, elem)) else DAE.BINARY(outExp, op, elem);
   end for;
 
 end makeSumWork;
@@ -7504,6 +7505,17 @@ algorithm
          end match;
 end isDivBinary;
 
+public function isPow "returns true if operator is POW"
+  input DAE.Operator op;
+  output Boolean res;
+algorithm
+  res := match(op)
+    case(DAE.POW()) then true;
+    else false;
+  end match;
+end isPow;
+
+
 public function isFunCall "return true if expression is DAE.CALL(path=Absyn.IDENT(name))"
   input DAE.Exp iExp;
   input String name;
@@ -8155,6 +8167,17 @@ algorithm
   end match;
 end isUnary;
 
+public function isBinary
+  "Returns true if expression is an binary."
+  input DAE.Exp inExp;
+  output Boolean outB;
+algorithm
+  outB:= match(inExp)
+    case(DAE.BINARY()) then true;
+    else false;
+  end match;
+end isBinary;
+
 public function isNegativeUnary
   "Returns true if expression is a negative unary."
   input DAE.Exp inExp;
@@ -8177,6 +8200,17 @@ algorithm
     else false;
   end match;
 end isCref;
+
+public function isUnaryCref
+  input DAE.Exp inExp;
+  output Boolean outIsCref;
+algorithm
+  outIsCref := match inExp
+    case DAE.UNARY(DAE.UMINUS(), DAE.CREF()) then true;
+    else false;
+  end match;
+
+end isUnaryCref;
 
 public function isCall
   "Returns true if the given expression is a function call,
@@ -12129,7 +12163,7 @@ end while;
 
 end createResidualExp2;
 
-protected function createResidualExp3
+public function createResidualExp3
 "author: Vitalij
   helper function of createResidualExp3
   swaps args"
@@ -12148,9 +12182,7 @@ algorithm
 
     // f(x) = f(y) -> x = y
     case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
-     equation
-       true = s1 == s2;
-       true = createResidualExp4(s1);
+      guard s1 == s2 and createResidualExp4(s1)
      then (e1,e2, true);
     // sqrt(f(x)) = 0.0 -> f(x) = 0
     case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(0.0))
@@ -12190,9 +12222,7 @@ algorithm
     then (e1,e2,true);
   // f(x) - f(y) = 0 -> x = y
     case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.SUB(),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
-     equation
-       true = s1 == s2;
-       true = createResidualExp4(s1);
+    guard s1 == s2 and createResidualExp4(s1)
      then (e1,e2,true);
    else (iExp1, iExp2, false);
   end matchcontinue;

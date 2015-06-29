@@ -2058,6 +2058,83 @@ algorithm
   end match;
 end setEquationAttributes;
 
+public function setEquationLHS
+"
+  sets the left hand side expression of an equation.
+"
+  input BackendDAE.Equation inEqn;
+  input DAE.Exp lhs;
+  output BackendDAE.Equation outEqn;
+algorithm
+  outEqn := match inEqn
+    local
+      DAE.ElementSource source;
+      list<Integer> dimSize;
+      DAE.Exp rhs;
+      DAE.ComponentRef componentRef;
+      Integer size;
+      DAE.Algorithm alg;
+      DAE.Expand expand;
+      BackendDAE.WhenEquation whenEquation;
+      list< .DAE.Exp> conditions;
+      list<list<BackendDAE.Equation>> eqnstrue;
+      list<BackendDAE.Equation> eqnsfalse;
+      BackendDAE.EquationAttributes attr;
+
+    case BackendDAE.EQUATION(scalar=rhs, source=source, attr=attr)
+    then BackendDAE.EQUATION(lhs, rhs, source, attr);
+
+    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, right=rhs, source=source, attr=attr)
+    then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, attr);
+
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function setEquationLHS failed", sourceInfo());
+    then fail();
+  end match;
+end setEquationLHS;
+
+public function setEquationRHS
+"
+  sets the right hand side expression of an equation.
+"
+  input BackendDAE.Equation inEqn;
+  input DAE.Exp rhs;
+  output BackendDAE.Equation outEqn;
+algorithm
+  outEqn := match inEqn
+    local
+      DAE.ElementSource source;
+      list<Integer> dimSize;
+      DAE.Exp lhs;
+      DAE.ComponentRef componentRef;
+      Integer size;
+      DAE.Algorithm alg;
+      DAE.Expand expand;
+      BackendDAE.WhenEquation whenEquation;
+      list< .DAE.Exp> conditions;
+      list<list<BackendDAE.Equation>> eqnstrue;
+      list<BackendDAE.Equation> eqnsfalse;
+      BackendDAE.EquationAttributes attr;
+
+    case BackendDAE.EQUATION(exp=lhs, source=source, attr=attr)
+    then BackendDAE.EQUATION(lhs, rhs, source, attr);
+
+    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, source=source, attr=attr)
+    then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, attr);
+
+    case BackendDAE.SOLVED_EQUATION(componentRef=componentRef, source=source, attr=attr)
+    then BackendDAE.SOLVED_EQUATION(componentRef, rhs, source, attr);
+
+    case BackendDAE.RESIDUAL_EQUATION(source=source, attr=attr)
+    then BackendDAE.RESIDUAL_EQUATION(rhs, source, attr);
+
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function setEquationRHS failed", sourceInfo());
+    then fail();
+  end match;
+end setEquationRHS;
+
+
 public function generateSolvedEqnsfromOption "author: Frenkel TUD 2010-05"
   input DAE.ComponentRef inLhs;
   input Option<DAE.Exp> inRhs;
@@ -2176,56 +2253,81 @@ public function makeTmpEqnForExp
   output BackendDAE.EquationArray oeqns = ieqns;
   output BackendDAE.Variables ovars = ivars;
   output BackendDAE.Shared oshared = ishared;
-
+  //output BackendDAE.StrongComponent
+  output Boolean update;
+  output Boolean para = false;
 protected
   DAE.ComponentRef cr;
-  DAE.ComponentRef cr_time = ComponentReference.makeCrefIdent("time", DAE.T_REAL_DEFAULT , {});
   BackendDAE.Var tmpvar;
   String name_ = "__OMC__" + intString(offset) + "$" + name;
-  DAE.Exp x, y;
+  DAE.Exp y;
   BackendDAE.Equation eqn;
-  list<BackendDAE.Var> eqnVars, eqnKnVars, inputsKnVars, paramKnVars;
+  list<BackendDAE.Var> eqnVars, eqnKnVars, inputsKnVars;
   BackendDAE.Variables knowVars;
   Boolean b;
 
 algorithm
 
   (y, _) := ExpressionSimplify.simplify(iExp);
-  b := Expression.isCref(y) or Expression.isConst(y);
-  if not b then
-    cr  := ComponentReference.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
-    tmpvar := BackendVariable.makeVar(cr);
-    x := Expression.crefExp(cr);
-    oExp := x;
+  if makeTmpEqnForExp_rule(y) then
+    update := true;
 
-    eqn := BackendDAE.EQUATION(x, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    //BackendDump.printEquation(eqn);
+    cr  := ComponentReference.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
+    oExp := Expression.crefExp(cr);
+
+    tmpvar := BackendVariable.makeVar(cr);
+    tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
+
+    eqn := BackendDAE.EQUATION(oExp, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+    if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+      BackendDump.printEquation(eqn);
+    end if;
     eqnVars := equationVars(eqn, ivars);
-    b := listEmpty(eqnVars) and not Expression.expHasCref(y,cr_time);
+    b := listEmpty(eqnVars) and not Expression.expHasCref(y, DAE.crefTime);
     if b then
       knowVars := BackendVariable.daeKnVars(oshared);
       eqnKnVars := equationVars(eqn, knowVars);
       (inputsKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isInput);
        b := listEmpty(inputsKnVars);
     end if;
+
     if b then
       tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
-      (paramKnVars,_) := List.splitOnTrue(eqnKnVars, BackendVariable.isParam);
-      if listEmpty(paramKnVars) then
-        tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.CONST());
-      else
-        tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.PARAM());
-      end if;
+      tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.PARAM());
       oshared := BackendVariable.addKnVarDAE(tmpvar, oshared);
+      para := true;
     else
       oeqns := BackendEquation.addEquation(eqn, oeqns);
       ovars := BackendVariable.addVar(tmpvar, ovars);
     end if;
+
   else
    oExp := y;
+   update := false;
   end if;
 
 end makeTmpEqnForExp;
+
+protected function makeTmpEqnForExp_rule
+  input DAE.Exp inExp;
+  output Boolean allowed;
+algorithm
+
+  if Expression.isCref(inExp) or Expression.isConst(inExp) or Expression.isUnaryCref(inExp) then
+    allowed := false;
+    return;
+  end if;
+
+  allowed := match inExp
+             local DAE.Exp e1, e2;
+             case DAE.BINARY(e1,DAE.DIV(),e2)
+             guard (Expression.isOne(e1) or Expression.isConstMinusOne(e1)) and (Expression.isCref(e2) or Expression.isUnaryCref(e2))
+              then false;
+             case DAE.CAST(exp=e1) then makeTmpEqnForExp_rule(e1);
+             else true;
+             end match;
+
+end makeTmpEqnForExp_rule;
 
 public function normalizationVec
 "
@@ -2770,6 +2872,26 @@ algorithm
     then fail();
   end match;
 end addOperation;
+
+public function isEquationsSystem
+  input BackendDAE.StrongComponent comp;
+  output Boolean res;
+algorithm
+  res := match comp
+         case BackendDAE.EQUATIONSYSTEM() then true;
+         else false;
+         end match;
+end isEquationsSystem;
+
+public function isTornSystem
+  input BackendDAE.StrongComponent comp;
+  output Boolean res;
+algorithm
+  res := match comp
+         case BackendDAE.TORNSYSTEM() then true;
+         else false;
+         end match;
+end isTornSystem;
 
 public function isWhenEquation
   input BackendDAE.Equation inEqn;

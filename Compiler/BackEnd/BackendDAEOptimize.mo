@@ -73,6 +73,7 @@ protected import Flags;
 protected import Graph;
 protected import HashTableExpToIndex;
 protected import List;
+protected import Matching;
 protected import RewriteRules;
 protected import SCode;
 protected import System;
@@ -4251,6 +4252,512 @@ algorithm
   //b := intLt(i1 ,i2);
   b := intGt(i1 ,i2);
 end compWeightsEqns;
+
+// =============================================================================
+// section for simplifyLoops
+//
+// simplify(hopful) loops for simulation
+// author: Vitalij Ruge
+// =============================================================================
+
+public function simplifyLoops
+  input BackendDAE.BackendDAE iDAE;
+  output BackendDAE.BackendDAE oDAE;
+algorithm
+  oDAE := if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then simplifyLoopsMain(iDAE) else iDAE;
+end simplifyLoops;
+
+protected function simplifyLoopsMain
+  input BackendDAE.BackendDAE iDAE;
+  output BackendDAE.BackendDAE oDAE = iDAE;
+protected
+  list<BackendDAE.EqSystem> systlst, new_systlst = {};
+  BackendDAE.Shared shared;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.StrongComponents comps;
+  BackendDAE.Matching matching;
+  DAE.FunctionTree functionTree;
+  Boolean update;
+  Integer index = 1, ii;
+  BackendDAE.EqSystem nSyst;
+  list<Integer> ass1;
+  list<Integer> ass2;
+  list<Integer> compOrders;
+  Integer ne, nv;
+  Boolean simDAE;
+algorithm
+  //BackendDump.bltdump("START:", oDAE);
+  BackendDAE.DAE(systlst, shared) := iDAE;
+  BackendDAE.SHARED(functionTree=functionTree) := shared;
+
+  simDAE := match shared
+            case BackendDAE.SHARED(backendDAEType = BackendDAE.SIMULATION()) then true;
+            else false;
+            end match;
+
+  if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+    print("START: simplifyLoops\n");
+    if not simDAE then
+      print("\n***noSIM***\n");
+    end if;
+  end if;
+  for syst in systlst loop
+    update := false;
+    ass1 := {};
+    ass2 := {};
+    compOrders := {};
+    ii := 1;
+    BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching as BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
+    BackendDAE.EQUATION_ARRAY(numberOfElement=ne) := eqns;
+    BackendDAE.VARIABLES(numberOfVars= nv) := vars;
+
+    for comp in comps loop
+      if BackendEquation.isEquationsSystem(comp) or BackendEquation.isTornSystem(comp) then
+        (index,vars,eqns,shared,update, ass1, ass2,compOrders) := simplifyLoopsWork(comp, index, vars, eqns, shared, update, ass1, ass2, simDAE, ii, compOrders);
+      end if;
+      ii := ii + 1;
+    end for; // comp
+    nSyst := if update then simplifyLoopsUpdateMatching(vars, eqns, syst, listReverse(ass1), listReverse(ass2), ne, nv, functionTree, listReverse(compOrders)) else syst;
+    new_systlst := nSyst :: new_systlst;
+  end for; //syst
+  oDAE:= BackendDAE.DAE(new_systlst, shared);
+  //oDAE:= BackendDAE.DAE(listReverse(new_systlst), shared);
+  //BackendDump.bltdump("ENDE:", oDAE);
+
+  if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+    print("END: simplifyLoops\n");
+  end if;
+
+end simplifyLoopsMain;
+
+protected function simplifyLoopsUpdateMatching
+"
+TODO: check me!
+"
+  input BackendDAE.Variables inVars "vars array";
+  input BackendDAE.EquationArray inEqns "eqns array";
+  input BackendDAE.EqSystem inSyst;
+  input list<Integer> ass1_;
+  input list<Integer> ass2_;
+  input Integer nEqns;
+  input Integer nVars;
+  input DAE.FunctionTree functionTree;
+  input list<Integer> compOrders;
+  output BackendDAE.EqSystem outSyst = inSyst;
+
+protected
+  array<Integer> ass1 "eqn := ass1[var]";
+  array<Integer> ass2 "var := ass2[eqn]";
+  Integer n1, n2;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.Matching matching;
+  BackendDAE.StrongComponents comps;
+//  BackendDAE.IncidenceMatrix m;
+//  BackendDAE.IncidenceMatrixT mT;
+algorithm
+  //print("\nStart simplifyLoopsUpdateMatching");
+
+  BackendDAE.EQSYSTEM(partitionKind=partitionKind, stateSets=stateSets,matching=matching) := inSyst;
+  BackendDAE.MATCHING(comps=comps, ass1 = ass1, ass2=ass2) := matching;
+
+  n1 := listLength(ass1_);
+  n2 := listLength(ass2_);
+
+  ass1 := Array.expand(n1, ass1, -1);
+  ass2 := Array.expand(n2, ass2, -1);
+
+  //print("ass1 :" + intString(arrayLength(ass1)) + "/" + intString(n1) + "/" + intString(nEqns));
+  //print("\nass2 :" + intString(arrayLength(ass2)) + "/" + intString(n2) + "/" + intString(nVars) + "\n");
+  //alg fix
+
+  ass1 := simplifyLoopsUpdateAss(ass1, ass1_, nVars);
+  ass2 := simplifyLoopsUpdateAss(ass2, ass2_, nEqns);
+
+  comps := simplifyLoopsUpdateComps(comps, ass1_, ass2_, compOrders);
+
+  matching := BackendDAE.MATCHING(ass1,ass2,comps);
+  //matching := BackendDAE.NO_MATCHING();
+  outSyst :=  BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), matching, stateSets, partitionKind);
+
+/*
+  (_,m,mT) :=  BackendDAEUtil.getIncidenceMatrix(outSyst, BackendDAE.NORMAL(), SOME(functionTree));
+  (ass1, ass2) := Matching.PerfectMatching(m);
+  comps := simplifyLoopsUpdateComps(comps, ass1_, ass2_);
+  matching := BackendDAE.MATCHING(ass1,ass2,comps);
+  outSyst :=  BackendDAE.EQSYSTEM(inVars, inEqns, SOME(m), SOME(mT), matching, stateSets, partitionKind);
+*/
+
+  //print("\nEnde simplifyLoopsUpdateMatching");
+end simplifyLoopsUpdateMatching;
+
+protected function simplifyLoopsUpdateAss
+  input array<Integer> inAss;
+  input list<Integer> new_ass;
+  input Integer n;
+  output array<Integer> outAss = inAss;
+protected
+  Integer i = 1;
+algorithm
+  for a in new_ass loop
+    outAss[i+n] := a;
+    i := i + 1;
+  end for;
+end simplifyLoopsUpdateAss;
+
+protected function simplifyLoopsUpdateComps
+  input BackendDAE.StrongComponents inComps;
+  input list<Integer> inAss1;
+  input list<Integer> inAss2;
+  input list<Integer> inCompOrders;
+  output BackendDAE.StrongComponents outComps = inComps;
+protected
+  Integer a1, a2, shift = 0, o;
+  BackendDAE.StrongComponent comp;
+  list<Integer> ass1 = inAss1, ass2 = inAss2, compOrders = inCompOrders;
+algorithm
+  for a1 in ass1 loop
+    o :: compOrders := compOrders;
+    a2 :: ass2 := ass2;
+    comp := BackendDAE.SINGLEEQUATION(a1, a2);
+    //print("comp: " + intString(a1) + " <->" + intString(a2) + "\n");
+    outComps := List.insert(outComps, o + shift, comp);
+    shift := shift + 1;
+    //outComps := comp :: outComps;
+  end for;
+end simplifyLoopsUpdateComps;
+
+protected function simplifyLoopsWork
+  input BackendDAE.StrongComponent inComp;
+  input Integer inIndx;
+  input BackendDAE.Variables inVars "vars array";
+  input BackendDAE.EquationArray inEqns "eqns array";
+  input BackendDAE.Shared inShared;
+  input Boolean inUpdate;
+  input list<Integer> ass1_;
+  input list<Integer> ass2_;
+  input Boolean simDAE;
+  input Integer ii;
+  input list<Integer> inCompOrders;
+  output Integer outIndx = inIndx;
+  output BackendDAE.Variables outVars = inVars "vars array";
+  output BackendDAE.EquationArray outEqns  = inEqns "eqns array";
+  output BackendDAE.Shared outShared = inShared;
+  output Boolean outUpdate = inUpdate;
+  output list<Integer> ass1 = ass1_;
+  output list<Integer> ass2 = ass2_;
+  output list<Integer> outCompOrders = inCompOrders;
+protected
+  list<Integer> eqns;
+  list<Integer> vv;
+  list<Integer> vars "be careful with states, this are solved for der(x)";
+  list<DAE.ComponentRef> var_lst = {} "varName";
+  DAE.ComponentRef cr;
+  BackendDAE.Equation eqn;
+  Boolean update, linear;
+  Integer i, k;
+  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  tuple<Integer,list<Integer>> tpl;
+algorithm
+
+  if BackendEquation.isEquationsSystem(inComp) then
+    BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars) := inComp;
+
+    //create tmp vars only for nonlinear case
+    if BackendDAEUtil.isLinearEqSystemComp(inComp) then
+      return;
+    end if;
+    if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+        print("------ EquationsSystem ------\n");
+    end if;
+
+  else
+    BackendDAE.TORNSYSTEM(linear=linear, strictTearingSet = BackendDAE.TEARINGSET(tearingvars=vars, residualequations=eqns, otherEqnVarTpl= otherEqnVarTpl)) := inComp;
+    if linear then
+      return;
+    end if;
+    if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+        print("------ Tearing ------\n");
+    end if;
+
+    for tpl in otherEqnVarTpl loop
+      (k,vv) := tpl;
+      eqns := k :: eqns;
+      vars := listAppend(vv,vars);
+    end for;
+  end if; //comp
+
+  if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+    print("------ loop-vars ------\n");
+  end if;
+
+  for i in vars loop
+    BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(outVars, i);
+    var_lst := cr :: var_lst;
+    if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+        print(ComponentReference.printComponentRefStr(cr) +"\n");
+    end if;
+  end for;
+
+  if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+    print("------------\n");
+  end if;
+
+  for i in eqns loop
+    try
+      eqn := BackendEquation.equationNth1(outEqns, i);
+      if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+        print("update eqn[" + intString(i) + "]\n");
+        BackendDump.printEquation(eqn);
+      end if;
+      (outIndx, outVars, outEqns, outShared, update, eqn, ass1, ass2, outCompOrders) := simplifyLoopEqn(outIndx, outVars, outEqns, outShared, var_lst, eqn, ass1, ass2, simDAE, ii, outCompOrders);
+      outUpdate := outUpdate or update;
+      //if update then
+        outEqns := BackendEquation.setAtIndex(outEqns, i, eqn);
+      //end if;
+      if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
+        print("=> ");
+        BackendDump.printEquation(eqn);
+      end if;
+    else
+    end try;
+  end for;
+
+end simplifyLoopsWork;
+
+protected function simplifyLoopEqn
+  input Integer inIndx;
+  input BackendDAE.Variables inVars "vars array";
+  input BackendDAE.EquationArray inEqns "eqns array";
+  input BackendDAE.Shared inShared;
+  input list<DAE.ComponentRef> var_lst "filter vars";
+  input BackendDAE.Equation inEqn "filter eqn";
+  input list<Integer> ass1_;
+  input list<Integer> ass2_;
+  input Boolean simDAE;
+  input Integer ii;
+  input list<Integer> inCompOrders;
+  output Integer outIndx = inIndx;
+  output BackendDAE.Variables outVars = inVars "vars array";
+  output BackendDAE.EquationArray outEqns  = inEqns "eqns array";
+  output BackendDAE.Shared outShared = inShared;
+  output Boolean outUpdate = false;
+  output BackendDAE.Equation outEqn = inEqn;
+  output list<Integer> ass1 = ass1_;
+  output list<Integer> ass2 = ass2_;
+  output list<Integer> outCompOrder = inCompOrders;
+protected
+  DAE.Exp rhs, lhs, e;
+  Boolean update_lhs, update_rhs;
+  list<DAE.Exp> loopTerms_lhs, noLoopTerms_lhs, loopTerms_rhs, noLoopTerms_rhs;
+  Boolean useTmpVars = Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 1;
+algorithm
+
+  if BackendEquation.isAlgorithm(outEqn) then
+    return;
+  end if;
+
+  //get
+  lhs := BackendEquation.getEquationLHS(outEqn);
+  //check
+  if not Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(lhs)) then
+    return ;
+  end if;
+  rhs := BackendEquation.getEquationRHS(outEqn);
+
+  (loopTerms_lhs, noLoopTerms_lhs) := simplifyLoops_SplitTerms(var_lst, lhs);
+  (loopTerms_rhs, noLoopTerms_rhs) := simplifyLoops_SplitTerms(var_lst, rhs);
+
+  if listLength(loopTerms_lhs) > listLength(loopTerms_rhs) then
+    lhs := Expression.expSub(Expression.makeSum1(loopTerms_lhs), Expression.makeSum1(loopTerms_rhs));
+    rhs := Expression.expSub(Expression.makeSum1(noLoopTerms_rhs), Expression.makeSum1(noLoopTerms_lhs));
+  else
+    lhs := Expression.expSub(Expression.makeSum1(loopTerms_rhs), Expression.makeSum1(loopTerms_lhs));
+    rhs := Expression.expSub(Expression.makeSum1(noLoopTerms_lhs), Expression.makeSum1(noLoopTerms_rhs));
+  end if;
+
+  //update
+  (outIndx, outVars, outEqns, outShared, update_rhs, rhs, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, rhs, ass1, ass2, simDAE, useTmpVars,ii,outCompOrder);
+  (outIndx, outVars, outEqns, outShared, update_lhs, lhs, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, lhs, ass1, ass2, simDAE, useTmpVars,ii,outCompOrder);
+
+  (lhs,rhs,_) := Expression.createResidualExp3(lhs,rhs);
+  (lhs,e) := Expression.makeFraction(lhs);
+
+  outEqn := BackendEquation.setEquationLHS(outEqn, lhs);
+  outEqn := BackendEquation.setEquationRHS(outEqn, Expression.expMul(rhs,e));
+
+  outUpdate := outUpdate or update_rhs or update_lhs;
+end simplifyLoopEqn;
+
+
+protected function simplifyLoopExp
+  input Integer inIndx;
+  input BackendDAE.Variables inVars "vars array";
+  input BackendDAE.EquationArray inEqns "eqns array";
+  input BackendDAE.Shared inShared;
+  input list<DAE.ComponentRef> var_lst "filter vars";
+  input DAE.Exp inExp;
+  input list<Integer> ass1_;
+  input list<Integer> ass2_;
+  input Boolean simDAE;
+  input Boolean useTmpVars = true;
+  input Integer ii;
+  input list<Integer> inCompOrders;
+  output Integer outIndx = inIndx;
+  output BackendDAE.Variables outVars = inVars "vars array";
+  output BackendDAE.EquationArray outEqns  = inEqns "eqns array";
+  output BackendDAE.Shared outShared = inShared;
+  output Boolean outUpdate = false;
+  output DAE.Exp outExp = inExp;
+  output list<Integer> ass1 = ass1_;
+  output list<Integer> ass2 = ass2_;
+  output list<Integer> outCompOrder = inCompOrders;
+protected
+  list<DAE.Exp> loopTerms, noLoopTerms, loopFactors, noLoopFactors, loopTermsUpdatedFactors, loopTerms2, noLoopTerms2, loopFacotrsUpdatedTerms;
+  DAE.Exp res, noLoopTerm, loopTerm, noLoopFactor, noLoopTerm2, loopTerm2, e1, e2, con;
+  Boolean update;
+  DAE.Operator op;
+  Boolean para;
+  Integer ne,nv;
+algorithm
+
+  (loopTerms, noLoopTerms) := simplifyLoops_SplitTerms(var_lst, outExp);
+
+  //terms
+  (noLoopTerm,_) := ExpressionSimplify.simplify1(Expression.makeSum1(noLoopTerms));
+  if useTmpVars and simDAE then
+    (noLoopTerm, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopTerm, "LOOPT", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+    (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
+  end if;
+
+   //factors
+   loopTermsUpdatedFactors := {};
+   for factor in loopTerms loop
+     (loopFactors, noLoopFactors) := simplifyLoops_SplitFactors(var_lst, factor);
+     (noLoopFactor,_) :=  ExpressionSimplify.simplify1(Expression.makeProductLst(noLoopFactors));
+
+     if useTmpVars and simDAE then
+      if (match noLoopFactor case DAE.BINARY(operator = DAE.DIV()) then true; case DAE.BINARY(operator = DAE.POW()) then true; else false; end match) then
+         DAE.BINARY(e1,op,e2) := noLoopFactor;
+        (e1, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(e1, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+        (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
+        (e2, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(e2, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+        (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
+        noLoopFactor := DAE.BINARY(e1,op,e2);
+      else
+        (noLoopFactor, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopFactor, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+        (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
+      end if;
+     end if;
+
+     //recursive
+     loopFacotrsUpdatedTerms := {};
+     for term in loopFactors loop
+        res := term;
+        if Expression.isBinary(res) then
+          DAE.BINARY(operator=op) := res;
+          if Expression.isAddOrSub(op) or Expression.isMulOrDiv(op) or Expression.isPow(op) then
+            if not Expression.expEqual(res, inExp) then
+              if Expression.isDiv(op) or Expression.isPow(op) then
+                DAE.BINARY(e1,op,e2) := res;
+                (outIndx, outVars, outEqns, outShared, update, e1, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, e1, ass1, ass2, simDAE, useTmpVars, ii, outCompOrder);
+                outUpdate := update or outUpdate;
+                (outIndx, outVars, outEqns, outShared, update, e2, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, e2, ass1, ass2, simDAE, useTmpVars, ii, outCompOrder);
+                outUpdate := update or outUpdate;
+                (e2,_) := ExpressionSimplify.simplify1(e2);
+                res := DAE.BINARY(e1,op,e2);
+              else
+                (outIndx, outVars, outEqns, outShared, update, res, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, res, ass1, ass2, simDAE, useTmpVars, ii, outCompOrder);
+                outUpdate := update or outUpdate;
+              end if; // DIV, POW
+            end if; // equal
+          end if; // *, /, +, -, ^
+        end if; // BINARY
+        loopFacotrsUpdatedTerms := res :: loopFacotrsUpdatedTerms;
+     end for; //term2
+     loopTermsUpdatedFactors := Expression.makeProductLst(noLoopFactor :: loopFacotrsUpdatedTerms) :: loopTermsUpdatedFactors;
+   end for; //factor
+
+   outExp := ExpressionSimplify.simplify(Expression.makeSum1(noLoopTerm::loopTermsUpdatedFactors,true));
+   // eqn := BackendEquation.setEquationLHS(eqn, loopTerm);
+   //eqn := BackendEquation.setEquationRHS(eqn, Expression.makeConstZeroE(loopTerm));
+
+end simplifyLoopExp;
+
+protected function simplifyLoopExpHelper
+  input Boolean update;
+  input Boolean update_;
+  input Boolean para;
+  input list<Integer> ass1_;
+  input list<Integer> ass2_;
+  input BackendDAE.Variables inVars "vars array";
+  input BackendDAE.EquationArray inEqns "eqns array";
+  input Integer inIndex;
+  input Integer ii;
+  input list<Integer> inCompOrders;
+  output Boolean outUpdate = update_;
+  output list<Integer> ass1 = ass1_;
+  output list<Integer> ass2 = ass2_;
+  output Integer outIndx = inIndex;
+  output list<Integer> outCompOrder = inCompOrders;
+protected
+  Integer ne, nv;
+algorithm
+   if update then
+    outIndx := outIndx + 1;
+    outUpdate := update;
+    if not para then
+      BackendDAE.EQUATION_ARRAY(numberOfElement=ne) := inEqns;
+      BackendDAE.VARIABLES(numberOfVars= nv) := inVars;
+      ass1 := ne :: ass1;
+      ass2 := nv :: ass2;
+      outCompOrder := ii :: outCompOrder;
+    end if;
+   end if;
+end simplifyLoopExpHelper;
+
+protected function simplifyLoops_SplitTerms
+  input list<DAE.ComponentRef> var_lst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> loopTerms = {};
+  output list<DAE.Exp> noLoopTerms;
+protected
+  list<DAE.Exp> tmp_loopTerms;
+algorithm
+  noLoopTerms := Expression.terms(inExp);
+  for cr in var_lst loop
+    if listEmpty(noLoopTerms) then
+      break;
+    else
+      (tmp_loopTerms, noLoopTerms) := List.split1OnTrue(noLoopTerms, Expression.expHasCrefNoPreOrStart, cr);
+      loopTerms := listAppend(tmp_loopTerms, loopTerms);
+    end if;
+  end for;
+end simplifyLoops_SplitTerms;
+
+protected function simplifyLoops_SplitFactors
+  input list<DAE.ComponentRef> var_lst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> loopTerms = {};
+  output list<DAE.Exp> noLoopTerms;
+protected
+  list<DAE.Exp> tmp_loopTerms;
+algorithm
+  noLoopTerms := Expression.factors(inExp);
+  for cr in var_lst loop
+    if listEmpty(noLoopTerms) then
+      break;
+    else
+      (tmp_loopTerms, noLoopTerms) := List.split1OnTrue(noLoopTerms, Expression.expHasCrefNoPreOrStart, cr);
+      loopTerms := listAppend(tmp_loopTerms, loopTerms);
+    end if;
+  end for;
+
+end simplifyLoops_SplitFactors;
+
 
 // =============================================================================
 // section for symEuler

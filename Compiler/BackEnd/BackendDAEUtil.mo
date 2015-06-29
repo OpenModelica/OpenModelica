@@ -4884,6 +4884,7 @@ algorithm
           end match;
    then (f,false);
   end matchcontinue;
+  //print("\ntryToSolveOrDerive=>" +ExpressionDump.printExpStr( Expression.crefExp(cr)) + "\nIN: " + ExpressionDump.printExpStr(e) + "\nOUT: " + ExpressionDump.printExpStr(f));
 end tryToSolveOrDerive;
 
 
@@ -7490,6 +7491,7 @@ algorithm
                         (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
                         (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
                         (DynamicOptimization.simplifyConstraints, "simplifyConstraints", false),
+                        (BackendDAEOptimize.simplifyLoops, "simplifyLoops", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),

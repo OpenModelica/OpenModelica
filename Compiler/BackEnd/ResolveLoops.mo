@@ -45,6 +45,7 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendDump;
+protected import BackendDAEOptimize;
 protected import ComponentReference;
 protected import Debug;
 protected import Expression;
@@ -2076,13 +2077,11 @@ protected
   Integer maxSize =  Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM);
   Boolean b = 1 < maxSize;
 algorithm
-
   if b then
-    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, solveLinearSystem0, (false,1,maxSize));
+    (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE, solveLinearSystem0, (false,1,maxSize));
   else
     outDAE := inDAE;
   end if;
-
 end solveLinearSystem;
 
 protected function solveLinearSystem0
