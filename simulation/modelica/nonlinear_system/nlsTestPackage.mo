@@ -144,7 +144,7 @@ package nonlinear_system
     x[3]/a = -b + (a^2+ b^2)* x[2]/a - a + log(time+1) - (a^2+ b^2)* x[1]/a + 1/a;
 
     y[1] = abs(x[1] - (b*x[2]^2 + b * x[3] + cos(time)*b));
-    y[2] = abs(x[2]^2*b - (b^2 + x[1] - a*b*x[2]^2 + a*b)); 
+    y[2] = abs(x[2]^2*b - (b^2 + x[1] - a*b*x[2]^2 + a*b));
     y[3] = abs(x[3] -( -b*a + (a^2+ b^2)* x[2] - a^2 + log(time+1)*a - (a^2+ b^2)* x[1] + 1));
 
   end problem11;
