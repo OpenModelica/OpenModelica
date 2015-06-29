@@ -2850,7 +2850,7 @@ public function simplifySumOperatorExpression
   input DAE.Exp iExp;
   output DAE.Exp oExp;
 protected
-  list<DAE.Exp> T = Expression.terms(iSum);
+  list<DAE.Exp> T = Expression.termsExpandUnary(iSum);
   Boolean b "simplifed?";
   DAE.Exp e, newE, sE;
   DAE.Type tp = Expression.typeofOp(iop);
@@ -2860,9 +2860,8 @@ algorithm
 
   for elem in T loop
     e := DAE.BINARY(elem,iop,iExp);
-    //newE := simplifyBinaryCoeff(e);
-    (newE,b) := simplify1(e);
-    //b := not Expression.expEqual(e, newE);
+    newE := simplifyBinaryCoeff(e);
+    b := not Expression.expEqual(e, newE);
     if b then
       sE := Expression.expAdd(sE, newE);
     else

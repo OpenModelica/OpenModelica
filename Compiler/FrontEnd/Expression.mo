@@ -2617,6 +2617,19 @@ algorithm
   end matchcontinue;
 end allTerms;
 
+
+public function termsExpandUnary
+  "Returns the terms of the expression if any as a list of expressions"
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst := match inExp
+                local DAE.Exp e;
+                case (DAE.UNARY(operator = DAE.UMINUS(),exp=e)) then List.map(terms(e), negate);
+                else terms(inExp);
+               end match;
+end termsExpandUnary;
+
 public function terms
   "Returns the terms of the expression if any as a list of expressions"
   input DAE.Exp inExp;
