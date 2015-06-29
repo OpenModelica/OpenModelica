@@ -2860,8 +2860,9 @@ algorithm
 
   for elem in T loop
     e := DAE.BINARY(elem,iop,iExp);
-    newE := simplifyBinaryCoeff(e);
-    b := not Expression.expEqual(e, newE);
+    //newE := simplifyBinaryCoeff(e);
+    (newE,b) := simplify1(e);
+    //b := not Expression.expEqual(e, newE);
     if b then
       sE := Expression.expAdd(sE, newE);
     else

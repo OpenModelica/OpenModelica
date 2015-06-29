@@ -4579,15 +4579,22 @@ algorithm
     rhs := Expression.expSub(Expression.makeSum1(noLoopTerms_lhs), Expression.makeSum1(noLoopTerms_rhs));
   end if;
 
+  //
+  (lhs,rhs,_) := Expression.createResidualExp3(lhs,rhs);
+  (lhs,e) := Expression.makeFraction(lhs);
+  (lhs, _) := ExpressionSimplify.simplify(lhs);
+  (e, _) := ExpressionSimplify.simplify(e);
+
+  //rhs := Expression.expMul(rhs,e);
+  rhs := ExpressionSimplify.simplifySumOperatorExpression(rhs, DAE.MUL(Expression.typeof(rhs)), e);
+
   //update
   (outIndx, outVars, outEqns, outShared, update_rhs, rhs, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, rhs, ass1, ass2, simDAE, useTmpVars,ii,outCompOrder);
   (outIndx, outVars, outEqns, outShared, update_lhs, lhs, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, lhs, ass1, ass2, simDAE, useTmpVars,ii,outCompOrder);
 
-  (lhs,rhs,_) := Expression.createResidualExp3(lhs,rhs);
-  (lhs,e) := Expression.makeFraction(lhs);
-
+  //
   outEqn := BackendEquation.setEquationLHS(outEqn, lhs);
-  outEqn := BackendEquation.setEquationRHS(outEqn, Expression.expMul(rhs,e));
+  outEqn := BackendEquation.setEquationRHS(outEqn, rhs);
 
   outUpdate := outUpdate or update_rhs or update_lhs;
 end simplifyLoopEqn;
