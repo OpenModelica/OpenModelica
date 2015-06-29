@@ -22,8 +22,30 @@ Copyright (c) 2008, OSMC
 using std::string;
 #endif
 */
+
+#include <vector>
+
 enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
-enum LogType {OFF, STATS, NLS, ODE, DEBUG};
+
+
+enum LogCategory {INIT = 0, NLS = 1, LS = 2, SOLV = 3, OUT = 4, EVT = 5, OTHER = 6, MOD = 7};
+enum LogLevel {ERROR, WARNING, INFO, DEBUG};
+struct LogSettings
+{
+	std::vector<LogLevel> modes;
+
+	LogSettings()
+	{
+		modes = std::vector<LogLevel>(8,ERROR);
+	}
+
+	void setAll(LogLevel l)
+	{
+		for(unsigned i = 0; i < modes.size() ; ++i)
+			modes[i] = l;
+	}
+};
+
 enum OutputPointType {ALL, STEP, EMPTY2};
 class IGlobalSettings
 {
@@ -45,8 +67,8 @@ public:
   virtual void setOutputFormat(OutputFormat) = 0;
   virtual OutputPointType getOutputPointType() = 0;
   virtual void setOutputPointType(OutputPointType) = 0;
-  virtual LogType getLogType() = 0;
-  virtual void setLogType(LogType) = 0;
+  virtual LogSettings getLogSettings() = 0;
+  virtual void setLogSettings(LogSettings) = 0;
   virtual void setAlarmTime(unsigned int) = 0;
   virtual unsigned int getAlarmTime() = 0;
 

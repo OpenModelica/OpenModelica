@@ -10,7 +10,11 @@
 
 Logger* Logger::instance = 0;
 
-Logger::Logger(bool enabled) : _isEnabled(enabled)
+Logger::Logger(LogSettings settings, bool enabled) : _settings(settings), _isEnabled(enabled)
+{
+}
+
+Logger::Logger(bool enabled) : _settings(LogSettings()), _isEnabled(enabled)
 {
 }
 
@@ -18,28 +22,12 @@ Logger::~Logger()
 {
 }
 
-void Logger::writeErrorInternal(std::string errorMsg)
+void Logger::writeInternal(std::string msg, LogCategory cat, LogLevel lvl)
 {
-  if(_isEnabled)
-    std::cerr << "Error: " << errorMsg << std::endl;
-}
-
-void Logger::writeWarningInternal(std::string warningMsg)
-{
-  if(_isEnabled)
-    std::cerr << "Warning: " << warningMsg << std::endl;
-}
-
-void Logger::writeInfoInternal(std::string infoMsg)
-{
-  if(_isEnabled)
-    std::cout << "Info: " << infoMsg << std::endl;
-}
-
-void Logger::writeDebugInternal(std::string debugMsg)
-{
-  if(_isEnabled)
-    std::cout << "Debug: " << debugMsg << std::endl;
+	if(isOutput(cat, lvl))
+	{
+		std::cerr << getPrefix(cat,lvl) << msg << std::endl;
+	}
 }
 
 void Logger::setEnabledInternal(bool enabled)
@@ -50,4 +38,33 @@ void Logger::setEnabledInternal(bool enabled)
 bool Logger::isEnabledInternal()
 {
   return _isEnabled;
+}
+
+bool Logger::isOutput(LogCategory cat, LogLevel lvl) const
+{
+	return _settings.modes[cat] >= lvl && _isEnabled;
+}
+
+bool Logger::isOutput(std::pair<LogCategory,LogLevel> mode) const
+{
+	return isOutput(mode.first, mode.second);
+}
+
+
+std::string Logger::getPrefix(LogCategory cat, LogLevel lvl) const
+{
+	switch(lvl)
+	{
+	case(DEBUG):
+		return "DEBUG: ";
+	case(ERROR):
+		return "ERROR: ";
+	case(INFO):
+		return "INFO: ";
+	case(WARNING):
+		return "WARNING: ";
+	default:
+		return "";
+
+	}
 }

@@ -6,6 +6,8 @@
 #include <Core/Modelica.h>
 #include <Core/SimController/SimManager.h>
 
+#include <sstream>
+
 SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* config)
   : _mixed_system      (system)
   , _config            (config)
@@ -102,7 +104,7 @@ void SimManager::initialize()
         return;
     }
 
-    Logger::writeDebug("SimManager start init");
+    Logger::write("SimManager start init",INIT,DEBUG);
     // Flag für Endlossimulaton (wird gesetzt wenn Solver zurückkommt)
     _continueSimulation = true;
 
@@ -155,7 +157,7 @@ void SimManager::initialize()
         memset(_events, false, _dimZeroFunc * sizeof(bool));
     }
 
-    Logger::writeDebug("SimManager assemble completed");
+    Logger::write("SimManager assemble completed",INIT,DEBUG);
 //#if defined(__TRICORE__) || defined(__vxworks)
     // Initialization for RT simulation
     if (_config->getGlobalSettings()->useEndlessSim())
@@ -257,24 +259,24 @@ void SimManager::runSimulation()
     #endif
     try
     {
-        Logger::writeInfo("SimManager: start simulation at t = " + boost::lexical_cast<std::string>(_tStart));
+        Logger::write("SimManager: start simulation at t = " + boost::lexical_cast<std::string>(_tStart),SOLV,INFO);
         runSingleProcess();
         // Zeit messen, Ausgabe der SimInfos
         ISolver::SOLVERSTATUS status = _solver->getSolverStatus();
         if ((status & ISolver::DONE) || (status & ISolver::USER_STOP))
         {
-            Logger::writeInfo("SimManager: simulation done at t = " + boost::lexical_cast<std::string>(_tEnd));
-            Logger::writeInfo("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps));
+            Logger::write("SimManager: simulation done at t = " + boost::lexical_cast<std::string>(_tEnd),SOLV,INFO);
+            Logger::write("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps),SOLV,INFO);
             writeProperties();
         }
     }
     catch (std::exception & ex)
     {
-        Logger::writeError("SimManager: simulation finish with errors at t = " + boost::lexical_cast<std::string>(_tEnd));
-        Logger::writeInfo("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps));
+        Logger::write("SimManager: simulation finish with errors at t = " + boost::lexical_cast<std::string>(_tEnd),SOLV,ERROR);
+        Logger::write("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps),SOLV,INFO);
         writeProperties();
 
-        Logger::writeError("SimManager: error = " + boost::lexical_cast<std::string>(ex.what()));
+        Logger::write("SimManager: error = " + boost::lexical_cast<std::string>(ex.what()),SOLV,ERROR);
         //ex << error_id(SIMMANAGER);
         throw;
     }
@@ -293,138 +295,141 @@ void SimManager::stopSimulation()
 }
 void SimManager::writeProperties()
 {
-    if (_config->getGlobalSettings()->getLogType() != STATS)
-        return;
-    /* Logs temporarily disabled
+	// decl for Logging
+	std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(SOLV, INFO);
 
-     {
-     BOOST_LOG_SCOPED_LOGGER_TAG(simmgr_lg::get(),"Tag", std::string, "computationTime");
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Geforderte Simulationszeit:                        " << _tEnd ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Rechenzeit in Sekunden:                 " << (_tClockEnd-_tClockStart);
-     }
-     BOOST_LOG_SCOPED_LOGGER_TAG(simmgr_lg::get(),"SimTag", std::string, "sim info");
+    Logger::write(boost::lexical_cast<std::string>("computationTime"),logM);
+    Logger::write(boost::lexical_cast<std::string>("Geforderte Simulationszeit:                        ") + boost::lexical_cast<std::string>(_tEnd),logM);
+    //Logger::write(boost::lexical_cast<std::string>("Rechenzeit in Sekunden:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
 
+    Logger::write(boost::lexical_cast<std::string>("sim info"),logM);
+/*
      // Zeit
-     if(_settings->_globalSettings->bEndlessSim)
-     {
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)<< "Geforderte Simulationszeit: endlos";
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Rechenzeit:                 " << (_tClockEnd-_tClockStart);
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Endzeit Toleranz:           " <<_config->getSimControllerSettings()->dTendTol;
-     }
-     else
-     {
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)       << "Geforderte Simulationszeit: " << _tEnd ;
-     //_infoStream << "Rechenzeit:                 " << (_tClockEnd-_tClockStart);
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Rechenzeit:                 " << (_tClockEnd-_tClockStart);
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Endzeit Toleranz:           " <<_config->getSimControllerSettings()->dTendTol;
+    if(_settings->_globalSettings->bEndlessSim)
+    {
+		 Logger::write(boost::lexical_cast<std::string>("Geforderte Simulationszeit: endlos"),logM);
+		 //Logger::write(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
+		 Logger::write(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(config->getSimControllerSettings()->dTendTol),logM);
+	}
+    else
+    {
+    	Logger::write(boost::lexical_cast<std::string>("Geforderte Simulationszeit: ") + boost::lexical_cast<std::string>(_tEnd),logM);
+    	//_infoStream << "Rechenzeit:                 " << (_tClockEnd-_tClockStart);
+    	//Logger::write(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
+     	Logger::write(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(_config->getSimControllerSettings()->dTendTol),logM);
      }
 
      if(_settings->_globalSettings->bRealtimeSim)
      {
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)<< "Echtzeit Simulationszeit aktiv:";
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Faktor:                 " << (_settings->_globalSettings->dRealtimeFactor);
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Aktive Rechenzeit (Pause Zeit):           " << (_tClockEnd-_tClockStart-_dataPool->getPauseDelay()) <<"(" << _dataPool->getPauseDelay() << ")";
+    	 Logger::write(boost::lexical_cast<std::string>("Echtzeit Simulationszeit aktiv:"),logM);
+    	 log->wirte(boost::lexical_cast<std::string>("Faktor:                 ") + boost::lexical_cast<std::string>(_settings->_globalSettings->dRealtimeFactor),logM);
+    	 Logger::write(boost::lexical_cast<std::string>("Aktive Rechenzeit (Pause Zeit):           ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart-_dataPool->getPauseDelay())
+    			  + boost::lexical_cast<std::string>("(") + boost::lexical_cast<std::string>(_dataPool->getPauseDelay()) + boost::lexical_cast<std::string>(")"),logM);
      }
      if(_dimSolver == 1)
      {
-     if(!(_solver->getSolverStatus() & ISolver::ERROR_STOP))
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)       << "Simulation erfolgreich.";
-     else
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Fehler bei der Simulation!";
+    	 if(!(_solver->getSolverStatus() & ISolver::ERROR_STOP))
+    		 Logger::write(boost::lexical_cast<std::string>("Simulation erfolgreich."),logM);
+    	 else
+    		 Logger::write(boost::lexical_cast<std::string>("Fehler bei der Simulation!"),logM);
 
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Schritte insgesamt des Solvers:   " << _totStps.at(0);
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Akzeptierte Schritte des Solvers: " << _accStps.at(0);
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Verworfene Schritte  des Solvers: " << _rejStps.at(0);
-     */
-    // Solver-Properties
-    _solver->writeSimulationInfo();
-    /*
-     }
-     else
-     {
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Anzahl Solver: " <<  _dimSolver << "  ";
+    	 Logger::write(boost::lexical_cast<std::string>("Schritte insgesamt des Solvers:   ") + boost::lexical_cast<std::string>(_totStps.at(0)),logM);
+    	 Logger::write(boost::lexical_cast<std::string>("Akzeptierte Schritte des Solvers: ") + boost::lexical_cast<std::string>(_accStps.at(0)),logM);
+    	 log->wrtie(boost::lexical_cast<std::string>("Verworfene Schritte  des Solvers: ") + boost::lexical_cast<std::string>(_rejStps.at(0)),logM);
 
-     if(_completelyDecoupledSystems || !(_settings->bDynCouplingStepSize))
-     {
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Koppelschrittweitensteuerung: fix ";
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Ausgabeschrittweite:          " << _config->getGlobalSettings()->gethOutput();
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Koppelschrittweite:           " << _settings->dHcpl ;
-
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Anzahl Koppelschritte: " << _totCouplStps ;
-
-     if(abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND)
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Integration erfolgreich. IDID= " << _idid << "  ";
-     else
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Solver run time simmgr_error. ";
+    	 if(Logger::getInstance()->isOutput(logM)
+    		_solver->writeSimulationInfo();
 
      }
      else
      {
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Koppelschrittweitensteuerung:            dynamisch";
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Ausgabeschrittweite:                     " << _config->getGlobalSettings()->gethOutput();
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Koppelschrittweite für nächsten Schritt: " << _H ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)   << "Maximal verwendete Schrittweite:         " << _Hmax ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)   << "Minimal verwendete Schrittweite:         " << _Hmin ;
+		 Logger::write(boost::lexical_cast<std::string>("Anzahl Solver: ") + boost::lexical_cast<std::string>(_dimSolver),logM) ;
 
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)   << "Obere Grenze für Schrittweite:           " << _settings->dHuplim;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)   << "Untere Grenze für Schrittweite:          " << _settings->dHlowlim;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "k-Faktor für Schrittweite:               " << _settings->dK;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Savety-Faktor:                           " << _settings->dC;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Upscale-Faktor:                          " << _settings->dCmax;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Downscale-Faktor:                        " << _settings->dCmin;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Fehlertoleranz:                          " << _settings->dErrTol;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Fehlertoleranz für Single Step:          " << _settings->dSingleStepTol;
+		 if(_completelyDecoupledSystems || !(_settings->bDynCouplingStepSize))
+		 {
+			Logger::write(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung: fix "),logM);
+			Logger::write(boost::lexical_cast<std::string>("Ausgabeschrittweite:          ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
+			Logger::write(boost::lexical_cast<std::string>("Koppelschrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHcpl), logM);
 
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Anzahl Koppelschritte insgesamt:         " << _totCouplStps ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Anzahl Einfach-Schritte:                 " << _singleStps ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Davon akzeptierte Schritte:              " << _accCouplStps;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Davon verworfene Schritte:               " << _rejCouplStps ;
+			Logger::write(boost::lexical_cast<std::string>("Anzahl Koppelschritte: ") + boost::lexical_cast<std::string>(_totCouplStps),logM) ;
 
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Max. nacheinander verwerfbare Schritte:  " << _settings->iMaxRejSteps ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Max. nacheinander verworfene Schritte:   " << _rejCouplStpsRow ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Zeitpunkt meiste verworfene Schritte:    " << _tRejCouplStpsRow ;
+			if(abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND)
+				Logger::write(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_idid), logM);
+			else
+				Logger::write(boost::lexical_cast<std::string>("Solver run time simmgr_error. "),logM);
 
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Anfangsschrittweite:                     " << _Hinit;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "bei einem Fehler:                        " << _simmgr_errorInit ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "nach verworfenen Schritten:              " << _rejCouplStpsInit ;
+		 }
+		 else
+		 {
+			 Logger::write(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung:            dynamisch"),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Ausgabeschrittweite:                     ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
 
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Wenn Fehler knapp unter 1+ErrTol bei 0 verworf. Schritte, dann war Anfangsschrittweite gut gewählt.\n\n";
+			 Logger::write(boost::lexical_cast<std::string>("Koppelschrittweite für nächsten Schritt: ") + boost::lexical_cast<std::string>(_H),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Maximal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmax),logM) ;
+			 Logger::write(boost::lexical_cast<std::string>("Minimal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmin),logM) ;
 
-     if(_idid == 0 && (abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND))
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Integration erfolgreich. IDID= " << _idid << "\n\n";
-     else if(_idid == -1)
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Integration abgebrochen. Fehlerbetrag zu groß (ev. Kopplung zu starr?). IDID= " << _idid ;
-     else if(_idid == -2)
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Integration abgebrochen. Mehr als " << _settings->iMaxRejSteps << " dirket nacheinander verworfenen Schritte. IDID= " << _idid ;
-     else if(_idid == -3)
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Integration abgebrochen. Koppelschrittweite kleiner als " << _settings->dHlowlim << ". IDID= " << _idid ;
-     else
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Solver run time simmgr_error";
+			 Logger::write(boost::lexical_cast<std::string>("Obere Grenze für Schrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHuplim),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Untere Grenze für Schrittweite:          ") + boost::lexical_cast<std::string>(_settings->dHlowlim),logM);
+			 Logger::write(boost::lexical_cast<std::string>("k-Faktor für Schrittweite:               ") + boost::lexical_cast<std::string>(_settings->dK),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Savety-Faktor:                           ") + boost::lexical_cast<std::string>(_settings->dC),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Upscale-Faktor:                          ") + boost::lexical_cast<std::string>(_settings->dCmax),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Downscale-Faktor:                        ") + boost::lexical_cast<std::string>(_settings->dCmin),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Fehlertoleranz:                          ") + boost::lexical_cast<std::string>(_settings->dErrTol),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Fehlertoleranz für Single Step:          ") + boost::lexical_cast<std::string>(_settings->dSingleStepTol),logM);
 
-     }
+			 Logger::write(boost::lexical_cast<std::string>("Anzahl Koppelschritte insgesamt:         ") + boost::lexical_cast<std::string>(_totCouplStps),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Anzahl Einfach-Schritte:                 ") + boost::lexical_cast<std::string>(_singleStps),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Davon akzeptierte Schritte:              ") + boost::lexical_cast<std::string>(_accCouplStps),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Davon verworfene Schritte:               ") + boost::lexical_cast<std::string>(_rejCouplStps),logM);
 
-     // Schritte der Solver
-     for(int i=0; i<_dimSolver; ++i)
-     {
-     if(!(_solver[i]->getSolverStatus() & ISolver::ERROR_STOP))
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Simulation mit Solver[" << i << "] erfolgreich." ;
-     else
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Fehler bei der Simulation in Solver[" << i << "]!" ;
+			 Logger::write(boost::lexical_cast<std::string>("Max. nacheinander verwerfbare Schritte:  ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Max. nacheinander verworfene Schritte:   ") + boost::lexical_cast<std::string>(_rejCouplStpsRow),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Zeitpunkt meiste verworfene Schritte:    ") + boost::lexical_cast<std::string>(_tRejCouplStpsRow),logM);
 
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Schritte insgesamt Solver[" << i << "]:   " <<  _totStps.at(i);
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Akzeptierte Schritte Solver[" << i << "]: " << _accStps.at(i) ;
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "Verworfene Schritte  Solver[" << i << "]: " << _rejStps.at(i);
+			 Logger::write(boost::lexical_cast<std::string>("Anfangsschrittweite:                     ") + boost::lexical_cast<std::string>(_Hinit),logM);
+			 Logger::write(boost::lexical_cast<std::string>("bei einem Fehler:                        ") + boost::lexical_cast<std::string>(_simmgr_errorInit),logM);
+			 Logger::write(boost::lexical_cast<std::string>("nach verworfenen Schritten:              ") + boost::lexical_cast<std::string>(_rejCouplStpsInit),logM);
 
-     }
+			 Logger::write(boost::lexical_cast<std::string>("Wenn Fehler knapp unter 1+ErrTol bei 0 verworf. Schritte, dann war Anfangsschrittweite gut gewählt.\n\n"),logM);
 
-     // Solver-Properties
-     for(int i=0; i<_dimSolver; ++i)
-     {
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "-----------------------------------------";
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)      << "simmgr_info Ausgabe Solver[" << i << "]";
+			 if(_idid == 0 && (abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND))
+				 Logger::write(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_idid) + boost::lexical_cast<std::string>("\n\n"),logM);
+			 else if(_idid == -1)
+				 Logger::write(boost::lexical_cast<std::string>("Integration abgebrochen. Fehlerbetrag zu groß (ev. Kopplung zu starr?). IDID= ") + boost::lexical_cast<std::string>(_idid),logM);
+			 else if(_idid == -2)
+				 Logger::write(boost::lexical_cast<std::string>("Integration abgebrochen. Mehr als ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps)
+						  + boost::lexical_cast<std::string>(" dirket nacheinander verworfenen Schritte. IDID= ") + boost::lexical_cast<std::string>(_idid),logM);
+			 else if(_idid == -3)
+				 Logger::write(boost::lexical_cast<std::string>("Integration abgebrochen. Koppelschrittweite kleiner als ") + boost::lexical_cast<std::string>(_settings->dHlowlim)
+						 	+ boost::lexical_cast<std::string>(". IDID= ") + boost::lexical_cast<std::string>(_idid),logM);
+			 else
+				 Logger::write(boost::lexical_cast<std::string>("Solver run time simmgr_error"),logM);
 
-     _solver[i]->writeSimulationInfo(os);
-     }
+		 }
+
+		 // Schritte der Solver
+		 for(int i=0; i<_dimSolver; ++i)
+		 {
+			 if(!(_solver[i]->getSolverStatus() & ISolver::ERROR_STOP))
+				 Logger::write(boost::lexical_cast<std::string>("Simulation mit Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("] erfolgreich."),logM);
+			 else
+				 Logger::write(boost::lexical_cast<std::string>("Fehler bei der Simulation in Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]!"),logM);
+
+			 Logger::write(boost::lexical_cast<std::string>("Schritte insgesamt Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]:   ") + boost::lexical_cast<std::string>(_totStps.at(i)),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Akzeptierte Schritte Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_accStps.at(i)),logM);
+			 Logger::write(boost::lexical_cast<std::string>("Verworfene Schritte  Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_rejStps.at(i)),logM);
+
+		 }
+
+			 // Solver-Properties
+		 for(int i=0; i<_dimSolver; ++i)
+		 {
+			 Logger::write(boost::lexical_cast<std::string>("-----------------------------------------"),logM);
+			 Logger::write(boost::lexical_cast<std::string>("simmgr_info Ausgabe Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]"),logM);
+
+			 if(Logger::getInstance()->isOutput(logM))
+				 _solver[i]->writeSimulationInfo(os);
+		 }
      }
 
      */
@@ -543,7 +548,7 @@ void SimManager::runSingleProcess()
     _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
     /* Logs temporarily disabled
      BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
-    Logger::writeDebug("SimManager: run single process");
+    Logger::write("SimManager: run single process",SOLV,DEBUG);
 
     // Zeitinvervall speichern
     //_H =_tEnd - _tStart;
