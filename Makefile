@@ -668,3 +668,7 @@ git-sanity-check: git-clean
 	comm --check-order -23 invalid-files.sorted .gitvalidfiles.sorted > invalid-files.log
 	cat invalid-files.log
 	test ! -s invalid-files.log
+	for commit in `git rev-list origin/master..HEAD`; do \
+	  test 50 -ge "`git log --format="%s" $$commit~1..$$commit | wc -c`" || (echo "$$commit has a too long commit summary (leave an empty line after the first if it is not part of the summary)"; git log $$commit~1..$$commit; false);\
+	  test 72 -ge "`git log --format="%b" $$commit~1..$$commit | wc -L`" || (echo "$$commit has too long commit lines (max 72 characters per line)"; git log $$commit~1..$$commit; false);\
+	done
