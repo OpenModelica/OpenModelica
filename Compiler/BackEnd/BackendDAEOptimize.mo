@@ -73,7 +73,6 @@ protected import Flags;
 protected import Graph;
 protected import HashTableExpToIndex;
 protected import List;
-protected import Matching;
 protected import RewriteRules;
 protected import SCode;
 protected import System;
@@ -4356,8 +4355,6 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.Matching matching;
   BackendDAE.StrongComponents comps;
-//  BackendDAE.IncidenceMatrix m;
-//  BackendDAE.IncidenceMatrixT mT;
 algorithm
   //print("\nStart simplifyLoopsUpdateMatching");
 
@@ -4380,16 +4377,7 @@ algorithm
   comps := simplifyLoopsUpdateComps(comps, ass1_, ass2_, compOrders);
 
   matching := BackendDAE.MATCHING(ass1,ass2,comps);
-  //matching := BackendDAE.NO_MATCHING();
   outSyst :=  BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), matching, stateSets, partitionKind);
-
-/*
-  (_,m,mT) :=  BackendDAEUtil.getIncidenceMatrix(outSyst, BackendDAE.NORMAL(), SOME(functionTree));
-  (ass1, ass2) := Matching.PerfectMatching(m);
-  comps := simplifyLoopsUpdateComps(comps, ass1_, ass2_);
-  matching := BackendDAE.MATCHING(ass1,ass2,comps);
-  outSyst :=  BackendDAE.EQSYSTEM(inVars, inEqns, SOME(m), SOME(mT), matching, stateSets, partitionKind);
-*/
 
   //print("\nEnde simplifyLoopsUpdateMatching");
 end simplifyLoopsUpdateMatching;
@@ -4466,7 +4454,7 @@ algorithm
   if BackendEquation.isEquationsSystem(inComp) then
     BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars) := inComp;
 
-    //create tmp vars only for nonlinear case
+    //linear system need simplifications?
     if BackendDAEUtil.isLinearEqSystemComp(inComp) then
       return;
     end if;
@@ -4689,8 +4677,6 @@ algorithm
    end for; //factor
 
    outExp := ExpressionSimplify.simplify(Expression.makeSum1(noLoopTerm::loopTermsUpdatedFactors,true));
-   // eqn := BackendEquation.setEquationLHS(eqn, loopTerm);
-   //eqn := BackendEquation.setEquationRHS(eqn, Expression.makeConstZeroE(loopTerm));
 
 end simplifyLoopExp;
 
