@@ -2229,7 +2229,7 @@ end createFixedLevelScheduleForTask0;
 
 protected function flattenAdviceList
   "author: marcusw
-   Flatten the given advice list and order the entries regarding their occurency count.
+   Flatten the given advice list and order the entries regarding their occurrence count.
    For example: {2,3,1,1,2,2} -> {2,1,3}"
   input list<Integer> iAdviceList;
   input Integer iNumOfThreads;

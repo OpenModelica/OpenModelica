@@ -3949,15 +3949,15 @@ end traverseStmtsExpList;
 /******************************************************************
  stuff to calculate enhanced Adjacency matrix
 
- The Adjacency matrix descibes the relation between knots and
+ The Adjacency matrix describes the relation between knots and
  knots of a bigraph. Additional information about the solvability
- of a variable are availible.
+ of a variable are available.
 ******************************************************************/
 
 public function getAdjacencyMatrixEnhancedScalar
 "author: Frenkel TUD 2012-05
   Calculates the Adjacency matrix, i.e. which variables are present in each equation
-  and add some information how the variable occure in the equation(see BackendDAE.BackendDAE.Solvability)."
+  and add some information how the variable occur in the equation(see BackendDAE.BackendDAE.Solvability)."
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input Boolean trytosolve "determine the solvability by solving for the variable instead of deriving, needed for 'Casual Tearing Set'";
@@ -4321,8 +4321,8 @@ algorithm
     // TODO : how to handle this?
     // Proposal:
     // 1. mark all vars in conditions as unsolvable
-    // 2. vars occure in all branches: check how they are occure
-    // 3. vars occure not in all branches: mark as unsolvable
+    // 2. vars occur in all branches: check how they are occur
+    // 3. vars occur not in all branches: mark as unsolvable
     case(vars, BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqnselse),_,_,_)
       equation
         //print("Warning: BackendDAEUtil.adjacencyRowEnhanced does not handle if-equations propper!\n");

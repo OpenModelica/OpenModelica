@@ -1268,7 +1268,7 @@ end removeDummyStateFromMapping1;
 //------------------------------------------
 
 protected function checkOdeSystemSize "Compares the number of components in the graph with the number of ode-equations in the simCode-structure.
-Remark: this can occure when asserts are added to the ode-system.
+Remark: this can occur when asserts are added to the ode-system.
 author:marcusw"
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input list<list<SimCode.SimEqSystem>> iOdeEqs;

@@ -959,7 +959,7 @@ algorithm
       Integer tvar;
       Integer size,varsize;
       array<Integer> points;
-    // if vars there with no liniear occurence in any equation use all of them
+    // if vars there with no linear occurrence in any equation use all of them
 /*    case(_,_,_,_)
       equation
       then

@@ -1034,7 +1034,7 @@ end simplifyInitialFunctionsExp;
 // section for pre-balancing the initial system
 //
 // This section removes unused pre variables and auto-fixes non-pre variables,
-// which occure in no equation.
+// which occur in no equation.
 // =============================================================================
 
 protected function preBalanceInitialSystem "author: lochel"

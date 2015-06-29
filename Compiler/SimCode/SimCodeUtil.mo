@@ -2596,7 +2596,7 @@ algorithm
           tmpEqBackendSimCodeMapping = ieqBackendSimCodeMapping;
           tmpBackendMapping = iBackendMapping;
         else
-          firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
+          firstSES = listHead(equations1);  // check if the all equations occur with this index in the c file
           isEqSys = isSimEqSys(firstSES);
           firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
           tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
@@ -2748,7 +2748,7 @@ algorithm
           tmpEqBackendSimCodeMapping = ieqBackendSimCodeMapping;
           tmpBackendMapping = iBackendMapping;
         else
-          firstSES = listHead(equations1);  // check if the all equations occure with this index in the c file
+          firstSES = listHead(equations1);  // check if the all equations occur with this index in the c file
           isEqSys = isSimEqSys(firstSES);
           firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
           tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);

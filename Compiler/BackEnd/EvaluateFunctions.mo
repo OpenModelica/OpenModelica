@@ -375,7 +375,7 @@ algorithm
 
   case(DAE.ASUB(DAE.CALL(path=path, expLst=exps, attr=attr1),sub),_)
     equation
-      //this ASUB stuff occures in the flattened DAE, check this special case because of removeSimpleEquations
+      //this ASUB stuff occurs in the flattened DAE, check this special case because of removeSimpleEquations
      exp = evaluateConstantFunctionCallExp(DAE.CALL(path=path, expLst=exps, attr=attr1),funcsIn);
      if not Expression.isConst(exp) then exp = expIn; end if;
      (exp,_) = ExpressionSimplify.simplify(DAE.ASUB(exp,sub));

@@ -1005,7 +1005,7 @@ algorithm
 end findPathByEnds;
 
 protected function doubleEntriesInLst "author:Waurich TUD 2014-01
-  get the entries in the list which occure multiple times.
+  get the entries in the list which occur multiple times.
   Is there an entry from lstIn found in checkLst, it will be output as doubled"
   input list<ElementType> lstIn;
   input list<ElementType> checkLst;

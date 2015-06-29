@@ -3213,7 +3213,7 @@ algorithm
         //str = BackendDump.dumpJacobianStr(SOME(jac));
         //print("analyze Jacobian: \n" + str + "\n");
         b = jacobianNonlinear(vars, jac);
-        // check also if variables occure in if expressions
+        // check also if variables occur in if expressions
         ((_,false)) = if not b then BackendDAEUtil.traverseBackendDAEExpsEqnsWithStop(eqns,varsNotInRelations,(vars,true)) else (vars,false);
         //print("jac type: JAC_NONLINEAR() \n");
       then
