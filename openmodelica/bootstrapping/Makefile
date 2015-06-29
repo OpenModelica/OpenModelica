@@ -3,6 +3,7 @@ TEST = ../../rtest
 
 TESTFILES = \
 DiffAlgorithm.mos \
+DiffAlgorithmModelica.mos \
 DumpTest.mos \
 ExpressionTest.mos \
 GraphTest.mos \

@@ -9,25 +9,25 @@ protected
   list<tuple<DiffAlgorithm.Diff, list<String>>> strDiffs;
 algorithm
   intDiffs := debug_diff({1,2,3},{1,2,3}, intEq, intString);
-  DiffAlgorithm.printDiffTerminalColor(intDiffs, intString);
+  print(DiffAlgorithm.printDiffTerminalColor(intDiffs, intString));
   print("\n");
   intDiffs := debug_diff({1,2,3},{1,2,3,4,5,6}, intEq, intString);
-  DiffAlgorithm.printDiffTerminalColor(intDiffs, intString);
+  print(DiffAlgorithm.printDiffTerminalColor(intDiffs, intString));
   print("\n");
   intDiffs := debug_diff({1,2,3,4,5,6},{1,2,3}, intEq, intString);
-  DiffAlgorithm.printDiffTerminalColor(intDiffs, intString);
+  print(DiffAlgorithm.printDiffTerminalColor(intDiffs, intString));
   print("\n");
   intDiffs := debug_diff({1,2,3,4,5,6},{1,2,3,6}, intEq, intString);
-  DiffAlgorithm.printDiffTerminalColor(intDiffs, intString);
+  print(DiffAlgorithm.printDiffTerminalColor(intDiffs, intString));
   print("\n");
   intDiffs := debug_diff({1},{2}, intEq, intString);
-  DiffAlgorithm.printDiffTerminalColor(intDiffs, intString);
+  print(DiffAlgorithm.printDiffTerminalColor(intDiffs, intString));
   print("\n");
   intDiffs := debug_diff({1,2,3,4,5,6,7,8,9,10},{1,2,6,4,5,7,3,8,9,10}, intEq, intString);
-  DiffAlgorithm.printDiffTerminalColor(intDiffs, intString);
+  print(DiffAlgorithm.printDiffTerminalColor(intDiffs, intString));
   print("\n");
   strDiffs := debug_diff({"1","2","3"},{"1","2","3"}, stringEq, id);
-  DiffAlgorithm.printDiffTerminalColor(strDiffs, id);
+  print(DiffAlgorithm.printDiffTerminalColor(strDiffs, id));
 end TestDiffAlgorithm;
 
 function debug_diff<T>

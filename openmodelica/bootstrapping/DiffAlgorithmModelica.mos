@@ -1,0 +1,143 @@
+// status: correct
+// depends: modelicadiff
+
+setCommandLineOptions("+g=MetaModelica +n=1 +d=noevalfunc");
+echo(false);
+prefixPath := if ""==getEnvironmentVar("OMCOMPILERSOURCES") then "../../../OMCompiler/Compiler/" else getEnvironmentVar("OMCOMPILERSOURCES") + "/";
+echo(true);
+loadFiles({
+  prefixPath + "Lexers/LexerModelicaDiff.mo",
+  prefixPath + "Util/DiffAlgorithm.mo",
+  prefixPath + "Util/Print.mo",
+  prefixPath + "Util/System.mo"
+});
+getErrorString();
+
+loadFile("TestDiffAlgorithm.mo");
+loadFile("TestDiffAlgorithmModelica.mo");
+getErrorString();
+
+// Create some diff files for testing?
+// list(writeFile("modelicadiff/"+) for f in {"4"});
+// runScriptParallel({},useThreads=false);
+
+setCommandLineOptions("+d=noevalfunc,rml");
+
+generateCode(diffModelica);
+getErrorString();
+
+list(diffModelica("modelicadiff/"+String(f)+".before", "modelicadiff/"+String(f)+".after") for f in 1:5);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// true
+// true
+// ""
+// true
+// true
+// ""
+// modelicadiff/1.before:
+// model M
+// end M;
+//
+//
+// model M
+// [4;32m  [0m[4;32mReal[0m[4;32m [0m[4;32mr[0m[4;32m;[0m[4;32m
+// [0mend M;
+//
+//
+// modelicadiff/2.before:
+// model M
+//   Real x;
+// Real y;
+// end M;
+//
+//
+// model M
+//   Real x;
+// Real y;
+// end M;
+//
+//
+// modelicadiff/3.before:
+// model aa
+//   Real x;
+// algorithm
+//   if time > 0.5 then
+//   //this is a comment
+//     x := 2;
+//   else
+//     x := 1;
+//   end if;
+// end aa;
+//
+//
+// model aa
+//   Real x;
+// algorithm
+//   if time > 0.5 then
+//   //this is a comment
+//     x := 2;
+//   else
+//     x := 1;
+//   end if;
+// end aa;
+//
+//
+// modelicadiff/4.before:
+// model CommentBug " Model"
+//   /* This is a several-line comment
+//      line two
+//      line three
+//      line four
+//   */
+// end CommentBug;
+//
+//
+// model CommentBug " Model"
+//   /* This is a several-line comment
+//      line two
+//      line three
+//      line four
+//   */
+// end CommentBug;
+//
+//
+// modelicadiff/5.before:
+// model aa
+//   Real x;
+// algorithm
+//   if time > 0.5 then
+//   /* this is a comment
+//   with
+//     several
+//   lines
+// */    x := 2;
+//   else
+//     x := 1;
+//   end if;
+// end aa;
+//
+//
+// model aa
+//   Real x;
+// algorithm
+//   if time > 0.5 then
+//   /* this is a comment
+//   with
+//     several
+//   lines
+// */    x := 2;
+//   else
+//     x := 1;
+//   end if;
+// end aa;
+//
+//
+// {,,,,}
+// ""
+// endResult

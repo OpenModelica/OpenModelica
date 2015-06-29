@@ -5,12 +5,14 @@ echo(false);
 prefixPath := if ""==getEnvironmentVar("OMCOMPILERSOURCES") then "../../../OMCompiler/Compiler/" else getEnvironmentVar("OMCOMPILERSOURCES") + "/";
 echo(true);
 loadFiles({
-  prefixPath + "Util/DiffAlgorithm.mo"
+  prefixPath + "Util/DiffAlgorithm.mo",
+  prefixPath + "Util/Print.mo"
 });
 getErrorString();
 
 loadFile("TestDiffAlgorithm.mo");
 getErrorString();
+setCommandLineOptions("+d=rml");
 generateCode(TestDiffAlgorithm);
 getErrorString();
 TestDiffAlgorithm();
@@ -23,6 +25,7 @@ getErrorString();
 // ""
 // true
 // ""
+// true
 // true
 // ""
 // Calling diff(

@@ -6,7 +6,8 @@
 %x c_linecomment
 %x c_string
 
-whitespace   [ \t\n]+
+whitespace1  [ \t]+
+whitespace2  [ \t]*\n
 letter       [a-zA-Z]
 wild         [_]
 digit        [0-9]
@@ -25,7 +26,8 @@ initialalgorithm  "initial"{whitespace}"algorithm"
  */
 
 %%
-{whitespace} return WHITESPACE;
+{whitespace1} return WHITESPACE;
+{whitespace2} return WHITESPACE;
 {real}      return UNSIGNED_REAL;
 {real2}     return UNSIGNED_REAL;
 {real3}     return UNSIGNED_REAL;
@@ -83,7 +85,6 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 "then" return THEN;
 "true" return T_TRUE;
 "type" return TYPE;
-"unsigned_real" return UNSIGNED_REAL;
 "when" return WHEN;
 "while" return WHILE;
 "within" return WITHIN;
@@ -148,14 +149,13 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 }
 
 "/\*"      {
-    BEGIN(c_comment);
+    BEGIN(c_comment) keepBuffer;
              }
 <c_comment>
 {
     "\*/"    { BEGIN(INITIAL); return BLOCK_COMMENT; }
-    "/\*"    { yyerror("Suspicious comment"); }
-    [^\n]    ;
-    \n       ;
+    [^\n]    {keepBuffer;}
+    \n       {keepBuffer;}
     <<EOF>>  {
          yyerror("Unterminated comment");
          yyterminate();
@@ -169,7 +169,7 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 <c_linecomment>
 {
     \n    { BEGIN(INITIAL); return LINE_COMMENT; }
-    [^\n]  ;
+    [^\n] { keepBuffer; };
 }
 
 %%

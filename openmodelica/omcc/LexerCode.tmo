@@ -112,6 +112,16 @@ algorithm
   strTk := "[TOKEN:" + tokName + " '" +  contents + "' (" + intString(lns) + ":" + intString(cns) + "-"+ intString(lne) + ":" + intString(cne) +")]";
 end printToken;
 
+function tokenContent
+  input Token token;
+  output String contents;
+protected
+  Integer byteOffset,length;
+algorithm
+  TOKEN(fileContents=contents,byteOffset=byteOffset,length=length) := token;
+  contents := if length>0 then substring(contents,byteOffset,byteOffset+length-1) else "";
+end tokenContent;
+
 protected
 
 function lex "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
