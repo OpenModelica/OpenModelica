@@ -4499,7 +4499,7 @@ algorithm
       eqn := BackendEquation.equationNth1(outEqns, i);
       if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
         print("update eqn[" + intString(i) + "]\n");
-        BackendDump.printEquation(eqn);
+        print(BackendDump.equationString(eqn) + "--old--\n");
       end if;
       (outIndx, outVars, outEqns, outShared, update, eqn, ass1, ass2, outCompOrders) := simplifyLoopEqn(outIndx, outVars, outEqns, outShared, var_lst, eqn, ass1, ass2, simDAE, ii, outCompOrders);
       outUpdate := outUpdate or update;
@@ -4508,7 +4508,7 @@ algorithm
       //end if;
       if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
         print("=> ");
-        BackendDump.printEquation(eqn);
+        print("- " + BackendDump.equationString(eqn) + " --new--\n");
       end if;
     else
     end try;

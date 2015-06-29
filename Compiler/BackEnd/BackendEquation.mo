@@ -2280,7 +2280,7 @@ algorithm
 
     eqn := BackendDAE.EQUATION(oExp, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
-      BackendDump.printEquation(eqn);
+      print(BackendDump.equationString(eqn) + " -- new--\n");
     end if;
     eqnVars := equationVars(eqn, ivars);
     b := listEmpty(eqnVars) and not Expression.expHasCref(y, DAE.crefTime);
