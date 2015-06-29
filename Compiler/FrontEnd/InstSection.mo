@@ -71,7 +71,6 @@ protected import InstTypes;
 protected import NFInstUtil;
 protected import List;
 protected import Lookup;
-protected import MetaUtil;
 protected import Patternm;
 protected import PrefixUtil;
 protected import Static;
@@ -5015,7 +5014,7 @@ algorithm
     // (v1,v2,..,vn) := func(...)
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,_,source,_,impl,_,_)
       equation
-        true = MetaUtil.onlyCrefExpressions(expl);
+        true = List.all(expl, Absyn.isCref);
         (cache, e_1 as DAE.CALL(), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info);
@@ -5030,7 +5029,7 @@ algorithm
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,_,source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        true = MetaUtil.onlyCrefExpressions(expl);
+        true = List.all(expl, Absyn.isCref);
         true = Types.isTuple(Types.getPropType(eprop));
         (cache, e_1 as DAE.MATCHEXPRESSION(), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);

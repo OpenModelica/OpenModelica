@@ -2309,82 +2309,25 @@ algorithm
 end componentElts;
 
 public function addClassdefsToEnv
-"author: PA
-
-  This function adds classdefinitions and
-  import statements to the  environment."
+  "This function adds class definitions and import statements to the environment."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input list<SCode.Element> inSCodeElementLst;
-  input Boolean inBoolean;
-  input Option<DAE.Mod> redeclareMod;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
+  input list<SCode.Element> inClasses;
+  input Boolean inImpl;
+  input Option<DAE.Mod> inRedeclareMod;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
 algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
-    local
-      FCore.Cache cache;
-      FCore.Graph env,env_1,env_2;
-      list<SCode.Element> els;
-      Boolean impl;
-      Prefix.Prefix pre;
-      InstanceHierarchy ih;
-
-    case (cache,env,ih,pre,els,impl,_)
-      equation
-        (cache,env_1,ih) = addClassdefsToEnv2(cache,env,ih,pre,els,impl,redeclareMod);
-        env_2 = env_1 //env_2 = Env.updateEnvClasses(env_1,env_1)
-        "classes added with correct env.
-        This is needed to store the correct env in Env.CLASS.
-        It is required to get external objects to work";
-       then (cache,env_2,ih);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- InstUtil.addClassdefsToEnv failed\n");
-      then fail();
-
-  end matchcontinue;
+  for c in inClasses loop
+    (outCache, outEnv, outIH) :=
+      addClassdefToEnv(outCache, outEnv, outIH, inPrefix, c, inImpl, inRedeclareMod);
+  end for;
 end addClassdefsToEnv;
 
-protected function addClassdefsToEnv2
-"author: PA
-  Helper relation to addClassdefsToEnv"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
-  input list<SCode.Element> inSCodeElementLst;
-  input Boolean inBoolean;
-  input Option<DAE.Mod> redeclareMod;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output InnerOuter.InstHierarchy outIH;
-algorithm
-  (outCache,outEnv,outIH) := match (inCache,inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      SCode.Element elt;
-      list<SCode.Element> xs;
-      Boolean impl;
-      InstanceHierarchy ih;
-      Prefix.Prefix pre;
-
-    case (cache,env,ih,_,{},_,_) then (cache,env,ih);
-    case (cache,env,ih,_,elt::xs,_,_)
-      equation
-        (cache,env,ih) = addClassdefToEnv2(cache,env,ih,inPrefix,elt,inBoolean,redeclareMod);
-        (cache,env,ih) = addClassdefsToEnv2(cache,env,ih,inPrefix,xs,inBoolean,redeclareMod);
-      then (cache,env,ih);
-  end match;
-end addClassdefsToEnv2;
-
-protected function addClassdefToEnv2
+protected function addClassdefToEnv
 "author: PA
   Helper relation to addClassdefsToEnv"
   input FCore.Cache inCache;
@@ -2398,7 +2341,7 @@ protected function addClassdefToEnv2
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
 algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inPrefix,inSCodeElement,inBoolean,redeclareMod)
+  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inPrefix,inSCodeElement,redeclareMod)
     local
       FCore.Cache cache;
       FCore.Graph env,env_1;
@@ -2415,7 +2358,7 @@ algorithm
       DAE.Mod m;
 
     // we do have a redeclaration of class.
-    case (cache,env,ih,pre,( (sel1 as SCode.CLASS())),_,SOME(m))
+    case (cache,env,ih,pre,( (sel1 as SCode.CLASS())),SOME(m))
       equation
         m = Mod.lookupCompModification(m, sel1.name);
         false = valueEq(m, DAE.NOMOD());
@@ -2427,7 +2370,7 @@ algorithm
         (cache,env_1,ih);
 
     // otherwise, extend frame with in class.
-    case (cache,env,ih,pre,(sel1 as SCode.CLASS()),_,_)
+    case (cache,env,ih,pre,(sel1 as SCode.CLASS()),_)
       equation
         // Debug.traceln("Extend frame " + FGraph.printGraphPathStr(env) + " with " + SCode.className(cl));
         env_1 = FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD());
@@ -2438,13 +2381,13 @@ algorithm
     // adrpo: we should have no imports after SCodeFlatten!
     // unfortunately we do because of the way we evaluate
     // programs for interactive evaluation
-    case (cache,env,ih,_,(imp as SCode.IMPORT()),_,_)
+    case (cache,env,ih,_,(imp as SCode.IMPORT()),_)
       equation
         env_1 = FGraph.mkImportNode(env, imp);
       then
         (cache,env_1,ih);
 
-    case(cache,env,ih,_,((elt as SCode.DEFINEUNIT())), _,_)
+    case(cache,env,ih,_,((elt as SCode.DEFINEUNIT())),_)
       equation
         env_1 = FGraph.mkDefunitNode(env,elt);
       then (cache,env_1,ih);
@@ -2456,7 +2399,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end addClassdefToEnv2;
+end addClassdefToEnv;
 
 protected function checkCompEnvPathVsCompTypePath
 "fails if the comp env path is NOT a prefix of comp type path"

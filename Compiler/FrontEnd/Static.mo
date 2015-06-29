@@ -718,7 +718,7 @@ algorithm
         (expl, DAE.PROP(ty, c)) := elabArray(expl, props, inPrefix, inInfo); // type-checking the array
         arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(listLength(expl))}, DAE.emptyTypeSource);
         exp := DAE.ARRAY(Types.simplifyType(arr_ty), not Types.isArray(ty), expl);
-        (exp, arr_ty) := MetaUtil.tryToConvertArrayToList(exp, arr_ty) "converts types that cannot be arrays in ot lists.";
+        MetaUtil.checkArrayType(ty);
         exp := elabMatrixToMatrixExp(exp);
       then
         (exp, DAE.PROP(arr_ty, c));
@@ -797,7 +797,7 @@ protected
   String exp_str, ty1_str, ty2_str;
 algorithm
   Absyn.CONS(e1, e2) := inExp;
-  {e1, e2} := MetaUtil.transformArrayNodesToListNodes({e1, e2}, {});
+  {e1, e2} := MetaUtil.transformArrayNodesToListNodes({e1, e2});
 
   // Elaborate both sides of the cons expression.
   (outCache, exp1, prop1) := elabExpInExpression(outCache, inEnv, e1,

@@ -2319,7 +2319,7 @@ algorithm
         eqConstraint = InstUtil.equalityConstraint(env5, els, info);
         ci_state6 = if Util.isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
       then
-        (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
+        (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,inClassDef6),NONE(),eqConstraint,graph);
 
     // This rule describes how to instantiate class definition derived from an enumeration
     case (cache,env,ih,store,mods,pre,_,_,
