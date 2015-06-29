@@ -47,6 +47,9 @@ MdiArea::MdiArea(QWidget *pParent)
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setActivationOrder(QMdiArea::ActivationHistoryOrder);
   setDocumentMode(true);
+#if QT_VERSION >= 0x040800
+  setTabsClosable(true);
+#endif
 }
 
 MainWindow* MdiArea::getMainWindow()
