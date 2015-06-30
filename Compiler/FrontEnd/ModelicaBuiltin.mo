@@ -2138,6 +2138,28 @@ See also <a href=\"modelica://OpenModelica.Scripting.list\">list()</a>.</p>
   preferredView="text");
 end listFile;
 
+type DiffFormat = enumeration(plain "no deletions, no markup", color "terminal escape sequences", xml "XML tags");
+
+function diffModelicaFileListings "Creates diffs of two strings corresponding to Modelica files"
+  input String before, after;
+  input DiffFormat diffFormat = DiffFormat.color;
+  output String result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Creates diffs of two strings (before and after) corresponding to Modelica files.
+The diff is specialized to handle the <a href=\"modelica://OpenModelica.Scripting.list\">list</a>
+API moving comments around in the file and introducing or deleting whitespace.</p>
+<p>The output can be chosen to be a colored diff (for terminals), XML, or
+the final text (deletions removed).</p>
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>1.9.3-dev</td><td>sjoelund.se</td><td>Introduced the API.</td></tr>
+</table>
+</html>"),
+  preferredView="text");
+end diffModelicaFileListings;
+
 // exportToFigaro added by Alexander Carlqvist
 function exportToFigaro
   input TypeName path;

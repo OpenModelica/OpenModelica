@@ -2,7 +2,7 @@
 
 nothing:
 
-LexerModelica.mo: lexerModelicaDiff.l OMCC/OMCC
+LexerModelicaDiff.mo: lexerModelicaDiff.l OMCC/OMCC
 	test ! -f OMCC/LexerModelicaDiff.mo || rm OMCC/LexerModelicaDiff.mo
 	cp lexerModelicaDiff.l OMCC/
 	cd OMCC && ./OMCC --lexer-only ModelicaDiff

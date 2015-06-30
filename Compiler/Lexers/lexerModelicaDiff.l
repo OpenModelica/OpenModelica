@@ -7,7 +7,7 @@ import DiffAlgorithm;
 %x c_string
 
 whitespace1  [ \t]+
-whitespace2  [ \t]*\n
+whitespace2  \n
 letter       [a-zA-Z]
 wild         [_]
 digit        [0-9]
@@ -27,7 +27,7 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 
 %%
 {whitespace1} return WHITESPACE;
-{whitespace2} return WHITESPACE;
+{whitespace2} return NEWLINE;
 {real}      return UNSIGNED_REAL;
 {real2}     return UNSIGNED_REAL;
 {real3}     return UNSIGNED_REAL;
@@ -206,11 +206,14 @@ function filterModelicaDiff
   import LexerModelicaDiff.{Token,TokenId,tokenContent,TOKEN};
   import DiffAlgorithm.Diff;
   input list<tuple<Diff, list<Token>>> diffs;
+  input Boolean removeWhitespace=true;
   output list<tuple<Diff, list<Token>>> odiffs;
 protected
   list<String> addedLineComments, removedLineComments;
   list<list<String>> addedBlockComments, removedBlockComments;
-  list<tuple<Diff, Token>> simpleDiff;
+  list<tuple<Diff, Token>> simpleDiff, tmp, rest;
+  Boolean lastIsNewline;
+  Integer depth;
 algorithm
   // No changes are easy
   _ := match diffs
@@ -226,6 +229,7 @@ algorithm
     local
       list<Token> ts;
     case (Diff.Delete,ts as {TOKEN(id=TokenId.WHITESPACE)}) then (Diff.Equal,ts);
+    case (Diff.Delete,ts as {TOKEN(id=TokenId.NEWLINE)}) then (Diff.Equal,ts);
     else e;
     end match
 
@@ -233,7 +237,8 @@ algorithm
     match e
       // Single addition of whitespace, not followed by another addition
       // is suspected garbage added by OMC.
-      case (Diff.Add,{TOKEN(id=TokenId.WHITESPACE)}) then false;
+      case (Diff.Add,{TOKEN(id=TokenId.WHITESPACE)}) then not removeWhitespace;
+      case (Diff.Add,{TOKEN(id=TokenId.NEWLINE)}) then not removeWhitespace;
       case (_,{}) then false;
       else true;
     end match
@@ -250,6 +255,36 @@ algorithm
       case (Diff.Delete,ts) then list((Diff.Delete,t) for t in ts);
     end match
   for e in odiffs);
+
+  tmp := {};
+  lastIsNewline := false;
+  depth := 2;
+  while not listEmpty(simpleDiff) loop
+    (lastIsNewline,simpleDiff,tmp) := match simpleDiff
+      local
+        tuple<Diff, Token> e;
+        Token t;
+      case (Diff.Add,TOKEN(id=TokenId.NEWLINE))::(Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(rest as (_,TOKEN(id=TokenId.NEWLINE))::_)
+        then (false,rest,tmp);
+      case (Diff.Add,TOKEN(id=TokenId.NEWLINE))::(rest as (_,TOKEN(id=TokenId.NEWLINE))::_)
+        then (false,rest,tmp);
+      case (e as (_,TOKEN(id=TokenId.NEWLINE)))::(Diff.Add,TOKEN(id=TokenId.NEWLINE))::rest
+        then (false,e::rest,tmp);
+      case (e as (_,TOKEN(id=TokenId.NEWLINE)))::rest then (true,rest,e::tmp);
+      case (Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(e as (Diff.Add,t))::rest guard lastIsNewline
+        then (false,rest,e::
+          (Diff.Add,TOKEN("WHITESPACE",TokenId.WHITESPACE,sum(" " for i in 1:depth),1,depth,0,0,0,0))
+          ::tmp);
+      case (Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(rest as (_,TOKEN(id=TokenId.NEWLINE))::_) guard lastIsNewline
+        then (true,rest,tmp);
+      case (e as (_,t as TOKEN(id=TokenId.WHITESPACE)))::rest guard lastIsNewline
+        algorithm
+          TOKEN(length=depth) := t;
+        then (false,rest,e::tmp);
+      case e::rest then (false,rest,e::tmp);
+    end match;
+  end while;
+  simpleDiff := listReverse(tmp);
 
   addedLineComments := list(tokenContent(tuple22(e)) for e guard Diff.Add==tuple21(e) and isLineComment(tuple22(e)) in simpleDiff);
   removedLineComments := list(tokenContent(tuple22(e)) for e guard Diff.Delete==tuple21(e) and isLineComment(tuple22(e)) in simpleDiff);
