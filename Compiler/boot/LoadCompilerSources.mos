@@ -169,8 +169,10 @@ if true then /* Suppress output */
     "../BackEnd/Uncertainties.mo",
     "../BackEnd/UnitCheck.mo",
     "../BackEnd/Unit.mo",
-	"../BackEnd/Vectorization.mo",
+  "../BackEnd/Vectorization.mo",
     "../BackEnd/XMLDump.mo",
+
+    "../Lexers/LexerModelicaDiff.mo",
 
   // "SimCode";
     "../SimCode/HpcOmSimCode.mo",
@@ -201,9 +203,9 @@ if true then /* Suppress output */
     "../Template/CodegenCpp.mo",
     "../Template/CodegenCppHpcom.mo",
     "../Template/CodegenFMU.mo",
-	"../Template/CodegenFMU1.mo",
-	"../Template/CodegenFMU2.mo",
-	"../Template/CodegenFMUCommon.mo",
+  "../Template/CodegenFMU1.mo",
+  "../Template/CodegenFMU2.mo",
+  "../Template/CodegenFMUCommon.mo",
     "../Template/CodegenFMUCpp.mo",
     "../Template/CodegenCppInit.mo",
     "../Template/CodegenCSharp.mo",
@@ -229,7 +231,7 @@ if true then /* Suppress output */
     "../Template/Tpl.mo",
     "../Template/TplParser.mo",
     "../Template/Unparsing.mo",
-	"../Template/VisualXMLTpl.mo",
+  "../Template/VisualXMLTpl.mo",
 
   // "Global";
     "../Global/Global.mo",
@@ -248,6 +250,7 @@ if true then /* Suppress output */
     "../Util/Corba.mo",
   //  "../Util/Database.mo",
     "../Util/Debug.mo",
+    "../Util/DiffAlgorithm.mo",
     "../Util/DynLoad.mo",
     "../Util/ErrorExt.mo",
     "../Util/Error.mo",
@@ -298,7 +301,7 @@ if true then /* Suppress output */
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
     "../Util/VisualXML.mo",
-	"../Util/Serializer.mo"
+  "../Util/Serializer.mo"
   };
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then

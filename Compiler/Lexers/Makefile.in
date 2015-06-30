@@ -9,7 +9,7 @@ LexerModelica.mo: lexerModelicaDiff.l OMCC/OMCC
 	mv OMCC/LexerModelicaDiff.mo "$@"
 OMCC/OMCC:
 	test -e OMCC/.git || git clone https://github.com/OpenModelica/OpenModelica-OMCC OMCC
-	cd OMCC && git fetch && git pull --ff
+	cd OMCC && git fetch && git pull --ff-only
 	$(MAKE) -C OMCC omcc OMC="@OMBUILDDIR@/bin/omc"
 
 Makefile: Makefile.in
