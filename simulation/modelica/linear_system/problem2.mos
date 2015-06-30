@@ -42,6 +42,18 @@ val(u3, 1.0);
 val(i2, 0.0);
 val(i2, 1.0);
 
+
+setCommandLineOptions("+d=dumpRecursiveTearing +recursiveTearing=1");
+
+simulate(linear_system.problem2, simflags="-ls lis -lv LOG_LS");
+getErrorString();
+
+val(u3, 0.0);
+val(u3, 1.0);
+val(i2, 0.0);
+val(i2, 1.0);
+
+
 setCommandLineOptions("--disableLinearTearing");
 
 simulate(linear_system.problem2);
@@ -121,6 +133,30 @@ val(i2, 1.0);
 // 8.881784197001252e-16
 // 2.804903282692988
 // 8.881784197001253e-17
+// 0.2804903282692989
+// true
+// INeqn => i2 = u2 / r2 [1]
+// INeqn => i3 = u2 / r3 [2]
+// INeqn => u1 = u0 - u2 [3]
+// INeqn => i1 = i3 + i2 [4]
+// INres => u1 - r1 * i1 = 0.0 [1]
+// OUTeqn => i2 = u2 / r2 [0]
+// OUTeqn => i3 = u2 / r3 [1]
+// OUTeqn => u1 = u0 - u2 [2]
+// OUTeqn => i1 = __OMC__1$RTEARINGF * u2 [3]
+// OUTres => __OMC__2$RTEARINGF * u2 - u2 = -u0 [0]
+// ****************
+// TearVar: u2[0]
+// ****************
+// record SimulationResult
+//     resultFile = "linear_system.problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis -lv LOG_LS'",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.0
+// 2.804903282692988
+// 0.0
 // 0.2804903282692989
 // true
 // record SimulationResult
