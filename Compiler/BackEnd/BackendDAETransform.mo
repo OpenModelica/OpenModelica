@@ -79,32 +79,36 @@ public function strongComponentsScalar "author: PA
   input array<Integer> mapIncRowEqn;
   output BackendDAE.EqSystem outSystem;
   output BackendDAE.StrongComponents outComps "list of components";
-protected
-  list<list<Integer>> comps;
-  array<Integer> ass1, ass2;
-  BackendDAE.IncidenceMatrixT mt;
-  BackendDAE.EquationArray eqs;
-  BackendDAE.Variables vars;
-  array<Integer> markarray;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  try
-    BackendDAE.EQSYSTEM(vars, eqs, SOME(_), SOME(mt), BackendDAE.MATCHING(ass1=ass1, ass2=ass2), stateSets=stateSets, partitionKind=partitionKind) := inSystem;
+  (outSystem, outComps) := matchcontinue inSystem
+    local
+      list<list<Integer>> comps_m;
+      array<Integer> ass1, ass2;
+      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.Variables vars;
+      array<Integer> markarray;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.EqSystem syst;
+    case syst as BackendDAE.EQSYSTEM(orderedEqs=eqs, m=SOME(_), mT=SOME(mt), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2))
+      algorithm
+        comps_m := Sorting.TarjanTransposed(mt, ass2);
 
-    comps := Sorting.TarjanTransposed(mt, ass2);
+        markarray := arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
+        comps := analyseStrongComponentsScalar(comps_m, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
+        ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
-    markarray := arrayCreate(BackendDAEUtil.equationArraySize(eqs), -1);
-    outComps := analyseStrongComponentsScalar(comps, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
-    ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
-
-    // noscalass2 = eqnAssignmentNonScalar(1, arrayLength(mapEqnIncRow), mapEqnIncRow, ass2, {});
-    // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-    outSystem := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, outComps), stateSets, partitionKind);
-  else
-    Error.addInternalError("function strongComponentsScalar failed (sorting strong components)", sourceInfo());
-    fail();
-  end try;
+        // noscalass2 = eqnAssignmentNonScalar(1, arrayLength(mapEqnIncRow), mapEqnIncRow, ass2, {});
+        // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
+        syst.m := NONE(); syst.mT := NONE(); syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+      then
+        (syst, comps);
+    else
+      algorithm
+        Error.addInternalError("function strongComponentsScalar failed (sorting strong components)", sourceInfo());
+      then
+        fail();
+  end matchcontinue;
 end strongComponentsScalar;
 
 public function eqnAssignmentNonScalar
@@ -156,7 +160,6 @@ protected
   BackendDAE.StrongComponent acomp;
   Integer mark = imark;
 algorithm
-
   for comp in inComps loop
       (acomp, mark) := analyseStrongComponentScalar(comp, syst, shared, inAss1, inAss2, mapEqnIncRow, mapIncRowEqn, mark, markarray);
       outComps := acomp :: outComps;
@@ -178,12 +181,12 @@ protected function analyseStrongComponentScalar "author: Frenkel TUD 2011-05"
   output BackendDAE.StrongComponent outComp;
   output Integer omark = imark + 1;
 protected
-      list<Integer> comp, vlst;
-      list<BackendDAE.Var> varlst;
-      list<tuple<BackendDAE.Var, Integer>> var_varindx_lst;
-      BackendDAE.Variables vars;
-      list<BackendDAE.Equation> eqn_lst;
-      BackendDAE.EquationArray eqns;
+  list<Integer> comp, vlst;
+  list<BackendDAE.Var> varlst;
+  list<tuple<BackendDAE.Var, Integer>> var_varindx_lst;
+  BackendDAE.Variables vars;
+  list<BackendDAE.Equation> eqn_lst;
+  BackendDAE.EquationArray eqns;
 algorithm
      try
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
