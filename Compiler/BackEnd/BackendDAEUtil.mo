@@ -7488,6 +7488,7 @@ algorithm
                         (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
                         (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),
+                        (Tearing.recursiveTearing, "recursiveTearing", false),
                         (DynamicOptimization.removeLoops, "extendDynamicOptimization", false),
                         (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization", false),
                         (DynamicOptimization.simplifyConstraints, "simplifyConstraints", false),

@@ -448,6 +448,8 @@ constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(140, "sortEqnsAndVars", false
   Util.gettext("Heuristical sorting for equations and variables. Influenced: removeSimpleEquations and tearing."));
 constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(141, "dumpSimplifyLoops", false,
   Util.gettext("Dump between steps of simplifyLoops"));
+constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(142, "dumpRecursiveTearing", false,
+  Util.gettext("Dump between steps of recursiveTearing"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -595,7 +597,8 @@ constant list<DebugFlag> allDebugFlags = {
   RUNTIME_STATIC_LINKING,
   DYNAMIC_TEARING_INFO,
   SORT_EQNS_AND_VARS,
-  DUMP_SIMPLIFY_LOOPS
+  DUMP_SIMPLIFY_LOOPS,
+  DUMP_RTEARING
 };
 
 public
@@ -764,6 +767,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "reduceDynamicOptimization", // before tearing
     "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
     "simplifyLoops",
+    "recursiveTearing",
     "partlintornsystem",
     "countOperations",
     "inputDerivativesUsed",
@@ -1095,6 +1099,15 @@ constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(73, "simplifyLoops",
     })),
     Util.gettext("simplify algebraic loops."));
 
+constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
+  NONE(), EXTERNAL(), INT_FLAG(0),
+  SOME(STRING_DESC_OPTION({
+    ("0", Util.gettext("do nonthing.")),
+    ("1", Util.gettext("linear tearing set of size 1")),
+    ("2", Util.gettext("linear tearing"))
+    })),
+    Util.gettext("inline and repeat tearing."));
+
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1173,7 +1186,8 @@ constant list<ConfigFlag> allConfigFlags = {
   ADD_TIME_AS_STATE,
   LOOP2CON,
   FORCE_TEARING,
-  SIMPLIFY_LOOPS
+  SIMPLIFY_LOOPS,
+  RTEARING
 };
 
 public function new

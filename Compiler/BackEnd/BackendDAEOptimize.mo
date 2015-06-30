@@ -4177,7 +4177,7 @@ end compWeightsEqns;
 // =============================================================================
 // section for simplifyLoops
 //
-// simplify(hopful) loops for simulation
+// simplify(hopful) loops for simulation/optimization
 // author: Vitalij Ruge
 // =============================================================================
 
@@ -4430,7 +4430,7 @@ algorithm
       //end if;
       if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
         print("=> ");
-        print("- " + BackendDump.equationString(eqn) + " --new--\n");
+        print(BackendDump.equationString(eqn) + "--new--\n");
       end if;
     else
     end try;
@@ -4510,7 +4510,7 @@ algorithm
 end simplifyLoopEqn;
 
 
-protected function simplifyLoopExp
+public function simplifyLoopExp
   input Integer inIndx;
   input BackendDAE.Variables inVars "vars array";
   input BackendDAE.EquationArray inEqns "eqns array";
@@ -4523,6 +4523,8 @@ protected function simplifyLoopExp
   input Boolean useTmpVars = true;
   input Integer ii;
   input list<Integer> inCompOrders;
+  input String tmpVarName = "LOOP";
+  input Boolean noPara = false;
   output Integer outIndx = inIndx;
   output BackendDAE.Variables outVars = inVars "vars array";
   output BackendDAE.EquationArray outEqns  = inEqns "eqns array";
@@ -4546,7 +4548,7 @@ algorithm
   //terms
   (noLoopTerm,_) := ExpressionSimplify.simplify1(Expression.makeSum1(noLoopTerms));
   if useTmpVars and simDAE then
-    (noLoopTerm, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopTerm, "LOOPT", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+    (noLoopTerm, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopTerm, tmpVarName + "T", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
     (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
   end if;
 
@@ -4559,13 +4561,13 @@ algorithm
      if useTmpVars and simDAE then
       if (match noLoopFactor case DAE.BINARY(operator = DAE.DIV()) then true; case DAE.BINARY(operator = DAE.POW()) then true; else false; end match) then
          DAE.BINARY(e1,op,e2) := noLoopFactor;
-        (e1, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(e1, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+        (e1, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(e1, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared,noPara);
         (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
-        (e2, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(e2, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+        (e2, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(e2, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared,noPara);
         (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
         noLoopFactor := DAE.BINARY(e1,op,e2);
       else
-        (noLoopFactor, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopFactor, "LOOPF", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
+        (noLoopFactor, outEqns, outVars, outShared, update, para) :=  BackendEquation.makeTmpEqnForExp(noLoopFactor, tmpVarName + "F", if simDAE then outIndx else -outIndx, outEqns, outVars, outShared);
         (outUpdate, ass1, ass2, outIndx, outCompOrder) := simplifyLoopExpHelper(update, outUpdate, para, ass1, ass2, outVars, outEqns, outIndx, ii, outCompOrder);
       end if;
      end if;

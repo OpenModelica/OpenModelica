@@ -1104,6 +1104,16 @@ algorithm
 
 end expAddX2;
 
+public function collectX
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp3 "DAE.CREF";
+  input DAE.Boolean expand = true;
+  output DAE.Exp outLhs;
+  output DAE.Exp outRhs;
+algorithm
+ (outLhs, outRhs) := preprocessingSolve5(inExp1, inExp3, expand);
+end collectX;
+
 protected function preprocessingSolve5
 "
  helprer function for preprocessingSolve

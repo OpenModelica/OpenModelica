@@ -1590,6 +1590,20 @@ algorithm
   end match;
 end varType;
 
+public function expOrDerCref
+"Returns the componentref if DAE.Exp is a CREF or DER(CREF)"
+  input DAE.Exp inExp;
+  output DAE.ComponentRef outComponentRef;
+  output Boolean isDer;
+algorithm
+  (outComponentRef, isDer) :=
+  match (inExp)
+    local ComponentRef cr;
+    case DAE.CREF(componentRef = cr) then (cr, false);
+    case DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(cr,_)}) then (cr, true);
+  end match;
+end expOrDerCref;
+
 public function expCref
 "Returns the componentref if DAE.Exp is a CREF,"
   input DAE.Exp inExp;
@@ -4647,7 +4661,7 @@ protected function replaceExpWork
   output Boolean cont;
   output tuple<DAE.Exp,DAE.Exp,Integer> otpl;
 algorithm
-  (outExp,cont,otpl) := matchcontinue (inExp,inTpl) /* TODO: match */
+  (outExp,cont,otpl) := match(inExp,inTpl)
     local
       tuple<DAE.Exp,DAE.Exp,Integer> tpl;
       DAE.Exp expr,source,target;
@@ -4655,17 +4669,11 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type ty;
     case (_,(source,target,c))
-      equation
-        true = expEqual(inExp, source);
+      guard expEqual(inExp, source)
       then (target,false,(source,target,c+1));
 
-    case (DAE.CREF(cr,ty),tpl)
-      equation
-        (cr,tpl) = traverseExpTopDownCrefHelper(cr,replaceExpWork,tpl);
-      then (DAE.CREF(cr,ty),false,tpl);
-
     else (inExp,true,inTpl);
-  end matchcontinue;
+  end match;
 end replaceExpWork;
 
 public function expressionCollector
@@ -4678,6 +4686,16 @@ algorithm
   outExps := exp::acc;
 end expressionCollector;
 
+
+public function replaceCrefBottomUp
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inSourceExp;
+  input DAE.Exp inTargetExp;
+  output DAE.Exp exp;
+algorithm
+  (exp,_) := traverseExpBottomUp(inExp,replaceCref,(inSourceExp,inTargetExp));
+end replaceCrefBottomUp;
+
 public function replaceCref
 "Replace a componentref with a expression"
   input DAE.Exp inExp;
@@ -4685,17 +4703,16 @@ public function replaceCref
   output DAE.Exp outExp;
   output tuple<DAE.ComponentRef,DAE.Exp> otpl;
 algorithm
-  (outExp,otpl) := matchcontinue (inExp,inTpl)
+  (outExp,otpl) := match (inExp,inTpl)
     local
       DAE.Exp target;
       DAE.ComponentRef cr,cr1;
     case (DAE.CREF(componentRef=cr),(cr1,target))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
+      guard ComponentReference.crefEqualNoStringCompare(cr, cr1)
       then
         (target,(cr1,target));
     else (inExp,inTpl);
-  end matchcontinue;
+  end match;
 end replaceCref;
 
 public function containsInitialCall "public function containsInitialCall

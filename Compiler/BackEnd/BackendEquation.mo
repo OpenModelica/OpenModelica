@@ -2134,7 +2134,6 @@ algorithm
   end match;
 end setEquationRHS;
 
-
 public function generateSolvedEqnsfromOption "author: Frenkel TUD 2010-05"
   input DAE.ComponentRef inLhs;
   input Option<DAE.Exp> inRhs;
@@ -2248,7 +2247,7 @@ public function makeTmpEqnForExp
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
   input BackendDAE.Shared ishared;
-
+  input Boolean noPara = false;
   output DAE.Exp oExp;
   output BackendDAE.EquationArray oeqns = ieqns;
   output BackendDAE.Variables ovars = ivars;
@@ -2280,7 +2279,7 @@ algorithm
 
     eqn := BackendDAE.EQUATION(oExp, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
-      print(BackendDump.equationString(eqn) + " -- new--\n");
+      print(BackendDump.equationString(eqn) + " -- new eqn--\n");
     end if;
     eqnVars := equationVars(eqn, ivars);
     b := listEmpty(eqnVars) and not Expression.expHasCref(y, DAE.crefTime);
@@ -2292,10 +2291,15 @@ algorithm
     end if;
 
     if b then
-      tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
-      tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.PARAM());
-      oshared := BackendVariable.addKnVarDAE(tmpvar, oshared);
-      para := true;
+      if noPara then
+        oExp := ExpressionSimplify.simplify(iExp);
+        update := false;
+      else
+        tmpvar := BackendVariable.setBindExp(tmpvar, SOME(y));
+        tmpvar := BackendVariable.setVarKind(tmpvar, BackendDAE.PARAM());
+        oshared := BackendVariable.addKnVarDAE(tmpvar, oshared);
+        para := true;
+      end if;
     else
       oeqns := BackendEquation.addEquation(eqn, oeqns);
       ovars := BackendVariable.addVar(tmpvar, ovars);
