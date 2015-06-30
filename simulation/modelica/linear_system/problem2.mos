@@ -118,9 +118,9 @@ val(i2, 1.0);
 //     messages = ""
 // end SimulationResult;
 // ""
-// 0.0
+// 8.881784197001252e-16
 // 2.804903282692988
-// 0.0
+// 8.881784197001253e-17
 // 0.2804903282692989
 // true
 // record SimulationResult
@@ -129,9 +129,9 @@ val(i2, 1.0);
 //     messages = ""
 // end SimulationResult;
 // ""
-// -0.0
-// 2.804903282692988
 // 0.0
+// 2.804903282692988
+// -0.0
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
@@ -139,9 +139,9 @@ val(i2, 1.0);
 //     messages = ""
 // end SimulationResult;
 // ""
-// -0.0
-// 2.804903282692988
 // 0.0
+// 2.804903282692988
+// -0.0
 // 0.2804903282692989
 // record SimulationResult
 //     resultFile = "linear_system.problem2_res.mat",
@@ -149,7 +149,7 @@ val(i2, 1.0);
 //     messages = ""
 // end SimulationResult;
 // ""
-// -0.0
+// 0.0
 // 2.804903282692989
 // 0.0
 // 0.2804903282692989
