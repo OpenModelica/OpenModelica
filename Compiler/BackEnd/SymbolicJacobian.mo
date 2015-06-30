@@ -1177,7 +1177,7 @@ algorithm
       then ((sparsetupleT, sparsetuple, (diffCompRefs, diffedCompRefs)), coloring);
         else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern failed"});
+        Error.addInternalError("function generateSparsePattern failed", sourceInfo());
       then fail();
   end matchcontinue;
 end generateSparsePattern;
@@ -1328,7 +1328,7 @@ algorithm
        equation
          (comp::_) = inComponents;
          BackendDump.dumpComponent(comp);
-         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePattern failed"});
+         Error.addInternalError("function getSparsePattern failed", sourceInfo());
        then fail();
   end match;
 end getSparsePattern;
@@ -1457,7 +1457,7 @@ algorithm
         mapIndexColors(inColors, i-1, inArray);
    else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern: mapIndexColors failed"});
+        Error.addInternalError("function mapIndexColors failed", sourceInfo());
       then
          fail();
  end matchcontinue;
@@ -1663,7 +1663,7 @@ algorithm
         (linearModelMatrices, functionTree);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of LinearModel Matrices failed. Function: BackendDAEOptimize.createLinearModelMatrixes"});
+        Error.addInternalError("Generation of LinearModel Matrices failed.", sourceInfo());
       then
         fail();
   end match;
@@ -1754,7 +1754,7 @@ algorithm
         ((backendDAE, inName, inDiffVars, diffedVars, inVars), sparsepattern, colsColors, funcs);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.createJacobian failed"});
+        Error.addInternalError("function createJacobian failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1822,7 +1822,7 @@ algorithm
         then backendDAE2;
      else
        equation
-         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.optimizeJacobianMatrix failed"});
+         Error.addInternalError("function optimizeJacobianMatrix failed", sourceInfo());
        then fail();
    end matchcontinue;
 end optimizeJacobianMatrix;
@@ -1961,12 +1961,12 @@ algorithm
       if Flags.isSet(Flags.JAC_WARNINGS) then
         print("*** analytical Jacobians -> failed vars are not equal to equations: " + intString(listLength(derivedEquations)) + " time: " + realString(clock()) + "\n");
       end if;
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSymbolicJacobian failed"});
+      Error.addInternalError("function generateSymbolicJacobian failed", sourceInfo());
     then fail();
 
     else
      equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSymbolicJacobian failed"});
+      Error.addInternalError("function generateSymbolicJacobian failed", sourceInfo());
     then fail();
   end matchcontinue;
 end generateSymbolicJacobian;
@@ -2497,8 +2497,6 @@ algorithm
       BackendDAE.StrongComponents comps;
       BackendDAE.ExtraInfo einfo;
 
-      String errorMessage;
-
       DAE.FunctionTree funcs;
 
     case(_, _, _, _, _, _, _, _)
@@ -2585,8 +2583,7 @@ algorithm
     case(_, _, _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.JAC_DUMP);
-        errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getSymbolicSimulationJacobian failed.";
-        Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+        Error.addInternalError("function getSymbolicJacobian failed", sourceInfo());
       then (BackendDAE.EMPTY_JACOBIAN(), inShared);
 
         else (BackendDAE.EMPTY_JACOBIAN(), inShared);
@@ -2833,7 +2830,6 @@ algorithm
       list<BackendDAE.Equation> rest;
       BackendDAE.Equation eqn;
       DAE.ElementSource source;
-      String errorMessage;
       BackendDAE.EquationAttributes eqAttr;
 
     case ({}, _, _, _, _) then listReverse(iAcc);
@@ -2853,8 +2849,7 @@ algorithm
         createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
     case (eqn::_, _, _, _, _)
       equation
-        errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function createResidualSetEquations failed for equation: " + BackendDump.equationString(eqn);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {errorMessage}, BackendEquation.equationInfo(eqn));
+        Error.addInternalError("function createResidualSetEquations failed for equation: " + BackendDump.equationString(eqn), sourceInfo());
     then
        fail();
   end match;
