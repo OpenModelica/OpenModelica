@@ -3062,8 +3062,6 @@ algorithm
       equation
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
-        // seperate the variables
-        str = stringDelimitList(vars_1,"\" \"");
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
@@ -3076,6 +3074,8 @@ algorithm
         // check if plot callback is defined
         b = System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
+          // seperate the variables
+          str = stringDelimitList(vars_1,"\" \"");
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
@@ -3092,6 +3092,8 @@ algorithm
           curveWidthStr = realString(curveWidth);
           curveStyleStr = intString(curveStyle);
           autoScaleStr = boolString(autoScale);
+          // seperate the variables
+          str = stringDelimitList(vars_1, " ");
           System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
         end if;
       then
