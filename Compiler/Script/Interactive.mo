@@ -8607,7 +8607,7 @@ algorithm
   matchcontinue (inString1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
     local
       Absyn.Path modelpath,modelwithin,tppath;
-      String name;
+      String name, filename;
       Absyn.ComponentRef tp,model_;
       list<Absyn.NamedArg> nargs;
       Absyn.Program p,newp;
@@ -8628,11 +8628,11 @@ algorithm
         (p,"false\n");
 
     // adding component to model that resides inside package
-    case (name,tp,(model_ as Absyn.CREF_QUAL()),nargs,(p as Absyn.PROGRAM()))
+    case (name,tp,model_,nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
-        modelwithin = Absyn.stripLast(modelpath);
-        cdef = getPathedClassInProgram(modelpath, p);
+        w = match modelpath case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(Absyn.stripLast(modelpath)); end match;
+        (cdef as Absyn.CLASS(info=SOURCEINFO(fileName=filename))) = getPathedClassInProgram(modelpath, p);
         tppath = Absyn.crefToPath(tp);
         annotation_ = annotationListToAbsynComment(nargs,NONE());
         modification = modificationToAbsyn(nargs,NONE());
@@ -8642,27 +8642,8 @@ algorithm
           Absyn.ELEMENT(false,redecl,io,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
-          SOURCEINFO("",false,0,0,0,0,0.0),NONE())));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then
-        (newp,"Ok\n");
-
-    // adding component to model that resides on top level
-    case (name,tp,(model_ as Absyn.CREF_IDENT()),nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
-        tppath = Absyn.crefToPath(tp);
-        annotation_ = annotationListToAbsynComment(nargs,NONE());
-        modification = modificationToAbsyn(nargs,NONE());
-        (io,redecl,attr) = getDefaultPrefixes(p,tppath);
-        newcdef = addToPublic(cdef,
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,redecl,io,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
-          SOURCEINFO("",false,0,0,0,0,0.0),NONE())));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+          SOURCEINFO(filename,false,0,0,0,0,0.0),NONE())));
+        newp = updateProgram(Absyn.PROGRAM({newcdef},w), p);
       then
         (newp,"Ok\n");
 
