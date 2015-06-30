@@ -148,7 +148,8 @@ fmi_cs_st.log \
 uncertainties.log \
 scodeinst.log \
 xml.log \
-xogeny.log
+xogeny.log \
+openmodelicadiff.log
 
 .PHONY : all omc-diff ReferenceFiles failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
 
@@ -531,6 +532,9 @@ modelica3d.log: omc-diff
 	@echo $@ done
 hummod.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/HumMod -f Makefile test > $@
+	@echo $@ done
+openmodelicadiff.log: omc-diff
+	$(MAKE) -C openmodelica/diff -f Makefile test > $@
 	@echo $@ done
 
 failingtest: omc-diff

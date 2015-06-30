@@ -2,17 +2,8 @@
 TEST = ../../rtest
 
 TESTFILES = \
-DiffAlgorithm.mos \
-DumpTest.mos \
-ExpressionTest.mos \
-GraphTest.mos \
-HashTableTest.mos \
-PriorityQueue.mos \
-SimCodeTest.mos \
-SimplifyTest.mos \
-SusanTest.mos \
-System.mos \
-UtilTest.mos
+AddComponent.mos \
+TestDiffListAPI.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -24,15 +15,7 @@ FAILINGTESTFILES= \
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile \
-BreakProcess.cpp \
-LinkMain.makefile.in \
-LinkMain.makefile.mingw \
-SusanTestSmall.tpl \
-main.c \
-main_records.c \
-main_separate.c \
-refactor-mc-to-m.sh
+Makefile
 
 # Remove executables on Linux (no extension)
 # CLEAN = $(TESTFILES:.mos=) $(TESTFILES:.mos=_*) $(TESTFILES:.mos=.cpp) $(TESTFILES:.mos=.makefile) $(TESTFILES:.mos=.libs) $(TESTFILES:.mos=.log) output.log *.dll *.exe *.so
