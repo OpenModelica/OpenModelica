@@ -29,7 +29,7 @@ enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
 
 
 enum LogCategory {INIT = 0, NLS = 1, LS = 2, SOLV = 3, OUT = 4, EVT = 5, OTHER = 6, MOD = 7};
-enum LogLevel {ERROR, WARNING, INFO, DEBUG};
+enum LogLevel {ERROR = 0, WARNING = 1, INFO = 2, DEBUG = 3};
 struct LogSettings
 {
 	std::vector<LogLevel> modes;
