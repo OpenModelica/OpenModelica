@@ -492,7 +492,7 @@ void Arkode::ArkodeCore()
       if (_idid < 0)
         throw ModelicaSimulationError(SOLVER,"CVode::ReInit()");
 
-      // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
+      // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung
       if (_tCurrent == _tEnd)
         _ark_rt = ARK_TSTOP_RETURN;
     }
