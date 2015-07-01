@@ -8041,6 +8041,18 @@ algorithm
   end match;
 end dimNotFixed;
 
+function isArrayWithUnknownDimension
+  input DAE.Type ty;
+  output Boolean b;
+algorithm
+  b := match ty
+    case DAE.T_ARRAY() then max(
+        match d case DAE.DIM_UNKNOWN() then true; else false; end match
+      for d in getDimensions(ty));
+    else false;
+  end match;
+end isArrayWithUnknownDimension;
+
 public function stripTypeVars
   "Strips the attribute variables from a type, and returns both the stripped
    type and the attribute variables."

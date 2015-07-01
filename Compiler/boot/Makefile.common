@@ -41,7 +41,7 @@ bootstrap-from-tarball: $(PATCHES)
 	tar xJf bootstrap-sources.tar.xz
 	# Patch _main.c to avoid a new tarball
 	$(PATCH_SOURCES)
-	cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | sed 's/\([.][0-9]*\)\?[.]patch/.c/'`" || exit 1; done
+	cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | $(SED) 's/\([.][0-9]*\)\?[.]patch/.c/'`" || exit 1; done
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc
 	@echo "Bootstrapping phase 1/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)

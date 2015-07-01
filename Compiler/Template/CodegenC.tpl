@@ -4547,15 +4547,11 @@ match ty
     let expPart = daeExp(right, context, &preExp, &varDecls, &auxFunction)
     match expTypeFromExpShort(right)
     case "boolean" then
-      let tvar = tempDecl("boolean_array", &varDecls)
-      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
       copy_boolean_array_data_mem(<%expPart%>, &<%cref(left)%>);
       >>
     case "integer" then
-      let tvar = tempDecl("integer_array", &varDecls)
-      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
       copy_integer_array_data_mem(<%expPart%>, &<%cref(left)%>);
@@ -5605,7 +5601,7 @@ template funArgDefinition(Variable var)
 ::=
   let &auxFunction = buffer ""
   match var
-  case VARIABLE(__) then '<%varType(var)%> <%contextCref(name,contextFunction,&auxFunction)%>'
+  case VARIABLE(__) then ('<%varType(var)%> <%contextCref(name,contextFunction,&auxFunction)%>' + (if var.instDims then " = {0}"))
   case FUNCTION_PTR(__) then 'modelica_fnptr _<%name%>'
 end funArgDefinition;
 
@@ -6900,11 +6896,12 @@ template varOutput(Variable var)
   case FUNCTION_PTR(__) then
     'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = (modelica_fnptr)<%funArgName(var)%>; }<%\n%>'
   case VARIABLE(ty=T_ARRAY(__)) then
-    'if (out<%funArgName(var)%>) { copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>); }<%\n%>'
+    // If the dim_size is NULL, the output is an array with unknown dimensions. Copy the array.
+    'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->dim_size == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);} }<%\n%>'
   case VARIABLE(__) then
     /*Seems like we still get an array var with the wrong type here. It have instdims though >_<. TODO I guess*/
     if instDims then
-      'if (out<%funArgName(var)%>) { copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>); }<%\n%>'
+      'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->dim_size == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);} }<%\n%>'
     else
     'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = <%funArgName(var)%>; }<%\n%>'
   else error(sourceInfo(), 'varOutput:error Unknown variable type as output')
@@ -7765,7 +7762,12 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
       >> /*varCopy end*/
     '&<%rhsStr%>'
   case CREF(__) then
-    '&<%daeExpCrefLhs(inExp, context, &preExp, &varDecls, &auxFunction)%>'
+    let res = daeExpCrefLhs(inExp, context, &preExp, &varDecls, &auxFunction)
+    if isArrayWithUnknownDimension(ty)
+    then
+      let &preExp += '<%res%>.dim_size = NULL;<%\n%>'
+      '&<%res%>'
+    else '&<%res%>'
   else
     error(sourceInfo(), 'tupleReturnVariableUpdates: Unhandled expression. <%ExpressionDump.printExpStr(inExp)%>')
 end tupleReturnVariableUpdates;
@@ -9578,7 +9580,10 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
               ""
             case T_TUPLE(types=t::_)
             case t
-            then tempDecl(expTypeArrayIf(t),&varDecls)
+            then
+              let tvar2 = tempDecl(expTypeArrayIf(t),&varDecls)
+              let &preExp += if isArrayType(t) then '<%tvar2%>.dim_size = 0;<%\n%>'
+              tvar2
           let &preExp += 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
           let &preExp += if tvar then '<%tvar%> = <%res%>;<%\n%>' else '<%res%>;<%\n%>'
           let &preExp += 'SIM_PROF_ACC_FN(<%funName%>_index);<%\n%>'
@@ -9824,6 +9829,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
   case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(types=tys)))) then
     let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
     let additionalOutputs = List.restOrEmpty(tys) |> ty hasindex i1 fromindex 2 => if intEq(i1,ix) then ', &<%v%>' else ", NULL"
+    let &preExp += if isArrayType(listGet(tys,ix)) then '<%v%>.dim_size = 0;<%\n%>'
     let res = daeExpCallTuple(exp, additionalOutputs, context, &preExp, &varDecls, &auxFunction)
     let &preExp += '<%res%>;<%\n%>'
     v

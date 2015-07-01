@@ -321,13 +321,13 @@ constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(77, "dumpSimCode", false,
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(78, "dumpinitialsystem", false,
   Util.gettext("Dumps the initial equation system."));
 constant DebugFlag GRAPH_INST = DEBUG_FLAG(79, "graphInst", false,
-  Util.gettext("Do graph based instantation."));
+  Util.gettext("Do graph based instantiation."));
 constant DebugFlag GRAPH_INST_RUN_DEP = DEBUG_FLAG(80, "graphInstRunDep", false,
   Util.gettext("Run scode dependency analysis. Use with -d=graphInst"));
 constant DebugFlag GRAPH_INST_GEN_GRAPH = DEBUG_FLAG(81, "graphInstGenGraph", false,
   Util.gettext("Dumps a graph of the program. Use with -d=graphInst"));
 constant DebugFlag GRAPH_INST_SHOW_GRAPH = DEBUG_FLAG(82, "graphInstShowGraph", false,
-  Util.gettext("Diplay a graph of the program interactively. Use with -d=graphInst"));
+  Util.gettext("Display a graph of the program interactively. Use with -d=graphInst"));
 constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(83, "dumpConstrepl", false,
   Util.gettext("Dump the found replacements for constants."));
 constant DebugFlag PEDANTIC = DEBUG_FLAG(84, "pedantic", false,
@@ -411,9 +411,9 @@ constant DebugFlag GRAPHML = DEBUG_FLAG(122, "graphml", false,
 constant DebugFlag USEMPI = DEBUG_FLAG(123, "useMPI", false,
   Util.gettext("Add MPI init and finalize to main method (CPPruntime). "));
 constant DebugFlag DUMP_CSE = DEBUG_FLAG(124, "dumpCSE", false,
-  Util.gettext("Additional ouput for CSE module."));
+  Util.gettext("Additional output for CSE module."));
 constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(125, "dumpCSE_verbose", false,
-  Util.gettext("Additional ouput for CSE module."));
+  Util.gettext("Additional output for CSE module."));
 constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(126, "addDerAliases", false,
   Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
                 which helps im some cases to simulate the models e.g.
@@ -427,7 +427,7 @@ constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(129, "disablePartitioning", fals
 constant DebugFlag ADVANCE_TEARING = DEBUG_FLAG(130, "advanceTearing", false,
   Util.gettext("Using ExpressionSolve in adjacencyRowEnhanced"));
 constant DebugFlag CONSTJAC = DEBUG_FLAG(131, "constjac", false,
-  Util.gettext("solves linear systems with const jacobian and variable b-Vector symbolically"));
+  Util.gettext("solves linear systems with constant Jacobian and variable b-Vector symbolically"));
 constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(132, "reduceDynOpt", false,
   Util.gettext("remove eqs which not need for the calculations of cost and constraints"));
 constant DebugFlag VISUAL_XML = DEBUG_FLAG(133, "visxml", false,
@@ -445,7 +445,7 @@ constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(138, "runtimeStaticLinkin
 constant DebugFlag DYNAMIC_TEARING_INFO = DEBUG_FLAG(139, "dynamicTearingInfo", false,
   Util.gettext("Dumps information about the strict and casual sets of the tearing system."));
 constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(140, "sortEqnsAndVars", false,
-  Util.gettext("Heuristical sorting for equations and variables. Influenced: removeSimpleEquations and tearing."));
+  Util.gettext("Heuristic sorting for equations and variables. Influenced: removeSimpleEquations and tearing."));
 constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(141, "dumpSimplifyLoops", false,
   Util.gettext("Dump between steps of simplifyLoops"));
 constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(142, "dumpRecursiveTearing", false,
@@ -804,22 +804,22 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("relaxSystem",Util.notrans("DESCRIBE ME")),
     ("countOperations", Util.gettext("Count the mathematic operations of the system.")),
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
-    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
-    ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
+    ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
+    ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot{x} = Ax + Bu`\n\t:math:`ty = Cx +Du`")),
     ("removeUnusedFunctions", Util.gettext("Removed all unused functions from functionTree.")),
     ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")),
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
     ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")),
     ("removeConstants", Util.gettext("Remove all constants in the system.")),
     ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for Jacobian A.")),
-    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for non-linear strong components.")),
-    ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")),
+    ("calculateStrongComponentJacobians", Util.gettext("Generates analytical Jacobian for non-linear strong components.")),
+    ("calculateStateSetsJacobians", Util.gettext("Generates analytical Jacobian for dynamic state selection sets.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
     ("CSE", Util.gettext("Common Subexpression Elimination")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
     ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
-    ("addTimeAsState", Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"))
+    ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -1000,11 +1000,11 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
 
 constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbolicJacobian",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be utilise by dassl with the runtime option: -dasslJacobian=coloredSymbolical|symbolical."));
+  Util.gettext("Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be utilise by dassl with the runtime option: -dasslJacobian=coloredSymbolical|symbolical."));
 
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(56, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t:math:`\\dot x = Ax + Bu`\n\t\t:math:`y = Cx +Du`"));
+  Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\n\t\t:math:`\\dot x = Ax + Bu`\n\t\t:math:`y = Cx +Du`"));
 
 constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(57, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1057,7 +1057,7 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(67, "removeSimpleEquat
   NONE(), EXTERNAL(), STRING_FLAG("default"),
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Disables module")),
-    ("default", Util.gettext("Performs alias elimination and removes constant variables. Dafault case uses in preOpt phase the fastAcausal and in postOpt phase the causal implementation.")),
+    ("default", Util.gettext("Performs alias elimination and removes constant variables. Default case uses in preOpt phase the fastAcausal and in postOpt phase the causal implementation.")),
     ("causal", Util.gettext("Performs alias elimination and removes constant variables. Causal implementation.")),
     ("fastAcausal", Util.gettext("Performs alias elimination and removes constant variables. fastImplementation fastAcausal.")),
     ("allAcausal", Util.gettext("Performs alias elimination and removes constant variables. Implementation allAcausal.")),
@@ -1071,20 +1071,20 @@ constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(68, "dynamicTearing",
 
 constant ConfigFlag SYM_EULER = CONFIG_FLAG(69, "symEuler",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Rewritte the ode system for inplicit euler."));
+  Util.gettext("Rewrite the ode system for implicit euler."));
 
 constant ConfigFlag ADD_TIME_AS_STATE = CONFIG_FLAG(70,
   "addTimeAsState", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Experimental feature: this repaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
+  Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state $time with equation der($time) = 1.0"));
 
 constant ConfigFlag LOOP2CON = CONFIG_FLAG(71, "loop2con",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Disables module")),
-    ("lin", Util.gettext("linear loops --> constraints.")),
-    ("noLin", Util.gettext("no linear loops --> constraints.")),
-    ("all", Util.gettext("loops --> constraints."))})),
-    Util.gettext("Specifies method that transform loops in constraints. hint: using intial guess from file!"));
+    ("lin", Util.gettext("linear loops --> constraints")),
+    ("noLin", Util.gettext("no linear loops --> constraints")),
+    ("all", Util.gettext("loops --> constraints"))})),
+    Util.gettext("Specifies method that transform loops in constraints. hint: using initial guess from file!"));
 
 constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(72, "forceTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -1093,16 +1093,16 @@ constant ConfigFlag FORCE_TEARING = CONFIG_FLAG(72, "forceTearing",
 constant ConfigFlag SIMPLIFY_LOOPS = CONFIG_FLAG(73, "simplifyLoops",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
-    ("0", Util.gettext("do nonthing.")),
-    ("1", Util.gettext("special modification of residula expressions.")),
-    ("2", Util.gettext("special modification of residula expressions with helper variables."))
+    ("0", Util.gettext("do nothing")),
+    ("1", Util.gettext("special modification of residual expressions")),
+    ("2", Util.gettext("special modification of residual expressions with helper variables"))
     })),
-    Util.gettext("simplify algebraic loops."));
+    Util.gettext("simplify algebraic loops"));
 
 constant ConfigFlag RTEARING = CONFIG_FLAG(74, "recursiveTearing",
   NONE(), EXTERNAL(), INT_FLAG(0),
   SOME(STRING_DESC_OPTION({
-    ("0", Util.gettext("do nonthing.")),
+    ("0", Util.gettext("do nothing")),
     ("1", Util.gettext("linear tearing set of size 1")),
     ("2", Util.gettext("linear tearing"))
     })),
