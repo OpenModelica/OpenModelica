@@ -482,7 +482,7 @@ void Arkode::ArkodeCore()
 
     if ((_zeroFound || state_selection)&& !isInterrupted())
     {
-      // Write the values of (P2)
+
       if (writeEventOutput)
       {
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
@@ -498,7 +498,7 @@ void Arkode::ArkodeCore()
         _ark_rt = ARK_TSTOP_RETURN;
     }
 
-    // Zähler für die Anzahl der ausgegebenen Schritte erhöhen
+
     ++_outStps;
     _tLastSuccess = _tCurrent;
 
@@ -627,141 +627,6 @@ int Arkode::ARK_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_
   return (0);
 }
 
-/*int Arkode::CV_JCallback(long int N, double t, N_Vector y, N_Vector fy, DlsMat Jac,void *user_data, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
-{
-  return 0;
-  //return ((Cvode*) user_data)->calcJacobian(t,N, tmp1, tmp2, tmp3,  NV_DATA_S(y), fy, Jac);
-
-}*/
-
-//int Arkode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthCol, double* y, N_Vector fy, DlsMat Jac)
-//{
-/*
-  try
-  {
-  int l,g;
-  double fnorm, minInc, *f_data, *fHelp_data, *errorWeight_data, h, srur, delta_inv;
-
-  f_data = NV_DATA_S(fy);
-  errorWeight_data = NV_DATA_S(errorWeight);
-  fHelp_data = NV_DATA_S(fHelp);
-
-
-  //Get relevant info
-  _idid = CVodeGetErrWeights(_cvodeMem, errorWeight);
-  if (_idid < 0)
-    {
-      _idid = -5;
-      throw ModelicaSimulationError(SOLVER,"Cvode::calcJacobian()");
-  }
-  _idid = CVodeGetCurrentStep(_cvodeMem, &h);
-  if (_idid < 0)
-    {
-      _idid = -5;
-      throw ModelicaSimulationError(SOLVER,"Cvode::calcJacobian()");
-  }
-
-  srur = sqrt(UROUND);
-
-  fnorm = N_VWrmsNorm(fy, errorWeight);
-  minInc = (fnorm != 0.0) ?
-           (1000.0 * abs(h) * UROUND * N * fnorm) : 1.0;
-
-  for(int j=0;j<N;j++)
-  {
-    _delta[j] = max(srur*abs(y[j]), minInc/errorWeight_data[j]);
-  }
-
-  for(int j=0;j<N;j++)
-  {
-    _deltaInv[j] = 1/_delta[j];
-  }
-
- if (_jacobianANonzeros != 0)
- {
-  for(int color=1; color <= _maxColors; color++)
-  {
-      for(int k=0; k < _dimSys; k++)
-    {
-      if((_colorOfColumn[k] ) == color)
-      {
-        _ysave[k] = y[k];
-        y[k]+= _delta[k];
-      }
-    }
-
-    calcFunction(t, y, fHelp_data);
-
-  for (int k = 0; k < _dimSys; k++)
-   {
-       if((_colorOfColumn[k]) == color)
-     {
-        y[k] = _ysave[k];
-
-    int startOfColumn = k * _dimSys;
-    for (int j = _jacobianALeadindex[k]; j < _jacobianALeadindex[k+1];j++)
-      {
-        l = _jacobianAIndex[j];
-        g = l + startOfColumn;
-        Jac->data[g] = (fHelp_data[l] - f_data[l]) * _deltaInv[k];
-      }
-    }
-  }
-  }
- }
-
-
-
-
-
-  }
-*/
-
-
-
-
-
-  /*
-  //Calculation of J without colouring
-   for (j = 0; j < N; j++)
-   {
-
-
-    //N_VSetArrayPointer(DENSE_COL(Jac,j), jthCol);
-
-     _ysave[j] = y[j];
-
-    y[j] += _delta[j];
-
-    calcFunction(t, y, fHelp_data);
-
-    y[j] = _ysave[j];
-
-    delta_inv = 1.0/_delta[j];
-    N_VLinearSum(delta_inv, fHelp, -delta_inv, fy, jthCol);
-
-    for(int i=0; i<_dimSys; ++i)
-        {
-            Jac->data[i+j*_dimSys] = NV_Ith_S(jthCol,i);
-        }
-
-    //DENSE_COL(Jac,j) = N_VGetArrayPointer(jthCol);
-  }
-  */
-
-    //workaround until exception can be catch from c- libraries
-  /*
-  catch (std::exception & ex )
-  {
-
-    cerr << "CVode integration error: " <<  ex.what();
-    return 1;
-  }
-  */
-
-//  return 0;
-//}
-
 int Arkode::reportErrorMessage(ostream& messageStream)
 {
   if (_solverStatus == ISolver::SOLVERERROR)
@@ -786,76 +651,7 @@ int Arkode::reportErrorMessage(ostream& messageStream)
 
 void Arkode::writeSimulationInfo()
 {
-#ifdef USE_BOOST_LOG
-/*
-  src::logger lg;
 
-  // Now, let's try logging with severity
-  src::severity_logger<cvodeseverity_level> slg;
-
-  long int nst, nfe, nsetups, nni, ncfn, netf;
-  long int nfQe, netfQ;
-  long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
-  long int nfQSe, netfQS;
-
-  int qlast, qcur;
-  realtype h0u, hlast, hcur, tcur;
-
-  int flag;
-
-  flag = CVodeGetIntegratorStats(_cvodeMem, &nst, &nfe, &nsetups, &netf, &qlast, &qcur, &h0u, &hlast, &hcur, &tcur);
-
-  flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
-
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Number steps: " << nst;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Function evaluations " << "f: " << nfe;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Error test failures " << "netf: " << netfS;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Linear solver setups " << "nsetups: " << nsetups;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Nonlinear iterations " << "nni: " << nni;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Convergence failures " << "ncfn: " << ncfn;
-*/
-#endif
-  //// Solver
-  //outputStream  << "\nSolver: " << getName()
-  //  << "\nVerfahren: ";
-  //if(_cvodesettings->iMethod == EulerSettings::EULERFORWARD)
-  //  outputStream << " Expliziter Cvode\n\n";
-  //else if(_cvodesettings->iMethod == EulerSettings::EULERBACKWARD)
-  //  outputStream << " Impliziter Cvode\n\n";
-
-  //// System
-  //outputStream
-  //  << "Dimension  des Systems (ODE):             " << (int)_dimSys << "\n";
-  //// Status, Anzahl Schritte, Nullstellenzeugs
-  //SolverDefaultImplementation::writeSimulationInfo(outputStream);
-
-  //// Nullstellensuche
-  //if (_cvodesettings->iZeroSearchMethod == SolverSettings::NO_ZERO_SEARCH)
-  //{
-  //  outputStream << "Nullstellensuche:                         Keine\n\n" << endl;
-  //}
-  //else
-  //{
-  //  /*if (_cvodesettings->iZeroSearchMethod == SolverSettings::BISECTION)
-  //  {
-  //  outputStream << "Nullstellensuche:                         Bisektion\n" << endl;
-  //  }
-  //  else
-  //  {*/
-  //  outputStream << "Nullstellensuche:                         Lineare Interpolation\n" << endl;
-  //  /*}*/
-
-  //}
-
-  //// Schritteweite
-  //outputStream
-  //  << "ausgegebene Schritte:                     " << _outStps << "\n"
-  //  << "Anfangsschrittweite:                      " << _cvodesettings->dH_init << "\n"
-  //  << "Ausgabeschrittweite:                      " << dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput() << "\n"
-  //  << "Obere Grenze für Schrittweite:            " << _hUpLim << "\n\n";
-  //// Status
-  //outputStream
-  //  << "Solver-Status:                            " << _idid << "\n\n";
 }
 
 int Arkode::check_flag(void *flagvalue, const char *funcname, int opt)
