@@ -325,22 +325,16 @@ protected function inlineWhenForInitializationSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
 protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
   list<BackendDAE.Equation> eqnlst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
-
-  eqnlst := BackendEquation.traverseEquationArray(orderedEqs, inlineWhenForInitializationEquation, {});
+  BackendDAE.EQSYSTEM(orderedEqs=eqns) := inEqSystem;
+  eqnlst := BackendEquation.traverseEquationArray(eqns, inlineWhenForInitializationEquation, {});
   //print("Before: " + intString(listLength(eqnlst)) + "\n");
   eqnlst := List.uniqueOnTrue(eqnlst, BackendEquation.equationEqual) "hack for #3209";
   //print("After: " + intString(listLength(eqnlst)) + "\n");
-  eqns := BackendEquation.listEquation(eqnlst);
-
-  outEqSystem := BackendDAEUtil.createEqSystem(orderedVars, eqns, stateSets, partitionKind);
+  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, BackendEquation.listEquation(eqnlst));
+  outEqSystem := BackendDAEUtil.clearEqSyst(outEqSystem);
 end inlineWhenForInitializationSystem;
 
 protected function inlineWhenForInitializationEquation "author: lochel"
@@ -1025,19 +1019,25 @@ protected function preBalanceInitialSystem "author: lochel"
   input BackendDAE.EqSystem inSystem;
   output BackendDAE.EqSystem outSystem;
   output list<BackendDAE.Var> outDumpVars;
-protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  Boolean b;
-  BackendDAE.IncidenceMatrix mt;
 algorithm
-  (_, mt) := BackendDAEUtil.incidenceMatrix(inSystem, BackendDAE.NORMAL(), NONE());
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inSystem;
-  (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
-  outSystem := if b then BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind) else inSystem;
+  outSystem := match inSystem
+    local
+      BackendDAE.EqSystem syst;
+      BackendDAE.Variables orderedVars;
+      BackendDAE.EquationArray orderedEqs;
+      Boolean b;
+      BackendDAE.IncidenceMatrix mt;
+    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
+      algorithm
+        (_, mt) := BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL(), NONE());
+        (orderedVars, orderedEqs, b, outDumpVars) :=
+            preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
+        if b then
+          syst.orderedEqs := orderedEqs; syst.orderedVars := orderedVars;
+          syst := BackendDAEUtil.clearEqSyst(syst);
+        end if;
+      then syst;
+  end match;
 end preBalanceInitialSystem;
 
 protected function preBalanceInitialSystem1 "author: lochel"
@@ -1188,7 +1188,7 @@ protected function analyzeInitialSystem2 "author: lochel"
   output BackendDAE.Shared outShared = inShared;
   output tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
 algorithm
-  (osyst, outTpl) := matchcontinue(isyst, inTpl)
+  (osyst, outTpl) := matchcontinue (isyst, inTpl)
     local
       BackendDAE.BackendDAE inDAE;
       BackendDAE.EqSystem system, sys;
@@ -1217,7 +1217,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.createEqSystem(vars, eqns2);
+      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-1) mixed-determined system
@@ -1229,7 +1229,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.createEqSystem(vars, eqns2);
+      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-2) mixed-determined system
@@ -1241,7 +1241,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.createEqSystem(vars, eqns2);
+      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-3) mixed-determined system
@@ -1253,7 +1253,7 @@ algorithm
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.createEqSystem(vars, eqns2);
+      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     else fail();
