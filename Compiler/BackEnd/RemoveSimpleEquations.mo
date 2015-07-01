@@ -354,22 +354,23 @@ protected
   list<SimpleContainer> simpleeqnslst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.StateSets stateSets;
   array<list<Integer>> mT;
   Boolean foundSimple, globalFindSimple, b;
   Integer traversals;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   try
-    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := outSystem;
+    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := outSystem;
     ((repl, globalFindSimple, unReplaceable, traversals)) := inTpl;
     // transform to list, this is later not neccesary because the acausal system should save the equations as list
     eqnslst := BackendEquation.equationList(eqns);
     mT := arrayCreate(BackendVariable.varsSize(vars), {});
     // check equations
-    ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold(eqnslst, simpleEquationsFinder, (vars, inShared, {}, {}, 1, mT, false));
-    ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) := causalFinder(foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, inShared, repl, unReplaceable, mT, {}, globalFindSimple);
-    outSystem := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, outSystem);
+    ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold( eqnslst, simpleEquationsFinder,
+                                                                      (vars, inShared, {}, {}, 1, mT, false) );
+    ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) :=
+        causalFinder( foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, inShared,
+                      repl, unReplaceable, mT, {}, globalFindSimple );
+    outSystem := updateSystem(b, eqnslst, vars, repl, outSystem);
     outTpl := ((repl, b, unReplaceable, traversals));
   else
     //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
@@ -498,10 +499,8 @@ protected
   array<list<Integer>> mT;
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.EqSystem syst;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := isyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := isyst;
   ((repl, unReplaceable, b1)) := inTpl;
 
   // transform to list, this is later not neccesary because the acausal system should save the equations as list
@@ -510,7 +509,7 @@ algorithm
 
   // check equations
   ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := allCausalFinder(eqnslst, (vars, inShared, repl, unReplaceable, mT, {}, false));
-  osyst := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
+  osyst := updateSystem(b, eqnslst, vars, repl, isyst);
   outTpl := ((repl, unReplaceable, b or b1));
 end allAcausal1;
 
@@ -567,17 +566,15 @@ protected
   array<list<Integer>> mT;
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.EqSystem syst;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps), stateSets=stateSets, partitionKind=partitionKind) := isyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := isyst;
   ((repl, unReplaceable, b1)) := inTpl;
 
   mT := arrayCreate(BackendVariable.varsSize(vars), {});
 
   // check equations
   ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := traverseComponents(comps, eqns, allCausalFinder, (vars, inShared, repl, unReplaceable, mT, {}, false));
-  osyst := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
+  osyst := updateSystem(b, eqnslst, vars, repl, isyst);
   outTpl := ((repl, unReplaceable, b or b1));
 end causal1;
 
@@ -3468,28 +3465,27 @@ protected function updateSystem "author: Frenkel TUD 2012-12
   input Boolean foundSimple;
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Variables iVars;
-  input BackendDAE.StateSets stateSets;
-  input BackendDAE.BaseClockPartitionKind inPartitionKind;
   input BackendVarTransform.VariableReplacements repl;
   input BackendDAE.EqSystem isyst;
   output BackendDAE.EqSystem osyst;
 algorithm
   osyst:=
-  match (foundSimple, iEqnslst, iVars, stateSets, inPartitionKind, repl, isyst)
+  match (foundSimple, isyst)
     local
 
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-    case (false, _, _, _, _, _, _) then isyst;
-    case (true, _, _, _, _, _, _)
+      BackendDAE.EqSystem syst;
+    case (false, _) then isyst;
+    case (true, syst as BackendDAE.EQSYSTEM())
       equation
         // remove empty entries from vars and update stateorder
-        vars = BackendVariable.emptyVars();
-        ((vars, _)) = BackendVariable.traverseBackendDAEVars(iVars, updateVar, (vars, repl));
+        ((vars, _)) = BackendVariable.traverseBackendDAEVars(iVars, updateVar, (BackendVariable.emptyVars(), repl));
         // replace unoptimized equations with optimized
         eqns = BackendEquation.listEquation(listReverse(iEqnslst));
+        syst.orderedEqs = eqns; syst.orderedVars = vars;
       then
-        BackendDAEUtil.createEqSystem(vars, eqns, stateSets, inPartitionKind);
+        BackendDAEUtil.clearEqSyst(syst);
   end match;
 end updateSystem;
 
@@ -3707,17 +3703,19 @@ algorithm
       Boolean b, b1;
       BackendDAE.EqSystem syst;
       BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
       Option<BackendVarTransform.VariableReplacements> statesetrepl1;
 
     case ({}, _, _, _, _) then inSysts1;
-    case ((syst as BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind))::rest, _, _, _, _)
-      equation
-        ((_, eqnslst, b)) = BackendEquation.traverseEquationArray(eqns, replaceEquationTraverser, (repl, {}, false));
-        eqnslst = if b then listReverse(eqnslst) else eqnslst;
-        eqns = if b then BackendEquation.listEquation(eqnslst) else eqns;
-        (stateSets, b1, statesetrepl1) = removeAliasVarsStateSets(stateSets, statesetrepl, v, aliasVars, {}, false);
-        syst = if b or b1 then BackendDAEUtil.createEqSystem(v, eqns, stateSets, partitionKind) else syst;
+    case ((syst as BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, stateSets=stateSets))::rest, _, _, _, _)
+      algorithm
+        ((_, eqnslst, b)) := BackendEquation.traverseEquationArray(eqns, replaceEquationTraverser, (repl, {}, false));
+        (stateSets, b1, statesetrepl1) := removeAliasVarsStateSets(stateSets, statesetrepl, v, aliasVars, {}, false);
+        if b or b1 then
+          eqns := BackendEquation.listEquation(listReverse(eqnslst));
+          syst.stateSets := stateSets;
+          syst.orderedEqs := eqns;
+          syst := BackendDAEUtil.clearEqSyst(syst);
+        end if;
       then
         removeSimpleEquationsShared1(rest, syst::inSysts1, repl, statesetrepl1, aliasVars);
     end match;
@@ -4351,7 +4349,9 @@ algorithm
 
       Integer countAliasEquations, countSimpleEquations, size;
       Boolean b;
-
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      BackendDAE.EventInfo eventInfo;
       BackendDAE.Variables knvars, exobj, knvars1;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns, inieqns, remeqns1;
@@ -4363,22 +4363,16 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       list<BackendDAE.WhenClause> whenClauseLst, whenClauseLst1;
-      list<BackendDAE.ZeroCrossing> zeroCrossingLst, relationsLst, sampleLst;
-      Integer numMathFunctions;
-      BackendDAE.BackendDAEType btp;
       BackendDAE.EqSystems systs, systs1;
       list<BackendDAE.Equation> eqnslst;
       list<BackendDAE.Var> varlst;
       Boolean b1;
-      list<BackendDAE.TimeEvent> timeEvents;
-      BackendDAE.ExtraInfo ei;
-      array<DAE.ClockKind> clocks;
       BackendVarTransform.VariableReplacements repl;
 
-    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets,partitionKind),
-          BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree,
-                             BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions, clocks),
-                             eoc, btp, symjacs, ei ))  equation
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs),
+           shared as BackendDAE.SHARED( knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns, removedEqs=remeqns,
+                                       eventInfo=eventInfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst )) )
+      equation
 
       // sizes of Hash tables are system dependent!!!!
       size = BackendVariable.varsSize(orderedVars);
@@ -4459,12 +4453,18 @@ algorithm
       end if;
       //SimCodeUtil.execStat("FINDSIMPLE6: ");
 
-      outSystem = BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
-      outShared = BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree,
-                                     BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numMathFunctions, clocks),
-                                     eoc, btp, symjacs, ei);
-    then (outSystem,outShared);
-    else (inSystem,inShared);
+      syst.orderedVars = orderedVars;
+      syst.orderedEqs = orderedEqs;
+
+      eventInfo.whenClauseLst = whenClauseLst;
+      shared.eventInfo = eventInfo;
+      shared.knownVars = knvars;
+      shared.aliasVars = aliasVars;
+      shared.initialEqs = inieqns;
+      shared.removedEqs = remeqns;
+
+    then (BackendDAEUtil.clearEqSyst(syst), shared);
+    else (inSystem, inShared);
   end matchcontinue;
 end eliminateTrivialEquations;
 
