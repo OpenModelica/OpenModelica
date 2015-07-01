@@ -406,22 +406,16 @@ protected function inputDerivativesForDynOptWork "author: "
 
 algorithm
 
-  (osyst, outChanged) := matchcontinue(isyst)
+  (osyst, outChanged) := matchcontinue isyst
     local
-      BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
       BackendDAE.EquationArray orderedEqs "ordered Equations";
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;
       list<DAE.ComponentRef> idercr={}, icr={};
       DAE.ComponentRef cr;
       String s;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
       list<BackendDAE.Var> varLst={};
       BackendDAE.Variables vars;
 
-    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind) algorithm
+    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
       vars := BackendVariable.daeKnVars(outShared);
 
       ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
@@ -442,7 +436,7 @@ algorithm
       end for;
       _ := BackendVariable.daeKnVars(outShared);
        //BackendDump.printVariables(vars);
-    then (BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind), true);
+    then (isyst, true);
 
     else (isyst, inChanged);
   end matchcontinue;
@@ -577,43 +571,46 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-      list<Integer> eindex,vindx;
-      Integer eindex_,vindx_;
+      list<Integer> eindex, vindx;
+      Integer eindex_, vindx_;
       BackendDAE.Shared shared;
       DAE.Exp e1, e2, varexp;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       DAE.FunctionTree funcs;
       BackendDAE.JacobianType jacType;
+      BackendDAE.EqSystem syst;
       Boolean linear;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx, jacType=jacType)))
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), shared,
+           (BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jacType=jacType)) )
     guard l2p_all or (if l2p_l then isConstOrlinear(jacType) else not isConstOrlinear(jacType))
-    equation
-      if l2p_l then
-      end if;
-      (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
-    then (BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind), shared);
+    algorithm
+      (eqns, vars, shared) := res2Con(eqns, vars, eindex, vindx, shared);
+      syst.orderedEqs := eqns; syst.orderedVars := vars;
+    then (BackendDAEUtil.clearEqSyst(syst), shared);
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex,tearingvars=vindx),linear=linear)))
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), shared,
+           (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex, tearingvars=vindx), linear=linear)) )
     guard l2p_all or (if l2p_l then linear else not linear)
-    equation
-      (eqns,vars,shared) = res2Con(eqns, vars, eindex, vindx,shared);
-    then (BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind), shared);
+    algorithm
+      (eqns, vars, shared) := res2Con(eqns, vars, eindex, vindx, shared);
+      syst.orderedEqs := eqns; syst.orderedVars := vars;
+    then (BackendDAEUtil.clearEqSyst(syst), shared);
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared,BackendDAE.SINGLEEQUATION(eqn=eindex_,var=vindx_))
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),
+           shared as BackendDAE.SHARED(functionTree = funcs),
+           BackendDAE.SINGLEEQUATION(eqn=eindex_, var=vindx_) )
     guard l2p_all or not l2p_l
-    equation
-        BackendDAE.EQUATION(exp=e1, scalar=e2) = BackendEquation.equationNth1(eqns, eindex_);
-        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, vindx_);
-        varexp = Expression.crefExp(cr);
-        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
-        BackendDAE.SHARED(functionTree = funcs) = shared;
-        failure(ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE()));
-        (eqns,vars,shared) = res2Con(eqns, vars, {eindex_}, {vindx_},shared);
-    then (BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind), shared);
+    algorithm
+      BackendDAE.EQUATION(exp=e1, scalar=e2) := BackendEquation.equationNth1(eqns, eindex_);
+      (v as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx_);
+      varexp := Expression.crefExp(cr);
+      varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
+      failure(ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE()));
+      (eqns, vars, shared) := res2Con(eqns, vars, {eindex_}, {vindx_}, shared);
+      syst.orderedEqs := eqns; syst.orderedVars := vars;
+    then (BackendDAEUtil.clearEqSyst(syst), shared);
 
 
     else (isyst,ishared);
@@ -745,7 +742,7 @@ algorithm
     BackendDAE.SHARED(functionTree = funcs, knownVars = knownVars) := shared;
 
     for syst in systlst loop
-      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
+      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps)) := syst;
       b := false;
       for comp in comps loop
         //BackendDump.dumpComponent(comp);
@@ -866,7 +863,7 @@ algorithm
         // remove empty entries from vars/eqns
         //vars := BackendVariable.listVar1(BackendVariable.varList(vars));
         //eqns := BackendEquation.listEquation(BackendEquation.equationList(eqns));
-        new_systlst := BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind) :: new_systlst;
+        new_systlst := BackendDAEUtil.clearEqSyst(syst) :: new_systlst;
       else
        new_systlst := syst :: new_systlst;
       end if;
