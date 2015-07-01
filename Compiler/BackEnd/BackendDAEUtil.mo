@@ -8187,6 +8187,23 @@ algorithm
   outSyst := BackendDAE.EQSYSTEM(orderedVars=inVars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind);
 end setEqSystVars;
 
+public function setEqSystMatrices
+  input BackendDAE.EqSystem inSyst;
+  input Option<BackendDAE.IncidenceMatrix> m = NONE();
+  input Option<BackendDAE.IncidenceMatrix> mT = NONE();
+  output BackendDAE.EqSystem outSyst;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs=eqs, orderedVars=vars, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
+  outSyst := BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind);
+end setEqSystMatrices;
+
+
 public function clearEqSyst
   input BackendDAE.EqSystem inSyst;
   output BackendDAE.EqSystem outSyst;
