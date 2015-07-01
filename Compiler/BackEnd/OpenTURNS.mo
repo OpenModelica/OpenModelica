@@ -518,13 +518,12 @@ protected function stripCorrelationVarsAndEqns " help function "
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets = stateSets, partitionKind=partitionKind)  := eqsys;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns)  := eqsys;
   vars := stripCorrelationVars(vars);
   eqns := stripCorrelationEqns(eqns);
-  outEqsys := BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind);
+  outEqsys := BackendDAEUtil.setEqSystVars(BackendDAEUtil.setEqSystEqs(eqsys, eqns), vars);
+  outEqsys := BackendDAEUtil.clearEqSyst(outEqsys);
 end stripCorrelationVarsAndEqns;
 
 protected function stripCorrelationEqns "help function "
