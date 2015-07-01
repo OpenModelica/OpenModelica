@@ -113,7 +113,7 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
     <%functionUpdateBoundStartValues(startValueEquations, simCode)%>
 
     <% wrapIntoExtraFileIfModelTooBig(
-       functionInitialEquations(useSymbolicInitialization, initialEquations, simCode),
+       functionInitialEquations(initialEquations, simCode),
        "InitialEquations", simCode) %>
 
     <%functionUpdateBoundParameters(parameterEquations, simCode)%>
@@ -1188,10 +1188,10 @@ template bodyInitialNonLinearSystem(SimEqSystem eqn, SimCode simCode)
 end bodyInitialNonLinearSystem;
 
 
-template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations, SimCode simCode) ::=
+template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
-public override bool UseSymbolicInitialization { get { return <%useSymbolicInitialization%>; } }
+public override bool UseSymbolicInitialization { get { return true; } }
 public override void FunInitialEquations()
 {
   <% localRepresentationArrayDefines %>

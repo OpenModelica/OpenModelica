@@ -9,7 +9,7 @@ ENDIF(NOT BOOST_STATIC_LINKING)
 IF(UNIX)
 	set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF(UNIX)
-set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 install (TARGETS ${ExtensionUtilitiesName}_static DESTINATION ${LIBINSTALLEXT})
 
 add_library(${ExtensionUtilitiesName} SHARED measure_time.cpp measure_time_statistic.cpp measure_time_rdtsc.cpp measure_time_scorep.cpp logger.cpp)
@@ -20,8 +20,6 @@ IF(UNIX)
 	set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 	set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF(UNIX)
-
-set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
 
 install (TARGETS ${ExtensionUtilitiesName}_static DESTINATION ${LIBINSTALLEXT})
 install (TARGETS ${ExtensionUtilitiesName} DESTINATION ${LIBINSTALLEXT})

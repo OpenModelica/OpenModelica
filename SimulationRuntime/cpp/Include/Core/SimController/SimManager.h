@@ -5,34 +5,11 @@
  */
 #include "Configuration.h"
 #include "Initialization.h"
-
+#include <Core/Utils/extension/logger.hpp>
 
 #ifdef RUNTIME_PROFILING
 #include <Core/Utils/extension/measure_time.hpp>
 #endif
-/*Logging vorübergehend deaktiviert
-
-namespace logging = boost::log;
-namespace attrs = boost::log::attributes;
-namespace src = boost::log::sources;
-namespace keywords = boost::log::keywords;
-using boost::shared_ptr;
-enum simmgrseverity_level
-{
-simmgr_info,
-simmgr_normal,
-simmgr_notification,
-simmgr_warning,
-simmgr_error,
-simmgr_critical
-};
-//  Global logger declaration
-BOOST_LOG_INLINE_GLOBAL_LOGGER_CTOR_ARGS(
-simmgr_lg,
-src::severity_channel_logger_mt< >,
-(keywords::severity = simmgr_normal)(keywords::channel = "Core.SimManager"))
-
-*/
 
 class SimManager
 {

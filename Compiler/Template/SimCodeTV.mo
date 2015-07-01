@@ -448,6 +448,13 @@ package SimCode
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
 
+    record SES_INVERSE_ALGORITHM
+      "this should only occur inside SES_NONLINEAR"
+      Integer index;
+      list<DAE.Statement> statements;
+      list<DAE.ComponentRef> knownOutputCrefs "this is a subset of output crefs of the original algorithm, which are already known";
+    end SES_INVERSE_ALGORITHM;
+
     record SES_LINEAR
       LinearSystem lSystem;
       Option<LinearSystem> alternativeTearing;
@@ -2968,6 +2975,10 @@ package Expression
   output list<Integer> outValues;
   end dimensionsList;
 
+  function isMetaArray
+    input DAE.Exp inExp;
+    output Boolean outB;
+  end isMetaArray;
 end Expression;
 
 package ExpressionDump

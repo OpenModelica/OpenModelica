@@ -2517,7 +2517,7 @@ algorithm
                       zeroCrossingLst = zeroCrossingLst, sampleLst = sampleLst,
                       relationsLst = relationsLst, numberMathEvents = numberMathEvents,
                       clocks = clocks );
-      then BackendDAEUtil.setEventInfo(shared, eventInfo);
+      then BackendDAEUtil.setSharedEventInfo(shared, eventInfo);
   end match;
 end wrapAddTimeEventHack;
 

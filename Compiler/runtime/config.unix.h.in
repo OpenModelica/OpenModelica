@@ -57,7 +57,20 @@
 #define WITH_DASSL
 #endif
 
-#define CONFIG_SYSTEMLIBS mmc_mk_cons(mmc_mk_scon("-lomcruntime"),mmc_mk_cons(mmc_mk_scon("-lexpat"),mmc_mk_cons(mmc_mk_scon("-lsqlite3"),mmc_mk_cons(mmc_mk_scon(CONFIG_LPSOLVE55),mmc_mk_cons(mmc_mk_scon(CONFIG_CORBALIBS),mmc_mk_nil())))))
+#ifdef WITH_HWLOC
+#define CONFIG_SYSTEMLIBS_HWLOC  mmc_mk_cons(mmc_mk_scon("-lhwloc"), mmc_mk_nil())
+#else
+#define CONFIG_SYSTEMLIBS_HWLOC  mmc_mk_nil()
+#endif
+
+#define CONFIG_SYSTEMLIBS mmc_mk_cons(mmc_mk_scon("-lomcruntime"), \
+  mmc_mk_cons(mmc_mk_scon("-lexpat"), \
+  mmc_mk_cons(mmc_mk_scon("-lsqlite3"), \
+  mmc_mk_cons(mmc_mk_scon(CONFIG_LPSOLVE55), \
+  mmc_mk_cons(mmc_mk_scon(CONFIG_CORBALIBS), \
+  mmc_mk_cons(mmc_mk_scon("-lomcgc"), \
+  CONFIG_SYSTEMLIBS_HWLOC \
+  ))))))
 
 #define USE_GRAPH @USE_GRAPH@
 #if USE_GRAPH

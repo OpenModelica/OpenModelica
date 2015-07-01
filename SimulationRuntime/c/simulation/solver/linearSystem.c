@@ -52,34 +52,6 @@ static void setBElementLis(int row, double value, void *data );
 
 int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
-const char *LS_NAME[LS_MAX+1] = {
-  "LS_UNKNOWN",
-
-  /* LS_LAPACK */       "lapack",
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* LS_LIS */          "lis",
-#endif
-  /* LS_UMFPACK */      "umfpack",
-  /* LS_TOTALPIVOT */   "totalpivot",
-  /* LS_DEFAULT */      "default",
-
-  "LS_MAX"
-};
-
-const char *LS_DESC[LS_MAX+1] = {
-  "unknown",
-
-  /* LS_LAPACK */       "method using lapack LU factorization",
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* LS_LIS */          "method using iterativ solver Lis",
-#endif
-  /* LS_UMFPACK */      "method using umfpack sparse linear solver",
-  /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
-  /* LS_DEFAULT */      "default method - lapack with total pivoting as fallback",
-
-  "LS_MAX"
-};
-
 /* Data structure for the default solver
  * where two different solverData for lapack and
  * totalpivot as fallback

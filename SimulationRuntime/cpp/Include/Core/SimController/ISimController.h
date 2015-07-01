@@ -32,7 +32,7 @@ struct SimSettings
   OutputFormat outputFormat;
   unsigned int timeOut;
   OutputPointType outputPointType;
-  LogType logType;
+  LogSettings logSettings;
 };
 
 /**

@@ -19,9 +19,9 @@ public:
   OMCFactory(PATH library_path, PATH modelicasystem_path);
   virtual ~OMCFactory();
 
-  void UnloadAllLibs(void);
-  LOADERRESULT LoadLibrary(string libName, type_map& current_map);
-  LOADERRESULT UnloadLibrary(shared_library lib);
+  virtual void UnloadAllLibs();
+  virtual LOADERRESULT LoadLibrary(string libName, type_map& current_map);
+  virtual LOADERRESULT UnloadLibrary(shared_library lib);
 
   /**
    * Create SimController and SimSettings.
@@ -37,6 +37,8 @@ protected:
 
   //boost::shared_ptr<ISimController> _simController;
   std::map<string,shared_library> _modules;
+  std::string _defaultLinSolver;
+  std::string _defaultNonLinSolver;
   PATH _library_path;
   PATH _modelicasystem_path;
 };

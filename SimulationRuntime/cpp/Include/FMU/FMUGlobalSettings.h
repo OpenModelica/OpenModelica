@@ -28,17 +28,17 @@ public:
     virtual void setInfoOutput(bool) {}
     virtual string    getOutputPath() { return "./"; }
     virtual OutputFormat getOutputFormat(){return EMPTY;}
-     virtual LogType getLogType() {return OFF;}
-    virtual void setLogType(LogType) {}
+     virtual LogSettings getLogSettings() {return LogSettings();}
+    virtual void setLogSettings(LogSettings) {}
     virtual OutputPointType getOutputPointType() { return ALL; };
     virtual void setOutputPointType(OutputPointType) {};
     virtual void setOutputFormat(OutputFormat) {}
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "euler"; }
     virtual void setSelectedSolver(string) {}
-    virtual string    getSelectedLinSolver() { return "kinsol"; }
+    virtual string    getSelectedLinSolver() { return "newton"; }
     virtual void setSelectedLinSolver(string) {}
-    virtual string    getSelectedNonLinSolver() { return "kinsol"; }
+    virtual string    getSelectedNonLinSolver() { return "newton"; }
     virtual void setSelectedNonLinSolver(string) {}
     virtual void load(string xml_file) {};
     virtual void setResultsFileName(string) {}

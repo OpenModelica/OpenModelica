@@ -1000,7 +1000,7 @@ algorithm
       list<SimCode.SimEqSystem> allEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,parameterEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations;
       list<SimCode.SimEqSystem> equationsForZeroCrossings;
       list<SimCode.StateSet> stateSets;
-      Boolean useSymbolicInitialization, useHomotopy;
+      Boolean useHomotopy;
       list<SimCode.SimEqSystem> initialEquations, removedInitialEquations;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
@@ -1026,7 +1026,7 @@ algorithm
       list<DAE.ClockKind> baseClocks;
 
     case (SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, partitionsKind, baseClocks,
-                           useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
+                           useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
                            minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                            jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars,
                            extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping,
@@ -1035,7 +1035,7 @@ algorithm
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
     then SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, {eqs}, algebraicEquations, partitionsKind, baseClocks,
-                          useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
+                          useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations,
                           minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars,
                           extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcomData, varToArrayIndexMapping,

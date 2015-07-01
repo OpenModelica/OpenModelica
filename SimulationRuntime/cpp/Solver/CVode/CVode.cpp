@@ -308,10 +308,7 @@ void Cvode::initialize()
 
     _cvode_initialized = true;
 
-    //
-    // CVODE is ready for integration
-    //
-    // BOOST_LOG_SEV(cvode_lg::get(), cvode_info) << "CVode initialized";
+    Logger::write("Cvode: initialized",SOLV,DEBUG);
   }
 }
 
@@ -648,21 +645,7 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         _time_system->setTime(_tLastWrite);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_yWrite));
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-        }
-        #endif
         SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
-        #ifdef RUNTIME_PROFILING
-        MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
-        if(MeasureTime::getInstance() != NULL)
-        {
-            measureTimeFunctionsArray[2].sumMeasuredValues->_numCalcs--;
-            MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
-        }
-        #endif
       }      //end if time -_tLastWritten
       if (_bWritten)
       {
@@ -678,26 +661,20 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-        }
-        #endif
         SolverDefaultImplementation::writeToFile(stp, _tEnd, h);
       }
     }
     else
     {
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
-        }
-        #endif
         SolverDefaultImplementation::writeToFile(stp, time, h);
     }
   }
+  #ifdef RUNTIME_PROFILING
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+  }
+  #endif
 }
 
 bool Cvode::stateSelection()
@@ -948,12 +925,6 @@ int Cvode::reportErrorMessage(ostream& messageStream)
 
 void Cvode::writeSimulationInfo()
 {
-#ifdef USE_BOOST_LOG
-  src::logger lg;
-
-  // Now, let's try logging with severity
-  src::severity_logger<cvodeseverity_level> slg;
-
   long int nst, nfe, nsetups, nni, ncfn, netf;
   long int nfQe, netfQ;
   long int nfSe, nfeS, nsetupsS, nniS, ncfnS, netfS;
@@ -968,15 +939,14 @@ void Cvode::writeSimulationInfo()
 
   flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Number steps: " << nst;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Function evaluations " << "f: " << nfe;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Error test failures " << "netf: " << netfS;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Linear solver setups " << "nsetups: " << nsetups;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Nonlinear iterations " << "nni: " << nni;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Convergence failures " << "ncfn: " << ncfn;
-  BOOST_LOG_SEV(slg, cvode_normal)<< " Number of evaluateODE calls " << "eODE: " << _numberOfOdeEvaluations;
+  Logger::write("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),SOLV,INFO);
+  Logger::write("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),SOLV,INFO);
+  Logger::write("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),SOLV,INFO);
+  Logger::write("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),SOLV,INFO);
+  Logger::write("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),SOLV,INFO);
+  Logger::write("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),SOLV,INFO);
+  Logger::write("Cvode: number of evaluateODE calls 'eODE' = " + boost::lexical_cast<std::string>(_numberOfOdeEvaluations),SOLV,INFO);
 
-#endif
   //// Solver
   //outputStream  << "\nSolver: " << getName()
   //  << "\nVerfahren: ";

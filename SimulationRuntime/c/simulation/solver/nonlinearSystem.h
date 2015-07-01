@@ -36,6 +36,7 @@
 #define _NONLINEARSYSTEM_H_
 
 #include "simulation_data.h"
+#include "util/simulation_options.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,40 +45,6 @@ extern "C" {
 #ifdef VOID
 #undef VOID
 #endif
-
-enum NONLINEAR_SOLVER
-{
-  NLS_NONE = 0,
-
-#if !defined(OMC_MINIMAL_RUNTIME)
-  NLS_HYBRID,
-  NLS_KINSOL,
-#endif
-  NLS_NEWTON,
-  NLS_HOMOTOPY,
-  NLS_MIXED,
-
-  NLS_MAX
-};
-
-
-enum NEWTON_STRATEGY
-{
-  NEWTON_NONE = 0,
-
-  NEWTON_DAMPED,
-  NEWTON_DAMPED2,
-  NEWTON_DAMPED_LS,
-  NEWTON_PURE,
-
-  NEWTON_MAX
-};
-
-extern const char *NLS_NAME[NLS_MAX+1];
-extern const char *NLS_DESC[NLS_MAX+1];
-
-extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX+1];
-extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX+1];
 
 typedef void* NLS_SOLVER_DATA;
 

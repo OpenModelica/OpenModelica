@@ -19,11 +19,27 @@ StaticOMCFactory::~StaticOMCFactory()
 {
 
 }
+
+void StaticOMCFactory::UnloadAllLibs()
+{
+}
+
+LOADERRESULT StaticOMCFactory::LoadLibrary(string libName,type_map& current_map)
+{
+    return LOADER_SUCCESS;
+}
+
+LOADERRESULT StaticOMCFactory::UnloadLibrary(shared_library lib)
+{
+    return LOADER_SUCCESS;
+}
+
 boost::shared_ptr<IAlgLoopSolverFactory> StaticOMCFactory::createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
 {
     boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = boost::shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings, _library_path, _modelicasystem_path));
     return algloopsolverfactory;
 }
+
 boost::shared_ptr<ISettingsFactory> StaticOMCFactory::createSettingsFactory()
 {
 

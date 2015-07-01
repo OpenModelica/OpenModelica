@@ -36,6 +36,7 @@
 #define _LINEARSYSTEM_H_
 
 #include "simulation_data.h"
+#include "util/simulation_options.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,24 +45,6 @@ extern "C" {
 #ifdef VOID
 #undef VOID
 #endif
-
-enum LINEAR_SOLVER
-{
-  LS_NONE = 0,
-
-  LS_LAPACK,
-#if !defined(OMC_MINIMAL_RUNTIME)
-  LS_LIS,
-#endif
-  LS_UMFPACK,
-  LS_TOTALPIVOT,
-  LS_DEFAULT,
-
-  LS_MAX
-};
-
-extern const char *LS_NAME[LS_MAX+1];
-extern const char *LS_DESC[LS_MAX+1];
 
 typedef void* LS_SOLVER_DATA;
 

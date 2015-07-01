@@ -40,6 +40,7 @@
 #include "openmodelica.h"
 #include "simulation_data.h"
 #include "util/list.h"
+#include "util/simulation_options.h"
 
 typedef struct SOLVER_INFO
 {
@@ -65,57 +66,6 @@ typedef struct SOLVER_INFO
 #ifdef __cplusplus
   extern "C" {
 #endif
-
-  enum SOLVER_METHOD
-  {
-    S_UNKNOWN = 0,
-
-    S_EULER,         /*  1 */
-    S_RUNGEKUTTA,    /*  2 */
-    S_DASSL,         /*  3 */
-    S_OPTIMIZATION,  /*  4 */
-    S_RADAU5,        /*  5 */
-    S_RADAU3,        /*  6 */
-    S_RADAU1,        /*  7 */
-    S_LOBATTO2,      /*  8 */
-    S_LOBATTO4,      /*  9 */
-    S_LOBATTO6,      /* 10 */
-    S_SYM_EULER,     /* 11 */
-    S_QSS,
-
-    S_MAX
-  };
-
-  static const char *SOLVER_METHOD_NAME[S_MAX] = {
-    "unknown",
-    "euler",
-    "rungekutta",
-    "dassl",
-    "optimization",
-    "radau5",
-    "radau3",
-    "radau1",
-    "lobatto2",
-    "lobatto4",
-    "lobatto6",
-    "symEuler",
-    "qss"
-  };
-  static const char *SOLVER_METHOD_DESC[S_MAX] = {
-    "unknown",
-    "euler",
-    "rungekutta",
-    "dassl with colored numerical jacobian, with interval root finding - default",
-    "optimization",
-    "radau5 [sundial/kinsol needed]",
-    "radau3 [sundial/kinsol needed]",
-    "radau1 [sundial/kinsol needed]",
-    "lobatto2 [sundial/kinsol needed]",
-    "lobatto4 [sundial/kinsol needed]",
-    "lobatto6 [sundial/kinsol needed]",
-    "symbolic implicit euler, [compiler flag +symEuler needed]",
-    "qss"
-  };
 
 extern int solver_main(DATA* data, const char* init_initMethod,
     const char* init_file, double init_time, int lambda_steps,

@@ -13,7 +13,7 @@ ENDIF(UNIX)
 install (TARGETS ${MathName}_static DESTINATION ${LIBINSTALLEXT})
 
 target_link_libraries (${MathName} ${Boost_LIBRARIES} ${UMFPACK_LIB} ${LAPACK_LIBRARIES})
-set_target_properties(${MathName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${MathName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 
 IF(UNIX)
 	set_target_properties(${MathName} PROPERTIES COMPILE_FLAGS -fPIC)

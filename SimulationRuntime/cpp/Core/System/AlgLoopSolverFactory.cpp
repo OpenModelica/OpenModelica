@@ -8,7 +8,7 @@
 #include <Core/System/AlgLoopSolverFactory.h>
 
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
-  : ObjectFactory<BaseFactory>(library_path,modelicasystem_path,library_path)
+  : IAlgLoopSolverFactory(), ObjectFactory<BaseFactory>(library_path,modelicasystem_path,library_path)
   , NonLinSolverPolicy(library_path,modelicasystem_path,library_path)
   , LinSolverPolicy(library_path,modelicasystem_path,library_path)
   , _global_settings(global_settings)

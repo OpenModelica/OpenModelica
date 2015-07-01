@@ -1588,7 +1588,8 @@ algorithm
     case (DAE.T_METAOPTION(ty = t1),DAE.T_METAOPTION(ty = t2))
       then subtype(t1,t2,requireRecordNamesEqual);
 
-    case (DAE.T_METABOXED(ty = t1),DAE.T_METABOXED(ty = t2)) then subtype(t1,t2,requireRecordNamesEqual);
+    case (DAE.T_METABOXED(ty = t1),DAE.T_METABOXED(ty = t2))
+      then subtype(t1,t2,requireRecordNamesEqual);
     case (DAE.T_METABOXED(ty = t1),t2) equation true = isBoxedType(t2); then subtype(t1,t2,requireRecordNamesEqual);
     case (t1,DAE.T_METABOXED(ty = t2)) equation true = isBoxedType(t1); then subtype(t1,t2,requireRecordNamesEqual);
 
@@ -1600,8 +1601,10 @@ algorithm
     // MM Function Reference
     case (DAE.T_FUNCTION(funcArg = farg1,funcResultType = t1),DAE.T_FUNCTION(funcArg = farg2,funcResultType = t2))
       equation
-        tList1 = List.map(farg1, funcArgType);
-        tList2 = List.map(farg2, funcArgType);
+        tList1 = list(traverseType(funcArgType(t), 1, unboxedTypeTraverseHelper) for t in farg1);
+        tList2 = list(traverseType(funcArgType(t), 1, unboxedTypeTraverseHelper) for t in farg2);
+        t1 = traverseType(t1, 1, unboxedTypeTraverseHelper);
+        t2 = traverseType(t2, 1, unboxedTypeTraverseHelper);
         true = subtypeTypelist(tList1,tList2,requireRecordNamesEqual);
         true = subtype(t1,t2,requireRecordNamesEqual);
       then true;
@@ -2054,6 +2057,7 @@ algorithm
     local
       Type ty;
     case (DAE.T_METALIST(ty = ty)) then (boxIfUnboxedType(ty),DAE.DIM_UNKNOWN());
+    case (DAE.T_METAARRAY(ty = ty)) then (boxIfUnboxedType(ty),DAE.DIM_UNKNOWN());
     case (DAE.T_ARRAY(dims = {dim},ty = ty)) then (ty,dim);
     case (DAE.T_SUBTYPE_BASIC(complexType = ty))
       equation
@@ -6529,33 +6533,34 @@ algorithm
 
     case ((id,{ty})::rest,solvedBindings,unsolvedBindings)
       equation
+        ty = Types.boxIfUnboxedType(ty);
         (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend(unsolvedBindings,rest),(id,{ty})::solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
       // Replace solved bindings
     case ((id,tys)::rest,solvedBindings,unsolvedBindings)
-      equation
-        tys = replaceSolvedBindings(tys, solvedBindings, false);
-        tys = List.unionOnTrue(tys, {}, equivtypes);
-        (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
+      algorithm
+        tys := replaceSolvedBindings(tys, solvedBindings, false);
+        tys := List.unionOnTrue(tys, {}, equivtypes);
+        (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
     case ((id,tys)::rest,solvedBindings,unsolvedBindings)
-      equation
-        (tys,solvedBindings) = solveBindings(tys, tys, solvedBindings);
-        tys = List.unionOnTrue(tys, {}, equivtypes);
-        (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
+      algorithm
+        (tys,solvedBindings) := solveBindings(tys, tys, solvedBindings);
+        tys := List.unionOnTrue(tys, {}, equivtypes);
+        (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
       // Duplicate types need to be removed
     case ((id,tys)::rest,solvedBindings,unsolvedBindings)
-      equation
-        len1 = listLength(tys);
-        true = len1 > 1;
-        tys = List.unionOnTrue(tys, {}, equivtypes); // Remove duplicates
-        len2 = listLength(tys);
-        false = len1 == len2;
-        (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
+      algorithm
+        len1 := listLength(tys);
+        true := len1 > 1;
+        tys := List.unionOnTrue(tys, {}, equivtypes); // Remove duplicates
+        len2 := listLength(tys);
+        false := len1 == len2;
+        (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
     case (first::rest, solvedBindings, unsolvedBindings)
@@ -6788,96 +6793,101 @@ Only works on the MetaModelica datatypes; the input is assumed to be boxed.
   input DAE.Type actual;
   input DAE.Type expected;
   input Option<Absyn.Path> envPath;
-  input InstTypes.PolymorphicBindings ibindings;
-  output InstTypes.PolymorphicBindings outBindings;
+  input InstTypes.PolymorphicBindings inBindings;
+  output InstTypes.PolymorphicBindings bindings;
 algorithm
-  outBindings := matchcontinue (actual,expected,envPath,ibindings)
+  bindings := matchcontinue (actual,expected)
     local
       String id,prefix;
       Type ty,ty1,ty2;
       list<DAE.FuncArg> farg1,farg2;
       list<DAE.Type> tList1,tList2,tys;
       Absyn.Path path1,path2;
-      list<String> ids;
-      InstTypes.PolymorphicBindings bindings;
+      list<String> ids,names1,names2;
 
-    case (_,DAE.T_METAPOLYMORPHIC(name = id),_,bindings)
-      then addPolymorphicBinding("$" + id,actual,bindings);
+    case (_,DAE.T_METAPOLYMORPHIC(name = id))
+      then addPolymorphicBinding("$" + id,actual,inBindings);
 
-    case (DAE.T_METAPOLYMORPHIC(name = id),_,_,bindings)
-      then addPolymorphicBinding("$$" + id,expected,bindings);
+    case (DAE.T_METAPOLYMORPHIC(name = id),_)
+      then addPolymorphicBinding("$$" + id,expected,inBindings);
 
-    case (DAE.T_METABOXED(ty = ty1),ty2,_,bindings)
+    case (DAE.T_METABOXED(ty = ty1),ty2)
       equation
         ty1 = unboxedType(ty1);
-      then subtypePolymorphic(ty1,ty2,envPath,bindings);
+      then subtypePolymorphic(ty1,ty2,envPath,inBindings);
 
-    case (ty1,DAE.T_METABOXED(ty = ty2),_,bindings)
+    case (ty1,DAE.T_METABOXED(ty = ty2))
       equation
         ty2 = unboxedType(ty2);
-      then subtypePolymorphic(ty1,ty2,envPath,bindings);
+      then subtypePolymorphic(ty1,ty2,envPath,inBindings);
 
-    case (DAE.T_NORETCALL(),DAE.T_NORETCALL(),_,bindings) then bindings;
-    case (DAE.T_INTEGER(),DAE.T_INTEGER(),_,bindings) then bindings;
-    case (DAE.T_REAL(),DAE.T_INTEGER(),_,bindings) then bindings;
-    case (DAE.T_STRING(),DAE.T_STRING(),_,bindings) then bindings;
-    case (DAE.T_BOOL(),DAE.T_BOOL(),_,bindings) then bindings;
+    case (DAE.T_NORETCALL(),DAE.T_NORETCALL()) then inBindings;
+    case (DAE.T_INTEGER(),DAE.T_INTEGER()) then inBindings;
+    case (DAE.T_REAL(),DAE.T_INTEGER()) then inBindings;
+    case (DAE.T_STRING(),DAE.T_STRING()) then inBindings;
+    case (DAE.T_BOOL(),DAE.T_BOOL()) then inBindings;
 
-    case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2),_,bindings)
-      then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METALIST(ty = ty1),DAE.T_METALIST(ty = ty2),_,bindings)
-      then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METAOPTION(ty = ty1),DAE.T_METAOPTION(ty = ty2),_,bindings)
-      then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2),_,bindings)
-      then subtypePolymorphicList(tList1,tList2,envPath,bindings);
+    case (DAE.T_ENUMERATION(names = names1),
+          DAE.T_ENUMERATION(names = names2))
+      equation
+        true = List.isEqualOnTrue(names1, names2, stringEq);
+      then inBindings;
 
-    case (DAE.T_TUPLE(types = tList1),DAE.T_TUPLE(types = tList2),_,bindings)
-      then subtypePolymorphicList(tList1,tList2,envPath,bindings);
+    case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2))
+      then subtypePolymorphic(ty1,ty2,envPath,inBindings);
+    case (DAE.T_METALIST(ty = ty1),DAE.T_METALIST(ty = ty2))
+      then subtypePolymorphic(ty1,ty2,envPath,inBindings);
+    case (DAE.T_METAOPTION(ty = ty1),DAE.T_METAOPTION(ty = ty2))
+      then subtypePolymorphic(ty1,ty2,envPath,inBindings);
+    case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2))
+      then subtypePolymorphicList(tList1,tList2,envPath,inBindings);
 
-    case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}),_,bindings)
+    case (DAE.T_TUPLE(types = tList1),DAE.T_TUPLE(types = tList2))
+      then subtypePolymorphicList(tList1,tList2,envPath,inBindings);
+
+    case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}))
       equation
         true = Absyn.pathEqual(path1,path2);
-      then bindings;
+      then inBindings;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path1)),DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path2)),_,bindings)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path1)),DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path2)))
       equation
         true = Absyn.pathEqual(path1,path2);
-      then bindings;
+      then inBindings;
 
     // MM Function Reference. sjoelund
-    case (DAE.T_FUNCTION(farg1,ty1,_,{path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}),_,bindings)
+    case (DAE.T_FUNCTION(farg1,ty1,_,{path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}))
       equation
         true = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1); // Don't rename the result type for recursive calls...
         tList1 = List.map(farg1, funcArgType);
         tList2 = List.map(farg2, funcArgType);
-        bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
+        bindings = subtypePolymorphicList(tList1,tList2,envPath,inBindings);
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
 
-    case (DAE.T_FUNCTION(source = {path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}),_,bindings)
+    case (DAE.T_FUNCTION(source = {path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}))
       equation
         false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
         prefix = "$" + Absyn.pathString(path1) + ".";
         (DAE.T_FUNCTION(farg1,ty1,_,_),_) = traverseType(actual, prefix, prefixTraversedPolymorphicType);
         tList1 = List.map(farg1, funcArgType);
         tList2 = List.map(farg2, funcArgType);
-        bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
+        bindings = subtypePolymorphicList(tList1,tList2,envPath,inBindings);
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
 
-    case (DAE.T_UNKNOWN(),ty2,_,bindings)
+    case (DAE.T_UNKNOWN(),ty2)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = List.map(tys, polymorphicTypeName);
-        bindings = List.fold1(ids, addPolymorphicBinding, actual, bindings);
+        bindings = List.fold1(ids, addPolymorphicBinding, actual, inBindings);
       then bindings;
 
-    case (DAE.T_ANYTYPE(),ty2,_,bindings)
+    case (DAE.T_ANYTYPE(),ty2)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = List.map(tys, polymorphicTypeName);
-        bindings = List.fold1(ids, addPolymorphicBinding, actual, bindings);
+        bindings = List.fold1(ids, addPolymorphicBinding, actual, inBindings);
       then bindings;
 
     else
@@ -8810,6 +8820,17 @@ algorithm
   end match;
 end metaArrayElementType;
 
+public function isMetaArray
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match inType
+    case DAE.T_METAARRAY() then true;
+    case DAE.T_METATYPE() then isMetaArray(inType.ty);
+    else false;
+  end match;
+end isMetaArray;
+
 public function getAttributes
   input DAE.Type inType;
   output list<DAE.Var> outAttributes;
@@ -8837,6 +8858,13 @@ algorithm
     end if;
   end for;
 end lookupAttributeValue;
+
+protected function unboxedTypeTraverseHelper<T>
+  input DAE.Type ty;
+  input T dummy;
+  output DAE.Type oty = unboxedType(ty);
+  output T odummy = dummy;
+end unboxedTypeTraverseHelper;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

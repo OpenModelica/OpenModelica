@@ -323,8 +323,8 @@ template simulationFile_inz(SimCode simCode, String guid)
     extern "C" {
     #endif
 
-    <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>
-    <%functionRemovedInitialEquations(useSymbolicInitialization, removedInitialEquations, modelNamePrefix(simCode))%>
+    <%functionInitialEquations(initialEquations, modelNamePrefix(simCode))%>
+    <%functionRemovedInitialEquations(removedInitialEquations, modelNamePrefix(simCode))%>
 
     <%functionInitialMixedSystems(initialEquations, parameterEquations, allEquations, jacobianMatrixes, modelNamePrefix(simCode))%>
 
@@ -664,7 +664,6 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
-       <%if useSymbolicInitialization then '1' else '0'%> /* useSymbolicInitialization */,
        <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
@@ -2092,155 +2091,182 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
   "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
-     // no dynamic tearing
-     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
-       let &varDecls = buffer ""
-       let &tmp = buffer ""
-       let innerEqs = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
-       let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
-       let body_initializeStaticNLSData = (nls.crefs |> cr hasindex i0 =>
+    case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
+    // no dynamic tearing
+    case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
+      let &varDecls = buffer ""
+      let &tmp = buffer ""
+      let innerEqs = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
+      let backupOutputs = match nls.eqs
+        case (alg as SES_INVERSE_ALGORITHM(__))::{} then
+          let body = (alg.knownOutputCrefs |> cr =>
+            let &varDecls += '<%crefType(cr)%> $OLD_<%cref(cr)%>;<%\n%>'
+            '$OLD_<%cref(cr)%> = <%cref(cr)%>;'
+          ;separator="\n")
+          <<
+          /* backup outputs of the algorithm */
+          <%body%>
+          >>
+      let restoreKnownOutputs = match nls.eqs
+        case (alg as SES_INVERSE_ALGORITHM(__))::{} then
+          let body = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr)%> = $OLD_<%cref(cr)%>;' ;separator="\n")
+          <<
+          /* restore previously known outputs of the algorithm */
+          <%body%>
+          >>
+      let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
+      let body_initializeStaticNLSData = (nls.crefs |> cr hasindex i0 =>
         <<
         /* static nls data for <%cref(cr)%> */
         nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
         nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
         nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
-        >> ;separator="\n")
-       let prebody = (nls.eqs |> eq2 =>
-           functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
-         ;separator="\n")
-       let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-           let &preExp = buffer ""
-           let expPart = daeExp(eq2.exp, contextSimulationDiscrete, &preExp, &varDecls, &tmp)
-           <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp%>res[<%i0%>] = <%expPart%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-           >>
-         ;separator="\n")
-       <<
-       <%innerEqs%>
-       <%&tmp%>
-       void initializeStaticNLSData<%nls.index%>(void *inData, void *inNlsData)
-       {
-         DATA* data = (DATA*) inData;
-         NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
-         int i=0;
-         <%body_initializeStaticNLSData%>
-       }
-
-       void residualFunc<%nls.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
-       {
-         DATA* data = (DATA*) dataIn;
-         const int equationIndexes[2] = {1,<%nls.index%>};
-         <%varDecls%>
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
-         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
-         <%xlocs%>
-         <%prebody%>
-         <%body%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
-       }
-     >>
-     // dynamic tearing
-     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-
-       // for strict tearing set
-       let &varDecls = buffer ""
-       let &tmp = buffer ""
-       let innerEqs = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
-       let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
-       let body_initializeStaticNLSData = (nls.crefs |> cr hasindex i0 =>
+        >>
+      ;separator="\n")
+      let prebody = (nls.eqs |> eq2 =>
+        functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
+      ;separator="\n")
+      let body = match nls.eqs
+        case (alg as SES_INVERSE_ALGORITHM(__))::{} then
+          (alg.knownOutputCrefs |> cr hasindex i0 => 'res[<%i0%>] = $OLD_<%cref(cr)%> - <%cref(cr)%>;' ;separator="\n")
+        else
+          (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+            let &preExp = buffer ""
+            let expPart = daeExp(eq2.exp, contextSimulationDiscrete, &preExp, &varDecls, &tmp)
+            <<
+            <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
+            <%preExp%>res[<%i0%>] = <%expPart%>;
+            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
+            >>
+          ;separator="\n")
       <<
-        /* static nls data for <%cref(cr)%> */
-        nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
-        nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
-        nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
-      >> ;separator="\n")
-       let prebody = (nls.eqs |> eq2 =>
-           functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
-         ;separator="\n")
-       let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-           let &preExp = buffer ""
-           let expPart = daeExp(eq2.exp, contextSimulationDiscrete, &preExp, &varDecls, &tmp)
-         <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp%>res[<%i0%>] = <%expPart%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-         >>
-         ;separator="\n")
+      <%innerEqs%>
+      <%&tmp%>
+      void initializeStaticNLSData<%nls.index%>(void *inData, void *inNlsData)
+      {
+        DATA* data = (DATA*) inData;
+        NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
+        int i=0;
+        <%body_initializeStaticNLSData%>
+      }
 
-       // for casual tearing set
-       let &varDecls2 = buffer ""
-       let &tmp2 = buffer ""
-       let innerEqs2 = functionNonLinearResiduals(at.eqs,modelNamePrefix)
-       let xlocs2 = (at.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
-       let body_initializeStaticNLSData2 = (at.crefs |> cr hasindex i0 =>
+      void residualFunc<%nls.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
+      {
+        DATA* data = (DATA*) dataIn;
+        const int equationIndexes[2] = {1,<%nls.index%>};
+        <%varDecls%>
+        <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
+        <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
+        <%xlocs%>
+        <%backupOutputs%>
+
+        <%prebody%>
+
+        <%body%>
+        <%restoreKnownOutputs%>
+        <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
+      }
+      >>
+    // dynamic tearing
+    case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+      // for strict tearing set
+      let &varDecls = buffer ""
+      let &tmp = buffer ""
+      let innerEqs = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
+      let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
+      let body_initializeStaticNLSData = (nls.crefs |> cr hasindex i0 =>
+        <<
+          /* static nls data for <%cref(cr)%> */
+          nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
+          nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
+          nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
+        >>
+      ;separator="\n")
+      let prebody = (nls.eqs |> eq2 =>
+        functionExtraResidualsPreBody(eq2, &varDecls, &tmp, modelNamePrefix)
+      ;separator="\n")
+      let body = (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+        let &preExp = buffer ""
+        let expPart = daeExp(eq2.exp, contextSimulationDiscrete, &preExp, &varDecls, &tmp)
+        <<
+          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
+          <%preExp%>res[<%i0%>] = <%expPart%>;
+          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
+        >>
+      ;separator="\n")
+
+      // for casual tearing set
+      let &varDecls2 = buffer ""
+      let &tmp2 = buffer ""
+      let innerEqs2 = functionNonLinearResiduals(at.eqs,modelNamePrefix)
+      let xlocs2 = (at.crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
+      let body_initializeStaticNLSData2 = (at.crefs |> cr hasindex i0 =>
+        <<
+          /* static nls data for <%cref(cr)%> */
+          nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
+          nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
+          nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
+        >>
+      ;separator="\n")
+      let prebody2 = (at.eqs |> eq2 =>
+        functionExtraResidualsPreBody(eq2, &varDecls2, &tmp2, modelNamePrefix)
+      ;separator="\n")
+      let body2 = (at.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+        let &preExp2 = buffer ""
+        let expPart2 = daeExp(eq2.exp, contextSimulationDiscrete, &preExp2, &varDecls2, &tmp2)
+        <<
+          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
+          <%preExp2%>res[<%i0%>] = <%expPart2%>;
+          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
+        >>
+      ;separator="\n")
       <<
-        /* static nls data for <%cref(cr)%> */
-        nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
-        nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
-        nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
-      >> ;separator="\n")
-       let prebody2 = (at.eqs |> eq2 =>
-           functionExtraResidualsPreBody(eq2, &varDecls2, &tmp2, modelNamePrefix)
-         ;separator="\n")
-       let body2 = (at.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-           let &preExp2 = buffer ""
-           let expPart2 = daeExp(eq2.exp, contextSimulationDiscrete, &preExp2, &varDecls2, &tmp2)
-         <<
-           <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
-           <%preExp2%>res[<%i0%>] = <%expPart2%>;
-           <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
-         >>
-         ;separator="\n")
-     <<
-       <%innerEqs%>
-       <%&tmp%>
-       void initializeStaticNLSData<%nls.index%>(void *inData, void *inNlsData)
-       {
-         DATA* data = (DATA*) inData;
-         NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
-         int i=0;
-         <%body_initializeStaticNLSData%>
-       }
+        <%innerEqs%>
+        <%&tmp%>
+        void initializeStaticNLSData<%nls.index%>(void *inData, void *inNlsData)
+        {
+          DATA* data = (DATA*) inData;
+          NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
+          int i=0;
+          <%body_initializeStaticNLSData%>
+        }
 
-       void residualFunc<%nls.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
-       {
-         DATA* data = (DATA*) dataIn;
-         const int equationIndexes[2] = {1,<%nls.index%>};
-         <%varDecls%>
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
-         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
-         <%xlocs%>
-         <%prebody%>
-         <%body%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
-       }
+        void residualFunc<%nls.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
+        {
+          DATA* data = (DATA*) dataIn;
+          const int equationIndexes[2] = {1,<%nls.index%>};
+          <%varDecls%>
+          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
+          <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
+          <%xlocs%>
+          <%prebody%>
+          <%body%>
+          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
+        }
 
-       <%innerEqs2%>
-       <%&tmp2%>
-       void initializeStaticNLSData<%at.index%>(void *inData, void *inNlsData)
-       {
-         DATA* data = (DATA*) inData;
-         NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
-         int i=0;
-         <%body_initializeStaticNLSData2%>
-       }
+        <%innerEqs2%>
+        <%&tmp2%>
+        void initializeStaticNLSData<%at.index%>(void *inData, void *inNlsData)
+        {
+          DATA* data = (DATA*) inData;
+          NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
+          int i=0;
+          <%body_initializeStaticNLSData2%>
+        }
 
-       void residualFunc<%at.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
-       {
-         DATA* data = (DATA*) dataIn;
-         const int equationIndexes[2] = {1,<%at.index%>};
-         <%varDecls2%>
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%at.index%>);' %>
-         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%at.index%>).profileBlockIndex,1);' %>
-         <%xlocs2%>
-         <%prebody2%>
-         <%body2%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%at.index%>);' %>
-       }
-    >>
+        void residualFunc<%at.index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
+        {
+          DATA* data = (DATA*) dataIn;
+          const int equationIndexes[2] = {1,<%at.index%>};
+          <%varDecls2%>
+          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%at.index%>);' %>
+          <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%at.index%>).profileBlockIndex,1);' %>
+          <%xlocs2%>
+          <%prebody2%>
+          <%body2%>
+          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%at.index%>);' %>
+        }
+      >>
   )
   ;separator="\n\n")
 end functionNonLinearResiduals;
@@ -2408,7 +2434,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   >>
 end functionUpdateBoundParameters;
 
-template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations, String modelNamePrefix)
+template functionInitialEquations(list<SimEqSystem> initalEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -2434,8 +2460,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
               else
                 ""
 
-  let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, 0, "The symbolic initialization was not generated.");'
-
   <<
   <%eqfuncs%>
 
@@ -2446,7 +2470,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     TRACE_PUSH
     <%varDecls%>
 
-    <%errorMsg%>
     data->simulationInfo.discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%nrfuncs%>, data, functionInitialEquations_systems);'
     else '<%fncalls%>' %>
@@ -2485,7 +2508,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
   end match
 end functionRemovedInitialEquationsBody;
 
-template functionRemovedInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> removedInitalEquations, String modelNamePrefix)
+template functionRemovedInitialEquations(list<SimEqSystem> removedInitalEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
@@ -4041,6 +4064,8 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix)
   case e as SES_ALGORITHM(__)
     then equationAlgorithm(e, context, &varD, &tempeqns)
+  case e as SES_INVERSE_ALGORITHM(__)
+    then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD)
   // no dynamic tearing
@@ -4113,6 +4138,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, S
   case e as SES_IFEQUATION(__)
     then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix)
   case e as SES_ALGORITHM(__)
+    then equationAlgorithm(e, context, &varD, &tempeqns)
+  case e as SES_INVERSE_ALGORITHM(__)
     then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD)
@@ -4303,12 +4330,12 @@ template equationAlgorithm(SimEqSystem eq, Context context, Text &varDecls, Text
  "Generates an equation that is an algorithm."
 ::=
 match eq
-case SES_ALGORITHM(__) then
+case SES_ALGORITHM(__)
+case SES_INVERSE_ALGORITHM(__) then
   (statements |> stmt =>
     algStatement(stmt, context, &varDecls, &auxFunction)
   ;separator="\n")
 end equationAlgorithm;
-
 
 template equationLinear(SimEqSystem eq, Context context, Text &varDecls)
  "Generates a linear equation system."
@@ -4382,7 +4409,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
         <<
         data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
         data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/,$P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, $P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
         >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, <%nls.indexNonLinearSystem%>);
@@ -4418,7 +4445,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
         <<
         data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
         data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
-        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/,$P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
+        data->simulationInfo.nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/, $P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
         >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, <%nls.indexNonLinearSystem%>);
@@ -8804,7 +8831,7 @@ case rel as RELATION(__) then
     case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
 
-    else error(sourceInfo(), 'daeExpRelation:ERR')
+    else error(sourceInfo(), 'daeExpRelation <%printExpStr(exp)%>')
 end daeExpRelation;
 
 
@@ -10032,12 +10059,11 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let &tmpVarDecls += (match identType
       case "modelica_metatype" then 'modelica_metatype <%loopVar%> = 0;<%\n%>'
       else '<%arrayType%> <%loopVar%>;<%\n%>')
-    let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
+    let firstIndex = match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls)
     let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction)
     let &rangeExpPre += '<%loopVar%> = <%rangeExp%>;<%\n%>'
     let &rangeExpPre += if firstIndex then '<%firstIndex%> = 1;<%\n%>'
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "1")
-    let empty = (match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)')
     let iteratorName = contextIteratorName(iter.id, context)
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
     let guardExp =
@@ -10050,13 +10076,22 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       >>
     (match identType
       case "modelica_metatype" then
-      <<
-      while(!<%empty%>) {
-        <%iteratorName%> = MMC_CAR(<%loopVar%>);
-        <%loopVar%> = MMC_CDR(<%loopVar%>);
-        <%guardExp%>
-      }
-      >>
+      (if isMetaArray(iter.exp) then
+        <<
+        while (<%firstIndex%> <= arrayLength(<%loopVar%>)) {
+          <%iteratorName%> = arrayGet(<%loopVar%>, <%firstIndex%>++);
+          <%guardExp%>
+        }
+        >>
+      else
+        <<
+        while (!listEmpty(<%loopVar%>)) {
+          <%iteratorName%> = MMC_CAR(<%loopVar%>);
+          <%loopVar%> = MMC_CDR(<%loopVar%>);
+          <%guardExp%>
+        }
+        >>
+      )
       else
       let addr = match iter.ty
         case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
@@ -10077,7 +10112,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let loopVar = '<%iter.id%>_loopVar'
          let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
+         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then 'arrayLength(<%loopVar%>)' else 'listLength(<%loopVar%>)') else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
          "")
        <<
        <%arrIndex%> = 1;
@@ -10970,7 +11005,8 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as BCONST(__) then 'if (<%if c.bool then 1 else 0%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
-        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN')
+        case c as ENUM_LITERAL() then 'if (<%c.index%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN <%printExpStr(p.exp)%>')
       %>>>
   case p as PAT_SOME(__) then
     let tvar = tempDecl("modelica_metatype", &varDecls)
@@ -11208,6 +11244,7 @@ template literalExpConstBoxedVal(Exp lit, Text index, Text &preLit)
   let tmp = '_OMC_LIT_STRUCT<%index%>'
   match lit
   case ICONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%integer%>))'
+  case ENUM_LITERAL(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%index%>))'
   case lit as BCONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%if lit.bool then 1 else 0%>))'
   case lit as RCONST(__) then
     let &preLit +=

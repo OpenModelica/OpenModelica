@@ -642,30 +642,6 @@ function cat "Concatenate arrays along given dimension"
 </html>"));
 end cat;
 
-function rooted "Not yet standard Modelica, but in the MSL since 3-4 years now."
-  external "builtin";
-  annotation(Documentation(info="<html>
-<p><b>Not yet standard Modelica, but in the MSL since 3-4 years now.</b></p>
-<h4>Syntax</h4>
-<blockquote>
-<pre><b>rooted</b>(x)</pre>
-</blockquote>
-<h4>Description</h4>
-<p>The operator \"rooted\" was introduced to improve efficiency:
-A tool that constructs the graph with the Connections.branch/.root etc.
-built-in operators has to cut the graph in order to arrive at \"spanning trees\".
-If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true,
-if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned.
-For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
-</p>
-<h4>Known Bugs</h4>
-<p>
-OpenModelica, <b>rooted</b>(x) always returns true.
-See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a> for details.
-</p>
-</html>"),version="Deprecated in the upcoming Modelica 3.2 rev2");
-end rooted;
-
 function actualStream
   external "builtin";
 end actualStream;
@@ -731,6 +707,29 @@ encapsulated package Connections
     // adrpo: I would like an assert here: size(nodes) <= size (roots)
     external "builtin";
   end uniqueRootIndices;
+
+  function rooted
+    external "builtin";
+    annotation(Documentation(info="<html>
+  <h4>Syntax</h4>
+  <blockquote>
+  <pre><b>Connections.rooted</b>(x)</pre>
+  </blockquote>
+  <h4>Description</h4>
+  <p>The operator \"rooted\" was introduced to improve efficiency:
+  A tool that constructs the graph with the Connections.branch/.root etc.
+  built-in operators has to cut the graph in order to arrive at \"spanning trees\".
+  If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true,
+  if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned.
+  For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
+  </p>
+  <h4>Known Bugs</h4>
+  <p>
+  OpenModelica, <b>rooted</b>(x) always returns true.
+  See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a> for details.
+  </p>
+  </html>"));
+  end rooted;
 end Connections;
 
 encapsulated package Subtask
@@ -2138,6 +2137,28 @@ See also <a href=\"modelica://OpenModelica.Scripting.list\">list()</a>.</p>
 </html>"),
   preferredView="text");
 end listFile;
+
+type DiffFormat = enumeration(plain "no deletions, no markup", color "terminal escape sequences", xml "XML tags");
+
+function diffModelicaFileListings "Creates diffs of two strings corresponding to Modelica files"
+  input String before, after;
+  input DiffFormat diffFormat = DiffFormat.color;
+  output String result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Creates diffs of two strings (before and after) corresponding to Modelica files.
+The diff is specialized to handle the <a href=\"modelica://OpenModelica.Scripting.list\">list</a>
+API moving comments around in the file and introducing or deleting whitespace.</p>
+<p>The output can be chosen to be a colored diff (for terminals), XML, or
+the final text (deletions removed).</p>
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>1.9.3-dev</td><td>sjoelund.se</td><td>Introduced the API.</td></tr>
+</table>
+</html>"),
+  preferredView="text");
+end diffModelicaFileListings;
 
 // exportToFigaro added by Alexander Carlqvist
 function exportToFigaro

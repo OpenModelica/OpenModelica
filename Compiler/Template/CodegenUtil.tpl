@@ -331,6 +331,8 @@ template equationIndex(SimEqSystem eq)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
     then index
+  case SES_INVERSE_ALGORITHM(__)
+    then index
   case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))
     then ls.index
   case SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
@@ -372,6 +374,13 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: ALGORITHM
+
+      <%e.statements |> stmt => escapeCComments(ppStmtStr(stmt,2))%>
+      >>
+    case e as SES_INVERSE_ALGORITHM(statements=first::_) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: INVERSE ALGORITHM
 
       <%e.statements |> stmt => escapeCComments(ppStmtStr(stmt,2))%>
       >>

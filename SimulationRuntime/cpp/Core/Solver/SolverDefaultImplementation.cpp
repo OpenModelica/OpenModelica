@@ -185,7 +185,7 @@ void SolverDefaultImplementation::setZeroState()
 void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, const double& h)
 {
   #ifdef RUNTIME_PROFILING
-  MEASURETIME_REGION_DEFINE(writeFunctionStartValues, "solverWriteOutput");
+  MEASURETIME_REGION_DEFINE(solverWriteOutputHandler, "solverWriteOutput");
   if(MeasureTime::getInstance() != NULL)
   {
       MEASURETIME_START(writeFunctionStartValues, solverWriteOutputHandler, "solverWriteOutput");

@@ -44,6 +44,7 @@ public import DAE;
 
 protected import Array;
 protected import BackendDAEEXT;
+protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendDAETransform;
 protected import BackendDump;
@@ -51,8 +52,13 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import Config;
 protected import Debug;
+protected import Differentiate;
 protected import DumpGraphML;
 protected import Error;
+protected import Expression;
+protected import ExpressionDump;
+protected import ExpressionSimplify;
+protected import ExpressionSolve;
 protected import Flags;
 protected import List;
 protected import Matching;
@@ -85,6 +91,8 @@ end TearingMethod;
 public function tearingSystem "author: Frenkel TUD 2012-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  Boolean update;
 algorithm
   outDAE := matchcontinue(inDAE)
     local
@@ -192,7 +200,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of traverseComponents\n" + BORDER + "\n\n");
   end if;
-  osyst := if b then BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(ass1, ass2, comps)) else isyst;
+  osyst := if b then BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(ass1, ass2, comps)) else isyst;
 end tearingSystemWork;
 
 protected function traverseComponents "author: Frenkel TUD 2012-05"
@@ -329,7 +337,7 @@ algorithm
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
-  subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
   funcs := BackendDAEUtil.getFunctions(ishared);
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
      //  DumpGraphML.dumpSystem(subsyst,ishared,NONE(),"System" + intString(size) + ".graphml");
@@ -382,7 +390,7 @@ algorithm
 
   // unmatched equations are residual equations
   residual := Matching.getUnassigned(size,ass2,{});
-     //  subsyst := BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
+     //  subsyst := BackendDAEUtil.setEqSystMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
      //  DumpGraphML.dumpSystem(subsyst,ishared,NONE(),"TornSystem" + intString(size) + ".graphml");
 
   // check if tearing makes sense
@@ -959,7 +967,7 @@ algorithm
       Integer tvar;
       Integer size,varsize;
       array<Integer> points;
-    // if vars there with no liniear occurence in any equation use all of them
+    // if vars there with no linear occurrence in any equation use all of them
 /*    case(_,_,_,_)
       equation
       then
@@ -1727,7 +1735,7 @@ algorithm
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
-  subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
 
   // Delete negative entries from incidence matrix
@@ -3739,6 +3747,310 @@ algorithm
       then ((num,indx+1,ilst));
   end matchcontinue;
 end findNEntries;
+
+// =============================================================================
+// section for preOptModule >>recursiveTearing<<
+//
+// inline and repeat tearing
+// author: Vitalij Ruge
+// =============================================================================
+
+public function recursiveTearing
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  Boolean con;
+algorithm
+  if Flags.getConfigInt(Flags.RTEARING) > 0 then
+    (outDAE, con) := recursiveTearingMain(inDAE);
+    while con loop
+      outDAE := tearingSystem(outDAE);
+      (outDAE, con) := recursiveTearingMain(outDAE);
+    end while;
+  else
+    outDAE := inDAE;
+  end if;
+end recursiveTearing;
+
+protected function recursiveTearingMain
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output Boolean update = false;
+protected
+  list<BackendDAE.EqSystem> systlst, systlst_new = {};
+  BackendDAE.Shared shared;
+  DAE.FunctionTree funcs;
+  BackendDAE.Variables vars, knownVars;
+  BackendDAE.StrongComponents comps;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+
+  list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  tuple<Integer,list<Integer>> tpl;
+  Integer eqindex, vindex;
+  list<Integer> residualequations;
+  list<Integer> tearingvars;
+  list<BackendDAE.Var> var_lst;
+  BackendDAE.Var var;
+  array<DAE.ComponentRef> tear_cr;
+  list<DAE.ComponentRef> tear_cr_lst, all_vars = {};
+  array<DAE.Exp> tear_exp;
+  DAE.ComponentRef cr, cr1;
+  BackendDAE.Equation eqn, eqn1;
+  DAE.Exp rhs, lhs, rhs1, lhs1, rhs_, lhs_, sumRhs, sumLhs, lhs_f, e, res;
+  Integer n, i, j, m, k, index = 1;
+  array<Option<BackendDAE.Equation>> optarr, optarr_res;
+  array<Integer> indx_res, indx_eq, indx_var;
+  Boolean tmp_update, isDer;
+  BackendDAE.IncidenceMatrix mm;
+  Boolean maxSizeOne =  Flags.getConfigInt(Flags.RTEARING) == 1;
+  list<DAE.Exp> loopT, noLoopT;
+algorithm
+
+  BackendDAE.DAE(systlst, shared) := inDAE;
+  BackendDAE.SHARED(functionTree = funcs, knownVars = knownVars) := shared;
+  //BackendDump.bltdump("IN:", inDAE);
+  for syst in systlst loop
+    BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
+    (_, mm, _) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.SPARSE(), SOME(funcs));
+    tmp_update := false;
+    for comp in comps loop
+      if isTornsystem(comp, true, false) then
+        // -----
+        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(otherEqnVarTpl = otherEqnVarTpl, residualequations= residualequations, tearingvars=tearingvars)) := comp;
+        n := listLength(otherEqnVarTpl);
+        m := listLength(residualequations);
+        if maxSizeOne and m > 1 then
+          continue;
+        end if;
+        indx_res := arrayCreate(m,0);
+        indx_var := arrayCreate(n,0);
+        indx_eq := arrayCreate(n,0);
+        i := 1;
+        optarr := arrayCreate(n, NONE());
+        update := true;
+        tmp_update := true;
+        // -----
+        for tpl in otherEqnVarTpl loop
+          (eqindex, {vindex}) := tpl;
+          (var as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindex);
+          all_vars := cr :: all_vars;
+          arrayUpdate(indx_var,i,vindex);
+          eqn := BackendEquation.equationNth1(eqns, eqindex);
+          if BackendVariable.isStateVar(var) then
+            eqn := BackendEquation.solveEquation(eqn, Expression.expDer(Expression.crefExp(cr)), SOME(funcs));
+          else
+            eqn := BackendEquation.solveEquation(eqn, Expression.crefExp(cr), SOME(funcs));
+          end if;
+          arrayUpdate(optarr, i, SOME(eqn));
+          eqns := BackendEquation.setAtIndex(eqns, eqindex, eqn);
+          arrayUpdate(indx_eq, i , eqindex);
+          i := i + 1;
+          if Flags.isSet(Flags.DUMP_RTEARING) then
+            print("INeqn => " + BackendDump.equationString(eqn) +  "[" + intString(i-1) + "]\n");
+          end if;
+        end for; //otherEqnVarTpl
+
+        // -----
+        var_lst := list(BackendVariable.getVarAt(vars, i) for i in tearingvars);
+        tear_cr_lst := list(BackendVariable.varCref(vv) for vv in var_lst);
+        tear_cr  := listArray(tear_cr_lst);
+        all_vars := listAppend(tear_cr_lst, all_vars);
+        tear_exp  := arrayCreate(m, DAE.RCONST(0.0));
+        i := 1;
+        for tcr in tear_cr  loop
+          arrayUpdate(tear_exp, i, Expression.crefExp(tcr));
+          i := i +1;
+        end for; //cr
+        // -----
+        optarr_res := arrayCreate(m, NONE());
+
+        for i in 1:m loop
+          eqindex :: residualequations := residualequations;
+          arrayUpdate(indx_res, i , eqindex);
+          eqn := BackendEquation.equationNth1(eqns, eqindex);
+          if Flags.isSet(Flags.DUMP_RTEARING) then
+            print("INres => " + BackendDump.equationString(eqn) + "[" + intString(i) + "]\n");
+          end if;
+          arrayUpdate(optarr_res, i, SOME(eqn));
+        end for;
+
+        for i in 1:n  loop
+          SOME(eqn) := arrayGet(optarr, i);
+          rhs := BackendEquation.getEquationRHS(eqn);
+          lhs := BackendEquation.getEquationLHS(eqn);
+          (cr,isDer) := Expression.expOrDerCref(lhs);
+
+          //print("*****" + ExpressionDump.printExpStr(lhs) + "= " +  ExpressionDump.printExpStr(rhs) + "*******\n");
+          for j in (i+1):n loop
+            if listMember(arrayGet(indx_var,i) , arrayGet(mm, arrayGet(indx_eq,j))) then
+              SOME(eqn1) := arrayGet(optarr, j);
+              //print("\n (" + intString(i) + "," + intString(j) + ") => \n" + BackendDump.equationString(eqn1));
+              rhs1 := BackendEquation.getEquationRHS(eqn1);
+              rhs1 := recursiveTearingReplace(rhs1, cr, rhs, isDer);
+              rhs1 := recursiveTearingCollect(tear_exp, rhs1);
+              (index, vars, eqns, shared, _, e, _, _, _) := BackendDAEOptimize.simplifyLoopExp(index, vars, eqns, shared, all_vars, rhs1, {}, {}, true, true,-1,{}, "RTEARING");
+              eqn1 := BackendEquation.setEquationRHS(eqn1, e);
+              //print( "=>" + BackendDump.equationString(eqn1) + "\n");
+              arrayUpdate(optarr,j,SOME(eqn1));
+            end if;
+          end for; // j
+
+          //res eqn
+          for j in 1:m loop
+            if listMember(arrayGet(indx_var,i) , arrayGet(mm, arrayGet(indx_res,j))) then
+              SOME(eqn1) := arrayGet(optarr_res, j);
+
+              res := BackendDAEOptimize.makeEquationToResidualExp(eqn1);
+              res := recursiveTearingCollect(tear_exp, res);
+              (loopT, noLoopT) := BackendDAEOptimize.simplifyLoops_SplitTerms(all_vars, res);
+
+              sumRhs := Expression.makeSum1(noLoopT,true);
+              sumLhs := Expression.makeSum1(loopT,true);
+
+              sumRhs := recursiveTearingReplace(sumRhs, cr, rhs, isDer);
+              sumLhs := recursiveTearingReplace(sumLhs, cr, rhs, isDer);
+
+              sumRhs := recursiveTearingCollect(tear_exp,sumRhs);
+              sumLhs := recursiveTearingCollect(tear_exp,sumLhs);
+
+              // RHS
+              (sumRhs,_) := ExpressionSimplify.simplify(sumRhs);
+              (index, vars, eqns, shared, _, sumRhs, _, _, _) := BackendDAEOptimize.simplifyLoopExp(index, vars, eqns, shared, all_vars, sumRhs, {}, {}, true, true,-1,{}, "RTEARING");
+              eqn1 := BackendEquation.setEquationRHS(eqn1, Expression.negate(sumRhs));
+
+              //LHS
+              (sumLhs,_) := ExpressionSimplify.simplify(sumLhs);
+              (index, vars, eqns, shared, _, sumLhs, _, _, _) := BackendDAEOptimize.simplifyLoopExp(index, vars, eqns, shared, all_vars, sumLhs, {}, {}, true, true,-1,{}, "RTEARING");
+              eqn1 := BackendEquation.setEquationLHS(eqn1, sumLhs);
+              arrayUpdate(optarr_res,j,SOME(eqn1));
+            end if; // listMember
+          end for;//j
+        end for; // i
+
+        for i in 1:n loop
+          eqindex := arrayGet(indx_eq,i);
+          SOME(eqn) := arrayGet(optarr, i);
+          eqns := BackendEquation.setAtIndex(eqns, eqindex, eqn);
+          if Flags.isSet(Flags.DUMP_RTEARING) then
+            print("OUTeqn => " + BackendDump.equationString(eqn) + "[" + intString(i-1) + "]\n");
+          end if;
+        end for; // i
+
+        for i in 1:m loop
+          eqindex := arrayGet(indx_res,i);
+          SOME(eqn) := arrayGet(optarr_res, i);
+          eqns := BackendEquation.setAtIndex(eqns, eqindex, eqn);
+          if Flags.isSet(Flags.DUMP_RTEARING) then
+            print("OUTres => " + BackendDump.equationString(eqn) +  "[" + intString(i-1) + "]\n");
+          end if;
+        end for; // i
+
+        if Flags.isSet(Flags.DUMP_RTEARING) then
+          print("****************\n");
+          for i in 1:m loop
+            print("TearVar: " + ExpressionDump.printExpStr(arrayGet(tear_exp, i)) +  "[" + intString(i-1) + "]\n");
+          end for;
+          print("****************\n");
+        end if;
+
+      end if; // isTornsystem
+    end for; // comp
+
+    if tmp_update then
+      systlst_new := BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind) :: systlst_new;
+    else
+      systlst_new := syst :: systlst_new;
+    end if;
+
+  end for; // syst
+  if update then
+    outDAE := BackendDAE.DAE(systlst_new, shared);
+    try
+      outDAE := BackendDAEUtil.transformBackendDAE(outDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+    else
+      update := false;
+    end try;
+  else
+    outDAE := inDAE;
+  end if;
+  //BackendDAE.DAE(systlst_new) := outDAE;
+  //outDAE := BackendDAE.DAE(systlst_new, shared);
+  //BackendDump.bltdump("OUT:", outDAE);
+end recursiveTearingMain;
+
+protected function recursiveTearingCollect
+  input array<DAE.Exp> tear_exp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+protected
+  Integer k;
+  DAE.Exp lhs, e1, e2;
+algorithm
+
+  (e1, e2) := ExpressionSolve.collectX(inExp, arrayGet(tear_exp, 1));
+
+  for k in 2:arrayLength(tear_exp) loop
+    (lhs, e2) := ExpressionSolve.collectX(e2, arrayGet(tear_exp, k));
+    e1 := Expression.expAdd(e1, lhs);
+  end for;
+  outExp := Expression.expAdd(e2, e1);
+end recursiveTearingCollect;
+
+protected function isTornsystem
+  input BackendDAE.StrongComponent comp;
+  input Boolean getLin = true;
+  input Boolean getNoLin = false;
+  output Boolean res;
+
+algorithm
+  res := match comp
+         local Boolean linear;
+
+         case  BackendDAE.TORNSYSTEM(linear=linear)
+         guard linear == getLin or getNoLin == (not linear)
+         then true;
+         else false;
+         end match;
+end isTornsystem;
+
+protected function recursiveTearingHelper
+"
+ collect expression
+"
+  input DAE.Exp rhs1;
+  input array<DAE.Exp> tear_exp;
+  input Integer m;
+  output DAE.Exp sumRhs = Expression.makeConstZeroE(rhs1);
+protected
+  Integer k;
+  DAE.Exp e, rhs = rhs1;
+algorithm
+  for k in 1:m loop
+    (e, rhs) := ExpressionSolve.collectX(rhs, arrayGet(tear_exp, k));
+    sumRhs := Expression.expAdd(e, sumRhs);
+  end for;
+  sumRhs := Expression.expAdd(rhs, sumRhs);
+  (sumRhs,_) := ExpressionSimplify.simplify(sumRhs);
+end recursiveTearingHelper;
+
+protected function recursiveTearingReplace
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inSourceExp;
+  input DAE.Exp inTargetExp;
+  input Boolean isDer;
+  output DAE.Exp res;
+algorithm
+  if isDer then
+    res := Expression.crefExp(inSourceExp);
+    res := Expression.expDer(res);
+    (res,_) := Expression.replaceExp(inExp, res, inTargetExp);
+  else
+    res := Expression.replaceCrefBottomUp(inExp, inSourceExp, inTargetExp);
+  end if;
+
+end recursiveTearingReplace;
 
 annotation(__OpenModelica_Interface="backend");
 end Tearing;

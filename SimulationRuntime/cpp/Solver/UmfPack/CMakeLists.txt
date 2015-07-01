@@ -4,11 +4,16 @@ project(${UmfPackName})
 
 # add the solver default implementation library
 add_library(${UmfPackName}_static STATIC UmfPack.cpp UmfPackSettings.cpp FactoryExport )
-set_target_properties(${UmfPackName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${UmfPackName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 
 add_library(${UmfPackName} SHARED UmfPack.cpp UmfPackSettings.cpp FactoryExport)
 target_link_libraries( ${UmfPackName} ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
 	
+if (UNIX)
+	set_target_properties(${UmfPackName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${UmfPackName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
 install (TARGETS ${UmfPackName} ${UmfPackName}_static DESTINATION ${LIBINSTALLEXT})
 
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPack.h

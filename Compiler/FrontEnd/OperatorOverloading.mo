@@ -85,7 +85,7 @@ function binary
   output DAE.Properties outProp;
 algorithm
   (outCache, outExp, outProp) :=
-   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo)
+   match (inCache,inEnv,inOperator1, inProp1, inExp1, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo)
        local
          FCore.Cache cache;
          FCore.Graph env;
@@ -103,52 +103,49 @@ algorithm
          Boolean didInline;
 
      // handle tuple op non_tuple
-     case (_, _, _, props1 as DAE.PROP_TUPLE(), _, DAE.PROP(), _, _, _, _, _, _, _, _)
+     case (_, _, _, props1 as DAE.PROP_TUPLE(), _, DAE.PROP(), _, _, _, _, _, _, _, _) guard not Config.acceptMetaModelicaGrammar()
        equation
-         false = Config.acceptMetaModelicaGrammar();
          (prop as DAE.PROP(type1, _)) = Types.propTupleFirstProp(props1);
          exp = DAE.TSUB(inExp1, 1, type1);
-         (_, exp, prop) = binary(inCache, inEnv, inOperator1, prop, exp, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
-       then
-         (inCache, exp, prop);
+         (cache, exp, prop) = binary(inCache, inEnv, inOperator1, prop, exp, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
+       then (cache, exp, prop);
 
      // handle non_tuple op tuple
-     case (_, _, _, DAE.PROP(), _, props2 as DAE.PROP_TUPLE(), _, _, _, _, _, _, _, _)
+     case (_, _, _, DAE.PROP(), _, props2 as DAE.PROP_TUPLE(), _, _, _, _, _, _, _, _) guard not Config.acceptMetaModelicaGrammar()
        equation
-         false = Config.acceptMetaModelicaGrammar();
          (prop as DAE.PROP(type2, _)) = Types.propTupleFirstProp(props2);
          exp = DAE.TSUB(inExp2, 1, type2);
-         (_, exp, prop) = binary(inCache, inEnv, inOperator1, inProp1, inExp1, prop, exp, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
-       then
-         (inCache, exp, prop);
+         (cache, exp, prop) = binary(inCache, inEnv, inOperator1, inProp1, inExp1, prop, exp, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
+       then (cache, exp, prop);
 
-     case (_, _, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _)
-       equation
-         false = Types.isRecord(Types.arrayElementType(type1));
-         false = Types.isRecord(Types.arrayElementType(type2));
-         (opList, type1,exp1,type2,exp2) = operatorsBinary(aboper, type1, exp1, type2, exp2);
-         (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, AbExp, inPre, inInfo);
-         const = Types.constAnd(const1, const2);
-         exp = replaceOperatorWithFcall(AbExp, exp1,oper,SOME(exp2), const);
-         (exp,_) = ExpressionSimplify.simplify(exp);
-         prop = DAE.PROP(otype,const);
-         warnUnsafeRelations(inEnv,AbExp,const, type1,type2,exp1,exp2,oper,inPre,inInfo);
-       then
-         (inCache,exp, prop);
+     case (cache, env, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _)
+       algorithm
+         if Types.isRecord(Types.arrayElementType(type1)) or Types.isRecord(Types.arrayElementType(type2)) then
+           // Overloaded records
+           (cache, exp, _, otype) := binaryUserdef(cache,env,aboper,inExp1,inExp2,type1,type2,inImpl,inSymTab,inPre,inInfo);
+           functionTree := FCore.getFunctionTree(cache);
+           exp := ExpressionSimplify.simplify1(exp);
+           (exp,_,didInline,_) := Inline.inlineExp(exp,(SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),DAE.emptyElementSource);
+           exp := ExpressionSimplify.condsimplify(didInline,exp);
+           const := Types.constAnd(const1, const2);
+           prop := DAE.PROP(otype,const);
+         else // Normal operator deoverloading
+           if Types.isBoxedType(type1) and Types.isBoxedType(type2) then
+             // Do the MetaModelica type-casting here for simplicity
+             (exp1, type1) := Types.matchType(exp1, type1, Types.unboxedType(type1), true);
+             (exp2, type2) := Types.matchType(exp2, type2, Types.unboxedType(type2), true);
+           end if;
+           (opList, type1, exp1, type2, exp2) := operatorsBinary(aboper, type1, exp1, type2, exp2);
+           (oper, {exp1,exp2}, otype) := deoverload(opList, {(exp1,type1), (exp2,type2)}, AbExp, inPre, inInfo);
+           const := Types.constAnd(const1, const2);
+           exp := replaceOperatorWithFcall(AbExp, exp1,oper,SOME(exp2), const);
+           exp := ExpressionSimplify.simplify(exp);
+           prop := DAE.PROP(otype,const);
+           warnUnsafeRelations(inEnv,AbExp,const, type1,type2,exp1,exp2,oper,inPre,inInfo);
+         end if;
+       then (cache, exp, prop);
 
-     case(cache, env, aboper, DAE.PROP(type1, const1), _, DAE.PROP(type2, const2), _, _, _, _, _, _, _, _)
-       equation
-         true = Types.isRecord(Types.arrayElementType(type1)) or Types.isRecord(Types.arrayElementType(type2));
-         (cache, exp, _, otype) = binaryUserdef(cache,env,aboper,inExp1,inExp2,type1,type2,inImpl,inSymTab,inPre,inInfo);
-         functionTree = FCore.getFunctionTree(cache);
-         (exp,_) = ExpressionSimplify.simplify1(exp);
-         (exp,_,didInline,_) = Inline.inlineExp(exp,(SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),DAE.emptyElementSource);
-         (exp,_) = ExpressionSimplify.condsimplify(didInline,exp);
-         const = Types.constAnd(const1, const2);
-       then
-         (cache, exp, DAE.PROP(otype,const));
-
-  end matchcontinue;
+  end match;
 end binary;
 
 function unary
@@ -1165,9 +1162,6 @@ algorithm
     case (Absyn.EQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.EQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        types = if Types.isBoxedType(t1) and Types.isBoxedType(t2)
-                  then {(DAE.EQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)}
-                  else {};
         types =
           (DAE.EQUAL(DAE.T_INTEGER_DEFAULT),
             {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
@@ -1178,16 +1172,13 @@ algorithm
             {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)::
           (DAE.EQUAL(DAE.T_BOOL_DEFAULT),
             {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          types;
+          {};
       then
         (types,t1,e1,t2,e2);
 
     case (Absyn.NEQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.NEQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        types = if Types.isBoxedType(t1) and Types.isBoxedType(t2)
-                  then {(DAE.NEQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)}
-                  else {};
         types =
           (DAE.NEQUAL(DAE.T_INTEGER_DEFAULT),
             {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
@@ -1198,7 +1189,7 @@ algorithm
             {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)::
           (DAE.NEQUAL(DAE.T_BOOL_DEFAULT),
             {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          types;
+          {};
       then
         (types,t1,e1,t2,e2);
 

@@ -1470,8 +1470,7 @@ algorithm
 
     case (_,_,stmt,_)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.fixStatement failed: " + Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(stmt)));
+        Error.addInternalError(getInstanceName() + " failed: " + Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(stmt)), sourceInfo());
       then fail();
   end matchcontinue;
 end fixStatement;

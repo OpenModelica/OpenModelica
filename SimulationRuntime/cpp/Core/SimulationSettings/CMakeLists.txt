@@ -4,6 +4,7 @@ project(${SimulationSettings})
 
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 add_library(${SimulationSettings}_static STATIC GlobalSettings.cpp Factory.cpp FactoryExport.cpp)
+set_target_properties(${SimulationSettings}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 add_precompiled_header(${SimulationSettings}_static Include/Core/Modelica.h)
 install (TARGETS ${SimulationSettings}_static DESTINATION ${LIBINSTALLEXT})
 

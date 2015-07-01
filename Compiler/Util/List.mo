@@ -1625,7 +1625,7 @@ end setDifferenceOnTrue;
 public function setDifference<T>
   "Takes two lists and returns the set difference of two lists A - B.
      Example:
-       setDifferenceOnTrue({1, 2, 3}, {1, 3}, intEq) => {2}"
+       setDifference({1, 2, 3}, {1, 3}) => {2}"
   input list<T> inList1;
   input list<T> inList2;
   output list<T> outDifference = inList1;

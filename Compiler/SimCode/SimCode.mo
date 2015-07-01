@@ -91,7 +91,6 @@ uniontype SimCode
     list<list<SimEqSystem>> algebraicEquations;
     list<BackendDAE.BaseClockPartitionKind> partitionsKind;
     list<DAE.ClockKind> baseClocks;
-    Boolean useSymbolicInitialization "true if a system to solve the initial problem symbolically is generated, otherwise false";
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> removedInitialEquations;
@@ -390,6 +389,13 @@ uniontype SimEqSystem
     Integer index;
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
+
+  record SES_INVERSE_ALGORITHM
+    "this should only occur inside SES_NONLINEAR"
+    Integer index;
+    list<DAE.Statement> statements;
+    list<DAE.ComponentRef> knownOutputCrefs "this is a subset of output crefs of the original algorithm, which are already known";
+  end SES_INVERSE_ALGORITHM;
 
   record SES_LINEAR
     LinearSystem lSystem;

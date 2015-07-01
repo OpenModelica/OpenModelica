@@ -121,12 +121,14 @@ ENDIF(USE_PARALLEL_OUTPUT)
 # Handle ScoreP
 IF(USE_SCOREP)
   ADD_DEFINITIONS(-DUSE_SCOREP)
+  SET(USE_SCOREP_ "ON")
   FIND_PACKAGE(ScoreP)
   SET(SCOREP_INCLUDE_ ${SCOREP_INCLUDE_DIR})
   MESSAGE(STATUS "ScoreP enabled")
   include_directories(${SCOREP_INCLUDE_DIR})
 ELSE(USE_SCOREP)
     SET(SCOREP_INCLUDE_ ".")
+    SET(USE_SCOREP_ "OFF")
   MESSAGE(STATUS "ScoreP disabled")
 ENDIF(USE_SCOREP)
 
@@ -222,6 +224,9 @@ INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(PAPI DEFAULT_MSG PAPI_LIBRARIES PAPI_INCLUDE_DIRS)
 IF(PAPI_FOUND)
   ADD_DEFINITIONS(-DUSE_PAPI)
+  SET(USE_PAPI_ "ON")
+ELSE(PAPI_FOUND)
+  SET(USE_PAPI_ "OFF")
 ENDIF(PAPI_FOUND)
 
 
@@ -230,14 +235,14 @@ ENDIF(PAPI_FOUND)
 #  - Additionaly the Boost_LIBRARIES variable is overwritten each time find_package(Boost ...) is called, thus it must be rescued
 FIND_PACKAGE(Boost COMPONENTS log log_setup)
 
-SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
-IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-  ADD_DEFINITIONS(-DUSE_BOOST_LOG)
-  MESSAGE(STATUS "Using boost log")
-ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-  MESSAGE(STATUS "Boost log disabled")
-  UNSET(Boost_LOG_LIBRARY)
-ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
+#SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
+#IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
+#  ADD_DEFINITIONS(-DUSE_BOOST_LOG)
+#  MESSAGE(STATUS "Using boost log")
+#ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
+#  MESSAGE(STATUS "Boost log disabled")
+#  UNSET(Boost_LOG_LIBRARY)
+#ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
 FIND_PACKAGE(Boost COMPONENTS thread atomic)
 
@@ -598,10 +603,10 @@ ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
 
+install (FILES "Licenses/sundials.license" DESTINATION share/omc/runtime/cpp/licenses)
 
-
- #copy Utils/extension
- SET(HS Include/Core/Object/IObject.h
+#copy Utils/extension
+SET(HS Include/Core/Object/IObject.h
         Include/Core/Object/Object.h
         Include/Core/Utils/extension/adaptable_factory.hpp
         Include/Core/Utils/extension/common.hpp
@@ -615,7 +620,7 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
         Include/Core/Utils/extension/registry.hpp
         Include/Core/Utils/extension/shared_library.hpp
         Include/Core/Utils/extension/type_map.hpp
-	Include/Core/Utils/extension/logger.hpp
+        Include/Core/Utils/extension/logger.hpp
         Include/Core/Utils/extension/impl/adaptable_factory.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
         Include/Core/Utils/extension/impl/adaptable_factory_set.hpp

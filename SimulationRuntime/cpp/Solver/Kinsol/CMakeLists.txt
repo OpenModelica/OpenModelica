@@ -7,10 +7,16 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR}/nvect
 add_library(${KinsolName}_static STATIC Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp)
 include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 add_precompiled_header(${KinsolName}_static Include/Core/Modelica.h)
-set_target_properties(${KinsolName}_static PROPERTIES COMPILE_DEFINITIONS "DRUNTIME_STATIC_LINKING")
+set_target_properties(${KinsolName}_static PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 
 add_library(${KinsolName} SHARED Kinsol.cpp KinsolSettings.cpp FactoryExport.cpp)
 add_precompiled_header(${KinsolName} Include/Core/Modelica.h )
+
+if (UNIX)
+	set_target_properties(${KinsolName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${KinsolName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
+
 target_link_libraries(${KinsolName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES})
 
 install (TARGETS ${KinsolName} ${KinsolName}_static DESTINATION ${LIBINSTALLEXT})

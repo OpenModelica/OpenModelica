@@ -1692,7 +1692,7 @@ algorithm
       dae = replaceDAElow(dae,repl,NONE(),false);
       (vars_1,kvars_1) = moveVariables(BackendVariable.daeVars(syst),BackendVariable.daeKnVars(shared),movedvars_1);
       dae = setDaeVars(dae,vars_1);
-      dae = setDaeKnownVars(dae,kvars_1);
+      dae = BackendDAEUtil.setKnownVars(dae, kvars_1);
 
       dae = BackendDAEUtil.transformBackendDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
       dae = BackendDAEUtil.mapEqSystem1(dae,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem,BackendDAE.NORMAL());
@@ -1993,27 +1993,17 @@ algorithm
   end match;
 end solveEqn2;
 
-public function setDaeVars "
+protected function setDaeVars "
    note: this function destroys matching
 "
   input BackendDAE.BackendDAE systIn;
   input BackendDAE.Variables newVarsIn;
   output BackendDAE.BackendDAE sysOut;
-protected
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.Shared shared;
-  BackendDAE.EquationArray eqns;
-  list<BackendDAE.EqSystem> eqlist;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind)::eqlist,shared) := systIn;
-  sysOut := BackendDAE.DAE(BackendDAE.EQSYSTEM(newVarsIn,eqns,m,mT,matching,stateSets,partitionKind)::eqlist,shared);
+  sysOut := BackendDAEUtil.setVars(systIn, newVarsIn);
 end setDaeVars;
 
-public function setDaeEqns "set the equations of a dae
+protected function setDaeEqns "set the equations of a dae
 public function setEquations
 "
   input BackendDAE.BackendDAE dae;
@@ -2021,53 +2011,21 @@ public function setEquations
   input Boolean initEqs "if true, set initialEquations instead of ordered equations";
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := match(dae,eqns,initEqs)
+  odae := match (dae, initEqs)
   local
-
     BackendDAE.EqSystem syst;
     list<BackendDAE.EqSystem> systList;
     BackendDAE.Shared shared;
-
-    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
-    BackendDAE.EquationArray orderedEqs "ordered Equations";
-    Option<BackendDAE.IncidenceMatrix> m;
-    Option<BackendDAE.IncidenceMatrixT> mT;
-    BackendDAE.Matching matching;
-
-    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters";
-    BackendDAE.Variables externalObjects "External object variables";
-    BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "Initial equations";
-    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
-    list<DAE.Constraint> constrs;
-    list<DAE.ClassAttributes> clsAttrs;
-    FCore.Cache cache;
-    FCore.Graph graph;
-    DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo";
-    BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-    BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
-    BackendDAE.SymbolicJacobians symjacs;
-    BackendDAE.StateSets stateSets;
-    BackendDAE.BaseClockPartitionKind partitionKind;
-    BackendDAE.ExtraInfo ei;
-
-    case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList, shared),_,false)
+  case (BackendDAE.DAE(syst::systList, shared), false)
     equation
-       syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching,stateSets,partitionKind);
+      syst = BackendDAEUtil.setEqSystEqs(syst, eqns);
     then
-       BackendDAE.DAE(syst::systList,shared);
-
-    case(BackendDAE.DAE(systList,
-      shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,
-                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,graph=graph,
-                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei)),_,true)
+      BackendDAE.DAE(syst::systList, shared);
+  case (BackendDAE.DAE(systList, shared), false)
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constrs,clsAttrs,cache,graph,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
+      shared = BackendDAEUtil.setSharedInitialEqns(shared, eqns);
     then
-       BackendDAE.DAE(systList,shared);
-
+      BackendDAE.DAE(systList, shared);
   end match;
 end setDaeEqns;
 
@@ -2082,50 +2040,22 @@ public function replaceDAElow
   input Boolean replaceVariables "if true, run replacementrules on variablelist also: Note: requires destinations in repl to be crefs!";
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := match(idlow,repl,func,replaceVariables)
+  odae := match idlow
   local
-
     BackendDAE.EqSystem syst;
     list<BackendDAE.EqSystem> systList;
     BackendDAE.Shared shared;
-
-    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
-    BackendDAE.EquationArray orderedEqs "ordered Equations";
-    Option<BackendDAE.IncidenceMatrix> m;
-    Option<BackendDAE.IncidenceMatrixT> mT;
-    BackendDAE.Matching matching;
-
-    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters";
-    BackendDAE.Variables externalObjects "External object variables";
-    BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "Initial equations";
-    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
-    list<DAE.Constraint> constrs;
-    list<DAE.ClassAttributes> clsAttrs;
-    FCore.Cache cache;
-    FCore.Graph graph;
-    DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo";
-    BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-    BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
-    BackendDAE.SymbolicJacobians symjacs;
-    BackendDAE.StateSets stateSets;
-    BackendDAE.BaseClockPartitionKind partitionKind;
-    BackendDAE.ExtraInfo ei;
-
-    case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList,
-      (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,graph=graph,
-                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),_,_,_)
+    BackendDAE.Variables orderedVars;
+    BackendDAE.EquationArray orderedEqs;
+  case BackendDAE.DAE(
+      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs))::systList, shared)
     equation
-       orderedVars = BackendVariable.listVar1(replaceVars(BackendVariable.varList(orderedVars),repl,func,replaceVariables));
-       (orderedEqs,_) = BackendVarTransform.replaceEquationsArr(orderedEqs,repl,NONE());
-       syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,graph,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
+      orderedVars = BackendVariable.listVar1(replaceVars(BackendVariable.varList(orderedVars), repl, func, replaceVariables));
+      (orderedEqs, _) = BackendVarTransform.replaceEquationsArr(orderedEqs, repl, NONE());
+      syst = BackendDAEUtil.setEqSystVars(syst, orderedVars);
+      syst = BackendDAEUtil.setEqSystEqs(syst, orderedEqs);
     then
-       BackendDAE.DAE(syst::systList,shared);
-
+      BackendDAE.DAE(syst::systList, shared);
   end match;
 end replaceDAElow;
 
@@ -2329,46 +2259,6 @@ algorithm
   end matchcontinue;
 end moveVariables2;
 
-
-public function setDaeKnownVars
-  input BackendDAE.BackendDAE dae;
-  input BackendDAE.Variables newVarsIn;
-  output BackendDAE.BackendDAE odae;
-algorithm
-  odae := match(dae,newVarsIn)
-  local
-
-    list<BackendDAE.EqSystem> systList;
-    BackendDAE.Shared shared;
-
-
-    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters";
-    BackendDAE.Variables externalObjects "External object variables";
-    BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "Initial equations";
-    BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
-    list<DAE.Constraint> constrs;
-    list<DAE.ClassAttributes> clsAttrs;
-    FCore.Cache cache;
-    FCore.Graph graph;
-    DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo";
-    BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-    BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
-    BackendDAE.SymbolicJacobians symjacs;
-    BackendDAE.ExtraInfo ei;
-
-    case(BackendDAE.DAE(systList,(shared as BackendDAE.SHARED(externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,eventInfo=eventInfo,cache=cache,graph=graph,
-                                   functionTree=funcs,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),knownVars)
-    equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,graph,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
-    then
-       BackendDAE.DAE(systList,shared);
-
-  end match;
-end setDaeKnownVars;
-
 replaceable type ElementType subtypeof Any;
 replaceable type ArgType1 subtypeof Any;
 
@@ -2389,14 +2279,14 @@ public function sortBy1
     output Integer outRes;
   end CompareFunc;
 algorithm
-  outList := match(inList, inCompFunc,inArgument1)
+  outList := match inList
     local
       ElementType e;
       list<ElementType> left, right;
       Integer middle;
 
-    case ({}, _,_) then {};
-    case ({e}, _,_) then {e};
+    case {} then {};
+    case {e} then {e};
     else
       equation
         middle = intDiv(listLength(inList), 2);
@@ -2477,11 +2367,11 @@ algorithm
       list<DAE.ComponentRef> set_solutions,removed_vars;
       BackendVarTransform.VariableReplacements repl;
       HashTable.HashTable removed_vars_table;
-    case(dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars)::_,BackendDAE.SHARED(knownVars=knvars)))
+    case(dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars)::_, BackendDAE.SHARED(knownVars=knvars)))
       equation
         repl=BackendVarTransform.emptyReplacements();
         removed_vars_table=HashTable.emptyHashTable();
-        (sets,other_eqns)=separateAliasSetsAndEquations(BackendEquation.equationList(eqns),{},{});
+        (sets,other_eqns)=separateAliasSetsAndEquations(BackendEquation.equationList(eqns), {}, {});
         //print("Alias Sets:\n");
         //dumpAliasSets(sets);
         set_solutions=List.map2(sets,solveAliasSet,vars,knvars);
@@ -2493,15 +2383,15 @@ algorithm
         //BackendDump.dumpEquationList(simple_eqns,"Equations:\n");
         //print("Removed variables:\n");
         //ComponentReference.printComponentRefList(removed_vars);
-        (other_eqns,_)=BackendVarTransform.replaceEquations(other_eqns,repl,NONE());
-        removed_vars_table=addCrefsToHashTable(removed_vars,removed_vars_table);
-        (vars,knvars)=moveVariables(vars,knvars,removed_vars_table);
-        dae = setDaeVars(dae,vars);
-        dae = setDaeKnownVars(dae,knvars);
-        dae = setDaeEqns(dae,BackendEquation.listEquation(listAppend(simple_eqns,other_eqns)),false);
+        (other_eqns,_)=BackendVarTransform.replaceEquations(other_eqns, repl, NONE());
+        removed_vars_table=addCrefsToHashTable(removed_vars, removed_vars_table);
+        (vars,knvars)=moveVariables(vars, knvars, removed_vars_table);
+        dae = setDaeVars(dae, vars);
+        dae = BackendDAEUtil.setKnownVars(dae, knvars);
+        dae = setDaeEqns(dae, BackendEquation.listEquation(listAppend(simple_eqns, other_eqns)),false);
 
-        dae = BackendDAEUtil.transformBackendDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
-        dae = BackendDAEUtil.mapEqSystem1(dae,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem,BackendDAE.NORMAL());
+        dae = BackendDAEUtil.transformBackendDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
+        dae = BackendDAEUtil.mapEqSystem1(dae, BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem, BackendDAE.NORMAL());
       then dae;
   end match;
 end removeSimpleEquationsUC;

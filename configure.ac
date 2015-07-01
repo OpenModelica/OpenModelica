@@ -87,6 +87,7 @@ AC_SUBST(BOOTSTRAP_STATIC)
 AC_SUBST(LIBDL)
 AC_SUBST(LIBDL)
 AC_SUBST(BOOST_INCLUDE)
+AC_SUBST(LDFLAGS_LIBSTDCXX)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -195,11 +196,9 @@ else # Is Darwin
 
 AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
-OLD_LDFLAGS=$LDFLAGS
 for flag in -stdlib=libstdc++; do
   CXXFLAGS="$OLD_CXXFLAGS $flag"
-  LDFLAGS="$OLD_LDFLAGS $flag"
-  AC_TRY_LINK([], [return 0;], [],[CXXFLAGS="$OLD_CXXFLAGS"; LDFLAGS="$OLD_LDFLAGS"])
+  AC_TRY_LINK([], [return 0;], [LDFLAGS_LIBSTDCXX="$flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
 done
 AC_LANG_POP([C++])
 
@@ -240,7 +239,7 @@ if test "$OMC" = "no" ; then
   fi
   AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
   OMC="$OMBUILDDIR/bin/omc"
-elif "$OMC" +version > /dev/null 2>&1; then
+elif "$OMC" --version > /dev/null 2>&1; then
   AC_MSG_RESULT([$OMC])
 else
   AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
@@ -804,6 +803,7 @@ SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
 Compiler/boot/Makefile \
+Compiler/Lexers/Makefile \
 "
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])

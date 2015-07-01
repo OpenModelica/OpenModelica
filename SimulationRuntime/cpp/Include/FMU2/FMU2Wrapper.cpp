@@ -48,7 +48,7 @@
 /*end workarround*/
 #include <Core/System/AlgLoopSolverFactory.h>
 
-static fmi2String const _logCategoryNames[] = {
+static fmi2String const _LogCategoryFMUNames[] = {
   "logEvents",
   "logSingularLinearSystems",
   "logNonlinearSystems",
@@ -61,8 +61,8 @@ static fmi2String const _logCategoryNames[] = {
   "logFmi2Call"
 };
 
-fmi2String FMU2Wrapper::logCategoryName(LogCategory category) {
-  return _logCategoryNames[category];
+fmi2String FMU2Wrapper::LogCategoryFMUName(LogCategoryFMU category) {
+  return _LogCategoryFMUNames[category];
 }
 
 FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
@@ -98,14 +98,14 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
   if (nCategories == 0)
     _logCategories = loggingOn? 0xFFFF: 0x0000;
   else {
-    int i, j, nSupported = sizeof(_logCategoryNames) / sizeof(fmi2String);
+    int i, j, nSupported = sizeof(_LogCategoryFMUNames) / sizeof(fmi2String);
     for (i = 0; i < nCategories; i++) {
       if (strcmp(categories[i], "logAll") == 0) {
         _logCategories = loggingOn? 0xFFFF: 0x0000;
         continue;
       }
       for (j = 0; j < nSupported; j++) {
-        if (strcmp(categories[i], _logCategoryNames[j]) == 0) {
+        if (strcmp(categories[i], _LogCategoryFMUNames[j]) == 0) {
           if (loggingOn)
             _logCategories |= (1 << j);
           else

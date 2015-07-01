@@ -32,6 +32,7 @@ MSGPACK_CFLAGS =
 CPPFLAGS=@CPPFLAGS@
 CXXFLAGS=@CXXFLAGS@
 LDFLAGS=@LDFLAGS@
+LDFLAGS_LIBSTDCXX=@LDFLAGS_LIBSTDCXX@
 LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 # LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)

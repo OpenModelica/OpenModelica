@@ -75,7 +75,7 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
     Matching matching;
-    StateSets stateSets "the statesets of the system";
+    StateSets stateSets "the state sets of the system";
     BaseClockPartitionKind partitionKind;
   end EQSYSTEM;
 end EqSystem;
@@ -113,7 +113,7 @@ uniontype Shared "Data shared for all equation-systems"
                                              In that way, double buffering of variables in pre()-buffer, extrapolation
                                              buffer and results caching, etc., is avoided, but in C-code output all the
                                              data about variables' names, comments, units, etc. is preserved as well as
-                                             pinter to their values (trajectories).";
+                                             pointer to their values (trajectories).";
     EquationArray initialEqs                "Initial equations";
     EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
     list< .DAE.Constraint> constraints     "constraints (Optimica extension)";
@@ -142,7 +142,7 @@ uniontype BackendDAEType "BackendDAEType to indicate different types of BackendD
   record SIMULATION      "Type for the normal BackendDAE.DAE for simulation" end SIMULATION;
   record JACOBIAN        "Type for Jacobian BackendDAE.DAE"                  end JACOBIAN;
   record ALGEQSYSTEM     "Type for algebraic loop BackendDAE.DAE"            end ALGEQSYSTEM;
-  record ARRAYSYSTEM     "Type for multidim equation arrays BackendDAE.DAE"  end ARRAYSYSTEM;
+  record ARRAYSYSTEM     "Type for multi dim equation arrays BackendDAE.DAE" end ARRAYSYSTEM;
   record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"          end PARAMETERSYSTEM;
   record INITIALSYSTEM   "Type for initial system BackendDAE.DAE"            end INITIALSYSTEM;
 end BackendDAEType;
@@ -288,7 +288,7 @@ public uniontype LoopInfo "is this equation part of a for-loop"
   end LOOP;
 end LoopInfo;
 
-public uniontype IterCref "which crefs occure in the for-loop and what are their iterated indexes"
+public uniontype IterCref "which crefs occur in the for-loop and what are their iterated indexes"
   record ITER_CREF
     .DAE.ComponentRef cref;
     .DAE.Exp iterator;
@@ -457,7 +457,7 @@ uniontype StrongComponent
     list<Integer> vars "be careful with states, this are solved for der(x)";
     Jacobian jac;
     JacobianType jacType;
-    Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";
+    Boolean mixedSystem "true for system that discrete dependencies to the iteration variables";
   end EQUATIONSYSTEM;
 
   record SINGLEARRAY
@@ -489,7 +489,7 @@ uniontype StrongComponent
     TearingSet strictTearingSet;
     Option<TearingSet> casualTearingSet;
     Boolean linear;
-    Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";
+    Boolean mixedSystem "true for system that discrete dependencies to the iteration variables";
   end TORNSYSTEM;
 end StrongComponent;
 
@@ -741,7 +741,7 @@ uniontype DifferentiateInputData
     Option<Variables> allVars;                    // all variables
     Option<list< Var>> controlVars;               // variables to save control vars of for algorithm
     Option<list< .DAE.ComponentRef>> diffCrefs;   // all crefs to differentiate, needed for generic gradient
-    Option<String> matrixName;                    // name to create tempory vars, needed for generic gradient
+    Option<String> matrixName;                    // name to create temporary vars, needed for generic gradient
   end DIFFINPUTDATA;
 end DifferentiateInputData;
 

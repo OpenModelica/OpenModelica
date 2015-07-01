@@ -1448,10 +1448,10 @@ algorithm
     //BackendDump.dumpEquationList(eqLst,"eqsOut");
     //BackendDump.dumpVariables(vars,"VARSOUT");
 
-  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
-  shared := BackendDAEUtil.replaceRemovedEqsInShared(sharedIn,BackendEquation.listEquation({}));
-  shared := BackendDAEUtil.replaceAliasVarsInShared(shared,aliasVars);
-  sharedOut := BackendDAEUtil.replaceKnownVarsInShared(shared,knownVars);
+  sysOut := BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind);
+  shared := BackendDAEUtil.setSharedRemovedEqns(sharedIn, BackendEquation.listEquation({}));
+  shared := BackendDAEUtil.setSharedAliasVars(shared, aliasVars);
+  sharedOut := BackendDAEUtil.setSharedKnVars(shared,knownVars);
 end prepareVectorizedDAE0;
 
 protected function setSubscriptsAtEndForEquation
@@ -1607,8 +1607,8 @@ algorithm
   vars := BackendVariable.listVar1(varLst);
   aliasVars := BackendVariable.listVar1(aliasLst);
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
-  sharedOut := BackendDAEUtil.replaceAliasVarsInShared(sharedIn,aliasVars);
-  sharedOut := BackendDAEUtil.replaceKnownVarsInShared(sharedOut,BackendVariable.listVar1(knownLst));
+  sharedOut := BackendDAEUtil.setSharedAliasVars(sharedIn,aliasVars);
+  sharedOut := BackendDAEUtil.setSharedKnVars(sharedOut,BackendVariable.listVar1(knownLst));
 end enlargeIteratedArrayVars;
 
 
@@ -1891,7 +1891,7 @@ algorithm
       list<SimCode.SimEqSystem> allEquations;
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<list<SimCode.SimEqSystem>> algebraicEquations;
-      Boolean useSymbolicInitialization, useHomotopy;
+      Boolean useHomotopy;
       list<SimCode.SimEqSystem> initialEquations, removedInitialEquations;
       list<SimCode.SimEqSystem> startValueEquations;
       list<SimCode.SimEqSystem> nominalValueEquations;
@@ -1927,7 +1927,7 @@ algorithm
 
     case (SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations, partitionsKind, baseClocks,
-                           useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations,
+                           useHomotopy, initialEquations, removedInitialEquations, startValueEquations,
                            nominalValueEquations, minValueEquations, maxValueEquations,
                            parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                            jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
@@ -1936,7 +1936,7 @@ algorithm
                            varToIndexMapping, crefToSimVarHT, backendMapping, modelStruct ), _)
       then SimCode.SIMCODE( modelInfo, literals, recordDecls, externalFunctionIncludes,
                             allEquations, odeEquations, algebraicEquations, partitionsKind, baseClocks,
-                            useSymbolicInitialization, useHomotopy, initEqs, removedInitialEquations, startValueEquations,
+                            useHomotopy, initEqs, removedInitialEquations, startValueEquations,
                             nominalValueEquations, minValueEquations, maxValueEquations,
                             parameterEquations, removedEquations, algorithmAndEquationAsserts,equationsForZeroCrossings,
                             jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
@@ -1982,7 +1982,7 @@ algorithm
   addAliasLst1 := expandAliasVars(aliasVars0,vars,{});
 
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
-  sharedOut := BackendDAEUtil.replaceAliasVarsInShared(sharedIn,aliasVars);
+  sharedOut := BackendDAEUtil.setSharedAliasVars(sharedIn,aliasVars);
 end prepareVectorizedDAE1;
 
 protected function expandAliasVars

@@ -103,6 +103,8 @@ import HashSetString;
 import Inst;
 import InstFunction;
 import InnerOuter;
+import LexerModelicaDiff;
+import DiffAlgorithm;
 import List;
 import Lookup;
 import MetaUtil;
@@ -878,6 +880,9 @@ public function cevalInteractiveFunctions2
   output FCore.Cache outCache;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
+protected
+  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,filterModelicaDiff,modelicaDiffTokenEq};
+  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
@@ -962,6 +967,8 @@ algorithm
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
       list<list<Values.Value>> valsLst;
+      list<Token> tokens1, tokens2;
+      list<tuple<Diff, list<Token>>> diffs;
     case (cache,_,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -1247,6 +1254,33 @@ algorithm
         (cache,Values.STRING(str),st);
 
     case (cache,_,"listFile",_,st,_) then (cache,Values.STRING(""),st);
+
+    case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      algorithm
+        tokens1 := scanString(s1);
+        tokens2 := scanString(s2);
+        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq);
+        // print("Before filtering:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
+        diffs := filterModelicaDiff(diffs,removeWhitespace=false);
+        // Scan a second time, with comments filtered into place
+        str := printActual(diffs, tokenContent);
+        // print("Intermediate string:\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
+        tokens2 := scanString(str);
+        diffs := diff(tokens1, tokens2, modelicaDiffTokenEq);
+        // print("Before filtering (2):\n"+printDiffTerminalColor(diffs, tokenContent)+"\n");
+        diffs := filterModelicaDiff(diffs);
+        str := match Absyn.pathLastIdent(path)
+          case "plain" then printActual(diffs, tokenContent);
+          case "color" then printDiffTerminalColor(diffs, tokenContent);
+          case "xml" then printDiffXml(diffs, tokenContent);
+          else
+            algorithm
+              Error.addInternalError("Unknown diffModelicaFileListings choice", sourceInfo());
+            then fail();
+        end match;
+      then (cache,Values.STRING(str),st);
+
+    case (cache,_,"diffModelicaFileListings",_,st,_) then (cache,Values.STRING(""),st);
 
     case (cache,_,"sortStrings",{Values.ARRAY(valueLst=vals)},(st as GlobalScript.SYMBOLTABLE()),_)
       equation
@@ -3062,8 +3096,6 @@ algorithm
       equation
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
-        // seperate the variables
-        str = stringDelimitList(vars_1,"\" \"");
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
@@ -3076,6 +3108,8 @@ algorithm
         // check if plot callback is defined
         b = System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
+          // seperate the variables
+          str = stringDelimitList(vars_1,"\" \"");
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
@@ -3092,6 +3126,8 @@ algorithm
           curveWidthStr = realString(curveWidth);
           curveStyleStr = intString(curveStyle);
           autoScaleStr = boolString(autoScale);
+          // seperate the variables
+          str = stringDelimitList(vars_1, " ");
           System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
         end if;
       then

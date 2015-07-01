@@ -48,6 +48,7 @@ public import Unit;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BackendDAEUtil;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import Debug;
@@ -93,23 +94,9 @@ algorithm
       BackendDAE.BackendDAE dae;
       BackendDAE.EqSystems eqs_;
       BackendDAE.Shared shared;
-      BackendDAE.Variables orderedVars, knownVars, aliasVars, externalObjects;
-      BackendDAE.EquationArray orderedEqs, initialEqs, removedEqs;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets ;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-      list<DAE.Constraint> constraints;
-      list<DAE.ClassAttributes> classAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree functionTree;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.ExternalObjectClasses extObjClasses;
-      BackendDAE.BackendDAEType backendDAEType;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.ExtraInfo info;
+      BackendDAE.Variables orderedVars, knownVars, aliasVars;
+      BackendDAE.EquationArray orderedEqs;
+      BackendDAE.EqSystem syst;
 
       list<BackendDAE.Var> varList, paraList, aliasList;
       list<BackendDAE.Equation> eqList;
@@ -119,45 +106,51 @@ algorithm
       HashTableUnitToString.HashTable HtU2S;
 
 
-    case BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind)}, shared as BackendDAE.SHARED(knownVars, externalObjects, aliasVars, initialEqs, removedEqs, constraints, classAttrs, cache, graph, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs, info)) equation
-      true = Flags.getConfigBool(Flags.NEW_UNIT_CHECKING);
+    case BackendDAE.DAE( {syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)},
+                         shared as BackendDAE.SHARED(knownVars=knownVars, aliasVars=aliasVars) )
+      equation
+        true = Flags.getConfigBool(Flags.NEW_UNIT_CHECKING);
 
-      varList = BackendVariable.varList(orderedVars);
-      paraList = BackendVariable.varList(knownVars);
-      aliasList = BackendVariable.varList(aliasVars);
-      eqList = BackendEquation.equationList(orderedEqs);
+        varList = BackendVariable.varList(orderedVars);
+        paraList = BackendVariable.varList(knownVars);
+        aliasList = BackendVariable.varList(aliasVars);
+        eqList = BackendEquation.equationList(orderedEqs);
 
-      HtCr2U1=HashTableCrToUnit.emptyHashTableSized(2053);
-      HtS2U=foldComplexUnits(HashTableStringToUnit.emptyHashTableSized(2053));
-      HtU2S=foldComplexUnits2(HashTableUnitToString.emptyHashTableSized(2053));
+        HtCr2U1=HashTableCrToUnit.emptyHashTableSized(2053);
+        HtS2U=foldComplexUnits(HashTableStringToUnit.emptyHashTableSized(2053));
+        HtU2S=foldComplexUnits2(HashTableUnitToString.emptyHashTableSized(2053));
 
-      if Flags.isSet(Flags.DUMP_EQ_UNIT) then
-        BackendDump.dumpEquationList(eqList, "########### Equation-Liste: #########\n");
-      end if;
-      ((HtCr2U1, HtS2U, HtU2S)) = List.fold(varList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
-      ((HtCr2U1, HtS2U, HtU2S)) = List.fold(paraList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
-      ((HtCr2U1, HtS2U, HtU2S)) = List.fold(aliasList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
+        if Flags.isSet(Flags.DUMP_EQ_UNIT) then
+          BackendDump.dumpEquationList(eqList, "########### Equation-Liste: #########\n");
+        end if;
+        ((HtCr2U1, HtS2U, HtU2S)) = List.fold(varList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
+        ((HtCr2U1, HtS2U, HtU2S)) = List.fold(paraList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
+        ((HtCr2U1, HtS2U, HtU2S)) = List.fold(aliasList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
 
-      HtCr2U2=BaseHashTable.copy(HtCr2U1);
-      if Flags.isSet(Flags.DUMP_UNIT) then
-        print("#####################################\n");
-        BaseHashTable.dumpHashTable(HtCr2U1);
-      end if;
-      ((HtCr2U2, HtS2U, HtU2S)) = algo(paraList, eqList, HtCr2U2, HtS2U, HtU2S);
-      if Flags.isSet(Flags.DUMP_UNIT) then
-        BaseHashTable.dumpHashTable(HtCr2U2);
-        print("######## UnitCheck COMPLETED ########\n");
-      end if;
-      notification(HtCr2U1, HtCr2U2, HtU2S);
-      varList = List.map2(varList, returnVar, HtCr2U2, HtU2S);
-      paraList = List.map2(paraList, returnVar, HtCr2U2, HtU2S);
-      aliasList = List.map2(aliasList, returnVar, HtCr2U2, HtU2S);
-      orderedVars = BackendVariable.listVar(varList);
-      knownVars = BackendVariable.listVar(paraList);
-      aliasVars = BackendVariable.listVar(aliasList);
-      shared = BackendDAE.SHARED(knownVars, externalObjects, aliasVars, initialEqs, removedEqs, constraints, classAttrs, cache, graph, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs, info);
-      dae = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind)}, shared);
-    then dae;
+        HtCr2U2=BaseHashTable.copy(HtCr2U1);
+        if Flags.isSet(Flags.DUMP_UNIT) then
+          print("#####################################\n");
+          BaseHashTable.dumpHashTable(HtCr2U1);
+        end if;
+        ((HtCr2U2, HtS2U, HtU2S)) = algo(paraList, eqList, HtCr2U2, HtS2U, HtU2S);
+        if Flags.isSet(Flags.DUMP_UNIT) then
+          BaseHashTable.dumpHashTable(HtCr2U2);
+          print("######## UnitCheck COMPLETED ########\n");
+        end if;
+        notification(HtCr2U1, HtCr2U2, HtU2S);
+        varList = List.map2(varList, returnVar, HtCr2U2, HtU2S);
+        paraList = List.map2(paraList, returnVar, HtCr2U2, HtU2S);
+        aliasList = List.map2(aliasList, returnVar, HtCr2U2, HtU2S);
+
+        orderedVars = BackendVariable.listVar(varList);
+        knownVars = BackendVariable.listVar(paraList);
+        aliasVars = BackendVariable.listVar(aliasList);
+
+        syst = BackendDAEUtil.setEqSystVars(syst, orderedVars);
+        shared = BackendDAEUtil.setSharedKnVars(shared, knownVars);
+        shared = BackendDAEUtil.setSharedAliasVars(shared, aliasVars);
+        dae = BackendDAE.DAE({syst}, shared);
+      then dae;
 
     //case _ equation
     //  true = Flags.getConfigBool(Flags.NEW_UNIT_CHECKING);

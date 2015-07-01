@@ -88,7 +88,7 @@ algorithm
       eqnLst = BackendEquation.equationList(orderedEqs);
       (eqnLst, true) = getScalarArrayEqns(eqnLst);
       orderedEqs = BackendEquation.listEquation(eqnLst);
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), true);
+    then (BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind), true);
 
     else (inEqSystem, inOptimized);
   end matchcontinue;
