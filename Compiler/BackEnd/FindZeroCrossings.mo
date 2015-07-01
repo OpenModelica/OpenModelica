@@ -242,22 +242,23 @@ protected function encapsulateWhenConditions_EqSystem "author: lochel"
   output BackendDAE.EqSystem outEqSystem;
   output Integer outIndex;
   output HashTableExpToIndex.HashTable outHT;
-protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  list<BackendDAE.Var> varLst;
-  list<BackendDAE.Equation> eqnLst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
-
-  ((orderedEqs, varLst, eqnLst, outIndex, outHT)) := BackendEquation.traverseEquationArray(orderedEqs, encapsulateWhenConditions_Equation, (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT));
-
-  orderedVars := BackendVariable.addVars(varLst, orderedVars);
-  orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
-
-  outEqSystem := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind);
+  outEqSystem := match inEqSystem
+    local
+      BackendDAE.Variables orderedVars;
+      BackendDAE.EquationArray orderedEqs;
+      BackendDAE.EqSystem syst;
+      list<BackendDAE.Var> varLst;
+      list<BackendDAE.Equation> eqnLst;
+    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
+      algorithm
+        ((orderedEqs, varLst, eqnLst, outIndex, outHT)) :=
+            BackendEquation.traverseEquationArray( orderedEqs, encapsulateWhenConditions_Equation,
+                                                   (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT) );
+        syst.orderedVars := BackendVariable.addVars(varLst, orderedVars);
+        syst.orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
+      then BackendDAEUtil.clearEqSyst(syst);
+  end match;
 end encapsulateWhenConditions_EqSystem;
 
 protected function encapsulateWhenConditions_Equation "author: lochel"
