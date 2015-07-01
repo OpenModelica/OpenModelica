@@ -144,7 +144,7 @@ val(i2, 1.0);
 // OUTeqn => i3 = u2 / r3 [1]
 // OUTeqn => u1 = u0 - u2 [2]
 // OUTeqn => i1 = __OMC__1$RTEARINGF * u2 [3]
-// OUTres => __OMC__2$RTEARINGF * u2 - u2 = -u0 [0]
+// OUTres => __OMC__2$RTEARINGF * u2 = -u0 [0]
 // ****************
 // TearVar: u2[0]
 // ****************
