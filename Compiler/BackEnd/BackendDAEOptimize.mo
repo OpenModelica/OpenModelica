@@ -4636,7 +4636,7 @@ algorithm
    end if;
 end simplifyLoopExpHelper;
 
-protected function simplifyLoops_SplitTerms
+public function simplifyLoops_SplitTerms
   input list<DAE.ComponentRef> var_lst;
   input DAE.Exp inExp;
   output list<DAE.Exp> loopTerms = {};

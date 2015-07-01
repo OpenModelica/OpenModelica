@@ -3798,13 +3798,14 @@ protected
   array<DAE.Exp> tear_exp;
   DAE.ComponentRef cr, cr1;
   BackendDAE.Equation eqn, eqn1;
-  DAE.Exp rhs, lhs, rhs1, lhs1, rhs_, lhs_, sumRhs, sumLhs, lhs_f, e;
+  DAE.Exp rhs, lhs, rhs1, lhs1, rhs_, lhs_, sumRhs, sumLhs, lhs_f, e, res;
   Integer n, i, j, m, k, index = 1;
   array<Option<BackendDAE.Equation>> optarr, optarr_res;
   array<Integer> indx_res, indx_eq, indx_var;
   Boolean tmp_update, isDer;
   BackendDAE.IncidenceMatrix mm;
   Boolean maxSizeOne =  Flags.getConfigInt(Flags.RTEARING) == 1;
+  list<DAE.Exp> loopT, noLoopT;
 algorithm
 
   BackendDAE.DAE(systlst, shared) := inDAE;
@@ -3888,23 +3889,10 @@ algorithm
               //print("\n (" + intString(i) + "," + intString(j) + ") => \n" + BackendDump.equationString(eqn1));
               rhs1 := BackendEquation.getEquationRHS(eqn1);
               rhs1 := recursiveTearingReplace(rhs1, cr, rhs, isDer);
-              //rhs1 := recursiveTearingHelper(rhs1, tear_exp, m);
-              sumRhs := Expression.makeConstZeroE(rhs1);
-              sumLhs := Expression.makeConstZeroE(rhs1);
-              for k in 1:m loop
-                (lhs_, rhs1) := ExpressionSolve.collectX(rhs1, arrayGet(tear_exp, k));
-                cr1 := Expression.expCref(arrayGet(tear_exp, k));
-                lhs_f := Differentiate.differentiateExpSolve(lhs, cr1, SOME(funcs));
-                lhs := Expression.expMul(lhs_f, arrayGet(tear_exp, k));
-                sumRhs := Expression.expAdd(sumRhs, rhs1);
-                sumLhs := Expression.expAdd(sumLhs, lhs_);
-              end for; // k
-
-              (sumRhs,_) := ExpressionSimplify.simplify(sumRhs);
-              (sumLhs,_) := ExpressionSimplify.simplify(sumLhs);
-              (index, vars, eqns, shared, _, e, _, _, _) := BackendDAEOptimize.simplifyLoopExp(index, vars, eqns, shared, all_vars, Expression.expAdd(sumLhs,sumRhs), {}, {}, true, true,-1,{}, "RTEARING");
+              rhs1 := recursiveTearingCollect(tear_exp, rhs1);
+              (index, vars, eqns, shared, _, e, _, _, _) := BackendDAEOptimize.simplifyLoopExp(index, vars, eqns, shared, all_vars, rhs1, {}, {}, true, true,-1,{}, "RTEARING");
               eqn1 := BackendEquation.setEquationRHS(eqn1, e);
-             // print( "=>" + BackendDump.equationString(eqn1) + "\n");
+              //print( "=>" + BackendDump.equationString(eqn1) + "\n");
               arrayUpdate(optarr,j,SOME(eqn1));
             end if;
           end for; // j
@@ -3913,32 +3901,25 @@ algorithm
           for j in 1:m loop
             if listMember(arrayGet(indx_var,i) , arrayGet(mm, arrayGet(indx_res,j))) then
               SOME(eqn1) := arrayGet(optarr_res, j);
-              rhs_ := BackendDAEOptimize.makeEquationToResidualExp(eqn1);
-              sumRhs := Expression.makeConstZeroE(rhs_);
-              sumLhs := sumRhs;
-              for k in 1:m loop
-                (lhs_, rhs_) := ExpressionSolve.collectX(rhs_, arrayGet(tear_exp, k));
-                cr1 := arrayGet(tear_cr, k);
-                lhs_f := Differentiate.differentiateExpSolve(lhs, cr1, SOME(funcs));
-                lhs := Expression.expMul(lhs_f, arrayGet(tear_exp, k));
-                sumRhs := Expression.expAdd(sumRhs, rhs_);
-                sumLhs := Expression.expAdd(sumLhs, lhs_);
-              end for; // k
 
-              rhs_ := recursiveTearingReplace(sumRhs, cr, rhs, isDer);
-              sumRhs := Expression.makeConstZeroE(rhs_);
-              for k in 1:m loop
-                (lhs_, rhs_) := ExpressionSolve.collectX(rhs_, arrayGet(tear_exp, k));
-                cr1 := Expression.expCref(arrayGet(tear_exp, k));
-                lhs_f := Differentiate.differentiateExpSolve(lhs, cr1, SOME(funcs));
-                sumRhs := Expression.expAdd(sumRhs, rhs_);
-                sumLhs := Expression.expAdd(sumLhs, lhs_);
-              end for; // k
+              res := BackendDAEOptimize.makeEquationToResidualExp(eqn1);
+              res := recursiveTearingCollect(tear_exp, res);
+              (loopT, noLoopT) := BackendDAEOptimize.simplifyLoops_SplitTerms(all_vars, res);
+
+              sumRhs := Expression.makeSum1(noLoopT,true);
+              sumLhs := Expression.makeSum1(loopT,true);
+
+              sumRhs := recursiveTearingReplace(sumRhs, cr, rhs, isDer);
+              sumLhs := recursiveTearingReplace(sumLhs, cr, rhs, isDer);
+
+              sumRhs := recursiveTearingCollect(tear_exp,sumRhs);
+              sumLhs := recursiveTearingCollect(tear_exp,sumLhs);
 
               // RHS
-              (sumRhs,_) := ExpressionSimplify.simplify(Expression.negate(sumRhs));
+              (sumRhs,_) := ExpressionSimplify.simplify(sumRhs);
               (index, vars, eqns, shared, _, sumRhs, _, _, _) := BackendDAEOptimize.simplifyLoopExp(index, vars, eqns, shared, all_vars, sumRhs, {}, {}, true, true,-1,{}, "RTEARING");
-              eqn1 := BackendEquation.setEquationRHS(eqn1, sumRhs);
+              eqn1 := BackendEquation.setEquationRHS(eqn1, Expression.negate(sumRhs));
+
               //LHS
               (sumLhs,_) := ExpressionSimplify.simplify(sumLhs);
               (index, vars, eqns, shared, _, sumLhs, _, _, _) := BackendDAEOptimize.simplifyLoopExp(index, vars, eqns, shared, all_vars, sumLhs, {}, {}, true, true,-1,{}, "RTEARING");
@@ -3998,6 +3979,24 @@ algorithm
   //outDAE := BackendDAE.DAE(systlst_new, shared);
   //BackendDump.bltdump("OUT:", outDAE);
 end recursiveTearingMain;
+
+protected function recursiveTearingCollect
+  input array<DAE.Exp> tear_exp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+protected
+  Integer k;
+  DAE.Exp lhs, e1, e2;
+algorithm
+
+  (e1, e2) := ExpressionSolve.collectX(inExp, arrayGet(tear_exp, 1));
+
+  for k in 2:arrayLength(tear_exp) loop
+    (lhs, e2) := ExpressionSolve.collectX(e2, arrayGet(tear_exp, k));
+    e1 := Expression.expAdd(e1, lhs);
+  end for;
+  outExp := Expression.expAdd(e2, e1);
+end recursiveTearingCollect;
 
 protected function isTornsystem
   input BackendDAE.StrongComponent comp;
