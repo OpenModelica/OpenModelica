@@ -479,7 +479,6 @@ void Arkode::ArkodeCore()
         _continuous_system->getContinuousStates(_z);
       }
     }
-
     if ((_zeroFound || state_selection)&& !isInterrupted())
     {
 
@@ -655,7 +654,7 @@ void Arkode::writeSimulationInfo()
 }
 
 int Arkode::check_flag(void *flagvalue, const char *funcname, int opt)
-{
+// {
   int *errflag;
 
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
