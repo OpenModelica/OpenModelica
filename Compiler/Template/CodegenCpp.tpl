@@ -3312,7 +3312,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let constVariableInitialize = simulationInitFile(simCode, &extraFuncsDecl, stateDerVectorName, false)
     <<
     #if defined(__TRICORE__) || defined(__vxworks)
-      #include <DataExchange/SimDouble.h>
+      #include <Core/DataExchange/SimDouble.h>
     #endif
 
     /* Constructor */
@@ -10491,7 +10491,7 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
       case SIMCODE(modelInfo = MODELINFO(__)) then
        <<
        if(_algLoopSolver<%num%>)
-           _algLoopSolver<%num%>->initialize();
+           _algLoopSolver<%num%>->initialize();<%\n%>
        >>
        end match
    case e as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
@@ -12799,6 +12799,7 @@ let modelname = identOfPath(modelInfo.name)
 '
 typedef struct <%modelname%>_struct
 {
+  void* __VFTABLEPOINTER;
   <%inputVars%>
   <%outputVars%>
   MLPI_IEC_REAL cycletime;
