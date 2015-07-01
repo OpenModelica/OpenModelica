@@ -189,6 +189,16 @@ static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, con
 }
 #endif
 
+#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+#define OMC_FUNCTION __func__
+#endif
+
+#define omc_assert_macro(expr) \
+  if (!(expr)) {                \
+    abort(); \
+    throwStreamPrint(NULL, "%s:%d: %s: Assertion `%s` failed.\n",  __FILE__, __LINE__, OMC_FUNCTION, #expr); \
+  }
+
 #ifdef USE_DEBUG_OUTPUT
 void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));

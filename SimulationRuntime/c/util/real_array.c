@@ -34,10 +34,10 @@
 #include "memory_pool.h"
 #include "division.h"
 #include "integer_array.h"
+#include "omc_error.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <math.h>
 #include <float.h>
@@ -94,9 +94,9 @@ void copy_real_array_data(const real_array_t source, real_array_t *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(&source));
-    assert(base_array_ok(dest));
-    assert(base_array_shape_eq(&source, dest));
+    omc_assert_macro(base_array_ok(&source));
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(base_array_shape_eq(&source, dest));
 
     nr_of_elements = base_array_nr_of_elements(source);
 
@@ -109,7 +109,7 @@ void copy_real_array_data_mem(const real_array_t source, modelica_real *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(&source));
+    omc_assert_macro(base_array_ok(&source));
 
     nr_of_elements = base_array_nr_of_elements(source);
 
@@ -150,7 +150,7 @@ void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelic
     size_t i;
     modelica_real value = start;
     modelica_real (*comp_func)(modelica_real, modelica_real);
-    assert(step != 0);
+    omc_assert_macro(step != 0);
 
     comp_func = (step > 0) ? &real_le : &real_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
@@ -206,7 +206,7 @@ void print_real_array(const real_array_t *source)
 {
     _index_t i,j;
     modelica_real *data;
-    assert(base_array_ok(source));
+    omc_assert_macro(base_array_ok(source));
 
     data = (modelica_real *) source->data;
     if(source->ndims == 1) {
@@ -283,16 +283,16 @@ void indexed_assign_real_array(const real_array_t source, real_array_t* dest,
     _index_t* idx_size;
     int i,j;
 
-    assert(base_array_ok(&source));
-    assert(base_array_ok(dest));
-    assert(index_spec_ok(dest_spec));
-    assert(index_spec_fit_base_array(dest_spec, dest));
+    omc_assert_macro(base_array_ok(&source));
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(index_spec_ok(dest_spec));
+    omc_assert_macro(index_spec_fit_base_array(dest_spec, dest));
     for(i = 0,j = 0; i < dest_spec->ndims; ++i) {
         if(dest_spec->dim_size[i] != 0) {
             ++j;
         }
     }
-    assert(j == source.ndims);
+    omc_assert_macro(j == source.ndims);
 
     idx_vec1 = size_alloc(dest->ndims);
     idx_size = size_alloc(dest_spec->ndims);
@@ -316,7 +316,7 @@ void indexed_assign_real_array(const real_array_t source, real_array_t* dest,
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
-    assert(j == base_array_nr_of_elements(source));
+    omc_assert_macro(j == base_array_nr_of_elements(source));
 }
 
 /*
@@ -339,10 +339,10 @@ void index_real_array(const real_array_t * source,
     int j;
     int i;
 
-    assert(base_array_ok(source));
-    assert(base_array_ok(dest));
-    assert(index_spec_ok(source_spec));
-    assert(index_spec_fit_base_array(source_spec,source));
+    omc_assert_macro(base_array_ok(source));
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(index_spec_ok(source_spec));
+    omc_assert_macro(index_spec_fit_base_array(source_spec,source));
 
     /*for(i = 0, j = 0; i < source->ndims; ++i)
     {
@@ -352,13 +352,13 @@ void index_real_array(const real_array_t * source,
             (source_spec->index_type[i] == 'A'))
             ++j;
     }
-    assert(j == dest->ndims);*/
+    omc_assert_macro(j == dest->ndims);*/
     for(i = 0,j = 0; i < source_spec->ndims; ++i) {
         if(source_spec->dim_size[i] != 0) {
             ++j;
         }
     }
-    assert(j == dest->ndims);
+    omc_assert_macro(j == dest->ndims);
 
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
     /* idx_vec2 = size_alloc(dest->ndims); / * indices in the destination array* / */
@@ -395,7 +395,7 @@ void index_real_array(const real_array_t * source,
 
     } while(0 == next_index(source->ndims, idx_vec1, idx_size));
 
-    assert(j == base_array_nr_of_elements(*dest));
+    omc_assert_macro(j == base_array_nr_of_elements(*dest));
 }
 
 /*
@@ -416,9 +416,9 @@ void index_alloc_real_array(const real_array_t * source,
     int i;
     int j;
 
-    assert(base_array_ok(source));
-    assert(index_spec_ok(source_spec));
-    assert(index_spec_fit_base_array(source_spec, source));
+    omc_assert_macro(base_array_ok(source));
+    omc_assert_macro(index_spec_ok(source_spec));
+    omc_assert_macro(index_spec_fit_base_array(source_spec, source));
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
          if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
@@ -450,11 +450,11 @@ void simple_index_alloc_real_array1(const real_array_t * source, int i1,
                                        real_array_t* dest)
 {
     int i;
-    assert(base_array_ok(source));
+    omc_assert_macro(base_array_ok(source));
 
     dest->ndims = source->ndims - 1;
     dest->dim_size = size_alloc(dest->ndims);
-    assert(dest->dim_size);
+    omc_assert_macro(dest->dim_size);
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i+1];
@@ -498,7 +498,7 @@ void array_real_array(real_array_t* dest,int n,real_array_t first,...)
     va_list ap;
 
     real_array_t *elts = (real_array_t*)malloc(sizeof(real_array_t) * n);
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
     elts[0] = first;
@@ -525,7 +525,7 @@ void array_alloc_real_array(real_array_t* dest, int n, real_array_t first,...)
     va_list ap;
 
     real_array_t *elts = (real_array_t*)malloc(sizeof(real_array_t) * n);
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
     elts[0] = first;
@@ -545,7 +545,7 @@ void array_alloc_real_array(real_array_t* dest, int n, real_array_t first,...)
     } else if (first.ndims == 4) {
         alloc_real_array(dest, 5, n, first.dim_size[0], first.dim_size[1], first.dim_size[2], first.dim_size[3]);
     } else {
-        assert(0 && "Dimension size > 4 not impl. yet");
+        omc_assert_macro(0 && "Dimension size > 4 not impl. yet");
     }
 
     for(i = 0, c = 0; i < n; ++i) {
@@ -562,9 +562,9 @@ void array_scalar_real_array(real_array_t* dest, int n, modelica_real first, ...
 {
     int i;
     va_list ap;
-    assert(base_array_ok(dest));
-    assert(dest->ndims == 1);
-    assert(dest->dim_size[0] == n);
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(dest->ndims == 1);
+    omc_assert_macro(dest->dim_size[0] == n);
     put_real_element(first, 0, dest);
     va_start(ap,first);
     for(i = 0; i < n; ++i) {
@@ -628,7 +628,7 @@ void cat_real_array(int k, real_array_t* dest, int n,
     int new_k_dim_size = 0;
     real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
 
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);
     elts[0] = first;
@@ -639,18 +639,18 @@ void cat_real_array(int k, real_array_t* dest, int n,
     va_end(ap);
 
     /* check dim sizes of all inputs and dest */
-    assert(elts[0]->ndims >= k);
+    omc_assert_macro(elts[0]->ndims >= k);
     for(i = 0; i < n; i++) {
-        assert(dest->ndims == elts[i]->ndims);
+        omc_assert_macro(dest->ndims == elts[i]->ndims);
         for(j = 0; j < (k - 1); j++) {
-            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+            omc_assert_macro(dest->dim_size[j] == elts[i]->dim_size[j]);
         }
         new_k_dim_size += elts[i]->dim_size[k-1];
         for(j = k; j < elts[0]->ndims; j++) {
-            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+            omc_assert_macro(dest->dim_size[j] == elts[i]->dim_size[j]);
         }
     }
-    assert(dest->dim_size[k-1] == new_k_dim_size);
+    omc_assert_macro(dest->dim_size[k-1] == new_k_dim_size);
 
     /* calculate size of sub and super structure in 1-dim data representation */
     for(i = 0; i < (k - 1); i++) {
@@ -690,7 +690,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
     int new_k_dim_size = 0;
     real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
 
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);
     elts[0] = first;
@@ -701,16 +701,16 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
     va_end(ap);
 
     /* check dim sizes of all inputs */
-    assert(elts[0]->ndims >= k);
+    omc_assert_macro(elts[0]->ndims >= k);
     new_k_dim_size = elts[0]->dim_size[k-1];
     for(i = 1; i < n; i++) {
-        assert(elts[0]->ndims == elts[i]->ndims);
+        omc_assert_macro(elts[0]->ndims == elts[i]->ndims);
         for(j = 0; j < (k - 1); j++) {
-            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+            omc_assert_macro(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
         }
         new_k_dim_size += elts[i]->dim_size[k-1];
         for(j = k; j < elts[0]->ndims; j++) {
-          assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+          omc_assert_macro(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
         }
     }
 
@@ -1009,7 +1009,7 @@ real_array_t mul_alloc_real_matrix_product_smart(const real_array_t a, const rea
         simple_alloc_2d_real_array(&dest,a.dim_size[0],b.dim_size[1]);
         mul_real_matrix_product(&a,&b,&dest);
     } else {
-        assert(0 == "Invalid size of matrix");
+        omc_assert_macro(0 == "Invalid size of matrix");
     }
     return dest;
 }
@@ -1102,7 +1102,7 @@ void pow_real_array_scalar(const real_array_t *a, modelica_real b, real_array_t*
   size_t nr_of_elements = base_array_nr_of_elements(*a);
   size_t i;
 
-  assert(nr_of_elements == base_array_nr_of_elements(*dest));
+  omc_assert_macro(nr_of_elements == base_array_nr_of_elements(*dest));
 
   for(i = 0; i < nr_of_elements; ++i) {
     real_set(dest, i, pow(real_get(*a, i), b));
@@ -1121,11 +1121,11 @@ real_array_t pow_alloc_real_array_scalar(const real_array_t a, modelica_real b)
 void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* dest)
 {
     /* Assert n>=0 */
-    assert(n >= 0);
+    omc_assert_macro(n >= 0);
     /* Assert that a is a two dimensional square array */
-    assert((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
+    omc_assert_macro((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
     /* Assert that dest is a two dimensional square array with the same size as a */
-    assert((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
+    omc_assert_macro((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
 
     if(n==0) {
         identity_real_array(a->dim_size[0],dest);
@@ -1247,8 +1247,8 @@ void size_real_array(const real_array_t * a, integer_array_t* dest)
     /* This should be an integer array dest instead */
     int i;
 
-    assert(dest->ndims == 1);
-    assert(dest->dim_size[0] == a->ndims);
+    omc_assert_macro(dest->ndims == 1);
+    omc_assert_macro(dest->dim_size[0] == a->ndims);
 
     for(i = 0 ; i < a->ndims ; i++) {
         ((modelica_integer *) dest->data)[i] = a->dim_size[i];
@@ -1257,8 +1257,8 @@ void size_real_array(const real_array_t * a, integer_array_t* dest)
 
 modelica_real scalar_real_array(const real_array_t* a)
 {
-    assert(base_array_ok(a));
-    assert(base_array_one_element_ok(a));
+    omc_assert_macro(base_array_ok(a));
+    omc_assert_macro(base_array_one_element_ok(a));
 
     return real_get(*a, 0);
 }
@@ -1315,7 +1315,7 @@ void transpose_alloc_real_array(const real_array_t * a, real_array_t* dest)
 
     /* transpose only valid for matrices.*/
 
-    assert(a->ndims == 2);
+    omc_assert_macro(a->ndims == 2);
     dest->dim_size[0]=a->dim_size[1];
     dest->dim_size[1]=a->dim_size[0];
     dest->ndims = 2;
@@ -1340,12 +1340,12 @@ void transpose_real_array(const real_array_t * a, real_array_t* dest)
         return;
     }
 
-    assert(a->ndims==2 && dest->ndims==2);
+    omc_assert_macro(a->ndims==2 && dest->ndims==2);
 
     n = a->dim_size[0];
     m = a->dim_size[1];
 
-    assert(dest->dim_size[0] == m && dest->dim_size[1] == n);
+    omc_assert_macro(dest->dim_size[0] == m && dest->dim_size[1] == n);
 
     for(i = 0; i < n; ++i) {
         for(j = 0; j < m; ++j) {
@@ -1379,7 +1379,7 @@ void outer_product_real_array(const real_array_t * v1, const real_array_t * v2,
 void outer_product_alloc_real_array(real_array_t* v1, real_array_t* v2, real_array_t* dest)
 {
   size_t dim1,dim2;
-  assert(base_array_ok(v1));
+  omc_assert_macro(base_array_ok(v1));
   dim1 = base_array_nr_of_elements(*v1);
   dim2 = base_array_nr_of_elements(*v2);
   alloc_real_array(dest,dim1,dim2);
@@ -1391,11 +1391,11 @@ void identity_real_array(int n, real_array_t* dest)
     int i;
     int j;
 
-    assert(base_array_ok(dest));
+    omc_assert_macro(base_array_ok(dest));
 
     /* Check that dest size is ok */
-    assert(dest->ndims==2);
-    assert((dest->dim_size[0]==n) && (dest->dim_size[1]==n));
+    omc_assert_macro(dest->ndims==2);
+    omc_assert_macro((dest->dim_size[0]==n) && (dest->dim_size[1]==n));
 
     for(i = 0; i < (n * n); ++i) {
         real_set(dest, i, 0);
@@ -1414,12 +1414,12 @@ void diagonal_real_array(const real_array_t * v,real_array_t* dest)
     size_t n;
 
     /* Assert that v is a vector */
-    assert(v->ndims == 1);
+    omc_assert_macro(v->ndims == 1);
 
     /* Assert that dest is a nxn matrix */
     n = v->dim_size[0];
-    assert(dest->ndims == 2);
-    assert((dest->dim_size[0] == n) && (dest->dim_size[1] == n));
+    omc_assert_macro(dest->ndims == 2);
+    omc_assert_macro((dest->dim_size[0] == n) && (dest->dim_size[1] == n));
 
     for(i = 0; i < (n * n); ++i) {
         real_set(dest, i, 0);
@@ -1480,7 +1480,7 @@ modelica_real max_real_array(const real_array_t a)
     size_t nr_of_elements;
     modelica_real max_element = DBL_MIN;
 
-    assert(base_array_ok(&a));
+    omc_assert_macro(base_array_ok(&a));
 
     nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1502,7 +1502,7 @@ modelica_real min_real_array(const real_array_t a)
     size_t nr_of_elements;
     modelica_real min_element = DBL_MAX;
 
-    assert(base_array_ok(&a));
+    omc_assert_macro(base_array_ok(&a));
 
     nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1525,7 +1525,7 @@ modelica_real sum_real_array(const real_array_t a)
     size_t nr_of_elements;
     modelica_real sum = 0;
 
-    assert(base_array_ok(&a));
+    omc_assert_macro(base_array_ok(&a));
 
     nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1542,7 +1542,7 @@ modelica_real product_real_array(const real_array_t a)
     size_t nr_of_elements;
     modelica_real product = 1;
 
-    assert(base_array_ok(&a));
+    omc_assert_macro(base_array_ok(&a));
 
     nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1578,11 +1578,11 @@ void symmetric_real_array(const real_array_t * a,real_array_t* dest)
 void cross_real_array(const real_array_t * x,const real_array_t * y, real_array_t* dest)
 {
     /* Assert x and y are vectors */
-    assert((x->ndims == 1) && (x->dim_size[0] == 3));
+    omc_assert_macro((x->ndims == 1) && (x->dim_size[0] == 3));
     /* Assert y is vector of size 3 */
-    assert((y->ndims == 1) && (y->dim_size[0] == 3));
+    omc_assert_macro((y->ndims == 1) && (y->dim_size[0] == 3));
     /* Assert dest is vector of size 3 */
-    assert((dest->ndims == 1) && (dest->dim_size[0] == 3));
+    omc_assert_macro((dest->ndims == 1) && (dest->dim_size[0] == 3));
 
     real_set(dest, 0, (real_get(*x,1) * real_get(*y,2)) - (real_get(*x,2) * real_get(*y,1)));
     real_set(dest, 1, (real_get(*x,2) * real_get(*y,0)) - (real_get(*x,0) * real_get(*y,2)));
@@ -1687,7 +1687,7 @@ void create_real_array_from_range(real_array_t *dest, modelica_real start, model
     size_t i;
     modelica_real (*comp_func)(modelica_real, modelica_real);
 
-    assert(step != 0);
+    omc_assert_macro(step != 0);
 
     comp_func = (step > 0) ? &real_le : &real_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;

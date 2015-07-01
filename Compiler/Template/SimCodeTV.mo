@@ -3343,6 +3343,10 @@ package Types
     input String name;
     output Integer index;
   end lookupIndexInMetaRecord;
+  function isArrayWithUnknownDimension
+    input DAE.Type ty;
+    output Boolean b;
+  end isArrayWithUnknownDimension;
 end Types;
 
 package FMI

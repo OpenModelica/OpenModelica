@@ -36,9 +36,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <math.h>
+
+#include "omc_error.h"
+#include "meta/meta_modelica.h"
 
 static OMC_INLINE modelica_integer *integer_ptrget(const integer_array_t *a, size_t i)
 {
@@ -93,9 +95,9 @@ void copy_integer_array_data(const integer_array_t source, integer_array_t* dest
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(&source));
-    assert(base_array_ok(dest));
-    assert(base_array_shape_eq(&source, dest));
+    omc_assert_macro(base_array_ok(&source));
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(base_array_shape_eq(&source, dest));
 
     nr_of_elements = base_array_nr_of_elements(source);
 
@@ -109,7 +111,7 @@ void copy_integer_array_data_mem(const integer_array_t source,
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(&source));
+    omc_assert_macro(base_array_ok(&source));
 
     nr_of_elements = base_array_nr_of_elements(source);
 
@@ -143,7 +145,7 @@ void create_integer_array_from_range(integer_array_t *dest, modelica_integer sta
     size_t i;
     modelica_integer (*comp_func)(modelica_integer, modelica_integer);
 
-    assert(step != 0);
+    omc_assert_macro(step != 0);
 
     comp_func = (step > 0) ? &integer_le : &integer_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
@@ -169,7 +171,7 @@ void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start
     modelica_integer value = start;
     modelica_integer (*comp_func)(modelica_integer, modelica_integer);
 
-    assert(step != 0);
+    omc_assert_macro(step != 0);
 
     comp_func = (step > 0) ? &integer_le : &integer_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
@@ -227,7 +229,7 @@ void print_integer_array(const integer_array_t * source)
 {
     _index_t i,j;
     modelica_integer *data;
-    assert(base_array_ok(source));
+    omc_assert_macro(base_array_ok(source));
 
     data = (modelica_integer *) source->data;
     if(source->ndims == 1) {
@@ -304,16 +306,16 @@ void indexed_assign_integer_array(const integer_array_t source, integer_array_t*
     _index_t* idx_size;
     int i,j;
 
-    assert(base_array_ok(&source));
-    assert(base_array_ok(dest));
-    assert(index_spec_ok(dest_spec));
-    assert(index_spec_fit_base_array(dest_spec, dest));
+    omc_assert_macro(base_array_ok(&source));
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(index_spec_ok(dest_spec));
+    omc_assert_macro(index_spec_fit_base_array(dest_spec, dest));
     for(i = 0,j = 0; i < dest_spec->ndims; ++i) {
         if(dest_spec->dim_size[i] != 0) {
             ++j;
         }
     }
-    assert(j == source.ndims);
+    omc_assert_macro(j == source.ndims);
 
     idx_vec1 = size_alloc(dest->ndims);
     idx_size = size_alloc(dest_spec->ndims);
@@ -337,7 +339,7 @@ void indexed_assign_integer_array(const integer_array_t source, integer_array_t*
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
-    assert(j == base_array_nr_of_elements(source));
+    omc_assert_macro(j == base_array_nr_of_elements(source));
 }
 
 /*
@@ -361,10 +363,10 @@ void index_integer_array(const integer_array_t * source,
     int j;
     int i;
 
-    assert(base_array_ok(source));
-    assert(base_array_ok(dest));
-    assert(index_spec_ok(source_spec));
-    assert(index_spec_fit_base_array(source_spec,source));
+    omc_assert_macro(base_array_ok(source));
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(index_spec_ok(source_spec));
+    omc_assert_macro(index_spec_fit_base_array(source_spec,source));
     for(i = 0, j = 0; i < source->ndims; ++i) {
         if((source_spec->index_type[i] == 'W')
             ||
@@ -372,7 +374,7 @@ void index_integer_array(const integer_array_t * source,
             ++j;
         }
     }
-    assert(j == dest->ndims);
+    omc_assert_macro(j == dest->ndims);
 
     idx_vec1 = size_alloc(source->ndims); /*indices in the source array*/
     idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
@@ -425,9 +427,9 @@ void index_alloc_integer_array(const integer_array_t * source,
     int i;
     int j;
 
-    assert(base_array_ok(source));
-    assert(index_spec_ok(source_spec));
-    assert(index_spec_fit_base_array(source_spec,source));
+    omc_assert_macro(base_array_ok(source));
+    omc_assert_macro(index_spec_ok(source_spec));
+    omc_assert_macro(index_spec_fit_base_array(source_spec,source));
 
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
@@ -460,7 +462,7 @@ void simple_index_alloc_integer_array1(const integer_array_t * source, int i1,
                                        integer_array_t* dest)
 {
     int i;
-    assert(base_array_ok(source));
+    omc_assert_macro(base_array_ok(source));
 
     dest->ndims = source->ndims - 1;
     dest->dim_size = size_alloc(dest->ndims);
@@ -482,7 +484,7 @@ void simple_index_integer_array1(const integer_array_t * source,
     size_t nr_of_elements = base_array_nr_of_elements(*dest);
     size_t off = nr_of_elements * i1;
 
-    assert(dest->ndims == (source->ndims - 1));
+    omc_assert_macro(dest->ndims == (source->ndims - 1));
 
     for(i = 0 ; i < nr_of_elements ; i++) {
         integer_set(dest, i, integer_get(*source, off + i));
@@ -509,7 +511,7 @@ void array_integer_array(integer_array_t* dest,int n,integer_array_t first,...)
     va_list ap;
 
     integer_array_t *elts=(integer_array_t*)malloc(sizeof(integer_array_t) * n);
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
     elts[0] = first;
@@ -537,7 +539,7 @@ void array_alloc_integer_array(integer_array_t* dest,int n,
     va_list ap;
 
     integer_array_t *elts=(integer_array_t*)malloc(sizeof(integer_array_t) * n);
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
     elts[0] = first;
@@ -557,7 +559,7 @@ void array_alloc_integer_array(integer_array_t* dest,int n,
     } else if(first.ndims == 4) {
         alloc_integer_array(dest, 5, n, first.dim_size[0], first.dim_size[1], first.dim_size[2], first.dim_size[3]);
     } else {
-        assert(0 && "Dimension size > 4 not impl. yet");
+        omc_assert_macro(0 && "Dimension size > 4 not impl. yet");
     }
 
     for(i = 0, c = 0; i < n; ++i) {
@@ -575,9 +577,9 @@ void array_scalar_integer_array(integer_array_t* dest,int n,
 {
     int i;
     va_list ap;
-    assert(base_array_ok(dest));
-    assert(dest->ndims == 1);
-    assert(dest->dim_size[0] == n);
+    omc_assert_macro(base_array_ok(dest));
+    omc_assert_macro(dest->ndims == 1);
+    omc_assert_macro(dest->dim_size[0] == n);
     put_integer_element(first, 0, dest);
     va_start(ap,first);
     for(i = 0; i < n; ++i) {
@@ -641,7 +643,7 @@ void cat_integer_array(int k, integer_array_t* dest, int n,
     int new_k_dim_size = 0;
     integer_array_t **elts = (integer_array_t**)malloc(sizeof(integer_array_t *) * n);
 
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);
     elts[0] = first;
@@ -652,18 +654,18 @@ void cat_integer_array(int k, integer_array_t* dest, int n,
     va_end(ap);
 
     /* check dim sizes of all inputs and dest */
-    assert(elts[0]->ndims >= k);
+    omc_assert_macro(elts[0]->ndims >= k);
     for(i = 0; i < n; i++) {
-        assert(dest->ndims == elts[i]->ndims);
+        omc_assert_macro(dest->ndims == elts[i]->ndims);
         for(j = 0; j < (k - 1); j++) {
-            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+            omc_assert_macro(dest->dim_size[j] == elts[i]->dim_size[j]);
         }
         new_k_dim_size += elts[i]->dim_size[k-1];
         for(j = k; j < elts[0]->ndims; j++) {
-            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+            omc_assert_macro(dest->dim_size[j] == elts[i]->dim_size[j]);
         }
     }
-    assert(dest->dim_size[k-1] == new_k_dim_size);
+    omc_assert_macro(dest->dim_size[k-1] == new_k_dim_size);
 
     /* calculate size of sub and super structure in 1-dim data representation */
     for(i = 0; i < (k - 1); i++) {
@@ -703,7 +705,7 @@ void cat_alloc_integer_array(int k, integer_array_t* dest, int n,
     int new_k_dim_size = 0;
     integer_array_t **elts = (integer_array_t**)malloc(sizeof(integer_array_t *) * n);
 
-    assert(elts);
+    omc_assert_macro(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);
     elts[0] = first;
@@ -714,16 +716,16 @@ void cat_alloc_integer_array(int k, integer_array_t* dest, int n,
     va_end(ap);
 
     /* check dim sizes of all inputs */
-    assert(elts[0]->ndims >= k);
+    omc_assert_macro(elts[0]->ndims >= k);
     new_k_dim_size = elts[0]->dim_size[k-1];
     for(i = 1; i < n; i++) {
-        assert(elts[0]->ndims == elts[i]->ndims);
+        omc_assert_macro(elts[0]->ndims == elts[i]->ndims);
         for(j = 0; j < (k - 1); j++) {
-            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+            omc_assert_macro(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
         }
         new_k_dim_size += elts[i]->dim_size[k-1];
         for(j = k; j < elts[0]->ndims; j++) {
-            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+            omc_assert_macro(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
         }
     }
 
@@ -807,9 +809,9 @@ void add_integer_array(const integer_array_t * a, const integer_array_t * b, int
     nr_of_elements = base_array_nr_of_elements(*a);
 
     /* Assert a and b are of the same size */
-    assert(base_array_nr_of_elements(*b) == nr_of_elements);
+    omc_assert_macro(base_array_nr_of_elements(*b) == nr_of_elements);
     /* Assert that dest are of correct size */
-    assert(base_array_nr_of_elements(*dest) == nr_of_elements);
+    omc_assert_macro(base_array_nr_of_elements(*dest) == nr_of_elements);
 
     for(i = 0; i < nr_of_elements; ++i) {
         integer_set(dest, i, integer_get(*a, i)+integer_get(*b, i));
@@ -833,9 +835,9 @@ void sub_integer_array(const integer_array_t * a, const integer_array_t * b, int
     nr_of_elements = base_array_nr_of_elements(*a);
 
     /* Assert a and b are of the same size */
-    assert(base_array_nr_of_elements(*b) == nr_of_elements);
+    omc_assert_macro(base_array_nr_of_elements(*b) == nr_of_elements);
     /* Assert that dest are of correct size */
-    assert(base_array_nr_of_elements(*dest) == nr_of_elements);
+    omc_assert_macro(base_array_nr_of_elements(*dest) == nr_of_elements);
 
     for(i = 0; i < nr_of_elements; ++i) {
         integer_set(dest, i, integer_get(*a, i)-integer_get(*b, i));
@@ -851,7 +853,7 @@ void sub_integer_array_data_mem(const integer_array_t * a, const integer_array_t
     nr_of_elements = base_array_nr_of_elements(*a);
 
     /* Assert a and b are of the same size */
-    assert(base_array_nr_of_elements(*b) == nr_of_elements);
+    omc_assert_macro(base_array_nr_of_elements(*b) == nr_of_elements);
     /* Assert that dest are of correct size */
 
     for(i = 0; i < nr_of_elements; ++i) {
@@ -876,7 +878,7 @@ void mul_scalar_integer_array(modelica_integer a,const integer_array_t * b,integ
     nr_of_elements = base_array_nr_of_elements(*b);
 
     /* Assert that dest has correct size*/
-    assert(base_array_nr_of_elements(*dest) == nr_of_elements);
+    omc_assert_macro(base_array_nr_of_elements(*dest) == nr_of_elements);
 
     for(i=0; i < nr_of_elements; ++i) {
         integer_set(dest, i, a * integer_get(*b, i));
@@ -900,7 +902,7 @@ void mul_integer_array_scalar(const integer_array_t * a,modelica_integer b,integ
     nr_of_elements = base_array_nr_of_elements(*a);
 
     /* Assert that dest has correct size*/
-    assert(base_array_nr_of_elements(*dest) == nr_of_elements);
+    omc_assert_macro(base_array_nr_of_elements(*dest) == nr_of_elements);
 
     for(i=0; i < nr_of_elements; ++i) {
         integer_set(dest, i, integer_get(*a, i) * b);
@@ -945,10 +947,10 @@ modelica_integer mul_integer_scalar_product(const integer_array_t a, const integ
     modelica_integer res;
 
     /* Assert that a and b are vectors */
-    assert(a.ndims == 1);
-    assert(b.ndims == 1);
+    omc_assert_macro(a.ndims == 1);
+    omc_assert_macro(b.ndims == 1);
     /* Assert that vectors are of matching size */
-    assert(a.dim_size[0] == b.dim_size[0]);
+    omc_assert_macro(a.dim_size[0] == b.dim_size[0]);
 
     nr_of_elements = base_array_nr_of_elements(a);
     res = 0;
@@ -993,11 +995,11 @@ void mul_integer_matrix_vector(const integer_array_t * a, const integer_array_t 
     modelica_integer tmp;
 
     /* Assert a matrix */
-    assert(a->ndims == 2);
+    omc_assert_macro(a->ndims == 2);
     /* Assert b vector */
-    assert(b->ndims == 1);
+    omc_assert_macro(b->ndims == 1);
     /* Assert dest correct size (a vector)*/
-    assert(dest->ndims == 1);
+    omc_assert_macro(dest->ndims == 1);
 
     i_size = a->dim_size[0];
     j_size = a->dim_size[1];
@@ -1021,9 +1023,9 @@ void mul_integer_vector_matrix(const integer_array_t * a, const integer_array_t 
     modelica_integer tmp;
 
     /* Assert a vector */
-    assert(a->ndims == 1);
+    omc_assert_macro(a->ndims == 1);
     /* Assert b matrix */
-    assert(b->ndims == 2);
+    omc_assert_macro(b->ndims == 2);
     /* Assert dest vector of correct size */
 
     i_size = a->dim_size[0];
@@ -1051,7 +1053,7 @@ integer_array_t mul_alloc_integer_matrix_product_smart(const integer_array_t a, 
         simple_alloc_2d_integer_array(&dest,a.dim_size[0],b.dim_size[1]);
         mul_integer_matrix_product(&a,&b,&dest);
     } else {
-        assert(0 == "Invalid size of matrix");
+        omc_assert_macro(0 == "Invalid size of matrix");
     }
     return dest;
 }
@@ -1065,7 +1067,7 @@ void div_integer_array_scalar(const integer_array_t * a,modelica_integer b,integ
     nr_of_elements = base_array_nr_of_elements(*a);
 
     /* Assert that dest has correct size*/
-    assert(nr_of_elements == base_array_nr_of_elements(*dest));
+    omc_assert_macro(nr_of_elements == base_array_nr_of_elements(*dest));
 
     for(i=0; i < nr_of_elements; ++i) {
         integer_set(dest, i, integer_get(*a, i)/b);
@@ -1089,7 +1091,7 @@ void division_integer_array_scalar(threadData_t *threadData, const integer_array
     nr_of_elements = base_array_nr_of_elements(*a);
 
     /* Assert that dest has correct size*/
-    assert(nr_of_elements == base_array_nr_of_elements(*dest));
+    omc_assert_macro(nr_of_elements == base_array_nr_of_elements(*dest));
 
     for(i=0; i < nr_of_elements; ++i) {
         integer_set(dest, i, (modelica_integer)DIVISIONNOTIME(integer_get(*a, i),b,division_str));
@@ -1131,7 +1133,7 @@ void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, inte
   size_t nr_of_elements = base_array_nr_of_elements(*a);
   size_t i;
 
-  assert(nr_of_elements == base_array_nr_of_elements(*dest));
+  omc_assert_macro(nr_of_elements == base_array_nr_of_elements(*dest));
 
   for(i = 0; i < nr_of_elements; ++i) {
     integer_set(dest, i, (modelica_integer)pow(integer_get(*a, i), b));
@@ -1150,11 +1152,11 @@ integer_array_t pow_alloc_integer_array_scalar(const integer_array a, modelica_i
 void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_array_t* dest)
 {
     /* Assert n>=0 */
-    assert(n >= 0);
+    omc_assert_macro(n >= 0);
     /* Assert that a is a two dimensional square array */
-    assert((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
+    omc_assert_macro((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
     /* Assert that dest is a two dimensional square array with the same size as a */
-    assert((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
+    omc_assert_macro((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
 
     if(n==0) {
         identity_integer_array(a->dim_size[0],dest);
@@ -1273,8 +1275,8 @@ void size_integer_array(const integer_array_t * a, integer_array_t* dest)
 {
     int i;
 
-    assert(dest->ndims == 1);
-    assert(dest->dim_size[0] == a->ndims);
+    omc_assert_macro(dest->ndims == 1);
+    omc_assert_macro(dest->dim_size[0] == a->ndims);
 
     for(i = 0 ; i < a->ndims ; i++) {
         integer_set(dest, i, a->dim_size[i]);
@@ -1283,8 +1285,8 @@ void size_integer_array(const integer_array_t * a, integer_array_t* dest)
 
 modelica_integer scalar_integer_array(const integer_array_t * a)
 {
-    assert(base_array_ok(a));
-    assert(base_array_one_element_ok(a));
+    omc_assert_macro(base_array_ok(a));
+    omc_assert_macro(base_array_one_element_ok(a));
 
     return integer_get(*a, 0);
 }
@@ -1341,7 +1343,7 @@ void transpose_alloc_integer_array(const integer_array_t * a, integer_array_t* d
 
     /* transpose only valid for matrices.*/
 
-    assert(a->ndims == 2);
+    omc_assert_macro(a->ndims == 2);
     dest->dim_size[0]=a->dim_size[1];
     dest->dim_size[1]=a->dim_size[0];
     dest->ndims = 2;
@@ -1366,12 +1368,12 @@ void transpose_integer_array(const integer_array_t * a, integer_array_t* dest)
         return;
     }
 
-    assert(a->ndims==2 && dest->ndims==2);
+    omc_assert_macro(a->ndims==2 && dest->ndims==2);
 
     n = a->dim_size[0];
     m = a->dim_size[1];
 
-    assert(dest->dim_size[0] == m && dest->dim_size[1] == n);
+    omc_assert_macro(dest->dim_size[0] == m && dest->dim_size[1] == n);
 
     for(i = 0; i < n; ++i) {
         for(j = 0; j < m; ++j) {
@@ -1403,7 +1405,7 @@ void outer_product_integer_array(const integer_array_t * v1,const integer_array_
 void outer_product_alloc_integer_array(const integer_array_t* v1, const integer_array_t* v2, integer_array_t* dest)
 {
   size_t dim1,dim2;
-  assert(base_array_ok(v1));
+  omc_assert_macro(base_array_ok(v1));
   dim1 = base_array_nr_of_elements(*v1);
   dim2 = base_array_nr_of_elements(*v2);
   alloc_integer_array(dest,dim1,dim2);
@@ -1431,11 +1433,11 @@ void identity_integer_array(int n, integer_array_t* dest)
     int i;
     int j;
 
-    assert(base_array_ok(dest));
+    omc_assert_macro(base_array_ok(dest));
 
     /* Check that dest size is ok */
-    assert(dest->ndims==2);
-    assert((dest->dim_size[0]==n) && (dest->dim_size[1]==n));
+    omc_assert_macro(dest->ndims==2);
+    omc_assert_macro((dest->dim_size[0]==n) && (dest->dim_size[1]==n));
 
     for(i = 0; i < (n * n); ++i) {
         integer_set(dest, i, 0);
@@ -1460,12 +1462,12 @@ void diagonal_integer_array(const integer_array_t * v,integer_array_t* dest)
     size_t n;
 
     /* Assert that v is a vector */
-    assert(v->ndims == 1);
+    omc_assert_macro(v->ndims == 1);
 
     /* Assert that dest is a nxn matrix */
     n = v->dim_size[0];
-    assert(dest->ndims == 2);
-    assert((dest->dim_size[0] == n) && (dest->dim_size[1] == n));
+    omc_assert_macro(dest->ndims == 2);
+    omc_assert_macro((dest->dim_size[0] == n) && (dest->dim_size[1] == n));
 
     for(i = 0; i < (n * n); ++i) {
         integer_set(dest, i, 0);
@@ -1526,7 +1528,7 @@ modelica_integer max_integer_array(const integer_array_t a)
     size_t nr_of_elements;
     modelica_integer max_element = LONG_MIN;
 
-    assert(base_array_ok(&a));
+    omc_assert_macro(base_array_ok(&a));
 
     nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1548,7 +1550,7 @@ modelica_integer min_integer_array(const integer_array_t a)
   size_t nr_of_elements;
   modelica_integer min_element = LONG_MAX;
 
-  assert(base_array_ok(&a));
+  omc_assert_macro(base_array_ok(&a));
 
   nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1570,7 +1572,7 @@ modelica_integer sum_integer_array(const integer_array_t a)
     size_t nr_of_elements;
     modelica_integer sum = 0;
 
-    assert(base_array_ok(&a));
+    omc_assert_macro(base_array_ok(&a));
 
     nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1587,7 +1589,7 @@ modelica_integer product_integer_array(const integer_array_t a)
     size_t nr_of_elements;
     modelica_integer product = 1;
 
-    assert(base_array_ok(&a));
+    omc_assert_macro(base_array_ok(&a));
 
     nr_of_elements = base_array_nr_of_elements(a);
 
@@ -1607,9 +1609,9 @@ void symmetric_integer_array(const integer_array_t * a,integer_array_t* dest)
     nr_of_elements = base_array_nr_of_elements(*a);
 
     /* Assert that a is a two dimensional square array */
-    assert((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
+    omc_assert_macro((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
     /* Assert that dest is a two dimensional square array with the same size as a */
-    assert((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
+    omc_assert_macro((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
 
     for(i = 0; i < nr_of_elements; ++i) {
         for(j = 0; j < i; ++j) {

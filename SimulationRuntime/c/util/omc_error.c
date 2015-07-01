@@ -461,7 +461,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 #endif
   case ERROR_EVENTHANDLING:
   default:
-    return threadData->globalJumpBuffer;
+    return threadData->globalJumpBuffer ? threadData->globalJumpBuffer : threadData->mmc_jumper;
   }
 }
 
