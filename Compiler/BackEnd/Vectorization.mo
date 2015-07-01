@@ -1403,53 +1403,42 @@ public function prepareVectorizedDAE0
   input BackendDAE.Shared sharedIn;
   output BackendDAE.EqSystem sysOut;
   output BackendDAE.Shared sharedOut;
-protected
-  array<Integer> ass1, ass2;
-  BackendDAE.Variables vars, aliasVars,knownVars;
-  list<BackendDAE.Var> varLst, addAlias, aliasLst, knownLst;
-  list<BackendDAE.Equation> eqLst;
-  BackendDAE.EquationArray eqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StrongComponents compsIn, comps;
-  BackendDAE.StateSets stateSets "the statesets of the system";
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  BackendDAE.Shared shared;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := sysIn;
-  BackendDAE.SHARED(aliasVars=aliasVars, knownVars=knownVars) := sharedIn;
+  (sysOut, sharedOut) := match (sysIn, sharedIn)
+    local
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst;
+      list<BackendDAE.Var> varLst, addAlias, aliasLst, knownLst;
+      list<BackendDAE.Equation> eqLst;
+    case ( syst as BackendDAE.EQSYSTEM(),
+           shared as BackendDAE.SHARED() )
+      algorithm
+        eqLst := BackendEquation.equationList(syst.orderedEqs);
+        //BackendDump.dumpEquationList(eqLst,"eqsIn");
+        //remove partly unrolled for-equations
+        // occasionally, there is a constantly indexed var in the for-equation
+        (eqLst,_) := updateIterCrefs(eqLst,({},{}));
+        // (eqLst,_) := List.fold(eqLst,markUnrolledForEqs,({},{}));
 
+        // set subscripts at end of equation crefs
+        eqLst := List.map(listReverse(eqLst),setSubscriptsAtEndForEquation);
 
-  eqLst := BackendEquation.equationList(eqs);
-    //BackendDump.dumpEquationList(eqLst,"eqsIn");
-  //remove partly unrolled for-equations
-  // occasionally, there is a constantly indexed var in the for-equation
-  (eqLst,_) := updateIterCrefs(eqLst,({},{}));
-  // (eqLst,_) := List.fold(eqLst,markUnrolledForEqs,({},{}));
-
-  // set subscripts at end of equation crefs
-  eqLst := List.map(listReverse(eqLst),setSubscriptsAtEndForEquation);
-
-  // set subscripts at end of vars
-  varLst := BackendVariable.varList(vars);
-  aliasLst := BackendVariable.varList(aliasVars);
-  knownLst := BackendVariable.varList(knownVars);
-  varLst := List.map(varLst,appendSubscriptsInVar);
-  aliasLst := List.map(aliasLst,appendSubscriptsInVar);
-  knownLst := List.map(knownLst,appendSubscriptsInVar);
-  vars := BackendVariable.listVar1(varLst);
-  aliasVars := BackendVariable.listVar1(aliasLst);
-  knownVars := BackendVariable.listVar1(knownLst);
-
-  eqs := BackendEquation.listEquation(eqLst);
-    //BackendDump.dumpEquationList(eqLst,"eqsOut");
-    //BackendDump.dumpVariables(vars,"VARSOUT");
-
-  sysOut := BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind);
-  shared := BackendDAEUtil.setSharedRemovedEqns(sharedIn, BackendEquation.listEquation({}));
-  shared := BackendDAEUtil.setSharedAliasVars(shared, aliasVars);
-  sharedOut := BackendDAEUtil.setSharedKnVars(shared,knownVars);
+        // set subscripts at end of vars
+        varLst := BackendVariable.varList(syst.orderedVars);
+        aliasLst := BackendVariable.varList(shared.aliasVars);
+        knownLst := BackendVariable.varList(shared.knownVars);
+        varLst := List.map(varLst,appendSubscriptsInVar);
+        aliasLst := List.map(aliasLst,appendSubscriptsInVar);
+        knownLst := List.map(knownLst,appendSubscriptsInVar);
+        syst.orderedVars := BackendVariable.listVar1(varLst);
+        shared.aliasVars := BackendVariable.listVar1(aliasLst);
+        shared.knownVars := BackendVariable.listVar1(knownLst);
+        shared.removedEqs := BackendEquation.listEquation({});
+        syst.orderedEqs := BackendEquation.listEquation(eqLst);
+        //BackendDump.dumpEquationList(eqLst,"eqsOut");
+        //BackendDump.dumpVariables(vars,"VARSOUT");
+      then (syst, shared);
+  end match;
 end prepareVectorizedDAE0;
 
 protected function setSubscriptsAtEndForEquation
@@ -1584,29 +1573,29 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := sysIn;
-  BackendDAE.SHARED(aliasVars=aliasVars, knownVars=knownVars) := sharedIn;
-
-  varLst := BackendVariable.varList(vars);
-  aliasLst := BackendVariable.varList(aliasVars);
-  knownLst := BackendVariable.varList(knownVars);
-    //BackendDump.dumpVarList(varLst,"varLst0");
-    //BackendDump.dumpVarList(aliasLst,"aliasVars0");
-    //BackendDump.dumpVarList(knownLst,"knownLst0");
-    //BackendDump.dumpVarList(aliasLst,"aliasVars0");
-
-  (varLst,aliasLst) := enlargeIteratedArrayVars1(varLst,aliasLst,{},{});
-  (knownLst,knownLst2) := enlargeIteratedArrayVars1(knownLst,{},{},{});
-
-    //BackendDump.dumpVarList(varLst,"varLst1");
-    //BackendDump.dumpVarList(aliasLst,"aliasVars1");
-    //BackendDump.dumpVarList(knownLst,"knownLst1");
-
-  vars := BackendVariable.listVar1(varLst);
-  aliasVars := BackendVariable.listVar1(aliasLst);
-  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
-  sharedOut := BackendDAEUtil.setSharedAliasVars(sharedIn,aliasVars);
-  sharedOut := BackendDAEUtil.setSharedKnVars(sharedOut,BackendVariable.listVar1(knownLst));
+  (sysOut, sharedOut) := match (sysIn, sharedIn)
+    local
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+    case (syst as BackendDAE.EQSYSTEM(), shared as BackendDAE.SHARED())
+      algorithm
+        varLst := BackendVariable.varList(syst.orderedVars);
+        aliasLst := BackendVariable.varList(shared.aliasVars);
+        knownLst := BackendVariable.varList(shared.knownVars);
+        (varLst, aliasLst) := enlargeIteratedArrayVars1(varLst, aliasLst, {}, {});
+        (knownLst, knownLst2) := enlargeIteratedArrayVars1(knownLst, {}, {}, {});
+        syst.orderedVars := BackendVariable.listVar1(varLst);
+        shared.aliasVars := BackendVariable.listVar1(aliasLst);
+        shared.knownVars := BackendVariable.listVar1(knownLst);
+        //BackendDump.dumpVarList(varLst,"varLst0");
+        //BackendDump.dumpVarList(aliasLst,"aliasVars0");
+        //BackendDump.dumpVarList(knownLst,"knownLst0");
+        //BackendDump.dumpVarList(aliasLst,"aliasVars0");
+        //BackendDump.dumpVarList(varLst,"varLst1");
+        //BackendDump.dumpVarList(aliasLst,"aliasVars1");
+        //BackendDump.dumpVarList(knownLst,"knownLst1");
+      then (syst, shared);
+  end match;
 end enlargeIteratedArrayVars;
 
 
