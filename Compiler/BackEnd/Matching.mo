@@ -6340,19 +6340,15 @@ protected function randSortSystem
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
 algorithm
-  osyst := match(isyst,ishared)
-     local
-     Integer ne,nv;
-     array<Integer> randarr,randarr1;
-     BackendDAE.Variables vars,vars1;
-     BackendDAE.EquationArray eqns,eqns1;
-     BackendDAE.IncidenceMatrix m;
-     BackendDAE.IncidenceMatrixT mT;
-     BackendDAE.EqSystem syst;
-     BackendDAE.StateSets stateSets;
-     BackendDAE.BaseClockPartitionKind partitionKind;
+  osyst := match isyst
+    local
+      Integer ne, nv;
+      array<Integer> randarr, randarr1;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.EqSystem syst;
 
-   case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind),_)
+   case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
      equation
        ne = BackendDAEUtil.systemSize(isyst);
        nv = BackendVariable.daenumVariables(isyst);
@@ -6360,10 +6356,11 @@ algorithm
        setrandArray(ne, randarr);
        randarr1 = listArray(List.intRange(nv));
        setrandArray(nv, randarr1);
-       eqns1 = randSortSystem1(ne, 0, randarr, eqns, BackendEquation.listEquation({}), BackendEquation.equationNth1, BackendEquation.addEquation);
-       vars1 = randSortSystem1(nv, 0, randarr1, vars, BackendVariable.emptyVars(), BackendVariable.getVarAt, BackendVariable.addVar);
-       (syst, _, _) = BackendDAEUtil.getIncidenceMatrix( BackendDAEUtil.createEqSystem(vars1, eqns1, stateSets, partitionKind),
-                                                         BackendDAE.NORMAL(), NONE() );
+       syst.orderedEqs = randSortSystem1( ne, 0, randarr, eqns, BackendEquation.listEquation({}),
+                                          BackendEquation.equationNth1, BackendEquation.addEquation );
+       syst.orderedVars = randSortSystem1( nv, 0, randarr1, vars, BackendVariable.emptyVars(),
+                                           BackendVariable.getVarAt, BackendVariable.addVar );
+       (syst, _, _) = BackendDAEUtil.getIncidenceMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE() );
      then
        syst;
   end match;
