@@ -191,6 +191,10 @@ static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, con
 
 #if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
 #define OMC_FUNCTION __func__
+#elif __STDC_VERSION__ < 199901L && __GNUC__ >= 2
+#define OMC_FUNCTION __FUNCTION__
+#else
+#define OMC_FUNCTION "(null)"
 #endif
 
 #define omc_assert_macro(expr) \
