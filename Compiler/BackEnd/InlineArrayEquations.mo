@@ -75,7 +75,7 @@ protected function inlineArrayEqn1
   output BackendDAE.Shared outShared = inShared "unused";
   output Boolean outOptimized;
 algorithm
-  (outEqSystem, outOptimized) := matchcontinue(inEqSystem)
+  (outEqSystem, outOptimized) := matchcontinue inEqSystem
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
@@ -84,11 +84,11 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) equation
+    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) equation
       eqnLst = BackendEquation.equationList(orderedEqs);
       (eqnLst, true) = getScalarArrayEqns(eqnLst);
       orderedEqs = BackendEquation.listEquation(eqnLst);
-    then (BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind), true);
+    then (BackendDAEUtil.clearEqSyst(BackendDAEUtil.setEqSystEqs(inEqSystem, orderedEqs)), true);
 
     else (inEqSystem, inOptimized);
   end matchcontinue;
