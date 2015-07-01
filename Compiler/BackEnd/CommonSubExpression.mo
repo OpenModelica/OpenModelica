@@ -96,8 +96,7 @@ algorithm
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+      BackendDAE.EqSystem syst;
       list<BackendDAE.Var> varList;
       list<BackendDAE.Equation> eqList;
       HashTableExpToExp.HashTable HT;
@@ -107,34 +106,40 @@ algorithm
       Boolean bCSE_EACHCALL;
       Boolean bCSE_BINARY;
 
-    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind), (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY)) equation
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs),
+           (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY) )
+      equation
     //if Flags.isSet(Flags.DUMP_CSE) then
     //  BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
     //  BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
     //end if;
-      HT = HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
-      HT2 = HashTableExpToIndex.emptyHashTableSized(49999);
-      HT3 = HashTableExpToIndex.emptyHashTableSized(49999);
-      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("collect statistics\n========================================\n");
-      end if;
-      (HT, HT2, index, _, _, _) = BackendEquation.traverseEquationArray(orderedEqs, createStatistics, (HT, HT2, index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
+        HT = HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
+        HT2 = HashTableExpToIndex.emptyHashTableSized(49999);
+        HT3 = HashTableExpToIndex.emptyHashTableSized(49999);
+        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+          print("collect statistics\n========================================\n");
+        end if;
+        (HT, HT2, index, _, _, _) =
+            BackendEquation.traverseEquationArray(orderedEqs, createStatistics, ( HT, HT2, index, bCSE_CALL,
+                                                                                  bCSE_EACHCALL, bCSE_BINARY ));
     //BaseHashTable.dumpHashTable(HT);
     //BaseHashTable.dumpHashTable(HT2);
-      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("\nstart substitution\n========================================\n");
-      end if;
-      (orderedEqs, (HT, HT2, _, eqList, varList, _, _, _)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
-      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("\n");
-      end if;
-      orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
-      orderedVars = BackendVariable.addVars(varList, orderedVars);
+        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+          print("\nstart substitution\n========================================\n");
+        end if;
+        (orderedEqs, (HT, HT2, _, eqList, varList, _, _, _)) =
+            BackendEquation.traverseEquationArray_WithUpdate (
+                orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY) );
+        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+          print("\n");
+        end if;
+      syst.orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
+      syst.orderedVars = BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then
-        BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
-        BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
+        BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List ###########");
+        BackendDump.dumpEquationArray(syst.orderedEqs, "########### Updated Equation List ###########");
       end if;
-    then (BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, partitionKind), (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
+    then (BackendDAEUtil.clearEqSyst(syst), (index, bCSE_CALL, bCSE_EACHCALL, bCSE_BINARY));
 
     else (inSystem, inTpl);
   end matchcontinue;
@@ -850,35 +855,32 @@ author:Waurich TUD 2014-11"
   output BackendDAE.EqSystem sysOut;
   output BackendDAE.Shared sharedOut;
 algorithm
-  (sysOut, sharedOut) := matchcontinue(tplsIn, m, mT, sysIn, sharedIn, deleteEqLstIn, deleteCrefsIn)
+  (sysOut, sharedOut) := matchcontinue (tplsIn, m, mT, sysIn, sharedIn, deleteEqLstIn, deleteCrefsIn)
     local
       Integer sharedVar, eqIdx1, eqIdx2, varIdx1, varIdx2, varIdxRepl, varIdxAlias, eqIdxDel, eqIdxLeft;
       list<Integer> eqIdcs, eqs1, eqs2, vars1, vars2, aliasVars;
       list<CommonSubExp> rest;
       BackendDAE.Var var1, var2;
       BackendVarTransform.VariableReplacements repl;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqs;
-      BackendDAE.EqSystem eqSys;
+      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       DAE.Exp varExp;
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
-  case({}, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind), _, _, _)
+  case({}, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs), _, _, _)
     equation
       // remove superfluous equations
     eqLst = BackendEquation.equationList(eqs);
     eqLst = List.deletePositions(eqLst, List.map1(deleteEqLstIn, intSub, 1));
-    eqs = BackendEquation.listEquation(eqLst);
+    syst.orderedEqs = BackendEquation.listEquation(eqLst);
 
     // remove alias from vars
-    vars = BackendVariable.deleteCrefs(deleteCrefsIn, vars);
-    eqSys = BackendDAEUtil.createEqSystem(vars, eqs, stateSets, partitionKind);
-    then (eqSys, sharedIn);
+    syst.orderedVars = BackendVariable.deleteCrefs(deleteCrefsIn, vars);
+    then (BackendDAEUtil.clearEqSyst(syst), sharedIn);
   case ( ASSIGNMENT_CSE(eqIdcs={eqIdx1, eqIdx2}, aliasVars={varIdx1, varIdx2})::rest, _, _,
-         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind),
+         syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs),
          _, _, _ )
     equation
      // update the equations
@@ -902,20 +904,20 @@ algorithm
      eqIdcs = arrayGet(mT, varIdxRepl);
      eqLst = BackendEquation.getEqns(eqIdcs, eqs);
      (eqLst, _) = BackendVarTransform.replaceEquations(eqLst, repl, NONE());
-     eqs = List.threadFold(eqIdcs, eqLst, BackendEquation.setAtIndexFirst, eqs);
+     syst.orderedEqs = List.threadFold(eqIdcs, eqLst, BackendEquation.setAtIndexFirst, eqs);
 
      // transfer initial value
      if BackendVariable.varHasStartValue(var2) and not BackendVariable.varHasStartValue(var1) then var1 = BackendVariable.setVarStartValue(var1, BackendVariable.varStartValue(var2));
         var1 = BackendVariable.setVarFixed(var1, BackendVariable.varFixed(var2)) ; end if;
-     vars = BackendVariable.setVarAt(vars, varIdxAlias, var1);
+     syst.orderedVars = BackendVariable.setVarAt(vars, varIdxAlias, var1);
 
      // add alias to shared
      var2 = BackendVariable.setBindExp(var2, SOME(varExp));
      shared = updateAllAliasVars(sharedIn, repl);
      shared = BackendVariable.addAliasVarDAE(var2, shared);
-     eqSys = BackendDAEUtil.createEqSystem(vars, eqs, stateSets, partitionKind);
-    then commonSubExpressionUpdate(rest, m, mT, eqSys, shared, eqIdxDel::deleteEqLstIn, cref::deleteCrefsIn);
- case(_::rest, _, _, _, _, _, _)
+     syst = BackendDAEUtil.clearEqSyst(syst);
+    then commonSubExpressionUpdate(rest, m, mT, syst, shared, eqIdxDel::deleteEqLstIn, cref::deleteCrefsIn);
+ case (_::rest, _, _, _, _, _, _)
   then commonSubExpressionUpdate(rest, m, mT, sysIn, sharedIn, deleteEqLstIn, deleteCrefsIn);
   end matchcontinue;
 end commonSubExpressionUpdate;
