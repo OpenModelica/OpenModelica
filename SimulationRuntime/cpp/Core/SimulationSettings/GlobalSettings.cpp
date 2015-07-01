@@ -21,7 +21,6 @@ GlobalSettings::GlobalSettings()
   , _endless_sim(false)
   , _outputFormat(EMPTY)
   , _outputPointType(ALL)
-  , _log_type(OFF)
   , _alarm_time(0)
 {
 }
@@ -93,14 +92,14 @@ void GlobalSettings::setOutputPointType(OutputPointType type)
   _outputPointType = type;
 }
 
-LogType GlobalSettings::getLogType()
+LogSettings GlobalSettings::getLogSettings()
 {
-  return _log_type;
+  return _log_settings;
 }
 
-void GlobalSettings::setLogType(LogType type)
+void GlobalSettings::setLogSettings(LogSettings set)
 {
-  _log_type = type;
+  _log_settings = set;
 }
 
 ///< Write out results ([false,true]; default: true)

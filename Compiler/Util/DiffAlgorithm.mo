@@ -43,6 +43,8 @@ Other resources used to understand the paper and optimize the algorithm:
   https://code.google.com/p/google-diff-match-patch/
 "
 
+import Print;
+
 type Diff = enumeration(Add,Delete,Equal);
 
 function diff<T>
@@ -71,6 +73,7 @@ end diff;
 partial function partialPrintDiff<T>
   input list<tuple<Diff,list<T>>> seq;
   input ToString toString;
+  output String res;
   partial function ToString
     input T t;
     output String o;
@@ -84,26 +87,36 @@ partial function partialPrintDiff<T>
     constant String addClose;
     constant String delOpen;
     constant String delClose;
+    constant Boolean printAdd=true;
+    constant Boolean printEqual=true;
+    constant Boolean printDelete=true;
   end DiffStrings;
 protected
   String open, close;
   list<T> ts;
+  Boolean b;
+  Integer i;
 algorithm
+  i:=Print.saveAndClearBuf();
   for d in seq loop
-    (open,close,ts) := match d
+    (open,close,ts,b) := match d
       case (Diff.Equal,ts)
-        then (DiffStrings.equalOpen,DiffStrings.equalClose,ts);
+        then (DiffStrings.equalOpen,DiffStrings.equalClose,ts,DiffStrings.printEqual);
       case (Diff.Add,ts)
-        then (DiffStrings.addOpen,DiffStrings.addClose,ts);
+        then (DiffStrings.addOpen,DiffStrings.addClose,ts,DiffStrings.printAdd);
       case (Diff.Delete,ts)
-        then (DiffStrings.delOpen,DiffStrings.delClose,ts);
+        then (DiffStrings.delOpen,DiffStrings.delClose,ts,DiffStrings.printDelete);
     end match;
-    print(open);
-    for t in ts loop
-      print(toString(t));
-    end for;
-    print(close);
+    if b or (DiffStrings.printEqual and DiffStrings.printAdd and DiffStrings.printDelete /* optimization */) then
+      Print.printBuf(open);
+      for t in ts loop
+        Print.printBuf(toString(t));
+      end for;
+      Print.printBuf(close);
+    end if;
   end for;
+  res := Print.getString();
+  Print.restoreBuf(i);
 end partialPrintDiff;
 
 function printDiffTerminalColor
@@ -127,6 +140,18 @@ function printDiffXml
     delClose="</del>"
   ));
 end printDiffXml;
+
+function printActual
+  extends partialPrintDiff(DiffStrings(
+    equalOpen="",
+    equalClose="",
+    addOpen="",
+    addClose="",
+    delOpen="",
+    delClose="",
+    printDelete=false
+  ));
+end printActual;
 
 protected
 

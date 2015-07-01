@@ -189,7 +189,7 @@ void SimController::StartVxWorks(SimSettings simsettings,string modelKey)
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setAlarmTime(simsettings.timeOut);
-        global_settings->setLogType(simsettings.logType);
+        global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setOutputPointType(simsettings.outputPointType);
 
         /*boost::shared_ptr<SimManager>*/ _simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
@@ -241,7 +241,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setOutputFormat(simsettings.outputFormat);
-        global_settings->setLogType(simsettings.logType);
+        global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setAlarmTime(simsettings.timeOut);
         global_settings->setOutputPointType(simsettings.outputPointType);
 

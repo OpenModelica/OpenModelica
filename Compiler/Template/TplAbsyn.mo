@@ -6402,7 +6402,7 @@ end lookupDeleteTupleList;
 protected function alignTupleList "
 Alignes the first list to be ordered by the second list with respect of the first elements of the (double) tuples.
 Only those tuples from the first list that have a corresponding tuple with the same first element in the second list will be included.
-Assuming the lists have distinct tuples (no multiple first elements occurences)."
+Assuming the lists have distinct tuples (no multiple first elements occurrences)."
   input list<tuple<Type_a,Type_b>> inListToAlign;
   input list<tuple<Type_a,Type_c>> inListAlignBy;
 

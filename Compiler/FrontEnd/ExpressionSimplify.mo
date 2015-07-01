@@ -2850,7 +2850,7 @@ public function simplifySumOperatorExpression
   input DAE.Exp iExp;
   output DAE.Exp oExp;
 protected
-  list<DAE.Exp> T = Expression.terms(iSum);
+  list<DAE.Exp> T = Expression.termsExpandUnary(iSum);
   Boolean b "simplifed?";
   DAE.Exp e, newE, sE;
   DAE.Type tp = Expression.typeofOp(iop);

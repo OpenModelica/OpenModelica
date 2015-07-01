@@ -45,6 +45,7 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendDump;
+protected import BackendDAEOptimize;
 protected import ComponentReference;
 protected import Debug;
 protected import Expression;
@@ -1005,7 +1006,7 @@ algorithm
 end findPathByEnds;
 
 protected function doubleEntriesInLst "author:Waurich TUD 2014-01
-  get the entries in the list which occure multiple times.
+  get the entries in the list which occur multiple times.
   Is there an entry from lstIn found in checkLst, it will be output as doubled"
   input list<ElementType> lstIn;
   input list<ElementType> checkLst;
@@ -2076,13 +2077,11 @@ protected
   Integer maxSize =  Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM);
   Boolean b = 1 < maxSize;
 algorithm
-
   if b then
-    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, solveLinearSystem0, (false,1,maxSize));
+    (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE, solveLinearSystem0, (false,1,maxSize));
   else
     outDAE := inDAE;
   end if;
-
 end solveLinearSystem;
 
 protected function solveLinearSystem0

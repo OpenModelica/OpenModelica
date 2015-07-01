@@ -21,6 +21,7 @@ Copyright (c) 2008, OSMC
 class IAlgLoopSolverFactory
 {
 public:
+  IAlgLoopSolverFactory() {};
   virtual ~IAlgLoopSolverFactory() {};
   virtual  boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop) = 0;
 };

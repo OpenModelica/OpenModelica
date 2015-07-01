@@ -1601,8 +1601,10 @@ algorithm
     // MM Function Reference
     case (DAE.T_FUNCTION(funcArg = farg1,funcResultType = t1),DAE.T_FUNCTION(funcArg = farg2,funcResultType = t2))
       equation
-        tList1 = List.map(farg1, funcArgType);
-        tList2 = List.map(farg2, funcArgType);
+        tList1 = list(traverseType(funcArgType(t), 1, unboxedTypeTraverseHelper) for t in farg1);
+        tList2 = list(traverseType(funcArgType(t), 1, unboxedTypeTraverseHelper) for t in farg2);
+        t1 = traverseType(t1, 1, unboxedTypeTraverseHelper);
+        t2 = traverseType(t2, 1, unboxedTypeTraverseHelper);
         true = subtypeTypelist(tList1,tList2,requireRecordNamesEqual);
         true = subtype(t1,t2,requireRecordNamesEqual);
       then true;
@@ -6531,33 +6533,34 @@ algorithm
 
     case ((id,{ty})::rest,solvedBindings,unsolvedBindings)
       equation
+        ty = Types.boxIfUnboxedType(ty);
         (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend(unsolvedBindings,rest),(id,{ty})::solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
       // Replace solved bindings
     case ((id,tys)::rest,solvedBindings,unsolvedBindings)
-      equation
-        tys = replaceSolvedBindings(tys, solvedBindings, false);
-        tys = List.unionOnTrue(tys, {}, equivtypes);
-        (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
+      algorithm
+        tys := replaceSolvedBindings(tys, solvedBindings, false);
+        tys := List.unionOnTrue(tys, {}, equivtypes);
+        (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
     case ((id,tys)::rest,solvedBindings,unsolvedBindings)
-      equation
-        (tys,solvedBindings) = solveBindings(tys, tys, solvedBindings);
-        tys = List.unionOnTrue(tys, {}, equivtypes);
-        (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
+      algorithm
+        (tys,solvedBindings) := solveBindings(tys, tys, solvedBindings);
+        tys := List.unionOnTrue(tys, {}, equivtypes);
+        (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
       // Duplicate types need to be removed
     case ((id,tys)::rest,solvedBindings,unsolvedBindings)
-      equation
-        len1 = listLength(tys);
-        true = len1 > 1;
-        tys = List.unionOnTrue(tys, {}, equivtypes); // Remove duplicates
-        len2 = listLength(tys);
-        false = len1 == len2;
-        (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
+      algorithm
+        len1 := listLength(tys);
+        true := len1 > 1;
+        tys := List.unionOnTrue(tys, {}, equivtypes); // Remove duplicates
+        len2 := listLength(tys);
+        false := len1 == len2;
+        (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(listAppend((id,tys)::unsolvedBindings,rest),solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
     case (first::rest, solvedBindings, unsolvedBindings)
@@ -8855,6 +8858,13 @@ algorithm
     end if;
   end for;
 end lookupAttributeValue;
+
+protected function unboxedTypeTraverseHelper<T>
+  input DAE.Type ty;
+  input T dummy;
+  output DAE.Type oty = unboxedType(ty);
+  output T odummy = dummy;
+end unboxedTypeTraverseHelper;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

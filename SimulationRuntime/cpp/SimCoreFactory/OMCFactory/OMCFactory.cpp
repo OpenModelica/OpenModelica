@@ -9,16 +9,22 @@
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/ISimController.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/container/vector.hpp>
+
 
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
     : _library_path(library_path)
     , _modelicasystem_path(modelicasystem_path)
+    , _defaultLinSolver("kinsol")
+    , _defaultNonLinSolver("kinsol")
 {
 }
 
 OMCFactory::OMCFactory()
     : _library_path("")
     , _modelicasystem_path("")
+    , _defaultLinSolver("kinsol")
+    , _defaultNonLinSolver("kinsol")
 {
 }
 
@@ -49,8 +55,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
-     std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("buffer",BUFFER);("empty",EMPTY);
-     std::map<std::string,LogType> logTypeMap = map_list_of("stats", STATS)("nls", NLS)("ode",ODE)("off",OFF);
+     std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("buffer", BUFFER)("empty", EMPTY);
+     std::map<std::string,LogCategory> logCatMap = map_list_of("init", INIT)("nls", NLS)("ls",LS)("solv", SOLV)("output", OUT)("event",EVT)("modell",MOD)("other",OTHER);
+     std::map<std::string,LogLevel> logLvlMap = map_list_of("error", ERROR)("warning", WARNING)("info", INFO)("debug", DEBUG);
      std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", ALL)("step", STEP)("empty2",EMPTY2);
      po::options_description desc("Allowed options");
      desc.add_options()
@@ -64,12 +71,12 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
           ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
           ("step-size,f", po::value< double >()->default_value(0.0),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
-          ("lin-solver,L", po::value< string >()->default_value("kinsol"),  "linear solver method")
-          ("non-lin-solver,N", po::value< string >()->default_value("kinsol"),  "non linear solver method")
-          ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,empty]")
+          ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver),  "linear solver method")
+          ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
+          ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,mat,empty]")
           ("number-of-intervals,v", po::value< int >()->default_value(500),  "number of intervals")
           ("tolerance,y", po::value< double >()->default_value(1e-6),  "solver tolerance")
-          ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats,nls,ode,off")
+          ("log-settings,l", po::value< std::vector<std::string> >(),  "log information: init, nls, ls, solv, output, event, modell, other")
           ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("OMEdit", po::value<vector<string> >(), "OMEdit options")
@@ -174,12 +181,30 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
           throw ModelicaSimulationError(MODEL_FACTORY,"results-filename  is not set");
      }
 
-     string logType_str;
-     LogType logType;
-     if (vm.count("log-type"))
+     LogSettings logSet;
+     if (vm.count("log-settings"))
      {
-         logType_str = vm["log-type"].as<string>();
-         logType = logTypeMap[logType_str];
+    	 std::vector<std::string> log_vec = vm["log-settings"].as<std::vector<string> >(),tmpvec;
+    	 for(unsigned i=0;i<log_vec.size();++i)
+    	 {
+    		 cout << i << ". " << log_vec[i] << std::endl;
+    		 tmpvec.clear();
+    		 boost::split(tmpvec,log_vec[i],boost::is_any_of("="));
+
+    		 if(tmpvec.size()>1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end() && ( tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()))
+    		 {
+    			 if(tmpvec[0] == "all")
+    			 {
+    				 logSet.setAll(logLvlMap[tmpvec[1]]);
+    				 break;
+    			 }
+    			 else
+    				 logSet.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
+    	     }
+    		 else
+    			 throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + boost::lexical_cast<std::string>(log_vec[i]) + "\n");
+    	 }
+
      }
 
      /*fs::path results_file_path = fs::path( resultsfilename) ;
@@ -198,7 +223,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,time_out,outputPointType,logType};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,time_out,outputPointType,logSet};
 
 
      _library_path = libraries_path;

@@ -18,32 +18,27 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
     static Logger* getInstance()
     {
       if(instance == NULL)
-        initialize();
+        initialize(LogSettings());
 
       return instance;
     }
 
-    static void initialize()
+    static void initialize(LogSettings settings)
     {
       if(instance != NULL)
         delete instance;
 
-      instance = new Logger(true);
+      instance = new Logger(settings, true);
     }
 
-    static void writeError(std::string errorMsg)
+    static void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
-      getInstance()->writeErrorInternal(errorMsg);
+      getInstance()->writeInternal(msg, cat, lvl);
     }
 
-    static void writeWarning(std::string warningMsg)
+    static void write(std::string msg, std::pair<LogCategory,LogLevel> mode)
     {
-      getInstance()->writeWarningInternal(warningMsg);
-    }
-
-    static void writeInfo(std::string infoMsg)
-    {
-      getInstance()->writeInfoInternal(infoMsg);
+    	return write(msg, mode.first, mode.second);
     }
 
     static void setEnabled(bool enabled)
@@ -56,18 +51,31 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
       return getInstance()->isEnabledInternal();
     }
 
+    static std::pair<LogCategory,LogLevel> getLogMode(LogCategory cat, LogLevel lvl)
+	{
+    	return std::pair<LogCategory, LogLevel>(cat, lvl);
+	}
+
+    bool isOutput(LogCategory cat, LogLevel lvl) const;
+
+    bool isOutput(std::pair<LogCategory,LogLevel> mode) const;
+
   protected:
+    Logger(LogSettings settings, bool enabled);
+
     Logger(bool enabled);
 
-    virtual void writeErrorInternal(std::string errorMsg);
-    virtual void writeWarningInternal(std::string warningMsg);
-    virtual void writeInfoInternal(std::string infoMsg);
+    virtual void writeInternal(std::string Msg, LogCategory cat, LogLevel lvl);
     virtual void setEnabledInternal(bool enabled);
     virtual bool isEnabledInternal();
+
+    std::string getPrefix(LogCategory cat, LogLevel lvl) const;
+
 
     static Logger* instance;
 
   private:
+    LogSettings _settings;
     bool _isEnabled;
 };
 

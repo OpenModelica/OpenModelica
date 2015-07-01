@@ -64,8 +64,8 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual void            setInfoOutput(bool) {}
   virtual string          getOutputPath() { return "./"; }
   virtual OutputFormat    getOutputFormat() { return EMPTY; }
-  virtual LogType         getLogType() { return OFF; }
-  virtual void            setLogType(LogType) {}
+  virtual LogSettings     getLogSettings() { return LogSettings(); }
+  virtual void            setLogSettings(LogSettings) {}
   virtual OutputPointType getOutputPointType() { return ALL; };
   virtual void            setOutputPointType(OutputPointType) {};
   virtual void            setOutputFormat(OutputFormat) {}

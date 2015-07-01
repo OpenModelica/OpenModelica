@@ -659,7 +659,7 @@ function arrayGet<A> "O(1)"
 external "builtin";
 end arrayGet;
 
-function arrayCreate<A>
+impure function arrayCreate<A>
   "O(size)"
   input Integer size;
   input A initialValue;
@@ -674,7 +674,7 @@ function arrayList<A>
 external "builtin";
 end arrayList;
 
-function listArray<A>
+impure function listArray<A>
   "O(n)"
   input List<A> lst;
   output array<A> arr;
@@ -868,7 +868,7 @@ function arrayGetNoBoundsChecking<A> "O(1)"
 external "builtin";
 end arrayGetNoBoundsChecking;
 
-function arrayCreateNoInit<A>
+impure function arrayCreateNoInit<A>
   "Creates a new array where the elements are *not* initialized!. Any attempt to
    access an uninitialized elements may cause segmentation faults if you're
    lucky, and pretty much anything else if you're not. Do not use unless you will

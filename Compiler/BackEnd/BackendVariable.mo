@@ -1840,6 +1840,46 @@ algorithm
   // referenceUpdate(inVar, 2, new_kind);
 end setVarKind;
 
+public function setVarTS "Sets the BackendDAE.TearingSelect of a variable"
+  input BackendDAE.Var inVar;
+  input Option<BackendDAE.TearingSelect> inTS;
+  output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef cr;
+  DAE.VarDirection dir;
+  DAE.VarParallelism prl;
+  BackendDAE.Type tp;
+  Option<DAE.Exp> bind;
+  Option<Values.Value> v;
+  list<DAE.Dimension> dim;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> attr;
+  Option<SCode.Comment> comment;
+  DAE.ConnectorType ct;
+  BackendDAE.Var oVar;
+  DAE.VarInnerOuter io;
+  Boolean unreplaceable;
+  BackendDAE.VarKind varKind;
+algorithm
+  BackendDAE.VAR(varName=cr,
+                 varDirection=dir,
+                 varParallelism=prl,
+                 varType=tp,
+                 varKind=varKind,
+                 bindExp=bind,
+                 bindValue=v,
+                 arryDim=dim,
+                 source=source,
+                 values=attr,
+                 comment=comment,
+                 connectorType=ct,
+                 innerOuter=io,
+                 unreplaceable=unreplaceable) := inVar;
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bind, v, dim, source, attr, inTS, comment, ct, io, unreplaceable);
+  // referenceUpdate(inVar, 2, new_kind);
+end setVarTS;
+
+
 public function setBindExp "author: lochel"
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> inBindExp;

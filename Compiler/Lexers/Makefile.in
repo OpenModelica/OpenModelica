@@ -1,0 +1,16 @@
+.PHONY: nothing OMCC
+
+nothing:
+
+LexerModelicaDiff.mo: lexerModelicaDiff.l OMCC/OMCC
+	test ! -f OMCC/LexerModelicaDiff.mo || rm OMCC/LexerModelicaDiff.mo
+	cp lexerModelicaDiff.l OMCC/
+	cd OMCC && ./OMCC --lexer-only ModelicaDiff
+	mv OMCC/LexerModelicaDiff.mo "$@"
+OMCC/OMCC:
+	test -e OMCC/.git || git clone https://github.com/OpenModelica/OpenModelica-OMCC OMCC
+	cd OMCC && git fetch && git pull --ff-only
+	$(MAKE) -C OMCC omcc OMC="@OMBUILDDIR@/bin/omc"
+
+Makefile: Makefile.in
+	cd @top_builddir@ && ./config.status

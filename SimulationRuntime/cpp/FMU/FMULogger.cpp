@@ -21,18 +21,21 @@ FMULogger::~FMULogger()
 {
 }
 
-void FMULogger::writeErrorInternal(std::string errorMsg)
+void FMULogger::writeInternal(std::string errorMsg, LogCategory cat, LogLevel lvl)
 {
-  callbackLogger(component, instanceName, fmiError, "?", errorMsg.c_str());
-}
-
-void FMULogger::writeWarningInternal(std::string warningMsg)
-{
-  callbackLogger(component, instanceName, fmiWarning, "?", warningMsg.c_str());
-}
-
-void FMULogger::writeInfoInternal(std::string infoMsg)
-{
-  if(isEnabledInternal())
-    callbackLogger(component, instanceName, fmiOK, "?", infoMsg.c_str());
+  switch(lvl)
+  {
+  case(ERROR):
+	  callbackLogger(component, instanceName, fmiError, "?", errorMsg.c_str());
+  	  break;
+  case(WARNING):
+  	  callbackLogger(component, instanceName, fmiWarning, "?", errorMsg.c_str());
+      break;
+  case(INFO):
+  case(DEBUG):
+  	  callbackLogger(component, instanceName, fmiOK, "?", errorMsg.c_str());
+      break;
+  default:
+	  callbackLogger(component, instanceName, fmiError, "?", errorMsg.c_str());
+  }
 }

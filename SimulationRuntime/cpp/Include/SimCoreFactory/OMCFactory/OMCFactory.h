@@ -37,6 +37,8 @@ protected:
 
   //boost::shared_ptr<ISimController> _simController;
   std::map<string,shared_library> _modules;
+  std::string _defaultLinSolver;
+  std::string _defaultNonLinSolver;
   PATH _library_path;
   PATH _modelicasystem_path;
 };

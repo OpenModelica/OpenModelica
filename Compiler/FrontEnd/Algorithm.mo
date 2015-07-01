@@ -272,17 +272,16 @@ protected function makeAssignment2
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := matchcontinue(lhs, lhprop, rhs, rhprop, source)
+  outStatement := match (lhs, lhprop, rhs, rhprop, source)
     local
       DAE.ComponentRef c;
       DAE.Exp rhs_1, e3, e1;
       DAE.Type t, ty;
       list<DAE.Exp> ea2;
 
-    case (DAE.CREF(), _, _, _, _)
+    case (DAE.CREF(), _, _, _, _) guard not Types.isPropArray(lhprop)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
-        false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
         DAE.STMT_ASSIGN(t, lhs, rhs_1, source);
@@ -295,10 +294,9 @@ algorithm
       then
         DAE.STMT_ASSIGN(t, e1, rhs_1);
       */
-    case (DAE.CREF(), _, _, _, _)
+    case (DAE.CREF(), _, _, _, _) // guard Types.isPropArray(lhprop)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
-        true = Types.isPropArray(lhprop);
         ty = Types.getPropType(lhprop);
         t = Types.simplifyType(ty);
       then
@@ -311,7 +309,7 @@ algorithm
         t = getPropExpType(lhprop);
       then
         DAE.STMT_ASSIGN(t, e3, rhs_1, source);
-  end matchcontinue;
+  end match;
 end makeAssignment2;
 
 public function makeSimpleAssignment
