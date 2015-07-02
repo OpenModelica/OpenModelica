@@ -79,6 +79,4 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
     bool _isEnabled;
 };
 
-
-
 #endif /* LOGGER_HPP_ */

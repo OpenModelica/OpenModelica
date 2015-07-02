@@ -4190,6 +4190,34 @@ protected uniontype TraverseStatementsOptions
   end TRAVERSE_RHS_ONLY;
 end TraverseStatementsOptions;
 
+public function traverseAlgorithmExps "
+  This function goes through the Algorithm structure and finds all the
+  expressions and performs the function on them
+"
+  replaceable type Type_a subtypeof Any;
+  input DAE.Algorithm inAlgorithm;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
+algorithm
+  outTypeA := match (inAlgorithm,func,inTypeA)
+    local
+      list<DAE.Statement> stmts;
+      Type_a ext_arg_1;
+    case (DAE.ALGORITHM_STMTS(statementLst = stmts),_,_)
+      equation
+        (_,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
+      then
+        ext_arg_1;
+  end match;
+end traverseAlgorithmExps;
+
 public function traverseDAEEquationsStmts "Traversing of DAE.Statement."
   input list<DAE.Statement> inStmts;
   input FuncExpType func;

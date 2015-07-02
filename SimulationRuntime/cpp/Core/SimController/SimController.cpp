@@ -277,7 +277,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
 
         boost::shared_ptr<IWriteOutput> writeoutput_system = boost::dynamic_pointer_cast<IWriteOutput>(mixedsystem);
 
-        if((global_settings->getOutputFormat()==BUFFER) && writeoutput_system)
+        if((global_settings->getOutputFormat()==OM_BUFFER) && writeoutput_system)
         {
             boost::shared_ptr<ISimData> simData = getSimData(modelKey).lock();
             //get history object to query simulation results

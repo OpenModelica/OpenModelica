@@ -42,22 +42,24 @@ public import HpcOmSimCode;
 public import SimCode;
 public import SimCodeVar;
 
-protected import Absyn;
-protected import Array;
-protected import BackendDAEUtil;
-protected import BackendVarTransform;
-protected import ComponentReference;
-protected import DAE;
-protected import Debug;
-protected import Error;
-protected import Expression;
-protected import Flags;
-protected import HpcOmSchedulerExt;
-protected import HpcOmSimCodeMain;
-protected import List;
-protected import SimCodeUtil;
-protected import System;
-protected import Util;
+protected
+import Absyn;
+import Array;
+import BackendDAEUtil;
+import BackendVarTransform;
+import ComponentReference;
+import DAE;
+import Debug;
+import Error;
+import Expression;
+import Flags;
+import HpcOmSchedulerExt;
+import HpcOmSimCodeMain;
+import List;
+import SimCodeUtil;
+import SimCodeFunctionUtil;
+import System;
+import Util;
 
 public type TaskAssignment = array<Integer>; //the information which node <idx> is assigned to which processor <value>
 
@@ -3296,7 +3298,7 @@ algorithm
         threadIdx = 1;
         compIdx = arrayLength(iSccSimEqMapping)+1;  // the next available component index
         taskIdx = arrayLength(iTaskGraph)+1;
-        simVarIdx = List.fold(List.map(algVars,SimCodeUtil.varIndex),intMax,0)+1;// the next available simVar index
+        simVarIdx = List.fold(List.map(algVars,SimCodeFunctionUtil.varIndex),intMax,0)+1;// the next available simVar index
         simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
         lsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;// the next available linear system index
         nlsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;// the next available nonlinear system index
@@ -3993,7 +3995,7 @@ algorithm
   crefLst := List.map1(simEqSysIdcs,SimCodeUtil.getAssignedCrefsOfSimEq,simCodeIn);
   crefs := List.flatten(crefLst);
   //print("crefs :\n"+stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),"\n")+"\n");
-  simVarLst := List.map1(crefs,SimCodeUtil.get,ht);
+  simVarLst := List.map1(crefs,SimCodeFunctionUtil.get,ht);
 
   // build the new crefs, new simVars
   numVars := listLength(simVarLst);
@@ -6502,7 +6504,7 @@ end revertTaskList;
 //----------------
 
 protected function setScheduleLockIds "Function creates unique Ids for every  tuple of out and ingoing locks
-	author: mhartung"
+  author: mhartung"
   input HpcOmSimCode.Schedule iSchedule;
   output HpcOmSimCode.Schedule oSchedule;
 protected
@@ -6572,7 +6574,7 @@ algorithm
 end replaceDepTasksInListByLockIds;
 
 
-protected function findTaskWithLockId "Function returns	a DepTask with the id regarding lockIds or the identity of the given task"
+protected function findTaskWithLockId "Function returns a DepTask with the id regarding lockIds or the identity of the given task"
   input array<list<tuple<Integer,Integer>>> lockIds;
   input HpcOmSimCode.Task iTask;
   output HpcOmSimCode.Task oTask;

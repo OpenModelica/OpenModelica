@@ -66,8 +66,8 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Matching;
-protected import SimCodeUtil;
 protected import Sorting;
+protected import SimCodeFunctionUtil;
 
 // =============================================================================
 // section for all public functions
@@ -172,7 +172,7 @@ algorithm
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
     (initsyst, dumpVars) := preBalanceInitialSystem(initsyst);
-    SimCodeUtil.execStat("created initial system");
+    SimCodeFunctionUtil.execStat("created initial system");
 
     // split the initial system into independend subsystems
     initdae := BackendDAE.DAE({initsyst}, shared);
@@ -183,7 +183,7 @@ algorithm
 
     (systs, shared) := BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
     initdae := BackendDAE.DAE(systs, shared);
-    SimCodeUtil.execStat("partitioned initial system");
+    SimCodeFunctionUtil.execStat("partitioned initial system");
 
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
       print(stringAppendList({"\npartitioned initial system:\n\n"}));

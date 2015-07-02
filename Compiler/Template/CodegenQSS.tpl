@@ -51,6 +51,7 @@
 package CodegenQSS
 
 import interface SimCodeTV;
+import interface SimCodeQSSTV;
 import CodegenUtil.*;
 import CodegenC.*;
 

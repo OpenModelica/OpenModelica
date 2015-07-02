@@ -68,7 +68,7 @@ protected import HashTable;
 protected import HashTableCrToExpSourceTpl;
 protected import Inline;
 protected import List;
-protected import SimCodeUtil;
+protected import SimCodeFunctionUtil;
 protected import SCode;
 protected import System;
 protected import Types;
@@ -154,7 +154,7 @@ algorithm
   neqStr := intString(BackendDAEUtil.equationSize(eqnarr));
   nvarStr := intString(BackendVariable.varsSize(vars_1));
   Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.DUMP_BACKENDDAE_INFO),Error.BACKENDDAEINFO_LOWER,{neqStr,nvarStr},Absyn.dummyInfo);
-  SimCodeUtil.execStat("Generate backend data structure");
+  SimCodeFunctionUtil.execStat("Generate backend data structure");
 end lower;
 
 protected function lower2

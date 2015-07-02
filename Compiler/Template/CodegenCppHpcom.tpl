@@ -7,6 +7,7 @@
 
 package CodegenCppHpcom
 
+import interface SimCodeBackendTV;
 import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
@@ -121,7 +122,7 @@ template generateAdditionalIncludesForParallelCode(SimCode simCode, Text& extraF
       <<
       #include <tbb/tbb.h>
       #include <tbb/flow_graph.h>
-	  #include <tbb/tbb_stddef.h>
+      #include <tbb/tbb_stddef.h>
       #include <boost/function.hpp>
       #include <boost/bind.hpp>
       #if TBB_INTERFACE_VERSION >= 8000
@@ -219,26 +220,26 @@ template generateAdditionalStructHeaders(Schedule odeSchedule)
           #if TBB_INTERFACE_VERSION >= 8000
           struct TbbArenaFunctor
           {
-          	tbb::flow::graph * g;
-          	tbb::flow::broadcast_node<tbb::flow::continue_msg> * sn;
+            tbb::flow::graph * g;
+            tbb::flow::broadcast_node<tbb::flow::continue_msg> * sn;
 
-          	TbbArenaFunctor( )
-          	{
-          		g = NULL;
-          		sn = NULL;
-          	}
+            TbbArenaFunctor( )
+            {
+              g = NULL;
+              sn = NULL;
+            }
 
-          	TbbArenaFunctor( tbb::flow::graph & in_g , tbb::flow::broadcast_node<tbb::flow::continue_msg> & in_sn )
-          	{
-          		g = &in_g;
-          		sn = &in_sn;
-          	}
+            TbbArenaFunctor( tbb::flow::graph & in_g , tbb::flow::broadcast_node<tbb::flow::continue_msg> & in_sn )
+            {
+              g = &in_g;
+              sn = &in_sn;
+            }
 
-          	void operator()()
-          	{
-          		sn->try_put( tbb::flow::continue_msg() );
-          		g->wait_for_all();
-          	}
+            void operator()()
+            {
+              sn->try_put( tbb::flow::continue_msg() );
+              g->wait_for_all();
+            }
 
           };
           #endif
@@ -537,17 +538,17 @@ match(iType)
   case "openmp" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	omp_init_lock(&<%lockName%>_[i]);
+    omp_init_lock(&<%lockName%>_[i]);
   >>
   case "pthreads" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	<%lockName%>_[i] = new alignedLock();
+    <%lockName%>_[i] = new alignedLock();
   >>
   case "pthreads_spin" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	<%lockName%>_[i] = new alignedSpinlock();
+    <%lockName%>_[i] = new alignedSpinlock();
   >>
   else
   <<
@@ -561,13 +562,13 @@ template assignArrayLocks(Integer numComms, String lockName, String iType)
     case ("openmp") then
       <<
       for(unsigned i=0;i<<%numComms%>;++i)
-      	omp_set_lock(&<%lockName%>_[i]);
+        omp_set_lock(&<%lockName%>_[i]);
       >>
     case ("pthreads")
     case ("pthreads_spin") then
       <<
       for(unsigned i=0;i<<%numComms%>;++i)
-      	<%lockName%>_[i]->lock();
+        <%lockName%>_[i]->lock();
       >>
 
   else
@@ -604,7 +605,7 @@ match(iType)
   case "openmp" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	omp_destroy_lock(&<%lockName%>_[i]);
+    omp_destroy_lock(&<%lockName%>_[i]);
   >>
   case "pthreads"
   case "pthreads_spin" then
@@ -919,7 +920,7 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
           {
             //Start
           #if TBB_INTERFACE_VERSION >= 8000
-			_tbbArena.execute(_tbbArenaFunctor);
+            _tbbArena.execute(_tbbArenaFunctor);
           #else
             _tbbStartNode.try_put(tbb::flow::continue_msg());
             _tbbGraph.wait_for_all();
@@ -1282,8 +1283,8 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> t
         if(_terminateThreads)
            return;
 
-		if(_evaluateODE)
-		{
+    if(_evaluateODE)
+    {
           <%taskEqsOde%>
         }
         else

@@ -100,7 +100,7 @@ protected import OnRelaxation;
 protected import RemoveSimpleEquations;
 protected import ResolveLoops;
 protected import SCode;
-protected import SimCodeUtil;
+protected import SimCodeFunctionUtil;
 protected import StateMachineFeatures;
 protected import SymbolicJacobian;
 protected import SynchronousFeatures;
@@ -6591,34 +6591,6 @@ algorithm
   end match;
 end traverseBackendDAEExpsOptEqnWithUpdate;
 
-public function traverseAlgorithmExps "
-  This function goes through the Algorithm structure and finds all the
-  expressions and performs the function on them
-"
-  replaceable type Type_a subtypeof Any;
-  input DAE.Algorithm inAlgorithm;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output DAE.Exp outExp;
-    output Type_a outA;
-  end FuncExpType;
-algorithm
-  outTypeA := match (inAlgorithm,func,inTypeA)
-    local
-      list<DAE.Statement> stmts;
-      Type_a ext_arg_1;
-    case (DAE.ALGORITHM_STMTS(statementLst = stmts),_,_)
-      equation
-        (_,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
-      then
-        ext_arg_1;
-  end match;
-end traverseAlgorithmExps;
-
 public function traverseAlgorithmExpsWithUpdate "
   This function goes through the Algorithm structure and finds all the
   expressions and performs the function on them
@@ -6749,7 +6721,7 @@ algorithm
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
-  SimCodeUtil.execStat("matching and sorting");
+  SimCodeFunctionUtil.execStat("matching and sorting");
 
   if Flags.isSet(Flags.GRAPHML) then
     HpcOmTaskGraph.dumpBipartiteGraph(sode, fileNamePrefix);
@@ -6763,13 +6735,13 @@ algorithm
   (optsode, Util.SUCCESS()) := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
 
   sode1 := FindZeroCrossings.findZeroCrossings(optsode);
-  SimCodeUtil.execStat("findZeroCrossings");
+  SimCodeFunctionUtil.execStat("findZeroCrossings");
 
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
-  SimCodeUtil.execStat("SimplifyAllExp");
+  SimCodeFunctionUtil.execStat("SimplifyAllExp");
 
   outSODE := calculateValues(sode1);
-  SimCodeUtil.execStat("calculateValue");
+  SimCodeFunctionUtil.execStat("calculateValue");
 
   if Flags.isSet(Flags.DUMP_INDX_DAE) then
     BackendDump.dumpBackendDAE(outSODE, "dumpindxdae");
@@ -6830,7 +6802,7 @@ algorithm
       BackendDAE.DAE(systs, shared) = optModule(inDAE);
       systs = filterEmptySystems(systs);
       dae = BackendDAE.DAE(systs, shared);
-      SimCodeUtil.execStat("preOpt " + moduleStr);
+      SimCodeFunctionUtil.execStat("preOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         print(stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
         BackendDump.printBackendDAE(dae);
@@ -6839,7 +6811,7 @@ algorithm
     then (dae1, status);
 
     case (_, (_, moduleStr, b)::rest) equation
-      SimCodeUtil.execStat("<failed> preOpt " + moduleStr);
+      SimCodeFunctionUtil.execStat("<failed> preOpt " + moduleStr);
       str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
       Error.addMessage(Error.INTERNAL_ERROR, {str});
       (dae,status) = preOptimizeDAE(inDAE,rest);
@@ -6881,7 +6853,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
-  //SimCodeUtil.execStat("matching");
+  //SimCodeFunctionUtil.execStat("matching");
   // do late inline
   outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
   // do state selection
@@ -6889,7 +6861,7 @@ algorithm
   // sort assigned equations to blt form
   systs := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
-  //SimCodeUtil.execStat("sorting");
+  //SimCodeFunctionUtil.execStat("sorting");
 end causalizeDAE;
 
 protected function mapCausalizeDAE "
@@ -6971,10 +6943,10 @@ algorithm
         nvars = BackendVariable.daenumVariables(syst);
         neqns = systemSize(syst);
         syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
-        // SimCodeUtil.execStat("transformDAE -> singularSystemCheck " + mAmethodstr);
+        // SimCodeFunctionUtil.execStat("transformDAE -> singularSystemCheck " + mAmethodstr);
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
-        // SimCodeUtil.execStat("transformDAE -> matchingAlgorithm " + mAmethodstr + " index Reduction Method " + str1);
+        // SimCodeFunctionUtil.execStat("transformDAE -> matchingAlgorithm " + mAmethodstr + " index Reduction Method " + str1);
       then (syst,shared,SOME(arg),true);
 
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
@@ -7009,7 +6981,7 @@ algorithm
       equation
         // do state selection
         outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
-        //SimCodeUtil.execStat("transformDAE -> state selection " + methodstr);
+        //SimCodeFunctionUtil.execStat("transformDAE -> state selection " + methodstr);
       then
          outDAE;
     else inDAE;
@@ -7120,7 +7092,7 @@ algorithm
         BackendDAE.DAE(systs, shared) = optModule(inDAE);
         systs = filterEmptySystems(systs);
         dae = BackendDAE.DAE(systs, shared);
-        SimCodeUtil.execStat("postOpt " + moduleStr);
+        SimCodeFunctionUtil.execStat("postOpt " + moduleStr);
         if Flags.isSet(Flags.OPT_DAE_DUMP) then
           print(stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
           BackendDump.printBackendDAE(dae);
@@ -7131,7 +7103,7 @@ algorithm
 
     case (_, (_, moduleStr, b)::rest, _, _)
       equation
-        SimCodeUtil.execStat("postOpt <failed> " + moduleStr);
+        SimCodeFunctionUtil.execStat("postOpt <failed> " + moduleStr);
         str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);

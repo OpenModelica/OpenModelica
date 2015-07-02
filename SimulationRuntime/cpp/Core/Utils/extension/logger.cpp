@@ -8,7 +8,7 @@
 #include <Core/Modelica.h>
 #include <Core/Utils/extension/logger.hpp>
 
-Logger* Logger::instance = 0;
+Logger* Logger::instance = NULL;
 
 Logger::Logger(LogSettings settings, bool enabled) : _settings(settings), _isEnabled(enabled)
 {
@@ -50,18 +50,17 @@ bool Logger::isOutput(std::pair<LogCategory,LogLevel> mode) const
 	return isOutput(mode.first, mode.second);
 }
 
-
 std::string Logger::getPrefix(LogCategory cat, LogLevel lvl) const
 {
 	switch(lvl)
 	{
-	case(DEBUG):
+	case(OM_DEBUG):
 		return "DEBUG: ";
-	case(ERROR):
+	case(OM_ERROR):
 		return "ERROR: ";
-	case(INFO):
+	case(OM_INFO):
 		return "INFO: ";
-	case(WARNING):
+	case(OM_WARNING):
 		return "WARNING: ";
 	default:
 		return "";
