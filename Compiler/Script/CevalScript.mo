@@ -77,7 +77,7 @@ import CheckModel;
 import ClassInf;
 import ClassLoader;
 import ClockIndexes;
-import CodegenC;
+import CodegenCFunctions;
 import Config;
 import Corba;
 import DAEQuery;
@@ -2260,7 +2260,7 @@ algorithm
 
     case (cache,_,"generateEntryPoint",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(),_)
       equation
-        str = Tpl.tplString2(CodegenC.generateEntryPoint, path, str);
+        str = Tpl.tplString2(CodegenCFunctions.generateEntryPoint, path, str);
         System.writeFile(filename,str);
       then (cache,Values.BOOL(true),st);
 

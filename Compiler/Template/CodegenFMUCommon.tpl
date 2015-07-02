@@ -48,6 +48,7 @@ package CodegenFMUCommon
 import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
+import CodegenCFunctions.*;
 
 template ModelExchange(SimCode simCode)
  "Generates ModelExchange code for ModelDescription file for FMU target."
