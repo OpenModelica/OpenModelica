@@ -86,11 +86,11 @@ protected
   BackendDAE.BackendDAE initdae;
   BackendDAE.EqSystem initsyst;
   BackendDAE.EqSystems systs;
-  BackendDAE.EquationArray inieqns, eqns, emptyeqns, reeqns;
+  BackendDAE.EquationArray inieqns, eqns, reeqns;
   BackendDAE.ExtraInfo ei;
   BackendDAE.Shared shared;
   BackendDAE.Variables initVars;
-  BackendDAE.Variables knvars, vars, fixvars, evars, eavars, avars;
+  BackendDAE.Variables knvars, vars, fixvars, avars;
   Boolean b, b1, b2;
   Boolean useHomotopy;
   DAE.FunctionTree functionTree;
@@ -148,24 +148,11 @@ algorithm
 
     vars := BackendVariable.rehashVariables(vars);
     fixvars := BackendVariable.rehashVariables(fixvars);
-    evars := BackendVariable.emptyVars();
-    eavars := BackendVariable.emptyVars();
-    emptyeqns := BackendEquation.emptyEqns();
-    shared := BackendDAE.SHARED(fixvars,
-                                evars,
-                                eavars,
-                                emptyeqns,
-                                reeqns,
-                                constraints,
-                                classAttrs,
-                                cache,
-                                graph,
-                                functionTree,
-                                BackendDAEUtil.emptyEventInfo(),
-                                {},
-                                BackendDAE.INITIALSYSTEM(),
-                                {},
-                                ei);
+    shared := BackendDAEUtil.createEmptyShared(BackendDAE.INITIALSYSTEM(), ei, cache, graph);
+    shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
+    shared := BackendDAEUtil.setSharedOptimica(shared, constraints, classAttrs);
+    shared := BackendDAEUtil.setSharedRemovedEqns(shared, reeqns);
+    shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
 
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
