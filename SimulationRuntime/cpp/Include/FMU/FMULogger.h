@@ -9,6 +9,7 @@
 #define FMULOGGER_H_
 
 #include <Core/Modelica.h>
+#include <FMU/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 #include "fmiModelFunctions.h"
 

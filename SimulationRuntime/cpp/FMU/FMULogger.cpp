@@ -9,7 +9,7 @@
 #include <FMU/FMULogger.h>
 
 #if defined(_MSC_VER) && !defined(RUNTIME_STATIC_LINKING)
-	Logger* Logger::instance = NULL;
+	Logger* Logger::instance = 0;
 #endif
 
 FMULogger::FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName) : Logger(false),
@@ -25,14 +25,14 @@ void FMULogger::writeInternal(std::string errorMsg, LogCategory cat, LogLevel lv
 {
   switch(lvl)
   {
-  case(OM_ERROR):
+  case(LL_ERROR):
 	  callbackLogger(component, instanceName, fmiError, "?", errorMsg.c_str());
   	  break;
-  case(OM_WARNING):
+  case(LL_WARNING):
   	  callbackLogger(component, instanceName, fmiWarning, "?", errorMsg.c_str());
       break;
-  case(OM_INFO):
-  case(OM_DEBUG):
+  case(LL_INFO):
+  case(LL_DEBUG):
   	  callbackLogger(component, instanceName, fmiOK, "?", errorMsg.c_str());
       break;
   default:

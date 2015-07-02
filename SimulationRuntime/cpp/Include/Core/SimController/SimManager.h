@@ -3,8 +3,9 @@
  *
  *  @{
  */
-#include "Configuration.h"
-#include "Initialization.h"
+#include <Core/SimController/Configuration.h>
+#include <Core/SimController/Initialization.h>
+#include <Core/SimController/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 
 #ifdef RUNTIME_PROFILING

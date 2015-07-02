@@ -10,7 +10,7 @@
 
 #include <Core/Modelica.h>
 
-class BOOST_EXTENSION_EXPORT_DECL Logger
+class BOOST_EXTENSION_LOGGER_DECL Logger
 {
   public:
     virtual ~Logger();
@@ -29,6 +29,11 @@ class BOOST_EXTENSION_EXPORT_DECL Logger
         delete instance;
 
       instance = new Logger(settings, true);
+    }
+
+    static void initialize()
+    {
+      initialize(LogSettings());
     }
 
     static void write(std::string msg, LogCategory cat, LogLevel lvl)

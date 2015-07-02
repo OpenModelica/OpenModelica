@@ -38,7 +38,7 @@ encapsulated package HpcOmSimCode
 
   public uniontype HpcOmData
     record HPCOMDATA
-      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules; //<ode schedule, dae schedule>
+      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules; //<ode schedule, dae schedule, zeroFunc schedule>
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
     end HPCOMDATA;
   end HpcOmData;

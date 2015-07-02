@@ -10,10 +10,6 @@
 #include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
 #include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
 
-#if defined(_MSC_VER) && !defined(RUNTIME_STATIC_LINKING)
-	Logger* Logger::instance = NULL;
-#endif
-
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _cvodesettings(dynamic_cast<ISolverSettings*>(_settings)),
@@ -312,14 +308,14 @@ void Cvode::initialize()
 
     _cvode_initialized = true;
 
-    Logger::write("Cvode: initialized",OM_SOLV,OM_DEBUG);
+    Logger::write("Cvode: initialized",LC_SOLV,LL_DEBUG);
   }
 }
 
 void Cvode::solve(const SOLVERCALL action)
 {
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OM_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OM_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OM_EMPTY2);
+  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
 
   #ifdef RUNTIME_PROFILING
   MEASURETIME_REGION_DEFINE(cvodeSolveFunctionHandler, "solve");
@@ -458,8 +454,8 @@ void Cvode::CVodeCore()
   if (_idid < 0)
     throw ModelicaSimulationError(SOLVER,"CVode::ReInit");
 
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OM_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OM_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OM_EMPTY2);
+  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
 
   while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {
@@ -943,13 +939,13 @@ void Cvode::writeSimulationInfo()
 
   flag = CVodeGetNonlinSolvStats(_cvodeMem, &nni, &ncfn);
 
-  Logger::write("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),OM_SOLV,OM_INFO);
-  Logger::write("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),OM_SOLV,OM_INFO);
-  Logger::write("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),OM_SOLV,OM_INFO);
-  Logger::write("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),OM_SOLV,OM_INFO);
-  Logger::write("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),OM_SOLV,OM_INFO);
-  Logger::write("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),OM_SOLV,OM_INFO);
-  Logger::write("Cvode: number of evaluateODE calls 'eODE' = " + boost::lexical_cast<std::string>(_numberOfOdeEvaluations),OM_SOLV,OM_INFO);
+  Logger::write("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),LC_SOLV,LL_INFO);
+  Logger::write("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),LC_SOLV,LL_INFO);
+  Logger::write("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),LC_SOLV,LL_INFO);
+  Logger::write("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),LC_SOLV,LL_INFO);
+  Logger::write("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),LC_SOLV,LL_INFO);
+  Logger::write("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),LC_SOLV,LL_INFO);
+  Logger::write("Cvode: number of evaluateODE calls 'eODE' = " + boost::lexical_cast<std::string>(_numberOfOdeEvaluations),LC_SOLV,LL_INFO);
 
   //// Solver
   //outputStream  << "\nSolver: " << getName()

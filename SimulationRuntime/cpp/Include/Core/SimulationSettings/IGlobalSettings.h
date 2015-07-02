@@ -25,21 +25,18 @@ using std::string;
 
 #include <vector>
 
-// adrpo: the MSVC compiler has issues with some of the enumerations (OUT, DEBUG, ERROR)
-enum OutputFormat {OM_CSV, OM_MAT, OM_BUFFER, OM_EMPTY};
+enum OutputFormat {OF_CSV, OF_MAT, OF_BUFFER, OF_EMPTY};
 
-enum LogCategory {OM_INIT = 0, OM_NLS = 1, OM_LS = 2, OM_SOLV = 3, OM_OUT = 4, OM_EVT = 5, OM_OTHER = 6, OM_MOD = 7};
-enum LogLevel {OM_ERROR = 0, OM_WARNING = 1, OM_INFO = 2, OM_DEBUG = 3};
 
-enum OutputPointType {OM_ALL, OM_STEP, OM_EMPTY2};
-
+enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLV = 3, LC_OUT = 4, LC_EVT = 5, LC_OTHER = 6, LC_MOD = 7};
+enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
 struct LogSettings
 {
 	std::vector<LogLevel> modes;
 
 	LogSettings()
 	{
-		modes = std::vector<LogLevel>(8,OM_ERROR);
+		modes = std::vector<LogLevel>(8,LL_ERROR);
 	}
 
 	void setAll(LogLevel l)
@@ -49,6 +46,7 @@ struct LogSettings
 	}
 };
 
+enum OutputPointType {OPT_ALL, OPT_STEP, OPT_EMPTY};
 class IGlobalSettings
 {
 public:

@@ -6,6 +6,7 @@
  */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Core/Utils/extension/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 
 Logger* Logger::instance = NULL;
@@ -50,17 +51,18 @@ bool Logger::isOutput(std::pair<LogCategory,LogLevel> mode) const
 	return isOutput(mode.first, mode.second);
 }
 
+
 std::string Logger::getPrefix(LogCategory cat, LogLevel lvl) const
 {
 	switch(lvl)
 	{
-	case(OM_DEBUG):
+	case(LL_DEBUG):
 		return "DEBUG: ";
-	case(OM_ERROR):
+	case(LL_ERROR):
 		return "ERROR: ";
-	case(OM_INFO):
+	case(LL_INFO):
 		return "INFO: ";
-	case(OM_WARNING):
+	case(LL_WARNING):
 		return "WARNING: ";
 	default:
 		return "";
