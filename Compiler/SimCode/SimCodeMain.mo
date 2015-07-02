@@ -58,7 +58,7 @@ protected
 import BackendDAECreate;
 import BackendQSS;
 import ClockIndexes;
-import CevalScript;
+import CevalScriptBackend;
 import CodegenC;
 import CodegenFMU;
 import CodegenFMUCpp;
@@ -139,7 +139,7 @@ protected
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
-  fileDir := CevalScript.getFileDir(a_cref, p);
+  fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs,libPaths,includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
@@ -180,7 +180,7 @@ protected
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
-  fileDir := CevalScript.getFileDir(a_cref, p);
+  fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs, libPaths, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
@@ -238,7 +238,7 @@ algorithm
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,graph,dae,st) = CevalScript.runFrontEnd(cache,graph,className,st,false);
+        (cache,graph,dae,st) = CevalScriptBackend.runFrontEnd(cache,graph,className,st,false);
         timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
         System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
 
@@ -320,7 +320,7 @@ algorithm
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,graph,dae,st) = CevalScript.runFrontEnd(cache,graph,className,st,false);
+        (cache,graph,dae,st) = CevalScriptBackend.runFrontEnd(cache,graph,className,st,false);
         timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
         System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
         _ = FCore.getFunctionTree(cache);
@@ -382,7 +382,7 @@ algorithm
   end if;
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
-  fileDir := CevalScript.getFileDir(a_cref, p);
+  fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs, libPaths,includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) := SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   simCode := createSimCode(outIndexedBackendDAE, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
@@ -630,7 +630,7 @@ algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-      (cache, graph, dae, st) = CevalScript.runFrontEnd(cache, graph, className, st, false);
+      (cache, graph, dae, st) = CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
       SimCodeFunctionUtil.execStat("FrontEnd");
       timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 

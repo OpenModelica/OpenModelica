@@ -47,6 +47,7 @@ import BackendDAE;
 import BackendDAECreate;
 import BackendDAEUtil;
 import CevalScript;
+import CevalScriptBackend;
 import ClockIndexes;
 import Config;
 import Corba;
@@ -579,7 +580,7 @@ algorithm
   // program. Otherwise, instantiate the given class name.
   cname := if stringLength(cls) == 0 then Absyn.lastClassname(program) else Absyn.stringPath(cls);
   st := GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable, program);
-  (cache, env, dae) := CevalScript.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
+  (cache, env, dae) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
 end instantiate;
 
 protected function optimizeDae

@@ -218,38 +218,13 @@ if true then /* Suppress output */
   };
   backendfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS")<>"" then
   {
-    "../Stubs/BackendDump.mo",
     "../Stubs/BackendDAECreate.mo",
-    "../Stubs/BackendDAEOptimize.mo",
-    "../Stubs/BackendEquation.mo",
-    "../Stubs/BackendDAETransform.mo",
-    "../Stubs/BackendQSS.mo",
-    "../Stubs/BackendVariable.mo",
-    "../Stubs/BackendVarTransform.mo",
-    "../Stubs/Differentiate.mo",
-    "../Stubs/ExpressionSolve.mo",
-    "../Stubs/Initialization.mo",
-    "../Stubs/SimCodeDump.mo",
+    "../Stubs/CevalScriptBackend.mo",
     "../Stubs/BackendDAEUtil.mo",
-    "../Stubs/DAEQuery.mo",
-    "../Stubs/FindZeroCrossings.mo",
-    "../Stubs/SymbolicJacobian.mo",
-    "../Stubs/Vectorization.mo",
-    "../Stubs/CodegenFMU.mo",
-    "../Stubs/HpcOmTaskGraph.mo",
-    "../Stubs/Figaro.mo",
-    "../Stubs/RewriteRules.mo",
-    "../Stubs/BlockCallRewrite.mo",
     "../Stubs/Refactor.mo",
+    "../Stubs/RewriteRules.mo",
     "../Stubs/SimCodeMain.mo",
-    "../Stubs/SimCodeUtil.mo",
-    "../Stubs/TaskSystemDump.mo",
-    "../Stubs/OpenTURNS.mo",
-    "../Stubs/Uncertainties.mo",
-    "../Stubs/XMLDump.mo",
-    "../Stubs/VisualXML.mo",
-    "../Stubs/LexerModelicaDiff.mo",
-    "../Stubs/DiffAlgorithm.mo"
+    "../Stubs/SimCodeUtil.mo"
   }
   else {
     "../BackEnd/BackendDAEFunc.mo",
@@ -313,6 +288,7 @@ if true then /* Suppress output */
     "../Script/BlockCallRewrite.mo",
     "../Script/OpenModelicaScriptingAPI.mo",
 
+    "../Script/CevalScriptBackend.mo",
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeModelInfo.mo",
     "../SimCode/SimCodeMain.mo",

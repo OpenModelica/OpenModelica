@@ -39,17 +39,20 @@ public import Prefix;
 
 protected type Ident = String;
 
-protected import Ceval;
-protected import CevalScript;
-protected import ClassInf;
-protected import ComponentReference;
-protected import Error;
-protected import ErrorExt;
-protected import Expression;
-protected import ExpressionSimplify;
-protected import Static;
-protected import Types;
-protected import Values;
+protected
+
+import Ceval;
+import CevalScript;
+import CevalScriptBackend;
+import ClassInf;
+import ComponentReference;
+import Error;
+import ErrorExt;
+import Expression;
+import ExpressionSimplify;
+import Static;
+import Types;
+import Values;
 
 
 protected function calculateSimulationTimes
@@ -95,12 +98,12 @@ algorithm
 
         (cache,startTime as DAE.RCONST(rstartTime)) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT,
-                              args, CevalScript.getSimulationOption(inSimOpt, "startTime"),
+                              args, CevalScriptBackend.getSimulationOption(inSimOpt, "startTime"),
                               pre, info);
 
         (cache,stopTime as DAE.RCONST(rstopTime)) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT,
-                              args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
+                              args, CevalScriptBackend.getSimulationOption(inSimOpt, "stopTime"),
                               pre, info);
 
         intervals = realInt((rstopTime - rstartTime) / rstepTime);
@@ -115,17 +118,17 @@ algorithm
         // fails if stepSize isn't given as argument to buildModel.
         (cache,startTime) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT,
-                              args, CevalScript.getSimulationOption(inSimOpt, "startTime"),
+                              args, CevalScriptBackend.getSimulationOption(inSimOpt, "startTime"),
                               pre, info);
 
         (cache,stopTime) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT,
-                              args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
+                              args, CevalScriptBackend.getSimulationOption(inSimOpt, "stopTime"),
                               pre, info);
 
         (cache,numberOfIntervals) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "numberOfIntervals", DAE.T_INTEGER_DEFAULT,
-                              args, CevalScript.getSimulationOption(inSimOpt, "numberOfIntervals"),
+                              args, CevalScriptBackend.getSimulationOption(inSimOpt, "numberOfIntervals"),
                               pre, info);
       then
         (cache, startTime, stopTime, numberOfIntervals);
@@ -177,48 +180,48 @@ algorithm
         Values.CODE(Absyn.C_TYPENAME(className)) = CevalScript.evalCodeTypeName(v,env);
 
         cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
-        defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str, defaultOption);
+        defaulSimOpt = CevalScriptBackend.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str, defaultOption);
 
         (cache, startTime, stopTime, numberOfIntervals) =
           calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inSymbolTable, inPrefix, inInfo, defaulSimOpt);
 
         (cache,tolerance) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT,
-                              args, CevalScript.getSimulationOption(defaulSimOpt, "tolerance"),
+                              args, CevalScriptBackend.getSimulationOption(defaulSimOpt, "tolerance"),
                               pre,info);
 
         (cache,method) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "method", DAE.T_STRING_DEFAULT,
-                              args, CevalScript.getSimulationOption(defaulSimOpt, "method"),
+                              args, CevalScriptBackend.getSimulationOption(defaulSimOpt, "method"),
                               pre, info);
 
         (cache,fileNamePrefix) =
           Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",  DAE.T_STRING_DEFAULT,
-                              args, CevalScript.getSimulationOption(defaulSimOpt, "fileNamePrefix"),
+                              args, CevalScriptBackend.getSimulationOption(defaulSimOpt, "fileNamePrefix"),
                               pre, info);
 
         (cache,options) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT,
-                              args, CevalScript.getSimulationOption(defaulSimOpt, "options"),
+                              args, CevalScriptBackend.getSimulationOption(defaulSimOpt, "options"),
                               pre, info);
 
         (cache,outputFormat) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT,
-                              args,  CevalScript.getSimulationOption(defaulSimOpt, "outputFormat"),
+                              args,  CevalScriptBackend.getSimulationOption(defaulSimOpt, "outputFormat"),
                               pre, info);
 
         (cache,variableFilter) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "variableFilter", DAE.T_STRING_DEFAULT,
-                              args,  CevalScript.getSimulationOption(defaulSimOpt, "variableFilter"),
+                              args,  CevalScriptBackend.getSimulationOption(defaulSimOpt, "variableFilter"),
                               pre, info);
 
         (cache,cflags) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "cflags", DAE.T_STRING_DEFAULT,
-                              args,  CevalScript.getSimulationOption(defaulSimOpt, "cflags"),
+                              args,  CevalScriptBackend.getSimulationOption(defaulSimOpt, "cflags"),
                               pre, info);
         (cache,simflags) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "simflags", DAE.T_STRING_DEFAULT,
-                              args, CevalScript.getSimulationOption(defaulSimOpt, "simflags"),
+                              args, CevalScriptBackend.getSimulationOption(defaulSimOpt, "simflags"),
                               pre, info);
 
       then
@@ -388,28 +391,28 @@ public function elabCallInteractive "This function elaborates the functions defi
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
-        recordtype = CevalScript.getSimulationResultType();
+        recordtype = CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
-        recordtype = CevalScript.getDrModelicaSimulationResultType();
+        recordtype = CevalScriptBackend.getDrModelicaSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
-        recordtype = CevalScript.getSimulationResultType();
+        recordtype = CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
-        recordtype = CevalScript.getSimulationResultType();
+        recordtype = CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
