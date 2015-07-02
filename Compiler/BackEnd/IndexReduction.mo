@@ -3828,45 +3828,28 @@ protected function replaceDummyDerivativesShared
   input HashTableCrIntToExp.HashTable ht;
   output BackendDAE.Shared oshared;
 algorithm
-  oshared:= match (inShared,ht)
+  oshared:= match inShared
     local
-      BackendDAE.Variables knvars,exobj,knvars1;
-      BackendDAE.Variables aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
-      list<BackendDAE.ZeroCrossing> zeroCrossingLst, relationsLst, sampleLst;
-      Integer numberOfMathEventFunctions;
-      BackendDAE.BackendDAEType btp;
-      list<BackendDAE.TimeEvent> timeEvents;
-      BackendDAE.ExtraInfo ei;
-      array<DAE.ClockKind> clocks;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      BackendDAE.Shared shared;
+      BackendDAE.EventInfo eventInfo;
 
-    case (BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree,
-                             BackendDAE.EVENT_INFO( timeEvents, whenClauseLst, zeroCrossingLst, sampleLst,
-                                                    relationsLst, numberOfMathEventFunctions, clocks),
-                             eoc, btp, symjacs, ei), _)
+    case shared as BackendDAE.SHARED(eventInfo=eventInfo as BackendDAE.EVENT_INFO())
       equation
         // replace dummy_derivatives in knvars,aliases,ineqns,remeqns
-        (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceDummyDerivativesVar, ht);
-        (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceDummyDerivativesVar, ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( inieqns, Expression.traverseSubexpressionsHelper,
-                                                                 (replaceDummyDerivativesExp,ht) );
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( remeqns, Expression.traverseSubexpressionsHelper,
-                                                                 (replaceDummyDerivativesExp,ht) );
-        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst( whenClauseLst,Expression.traverseSubexpressionsHelper,
-                                                                                      (replaceDummyDerivativesExp,ht) );
+        _ = BackendVariable.traverseBackendDAEVarsWithUpdate(shared.aliasVars, replaceDummyDerivativesVar, ht);
+        _ = BackendVariable.traverseBackendDAEVarsWithUpdate(shared.knownVars, replaceDummyDerivativesVar, ht);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( shared.initialEqs, Expression.traverseSubexpressionsHelper,
+                                                                 (replaceDummyDerivativesExp, ht) );
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( shared.removedEqs, Expression.traverseSubexpressionsHelper,
+                                                                 (replaceDummyDerivativesExp, ht) );
+        (whenClauseLst, _) =
+            BackendDAETransform.traverseBackendDAEExpsWhenClauseLst (
+                eventInfo.whenClauseLst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht) );
+        eventInfo.whenClauseLst = whenClauseLst;
+        shared.eventInfo = eventInfo;
       then
-        BackendDAE.SHARED( knvars1, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree,
-                           BackendDAE.EVENT_INFO( timeEvents, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst,
-                                                  numberOfMathEventFunctions, clocks ),
-                           eoc, btp, symjacs, ei );
+        shared;
 
   end match;
 end replaceDummyDerivativesShared;
