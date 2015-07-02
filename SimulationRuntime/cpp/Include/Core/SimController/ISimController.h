@@ -3,19 +3,7 @@
  *
  *  @{
  */
-/*includes removed for static linking not needed any more
-#ifdef RUNTIME_STATIC_LINKING
-#include <Core/SimController/ISimData.h>
-#include <Core/System/IMixedSystem.h>
-#include <Core/System/IAlgLoopSolverFactory.h>
-#include <Core/SimulationSettings/IGlobalSettings.h>
-#include <boost/weak_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 
-#include <string.h>
-using std::string;
-#endif
-*/
 struct SimSettings
 {
   string solver_name;

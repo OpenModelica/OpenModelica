@@ -31,6 +31,7 @@ install (FILES  ${CMAKE_SOURCE_DIR}/Include/FMU/fmiModelFunctions.h
 				${CMAKE_SOURCE_DIR}/Include/FMU/FMUWrapper.h
 				${CMAKE_SOURCE_DIR}/Include/FMU/FMULibInterface.h
 				${CMAKE_SOURCE_DIR}/Include/FMU/IFMUInterface.h
+				${CMAKE_SOURCE_DIR}/Include/FMU/FactoryExport.h
   DESTINATION include/omc/cpp/FMU)
 
 

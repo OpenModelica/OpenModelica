@@ -1,0 +1,71 @@
+Author: Marcus Walther 02.07.2015
+
+============================
+BUILD THE SIMULATION RUNTIME
+============================
+Building the c++ simulation runtime with OpenModelica is slightly different for
+Linux/Mac and Windows. The following lines explain how to build the runtime with
+it's default configuration. All commands should be executed in the
+“superproject”-folder of OpenModelica, which contains the OMCompiler-folder.
+
+  Linux/Mac:
+    configure --with-cppruntime
+    make omc
+
+  Windows:
+    make -f Makefile.omdev.mingw runtimeCPPinstall
+
+    (if the visual studio compiler should be used):
+    make -f Makefile.omdev.mingw runtimeCPPmsvcinstall
+
+
+==================================
+CONFIGURING THE SIMULATION RUNTIME
+==================================
+At the moment it's not possible to configure the behavior of the simulation
+runtime with the autoconf-script of OpenModelica. Thus, it is necessary to
+change to the source folder and pass some arguments to the Makefile.
+
+  Linux/Mac/Windows:
+    cd OMCompiler/SimulationRuntime/cpp
+
+The following section explains the arguments that can be passed to the makefile.
+
+  The boost static libraries can be used for the build, by passing the
+  BOOST_STATIC_LINKING argument to make.
+
+    make [..] BOOST_STATIC_LINKING="true"
+
+  Sometimes it's necessary to link boost against it's real path libraries.
+  This means for example, that instead of linking against “-lboost_system”, the
+  makefiles will link against “-lboost1.55_system”.
+
+    make [..] BOOST_REALPATHS="true"
+
+  If profiling informations for the runtime are required, they can be turned on
+  with the RUNTIME_PROFILING command.
+
+    make [..] RUNTIME_PROFILING="true"
+
+  Profiling can additionally be handled by Score-P. This gives the possibility
+  to use tracing besides profiling for performance analysis. Maybe it's
+  necessary to give the SCOREP_HOME directory to make as well. This is the
+  directory containing “include/scorep/SCOREP_User.h”.
+
+    make [..] SCOREP_SUPPORT="true" SCOREP_HOME=”...”
+
+  The doxygen documentation can be created the BUILD_DOCUMENTATION argument.
+  You can find further instructions and the code documentation in the generated
+  documents.
+
+    make [..] BUILD_DOCUMENTATION="true"
+
+  Simulation results can be written asynchronously with the help of boost
+  threads and a consumer producer algorithm (experimental).
+
+    make [..] PARALLEL_OUTPUT="true"
+
+  The sundials solver suite has additional lapack support. It can be used by
+  setting the SUNDIALS_LAPACK argument (experimental).
+
+    make [..] SUNDIALS_LAPACK="true"

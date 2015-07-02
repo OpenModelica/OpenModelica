@@ -54,6 +54,7 @@ import BackendEquation;
 import BackendVariable;
 import ClockIndexes;
 import CevalScript;
+import CevalScriptBackend;
 import ComponentReference;
 import DAEUtil;
 import Expression;
@@ -96,8 +97,8 @@ algorithm
   cname_last_str := Absyn.pathLastIdent(inPath);
   fileNamePrefix := cname_str;
 
-  simSettings := CevalScript.convertSimulationOptionsToSimCode(
-    CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(
+  simSettings := CevalScriptBackend.convertSimulationOptionsToSimCode(
+    CevalScriptBackend.buildSimulationOptionsFromModelExperimentAnnotation(
       GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable,inProgram),inPath,fileNamePrefix,NONE())
   );
   // correlation matrix form (vector of records) currently not supported by OpenModelica backend, remove it .

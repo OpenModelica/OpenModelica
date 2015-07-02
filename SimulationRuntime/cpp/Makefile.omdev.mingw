@@ -31,7 +31,7 @@ runtimeCPPmsvc:
 
 	test -f """${VS100COMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC'
-	rm -rf build_msvc
+	#rm -rf build_msvc
 	mkdir -p build_msvc
 	echo call '"%VS100COMNTOOLS%\\..\\..\\VC\\vcvarsall.bat"' > build_msvc/build.bat
 	#echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX=./tmp ../ -G "Visual Studio 10"' >> build_msvc/build.bat

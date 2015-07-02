@@ -13,7 +13,7 @@ end BackendVariable;
 package HpcOmSimCode
   uniontype HpcOmData
     record HPCOMDATA
-      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules;
+      Option<tuple<HpcOmSimCode.Schedule, HpcOmSimCode.Schedule, HpcOmSimCode.Schedule>> schedules;
       Option<MemoryMap> hpcOmMemory;
     end HPCOMDATA;
   end HpcOmData;
@@ -88,8 +88,9 @@ package HpcOmScheduler
   function convertFixedLevelScheduleToTaskLists
     input HpcOmSimCode.Schedule iOdeSchedule;
     input HpcOmSimCode.Schedule iDaeSchedule;
+    input HpcOmSimCode.Schedule iZeroFuncSchedule;
     input Integer iNumOfThreads;
-    output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks;
+    output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks;
   end convertFixedLevelScheduleToTaskLists;
 end HpcOmScheduler;
 
