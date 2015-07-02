@@ -731,11 +731,110 @@ package SimCode
 end SimCode;
 
 package SimCodeUtil
+  function appendLists
+    input list<SimCode.SimEqSystem> inEqn1;
+    input list<SimCode.SimEqSystem> inEqn2;
+    output list<SimCode.SimEqSystem> outEqn;
+  end appendLists;
 
-  function elementVars
-    input list<DAE.Element> ld;
-    output list<SimCode.Variable> vars;
-  end elementVars;
+  function functionInfo
+    input SimCode.Function fn;
+    output builtin.SourceInfo info;
+  end functionInfo;
+
+  function countDynamicExternalFunctions
+    input list<SimCode.Function> inFncLst;
+    output Integer outDynLoadFuncs;
+  end countDynamicExternalFunctions;
+
+  function eqInfo
+    input SimCode.SimEqSystem eq;
+    output builtin.SourceInfo info;
+  end eqInfo;
+
+  function dimsToAllIndexes
+    input DAE.Dimensions inDims;
+    output list<list<Integer>> outIndexes;
+  end dimsToAllIndexes;
+
+  function sortEqSystems
+    input list<SimCode.SimEqSystem> eqs;
+    output list<SimCode.SimEqSystem> outEqs;
+  end sortEqSystems;
+
+  function getEnumerationTypes
+    input SimCodeVar.SimVars inVars;
+    output list<SimCodeVar.SimVar> outVars;
+  end getEnumerationTypes;
+
+  function getFMIModelStructure
+    input SimCode.SimCode simCode;
+    input list<SimCode.JacobianMatrix> jacobianMatrixes;
+    output SimCode.FmiModelStructure outFmiModelStructure;
+  end getFMIModelStructure;
+
+  function getStateSimVarIndexFromIndex
+    input list<SimCodeVar.SimVar> inStateVars;
+    input Integer inIndex;
+    output Integer outVariableIndex;
+  end getStateSimVarIndexFromIndex;
+
+  function getVariableIndex
+    input SimCodeVar.SimVar inVar;
+    output Integer outVariableIndex;
+  end getVariableIndex;
+
+  function getMaxSimEqSystemIndex
+    input SimCode.SimCode simCode;
+    output Integer idxOut;
+  end getMaxSimEqSystemIndex;
+
+  function translateSparsePatterSimVarInts
+    input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
+    input SimCode.SimCode simCode;
+    output list<tuple<Integer, list<Integer>>> outSparsePattern;
+  end translateSparsePatterSimVarInts;
+
+  function translateColorsSimVarInts
+    input list<list<DAE.ComponentRef>> inColors;
+    input SimCode.SimCode simCode;
+    output list<list<Integer>> outColors;
+  end translateColorsSimVarInts;
+
+  function getDaeEqsNotPartOfOdeSystem
+    input SimCode.SimCode iSimCode;
+    output list<SimCode.SimEqSystem> oEqs;
+  end getDaeEqsNotPartOfOdeSystem;
+
+  function getVarIndexListByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input String iIndexForUndefinedReferences;
+    output list<String> oVarIndexList;
+  end getVarIndexListByMapping;
+
+  function isVarIndexListConsecutive
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    output Boolean oIsConsecutive;
+  end isVarIndexListConsecutive;
+end SimCodeUtil;
+
+package SimCodeFunctionUtil
+  function varName
+    input SimCodeVar.SimVar var;
+    output DAE.ComponentRef cr;
+  end varName;
+
+  function isParallelFunctionContext
+    input SimCode.Context context;
+    output Boolean s;
+  end isParallelFunctionContext;
+
+  function createDAEString
+    input String inString;
+    output DAE.Exp outExp;
+  end createDAEString;
 
   function crefSubIsScalar
     input DAE.ComponentRef cref;
@@ -752,24 +851,6 @@ package SimCodeUtil
     input SimCode.Context context;
     output Boolean isScalar;
   end crefIsScalar;
-
-  function buildCrefExpFromAsub
-    input DAE.Exp cref;
-    input list<DAE.Exp> subs;
-    output DAE.Exp cRefOut;
-  end buildCrefExpFromAsub;
-
-  function incrementInt
-    input Integer inInt;
-    input Integer increment;
-    output Integer outInt;
-  end incrementInt;
-
-  function decrementInt
-    input Integer inInt;
-    input Integer decrement;
-    output Integer outInt;
-  end decrementInt;
 
   function isProtected
     input SimCodeVar.SimVar simVar;
@@ -830,110 +911,33 @@ package SimCodeUtil
     output DAE.Exp outExp;
   end createAssertforSqrt;
 
-  function appendLists
-    input list<SimCode.SimEqSystem> inEqn1;
-    input list<SimCode.SimEqSystem> inEqn2;
-    output list<SimCode.SimEqSystem> outEqn;
-  end appendLists;
-
-  function createDAEString
-    input String inString;
-    output DAE.Exp outExp;
-  end createDAEString;
+  function elementVars
+    input list<DAE.Element> ld;
+    output list<SimCode.Variable> vars;
+  end elementVars;
 
   function isBoxedFunction
     input SimCode.Function fn;
     output Boolean b;
   end isBoxedFunction;
 
-  function functionInfo
-    input SimCode.Function fn;
-    output builtin.SourceInfo info;
-  end functionInfo;
+  function incrementInt
+    input Integer inInt;
+    input Integer increment;
+    output Integer outInt;
+  end incrementInt;
 
-  function twodigit
-    input Integer i;
-    output String s;
-  end twodigit;
+  function decrementInt
+    input Integer inInt;
+    input Integer decrement;
+    output Integer outInt;
+  end decrementInt;
 
-  function countDynamicExternalFunctions
-    input list<SimCode.Function> inFncLst;
-    output Integer outDynLoadFuncs;
-  end countDynamicExternalFunctions;
-
-  function eqInfo
-    input SimCode.SimEqSystem eq;
-    output builtin.SourceInfo info;
-  end eqInfo;
-
-  function varName
-    input SimCodeVar.SimVar var;
-    output DAE.ComponentRef cr;
-  end varName;
-
-  function dimsToAllIndexes
-    input DAE.Dimensions inDims;
-    output list<list<Integer>> outIndexes;
-  end dimsToAllIndexes;
-
-  function sortEqSystems
-    input list<SimCode.SimEqSystem> eqs;
-    output list<SimCode.SimEqSystem> outEqs;
-  end sortEqSystems;
-
-  function isParallelFunctionContext
-    input SimCode.Context context;
-    output Boolean s;
-  end isParallelFunctionContext;
-
-  function getEnumerationTypes
-    input SimCodeVar.SimVars inVars;
-    output list<SimCodeVar.SimVar> outVars;
-  end getEnumerationTypes;
-
-  function getFMIModelStructure
-    input SimCode.SimCode simCode;
-    input list<SimCode.JacobianMatrix> jacobianMatrixes;
-    output SimCode.FmiModelStructure outFmiModelStructure;
-  end getFMIModelStructure;
-
-  function getStateSimVarIndexFromIndex
-    input list<SimCodeVar.SimVar> inStateVars;
-    input Integer inIndex;
-    output Integer outVariableIndex;
-  end getStateSimVarIndexFromIndex;
-
-  function getVariableIndex
-    input SimCodeVar.SimVar inVar;
-    output Integer outVariableIndex;
-  end getVariableIndex;
-
-  function getMaxSimEqSystemIndex
-    input SimCode.SimCode simCode;
-    output Integer idxOut;
-  end getMaxSimEqSystemIndex;
-
-  function translateSparsePatterSimVarInts
-    input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
-    input SimCode.SimCode simCode;
-    output list<tuple<Integer, list<Integer>>> outSparsePattern;
-  end translateSparsePatterSimVarInts;
-
-  function translateColorsSimVarInts
-    input list<list<DAE.ComponentRef>> inColors;
-    input SimCode.SimCode simCode;
-    output list<list<Integer>> outColors;
-  end translateColorsSimVarInts;
-
-  function generateSubPalceholders
-    input DAE.ComponentRef cr;
-    output String outdef;
-  end generateSubPalceholders;
-
-  function getDaeEqsNotPartOfOdeSystem
-    input SimCode.SimCode iSimCode;
-    output list<SimCode.SimEqSystem> oEqs;
-  end getDaeEqsNotPartOfOdeSystem;
+  function buildCrefExpFromAsub
+    input DAE.Exp cref;
+    input list<DAE.Exp> subs;
+    output DAE.Exp cRefOut;
+  end buildCrefExpFromAsub;
 
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
@@ -949,20 +953,17 @@ package SimCodeUtil
     output Integer i;
   end codegenPeekTryThrowIndex;
 
-  function getVarIndexListByMapping
-    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
-    input DAE.ComponentRef iVarName;
-    input String iIndexForUndefinedReferences;
-    output list<String> oVarIndexList;
-  end getVarIndexListByMapping;
+  function twodigit
+    input Integer i;
+    output String s;
+  end twodigit;
 
-  function isVarIndexListConsecutive
-    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
-    input DAE.ComponentRef iVarName;
-    output Boolean oIsConsecutive;
-  end isVarIndexListConsecutive;
-end SimCodeUtil;
+  function generateSubPalceholders
+    input DAE.ComponentRef cr;
+    output String outdef;
+  end generateSubPalceholders;
 
+end SimCodeFunctionUtil;
 
 package BackendDAE
 
@@ -3126,167 +3127,6 @@ package ValuesUtil
   end valueExp;
 end ValuesUtil;
 
-package BackendQSS
-  uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
-    record QSSINFO
-      list<list<Integer>> stateVarIndex;
-      list<DAE.ComponentRef> stateVars;
-      list<DAE.ComponentRef> discreteAlgVars;
-      list<DAE.ComponentRef> algVars;
-      BackendDAE.EqSystems eqs;
-      list<DAE.Exp> zcs;
-      Integer zc_offset;
-    end QSSINFO;
-  end QSSinfo;
-
-  function getStateIndexList
-    input QSSinfo qssInfo;
-    output list<list<Integer>> refs;
-  end getStateIndexList;
-
-  function getStates
-    input QSSinfo qssInfo;
-    output list<DAE.ComponentRef> refs;
-  end getStates;
-
-  function getDisc
-    input QSSinfo qssInfo;
-    output list<DAE.ComponentRef> refs;
-  end getDisc;
-  function replaceVars
-    input DAE.Exp exp;
-    input list<DAE.ComponentRef> states;
-    input list<DAE.ComponentRef> disc;
-    input list<DAE.ComponentRef> algs;
-    output DAE.Exp expout;
-  end replaceVars;
-
-  function replaceCref
-    input DAE.ComponentRef cr;
-    input list<DAE.ComponentRef> states;
-    input list<DAE.ComponentRef> disc;
-    input list<DAE.ComponentRef> algs;
-    output String out;
-  end replaceCref;
-
-  function getAlgs
-    input QSSinfo qssInfo;
-    output list<DAE.ComponentRef> refs;
-  end getAlgs;
-
-  function negate
-    input DAE.Exp exp;
-    output DAE.Exp exp_out;
-  end negate;
-
-  function getEqs
-    input QSSinfo qssInfo;
-    output BackendDAE.EquationArray eqs;
-  end getEqs;
-
-  function generateHandler
-    input BackendDAE.EquationArray eqs;
-    input list<Integer> handlers;
-    input list<DAE.ComponentRef> states;
-    input list<DAE.ComponentRef> disc;
-    input list<DAE.ComponentRef> algs;
-    input DAE.Exp condition;
-    input Boolean v;
-    input list<DAE.Exp> zc_exps;
-    input Integer offset;
-    output String out;
-    end generateHandler;
-
-
-  function getRHSVars
-    input list<DAE.Exp> beqs;
-    input list<SimCodeVar.SimVar> vars;
-    input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-    input list<DAE.ComponentRef> states;
-    input list<DAE.ComponentRef> disc;
-    input list<DAE.ComponentRef> algs;
-    output list<DAE.ComponentRef> out;
-  end getRHSVars;
-
-  function getDiscRHSVars
-    input list<DAE.Exp> beqs;
-    input list<SimCodeVar.SimVar> vars;
-    input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-    input list<DAE.ComponentRef> states;
-    input list<DAE.ComponentRef> disc;
-    input list<DAE.ComponentRef> algs;
-    output list<DAE.ComponentRef> out;
-  end getDiscRHSVars;
-
-
-  function generateDInit
-    input  list<DAE.ComponentRef> disc;
-    //input  list<SimCode.SampleCondition> sample;
-    input  SimCodeVar.SimVars vars;
-    input  Integer acc;
-    input  Integer total;
-    input  Integer nWhenClause;
-    output String out;
-  end generateDInit;
-
-  function generateExtraParams
-    input SimCode.SimEqSystem eq;
-    input SimCodeVar.SimVars vars;
-    output String s;
-  end generateExtraParams;
-
-  function generateInitialParamEquations
-    input  SimCode.SimEqSystem eq;
-    output String t;
-  end generateInitialParamEquations;
-
-  function replaceVarsInputs
-    input DAE.Exp exp;
-    input list<DAE.ComponentRef> inp;
-    output DAE.Exp exp_out;
-  end replaceVarsInputs;
-
-  function simpleWhens
-    input list<SimCode.SimWhenClause> i;
-    output list<SimCode.SimWhenClause> o;
-  end simpleWhens;
-
-  function sampleWhens
-    input list<SimCode.SimWhenClause> i;
-    output list<SimCode.SimWhenClause> o;
-  end sampleWhens;
-
-  function getZCOffset
-    input QSSinfo qssInfo;
-    output Integer o;
-  end getZCOffset;
-
-  function getZCExps
-    input QSSinfo qssInfo;
-    output list<DAE.Exp> exps;
-  end getZCExps;
-
-end BackendQSS;
-
-package BackendVariable
-  function varCref
-    input BackendDAE.Var inVar;
-    output DAE.ComponentRef outComponentRef;
-  end varCref;
-
-  function isStateVar
-    input BackendDAE.Var inVar;
-    output Boolean outBoolean;
-  end isStateVar;
-
-  function varIndex
-    input BackendDAE.Var inVar;
-    output Integer outInteger;
-  end varIndex;
-
-
-end BackendVariable;
-
 package DAEDump
 
   function ppStmtStr
@@ -3601,15 +3441,6 @@ package HpcOmSimCode
     end MEMORYMAP_ARRAY;
   end MemoryMap;
 end HpcOmSimCode;
-
-package HpcOmScheduler
-  function convertFixedLevelScheduleToTaskLists
-    input HpcOmSimCode.Schedule iOdeSchedule;
-    input HpcOmSimCode.Schedule iDaeSchedule;
-    input Integer iNumOfThreads;
-    output array<tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>>> oThreadLevelTasks;
-  end convertFixedLevelScheduleToTaskLists;
-end HpcOmScheduler;
 
 package HashTableCrIListArray
   type Key = DAE.ComponentRef;

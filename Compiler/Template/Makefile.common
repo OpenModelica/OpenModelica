@@ -77,7 +77,7 @@ SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
+CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo SimCodeQSSTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenQSS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -87,7 +87,7 @@ CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo CodegenUtil.tpl CodegenCppInit.tpl
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-CodegenCppHpcom.mo : CodegenCppHpcom.tpl SimCodeTV.mo CodegenCpp.tpl CodegenUtil.tpl
+CodegenCppHpcom.mo : CodegenCppHpcom.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCpp.tpl CodegenUtil.tpl
 	@echo " ** CodegenCppHpcom template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -107,7 +107,7 @@ ExpressionDumpTpl.mo : ExpressionDumpTpl.tpl ExpressionDumpTV.mo DAEDumpTpl.tpl
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-GraphvizDump.mo : GraphvizDump.tpl
+GraphvizDump.mo : GraphvizDump.tpl SimCodeTV.mo SimCodeBackendTV.mo
 	@echo " ** GraphvizDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -151,7 +151,7 @@ GenerateAPIFunctionsTpl.mo : GenerateAPIFunctionsTpl.tpl SimCodeTV.mo
 	@echo " ** GenerateAPIFunctionsTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-	
+
 VisualXMLTpl.mo : VisualXMLTpl.tpl VisualXMLTplTV.mo
 	@echo " ** VisualXMLTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)

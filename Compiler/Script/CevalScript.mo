@@ -119,6 +119,7 @@ import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import SimCodeMain;
+import SimCodeFunction;
 import System;
 import Static;
 import StaticScript;
@@ -5213,7 +5214,7 @@ algorithm
   funcs := FCore.getFunctionTree(cache);
   // First check if the main function exists... If it does not it might be an interactive function...
   mainFunction := DAEUtil.getNamedFunction(functionName, funcs);
-  dependencies := SimCodeMain.getCalledFunctionsInFunction(functionName,funcs);
+  dependencies := SimCodeFunction.getCalledFunctionsInFunction(functionName,funcs);
 end getFunctionDependencies;
 
 public function collectDependencies
@@ -5266,7 +5267,7 @@ algorithm
 
         pathstr  = generateFunctionName(path);
         fileName = generateFunctionFileName(path);
-        SimCodeMain.translateFunctions(program, fileName, SOME(mainFunction), d, metarecordTypes, {});
+        SimCodeFunction.translateFunctions(program, fileName, SOME(mainFunction), d, metarecordTypes, {});
         compileModel(fileName, {});
       then
         (cache, pathstr, fileName);
@@ -5286,7 +5287,7 @@ algorithm
         fileName = generateFunctionFileName(path);
         // The list of functions is not ordered, so we need to filter out the main function...
         d = DAEUtil.getFunctionList(funcs);
-        SimCodeMain.translateFunctions(program, fileName, NONE(), d, {}, {});
+        SimCodeFunction.translateFunctions(program, fileName, NONE(), d, {}, {});
       then
         (cache, pathstr, fileName);
 
@@ -5385,7 +5386,7 @@ algorithm
         System.writeFile(name + ".deps", "$(GEN_DIR)" + name + ".o: $(GEN_DIR)" + name + ".c" + " " + stringDelimitList(strs," "));
         dependencies = List.map1(dependencies,stringAppend,"\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");
-        SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
+        SimCodeFunction.translateFunctions(p, name, NONE(), d, {}, dependencies);
         str = Tpl.tplString(Unparsing.programExternalHeader, {cl});
         System.writeFile(name + "_records.c","#include <meta/meta_modelica.h>\n" + str);
         cache = if cleanCache then icache else cache;
@@ -7782,8 +7783,8 @@ protected function writeModuleDepends
 algorithm
   str := matchcontinue (cl,prefix,suffix,deps)
     local
-      String name,fileName;
-      list<String> allDepends,protectedDepends;
+      String name,fileName,tmp1;
+      list<String> allDepends,protectedDepends,tmp2;
       list<SCode.Element> elts;
       SourceInfo info;
     case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = SOURCEINFO()),_,_,_)
@@ -7795,6 +7796,27 @@ algorithm
         allDepends = List.map1(allDepends, stringAppend, ".interface.mo");
         str = prefix + name + suffix + ": $(RELPATH_" + name + ") " + stringDelimitList(allDepends," ");
       then str;
+    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info=info),_,_,_)
+      algorithm
+        protectedDepends := List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
+        protectedDepends := List.select(protectedDepends, isNotBuiltinImport);
+        allDepends := list(Util.tuple21(e) for e in deps);
+        for d in protectedDepends loop
+          if not listMember(d, allDepends) then
+            Error.addSourceMessage(Error.GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED_UNKNOWN_PACKAGE, {name,name,d}, info);
+            fail();
+          end if;
+        end for;
+        for dep in deps loop
+          (tmp1,tmp2) := dep;
+          for d in tmp2 loop
+            if not listMember(d, allDepends) then
+              Error.addSourceMessage(Error.GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED_UNKNOWN_PACKAGE, {name,tmp1,d}, info);
+              fail();
+            end if;
+          end for;
+        end for;
+      then fail();
     case (SCode.CLASS(name=name,info=info),_,_,_)
       equation
         Error.addSourceMessage(Error.GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED, {name}, info);

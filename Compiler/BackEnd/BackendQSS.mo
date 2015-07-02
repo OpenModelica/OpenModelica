@@ -55,7 +55,7 @@ protected import BackendVariable;
 protected import ComponentReference;
 protected import HpcOmSimCode;
 protected import List;
-protected import SimCodeUtil;
+protected import SimCodeFunctionUtil;
 
 public
 uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
@@ -614,7 +614,7 @@ end generateHandler;
 //     then computeAlgs(tail,states,listAppend(i_algs,{cref}));
 //     case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,_)
 //     equation
-//       vars_cref = List.map(vars,SimCodeUtil.varName);
+//       vars_cref = List.map(vars,SimCodeFunctionUtil.varName);
 //     then computeAlgs(tail,states,listAppend(i_algs,vars_cref));
 //     case ({},_,_)
 //     equation
@@ -802,9 +802,9 @@ algorithm
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp),
         SimCodeVar.SIMVARS(paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars))
   equation
-    failure(_ = List.position(cref,List.map(paramVars,SimCodeUtil.varName)));
-    failure(_ = List.position(cref,List.map(intParamVars,SimCodeUtil.varName)));
-    failure(_ = List.position(cref,List.map(boolParamVars,SimCodeUtil.varName)));
+    failure(_ = List.position(cref,List.map(paramVars,SimCodeFunctionUtil.varName)));
+    failure(_ = List.position(cref,List.map(intParamVars,SimCodeFunctionUtil.varName)));
+    failure(_ = List.position(cref,List.map(boolParamVars,SimCodeFunctionUtil.varName)));
     t = stringAppend("parameter Real ",System.stringReplace(replaceCref(cref,{},{},{}),".","_"));
     t = stringAppend(t," = ");
     t = stringAppend(t,ExpressionDump.printExpStr(replaceVars(exp,{},{},{})));

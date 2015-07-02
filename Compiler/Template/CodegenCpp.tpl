@@ -1217,7 +1217,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 template createAssignArray(DAE.ComponentRef sourceOrTargetArrayCref, String sourceArrayName, String targetArrayName, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotationSource, Boolean useFlatArrayNotationTarget, String dimsArrayName)
 ::=
-  match SimCodeUtil.cref2simvar(sourceOrTargetArrayCref, simCode)
+  match cref2simvar(sourceOrTargetArrayCref, simCode)
     case v as SIMVAR(numArrayElement=num) then
         '<%targetArrayName%>.assign(<%sourceArrayName%>);'
 end createAssignArray;

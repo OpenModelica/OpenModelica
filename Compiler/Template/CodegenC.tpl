@@ -48,7 +48,6 @@ package CodegenC
 import interface SimCodeTV;
 import CodegenUtil.*;
 
-
 /* public */ template translateModel(SimCode simCode, String guid)
   "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model.
@@ -1095,7 +1094,7 @@ template crefMacroSubsAtEndParNew(ComponentRef cr)
   let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
   let totnrdims = listLength(crefDims(cr))
   let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
-  let substr = SimCodeUtil.generateSubPalceholders(cr)
+  let substr = generateSubPalceholders(cr)
   let &subsDimThread = buffer "" /*BUFD*/
   <<
   #define <%nosubfullpath%>_index(<%substr%>)    (&<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
@@ -1109,7 +1108,7 @@ template crefMacroSubsAtEndVarNew(ComponentRef cr)
   let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
   let totnrdims = listLength(crefDims(cr))
   let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
-  let substr = SimCodeUtil.generateSubPalceholders(cr)
+  let substr = generateSubPalceholders(cr)
   let &subsDimThread = buffer "" /*BUFD*/
   <<
   #define <%nosubfullpath%>_index(<%substr%>)    (&<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
@@ -6599,7 +6598,7 @@ template funArgBox(String outName, String varName, String condition, Type ty, Te
     let &varUnbox += if condition then 'if (<%condition%>) { <%outName%> = <%constructor%>; }<%\n%>' else '<%outName%> = <%constructor%>;<%\n%>'
     outName
   else // Some types don't need to be boxed, since they're already boxed.
-    let &varUnbox += '/* skip box <%varName%>; <%unparseType(ty)%> */'
+    let &varUnbox += '/* skip box <%varName%>; <%unparseType(ty)%> */<%\n%>'
     varName
 end funArgBox;
 
@@ -9607,7 +9606,7 @@ template daeExpCallTuple(Exp call, Text additionalOutputs /* arguments 2..N */, 
         let closure = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%name%>), 2)))'
         let argStrPointer = ('threadData, <%closure%>' + (expLst |> exp => (", " + daeExp(exp, context, &preExp, &varDecls, &auxFunction))))
         //'<%name%>(<%argStr%><%additionalOutputs%>)'
-        '/*Closure?*/<%closure%> ? (<%typeCast1%> <%func%>) (<%argStrPointer%><%additionalOutputs%>) : (<%typeCast2%> <%func%>) (<%argStr%><%additionalOutputs%>)'
+        '<%closure%> ? (<%typeCast1%> <%func%>) (<%argStrPointer%><%additionalOutputs%>) : (<%typeCast2%> <%func%>) (<%argStr%><%additionalOutputs%>)'
       else
         let name = '<% if attr.builtin then "" else "omc_" %><%underscorePath(path)%>'
         '<%name%>(<%argStr%><%additionalOutputs%>)'
@@ -10393,7 +10392,7 @@ match exp
 case exp as UNBOX(__) then
   let ty = expTypeShort(exp.ty)
   let res = daeExp(exp.exp,context,&preExp,&varDecls, &auxFunction)
-  'mmc_unbox_<%ty%>(<%res%>) /* DAE.UNBOX <%unparseType(exp.ty) %> */'
+  'mmc_unbox_<%ty%>(<%res%>)'
 end daeExpUnbox;
 
 template daeExpSharedLiteral(Exp exp)
