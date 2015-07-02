@@ -1686,7 +1686,7 @@ algorithm
       equation
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         filename_1 = Util.absoluteOrRelative(filename);
-        value = ValuesUtil.readDataset(filename_1, vars_1, size);
+        value = SimulationResults.readDataset(filename_1, vars_1, size);
       then
         (cache,value,st);
 

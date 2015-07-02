@@ -46,6 +46,7 @@
 package CodegenFMUCommon
 
 import interface SimCodeTV;
+import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenCFunctions.*;

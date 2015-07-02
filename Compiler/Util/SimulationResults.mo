@@ -38,7 +38,12 @@ encapsulated package SimulationResults
 
   "
 
-public import Values;
+import Values;
+
+protected
+
+import List;
+import ValuesUtil;
 
 public function val
   input String filename;
@@ -61,9 +66,24 @@ public function readDataset
   input String filename;
   input list<String> vars;
   input Integer dimsize;
-  output list<list<Real>> outMatrix;
+  output Values.Value val;
+protected
+  list<list<Real>> rvals;
+  list<list<Values.Value>> vals;
+  list<Values.Value> rows;
+  function readDataset_work
+    input String filename;
+    input list<String> vars;
+    input Integer dimsize;
+    output list<list<Real>> outMatrix;
 
-  external "C" outMatrix=SimulationResults_readDataset(filename,vars,dimsize) annotation(Library = "omcruntime");
+    external "C" outMatrix=SimulationResults_readDataset(filename,vars,dimsize) annotation(Library = "omcruntime");
+  end readDataset_work;
+algorithm
+  rvals := readDataset_work(filename,vars,dimsize);
+  vals := List.mapListReverse(rvals, ValuesUtil.makeReal);
+  rows := List.mapReverse(vals, ValuesUtil.makeArray);
+  val := ValuesUtil.makeArray(rows);
 end readDataset;
 
 public function readSimulationResultSize
