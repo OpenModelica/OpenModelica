@@ -16,7 +16,7 @@ compareVars :=
 };
 
 setDebugFlags("hpcom"); getErrorString();
-setCommandLineOptions("+n=2 +hpcomScheduler=mcp +hpcomCode=openmp"); getErrorString();
+setCommandLineOptions("+n=1 +hpcomScheduler=mcp +hpcomCode=openmp"); getErrorString();
 
 runScript(modelTesting);getErrorString();
 
