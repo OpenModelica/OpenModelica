@@ -3539,33 +3539,24 @@ algorithm
   outDAE:=
   match (b, inDAE)
     local
-      BackendDAE.Variables knvars, exobj, knvars1;
+      BackendDAE.Variables knvars;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns, inieqns, remeqns1;
       list<DAE.Constraint> constraintsLst;
       list<DAE.ClassAttributes> clsAttrsLst;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      list<BackendDAE.WhenClause> whenClauseLst, whenClauseLst1;
-      list<BackendDAE.ZeroCrossing> zeroCrossingLst, relationsLst, sampleLst;
-      Integer numMathFunctions;
-      BackendDAE.BackendDAEType btp;
+      list<BackendDAE.WhenClause> whenClauseLst;
+
       BackendDAE.EqSystems systs, systs1;
       list<BackendDAE.Equation> eqnslst;
       list<BackendDAE.Var> varlst;
       Boolean b1;
-      list<BackendDAE.TimeEvent> timeEvents;
-      BackendDAE.ExtraInfo ei;
-      array<DAE.ClockKind> clocks;
+      BackendDAE.Shared shared;
+      BackendDAE.EventInfo eventInfo;
 
     case (false, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree,
-                                                         BackendDAE.EVENT_INFO( timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst,
-                                                                                numMathFunctions, clocks ),
-                                                         eoc, btp, symjacs, ei )))
+    case (true, BackendDAE.DAE(systs, shared as BackendDAE.SHARED( knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns,
+                                                         removedEqs=remeqns, constraints=constraintsLst, classAttrs=clsAttrsLst,
+                                                         eventInfo=eventInfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) )))
       equation
         if Flags.isSet(Flags.DUMP_REPL) then
           BackendVarTransform.dumpReplacements(repl);
@@ -3573,24 +3564,32 @@ algorithm
           BackendVarTransform.dumpDerConstReplacements(repl);
         end if;
         // replace moved vars in knvars, remeqns
-        (aliasVars, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
+        (_, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
         aliasVars = List.fold(varlst, fixAliasConstBindings, aliasVars);
-        (knvars1, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
+        shared.aliasVars = aliasVars;
+
+        (_, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
+
         ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(inieqns, replaceEquationTraverser, (repl, {}, false));
-        inieqns = if b1 then BackendEquation.listEquation(eqnslst) else inieqns;
+        shared.initialEqs = if b1 then BackendEquation.listEquation(eqnslst) else inieqns;
+
         ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(remeqns, replaceEquationTraverser, (repl, {}, false));
         remeqns1 = if b1 then BackendEquation.listEquation(eqnslst) else remeqns;
-        (whenClauseLst1, _) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-        // remove optimica contraints and classAttributes
-        (constraintsLst, clsAttrsLst) = replaceOptimicaExps(constraintsLst, clsAttrsLst, repl);
-        systs1 = removeSimpleEquationsShared1(systs, {}, repl, NONE(), aliasVars);
         // remove asserts with condition=true from removed equations
-        remeqns1 = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1), assertWithCondTrue));
+        shared.removedEqs = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1), assertWithCondTrue));
+
+        (eventInfo.whenClauseLst, _) =
+            BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        shared.eventInfo = eventInfo;
+
+        (constraintsLst, clsAttrsLst) = replaceOptimicaExps(constraintsLst, clsAttrsLst, repl);
+        shared.constraints = constraintsLst;
+        shared.classAttrs = clsAttrsLst;
+
+        systs1 = removeSimpleEquationsShared1(systs, {}, repl, NONE(), aliasVars);
+
       then
-        BackendDAE.DAE(systs1, BackendDAE.SHARED( knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, graph, funcTree,
-                                                  BackendDAE.EVENT_INFO( timeEvents, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst,
-                                                                         numMathFunctions, clocks ),
-                                                  eoc, btp, symjacs, ei ));
+        BackendDAE.DAE(systs1, shared);
   end match;
 end removeSimpleEquationsShared;
 
