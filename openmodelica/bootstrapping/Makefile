@@ -8,9 +8,7 @@ ExpressionTest.mos \
 GraphTest.mos \
 HashTableTest.mos \
 PriorityQueue.mos \
-SimCodeTest.mos \
 SimplifyTest.mos \
-SusanTest.mos \
 System.mos \
 UtilTest.mos
 
