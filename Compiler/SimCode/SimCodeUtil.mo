@@ -4653,13 +4653,10 @@ protected function createEquationsfromList
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
 algorithm
-  (equations_, ouniqueEqIndex, otempvars) := matchcontinue(inEquations, inVars, genDiscrete, iuniqueEqIndex, itempvars, iextra)
+  (equations_, ouniqueEqIndex, otempvars) := matchcontinue inEquations
     local
-      BackendDAE.Variables evars, vars1;
-      BackendDAE.EquationArray eeqns, eqns_1;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
+      BackendDAE.Variables vars1;
+      BackendDAE.EquationArray eqns_1;
       BackendDAE.BackendDAE subsystem_dae;
       BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
@@ -4667,23 +4664,20 @@ algorithm
       Integer uniqueEqIndex;
       list<SimCodeVar.SimVar> tempvars;
 
-    case ({}, _, _, _, _, _)
+    case {}
     then ({}, iuniqueEqIndex, itempvars);
 
-    case (_, _, _, _, _, _) equation
+    case _ equation
       eqns_1 = BackendEquation.listEquation(inEquations);
       vars1 = BackendVariable.listVar1(inVars);
-      evars = BackendVariable.emptyVars();
-      eeqns = BackendEquation.emptyEqns();
-      cache = FCore.emptyCache();
-      graph = FGraph.empty();
-      funcs = DAEUtil.avlTreeNew();
-      syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED( evars, evars, evars, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAEUtil.emptyEventInfo(), {},
-                                  BackendDAE.ARRAYSYSTEM(), {}, iextra );
+      syst = BackendDAEUtil.createEqSystem(vars1, eqns_1);
+      shared = BackendDAEUtil.createEmptyShared(BackendDAE.ARRAYSYSTEM(), iextra, FCore.emptyCache(), FGraph.empty());
       subsystem_dae = BackendDAE.DAE({syst}, shared);
-      (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
-      (equations_, _, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
+      (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) =
+          BackendDAEUtil.transformBackendDAE( subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(),
+                                              BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE() );
+      (equations_, _, uniqueEqIndex, tempvars) =
+          createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
     then (equations_, uniqueEqIndex, tempvars);
 
     else equation
