@@ -298,6 +298,10 @@ ReferenceFiles \
 cleanAll.cmd \
 cleanAllButMat.cmd \
 simulateAll.sh \
+simulate.cmd \
+simulate_parallel.cmd \
+simulateAll.cmd \
+simulateAll_Parallel.cmd \
 sortResults.py
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

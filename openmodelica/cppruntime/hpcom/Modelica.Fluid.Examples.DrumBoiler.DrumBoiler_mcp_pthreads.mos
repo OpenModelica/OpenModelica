@@ -9,12 +9,10 @@
 //
 
 runScript("ModelTestingDefaults.mos");getErrorString();
-simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler);
 timeout := 120;
 
-referenceFile := "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat";
 compareVars :=
 {
    "evaporator.p",
@@ -22,22 +20,22 @@ compareVars :=
    "controller.x"
 };
 
-//setDebugFlags("hpcom"); getErrorString();
+setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=2 +hpcomScheduler=mcp +hpcomCode=pthreads"); getErrorString();
 
 runScript(modelTesting);getErrorString();
 
 // Result:
-// "true
-// true
+// "\"true
+// \"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"mat\"
 // true
 // "
 // ""
-// OpenModelicaModelTesting.SimulationRuntime.Cpp
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.DrumBoiler.DrumBoiler
 // 120
-// "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat"
 // {"evaporator.p","evaporator.V_l","controller.x"}
 // true
 // ""
@@ -45,13 +43,13 @@ runScript(modelTesting);getErrorString();
 // ""
 // readCalcTimesFromFile: No valid profiling-file found.
 // Warning: The costs have been estimated. Maybe Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_eqs_prof-file is missing.
-// TaskgraphMeta valid
-// Using Modified Critical Path Scheduler
-// There is no parallel potential for this model!
-// the ODE-system size is correct(22)
+// Using Modified Critical Path Scheduler for the DAE system
+// Using Modified Critical Path Scheduler for the ODE system
+// Using Modified Critical Path Scheduler for the ZeroFunc system
+// There is no parallel potential in the ODE system model!
 // HpcOm is still under construction.
-// Simulation options: startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''
-// Result file: Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.csv
+// Simulation options: startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat
 // Files Equal!
 // Warning: Alias set with several free start values
 // * candidate: evaporator.p(start = evaporator.p_start)

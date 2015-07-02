@@ -1,31 +1,51 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-BouncingBall_mcp_omp.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_level.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_memory.mos \
-Modelica.Thermal.HeatTransfer.Examples.Motor.mos
-
-TESTFILES_ALL = $(TESTFILES) \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_tbb.mos \
-BouncingBall_mcp_omp.mos \
-BouncingBall_levelfix_pthreads.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_list_omp.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_listr_omp.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_list_pthreads.mos \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_level_omp.mos \
 Modelica.Electrical.Spice3.Examples.CoupledInductors_list_pthreads_spin.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_mcp_omp.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_tbb.mos \
-Modelica.Fluid.Examples.BranchingDynamicPipes_levelfix.mos \
-Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_mcp_pthreads.mos \
-Modelica.Thermal.HeatTransfer.Examples.Motor.mos
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_pthreads_memory.mos \
+Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_omp.mos
 
+TESTFILES_ALL = $(TESTFILES_SERIAL) $(TESTFILES_LEVELFIX) $(TESTFILES_LEVEL) $(TESTFILES_METIS) $(TESTFILES_LIST) $(TESTFILES_LISTR) $(TESTFILES_TBB) $(TESTFILES_MCP)
+
+TESTFILES_SERIAL = \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_serial_omp.mos \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_serial_pthreads.mos
+
+TESTFILES_LEVELFIX = \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_pthreads.mos \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_pthreads_memory.mos \
+Modelica.Fluid.Examples.BranchingDynamicPipes_levelfix_pthreads.mos
+
+TESTFILES_LEVEL = \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_level_omp.mos \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp.mos
+
+TESTFILES_METIS = \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_metis_pthreads.mos
+
+TESTFILES_LIST = \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_list_omp.mos \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_list_pthreads.mos \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_list_pthreads_spin.mos
+
+TESTFILES_LISTR = \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_listr_omp.mos
+
+TESTFILES_TBB = \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_tbb.mos \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_tbb.mos
+
+TESTFILES_MCP = \
+Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_mcp_pthreads.mos \
+Modelica.Electrical.Spice3.Examples.CoupledInductors_mcp_omp.mos \
+Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_omp.mos
 
 # Run make failingtest
 FAILINGTESTFILES= \
-Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_level_omp.mos
+Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_level_omp.mos \
+Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_list_omp.mos \
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp_memory.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -40,7 +60,7 @@ ReferenceGraphs
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-.PHONY : test testAll clean getdeps failingtest
+.PHONY : test testAll clean getdeps failingtest testSerial testLevelfix testMetis testList testListr testTbb testMcp
 
 test:
 	@echo
@@ -48,6 +68,30 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
+
+testSerial:
+	@$(TEST) $(TESTFILES_SERIAL)
+
+testLevelfix:
+	@$(TEST) $(TESTFILES_LEVELFIX)
+
+testLevel:
+	@$(TEST) $(TESTFILES_LEVEL)
+
+testMetis:
+	@$(TEST) $(TESTFILES_METIS)
+
+testList:
+	@$(TEST) $(TESTFILES_LIST)
+
+testListr:
+	@$(TEST) $(TESTFILES_LISTR)
+
+testTbb:
+	@$(TEST) $(TESTFILES_TBB)
+
+testMcp:
+	@$(TEST) $(TESTFILES_MCP)
 
 testAll:
 	@echo
