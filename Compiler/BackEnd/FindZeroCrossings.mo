@@ -99,20 +99,7 @@ public function encapsulateWhenConditions "author: lochel"
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
-  BackendDAE.Variables knownVars;
-  BackendDAE.Variables externalObjects;
-  BackendDAE.Variables aliasVars;
-  BackendDAE.EquationArray initialEqs;
   BackendDAE.EquationArray removedEqs;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.EventInfo eventInfo;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
 
   list<BackendDAE.TimeEvent> timeEvents;
   list<BackendDAE.WhenClause> whenClauseLst;
@@ -129,23 +116,11 @@ protected
   BackendDAE.EquationArray eqns_;
   BackendDAE.ExtraInfo info;
   array<DAE.ClockKind> clocks;
+  BackendDAE.EventInfo eventInfo;
+
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  BackendDAE.SHARED(knownVars=knownVars,
-                    externalObjects=externalObjects,
-                    aliasVars=aliasVars,
-                    initialEqs=initialEqs,
-                    removedEqs=removedEqs,
-                    constraints=constraints,
-                    classAttrs=classAttrs,
-                    cache=cache,
-                    graph=graph,
-                    functionTree=functionTree,
-                    eventInfo=eventInfo,
-                    extObjClasses=extObjClasses,
-                    backendDAEType=backendDAEType,
-                    symjacs=symjacs,
-                    info=info) := shared;
+  BackendDAE.SHARED(removedEqs=removedEqs, eventInfo=eventInfo) := shared;
   BackendDAE.EVENT_INFO(timeEvents=timeEvents,
                         whenClauseLst=whenClauseLst,
                         zeroCrossingLst=zeroCrossingLst,
@@ -163,7 +138,9 @@ algorithm
   (whenClauseLst, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(whenClauseLst, {}, {}, {}, ht, index);
 
   // removed equations
-  ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseEquationArray(removedEqs, encapsulateWhenConditions_Equation, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
+  ((removedEqs, vars, eqns, index, ht)) :=
+      BackendEquation.traverseEquationArray( removedEqs, encapsulateWhenConditions_Equation,
+                                             (BackendEquation.emptyEqns(), vars, eqns, index, ht) );
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
   systs := listAppend(systs, {BackendDAEUtil.createEqSystem(vars_, eqns_)});
@@ -175,21 +152,10 @@ algorithm
                                      relationsLst,
                                      numberMathEvents,
                                      clocks);
-  shared := BackendDAE.SHARED(knownVars,
-                              externalObjects,
-                              aliasVars,
-                              initialEqs,
-                              removedEqs,
-                              constraints,
-                              classAttrs,
-                              cache,
-                              graph,
-                              functionTree,
-                              eventInfo,
-                              extObjClasses,
-                              backendDAEType,
-                              symjacs,
-                              info);
+
+  shared := BackendDAEUtil.setSharedEventInfo(shared, eventInfo);
+  shared := BackendDAEUtil.setSharedRemovedEqns(shared, removedEqs);
+
   outDAE := if intGt(index, 1) then BackendDAE.DAE(systs, shared) else inDAE;
   if Flags.isSet(Flags.DUMP_ENCAPSULATECONDITIONS) then
     BackendDump.dumpBackendDAE(outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
