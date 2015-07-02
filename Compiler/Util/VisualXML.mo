@@ -128,18 +128,11 @@ This is needed since protected, time-dependent variables are not stored in resul
 protected
   array<Integer> ass1;
   BackendDAE.Variables vars;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
   BackendDAE.EquationArray eqs;
-  list<BackendDAE.Var> varLst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := eqSysIn;
-  BackendDAE.MATCHING(ass1=ass1) := matching;
-  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setBindingForProtectedVars1,(1,ass1,eqs));
-  eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets,partitionKind);
+  BackendDAE.EQSYSTEM(orderedEqs=eqs, orderedVars=vars, matching=BackendDAE.MATCHING(ass1=ass1)) := eqSysIn;
+  BackendVariable.traverseBackendDAEVarsWithUpdate(vars, setBindingForProtectedVars1, (1, ass1, eqs));
+  eqSysOut := eqSysIn;
 end setBindingForProtectedVars;
 
 protected function setBindingForProtectedVars1"checks if the var is protected and sets the binding (i.e. the solved equation)"
