@@ -25,7 +25,7 @@ void FMULogger::writeInternal(std::string errorMsg, LogCategory cat, LogLevel lv
 {
   switch(lvl)
   {
-  case(ERROR):
+  case(OM_ERROR):
 	  callbackLogger(component, instanceName, fmiError, "?", errorMsg.c_str());
   	  break;
   case(OM_WARNING):
