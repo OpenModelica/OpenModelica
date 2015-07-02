@@ -39,7 +39,6 @@ encapsulated package NFEnvAvlTree
   This package implements an AvlTree that's used by NFEnv.
 "
 
-public import Absyn;
 public import NFInstTypes;
 
 protected import Error;

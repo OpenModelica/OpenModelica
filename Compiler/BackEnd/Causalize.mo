@@ -43,7 +43,6 @@ public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;
 
-protected import Absyn;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;

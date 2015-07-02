@@ -7,11 +7,8 @@ encapsulated package BlockCallRewrite
 "
 
 public import Absyn;
-public import SCode;
 
 protected import Dump;
-protected import Parser;
-protected import Print;
 
 public function rewriteBlockCall
   input Absyn.Program inPg "Model containing block calls";

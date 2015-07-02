@@ -66,7 +66,6 @@ public import DAE;
 public import FCore;
 
 protected import Array;
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
@@ -77,7 +76,6 @@ protected import BaseHashSet;
 protected import Ceval;
 protected import ComponentReference;
 protected import DAEUtil;
-protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;

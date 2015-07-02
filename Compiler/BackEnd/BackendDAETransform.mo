@@ -42,13 +42,11 @@ encapsulated package BackendDAETransform
   RCS: $Id$
 "
 
-public import Absyn;
 public import BackendDAE;
 public import DAE;
 
 protected import BackendDAEUtil;
 protected import BackendDump;
-protected import BackendDAEOptimize;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
@@ -59,7 +57,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;
-protected import Matching;
 protected import SCode;
 protected import Sorting;
 protected import SymbolicJacobian;

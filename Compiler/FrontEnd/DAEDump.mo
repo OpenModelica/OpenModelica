@@ -48,7 +48,6 @@ public import SCode;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
-protected import Debug;
 protected import Error;
 protected import Print;
 protected import Util;

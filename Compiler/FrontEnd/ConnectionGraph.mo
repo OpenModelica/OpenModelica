@@ -75,7 +75,6 @@ public import HashTable3;
 public import HashTableCG;
 public import Connect;
 
-protected import Error;
 
 public type Edge  = tuple<DAE.ComponentRef,DAE.ComponentRef> "an edge is a tuple with two component references";
 public type Edges = list<Edge> "A list of edges";
@@ -348,7 +347,6 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import ConnectUtil;
 protected import Debug;
-protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;

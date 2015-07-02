@@ -91,7 +91,6 @@ protected import Global;
 protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
 protected import IndexReduction;
-protected import Initialization;
 protected import Inline;
 protected import InlineArrayEquations;
 protected import List;

@@ -50,7 +50,6 @@ protected import BackendVariable;
 protected import CheckModel;
 protected import ComponentReference;
 protected import DAEDump;
-protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;

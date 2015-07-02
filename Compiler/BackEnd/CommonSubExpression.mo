@@ -46,7 +46,6 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
-protected import BaseHashSet;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import Expression;

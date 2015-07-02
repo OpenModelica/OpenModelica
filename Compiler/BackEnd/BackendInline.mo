@@ -41,29 +41,15 @@ encapsulated package BackendInline
   The entry point is the inlineCalls function, or inlineCallsInFunctions
   "
 
-public import Absyn;
 public import BackendDAE;
-public import BaseHashTable;
 public import DAE;
-public import FCore;
-public import HashTableCG;
 public import Inline;
 public import SCode;
 public import Values;
 
-protected import Ceval;
-protected import ClassInf;
-protected import ComponentReference;
-protected import Config;
 protected import Debug;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
-protected import Types;
-protected import VarTransform;
 
 // =============================================================================
 // late inline functions stuff

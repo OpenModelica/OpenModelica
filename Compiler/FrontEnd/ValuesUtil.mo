@@ -47,7 +47,6 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSimplifyTypes;
 protected import Flags;

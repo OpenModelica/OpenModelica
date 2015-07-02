@@ -37,7 +37,6 @@ encapsulated package Matching
   RCS: $Id: Matching.mo 11428 2012-03-14 17:38:09Z Frenkel TUD $"
 
 
-public import Absyn;
 public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;

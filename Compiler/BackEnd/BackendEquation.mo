@@ -53,7 +53,6 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
-protected import FCore;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;

@@ -57,7 +57,6 @@ protected import Differentiate;
 protected import Expression;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
-protected import Error;
 protected import Flags;
 protected import List;
 

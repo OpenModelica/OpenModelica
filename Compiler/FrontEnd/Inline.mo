@@ -44,11 +44,9 @@ encapsulated package Inline
 public import Absyn;
 public import BaseHashTable;
 public import DAE;
-public import FCore;
 public import HashTableCG;
 public import SCode;
 public import Util;
-public import Values;
 
 public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 

@@ -43,7 +43,6 @@ public import Values;
 protected import Algorithm;
 protected import BackendDAECreate;
 protected import BackendDAEEXT;
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;

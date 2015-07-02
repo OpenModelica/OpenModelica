@@ -38,7 +38,6 @@ encapsulated package MathematicaDump
   import Util;
   import List;
   import Absyn;
-  import Expression;
   import System;
   import ExpressionDump;
   import IOStream;

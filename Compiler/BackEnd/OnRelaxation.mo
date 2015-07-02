@@ -48,7 +48,6 @@ protected import BackendVariable;
 protected import BackendDAETransform;
 protected import BaseHashSet;
 protected import ComponentReference;
-protected import Debug;
 protected import Differentiate;
 protected import DumpGraphML;
 protected import Expression;

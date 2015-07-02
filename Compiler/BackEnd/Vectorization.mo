@@ -50,8 +50,6 @@ protected import Dump;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import List;
-protected import SCode;
-protected import SCodeDump;
 protected import SimCode;
 protected import SimCodeVar;
 protected import Util;

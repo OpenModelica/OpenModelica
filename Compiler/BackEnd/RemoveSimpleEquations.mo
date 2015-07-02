@@ -57,7 +57,6 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
-protected import BackendDAETransform;
 protected import BaseHashSet;
 protected import BaseHashTable;
 protected import Ceval;
@@ -79,15 +78,9 @@ protected import Types;
 protected import Util;
 protected import HashTableCrToCrEqLst;
 protected import HashTableCrToExp;
-protected import HashTableExpToExp;
 protected import HashTableExpToIndex;
 
 
-protected import Array;
-protected import HpcOmEqSystems;
-protected import HpcOmTaskGraph;
-protected import ResolveLoops;
-protected import Differentiate;
 
 protected type EquationSourceAndAttributes = tuple<DAE.ElementSource, BackendDAE.EquationAttributes> "eqnAttributes(source,EquationAttributes)";
 

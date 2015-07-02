@@ -53,7 +53,6 @@ public import HashSet;
 public import Tpl;
 
 protected import Absyn;
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;

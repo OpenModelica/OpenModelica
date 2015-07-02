@@ -1,7 +1,5 @@
 encapsulated package SimCodeUtil
 
-import SimCode;
-
 function sortEqSystems<T>
   input T eqs;
   output T outEqs;

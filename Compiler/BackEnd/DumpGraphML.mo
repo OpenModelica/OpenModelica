@@ -40,7 +40,6 @@ encapsulated package DumpGraphML
 public import BackendDAE;
 public import DAE;
 
-protected import Array;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendDAETransform;
