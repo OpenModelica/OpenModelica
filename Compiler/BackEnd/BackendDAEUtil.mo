@@ -8302,6 +8302,23 @@ algorithm
   end match;
 end setSharedAliasVars;
 
+public function setSharedOptimica
+  input BackendDAE.Shared inShared;
+  input list<DAE.Constraint> constraints;
+  input list<DAE.ClassAttributes> classAttrs;
+  output BackendDAE.Shared outShared;
+algorithm
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      equation
+        shared.constraints = constraints;
+        shared.classAttrs = classAttrs;
+      then shared;
+  end match;
+end setSharedOptimica;
+
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
