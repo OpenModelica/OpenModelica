@@ -137,7 +137,7 @@ if true then /* Suppress output */
 
     // "Template";
     "../Template/AbsynDumpTpl.mo",
-    "../Template/CodegenC.mo",
+    "../Template/CodegenCFunctions.mo",
     "../Template/CodegenUtil.mo",
     "../Template/DAEDumpTpl.mo",
     "../Template/ExpressionDumpTpl.mo",
@@ -249,8 +249,7 @@ if true then /* Suppress output */
     "../Stubs/XMLDump.mo",
     "../Stubs/VisualXML.mo",
     "../Stubs/LexerModelicaDiff.mo",
-    "../Stubs/DiffAlgorithm.mo",
-    "../Stubs/HpcOmSimCodeMain.mo"
+    "../Stubs/DiffAlgorithm.mo"
   }
   else {
     "../BackEnd/BackendDAEFunc.mo",
@@ -320,6 +319,7 @@ if true then /* Suppress output */
     "../SimCode/SimCodeUtil.mo",
 
     "../Template/CodegenAdevs.mo",
+    "../Template/CodegenC.mo",
     "../Template/CodegenCpp.mo",
     "../Template/CodegenCppHpcom.mo",
     "../Template/CodegenCppInit.mo",

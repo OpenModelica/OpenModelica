@@ -43,7 +43,7 @@ import SimCode;
 // protected imports
 protected
 import BaseHashTable;
-import CodegenC;
+import CodegenCFunctions;
 import SimCodeFunctionUtil;
 
 public function translateFunctions "
@@ -77,7 +77,7 @@ algorithm
         makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs,libPaths, true);
         fnCode = SimCode.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
-        _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
+        _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
       then
         ();
     case (_, _, NONE(), daeElements, _, includes)
@@ -92,7 +92,7 @@ algorithm
 
         fnCode = SimCode.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
-        _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
+        _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
       then
         ();
   end match;
