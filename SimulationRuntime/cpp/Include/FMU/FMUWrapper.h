@@ -52,7 +52,7 @@ public:
 
     virtual fmiStatus setDebugLogging  (fmiBoolean loggingOn)
     {
-    	Logger::setEnabled(loggingOn);
+      Logger::setEnabled(loggingOn);
         return fmiOK;
     }
 
@@ -66,11 +66,11 @@ public:
 
     virtual fmiStatus setContinuousStates    (const fmiReal states[], size_t nx)
     {
-    	Logger::write("setContinuousStates called",OTHER,INFO);
+      Logger::write("setContinuousStates called",OM_OTHER,OM_INFO);
       // to set states do the folowing
-	  std::stringstream message;
-	  message << "Setting continuous states";
-	  Logger::write(message.str(),OTHER,INFO);
+    std::stringstream message;
+    message << "Setting continuous states";
+    Logger::write(message.str(),OM_OTHER,OM_INFO);
       _model->setContinuousStates(states);
       _need_update = true;
       return fmiOK;
@@ -144,13 +144,13 @@ public:
       eventInfo.terminateSimulation = fmiFalse;
       eventInfo.upcomingTimeEvent = fmiFalse;
       //eventInfo.nextTimeEvent no need to set this for this model
-      Logger::write("Initialization completed",OTHER,INFO);
+      Logger::write("Initialization completed",OM_OTHER,OM_INFO);
       return fmiOK;
     }
 
     virtual fmiStatus getDerivatives    (fmiReal derivatives[]    , size_t nx)
     {
-	  Logger::write("Try to get derivatives",OTHER,INFO);
+    Logger::write("Try to get derivatives",OM_OTHER,OM_INFO);
       updateModel();
       _model->getRHS(derivatives);
       return fmiOK;
