@@ -55,10 +55,29 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
-     std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("buffer", BUFFER)("empty", EMPTY);
-     std::map<std::string,LogCategory> logCatMap = map_list_of("init", INIT)("nls", NLS)("ls",LS)("solv", SOLV)("output", OUT)("event",EVT)("modell",MOD)("other",OTHER);
-     std::map<std::string,LogLevel> logLvlMap = map_list_of("error", ERROR)("warning", WARNING)("info", INFO)("debug", DEBUG);
-     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", ALL)("step", STEP)("empty2",EMPTY2);
+     std::map<std::string,OutputFormat> outputFormatMap = map_list_of
+       ("csv", OM_CSV)
+       ("mat", OM_MAT)
+       ("buffer", OM_BUFFER)
+       ("empty", OM_EMPTY);
+     std::map<std::string,LogCategory> logCatMap = map_list_of
+       ("init", OM_INIT)
+       ("nls", OM_NLS)
+       ("ls", OM_LS)
+       ("solv", OM_SOLV)
+       ("output", OM_OUT)
+       ("event", OM_EVT)
+       ("modell", OM_MOD)
+       ("other", OM_OTHER);
+     std::map<std::string,LogLevel> logLvlMap = map_list_of
+       ("error", OM_ERROR)
+       ("warning", OM_WARNING)
+       ("info", OM_INFO)
+       ("debug", OM_DEBUG);
+     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of
+       ("all", OM_ALL)
+       ("step", OM_STEP)
+       ("empty2", OM_EMPTY2);
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
@@ -157,7 +176,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
           //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
           outputFormat_str = vm["OutputFormat"].as<string>();
           outputFomat = outputFormatMap[outputFormat_str];
-          if(!((outputFomat==CSV) || (outputFomat==EMPTY)||(outputFomat==BUFFER)||(outputFomat==MAT)))
+          if(!((outputFomat==OM_CSV) || (outputFomat==OM_EMPTY)||(outputFomat==OM_BUFFER)||(outputFomat==OM_MAT)))
           {
             std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" or  outputFormat=\"empty\" or  outputFormat=\"matlab\"in simulate command ";
             throw ModelicaSimulationError(MODEL_FACTORY,eception_msg.c_str());
@@ -184,26 +203,26 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      LogSettings logSet;
      if (vm.count("log-settings"))
      {
-    	 std::vector<std::string> log_vec = vm["log-settings"].as<std::vector<string> >(),tmpvec;
-    	 for(unsigned i=0;i<log_vec.size();++i)
-    	 {
-    		 cout << i << ". " << log_vec[i] << std::endl;
-    		 tmpvec.clear();
-    		 boost::split(tmpvec,log_vec[i],boost::is_any_of("="));
+       std::vector<std::string> log_vec = vm["log-settings"].as<std::vector<string> >(),tmpvec;
+       for(unsigned i=0;i<log_vec.size();++i)
+       {
+         cout << i << ". " << log_vec[i] << std::endl;
+         tmpvec.clear();
+         boost::split(tmpvec,log_vec[i],boost::is_any_of("="));
 
-    		 if(tmpvec.size()>1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end() && ( tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()))
-    		 {
-    			 if(tmpvec[0] == "all")
-    			 {
-    				 logSet.setAll(logLvlMap[tmpvec[1]]);
-    				 break;
-    			 }
-    			 else
-    				 logSet.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
-    	     }
-    		 else
-    			 throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + boost::lexical_cast<std::string>(log_vec[i]) + "\n");
-    	 }
+         if(tmpvec.size()>1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end() && ( tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()))
+         {
+           if(tmpvec[0] == "all")
+           {
+             logSet.setAll(logLvlMap[tmpvec[1]]);
+             break;
+           }
+           else
+             logSet.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
+           }
+         else
+           throw ModelicaSimulationError(MODEL_FACTORY,"log-settings flags not supported: " + boost::lexical_cast<std::string>(log_vec[i]) + "\n");
+       }
 
      }
 

@@ -111,7 +111,7 @@ void SolverDefaultImplementation::initialize()
   timeevent_system->setTime(_tCurrent);
 
 
-  if(_settings->getGlobalSettings()->getOutputPointType() != EMPTY2 && _settings->getGlobalSettings()->getOutputFormat() != EMPTY)
+  if(_settings->getGlobalSettings()->getOutputPointType() != OM_EMPTY2 && _settings->getGlobalSettings()->getOutputFormat() != OM_EMPTY)
     writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 
   // Allocate array with values of zero functions
@@ -192,7 +192,7 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
   }
   #endif
 
-  if(_settings->getGlobalSettings()->getOutputFormat()!= EMPTY)
+  if(_settings->getGlobalSettings()->getOutputFormat()!= OM_EMPTY)
   {
     IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
 

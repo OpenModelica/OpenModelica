@@ -6,6 +6,10 @@
 #include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
 #include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
 
+#if defined(_MSC_VER) && !defined(RUNTIME_STATIC_LINKING)
+	Logger* Logger::instance = NULL;
+#endif
+
 Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),
       _idasettings(dynamic_cast<ISolverSettings*>(_settings)),
@@ -282,8 +286,8 @@ void Ida::initialize()
 
 void Ida::solve(const SOLVERCALL action)
 {
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
+  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OM_ALL);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OM_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OM_EMPTY2);
 
   #ifdef RUNTIME_PROFILING
   MEASURETIME_REGION_DEFINE(idaSolveFunctionHandler, "solve");
@@ -422,8 +426,8 @@ void Ida::IDACore()
   if (_idid < 0)
     throw std::runtime_error("IDA::ReInit");
 
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
+  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OM_ALL);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OM_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OM_EMPTY2);
 
   while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {
@@ -919,12 +923,12 @@ void Ida::writeSimulationInfo()
 
   flag = IDAGetNonlinSolvStats(_idaMem, &nni, &ncfn);
 
-  Logger::write("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),SOLV,INFO);
-  Logger::write("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),SOLV,INFO);
-  Logger::write("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),SOLV,INFO);
-  Logger::write("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),SOLV,INFO);
-  Logger::write("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),SOLV,INFO);
-  Logger::write("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),SOLV,INFO);
+  Logger::write("Cvode: number steps = " + boost::lexical_cast<std::string>(nst),OM_SOLV,OM_INFO);
+  Logger::write("Cvode: function evaluations 'f' = " + boost::lexical_cast<std::string>(nfe),OM_SOLV,OM_INFO);
+  Logger::write("Cvode: error test failures 'netf' = " + boost::lexical_cast<std::string>(netfS),OM_SOLV,OM_INFO);
+  Logger::write("Cvode: linear solver setups 'nsetups' = " + boost::lexical_cast<std::string>(nsetups),OM_SOLV,OM_INFO);
+  Logger::write("Cvode: nonlinear iterations 'nni' = " + boost::lexical_cast<std::string>(nni),OM_SOLV,OM_INFO);
+  Logger::write("Cvode: convergence failures 'ncfn' = " + boost::lexical_cast<std::string>(ncfn),OM_SOLV,OM_INFO);
 }
 
 int Ida::check_flag(void *flagvalue, const char *funcname, int opt)
