@@ -98,23 +98,14 @@ protected
   BackendDAE.StrongComponent c;
   Integer i = 1;
   list<BackendDAE.Var> newVars = {};
-
-  BackendDAE.Variables vars;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  BackendDAE.EquationArray eqns;
-
 algorithm
   for comp in inComps loop
     (osyst,oshared, newVars) := findSimpleEquationWork(osyst,oshared,comp, i, newVars);
     i := i + 1;
   end for;
-
   if  not listEmpty(newVars) then
-    BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := osyst;
-    vars := BackendVariable.addVars(newVars, vars);
-    osyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),matching,stateSets,partitionKind);
+    osyst.orderedVars := BackendVariable.addVars(newVars, osyst.orderedVars);
+    osyst := BackendDAEUtil.setEqSystMatrices(osyst);
     //BackendDump.printEqSystem(osyst);
   end if;
 

@@ -3468,11 +3468,8 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+      BackendDAE.EqSystem syst;
       list<SimCode.StateSet> equations;
       Integer uniqueEqIndex, numStateSets;
       list<SimCodeVar.SimVar> tempvars;
@@ -3480,12 +3477,14 @@ algorithm
     // no stateSet
     case (BackendDAE.EQSYSTEM(stateSets={}), _) then (isyst, inTpl);
     // sets
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, m=m, mT=mT, matching=matching as BackendDAE.MATCHING(comps=comps), stateSets=stateSets, partitionKind=partitionKind),
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps), stateSets=stateSets),
          (equations, uniqueEqIndex, tempvars, numStateSets))
       equation
-        (vars, equations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(stateSets, vars, eqns, inShared, comps, equations, uniqueEqIndex, tempvars, numStateSets);
+        (vars, equations, uniqueEqIndex, tempvars, numStateSets) =
+            createStateSetsSets(stateSets, vars, eqns, inShared, comps, equations, uniqueEqIndex, tempvars, numStateSets);
+        syst.orderedVars = vars;
       then
-        (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), (equations, uniqueEqIndex, tempvars, numStateSets));
+        (syst, (equations, uniqueEqIndex, tempvars, numStateSets));
   end match;
 end createStateSetsSystem;
 
@@ -5753,25 +5752,21 @@ author:Waurich TUD 2015-01"
 protected
   list<Integer> varMap;
   array<Integer> varMapArr;
-  BackendDAE.Variables vars,allVars,vars1;
-  BackendDAE.EquationArray eqs,eqs1;
+  BackendDAE.Variables vars, allVars, vars1;
+  BackendDAE.EquationArray eqs, eqs1;
   BackendDAE.Matching matching;
   BackendDAE.IncidenceMatrix mStart;
   BackendDAE.IncidenceMatrixT mTStart;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
   BackendDAE.StrongComponents comps;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
   BackendDAE.EqSystem syst;
   list<BackendDAE.Equation> eqLst;
-  list<BackendDAE.Var> varLst,noStartVarLst;
+  list<BackendDAE.Var> varLst, noStartVarLst;
 
   list<tuple<Integer,BackendDAE.VarKind>> stateInfo;
   list<Integer> stateIdcs;
   list<BackendDAE.VarKind> stateKinds;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, stateSets=stateSets, partitionKind=partitionKind, matching=matching) := systIn;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs) := systIn;
   // set the varkInd for states to variable, reverse this later with the help of the stateinfo
   stateInfo := List.fold1(List.intRange(BackendVariable.varsSize(vars)),getStateInfo,vars,{});// which var is a state and save the kind
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,BackendDAE.VARIABLE());
@@ -5786,24 +5781,24 @@ algorithm
   // insert start values for crefs and build incidence matrix
     //BackendDump.dumpVariables(vars,"VAR BEFORE");
     //BackendDump.dumpEquationList(eqLst,"EQS BEFORE");
-  (eqLst,_) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,allVars);
+  (eqLst, _) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,allVars);
     //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
   eqs1 := BackendEquation.listEquation(eqLst);
   vars1 := BackendVariable.listVar1(noStartVarLst);
-  syst := BackendDAE.EQSYSTEM(vars1,eqs1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
-  (syst,mStart,mTStart) := BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
+  syst := BackendDAEUtil.createEqSystem(vars1, eqs1);
+  (syst, mStart, mTStart) := BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
     //BackendDump.dumpIncidenceMatrix(mStart);
     //BackendDump.dumpIncidenceMatrixT(mTStart);
   // solve equations for new start values and assign start values to variables
   varMapArr := listArray(varMap);
-  vars := preCalculateStartValues1(List.intRange(arrayLength(mStart)),mStart,mTStart,varMapArr,eqs1,vars);
+  vars := preCalculateStartValues1(List.intRange(arrayLength(mStart)), mStart, mTStart, varMapArr, eqs1, vars);
 
   // reset the varKinds for the states
-  stateIdcs := List.map(stateInfo,Util.tuple21);
-  stateKinds := List.map(stateInfo,Util.tuple22);
-  vars := List.threadFold(stateIdcs,stateKinds,BackendVariable.setVarKindForVar,vars);
+  stateIdcs := List.map(stateInfo, Util.tuple21);
+  stateKinds := List.map(stateInfo, Util.tuple22);
+  vars := List.threadFold(stateIdcs, stateKinds,BackendVariable.setVarKindForVar, vars);
     //BackendDump.dumpVariables(vars,"VAR AFTER");
-  systOut := BackendDAE.EQSYSTEM(vars, eqs,m, mT, matching, stateSets, partitionKind);
+  systOut := BackendDAEUtil.setEqSystVars(systIn, vars);
 end preCalculateStartValues;
 
 protected function preCalculateStartValues1"try to solve the start equation for a var and set the resulting start value for it."

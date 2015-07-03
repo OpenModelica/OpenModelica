@@ -1766,19 +1766,13 @@ protected
   array<Option<BackendDAE.Equation>> equOptArr;
   DAE.VarInnerOuter io1, io2;
   // EQSYSTEM
-  BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
-  BackendDAE.EquationArray orderedEqs "ordered Equations";
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets "the statesets of the system";
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.Variables orderedVars;
 algorithm
   (modes,syst) := inModesSyst;
   (keyCref,mode) := inCrefMode;
-  MODE(name,isInitial,edges,eqs,outgoing,outShared,outLocal,crefPrevious) := mode;
-  BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr) := eqs;
-  BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind) := syst;
+  MODE(name, isInitial, edges, eqs, outgoing, outShared, outLocal, crefPrevious) := mode;
+  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := eqs;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars) := syst;
   outSharedNew := {};
 
   for outVar in outShared loop
@@ -1792,18 +1786,18 @@ algorithm
 
       if isSome(innerOptCref) then
         // Remove the equation relating inner and outer
-        arrayUpdate(equOptArr,i,NONE());
+        arrayUpdate(equOptArr, i, NONE());
         size := size - 1;
         //numberOfElement := numberOfElement - 1;
-        eqs := BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr);
+        eqs := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr);
         // replace all outer crefs by their corresponding inner cref
-        (eqs,_) := BackendEquation.traverseEquationArray_WithUpdate(eqs,subsOuterByInnerEq,(outCref,Util.getOption(innerOptCref)));
+        (eqs,_) := BackendEquation.traverseEquationArray_WithUpdate(eqs, subsOuterByInnerEq, (outCref,Util.getOption(innerOptCref)));
         // update outSharedNew and use that later to construct MODE
-        ({innerVar},_) := BackendVariable.getVar(Util.getOption(innerOptCref),orderedVars);
+        ({innerVar}, _) := BackendVariable.getVar(Util.getOption(innerOptCref), orderedVars);
         outSharedNew := innerVar :: outSharedNew;
         // replace possible outer crefs in "crefPrevious" by their corresponding inner
-        crefPrevious := List.replaceOnTrue(Util.getOption(innerOptCref),crefPrevious,function ComponentReference.crefEqual(inComponentRef1=outCref));
-
+        crefPrevious := List.replaceOnTrue( Util.getOption(innerOptCref), crefPrevious,
+                                            function ComponentReference.crefEqual(inComponentRef1=outCref) );
         // Remove variable from BackendDAE variables (the corresponding element in the variable array is set to NONE())
         orderedVars := BackendVariable.removeCref(outCref,orderedVars);
         success := true;
@@ -1811,7 +1805,7 @@ algorithm
       end if;
     end for;
 
-    assert(success, "Expect to find inner variable corresponding to outer variable "+ComponentReference.crefStr(outCref));
+    assert(success, "Expect to find inner variable corresponding to outer variable " + ComponentReference.crefStr(outCref));
   end for;
 
   // Rebuild "orderedVars" in order to eliminate intermediate "NONE()" entries in variable array.
@@ -1822,7 +1816,7 @@ algorithm
 
   mode := MODE(name,isInitial,edges,eqs,outgoing,listReverse(outSharedNew),outLocal,crefPrevious);
   modes := BaseHashTable.update((keyCref, mode), modes);
-  syst := BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind);
+  syst.orderedVars := orderedVars;
   outModesSyst := (modes,syst);
 end elaborateMode;
 
