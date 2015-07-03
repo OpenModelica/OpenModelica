@@ -150,7 +150,7 @@ algorithm
                                                     extObjCls,
                                                     BackendDAE.SIMULATION(),
                                                     symjacs,inExtraInfo,
-                                                    BackendDAE.PARTITIONS_INFO(arrayCreate(0, DAE.INFERRED_CLOCK()))));
+                                                    BackendDAE.PARTITIONS_INFO(BackendDAEUtil.emptyClocks())));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   neqStr := intString(BackendDAEUtil.equationSize(eqnarr));
   nvarStr := intString(BackendVariable.varsSize(vars_1));

@@ -8001,7 +8001,7 @@ protected
 algorithm
   shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
                                DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei,
-                               BackendDAE.PARTITIONS_INFO(arrayCreate(0, DAE.INFERRED_CLOCK())) );
+                               BackendDAE.PARTITIONS_INFO(emptyClocks()) );
 end createEmptyShared;
 
 public function makeSingleEquationComp
