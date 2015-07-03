@@ -215,25 +215,28 @@ protected function removeHoldExpsSyst
   input list<BackendDAE.EqSystem> inSysts;
   output list<BackendDAE.EqSystem> outSysts = {};
   output list<DAE.ComponentRef> outHoldComps = {};
-protected
-  BackendDAE.EquationArray eqs;
-  BackendDAE.Variables vars;
-  BackendDAE.Equation eq;
-  list<BackendDAE.Equation> lstEqs;
-  Integer i;
-  BackendDAE.EqSystem syst;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  for syst in inSysts loop
-    lstEqs := {};
-    BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, partitionKind = partitionKind) := syst;
-    for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
-      eq := BackendEquation.equationNth1(eqs, i);
-      (eq, outHoldComps) := BackendEquation.traverseExpsOfEquation(eq, removeHoldExp1, outHoldComps);
-      lstEqs := eq::lstEqs;
-    end for;
-    outSysts := BackendDAEUtil.createEqSystem( vars, BackendEquation.listEquation(listReverse(lstEqs)),
-                                                  {}, partitionKind ) :: outSysts;
+  for syst1 in inSysts loop
+    syst1 := match syst1
+      local
+        BackendDAE.EquationArray eqs;
+        BackendDAE.Variables vars;
+        BackendDAE.EqSystem syst;
+        list<BackendDAE.Equation> lstEqs;
+        Integer i;
+        BackendDAE.Equation eq;
+      case syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs)
+        algorithm
+          lstEqs := {};
+          for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+            eq := BackendEquation.equationNth1(eqs, i);
+            (eq, outHoldComps) := BackendEquation.traverseExpsOfEquation(eq, removeHoldExp1, outHoldComps);
+            lstEqs := eq::lstEqs;
+          end for;
+          syst.orderedEqs := BackendEquation.listEquation(listReverse(lstEqs));
+        then syst;
+    end match;
+    outSysts := BackendDAEUtil.clearEqSyst(syst1) :: outSysts;
   end for;
 end removeHoldExpsSyst;
 
@@ -999,27 +1002,28 @@ protected function substituteParitionOpExps
  and the equation $var_i = expr_i is added to the equation set."
   input BackendDAE.EqSystem inSyst;
   output BackendDAE.EqSystem outSyst;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqs;
-  list<BackendDAE.Equation> newEqs = {};
-  list<BackendDAE.Var> newVars = {};
-  Integer cnt = 1;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.Equation eq;
-  Integer eqSize;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs) := inSyst;
-  eqSize := BackendDAEUtil.equationArraySize(eqs);
-  for i in 1:eqSize loop
-    eq := BackendEquation.equationNth1(eqs, i);
-    (eq, (newEqs, newVars, cnt)) :=
-        BackendEquation.traverseExpsOfEquation(eq, substituteParitionOpExp, (newEqs, newVars, cnt));
-    newEqs := eq::newEqs;
-  end for;
-  eqs := BackendEquation.listEquation(listReverse(newEqs));
-  vars := BackendVariable.addVars(newVars, vars);
-  outSyst := BackendDAEUtil.createEqSystem(vars, eqs);
+  outSyst := match inSyst
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.EqSystem syst;
+      list<BackendDAE.Equation> newEqs = {};
+      list<BackendDAE.Var> newVars = {};
+      Integer cnt = 1;
+      BackendDAE.Equation eq;
+    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs)
+      algorithm
+        for i in 1:BackendDAEUtil.equationArraySize(eqs) loop
+          eq := BackendEquation.equationNth1(eqs, i);
+          (eq, (newEqs, newVars, cnt)) :=
+          BackendEquation.traverseExpsOfEquation(eq, substituteParitionOpExp, (newEqs, newVars, cnt));
+          newEqs := eq::newEqs;
+        end for;
+        syst.orderedEqs := BackendEquation.listEquation(listReverse(newEqs));
+        syst.orderedVars := BackendVariable.addVars(newVars, vars);
+      then BackendDAEUtil.clearEqSyst(syst);
+  end match;
 end substituteParitionOpExps;
 
 protected function substituteParitionOpExp
@@ -1482,18 +1486,15 @@ protected function setSystPartition
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.BaseClockPartitionKind inPartitionKind;
   output BackendDAE.EqSystem outSyst;
-protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.EquationArray removedEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.EQSYSTEM( orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inSyst;
-  outSyst := BackendDAEUtil.createEqSystem(orderedVars, orderedEqs, stateSets, inPartitionKind);
+  outSyst := match inSyst
+    local
+      BackendDAE.EqSystem syst;
+    case syst as BackendDAE.EQSYSTEM()
+      algorithm
+        syst.partitionKind := inPartitionKind;
+      then syst;
+  end match;
 end setSystPartition;
 
 protected function getPartitionConflictError
