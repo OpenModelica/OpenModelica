@@ -37,7 +37,6 @@ encapsulated package NFConnect2
   RCS: $Id$
 "
 
-public import Absyn;
 public import DAE;
 
 public uniontype Face

@@ -49,7 +49,6 @@ import FCore;
 protected
 import List;
 import Error;
-import System;
 
 public
 type Name = FCore.Name;

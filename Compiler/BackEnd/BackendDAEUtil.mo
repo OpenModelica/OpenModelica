@@ -91,7 +91,6 @@ protected import Global;
 protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
 protected import IndexReduction;
-protected import Initialization;
 protected import Inline;
 protected import InlineArrayEquations;
 protected import List;
@@ -561,15 +560,9 @@ public function addVarsToEqSystem
   output BackendDAE.EqSystem osyst;
 protected
   BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqs;
-  Option<BackendDAE.IncidenceMatrix> m,mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind) := syst;
-  vars := BackendVariable.addVars(varlst, vars);
-  osyst := BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind);
+  BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
+  osyst := setEqSystVars(syst,  BackendVariable.addVars(varlst, vars));
 end addVarsToEqSystem;
 
 public function numberOfZeroCrossings "author: lochel"
@@ -1986,10 +1979,9 @@ only to get the functionsTree.
   output BackendDAE.EqSystem oSyst;
 
 protected
-   BackendDAE.BaseClockPartitionKind partitionKind;
    array<Integer> ass1, ass2;
    BackendDAE.Variables v;
-   BackendDAE.Variables vars;
+   BackendDAE.EqSystem syst;
    BackendDAE.Variables iVars = BackendVariable.listVar(iVarlst);
    BackendDAE.EquationArray ordererdEqs, arrEqs;
    list<Integer> indx_lst_v, indx_lst_e, ind_mark, statevarindx_lst;
@@ -2000,30 +1992,33 @@ protected
    DAE.FunctionTree funcs;
    BackendDAE.IncidenceMatrix m;
 algorithm
+  oSyst := match iSyst
+    case syst as BackendDAE.EQSYSTEM( orderedEqs=ordererdEqs, orderedVars=v,
+                                      matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2) )
+      algorithm
+        (_, statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+        indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
 
-   BackendDAE.EQSYSTEM(orderedEqs = ordererdEqs, orderedVars = v, matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2), partitionKind = partitionKind) := iSyst;
+        indx_lst_v := List.appendNoCopy(indx_lst_v, statevarindx_lst) "overestimate";
+        indx_lst_e := List.map1r(indx_lst_v, arrayGet, ass1);
 
-  (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
-  indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
+        indx_arr := arrayCreate(equationArraySizeDAE(iSyst), 0);
+        funcs := getFunctions(shared);
+        (_, m, _) := getIncidenceMatrix(iSyst, BackendDAE.SPARSE(), SOME(funcs));
 
-  indx_lst_v := List.appendNoCopy(indx_lst_v, statevarindx_lst) "overestimate";
-  indx_lst_e := List.map1r(indx_lst_v,arrayGet,ass1);
+        indx_arr := markStateEquationsWork(indx_lst_e,  m, ass1, indx_arr);
 
-  indx_arr := arrayCreate(equationArraySizeDAE(iSyst), 0);
-  funcs := getFunctions(shared);
-  (_, m, _) := getIncidenceMatrix(iSyst, BackendDAE.SPARSE(), SOME(funcs));
+        indx_lst_e := Array.foldIndex(indx_arr, translateArrayList, {});
 
-  indx_arr := markStateEquationsWork(indx_lst_e,  m, ass1, indx_arr);
+        el := BackendEquation.getEqns(indx_lst_e, ordererdEqs);
+        arrEqs := BackendEquation.listEquation(el);
+        vl := BackendEquation.equationsVars(arrEqs, v);
 
-  indx_lst_e := Array.foldIndex(indx_arr, translateArrayList, {});
-
-  el := BackendEquation.getEqns(indx_lst_e, ordererdEqs);
-  arrEqs := BackendEquation.listEquation(el);
-
-  vl := BackendEquation.equationsVars(arrEqs, v);
-  vars := BackendVariable.listVar1(vl);
-
-  oSyst := BackendDAE.EQSYSTEM(vars, arrEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, partitionKind);
+        syst.orderedVars := BackendVariable.listVar1(vl);
+        syst.orderedEqs := arrEqs;
+        syst.stateSets := {};
+      then BackendDAEUtil.clearEqSyst(syst);
+  end match;
 end reduceEqSystem;
 
 protected function translateArrayList
@@ -3306,27 +3301,21 @@ public function updateIncidenceMatrix
   input list<Integer> inIntegerLst;
   output BackendDAE.EqSystem osyst;
 algorithm
-  osyst := matchcontinue (syst,inIndxType,functionTree,inIntegerLst)
+  osyst := matchcontinue syst
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray daeeqns;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_)
+    case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=daeeqns, m=SOME(m), mT=SOME(mt))
       equation
-        (m,mt) = updateIncidenceMatrix1(vars,daeeqns,inIndxType,functionTree,m,mt,inIntegerLst);
-      then
-        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind);
-
+        (m,mt) = updateIncidenceMatrix1(vars, daeeqns, inIndxType, functionTree, m, mt, inIntegerLst);
+      then BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt));
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.updateIncididenceMatrix failed"});
-      then
-        fail();
+      then fail();
 
   end matchcontinue;
 end updateIncidenceMatrix;
@@ -3394,40 +3383,42 @@ public function updateIncidenceMatrixScalar
   output array<list<Integer>> oMapEqnIncRow;
   output array<Integer> oMapIncRowEqn;
 algorithm
-  (osyst,oMapEqnIncRow,oMapIncRowEqn) := matchcontinue (syst,inIndxType,functionTree,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn)
+  (osyst, oMapEqnIncRow, oMapIncRowEqn) := matchcontinue syst
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      Integer oldsize,newsize,oldsize1,newsize1,deltasize;
+      Integer oldsize, newsize, oldsize1, newsize1, deltasize;
       list<Integer> eqns;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray daeeqns;
       BackendDAE.Matching matching;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=daeeqns, m=SOME(m), mT=SOME(mt))
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
         newsize = equationArraySize(daeeqns);
-        mapEqnIncRow = Array.expand(newsize-oldsize,iMapEqnIncRow,{});
+        mapEqnIncRow = Array.expand(newsize-oldsize, iMapEqnIncRow, {});
         oldsize1 = arrayLength(iMapIncRowEqn);
         newsize1 = equationSize(daeeqns);
         deltasize = newsize1-oldsize1;
-        mapIncRowEqn = Array.expand(deltasize,iMapIncRowEqn,0);
+        mapIncRowEqn = Array.expand(deltasize, iMapIncRowEqn, 0);
         // extend the incidenceMatrix
-        m = Array.expand(deltasize,m,{});
-        mt = Array.expand(deltasize,mt,{});
+        m = Array.expand(deltasize, m, {});
+        mt = Array.expand(deltasize, mt, {});
         // fill the extended parts first
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(oldsize+1,newsize,oldsize1,vars,daeeqns,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
+        (m, mt, mapEqnIncRow, mapIncRowEqn) =
+            updateIncidenceMatrixScalar2( oldsize+1, newsize, oldsize1, vars, daeeqns, m, mt, mapEqnIncRow,
+                                          mapIncRowEqn, inIndxType, functionTree );
         // update the old
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
+        (m,mt,mapEqnIncRow,mapIncRowEqn) =
+            updateIncidenceMatrixScalar1( vars, daeeqns, m, mt, eqns, mapEqnIncRow,
+                                          mapIncRowEqn, inIndxType, functionTree );
       then
-        (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),mapEqnIncRow,mapIncRowEqn);
+        (BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt)), mapEqnIncRow, mapIncRowEqn);
 
     else
       equation
@@ -3671,7 +3662,7 @@ public function getIncidenceMatrixfromOption
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
 algorithm
-  (outSyst, outM, outMT) := match (inSyst, inIndxType, inFunctionTree)
+  (outSyst, outM, outMT) := match inSyst
     local
       BackendDAE.IncidenceMatrix m, mT;
       BackendDAE.Variables v;
@@ -3680,15 +3671,15 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case(BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=NONE(), matching=matching, stateSets=stateSets, partitionKind=partitionKind), _, _) equation
+    case BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=NONE()) equation
       (m, mT) = incidenceMatrix(inSyst, inIndxType, inFunctionTree);
-    then (BackendDAE.EQSYSTEM(v, eq, SOME(m), SOME(mT), matching, stateSets, partitionKind), m, mT);
+    then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
 
-    case(BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=SOME(m), mT=NONE(), matching=matching, stateSets=stateSets, partitionKind=partitionKind), _, _) equation
+    case BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eq, m=SOME(m), mT=NONE()) equation
       mT = transposeMatrix(m, BackendVariable.varsSize(v));
-    then (BackendDAE.EQSYSTEM(v, eq, SOME(m), SOME(mT), matching, stateSets, partitionKind), m, mT);
+    then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
 
-    case(BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT)), _, _)
+    case BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT))
     then (inSyst, m, mT);
   end match;
 end getIncidenceMatrixfromOption;
@@ -3702,15 +3693,11 @@ public function getIncidenceMatrix "this function returns the incidence matrix,
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
 protected
-  BackendDAE.Variables v;
   BackendDAE.EquationArray eq;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := inEqSystem;
-  (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType,functionTree);
-  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets,partitionKind);
+  BackendDAE.EQSYSTEM(orderedEqs=eq) := inEqSystem;
+  (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType, functionTree);
+  outEqSystem := BackendDAEUtil.setEqSystMatrices(inEqSystem, SOME(outM), SOME(outMT));
 end getIncidenceMatrix;
 
 public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
@@ -3723,15 +3710,11 @@ public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
   output array<list<Integer>> outMapEqnIncRow;
   output array<Integer> outMapIncRowEqn;
 protected
-  BackendDAE.Variables v;
   BackendDAE.EquationArray eq;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := syst;
-  (outM,outMT,outMapEqnIncRow,outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType, functionTree);
-  osyst := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets, partitionKind);
+  BackendDAE.EQSYSTEM(orderedEqs=eq) := syst;
+  (outM, outMT, outMapEqnIncRow, outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType, functionTree);
+  osyst := BackendDAEUtil.setEqSystMatrices(syst, SOME(outM), SOME(outMT));
 end getIncidenceMatrixScalar;
 
 
@@ -8150,43 +8133,48 @@ algorithm
 end setFunctionTree;
 
 public function setEqSystEqs
-"  That function replace the KnownVars in BackendDAE.
-  author:  wbraun"
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.EquationArray inEqs;
   output BackendDAE.EqSystem outSyst;
-protected
-  BackendDAE.Variables vars;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  BackendDAE.EquationArray initialEqs;
-  BackendDAE.EquationArray removedEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
-  outSyst := BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=inEqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind);
+  outSyst := match inSyst
+    local
+      BackendDAE.EqSystem syst;
+    case syst as BackendDAE.EQSYSTEM()
+      algorithm syst.orderedEqs := inEqs;
+      then syst;
+  end match;
 end setEqSystEqs;
 
 public function setEqSystVars
-"  That function replace the KnownVars in BackendDAE.
-  author:  wbraun"
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Variables inVars;
   output BackendDAE.EqSystem outSyst;
-protected
-  BackendDAE.EquationArray eqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
-  outSyst := BackendDAE.EQSYSTEM(orderedVars=inVars, orderedEqs=eqs, m=m, mT=mT, matching=matching, stateSets=stateSets, partitionKind=partitionKind);
+  outSyst := match inSyst
+    local
+      BackendDAE.EqSystem syst;
+    case syst as BackendDAE.EQSYSTEM()
+      algorithm syst.orderedVars := inVars;
+      then syst;
+  end match;
 end setEqSystVars;
+
+public function setEqSystMatrices
+  input BackendDAE.EqSystem inSyst;
+  input Option<BackendDAE.IncidenceMatrix> m = NONE();
+  input Option<BackendDAE.IncidenceMatrix> mT = NONE();
+  output BackendDAE.EqSystem outSyst;
+algorithm
+  outSyst := match inSyst
+    local
+      BackendDAE.EqSystem syst;
+    case syst as BackendDAE.EQSYSTEM()
+      algorithm
+        syst.m := m; syst.mT := mT;
+      then syst;
+  end match;
+end setEqSystMatrices;
 
 public function clearEqSyst
   input BackendDAE.EqSystem inSyst;
@@ -8206,208 +8194,112 @@ public function setEqSystMatching
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Matching matching;
   output BackendDAE.EqSystem outSyst;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
-  outSyst := BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, stateSets=stateSets, matching=matching, partitionKind=partitionKind);
+  outSyst := match inSyst
+    local
+      BackendDAE.EqSystem syst;
+    case syst as BackendDAE.EQSYSTEM()
+      algorithm syst.matching := matching;
+      then syst;
+  end match;
 end setEqSystMatching;
 
 public function setSharedRemovedEqns
   input BackendDAE.Shared inShared;
   input BackendDAE.EquationArray removedEqs;
   output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables knownVars, externalObjects, aliasVars;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
-  BackendDAE.EquationArray initialEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs, info=info,
-                     initialEqs=initialEqs, eventInfo=eventInfo, aliasVars=aliasVars, functionTree=functionTree ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
-                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.removedEqs := removedEqs;
+      then shared;
+  end match;
 end setSharedRemovedEqns;
 
 public function setSharedInitialEqns
   input BackendDAE.Shared inShared;
   input BackendDAE.EquationArray initialEqs;
   output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables knownVars, externalObjects, aliasVars;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
-  BackendDAE.EquationArray removedEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs, info=info,
-                     removedEqs=removedEqs, eventInfo=eventInfo, aliasVars=aliasVars, functionTree=functionTree ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
-                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.initialEqs := initialEqs;
+      then shared;
+  end match;
 end setSharedInitialEqns;
 
 public function setSharedSymJacs
   input BackendDAE.Shared inShared;
   input BackendDAE.SymbolicJacobians symjacs;
   output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables knownVars, externalObjects, aliasVars;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.EquationArray initialEqs;
-  BackendDAE.ExtraInfo info;
-  BackendDAE.EquationArray removedEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, initialEqs=initialEqs, info=info,
-                     removedEqs=removedEqs, eventInfo=eventInfo, aliasVars=aliasVars, functionTree=functionTree ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
-                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.symjacs := symjacs;
+      then shared;
+  end match;
 end setSharedSymJacs;
 
-public function setSharedFunctionTree "replaces the aliasVars in the BackendDAE.Shared
-author:Waurich TUD 2014-11"
+public function setSharedFunctionTree
   input BackendDAE.Shared inShared;
   input DAE.FunctionTree inFunctionTree;
   output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables knownVars, externalObjects, aliasVars;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
-  BackendDAE.EquationArray initialEqs;
-  BackendDAE.EquationArray removedEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                     graph=graph, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs, info=info,
-                     initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo, aliasVars=aliasVars ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                                  graph=graph, functionTree=inFunctionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType, aliasVars=aliasVars,
-                                  symjacs=symjacs, info=info, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.functionTree := inFunctionTree;
+      then shared;
+  end match;
 end setSharedFunctionTree;
-
-
 
 public function setSharedEventInfo
   input BackendDAE.Shared inShared;
   input BackendDAE.EventInfo eventInfo;
   output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables knownVars, externalObjects, aliasVars;
-  BackendDAE.EquationArray initialEqs;
-  BackendDAE.EquationArray removedEqs;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
 algorithm
-  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,
-                     initialEqs=initialEqs, removedEqs=removedEqs, constraints=constraints, classAttrs=classAttrs,
-                     cache=cache, graph=graph, functionTree=functionTree, extObjClasses=extObjClasses,
-                     backendDAEType=backendDAEType, symjacs=symjacs, info=info ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,
-                                  initialEqs=initialEqs, removedEqs=removedEqs, constraints=constraints, classAttrs=classAttrs,
-                                  cache=cache, graph=graph, functionTree =functionTree, extObjClasses=extObjClasses, info=info,
-                                  eventInfo=eventInfo, backendDAEType=backendDAEType, symjacs=symjacs );
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.eventInfo := eventInfo;
+      then shared;
+  end match;
 end setSharedEventInfo;
 
 public function setSharedKnVars
-"  That function replace the KnownVars in BackendDAE.
-  author:  wbraun"
   input BackendDAE.Shared inShared;
   input BackendDAE.Variables knownVars;
   output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables aliasVars, externalObjects;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
-  BackendDAE.EquationArray initialEqs;
-  BackendDAE.EquationArray removedEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.SHARED( externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                     graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
-                     symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
-                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo  );
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.knownVars := knownVars;
+      then shared;
+  end match;
 end setSharedKnVars;
 
-public function setSharedAliasVars "replaces the aliasVars in the BackendDAE.Shared
-author:Waurich TUD 2014-11"
+public function setSharedAliasVars
   input BackendDAE.Shared inShared;
   input BackendDAE.Variables aliasVars;
   output BackendDAE.Shared outShared;
-protected
-  BackendDAE.Variables knownVars, externalObjects;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
-  BackendDAE.EquationArray initialEqs;
-  BackendDAE.EquationArray removedEqs;
-  BackendDAE.EventInfo eventInfo;
 algorithm
-  BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                     graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
-                     symjacs=symjacs, info=info, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo ) := inShared;
-  outShared := BackendDAE.SHARED( knownVars=knownVars, externalObjects=externalObjects, constraints=constraints, classAttrs=classAttrs, cache=cache,
-                                  graph=graph, functionTree=functionTree, extObjClasses=extObjClasses, backendDAEType=backendDAEType,
-                                  symjacs=symjacs, info=info, aliasVars=aliasVars, initialEqs=initialEqs, removedEqs=removedEqs, eventInfo=eventInfo );
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.aliasVars := aliasVars;
+      then shared;
+  end match;
 end setSharedAliasVars;
 
 public function emptyEventInfo

@@ -53,7 +53,6 @@ public import Absyn;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import List;
 protected import Print;
 protected import SCodeDump;
 

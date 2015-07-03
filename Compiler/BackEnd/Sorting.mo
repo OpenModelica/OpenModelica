@@ -39,11 +39,7 @@ encapsulated package Sorting
 public import BackendDAE;
 
 protected import BackendDump;
-protected import Debug;
-protected import Error;
-protected import List;
 protected import Matching;
-protected import Util;
 
 public function Tarjan "author: lochel
   This sorting algorithm only considers equations e that have a matched variable v with e = ass1[v]."

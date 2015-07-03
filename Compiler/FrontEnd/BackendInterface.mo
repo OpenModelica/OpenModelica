@@ -40,15 +40,11 @@ public import Absyn;
 public import DAE;
 public import FCore;
 public import GlobalScript;
-public import GraphML;
 public import Prefix;
 public import Values;
 
 protected import CevalScript;
-protected import GraphMLDumpTpl;
 protected import StaticScript;
-protected import RewriteRules;
-protected import Tpl;
 
 public function cevalInteractiveFunctions
   input FCore.Cache inCache;

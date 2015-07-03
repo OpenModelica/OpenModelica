@@ -45,8 +45,6 @@ public import BaseHashTable;
 public import Absyn;
 public import NFInstTypes;
 
-protected import System;
-
 public type Key = Absyn.Path;
 public type Value = NFInstTypes.Function;
 

@@ -60,7 +60,6 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import Connect;
 protected import DAEUtil;
-protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import Error;

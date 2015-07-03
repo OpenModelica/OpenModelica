@@ -53,7 +53,6 @@ import ExpressionDump;
 import ExpressionSimplify;
 import FGraph;
 import Flags;
-import Global;
 import Inline;
 import List;
 import Lookup;

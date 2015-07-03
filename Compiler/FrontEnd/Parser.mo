@@ -45,7 +45,6 @@ import HashTableStringToProgram;
 
 protected
 import Config;
-import Error;
 import ErrorExt;
 import Flags;
 import ParserExt;

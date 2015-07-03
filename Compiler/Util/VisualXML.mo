@@ -40,21 +40,22 @@ encapsulated package VisualXML
 
 "
 
-protected import Absyn;
-protected import Array;
-protected import BackendDAE;
-protected import BackendDAEUtil;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import ComponentReference;
-protected import DAE;
-protected import DAEUtil;
-protected import ExpressionDump;
-protected import ExpressionSolve;
-protected import List;
-protected import Util;
-protected import Tpl;
-protected import VisualXMLTpl;
+protected
+
+import Absyn;
+import BackendDAE;
+import BackendDAEUtil;
+import BackendEquation;
+import BackendVariable;
+import ComponentReference;
+import DAE;
+import DAEUtil;
+import ExpressionDump;
+import ExpressionSolve;
+import List;
+import Util;
+import Tpl;
+import VisualXMLTpl;
 
 //----------------------------
 //  Visualization types

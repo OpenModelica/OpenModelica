@@ -48,7 +48,6 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import DAEDump;
-protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;

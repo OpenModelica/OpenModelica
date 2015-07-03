@@ -75,7 +75,6 @@ import Settings;
 import SimCode;
 import SimCodeMain;
 import SimCodeFunctionUtil;
-import SimCodeUtil;
 import Socket;
 import System;
 import TplMain;

@@ -47,7 +47,6 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSimplifyTypes;
 protected import Flags;
@@ -56,7 +55,6 @@ protected import Print;
 protected import System;
 protected import ClassInf;
 protected import Types;
-protected import SimulationResults;
 
 public function typeConvert "Apply type conversion on a list of Values"
   input DAE.Type inType1;
@@ -2487,22 +2485,6 @@ algorithm
   Values.CODE(code) := val;
   Absyn.C_TYPENAME(path) := code;
 end getPath;
-
-public function readDataset
-  input String filename;
-  input list<String> vars;
-  input Integer dimsize;
-  output Values.Value val;
-protected
-  list<list<Real>> rvals;
-  list<list<Values.Value>> vals;
-  list<Values.Value> rows;
-algorithm
-  rvals := SimulationResults.readDataset(filename,vars,dimsize);
-  vals := List.mapListReverse(rvals,makeReal);
-  rows := List.mapReverse(vals,makeArray);
-  val := makeArray(rows);
-end readDataset;
 
 public function printCodeVariableName
   input Values.Value val;

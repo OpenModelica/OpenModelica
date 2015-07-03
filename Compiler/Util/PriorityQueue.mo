@@ -52,7 +52,6 @@ TODO: Implement insert() in O(1) time
 TODO: Implement meld() in O(1) time
 "
 
-protected import List;
 public import SimCode;
 
 public

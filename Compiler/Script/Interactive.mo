@@ -61,11 +61,9 @@ public import Values;
 // protected imports
 protected import Builtin;
 protected import Ceval;
-protected import CevalFunction;
 protected import CevalScript;
 protected import ClassInf;
 protected import ClockIndexes;
-protected import ComponentReference;
 protected import Config;
 protected import Connect;
 protected import Constants;

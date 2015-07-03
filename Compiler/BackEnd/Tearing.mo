@@ -46,13 +46,10 @@ protected import Array;
 protected import BackendDAEEXT;
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
-protected import BackendDAETransform;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import Config;
-protected import Debug;
-protected import Differentiate;
 protected import DumpGraphML;
 protected import Error;
 protected import Expression;
@@ -63,8 +60,6 @@ protected import Flags;
 protected import List;
 protected import Matching;
 protected import Util;
-protected import SCode;
-protected import SCodeDump;
 protected import Sorting;
 
 // =============================================================================

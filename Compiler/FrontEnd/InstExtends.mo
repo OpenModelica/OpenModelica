@@ -53,7 +53,6 @@ public import Prefix;
 
 // protected imports
 protected import BaseHashTable;
-protected import Builtin;
 protected import ComponentReference;
 protected import Debug;
 protected import Dump;

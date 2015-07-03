@@ -62,7 +62,6 @@ protected import DynamicOptimization;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
-protected import ExpressionSolve;
 protected import Error;
 protected import Flags;
 protected import Global;

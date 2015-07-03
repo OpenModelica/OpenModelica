@@ -44,7 +44,6 @@ encapsulated package ClassLoader
 import Absyn;
 
 protected
-import BackendInterface;
 import BaseHashTable;
 import Config;
 import Debug;

@@ -66,7 +66,6 @@ public import DAE;
 public import FCore;
 
 protected import Array;
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
@@ -77,7 +76,6 @@ protected import BaseHashSet;
 protected import Ceval;
 protected import ComponentReference;
 protected import DAEUtil;
-protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -1099,18 +1097,15 @@ protected function replaceEvaluatedParametersSystemEqns
   input BackendVarTransform.VariableReplacements repl;
   output BackendDAE.EqSystem osyst;
 protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns,eqns1;
-  list<BackendDAE.Equation> eqns_1,lsteqns;
+  BackendDAE.EquationArray eqns, eqns1;
+  list<BackendDAE.Equation> lsteqns;
   Boolean b;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := isyst;
+  BackendDAE.EQSYSTEM(orderedEqs=eqns) := isyst;
   lsteqns := BackendEquation.equationList(eqns);
-  (eqns_1,b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
-  eqns1 := if b then BackendEquation.listEquation(eqns_1) else eqns;
-  osyst := if b then BackendDAEUtil.createEqSystem(vars, eqns1, stateSets, partitionKind) else isyst;
+  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
+  eqns1 := if b then BackendEquation.listEquation(lsteqns) else eqns;
+  osyst := if b then BackendDAEUtil.clearEqSyst(BackendDAEUtil.setEqSystEqs(isyst, eqns1)) else isyst;
 end replaceEvaluatedParametersSystemEqns;
 
 annotation(__OpenModelica_Interface="backend");

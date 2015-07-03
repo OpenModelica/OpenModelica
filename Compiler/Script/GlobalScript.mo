@@ -40,7 +40,6 @@ encapsulated package GlobalScript
 public import Absyn;
 public import DAE;
 public import FCore;
-public import Global;
 public import SCode;
 public import Values;
 

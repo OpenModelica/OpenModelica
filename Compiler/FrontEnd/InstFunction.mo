@@ -54,10 +54,7 @@ public import SCode;
 public import UnitAbsyn;
 
 protected import Lookup;
-protected import MetaUtil;
 protected import Inst;
-protected import InstBinding;
-protected import InstVar;
 protected import InstUtil;
 protected import UnitAbsynBuilder;
 protected import List;
@@ -72,7 +69,6 @@ protected import Config;
 protected import DAEUtil;
 protected import PrefixUtil;
 protected import Error;
-protected import Builtin;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";

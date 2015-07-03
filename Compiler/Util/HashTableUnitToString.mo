@@ -55,10 +55,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 /* HashTable instance specific code */
 
 public import BaseHashTable;
-public import System;
 public import Unit;
-public import Util;
-
 
 public type Key = Unit.Unit;
 public type Value = String;

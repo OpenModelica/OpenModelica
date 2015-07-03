@@ -40,19 +40,19 @@ CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
 	@echo " "
 
 # FMU
-CodegenFMUCommon.mo : CodegenFMUCommon.tpl SimCodeTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
+CodegenFMUCommon.mo : CodegenFMUCommon.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMUCommon template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-CodegenFMU.mo : CodegenFMU.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
+CodegenFMU.mo : CodegenFMU.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-CodegenFMU1.mo : CodegenFMU1.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
+CodegenFMU1.mo : CodegenFMU1.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU1 template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-CodegenFMU2.mo : CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
+CodegenFMU2.mo : CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU2 template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -97,7 +97,7 @@ CodegenCppHpcom.mo : CodegenCppHpcom.tpl SimCodeTV.mo SimCodeBackendTV.mo Codege
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl CodegenFMU.tpl
+CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
