@@ -253,7 +253,7 @@ algorithm
       end if;
       false = Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING);
       // TODO: Remove when cpp runtime ready for doLinearTearing
-      false = stringEqual(Config.simCodeTarget(), "Cpp");
+      //false = stringEqual(Config.simCodeTarget(), "Cpp");
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Flag 'doLinearTearing' is set\n\n");
       end if;
