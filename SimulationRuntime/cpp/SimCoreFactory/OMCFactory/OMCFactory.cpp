@@ -55,10 +55,10 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
-     std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("buffer", BUFFER)("empty", EMPTY);
-     std::map<std::string,LogCategory> logCatMap = map_list_of("init", INIT)("nls", NLS)("ls",LS)("solv", SOLV)("output", OUT)("event",EVT)("modell",MOD)("other",OTHER);
-     std::map<std::string,LogLevel> logLvlMap = map_list_of("error", ERROR)("warning", WARNING)("info", INFO)("debug", DEBUG);
-     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", ALL)("step", STEP)("empty2",EMPTY2);
+     std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", OF_CSV)("mat", OF_MAT)("buffer", OF_BUFFER)("empty", OF_EMPTY);
+     std::map<std::string,LogCategory> logCatMap = map_list_of("init", LC_INIT)("nls", LC_NLS)("ls",LC_LS)("solv", LC_SOLV)("output", LC_OUT)("event",LC_EVT)("modell",LC_MOD)("other",LC_OTHER);
+     std::map<std::string,LogLevel> logLvlMap = map_list_of("error", LL_ERROR)("warning", LL_WARNING)("info", LL_INFO)("debug", LL_DEBUG);
+     std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", OPT_ALL)("step", OPT_STEP)("empty", OPT_EMPTY);
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
@@ -157,7 +157,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
           //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
           outputFormat_str = vm["OutputFormat"].as<string>();
           outputFomat = outputFormatMap[outputFormat_str];
-          if(!((outputFomat==CSV) || (outputFomat==EMPTY)||(outputFomat==BUFFER)||(outputFomat==MAT)))
+          if(!((outputFomat==OF_CSV) || (outputFomat==OF_EMPTY) || (outputFomat==OF_BUFFER) || (outputFomat==OF_MAT)))
           {
             std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" or  outputFormat=\"empty\" or  outputFormat=\"matlab\"in simulate command ";
             throw ModelicaSimulationError(MODEL_FACTORY,eception_msg.c_str());

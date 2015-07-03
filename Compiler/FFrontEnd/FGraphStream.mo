@@ -70,38 +70,20 @@ type Visited = FCore.Visited;
 
 public function start
 algorithm
-  _ := matchcontinue()
-
-    case ()
-      equation
-        true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
-        _ = GraphStream.startExternalViewer("localhost", 2001);
-        GraphStream.newStream("default", "localhost", 2001, false);
-        GraphStream.addGraphAttribute("default", "omc", -1, "stylesheet", Values.STRING("node{fill-mode:plain;fill-color:#567;size:6px;}"));
-        // GraphStream.addGraphAttribute("default", "omc", -1, "ui.antialias", Values.BOOL(true));
-        // GraphStream.addGraphAttribute("default", "omc", -1, "layout.stabilization-limit", Values.INTEGER(0));
-      then
-        ();
-
-    else ();
-
-  end matchcontinue;
+  if Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH) then
+    GraphStream.startExternalViewer("localhost", 2001);
+    GraphStream.newStream("default", "localhost", 2001, false);
+    GraphStream.addGraphAttribute("default", "omc", -1, "stylesheet", Values.STRING("node{fill-mode:plain;fill-color:#567;size:6px;}"));
+    // GraphStream.addGraphAttribute("default", "omc", -1, "ui.antialias", Values.BOOL(true));
+    // GraphStream.addGraphAttribute("default", "omc", -1, "layout.stabilization-limit", Values.INTEGER(0));
+  end if;
 end start;
 
 public function finish
 algorithm
-  _ := matchcontinue()
-
-    case ()
-      equation
-        true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
-        GraphStream.cleanup();
-      then
-        ();
-
-    else ();
-
-  end matchcontinue;
+  if Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH) then
+    GraphStream.cleanup();
+  end if;
 end finish;
 
 

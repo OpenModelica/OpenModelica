@@ -47,14 +47,13 @@ import BackendDAE;
 import BackendDAECreate;
 import BackendDAEUtil;
 import CevalScript;
-import ClassLoader;
+import CevalScriptBackend;
 import ClockIndexes;
 import Config;
 import Corba;
 import DAE;
 import DAEDump;
 import DAEUtil;
-//import Database;
 import Debug;
 import Dump;
 import DumpGraphviz;
@@ -75,7 +74,7 @@ import Print;
 import Settings;
 import SimCode;
 import SimCodeMain;
-import SimCodeUtil;
+import SimCodeFunctionUtil;
 import Socket;
 import System;
 import TplMain;
@@ -482,7 +481,7 @@ algorithm
           DumpGraphviz.dump(p);
         end if;
 
-        SimCodeUtil.execStat("Parsed file");
+        SimCodeFunctionUtil.execStat("Parsed file");
 
         // Instantiate the program.
         (cache, env, d, cname) = instantiate(p);
@@ -492,14 +491,14 @@ algorithm
         funcs = FCore.getFunctionTree(cache);
 
         Print.clearBuf();
-        SimCodeUtil.execStat("Transformations before Dump");
+        SimCodeFunctionUtil.execStat("Transformations before Dump");
         s = DAEDump.dumpStr(d, funcs);
-        SimCodeUtil.execStat("DAEDump done");
+        SimCodeFunctionUtil.execStat("DAEDump done");
         Print.printBuf(s);
         if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
           DAEDump.dumpGraphviz(d);
         end if;
-        SimCodeUtil.execStat("Misc Dump");
+        SimCodeFunctionUtil.execStat("Misc Dump");
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
         d = if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
@@ -507,7 +506,7 @@ algorithm
         if not Config.silent() then
           print(Print.getString());
         end if;
-        SimCodeUtil.execStat("Transformations before backend");
+        SimCodeFunctionUtil.execStat("Transformations before backend");
 
         // Run the backend.
         optimizeDae(cache, env, d, p, cname);
@@ -580,7 +579,7 @@ algorithm
   // program. Otherwise, instantiate the given class name.
   cname := if stringLength(cls) == 0 then Absyn.lastClassname(program) else Absyn.stringPath(cls);
   st := GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable, program);
-  (cache, env, dae) := CevalScript.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
+  (cache, env, dae) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
 end instantiate;
 
 protected function optimizeDae
@@ -627,7 +626,7 @@ algorithm
     System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
     SimCodeMain.generateModelCode(inBackendDAE, inProgram, inDAE, inClassName,
       cname, SOME(sim_settings), Absyn.FUNCTIONARGS({}, {}));
-    SimCodeUtil.execStat("Codegen Done");
+    SimCodeFunctionUtil.execStat("Codegen Done");
   end if;
 end simcodegen;
 

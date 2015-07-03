@@ -27,10 +27,10 @@ public:
     virtual bool getInfoOutput() { return false; }
     virtual void setInfoOutput(bool) {}
     virtual string    getOutputPath() { return "./"; }
-    virtual OutputFormat getOutputFormat(){return EMPTY;}
+    virtual OutputFormat getOutputFormat(){return OF_EMPTY;}
      virtual LogSettings getLogSettings() {return LogSettings();}
     virtual void setLogSettings(LogSettings) {}
-    virtual OutputPointType getOutputPointType() { return ALL; };
+    virtual OutputPointType getOutputPointType() { return OPT_ALL; };
     virtual void setOutputPointType(OutputPointType) {};
     virtual void setOutputFormat(OutputFormat) {}
     virtual void setOutputPath(string) {}

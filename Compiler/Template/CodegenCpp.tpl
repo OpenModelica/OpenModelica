@@ -1218,7 +1218,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 template createAssignArray(DAE.ComponentRef sourceOrTargetArrayCref, String sourceArrayName, String targetArrayName, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotationSource, Boolean useFlatArrayNotationTarget, String dimsArrayName)
 ::=
-  match SimCodeUtil.cref2simvar(sourceOrTargetArrayCref, simCode)
+  match cref2simvar(sourceOrTargetArrayCref, simCode)
     case v as SIMVAR(numArrayElement=num) then
         '<%targetArrayName%>.assign(<%sourceArrayName%>);'
 end createAssignArray;
@@ -1575,6 +1575,7 @@ let modelname = identOfPath(modelInfo.name)
 #include <Core/DataExchange/SimDouble.h>
 #include <Core/DataExchange/SimBoolean.h>
 #include <Core/SimController/ISimController.h>
+#include <Core/System/FactoryExport.h>
 
 #include <wvLib.h>
 #define PATH string
@@ -2040,6 +2041,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
   #include <Core/SimController/ISimController.h>
+  #include <Core/System/FactoryExport.h>
   #include <Core/Utils/extension/logger.hpp>
 
   <%
@@ -2141,6 +2143,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       %>
       try
       {
+            Logger::initialize();
+            Logger::setEnabled(false);
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 std::vector<MeasureTimeData> measureTimeArraySimulation = std::vector<MeasureTimeData>(2); //0 all, 1 setup
@@ -3490,7 +3494,7 @@ match simCode
 
             #ifdef MEASURETIME_MODELFUNCTIONS
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
-            measureTimeFunctionsArray = std::vector<MeasureTimeData>(4); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents
+            measureTimeFunctionsArray = std::vector<MeasureTimeData>(5); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents; 5 evaluateZeroFuncs
             measuredFunctionStartValues = MeasureTime::getZeroValues();
             measuredFunctionEndValues = MeasureTime::getZeroValues();
 
@@ -3498,6 +3502,7 @@ match simCode
             measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
             measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
             measureTimeFunctionsArray[3] = MeasureTimeData("handleTimeEvents");
+            measureTimeFunctionsArray[4] = MeasureTimeData("evaluateZeroFuncs");
             #endif //MEASURETIME_MODELFUNCTIONS
             >>
         %>
@@ -14562,7 +14567,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     bool state_var_reinitialized = false;
 
     <%varDecls%>
-    /* Evaluate Equations*/
+    // Evaluate Equations
     <%equation_all_func_calls%>
     // Reinits
     <%reinit%>
@@ -14609,7 +14614,7 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   {
     <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
     <%varDecls%>
-    /* Evaluate Equations*/
+    // Evaluate Equations
     <%equation_ode_func_calls%>
     <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
   }
@@ -14630,7 +14635,7 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
   void <%className%>::evaluateZeroFuncs(const UPDATETYPE command)
   {
     <%varDecls%>
-    /* Evaluate Equations*/
+    // Evaluate Equations
     <%equation_zero_func_calls%>
   }
   >>

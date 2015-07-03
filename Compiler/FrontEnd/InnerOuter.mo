@@ -56,7 +56,6 @@ protected import Error;
 protected import ErrorExt;
 protected import Expression;
 protected import Flags;
-protected import Inst;
 protected import InstSection;
 protected import List;
 protected import Lookup;

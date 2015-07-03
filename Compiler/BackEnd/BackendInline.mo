@@ -41,29 +41,15 @@ encapsulated package BackendInline
   The entry point is the inlineCalls function, or inlineCallsInFunctions
   "
 
-public import Absyn;
 public import BackendDAE;
-public import BaseHashTable;
 public import DAE;
-public import FCore;
-public import HashTableCG;
 public import Inline;
 public import SCode;
 public import Values;
 
-protected import Ceval;
-protected import ClassInf;
-protected import ComponentReference;
-protected import Config;
 protected import Debug;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
-protected import Types;
-protected import VarTransform;
 
 // =============================================================================
 // late inline functions stuff
@@ -120,21 +106,16 @@ protected function inlineEquationSystem
   input Inline.Functiontuple tpl;
   output BackendDAE.EqSystem oeqs;
 algorithm
-  oeqs := match (eqs,tpl)
+  oeqs := match eqs
     local
       BackendDAE.EqSystem syst;
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      BackendDAE.Matching matching;
-      Boolean b1,b2;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs,matching=matching,stateSets=stateSets,partitionKind=partitionKind),_)
+    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
       equation
-        (orderedVars,b1) = inlineVariables(orderedVars,tpl);
-        (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);
-        syst = if b1 or b2 then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,stateSets,partitionKind) else syst;
+        _ = inlineVariables(orderedVars, tpl);
+        _ = inlineEquationArray(orderedEqs, tpl);
       then
         syst;
   end match;

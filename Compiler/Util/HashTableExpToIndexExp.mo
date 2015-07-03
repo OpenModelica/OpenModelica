@@ -44,7 +44,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import Expression;
-protected import List;
 protected import Util;
 public import ExpressionDump;
 

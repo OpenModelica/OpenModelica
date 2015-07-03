@@ -7,6 +7,7 @@
 
 package CodegenCppHpcom
 
+import interface SimCodeBackendTV;
 import interface SimCodeTV;
 import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
@@ -121,7 +122,7 @@ template generateAdditionalIncludesForParallelCode(SimCode simCode, Text& extraF
       <<
       #include <tbb/tbb.h>
       #include <tbb/flow_graph.h>
-	  #include <tbb/tbb_stddef.h>
+      #include <tbb/tbb_stddef.h>
       #include <boost/function.hpp>
       #include <boost/bind.hpp>
       #if TBB_INTERFACE_VERSION >= 8000
@@ -174,11 +175,12 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& ext
       }
       <%
       match schedulesOpt
-        case SOME((odeSchedule as THREADSCHEDULE(__),_)) then
+        case SOME((odeSchedule as THREADSCHEDULE(__),_,_)) then
           <<
           #ifdef MEASURETIME_MODELFUNCTIONS
           std::vector<MeasureTimeData> measureTimeThreadArrayOdeHpcom;
           std::vector<MeasureTimeData> measureTimeThreadArrayDaeHpcom;
+          std::vector<MeasureTimeData> measureTimeThreadArrayZeroFuncHpcom;
           <%List.intRange(arrayLength(odeSchedule.threadTasks)) |> threadIdx => 'MeasureTimeValues* measuredSchedulerStartValues_<%intSub(threadIdx,1)%>;'; separator="\n"%>
           <%List.intRange(arrayLength(odeSchedule.threadTasks)) |> threadIdx => 'MeasureTimeValues* measuredSchedulerEndValues_<%intSub(threadIdx,1)%>;'; separator="\n"%>
           #endif //MEASURETIME_MODELFUNCTIONS
@@ -219,26 +221,26 @@ template generateAdditionalStructHeaders(Schedule odeSchedule)
           #if TBB_INTERFACE_VERSION >= 8000
           struct TbbArenaFunctor
           {
-          	tbb::flow::graph * g;
-          	tbb::flow::broadcast_node<tbb::flow::continue_msg> * sn;
+            tbb::flow::graph * g;
+            tbb::flow::broadcast_node<tbb::flow::continue_msg> * sn;
 
-          	TbbArenaFunctor( )
-          	{
-          		g = NULL;
-          		sn = NULL;
-          	}
+            TbbArenaFunctor( )
+            {
+              g = NULL;
+              sn = NULL;
+            }
 
-          	TbbArenaFunctor( tbb::flow::graph & in_g , tbb::flow::broadcast_node<tbb::flow::continue_msg> & in_sn )
-          	{
-          		g = &in_g;
-          		sn = &in_sn;
-          	}
+            TbbArenaFunctor( tbb::flow::graph & in_g , tbb::flow::broadcast_node<tbb::flow::continue_msg> & in_sn )
+            {
+              g = &in_g;
+              sn = &in_sn;
+            }
 
-          	void operator()()
-          	{
-          		sn->try_put( tbb::flow::continue_msg() );
-          		g->wait_for_all();
-          	}
+            void operator()()
+            {
+              sn->try_put( tbb::flow::continue_msg() );
+              g->wait_for_all();
+            }
 
           };
           #endif
@@ -249,24 +251,13 @@ template generateAdditionalStructHeaders(Schedule odeSchedule)
   end match
 end generateAdditionalStructHeaders;
 
-template generateAdditionalFunctionHeaders(Option<tuple<Schedule,Schedule>> schedulesOpt)
+template generateAdditionalFunctionHeaders(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  let parallelEvaluate = 'FORCE_INLINE void evaluateParallel(const UPDATETYPE command, bool evaluateODE);'
   <<
-  <%parallelEvaluate%>
+  FORCE_INLINE void evaluateParallel(const UPDATETYPE command, int evaluateMode);
   <%match schedulesOpt
-    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_)) then
-      match type
-        case ("pthreads")
-        case ("pthreads_spin") then
-          let threadFuncs = List.intRange(getConfigInt(NUM_PROC)) |> thIdx hasindex i0 fromindex 0 => 'void evaluateThreadFunc<%i0%>();'; separator="\n"
-          <<
-          <%threadFuncs%>
-          >>
-        else ""
-      end match
-    case SOME((odeSchedule as THREADSCHEDULE(__),_)) then
+    case SOME((odeSchedule as THREADSCHEDULE(__),_,_)) then
       match type
         case ("openmp") then
           <<
@@ -277,7 +268,7 @@ template generateAdditionalFunctionHeaders(Option<tuple<Schedule,Schedule>> sche
           <%headers%>
           >>
       end match
-    case SOME((odeSchedule as TASKDEPSCHEDULE(__),daeSchedule as TASKDEPSCHEDULE(__))) then
+    case SOME((odeSchedule as TASKDEPSCHEDULE(__),daeSchedule as TASKDEPSCHEDULE(__),zeroFuncSchedule as TASKDEPSCHEDULE(__))) then
       match type
         case ("openmp") then
           <<
@@ -299,11 +290,20 @@ template generateAdditionalFunctionHeaders(Option<tuple<Schedule,Schedule>> sche
                   >>
                 else ""
               ); separator="\n"
+          let voidfuncsZeroFunc = zeroFuncSchedule.tasks |> task => (
+              match task
+                case ((task as CALCTASK(__),parents)) then
+                  <<
+                  void task_func_ZeroFunc_<%task.index%>();
+                  >>
+                else ""
+              ); separator="\n"
           <<
           <%generateAdditionalStructHeaders(odeSchedule)%>
 
           <%voidfuncsOde%>
           <%voidfuncsDae%>
+          <%voidfuncsZeroFunc%>
           >>
         else ""
       end match
@@ -312,15 +312,15 @@ template generateAdditionalFunctionHeaders(Option<tuple<Schedule,Schedule>> sche
   >>
 end generateAdditionalFunctionHeaders;
 
-template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule>> schedulesOpt)
+template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   <<
   UPDATETYPE _command;
-  bool _evaluateODE;
+  int _evaluateMode;
   <%
   match schedulesOpt
-    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_)) then
+    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_,_)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -332,15 +332,17 @@ template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule>> sche
           >>
         else ""
       end match
-    case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__))) then
+    case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__),zeroFuncSchedule as THREADSCHEDULE(__))) then
       let odeLocks = createLockArrayByName(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockOde", type); separator="\n"
       let daeLocks = createLockArrayByName(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockDae", type); separator="\n"
+      let zeroFuncLocks = createLockArrayByName(listLength(zeroFuncSchedule.outgoingDepTasks),"_lockZeroFunc",type)//daeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockDae", type); separator="\n"
       match type
         case ("openmp") then
           let threadDecl = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
           <<
           <%odeLocks%>
           <%daeLocks%>
+          <%zeroFuncLocks%>
           <%threadDecl%>
           >>
         case "mpi" then
@@ -355,12 +357,13 @@ template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule>> sche
           bool _terminateThreads;
           <%odeLocks%>
           <%daeLocks%>
+          <%zeroFuncLocks%>
           <%thLocks%>
           <%thLocks1%>
           <%threadDecl%>
           >>
       end match
-    case SOME((odeSchedule as TASKDEPSCHEDULE(__),_)) then
+    case SOME((odeSchedule as TASKDEPSCHEDULE(__),_,_)) then
       match type
         case ("openmp") then
           << >>
@@ -370,6 +373,7 @@ template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule>> sche
           tbb::flow::broadcast_node<tbb::flow::continue_msg> _tbbStartNode;
           std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* > _tbbNodeList_ODE;
           std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* > _tbbNodeList_DAE;
+          std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* > _tbbNodeList_ZeroFunc;
           #if TBB_INTERFACE_VERSION >= 8000
           tbb::task_arena _tbbArena;
           TbbArenaFunctor _tbbArenaFunctor;
@@ -403,11 +407,11 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
   >>
 end generateThreadFunctionHeaderDecl;
 
-template generateAdditionalConstructorDefinitions(Option<tuple<Schedule,Schedule>> scheduleOpt)
+template generateAdditionalConstructorDefinitions(Option<tuple<Schedule,Schedule,Schedule>> scheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match scheduleOpt
-    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_)) then
+    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_,_)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -417,7 +421,7 @@ template generateAdditionalConstructorDefinitions(Option<tuple<Schedule,Schedule
           ,<%initializeBarrierByName("levelBarrier","",getConfigInt(NUM_PROC),type)%>
           >>
         else ""
-    case SOME((odeSchedule as TASKDEPSCHEDULE(__),daeSchedule as TASKDEPSCHEDULE(__))) then
+    case SOME((odeSchedule as TASKDEPSCHEDULE(__),daeSchedule as TASKDEPSCHEDULE(__),zeroFuncSchedule as TASKDEPSCHEDULE(__))) then
       match type
         case ("tbb") then
           <<
@@ -425,6 +429,7 @@ template generateAdditionalConstructorDefinitions(Option<tuple<Schedule,Schedule
           ,_tbbStartNode(_tbbGraph)
           ,_tbbNodeList_ODE(<%listLength(odeSchedule.tasks)%>,NULL)
           ,_tbbNodeList_DAE(<%listLength(daeSchedule.tasks)%>,NULL)
+          ,_tbbNodeList_ZeroFunc(<%listLength(zeroFuncSchedule.tasks)%>,NULL)
           >>
         else ""
       end match
@@ -432,11 +437,11 @@ template generateAdditionalConstructorDefinitions(Option<tuple<Schedule,Schedule
   end match
 end generateAdditionalConstructorDefinitions;
 
-template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Schedule>> schedulesOpt, String modelNamePrefixStr, String fullModelName)
+template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt, String modelNamePrefixStr, String fullModelName)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match schedulesOpt
-    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_)) then
+    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_,_)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -458,11 +463,14 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
           >>
         else ""
       end match
-    case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__))) then
-      let initlocksOde = initializeArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockOde", type); separator="\n"
+    case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__),zeroFuncSchedule as THREADSCHEDULE(__))) then
+      let initLocksOde = initializeArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockOde", type); separator="\n"
       let assignLocksOde = assignArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "_lockOde", type); separator="\n"
-      let initlocksDae = initializeArrayLocks(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockDae", type); separator="\n"
+      let initLocksDae = initializeArrayLocks(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockDae", type); separator="\n"
       let assignLocksDae = assignArrayLocks(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "_lockDae", type); separator="\n"
+      let initLocksZeroFunc = initializeArrayLocks(listLength(zeroFuncSchedule.outgoingDepTasks),"_lockZeroFunc",type)//daeSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "_lockDae", type); separator="\n"
+      let assignLocksZeroFunc = assignArrayLocks(listLength(zeroFuncSchedule.outgoingDepTasks),"_lockZeroFunc",type)//daeSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "_lockDae", type); separator="\n"
+
       let threadMeasureTimeBlocks = generateThreadMeasureTimeDeclaration(fullModelName, arrayLength(odeSchedule.threadTasks))
 
       match type
@@ -471,8 +479,9 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
           <<
           omp_set_dynamic(0);
           <%threadFuncs%>
-          <%initlocksOde%>
-          <%initlocksDae%>
+          <%initLocksOde%>
+          <%initLocksDae%>
+          <%initLocksZeroFunc%>
           <%threadMeasureTimeBlocks%>
           >>
         case ("mpi") then
@@ -488,25 +497,27 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
           <<
           _terminateThreads = false;
           _command = IContinuous::UNDEF_UPDATE;
-          _evaluateODE = false;
+          _evaluateMode = -1;
 
-          <%initlocksOde%>
-          <%initlocksDae%>
+          <%initLocksOde%>
+          <%initLocksDae%>
+          <%initLocksZeroFunc%>
           <%threadLocksInit%>
           <%threadLocksInit1%>
 
           <%assignLocksDae%>
           <%assignLocksOde%>
+          <%assignLocksZeroFunc%>
           <%threadAssignLocks%>
           <%threadAssignLocks1%>
 
           <%threadFuncs%>
           <%threadMeasureTimeBlocks%>
           >>
-    case SOME((odeSchedule as TASKDEPSCHEDULE(__), daeSchedule as TASKDEPSCHEDULE(__))) then
+    case SOME((odeSchedule as TASKDEPSCHEDULE(__),daeSchedule as TASKDEPSCHEDULE(__),zeroFuncSchedule as TASKDEPSCHEDULE(__))) then
       match type
         case ("tbb") then
-          let tbbVars = generateTbbConstructorExtension(odeSchedule.tasks, daeSchedule.tasks, modelNamePrefixStr)
+          let tbbVars = generateTbbConstructorExtension(odeSchedule.tasks, daeSchedule.tasks, zeroFuncSchedule.tasks, modelNamePrefixStr)
           <<
           <%tbbVars%>
           >>
@@ -521,12 +532,15 @@ template generateThreadMeasureTimeDeclaration(String fullModelName, Integer numb
   #ifdef MEASURETIME_MODELFUNCTIONS
   measureTimeThreadArrayOdeHpcom = std::vector<MeasureTimeData>(<%numberOfThreads%>);
   measureTimeThreadArrayDaeHpcom = std::vector<MeasureTimeData>(<%numberOfThreads%>);
+  measureTimeThreadArrayZeroFuncHpcom = std::vector<MeasureTimeData>(<%numberOfThreads%>);
   MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateODE_threads",&measureTimeThreadArrayOdeHpcom);
   MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateDAE_threads",&measureTimeThreadArrayDaeHpcom);
+  MeasureTime::addResultContentBlock("<%fullModelName%>","evaluateZeroFunc_threads",&measureTimeThreadArrayDaeHpcom);
   <%List.intRange(numberOfThreads) |> threadIdx => 'measuredSchedulerStartValues_<%intSub(threadIdx,1)%> = MeasureTime::getZeroValues();'; separator="\n"%>
   <%List.intRange(numberOfThreads) |> threadIdx => 'measuredSchedulerEndValues_<%intSub(threadIdx,1)%> = MeasureTime::getZeroValues();'; separator="\n"%>
   <%List.intRange(numberOfThreads) |> threadIdx => 'measureTimeThreadArrayOdeHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateODE_thread_<%threadIdx%>");'; separator="\n"%>
   <%List.intRange(numberOfThreads) |> threadIdx => 'measureTimeThreadArrayDaeHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateDAE_thread_<%threadIdx%>");'; separator="\n"%>
+  <%List.intRange(numberOfThreads) |> threadIdx => 'measureTimeThreadArrayZeroFuncHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateZeroFunc_thread_<%threadIdx%>");'; separator="\n"%>
   #endif //MEASURETIME_MODELFUNCTIONS
   >>
 end generateThreadMeasureTimeDeclaration;
@@ -537,17 +551,17 @@ match(iType)
   case "openmp" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	omp_init_lock(&<%lockName%>_[i]);
+    omp_init_lock(&<%lockName%>_[i]);
   >>
   case "pthreads" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	<%lockName%>_[i] = new alignedLock();
+    <%lockName%>_[i] = new alignedLock();
   >>
   case "pthreads_spin" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	<%lockName%>_[i] = new alignedSpinlock();
+    <%lockName%>_[i] = new alignedSpinlock();
   >>
   else
   <<
@@ -561,13 +575,13 @@ template assignArrayLocks(Integer numComms, String lockName, String iType)
     case ("openmp") then
       <<
       for(unsigned i=0;i<<%numComms%>;++i)
-      	omp_set_lock(&<%lockName%>_[i]);
+        omp_set_lock(&<%lockName%>_[i]);
       >>
     case ("pthreads")
     case ("pthreads_spin") then
       <<
       for(unsigned i=0;i<<%numComms%>;++i)
-      	<%lockName%>_[i]->lock();
+        <%lockName%>_[i]->lock();
       >>
 
   else
@@ -604,7 +618,7 @@ match(iType)
   case "openmp" then
   <<
   for(unsigned i=0;i<<%numComms%>;++i)
-  	omp_destroy_lock(&<%lockName%>_[i]);
+    omp_destroy_lock(&<%lockName%>_[i]);
   >>
   case "pthreads"
   case "pthreads_spin" then
@@ -618,11 +632,11 @@ match(iType)
   >>
 end destroyArrayLocks;
 
-template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedule>> schedulesOpt)
+template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match schedulesOpt
-    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_)) then
+    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true),_,_)) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
@@ -634,14 +648,16 @@ template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedu
           _levelBarrier.wait();
           >>
         else ""
-    case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__))) then
+    case SOME((odeSchedule as THREADSCHEDULE(__),daeSchedule as THREADSCHEDULE(__),zeroFuncSchedule as THREADSCHEDULE(__))) then
       let destroyLocksOde = destroyArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockOde",type)//odeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockOde", type); separator="\n"
-      let destroyLocksDae = destroyArrayLocks(listLength(odeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockDae", type); separator="\n"
+      let destroyLocksDae = destroyArrayLocks(listLength(daeSchedule.outgoingDepTasks),"_lockDae",type)//daeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockDae", type); separator="\n"
+      let destroyLocksZeroFunc = destroyArrayLocks(listLength(zeroFuncSchedule.outgoingDepTasks),"_lockZeroFunc",type)//daeSchedule.outgoingDepTasks |> task => destroyLockByDepTask(task, "_lockDae", type); separator="\n"
       match type
         case ("openmp") then
           <<
           <%destroyLocksOde%>
           <%destroyLocksDae%>
+          <%destroyLocksZeroFunc%>
           >>
         case "mpi" then
           <<
@@ -659,17 +675,20 @@ template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedu
           <%joinThreads%>
           <%destroyLocksOde%>
           <%destroyLocksDae%>
+          <%destroyLocksZeroFunc%>
           <%threadLocksDel%>
           <%threadLocksDel1%>
           <%destroyThreads%>
           >>
-    case SOME((odeSchedule as TASKDEPSCHEDULE(__),_)) then
+    case SOME((odeSchedule as TASKDEPSCHEDULE(__),_,_)) then
       match type
         case ("tbb") then
           <<
           for(std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* >::iterator it = _tbbNodeList_ODE.begin(); it != _tbbNodeList_ODE.end(); it++)
             delete *it;
           for(std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* >::iterator it = _tbbNodeList_DAE.begin(); it != _tbbNodeList_DAE.end(); it++)
+            delete *it;
+          for(std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* >::iterator it = _tbbNodeList_ZeroFunc.begin(); it != _tbbNodeList_ZeroFunc.end(); it++)
             delete *it;
           >>
         else ""
@@ -684,132 +703,154 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
 
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
-      let parCode = generateParallelEvaluate(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcomData.schedules, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
+      let parCode = generateParallelEvaluate(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcomData.schedules, context, stateDerVectorName, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
       <%equationFunctions(allEquations,whenClauses, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,false)%>
 
-      <%createEvaluateAll(allEquations,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation)%>
-
-      <%createEvaluateZeroFuncs(equationsForZeroCrossings, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther) %>
-
       <%createEvaluateConditions(allEquations,whenClauses, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>
+      /*
+      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther)%>
+
+      <%createEvaluateAll(allEquations,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation,  boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+      */
       <%parCode%>
       >>
   end match
 end update;
 
-template createEvaluateAll(list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name,
+                 list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<tuple<Schedule, Schedule, Schedule>> schedulesOpt, Context context, Text stateDerVectorName /*=__zDot*/,
+                 String modelNamePrefixStr, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n";empty)
-  <<
-  bool <%lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>::evaluateAll(const UPDATETYPE command)
-  {
-    bool state_var_reinitialized = false;
-    <%varDecls%>
 
-    evaluateParallel(command, false);
+  let measureTimeEvaluateOdeStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
+  let measureTimeEvaluateOdeEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""
 
-    <%reinit%>
+  let measureTimeEvaluateAllStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""
+  let measureTimeEvaluateAllEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS") else ""
 
-    return state_var_reinitialized;
-  }
-  >>
-end createEvaluateAll;
-
-template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name,
-                 list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<tuple<Schedule, Schedule>> schedulesOpt, Context context,
-                 String modelNamePrefixStr, Boolean useFlatArrayNotation)
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  /* let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace))
-    ;separator="\n") */
-
-  /* let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,context)
-    ;separator="\n";empty) */
-
-  // Head of function is the same for all schedulers and parallelization methods:
-  let functionHead =
-    '
-    void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
-    {
-      evaluateParallel(command, true);
-    }
-
-    void <%lastIdentOfPath(name)%>::evaluateParallel(const UPDATETYPE command, bool evaluateODE)
-    '
+  let measureTimeEvaluateZeroFuncStart = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateZeroFuncs", "MEASURETIME_MODELFUNCTIONS") else ""
+  let measureTimeEvaluateZeroFuncEnd = if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[4]", "evaluateZeroFuncs", "MEASURETIME_MODELFUNCTIONS") else ""
 
   let type = getConfigString(HPCOM_CODE)
 
+  // Head of function is the same for all schedulers and parallelization methods:
+  let functionHead =
+  <<
+  //using type: <%type%>
+
+  void <%lastIdentOfPath(name)%>::evaluateZeroFuncs(const UPDATETYPE command)
+  {
+    <%measureTimeEvaluateZeroFuncStart%>
+    evaluateParallel(command, 1);
+    <%measureTimeEvaluateZeroFuncEnd%>
+  }
+
+  bool <%lastIdentOfPath(name)%>::evaluateAll(const UPDATETYPE command)
+  {
+    <%measureTimeEvaluateAllStart%>
+
+    bool state_var_reinitialized = false;
+    <%varDecls%>
+
+    evaluateParallel(command, -1);
+    <%reinit%>
+    <%measureTimeEvaluateAllEnd%>
+
+    return state_var_reinitialized;
+  }
+
+  void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
+  {
+    <%measureTimeEvaluateOdeStart%>
+    evaluateParallel(command, 0);
+    <%measureTimeEvaluateOdeEnd%>
+  }
+
+  //evaluateMode = 0 : evaluateODE
+  //evaluateMode < 0 : evaluateAll
+  //evaluateMode > 0 : evaluateZeroFunc
+  void <%lastIdentOfPath(name)%>::evaluateParallel(const UPDATETYPE command, int evaluateMode)
+  >>
+
   match schedulesOpt
-    case SOME((odeSchedule as EMPTYSCHEDULE(tasks=SERIALTASKLIST(tasks=taskListOde)), daeSchedule as EMPTYSCHEDULE(tasks=SERIALTASKLIST(tasks=taskListDae)))) then
+    case SOME((odeSchedule as EMPTYSCHEDULE(tasks=SERIALTASKLIST(tasks=taskListOde)), daeSchedule as EMPTYSCHEDULE(tasks=SERIALTASKLIST(tasks=taskListDae)), zeroFuncsSchedule as EMPTYSCHEDULE(tasks=SERIALTASKLIST(tasks=taskListZeroFunc)))) then
         <<
         <%functionHead%>
         {
-          if(evaluateODE)
+          if(evaluateMode == 0) //evaluate ODE
           {
-            <%function_HPCOM_Thread0(allEquationsPlusWhen, taskListOde, 1, "", "", &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
+            <%parallelThreadCodeWithSplit(allEquationsPlusWhen, taskListOde, 1, 1, "", "", &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateODE_Th1", useFlatArrayNotation)%>
           }
-          else
+          else if(evaluateMode < 0) //evaluate All
           {
-            <%function_HPCOM_Thread0(allEquationsPlusWhen, taskListDae, 1, "", "", &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
+            <%parallelThreadCodeWithSplit(allEquationsPlusWhen, taskListDae, 1, 1, "", "", &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateAll_Th1", useFlatArrayNotation)%>
+          }
+          else //evaluate ZeroFuncs
+          {
+            <%parallelThreadCodeWithSplit(allEquationsPlusWhen, taskListZeroFunc, 1, 1, "", "", &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateZeroFunc_Th1", useFlatArrayNotation)%>
           }
         }
         >>
-    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevelsOde), daeSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevelsDae))) then
-      let odeEqs = tasksOfLevelsOde |> tasks => generateLevelCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
-      let daeEqs = tasksOfLevelsDae |> tasks => generateLevelCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+    case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevelsOde), daeSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevelsDae), zeroFuncSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevelsZeroFunc))) then
+      let odeEqs = tasksOfLevelsOde |> tasks => generateLevelCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
+      let daeEqs = tasksOfLevelsDae |> tasks => generateLevelCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
+      let zeroFuncEqs = tasksOfLevelsZeroFunc |> tasks => generateLevelCodeForLevel(allEquationsPlusWhen, tasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
 
       match type
         case ("openmp") then
+          let &extraFuncsDecl +=
           <<
-          <%functionHead%>
+          void evaluateODE_Parallel();
+          void evaluateAll_Parallel();
+          void evaluateZeroFuncs_Parallel();
+          >>
+
+          <<
+          void <%lastIdentOfPath(name)%>::evaluateODE_Parallel()
           {
-            this->_evaluateODE = evaluateODE;
-            this->_command = command;
-            <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
-            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '//MeasureTimeValues **threadValues = new MeasureTimeValues*[<%getConfigInt(NUM_PROC)%>];'%>
             #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
             {
-              <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-              <<
-              /*MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
-              MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
-              <%generateMeasureTimeStartCode('valuesStart', "evaluateODEInner", "MEASURETIME_MODELFUNCTIONS")%>*/
-              >>%>
-
-              if(_evaluateODE)
-              {
-                <%odeEqs%>
-              }
-              else
-              {
-                <%daeEqs%>
-              }
-
-              <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-              <<
-              /*MeasureTime::getTimeValuesEnd(valuesEnd);
-              valuesEnd->sub(valuesStart);
-              valuesEnd->sub(MeasureTime::getOverhead());
-              #pragma omp critical
-              {
-                  measureTimeArrayHpcom[0].sumMeasuredValues->add(valuesEnd);
-              }
-              delete valuesStart;
-              delete valuesEnd;*/
-              >>%>
+              <%odeEqs%>
             }
-            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-            <<
-            /*delete threadValues;
-            ++(measureTimeArrayHpcom[0].numCalcs);*/
-            >>%>
+          }
 
-            <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
+          void <%lastIdentOfPath(name)%>::evaluateAll_Parallel()
+          {
+            #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
+            {
+              <%daeEqs%>
+            }
+          }
+
+          void <%lastIdentOfPath(name)%>::evaluateZeroFuncs_Parallel()
+          {
+            #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
+            {
+              <%zeroFuncEqs%>
+            }
+          }
+
+          <%functionHead%>
+          {
+            this->_evaluateMode = _evaluateMode;
+            this->_command = command;
+            if(evaluateMode == 0)
+            {
+              evaluateODE_Parallel();
+            }
+            else if(evaluateMode < 0)
+            {
+              evaluateAll_Parallel();
+            }
+            else
+            {
+              evaluateZeroFuncs_Parallel();
+            }
           }
           >>
         else
@@ -820,48 +861,124 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
           }
           >>
      end match
-   case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true), daeSchedule as LEVELSCHEDULE(useFixedAssignments=true))) then
+   case SOME((odeSchedule as LEVELSCHEDULE(useFixedAssignments=true), daeSchedule as LEVELSCHEDULE(useFixedAssignments=true), zeroFuncSchedule as LEVELSCHEDULE(useFixedAssignments=true))) then
       match type
         case ("pthreads")
         case ("pthreads_spin") then
-          let &mainThreadCode = buffer "" /*BUFD*/
-          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(odeSchedule, daeSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
+          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(odeSchedule, daeSchedule, zeroFuncSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), useFlatArrayNotation); separator="\n"
           let threadLocks = List.intRange(getConfigInt(NUM_PROC)) |> tt => createLockByLockName('threadLock<%tt%>', "", type); separator="\n"
           <<
           <%eqsFuncs%>
 
           <%functionHead%>
           {
-            <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
             this->_command = command;
-            this->_evaluateODE = evaluateODE;
-            //_evaluateBarrier.wait(); //start calculation
-            <%mainThreadCode%>
-            //_evaluateBarrier.wait(); //calculation finished
+            this->_evaluateMode = evaluateMode;
 
-            <%generateStateVarPrefetchCode(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
-            <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
+            if(evaluateMode == 0) //evaluate ODE
+            {
+              _levelBarrier.wait();
+              evaluateThreadFuncODE_0();
+              _levelBarrier.wait();
+
+              <%generateStateVarPrefetchCode(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
+            }
+            else if(evaluateMode < 0) //evaluate All
+            {
+              _levelBarrier.wait();
+              evaluateThreadFuncAll_0();
+              _levelBarrier.wait();
+            }
+            else //evaluate ZeroFuncs
+            {
+              _levelBarrier.wait();
+              evaluateThreadFuncZeroFunc_0();
+              _levelBarrier.wait();
+            }
           }
           >>
         else ""
       end match
-   case SOME((odeSchedule as THREADSCHEDULE(__), daeSchedule as THREADSCHEDULE(__))) then
+   case SOME((odeSchedule as THREADSCHEDULE(threadTasks=threadTasksOde), daeSchedule as THREADSCHEDULE(threadTasks=threadTasksDae), zeroFuncSchedule as THREADSCHEDULE(threadTasks=threadTasksZeroFunc))) then
       match type
         case ("openmp") then
-          let taskEqs = function_HPCOM_Thread(allEquationsPlusWhen, odeSchedule.threadTasks, daeSchedule.threadTasks, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          let threadAssignLocksOde = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, type); separator="\n"
+          let threadReleaseLocksOde = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, type); separator="\n"
+          let threadAssignLocksDae = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, type); separator="\n"
+          let threadReleaseLocksDae = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, type); separator="\n"
+          let threadAssignLocksZeroFunc = arrayList(threadTasksZeroFunc) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksZeroFunc, intAdd(i0, 1)), "_lockZeroFunc", i0, type); separator="\n"
+          let threadReleaseLocksZeroFunc = arrayList(threadTasksZeroFunc) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksZeroFunc, intAdd(i0, 1)), "_lockZeroFunc", i0, type); separator="\n"
+
+          let odeEqs = arrayList(threadTasksOde) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,intSub(arrayLength(threadTasksOde),1),type,"_lockOde",&varDecls,simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateODE", useFlatArrayNotation); separator="\n"
+          let daeEqs = arrayList(threadTasksDae) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,intSub(arrayLength(threadTasksDae),1),type,"_lockDae",&varDecls,simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateAll", useFlatArrayNotation); separator="\n"
+          let zeroFuncEqs = arrayList(threadTasksZeroFunc) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,intSub(arrayLength(threadTasksZeroFunc),1),type,"_lockZeroFunc",&varDecls,simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateZeroFunc", useFlatArrayNotation); separator="\n"
+
+          let &extraFuncsDecl +=
+            <<
+            void evaluateODE_Parallel();
+            void evaluateAll_Parallel();
+            void evaluateZeroFuncs_Parallel();
+            >>
           <<
-          //using type: <%type%>
+          void <%lastIdentOfPath(name)%>::evaluateODE_Parallel()
+          {
+            #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
+            {
+              int threadNum = getThreadNumber();
+              <%threadAssignLocksOde%>
+              #pragma omp barrier
+              <%odeEqs%>
+              #pragma omp barrier
+              <%threadReleaseLocksOde%>
+            }
+          }
+
+          void <%lastIdentOfPath(name)%>::evaluateAll_Parallel()
+          {
+            #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
+            {
+              int threadNum = getThreadNumber();
+              <%threadAssignLocksDae%>
+              #pragma omp barrier
+              <%daeEqs%>
+              #pragma omp barrier
+              <%threadReleaseLocksDae%>
+            }
+          }
+
+          void <%lastIdentOfPath(name)%>::evaluateZeroFuncs_Parallel()
+          {
+            #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
+            {
+              int threadNum = getThreadNumber();
+              <%threadAssignLocksZeroFunc%>
+              #pragma omp barrier
+              <%zeroFuncEqs%>
+              #pragma omp barrier
+              <%threadReleaseLocksZeroFunc%>
+            }
+          }
+
           <%functionHead%>
           {
-            this->_evaluateODE = evaluateODE;
+            this->_evaluateMode = _evaluateMode;
             this->_command = command;
-            <%&varDecls%>
-            <%taskEqs%>
+            if(evaluateMode == 0)
+            {
+              evaluateODE_Parallel();
+            }
+            else if(evaluateMode < 0)
+            {
+              evaluateAll_Parallel();
+            }
+            else
+            {
+              evaluateZeroFuncs_Parallel();
+            }
           }
           >>
         case ("mpi") then
           <<
-          //using type: <%type%> and threadscheduling
           <%functionHead%>
           {
             // MFlehmig: Todo
@@ -869,16 +986,15 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
           >>
         else
           let &mainThreadCode = buffer "" /*BUFD*/
-          let threadFuncs = List.intRange(arrayLength(odeSchedule.threadTasks)) |> threadIdx => generateThreadFunc(allEquationsPlusWhen, arrayGet(odeSchedule.threadTasks, threadIdx), arrayGet(daeSchedule.threadTasks, threadIdx), type, intSub(threadIdx, 1), modelNamePrefixStr, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
+          let threadFuncs = List.intRange(arrayLength(odeSchedule.threadTasks)) |> threadIdx => generateThreadFunc(allEquationsPlusWhen, arrayGet(odeSchedule.threadTasks, threadIdx), arrayGet(daeSchedule.threadTasks, threadIdx), arrayGet(zeroFuncSchedule.threadTasks, threadIdx), type, intSub(threadIdx, 1), modelNamePrefixStr, &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), &mainThreadCode, useFlatArrayNotation); separator="\n"
           let threadAssignLocks1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
           let threadReleaseLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
           <%threadFuncs%>
 
-          //using type: <%type%>
           <%functionHead%>
           {
-            this->_evaluateODE = evaluateODE;
+            this->_evaluateMode = _evaluateMode;
             this->_command = command;
             <%threadReleaseLocks%>
             <%mainThreadCode%>
@@ -886,32 +1002,35 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
           }
           >>
       end match
-    case SOME((odeSchedule as TASKDEPSCHEDULE(__), daeSchedule as TASKDEPSCHEDULE(__))) then
+    case SOME((odeSchedule as TASKDEPSCHEDULE(__), daeSchedule as TASKDEPSCHEDULE(__), zeroFuncSchedule as TASKDEPSCHEDULE(__))) then
       match type
         case ("openmp") then
           let odeTaskEqs = function_HPCOM_TaskDep(odeSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           let daeTaskEqs = function_HPCOM_TaskDep(daeSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          let zeroFuncTaskEqs = function_HPCOM_TaskDep(zeroFuncSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
-          //using type: <%type%>
           <%functionHead%>
           {
-            this->_evaluateODE = evaluateODE;
+            this->_evaluateMode = _evaluateMode;
             this->_command = command;
             <%&varDecls%>
-            if(_evaluateODE)
+            if(_evaluateMode == 0)
             {
               <%odeTaskEqs%>
             }
-            else
+            else if(_evaluateMode < 0)
             {
               <%daeTaskEqs%>
+            }
+            else
+            {
+              <%zeroFuncTaskEqs%>
             }
           }
           >>
         case ("tbb") then
-          let taskFuncs = function_HPCOM_TaskDep_voidfunc(odeSchedule.tasks, daeSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          let taskFuncs = function_HPCOM_TaskDep_voidfunc(odeSchedule.tasks, daeSchedule.tasks, zeroFuncSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
-          //using type: <%type%>
           //void functions for functionhandling in tbb_nodes
           <%taskFuncs%>
 
@@ -919,7 +1038,7 @@ template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.
           {
             //Start
           #if TBB_INTERFACE_VERSION >= 8000
-			_tbbArena.execute(_tbbArenaFunctor);
+            _tbbArena.execute(_tbbArenaFunctor);
           #else
             _tbbStartNode.try_put(tbb::flow::continue_msg());
             _tbbGraph.wait_for_all();
@@ -976,18 +1095,43 @@ template generateLevelCodeForTask(list<SimEqSystem> allEquationsPlusWhen, Task i
   <<
   #pragma omp section
   {
-    <%function_HPCOM_Task(allEquationsPlusWhen, iTask, iType, "", &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
+    <%taskCode(allEquationsPlusWhen, iTask, iType, "", &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
   }
   >>
 end generateLevelCodeForTask;
 
-template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &mainThreadCode, Boolean useFlatArrayNotation)
+template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, tuple<list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>,list<list<HpcOmSimCode.Task>>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match(tasksOfLevels)
-    case((odeTasksOfLevel, daeTasksOfLevel)) then
+    case((odeTasksOfLevel, daeTasksOfLevel, zeroFuncTasksOfLevel)) then
       let odeEqs = odeTasksOfLevel |> tasks hasindex levelIdx => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, levelIdx, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       let daeEqs = daeTasksOfLevel |> tasks hasindex levelIdx => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, levelIdx, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
-      if (intGt(iThreadIdx, 0)) then
+      let zeroFuncEqs = zeroFuncTasksOfLevel |> tasks hasindex levelIdx => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, levelIdx, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+      let &extraFuncsDecl +=
+      <<
+      void evaluateThreadFuncODE_<%iThreadIdx%>();
+      void evaluateThreadFuncAll_<%iThreadIdx%>();
+      void evaluateThreadFuncZeroFunc_<%iThreadIdx%>();
+      void evaluateThreadFunc<%iThreadIdx%>();
+      <%\n%>
+      >>
+      <<
+      void <%lastIdentOfPath(name)%>::evaluateThreadFuncODE_<%iThreadIdx%>()
+      {
+        <%odeEqs%>
+      }
+
+      void <%lastIdentOfPath(name)%>::evaluateThreadFuncAll_<%iThreadIdx%>()
+      {
+        <%daeEqs%>
+      }
+
+      void <%lastIdentOfPath(name)%>::evaluateThreadFuncZeroFunc_<%iThreadIdx%>()
+      {
+        <%zeroFuncEqs%>
+      }
+
+      <%if (intGt(iThreadIdx, 0)) then
       <<
       void <%lastIdentOfPath(name)%>::evaluateThreadFunc<%iThreadIdx%>()
       {
@@ -1008,24 +1152,21 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
                 break;
             }
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>'%>
-            if(_evaluateODE)
+            if(_evaluateMode == 0)
             {
-              <%odeEqs%>
+              evaluateThreadFuncODE_<%iThreadIdx%>();
+            }
+            else if(_evaluateMode < 0)
+            {
+              evaluateThreadFuncAll_<%iThreadIdx%>();
             }
             else
             {
-              <%daeEqs%>
+              evaluateThreadFuncZeroFunc_<%iThreadIdx%>();
             }
 
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             <<
-            //MeasureTime::getTimeValuesEnd(valuesEnd);
-            //valuesEnd->sub(valuesStart);
-            //valuesEnd->sub(MeasureTime::getOverhead());
-
-            //_measureTimeArrayLock.lock();
-            //measureTimeArrayHpcom[0].sumMeasuredValues->add(valuesEnd);
-            //_measureTimeArrayLock.unlock();
             <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", 'measureTimeArrayHpcom[<%iThreadIdx%>]', 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
             >>%>
 
@@ -1039,29 +1180,14 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
         >>%>
       }
       >>
-      else
-        let &mainThreadCode +=
-        '
-        _levelBarrier.wait();
-        if(_evaluateODE)
-        {
-          <%odeEqs%>
-        }
-        else
-        {
-          <%daeEqs%>
-        }
-        _levelBarrier.wait();
-        '
-        <<
-
-        >>
+      %>
+      >>
 end generateLevelFixedCodeForThread;
 
 template generateLevelFixedCodeForThreadLevel(list<SimEqSystem> allEquationsPlusWhen, list<HpcOmSimCode.Task> tasksOfLevel,
                                               Integer iThreadIdx, String iType, Integer iLevelIdx, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let tasks = tasksOfLevel |> t => function_HPCOM_Task(allEquationsPlusWhen, t, iType, "", varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+  let tasks = tasksOfLevel |> t => taskCode(allEquationsPlusWhen, t, iType, "", varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   <<
   //Start of Level <%iLevelIdx%>
   <%if intEq(iThreadIdx, 0) then
@@ -1105,7 +1231,7 @@ template function_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSys
 ::=
   match taskIn
     case ((task as CALCTASK(__),parents)) then
-      let taskEqs = function_HPCOM_Task(allEquationsPlusWhen, task, iType, "", &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
+      let taskEqs = taskCode(allEquationsPlusWhen, task, iType, "", &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
       let parentDependencies = parents |> p => 't[<%p%>]'; separator = ","
       let taskDependencies = parents |> p => '<%p%>'; separator = ","
       let depIn = if intGt(listLength(parents),0) then 'depend(in:<%parentDependencies%>) ' else ""
@@ -1119,14 +1245,16 @@ template function_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSys
   end match
 end function_HPCOM_TaskDep0;
 
-template generateTbbConstructorExtension(list<tuple<Task,list<Integer>>> odeTasks, list<tuple<Task,list<Integer>>> daeTasks, String modelNamePrefixStr)
+template generateTbbConstructorExtension(list<tuple<Task,list<Integer>>> odeTasks, list<tuple<Task,list<Integer>>> daeTasks, list<tuple<Task,list<Integer>>> zeroFuncTasks, String modelNamePrefixStr)
 ::=
   let odeNodesAndEdges = odeTasks |> t hasindex i fromindex 0 => generateTbbConstructorExtensionNodesAndEdges(t,i,"ODE",modelNamePrefixStr); separator="\n"
   let daeNodesAndEdges = daeTasks |> t hasindex i fromindex 0 => generateTbbConstructorExtensionNodesAndEdges(t,i,"DAE",modelNamePrefixStr); separator="\n"
+  let zeroFuncNodesAndEdges = zeroFuncTasks |> t hasindex i fromindex 0 => generateTbbConstructorExtensionNodesAndEdges(t,i,"ZeroFunc",modelNamePrefixStr); separator="\n"
   <<
   tbb::flow::continue_node<tbb::flow::continue_msg> *tbb_task;
   <%odeNodesAndEdges%>
   <%daeNodesAndEdges%>
+  <%zeroFuncNodesAndEdges%>
   #if TBB_INTERFACE_VERSION >= 8000
   _tbbArena = tbb::task_arena(<%getConfigInt(NUM_PROC)%>);
   _tbbArenaFunctor = TbbArenaFunctor(_tbbGraph,_tbbStartNode);
@@ -1149,14 +1277,16 @@ template generateTbbConstructorExtensionNodesAndEdges(tuple<Task,list<Integer>> 
   end match
 end generateTbbConstructorExtensionNodesAndEdges;
 
-template function_HPCOM_TaskDep_voidfunc(list<tuple<Task,list<Integer>>> odeTasks, list<tuple<Task,list<Integer>>> daeTasks, list<SimEqSystem> allEquationsPlusWhen,
+template function_HPCOM_TaskDep_voidfunc(list<tuple<Task,list<Integer>>> odeTasks, list<tuple<Task,list<Integer>>> daeTasks, list<tuple<Task,list<Integer>>> zeroFuncTasks, list<SimEqSystem> allEquationsPlusWhen,
                                          String iType, Absyn.Path name, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   let funcTasksOde = odeTasks |> t => function_HPCOM_TaskDep_voidfunc0(t,allEquationsPlusWhen,iType, "ODE", name, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   let funcTasksDae = daeTasks |> t => function_HPCOM_TaskDep_voidfunc0(t,allEquationsPlusWhen,iType, "DAE", name, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+  let funcTasksZeroFunc = zeroFuncTasks |> t => function_HPCOM_TaskDep_voidfunc0(t,allEquationsPlusWhen,iType, "ZeroFunc", name, &varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   <<
   <%funcTasksOde%>
   <%funcTasksDae%>
+  <%funcTasksZeroFunc%>
   >>
 end function_HPCOM_TaskDep_voidfunc;
 
@@ -1165,7 +1295,7 @@ template function_HPCOM_TaskDep_voidfunc0(tuple<Task,list<Integer>> taskIn, list
   match taskIn
     case ((task as CALCTASK(__),parents)) then
       let &tempvarDecl = buffer "" /*BUFD*/
-      let taskEqs = function_HPCOM_Task(allEquationsPlusWhen, task, iType, "", &tempvarDecl, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
+      let taskEqs = taskCode(allEquationsPlusWhen, task, iType, "", &tempvarDecl, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
       <<
       void <%lastIdentOfPath(name)%>::task_func_<%funcSuffix%>_<%task.index%>()
       {
@@ -1176,99 +1306,86 @@ template function_HPCOM_TaskDep_voidfunc0(tuple<Task,list<Integer>> taskIn, list
   end match
 end function_HPCOM_TaskDep_voidfunc0;
 
-template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasksOde, array<list<Task>> threadTasksDae, String iType,Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+/*
+template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasksOde, array<list<Task>> threadTasksDae, array<list<Task>> threadTasksZeroFunc, String iType,Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let odeEqs = arrayList(threadTasksOde) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,"_lockOde",&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
-  let daeEqs = arrayList(threadTasksDae) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,"_lockDae",&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+  let odeEqs = arrayList(threadTasksOde) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,iType,"_lockOde",&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, "evaluateODE", useFlatArrayNotation); separator="\n"
+  let daeEqs = arrayList(threadTasksDae) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,iType,"_lockDae",&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, "evaluateAll", useFlatArrayNotation); separator="\n"
+  let zeroFuncEqs = arrayList(threadTasksDae) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,iType,"_lockZeroFunc",&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, "evaluateZeroFunc", useFlatArrayNotation); separator="\n"
   match iType
-    case ("openmp") then
-      let threadAssignLocksOde = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, iType); separator="\n"
-      let threadReleaseLocksOde = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, iType); separator="\n"
-      let threadAssignLocksDae = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, iType); separator="\n"
-      let threadReleaseLocksDae = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, iType); separator="\n"
-
-      <<
-      #pragma omp parallel num_threads(<%arrayLength(threadTasksOde)%>)
-      {
-         int threadNum = omp_get_thread_num();
-         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-         <<
-         MeasureTimeValues *measuredSchedulerStartValues = MeasureTime::getZeroValues();
-         MeasureTimeValues *measuredSchedulerEndValues = MeasureTime::getZeroValues();
-         >>
-         %>
-         if(_evaluateODE)
-         {
-           <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
-           //Assign locks first
-           <%threadAssignLocksOde%>
-           #pragma omp barrier
-           <%odeEqs%>
-           //Release locks after calculation
-           #pragma omp barrier
-           <%threadReleaseLocksOde%>
-           <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayOdeHpcom[threadNum]", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
-         }
-         else
-         {
-           <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
-           //Assign locks first
-           <%threadAssignLocksDae%>
-           #pragma omp barrier
-           <%daeEqs%>
-           //Release locks after calculation
-           #pragma omp barrier
-           <%threadReleaseLocksDae%>
-           <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayDaeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
-         }
-         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-         <<
-         delete measuredSchedulerStartValues;
-         delete measuredSchedulerEndValues;
-         >>
-         %>
-      }
-      >>
     case ("mpi") then
       <<
       int world_rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-      if(_evaluateOde)
+      if(_evaluateMode == 0)
       {
         <%odeEqs%>
       }
-      else
+      else if(_evaluateMode < 0)
       {
         <%daeEqs%>
+      }
+      else
+      {
+        <%zeroFuncEqs%>
       }
       >>
     else
       <<
-      if(_evaluateOde)
+      if(_evaluateMode == 0)
       {
         <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
         <%odeEqs%>
         <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayOdeHpcom[threadNum]", "evaluateODE_threads", "MEASURETIME_MODELFUNCTIONS")%>
       }
-      else
+      else if(_evaluateMode < 0)
       {
         <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
         <%daeEqs%>
         <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayDaeHpcom[threadNum]", "evaluateDAE_threads", "MEASURETIME_MODELFUNCTIONS")%>
       }
+      else
+      {
+        <%generateMeasureTimeStartCode("measuredSchedulerStartValues", "evaluateZeroFunc_threads", "MEASURETIME_MODELFUNCTIONS")%>
+        <%zeroFuncEqs%>
+        <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", "measureTimeThreadArrayZeroFuncHpcom[threadNum]", "evaluateZeroFunc_threads", "MEASURETIME_MODELFUNCTIONS")%>
+      }
       >>
   end match
 end function_HPCOM_Thread;
-
-template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTasksOde, list<Task> threadTasksDae, String iType, Integer iThreadIdx, String modelNamePrefixStr, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& mainThreadCode, Boolean useFlatArrayNotation)
+*/
+template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTasksOde, list<Task> threadTasksDae, list<Task> threadTasksZeroFunc, String iType, Integer iThreadIdx, String modelNamePrefixStr, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& mainThreadCode, Boolean useFlatArrayNotation)
 ::=
   let &varDeclsLoc = buffer "" /*BUFD*/
-  let taskEqsOde = function_HPCOM_Thread0(allEquationsPlusWhen, threadTasksOde, iThreadIdx, iType, "_lockOde", &varDeclsLoc, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
-  let taskEqsDae = function_HPCOM_Thread0(allEquationsPlusWhen, threadTasksDae, iThreadIdx, iType, "_lockDae", &varDeclsLoc, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+  let taskEqsOde = parallelThreadCode(allEquationsPlusWhen, threadTasksOde, iThreadIdx, iType, "_lockOde", &varDeclsLoc, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, "evaluateODE", useFlatArrayNotation); separator="\n"
+  let taskEqsDae = parallelThreadCode(allEquationsPlusWhen, threadTasksDae, iThreadIdx, iType, "_lockDae", &varDeclsLoc, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, "evaluateAll", useFlatArrayNotation); separator="\n"
+  let taskEqsZeroFunc = parallelThreadCode(allEquationsPlusWhen, threadTasksZeroFunc, iThreadIdx, iType, "_lockZeroFunc", &varDeclsLoc, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, "evaluateZeroFunc", useFlatArrayNotation); separator="\n"
   let assLock = assignLockByLockName(iThreadIdx, "th_lock", iType); separator="\n"
   let relLock = releaseLockByLockName(iThreadIdx, "th_lock1", iType); separator="\n"
+  let &extraFuncsDecl +=
+    <<
+    void evaluateThreadFuncODE_<%iThreadIdx%>();
+    void evaluateThreadFuncAll_<%iThreadIdx%>();
+    void evaluateThreadFuncZeroFunc_<%iThreadIdx%>();
+    >>
+
   if (intGt(iThreadIdx, 0)) then
     <<
+    void <%modelNamePrefixStr%>::evaluateThreadFuncODE_<%iThreadIdx%>()
+    {
+      <%taskEqsOde%>
+    }
+
+    void <%modelNamePrefixStr%>::evaluateThreadFuncAll_<%iThreadIdx%>()
+    {
+      <%taskEqsDae%>
+    }
+
+    void <%modelNamePrefixStr%>::evaluateThreadFuncZeroFunc_<%iThreadIdx%>()
+    {
+      <%taskEqsZeroFunc%>
+    }
+
     void <%modelNamePrefixStr%>::evaluateThreadFunc<%iThreadIdx%>()
     {
       #ifdef MEASURETIME_MODELFUNCTIONS
@@ -1282,13 +1399,17 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> t
         if(_terminateThreads)
            return;
 
-		if(_evaluateODE)
+		if(_evaluateMode == 0)
 		{
-          <%taskEqsOde%>
+          evaluateThreadFuncODE_<%iThreadIdx%>();
+        }
+        else if(_evaluateMode < 0)
+        {
+          evaluateThreadFuncAll_<%iThreadIdx%>();
         }
         else
         {
-          <%taskEqsDae%>
+          evaluateThreadFuncZeroFunc_<%iThreadIdx%>();
         }
         <%relLock%>
       }
@@ -1297,20 +1418,39 @@ template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, list<Task> t
   else
     let &mainThreadCode += &varDeclsLoc
     let &mainThreadCode +=
-      '
-       #ifdef MEASURETIME_MODELFUNCTIONS
-       MeasureTimeValues *measuredSchedulerStartValues = measuredSchedulerStartValues_0;
-       MeasureTimeValues *measuredSchedulerEndValues = measuredSchedulerEndValues_0;
-       #endif //MEASURETIME_MODELFUNCTIONS
-       if(_evaluateODE)
-       {
-         <%taskEqsOde%>
-       }
-       else
-       {
-         <%taskEqsDae%>
-       }'
+      <<
+      #ifdef MEASURETIME_MODELFUNCTIONS
+      MeasureTimeValues *measuredSchedulerStartValues = measuredSchedulerStartValues_0;
+      MeasureTimeValues *measuredSchedulerEndValues = measuredSchedulerEndValues_0;
+      #endif //MEASURETIME_MODELFUNCTIONS
+      if(_evaluateMode == 0)
+      {
+        evaluateThreadFuncODE_<%iThreadIdx%>();
+      }
+      else if(_evaluateMode < 0)
+      {
+        evaluateThreadFuncAll_<%iThreadIdx%>();
+      }
+      else
+      {
+        evaluateThreadFuncZeroFunc_<%iThreadIdx%>();
+      }
+      >>
     <<
+    void <%modelNamePrefixStr%>::evaluateThreadFuncODE_<%iThreadIdx%>()
+    {
+      <%taskEqsOde%>
+    }
+
+    void <%modelNamePrefixStr%>::evaluateThreadFuncAll_<%iThreadIdx%>()
+    {
+      <%taskEqsDae%>
+    }
+
+    void <%modelNamePrefixStr%>::evaluateThreadFuncZeroFunc_<%iThreadIdx%>()
+    {
+      <%taskEqsZeroFunc%>
+    }
     >>
 end generateThreadFunc;
 
@@ -1346,33 +1486,52 @@ template function_HPCOM_releaseThreadLocks(list<Task> iThreadTasks, String iLock
   >>
 end function_HPCOM_releaseThreadLocks;
 
-template function_HPCOM_Thread0(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTaskList, Integer iThreadNum,
-                                String iType, String lockPrefix, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template parallelThreadCodeWithSplit(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTaskList, Integer iThreadNum, Integer iMaxThreadNumber,
+                                String iType, String lockPrefix, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                                Text extraFuncsNamespace, String extraFunctionName, Boolean useFlatArrayNotation)
 ::=
-  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(allEquationsPlusWhen,tt,iType,lockPrefix,&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
+  let functionCalls = List.partition(threadTaskList, 100) |> tt hasindex i0 => parallelThreadCode(allEquationsPlusWhen,tt,i0,iType,lockPrefix,&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, '<%extraFunctionName%>_Th<%iThreadNum%>', useFlatArrayNotation); separator="\n"
   match iType
     case ("openmp") then
       <<
-      <%if intNe(iThreadNum, 0) then 'else ' else ''%>if(threadNum == <%iThreadNum%>)
-      {
-        <%threadTasks%>
-      }
+      <%if intEq(iThreadNum, 0) then 'switch(threadNum) <%\n%>{<%\n%>' else '' %>case <%iThreadNum%>:
+        <%functionCalls%>
+        break;
+      <%if intEq(iThreadNum, iMaxThreadNumber) then '<%\n%>}' else ''%>
       >>
     case ("mpi") then
       <<
       if (world_rank == <%iThreadNum%>)
       {
-        <%threadTasks%>
+        <%functionCalls%>
       }
       >>
     else
       <<
-      <%threadTasks%>
+      <%functionCalls%>
       >>
   end match
-end function_HPCOM_Thread0;
+end parallelThreadCodeWithSplit;
 
-template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, String lockPrefix, Text &varDecls,
+template parallelThreadCode(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTaskList, Integer iPartitionIndex,
+                                String iType, String lockPrefix, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, String extraFunctionName, Boolean useFlatArrayNotation)
+::=
+  let threadTasks = threadTaskList |> tt => taskCode(allEquationsPlusWhen,tt,iType,lockPrefix,&varDecls,simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
+  let &extraFuncs +=
+  <<
+  void <%extraFuncsNamespace%>::<%extraFunctionName%>_<%iPartitionIndex%>()
+  {
+    <%threadTasks%>
+  }<%\n%><%\n%>
+  >>
+  let &extraFuncsDecl += 'void <%extraFunctionName%>_<%iPartitionIndex%>();'
+
+  <<
+  <%extraFunctionName%>_<%iPartitionIndex%>();
+  >>
+end parallelThreadCode;
+
+template taskCode(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, String lockPrefix, Text &varDecls,
                              SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match iTask
@@ -1403,7 +1562,7 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
       <%relLck%>
       >>
   end match
-end function_HPCOM_Task;
+end taskCode;
 
 template equationNamesHPCOM_(Integer idx, list<SimEqSystem> allEquationsPlusWhen, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=

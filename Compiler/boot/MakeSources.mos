@@ -15,7 +15,7 @@ ifeq ($(wildcard $(GEN_DIR)"+typeNameString(cl)+".deps),$(GEN_DIR)"+typeNameStri
 include $(GEN_DIR)"+typeNameString(cl)+".deps
 endif" for cl in getClassNames())
 */
-);
+);getErrorString();
 
 loadString("within Absyn; /* So it is not listed by getClassNames() */
 function delimit

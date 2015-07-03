@@ -41,7 +41,6 @@ encapsulated package NFFlatten
 
 public import NFInst.{Instance};
 
-protected import NFEnv;
 
 public function flattenClass
   input Instance inClass;

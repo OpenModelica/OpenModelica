@@ -54,6 +54,7 @@ import BackendEquation;
 import BackendVariable;
 import ClockIndexes;
 import CevalScript;
+import CevalScriptBackend;
 import ComponentReference;
 import DAEUtil;
 import Expression;
@@ -96,8 +97,8 @@ algorithm
   cname_last_str := Absyn.pathLastIdent(inPath);
   fileNamePrefix := cname_str;
 
-  simSettings := CevalScript.convertSimulationOptionsToSimCode(
-    CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(
+  simSettings := CevalScriptBackend.convertSimulationOptionsToSimCode(
+    CevalScriptBackend.buildSimulationOptionsFromModelExperimentAnnotation(
       GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable,inProgram),inPath,fileNamePrefix,NONE())
   );
   // correlation matrix form (vector of records) currently not supported by OpenModelica backend, remove it .
@@ -517,13 +518,12 @@ protected function stripCorrelationVarsAndEqns " help function "
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets = stateSets, partitionKind=partitionKind)  := eqsys;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns)  := eqsys;
   vars := stripCorrelationVars(vars);
   eqns := stripCorrelationEqns(eqns);
-  outEqsys := BackendDAEUtil.createEqSystem(vars, eqns, stateSets, partitionKind);
+  outEqsys := BackendDAEUtil.setEqSystVars(BackendDAEUtil.setEqSystEqs(eqsys, eqns), vars);
+  outEqsys := BackendDAEUtil.clearEqSyst(outEqsys);
 end stripCorrelationVarsAndEqns;
 
 protected function stripCorrelationEqns "help function "

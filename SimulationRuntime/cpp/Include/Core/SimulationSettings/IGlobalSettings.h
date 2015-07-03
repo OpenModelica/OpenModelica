@@ -25,18 +25,18 @@ using std::string;
 
 #include <vector>
 
-enum OutputFormat {CSV, MAT, BUFFER, EMPTY};
+enum OutputFormat {OF_CSV, OF_MAT, OF_BUFFER, OF_EMPTY};
 
 
-enum LogCategory {INIT = 0, NLS = 1, LS = 2, SOLV = 3, OUT = 4, EVT = 5, OTHER = 6, MOD = 7};
-enum LogLevel {ERROR = 0, WARNING = 1, INFO = 2, DEBUG = 3};
+enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLV = 3, LC_OUT = 4, LC_EVT = 5, LC_OTHER = 6, LC_MOD = 7};
+enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
 struct LogSettings
 {
 	std::vector<LogLevel> modes;
 
 	LogSettings()
 	{
-		modes = std::vector<LogLevel>(8,ERROR);
+		modes = std::vector<LogLevel>(8,LL_ERROR);
 	}
 
 	void setAll(LogLevel l)
@@ -46,7 +46,7 @@ struct LogSettings
 	}
 };
 
-enum OutputPointType {ALL, STEP, EMPTY2};
+enum OutputPointType {OPT_ALL, OPT_STEP, OPT_EMPTY};
 class IGlobalSettings
 {
 public:

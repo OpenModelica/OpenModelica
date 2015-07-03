@@ -45,8 +45,6 @@ public import SCode;
 public import SCodeUtil;
 
 protected import Config;
-protected import Dump;
-protected import Error;
 protected import Flags;
 protected import List;
 protected import Types;

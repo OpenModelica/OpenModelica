@@ -47,7 +47,6 @@ public import HashTable3;
 protected import Absyn;
 protected import BaseHashTable;
 protected import BaseHashSet;
-protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ClassInf;

@@ -51,8 +51,9 @@
 package CodegenQSS
 
 import interface SimCodeTV;
+import interface SimCodeQSSTV;
 import CodegenUtil.*;
-import CodegenC.*;
+import CodegenCFunctions.*;
 
 template translateModel(SimCode simCode,QSSinfo qssInfo)
  "Generates C code and Makefile for compiling and running a simulation of a
@@ -443,7 +444,7 @@ void fsolve<%ls.index%>(<%
   /* Fill B */
   <%ls.beqs |> exp hasindex i0 =>
     'gsl_vector_set(b<%ls.index%>,<%i0%>,<%
-      System.stringReplace(CodegenC.daeExp(
+      System.stringReplace(daeExp(
         BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs)),
         contextOther,&preExp,&varDecls,&auxFunctionIgnore),"$P","") %>);';separator=\n%>
 
@@ -453,7 +454,7 @@ void fsolve<%ls.index%>(<%
     /* Fill A */
     gsl_matrix_set_zero(A<%ls.index%>);
     <%ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-     'gsl_matrix_set(A<%ls.index%>, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
+     'gsl_matrix_set(A<%ls.index%>, <%row%>, <%col%>,<%  System.stringReplace(daeExp(
         BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(ls.beqs,ls.vars,ls.simJac,states,disc,algs)),
         contextOther,&preExp,&varDecls,&auxFunctionIgnore),"$P","") %>);'
     ;separator="\n"%>

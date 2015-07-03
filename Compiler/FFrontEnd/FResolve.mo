@@ -43,7 +43,6 @@ public
 import Absyn;
 import FCore;
 import FNode;
-import FGraph;
 import FLookup;
 
 protected

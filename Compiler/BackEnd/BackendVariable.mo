@@ -40,14 +40,12 @@ encapsulated package BackendVariable
 
 public import BackendDAE;
 public import DAE;
-public import FCore;
 public import SCode;
 public import Values;
 
 protected import Absyn;
 protected import Array;
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import BaseHashSet;
 protected import BaseHashTable;
 protected import ComponentReference;
@@ -60,7 +58,6 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import HashSet;
 protected import List;
-protected import System;
 protected import Util;
 protected import Types;
 

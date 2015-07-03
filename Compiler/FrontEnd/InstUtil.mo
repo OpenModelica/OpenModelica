@@ -8526,8 +8526,6 @@ algorithm
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_ASSERT(cond=DAE.BCONST(false),source=source),_,(_,_,_)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
-      equation
-        _ = DAEUtil.getElementSourceFileInfo(source);
       then ((true,true,{}));
     case (DAE.STMT_ASSERT(cond=exp1,msg=exp2,source=source),_,(_,_,unbound))
       equation
@@ -8540,6 +8538,8 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((true,true,unbound));
+    case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"),expLst={}),source=source),_,(_,_,unbound))
+      then ((true,true,{}));
     case (DAE.STMT_NORETCALL(exp=exp,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);

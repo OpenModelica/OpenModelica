@@ -42,12 +42,16 @@ bootstrap-from-tarball: $(PATCHES)
 	# Patch _main.c to avoid a new tarball
 	$(PATCH_SOURCES)
 	cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | $(SED) 's/\([.][0-9]*\)\?[.]patch/.c/'`" || exit 1; done
+	# We have not compiled OpenModelicaScriptingAPI.mo yet
+	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc
 	@echo "Bootstrapping phase 1/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
-	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
 	# Patch _main.c to avoid a new tarball
 	$(PATCH_SOURCES)
+	# We have not compiled OpenModelicaScriptingAPI.mo yet
+	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)
 	@echo "Bootstrapping phase 2/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
@@ -58,12 +62,14 @@ bootstrap-from-tarball: $(PATCHES)
 
 bootstrap-from-compiled: make-separate
 
-make-bootstrap-tarball:
-	rm -rf $(GEN_DIR)
-	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+make-bootstrap-tarball: clean
+	test ! -f Makefile.sources || rm Makefile.sources
+	test ! -f Makefile.depends || rm Makefile.depends
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
 	rm -rf $(GEN_DIR)/*.mo $(GEN_DIR)/tmp $(GEN_DIR)/*.deps $(GEN_DIR)/*.mos $(GEN_DIR)/*.stamp
-	sed -i -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "/^$$/d" -e "/^ *[/][*].*[*][/] *$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
-	tar cJf bootstrap-sources.tar.xz $(GEN_DIR) Makefile.sources
+	sed -i -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "s/ *[/][*].*[*][/]\([;)]\?\) *$$/\1/" -e "s/^ *[/][*].*[*][/]\(;\?\) */\1/" -e "/^ *$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
+	tar cf bootstrap-sources.tar $(GEN_DIR) Makefile.sources
+	xz --best --force bootstrap-sources.tar
 
 templates:
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template

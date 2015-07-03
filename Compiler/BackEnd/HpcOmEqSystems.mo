@@ -53,7 +53,6 @@ protected import BackendDAETransform;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import ComponentReference;
-protected import Debug;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;

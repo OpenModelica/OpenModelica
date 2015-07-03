@@ -19,8 +19,8 @@ GlobalSettings::GlobalSettings()
   , _selected_nonlin_solver("Newton")
   , _resultsfile_name("results.csv")
   , _endless_sim(false)
-  , _outputFormat(EMPTY)
-  , _outputPointType(ALL)
+  , _outputFormat(OF_EMPTY)
+  , _outputPointType(OPT_ALL)
   , _alarm_time(0)
 {
 }

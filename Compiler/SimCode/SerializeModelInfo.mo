@@ -54,6 +54,7 @@ import crefStr = ComponentReference.printComponentRefStrFixDollarDer;
 import expStr = ExpressionDump.printExpStr;
 import List;
 import SimCodeUtil;
+import SimCodeFunctionUtil;
 import SCodeDump;
 import Util;
 
@@ -778,7 +779,7 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       File.write(file, "\",\"tag\":\"container\",\"display\":\"mixed\",\"defines\":[");
-      serializeUses(file,list(SimCodeUtil.varName(v) for v in eq.discVars));
+      serializeUses(file,list(SimCodeFunctionUtil.varName(v) for v in eq.discVars));
       File.write(file, "],\"equation\":[");
       serializeEquationIndex(file,eq.cont);
       list(match () case () equation File.write(file,","); serializeEquationIndex(file,e); then (); end match for e in eq.discEqs);

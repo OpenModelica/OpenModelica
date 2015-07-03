@@ -104,7 +104,7 @@ void SimManager::initialize()
         return;
     }
 
-    Logger::write("SimManager start init",INIT,DEBUG);
+    Logger::write("SimManager start init",LC_INIT,LL_DEBUG);
     // Flag für Endlossimulaton (wird gesetzt wenn Solver zurückkommt)
     _continueSimulation = true;
 
@@ -121,7 +121,6 @@ void SimManager::initialize()
         //ex << error_id(SIMMANAGER);
         throw;
     }
-
     _totStps = 0;
     _accStps = 0;
     _rejStps = 0;
@@ -157,7 +156,7 @@ void SimManager::initialize()
         memset(_events, false, _dimZeroFunc * sizeof(bool));
     }
 
-    Logger::write("SimManager assemble completed",INIT,DEBUG);
+    Logger::write("SimManager assemble completed",LC_INIT,LL_DEBUG);
 //#if defined(__TRICORE__) || defined(__vxworks)
     // Initialization for RT simulation
     if (_config->getGlobalSettings()->useEndlessSim())
@@ -259,24 +258,24 @@ void SimManager::runSimulation()
     #endif
     try
     {
-        Logger::write("SimManager: start simulation at t = " + boost::lexical_cast<std::string>(_tStart),SOLV,INFO);
+        Logger::write("SimManager: start simulation at t = " + boost::lexical_cast<std::string>(_tStart),LC_SOLV,LL_INFO);
         runSingleProcess();
         // Zeit messen, Ausgabe der SimInfos
         ISolver::SOLVERSTATUS status = _solver->getSolverStatus();
         if ((status & ISolver::DONE) || (status & ISolver::USER_STOP))
         {
-            Logger::write("SimManager: simulation done at t = " + boost::lexical_cast<std::string>(_tEnd),SOLV,INFO);
-            Logger::write("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps),SOLV,INFO);
+            Logger::write("SimManager: simulation done at t = " + boost::lexical_cast<std::string>(_tEnd),LC_SOLV,LL_INFO);
+            Logger::write("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps),LC_SOLV,LL_INFO);
             writeProperties();
         }
     }
     catch (std::exception & ex)
     {
-        Logger::write("SimManager: simulation finish with errors at t = " + boost::lexical_cast<std::string>(_tEnd),SOLV,ERROR);
-        Logger::write("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps),SOLV,INFO);
+        Logger::write("SimManager: simulation finish with errors at t = " + boost::lexical_cast<std::string>(_tEnd),LC_SOLV,LL_ERROR);
+        Logger::write("SimManager: number of steps = " + boost::lexical_cast<std::string>(_totStps),LC_SOLV,LL_INFO);
         writeProperties();
 
-        Logger::write("SimManager: error = " + boost::lexical_cast<std::string>(ex.what()),SOLV,ERROR);
+        Logger::write("SimManager: error = " + boost::lexical_cast<std::string>(ex.what()),LC_SOLV,LL_ERROR);
         //ex << error_id(SIMMANAGER);
         throw;
     }
@@ -296,7 +295,7 @@ void SimManager::stopSimulation()
 void SimManager::writeProperties()
 {
 	// decl for Logging
-	std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(SOLV, INFO);
+	std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLV, LL_INFO);
 
     Logger::write(boost::lexical_cast<std::string>("computationTime"),logM);
     Logger::write(boost::lexical_cast<std::string>("Geforderte Simulationszeit:                        ") + boost::lexical_cast<std::string>(_tEnd),logM);
@@ -548,7 +547,7 @@ void SimManager::runSingleProcess()
     _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
     /* Logs temporarily disabled
      BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
-    Logger::write("SimManager: run single process",SOLV,DEBUG);
+    Logger::write("SimManager: run single process",LC_SOLV,LL_DEBUG);
 
     // Zeitinvervall speichern
     //_H =_tEnd - _tStart;
