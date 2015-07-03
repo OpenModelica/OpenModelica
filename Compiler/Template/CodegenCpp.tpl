@@ -51,7 +51,7 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationStateSelectionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
         let()= textFile(simulationStateSelectionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
         let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
-        let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
+        let()= textFile(simulationExtensionCppFile(simCode  , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
@@ -416,6 +416,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual IHistory* getHistory();
     /// Provide Jacobian
     virtual void getJacobian(SparseMatrix& matrix);
+    virtual void getJacobian(SparseMatrix& matrix,unsigned int index);
     virtual void getStateSetJacobian(unsigned int index,SparseMatrix& matrix);
     /// Called to handle all events occured at same time
     virtual bool handleSystemEvents(bool* events);
@@ -649,7 +650,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    let initialjacMats = (jacobianMatrixes |> (mat, vars, name, (sparsepattern,_), colorList, _, jacIndex) =>
     initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
-    ;separator="";empty)
+    ;separator="/*test <%jacIndex%>*/";empty)
    <<
 
    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
@@ -949,11 +950,15 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
    >>
 end simulationWriteOutputAliasVarsCppFile;
 
-template simulationExtensionCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template simulationExtensionCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(__))) then
+case SIMCODE(modelInfo = MODELINFO(__)) then
+
+  let getJacobianForIndexMethods =   (jacobianMatrixes |> (mat, _,name, _,colorList, _, jacIndex) =>
+          generateJacobianForIndex         (simCode,mat,colorList,jacIndex, name, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    ;separator="\n\n";empty)
   let classname = lastIdentOfPath(modelInfo.name)
    <<
 
@@ -994,6 +999,17 @@ case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(__))) then
      getAJacobian(matrix);
 
    }
+
+    void <%classname%>Extension::getJacobian(SparseMatrix& matrix,unsigned int index)
+   {
+     switch (index)
+     {
+        <%getJacobianForIndexMethods%>
+     }
+   }
+
+
+
 
    void <%classname%>Extension::getStateSetJacobian(unsigned int index,SparseMatrix& matrix)
    {
@@ -1116,6 +1132,41 @@ case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(__))) then
    >>
 end simulationExtensionCppFile;
 
+
+template generateJacobianForIndex(SimCode simCode, list<JacobianColumn> jacobianColumn, list<list<Integer>> colorList,Integer indexJacobian, String matrixName,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,                                Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates Matrixes for Linear Model."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+
+let classname =  lastIdentOfPath(modelInfo.name)
+match jacobianColumn
+case {} then
+  <<
+  >>
+case _ then
+  match colorList
+  case {} then
+  <<
+
+  >>
+  case _ then
+
+  <<
+
+    case <%indexJacobian%>:
+    {
+        get<%matrixName%>Jacobian(matrix);
+        break;
+    }
+  >>
+
+/*
+  (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0); //1 <%cref(cref)%>'
+           else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff);//2 <%cref(cref)%>'
+
+*/
+end generateJacobianForIndex;
 
 template functionDimStateSets(list<StateSet> stateSets,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
   "Generates functions in simulation file to initialize the stateset data."
