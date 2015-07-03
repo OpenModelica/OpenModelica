@@ -1264,11 +1264,8 @@ public function equationAddDAE "author: Frenkel TUD 2011-05"
   input BackendDAE.Equation inEquation;
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
-protected
-  BackendDAE.EquationArray eqs;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=eqs) := inEqSystem;
-  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, addEquation(inEquation, eqs));
+  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, addEquation(inEquation, inEqSystem.orderedEqs));
   outEqSystem := BackendDAEUtil.setEqSystMatching(outEqSystem, BackendDAE.NO_MATCHING());
 end equationAddDAE;
 

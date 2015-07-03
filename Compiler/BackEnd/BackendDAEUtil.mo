@@ -8096,15 +8096,9 @@ end setFunctionTree;
 public function setEqSystEqs
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.EquationArray inEqs;
-  output BackendDAE.EqSystem outSyst;
+  output BackendDAE.EqSystem syst = inSyst;
 algorithm
-  outSyst := match inSyst
-    local
-      BackendDAE.EqSystem syst;
-    case syst as BackendDAE.EQSYSTEM()
-      algorithm syst.orderedEqs := inEqs;
-      then syst;
-  end match;
+  syst.orderedEqs := inEqs;
 end setEqSystEqs;
 
 public function setEqSystVars
