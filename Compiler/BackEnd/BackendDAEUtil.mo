@@ -8000,7 +8000,8 @@ protected
   DAE.FunctionTree functions = DAEUtil.avlTreeNew();
 algorithm
   shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
-                               DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei);
+                               DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei,
+                               BackendDAE.PARTITIONS_INFO(arrayCreate(0, DAE.INFERRED_CLOCK())) );
 end createEmptyShared;
 
 public function makeSingleEquationComp
@@ -8282,7 +8283,7 @@ end setSharedOptimica;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, emptyClocks());
+  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0);
 end emptyEventInfo;
 
 public function emptyClocks

@@ -515,13 +515,12 @@ algorithm
       BackendDAE.EventInfo ev;
       Boolean b1, b2, b3;
       list<BackendDAE.TimeEvent> timeEvents;
-      array<DAE.ClockKind> clocks;
 
-    case(BackendDAE.EVENT_INFO(timeEvents, wclst, zclst, samples, relations, numberOfMathEvents, clocks), fns) equation
+    case(BackendDAE.EVENT_INFO(timeEvents, wclst, zclst, samples, relations, numberOfMathEvents), fns) equation
       (wclst_1, b1) = inlineWhenClauses(wclst, fns, {}, false);
       (zclst_1, b2) = inlineZeroCrossings(zclst, fns, {}, false);
       (relations, b3) = inlineZeroCrossings(relations, fns, {}, false);
-      ev = if b1 or b2 or b3 then BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfMathEvents, clocks)
+      ev = if b1 or b2 or b3 then BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfMathEvents)
                              else inEventInfo;
     then ev;
 

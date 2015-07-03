@@ -259,14 +259,13 @@ protected
   list<BackendDAE.WhenClause> whenClauseLst;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
   Integer numberMathEvents;
-  array<DAE.ClockKind> clocks;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents, clocks) := iEventInfo;
+  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := iEventInfo;
   (whenClauseLst, outTypeA) := traverseWhenClauseExps(whenClauseLst, func, inTypeA, {});
   (zeroCrossingLst, outTypeA) := traverseZeroCrossingExps(zeroCrossingLst, func, outTypeA, {});
   (sampleLst, outTypeA) := traverseZeroCrossingExps(sampleLst, func, outTypeA, {});
   (relationsLst, outTypeA) := traverseZeroCrossingExps(relationsLst, func, outTypeA, {});
-  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents, clocks);
+  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents);
 end traverseEventInfoExps;
 
 protected function traverseWhenClauseExps<T>

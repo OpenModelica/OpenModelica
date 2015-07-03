@@ -131,14 +131,13 @@ protected
   list<BackendDAE.ZeroCrossing> relationsLst;
   Integer numberMathEvents;
 algorithm
-  BackendDAE.SHARED(eventInfo=eventInfo) := inShared;
-  BackendDAE.EVENT_INFO( timeEvents=timeEvents, whenClauseLst=whenClauseLst, sampleLst=sampleLst,
-                         zeroCrossingLst=zeroCrossingLst, relationsLst=relationsLst,
-                         numberMathEvents=numberMathEvents) := eventInfo;
-  eventInfo := BackendDAE.EVENT_INFO( timeEvents=timeEvents, whenClauseLst=whenClauseLst,
-                                      zeroCrossingLst=zeroCrossingLst, relationsLst=relationsLst,
-                                      numberMathEvents=numberMathEvents, sampleLst=sampleLst, clocks = inClocks );
-  outShared := BackendDAEUtil.setSharedEventInfo(inShared, eventInfo);
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      algorithm shared.partitionsInfo := BackendDAE.PARTITIONS_INFO(inClocks);
+      then shared;
+  end match;
 end setClocks;
 
 protected type UnresolvedPartitionData = tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.SubClock>;

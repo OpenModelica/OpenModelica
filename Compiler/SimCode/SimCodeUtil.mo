@@ -267,6 +267,7 @@ algorithm
                                                         constraints=constraints,
                                                         classAttrs=classAttributes,
                                                         symjacs=symJacs,
+                                                        partitionsInfo=BackendDAE.PARTITIONS_INFO(baseClocks),
                                                         eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents))) = dlow;
 
 
@@ -289,7 +290,6 @@ algorithm
       // Assertions and crap
       // create parameter equations
       partitionsKind = BackendDAEUtil.foldEqSystem(dlow, collectPartitions, {});
-      BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(clocks=baseClocks))) = dlow;
       ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, nominalValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, minValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));

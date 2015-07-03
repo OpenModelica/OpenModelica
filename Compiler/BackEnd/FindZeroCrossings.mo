@@ -115,19 +115,17 @@ protected
   BackendDAE.Variables vars_;
   BackendDAE.EquationArray eqns_;
   BackendDAE.ExtraInfo info;
-  array<DAE.ClockKind> clocks;
   BackendDAE.EventInfo eventInfo;
 
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
   BackendDAE.SHARED(removedEqs=removedEqs, eventInfo=eventInfo) := shared;
-  BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                        whenClauseLst=whenClauseLst,
-                        zeroCrossingLst=zeroCrossingLst,
-                        sampleLst=sampleLst,
-                        relationsLst=relationsLst,
-                        numberMathEvents=numberMathEvents,
-                        clocks=clocks) := eventInfo;
+  BackendDAE.EVENT_INFO( timeEvents=timeEvents,
+                         whenClauseLst=whenClauseLst,
+                         zeroCrossingLst=zeroCrossingLst,
+                         sampleLst=sampleLst,
+                         relationsLst=relationsLst,
+                         numberMathEvents=numberMathEvents ) := eventInfo;
 
   ht := HashTableExpToIndex.emptyHashTable();
 
@@ -150,8 +148,7 @@ algorithm
                                      zeroCrossingLst,
                                      sampleLst,
                                      relationsLst,
-                                     numberMathEvents,
-                                     clocks);
+                                     numberMathEvents);
 
   shared := BackendDAEUtil.setSharedEventInfo(shared, eventInfo);
   shared := BackendDAEUtil.setSharedRemovedEqns(shared, removedEqs);
@@ -670,14 +667,13 @@ algorithm
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<BackendDAE.ZeroCrossing> relations, sampleLst;
       Integer countMathFunctions;
-      array<DAE.ClockKind> clocks;
     //No zero crossing for clocked discrete partitions;
     case BackendDAE.CLOCKED_PARTITION(subClock=BackendDAE.SUBCLOCK(solver=NONE()))
       then (inSyst, inShared);
     else
       algorithm
         BackendDAE.SHARED( knownVars=knvars, eventInfo=einfo) := inShared;
-        BackendDAE.EVENT_INFO( timeEvents=timeEvents, zeroCrossingLst=zero_crossings, clocks=clocks,
+        BackendDAE.EVENT_INFO( timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
                                sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
                                numberMathEvents=countMathFunctions ) := einfo;
         eqs_lst := BackendEquation.equationList(eqns);
@@ -691,7 +687,7 @@ algorithm
         end if;
         eqns1 := BackendEquation.listEquation(eqs_lst1);
         einfo := BackendDAE.EVENT_INFO( timeEvents, whenclauses, zero_crossings, sampleLst, relations,
-                                           countMathFunctions, clocks );
+                                           countMathFunctions );
       then (BackendDAEUtil.setEqSystEqs(inSyst, eqns1), BackendDAEUtil.setSharedEventInfo(inShared, einfo));
   end match;
 end findZeroCrossings1;
