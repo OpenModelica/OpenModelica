@@ -5797,7 +5797,7 @@ algorithm
     case (DAE.T_METARECORD(knownSingleton=false,utPath = path1), DAE.T_METARECORD(knownSingleton=false,utPath=path2))
       equation
         true = Absyn.pathEqual(path1,path2);
-      then DAE.T_METAUNIONTYPE({},false,{path1});
+      then DAE.T_METAUNIONTYPE({},false,{},{path1});
 
     case (DAE.T_INTEGER(),DAE.T_REAL())
       then DAE.T_REAL_DEFAULT;
@@ -7824,7 +7824,10 @@ algorithm
     case (DAE.T_METALIST(t, _), ts) then DAE.T_METALIST(t, ts);
     case (DAE.T_METATUPLE(tys, _), ts) then DAE.T_METATUPLE(tys, ts);
     case (DAE.T_METAOPTION(t, _), ts) then DAE.T_METAOPTION(t, ts);
-    case (DAE.T_METAUNIONTYPE(ps, b, _), ts) then DAE.T_METAUNIONTYPE(ps, b, ts);
+    case (t as DAE.T_METAUNIONTYPE(), ts)
+      algorithm
+        t.source := ts;
+      then t;
     case (DAE.T_METARECORD(p, i, v, b, _), ts) then DAE.T_METARECORD(p, i, v, b, ts);
     case (DAE.T_METAARRAY(t, _), ts) then DAE.T_METAARRAY(t, ts);
     case (DAE.T_METABOXED(t, _), ts) then DAE.T_METABOXED(t, ts);
@@ -8218,7 +8221,7 @@ algorithm
     local
       Boolean b;
       Absyn.Path p;
-    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},b,{p});
+    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},b,if b then list(varName(v) for v in inTy.fields) else {},{p});
     else inTy;
   end match;
 end getUniontypeIfMetarecord;
@@ -8237,7 +8240,7 @@ protected function getUniontypeIfMetarecordTraverse
   output Integer odummy = dummy;
 algorithm
   oty := match ty
-    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.knownSingleton,{ty.utPath});
+    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.knownSingleton,if ty.knownSingleton then list(varName(v) for v in ty.fields) else {},{ty.utPath});
     else ty;
   end match;
 end getUniontypeIfMetarecordTraverse;

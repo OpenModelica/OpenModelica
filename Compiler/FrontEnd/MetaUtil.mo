@@ -269,11 +269,12 @@ public function fixUniontype
   input SCode.ClassDef inClassDef;
   output Option<DAE.Type> outType;
 algorithm
-  outType := matchcontinue(inState, inClassDef)
+  outType := match (inState, inClassDef)
     local
+      Boolean b;
       Absyn.Path p;
       list<Absyn.Path> paths;
-      list<String> names;
+      list<String> names, singletonFields;
       DAE.TypeSource ts;
 
     case (ClassInf.META_UNIONTYPE(), SCode.PARTS())
@@ -281,12 +282,18 @@ algorithm
         p := Absyn.makeFullyQualified(inState.path);
         names := SCode.elementNames(inClassDef.elementLst);
         paths := list(Absyn.pathReplaceIdent(p, n) for n in names);
+        b := listLength(paths)==1;
+        if b then
+          singletonFields := SCode.componentNames(listGet(inClassDef.elementLst, 1));
+        else
+          singletonFields := {};
+        end if;
         ts := Types.mkTypeSource(SOME(p));
       then
-        SOME(DAE.T_METAUNIONTYPE(paths, listLength(paths) == 1, ts));
+        SOME(DAE.T_METAUNIONTYPE(paths,b,singletonFields,ts));
 
     else NONE();
-  end matchcontinue;
+  end match;
 end fixUniontype;
 
 public function checkArrayType

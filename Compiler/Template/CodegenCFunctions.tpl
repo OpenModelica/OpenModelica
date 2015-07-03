@@ -2412,6 +2412,20 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
     ((modelica_metatype*)MMC_UNTAGPTR(<%tmp%>))[<%indexInRecord%>] = <%expPart%>;
     <%varPart%> = <%tmp%>;
     >>
+  case STMT_ASSIGN(exp1=CREF(componentRef=cr as CREF_QUAL(identType=T_METATYPE(ty=t1 as T_METAUNIONTYPE(__)), componentRef=cr2 as CREF_IDENT(__)),ty=t2)) then
+    let &preExp = buffer ""
+    let tmp = tempDecl("modelica_metatype",&varDecls)
+    let varPart = '_<%cr.ident%>' // So it only works in function context?
+    let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let indexInRecord = intAdd(1, position(cr2.ident, t1.singletonFields))
+    let len = intAdd(2, listLength(t1.singletonFields))
+    <<
+    <%preExp%>
+    <%tmp%> = MMC_TAGPTR(mmc_alloc_words(<%len%>));
+    memcpy(MMC_UNTAGPTR(<%tmp%>), MMC_UNTAGPTR(<%varPart%>), <%len%>*sizeof(modelica_metatype));
+    ((modelica_metatype*)MMC_UNTAGPTR(<%tmp%>))[<%indexInRecord%>] = <%expPart%>;
+    <%varPart%> = <%tmp%>;
+    >>
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_FUNC(__))) then
     let &preExp = buffer ""
@@ -4373,7 +4387,10 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) _<%crefStr(cr)%>)'
   case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METARECORD(__)), componentRef=cri as CREF_IDENT(__))) then
-    let offset = intAdd(findVarIndex(cri.ident,ty.fields),2)
+    let offset = intAdd(findVarIndex(cri.ident,ty.fields),2) // 0-based
+    '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
+  case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METAUNIONTYPE(__)), componentRef=cri as CREF_IDENT(__))) then
+    let offset = intAdd(position(cri.ident,ty.singletonFields),1) // 1-based
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
   else
     match context

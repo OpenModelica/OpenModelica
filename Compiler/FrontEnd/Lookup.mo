@@ -2698,7 +2698,7 @@ protected function lookupVarF
   output String name;
 algorithm
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) :=
-  matchcontinue (inCache,inBinTree,inComponentRef,inEnv)
+  match (inCache,inBinTree,inComponentRef,inEnv)
     local
       String id,id2;
       SCode.ConnectorType ct;
@@ -2723,6 +2723,7 @@ algorithm
       DAE.Attributes attr;
       list<DAE.Var> fields;
       Option<DAE.Exp> oSplicedExp;
+      Absyn.Path p;
 
     // Simple identifier
     case (cache,ht,DAE.CREF_IDENT(ident = id,subscriptLst = ss),_)
@@ -2739,50 +2740,58 @@ algorithm
 
     // Qualified variables looked up through component environment with or without spliced exp
     case (cache,ht,DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids), _)
-      equation
-        (DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,_),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
+      algorithm
+        (DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,_),_,_,_,componentEnv) := lookupVar2(ht, id, inEnv);
 
         // leave just the last scope from component env as it SHOULD BE ONLY THERE, i.e. don't go on searching the parents!
         // componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
 
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        (attr,ty,binding,cnstForRange,componentEnv,name) := match tyParent
+          case DAE.T_METARECORD(fields=fields)
+            algorithm
+              {} := ss;
+              DAE.CREF_IDENT(ident=id2,subscriptLst={}) := ids;
+              DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(id2,fields)+1);
+              splicedExpData := InstTypes.SPLICEDEXPDATA(NONE(),ty);
+            then (attr,ty,binding,cnstForRange,componentEnv,name);
+          case DAE.T_METAUNIONTYPE(knownSingleton=true, paths={p})
+            algorithm
+              {} := ss;
+              DAE.CREF_IDENT(ident=id2,subscriptLst={}) := ids;
+              (cache, DAE.T_METARECORD(fields=fields), _) := lookupType(cache, componentEnv, p, NONE());
+              DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(id2,fields)+1);
+              splicedExpData := InstTypes.SPLICEDEXPDATA(NONE(),ty);
+            then (attr,ty,binding,cnstForRange,componentEnv,name);
+          case DAE.T_METAUNIONTYPE()
+            then fail();
+          else
+            algorithm
+              (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) := lookupVar(cache, componentEnv, ids);
 
-        ltCref = elabComponentRecursive((texp));
-        _ = match ltCref
-          case (tCref::_) // with a spliced exp
-            equation
-             ty = if Types.isBoxedType(tyParent) and not Types.isUnknownType(tyParent)
-                  then Types.boxIfUnboxedType(tyChild)
-                  else tyChild "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
-             ty1 = checkSubscripts(tyParent, ss);
-             ty = sliceDimensionType(ty1,ty);
-             ty2_2 = Types.simplifyType(tyParent);
-             ss = addArrayDimensions(ty2_2,ss);
-             xCref = ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
-             eType = Types.simplifyType(ty);
-             splicedExp = Expression.makeCrefExp(xCref,eType);
-             oSplicedExp = SOME(splicedExp);
-           then ();
-          case ({}) // without spliced Expression
-            equation
-              oSplicedExp = NONE();
-             then ();
+              ltCref := elabComponentRecursive((texp));
+              oSplicedExp := match ltCref
+                case (tCref::_) // with a spliced exp
+                  algorithm
+                    ty1 := checkSubscripts(tyParent, ss);
+                    ty := sliceDimensionType(ty1,tyChild);
+                    ty2_2 := Types.simplifyType(tyParent);
+                    ss := addArrayDimensions(ty2_2,ss);
+                    xCref := ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
+                    eType := Types.simplifyType(ty);
+                    splicedExp := Expression.makeCrefExp(xCref,eType);
+                  then SOME(splicedExp);
+                case ({}) // without spliced Expression
+                  then NONE();
+              end match;
+              vt := SCode.variabilityOr(vt,vt2);
+              binding := lookupBinding(inComponentRef, tyParent, ty, parentBinding, binding);
+              splicedExpData := InstTypes.SPLICEDEXPDATA(oSplicedExp,idTp);
+            then
+              (DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,componentEnv,name);
         end match;
-        vt = SCode.variabilityOr(vt,vt2);
-        binding = lookupBinding(inComponentRef, tyParent, ty, parentBinding, binding);
-      then
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(oSplicedExp,idTp),componentEnv,name);
+      then (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name);
 
-    // MetaModelica meta-records
-    case (cache,ht,(DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = DAE.CREF_IDENT(ident=id2,subscriptLst={}))), _)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        (DAE.TYPES_VAR(ty=DAE.T_METARECORD(fields=fields)),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
-        DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) = listGet(fields,Types.findVarIndex(id2,fields)+1);
-      then
-        (cache,attr,ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),ty),componentEnv,name);
-
-  end matchcontinue;
+  end match;
 end lookupVarF;
 
 protected function lookupBinding
