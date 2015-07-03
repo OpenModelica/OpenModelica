@@ -81,42 +81,19 @@ public function varEqual "author: PA
   Returns true if two vars are equal."
   input BackendDAE.Var inVar1;
   input BackendDAE.Var inVar2;
-  output Boolean outBoolean;
-protected
-  DAE.ComponentRef cr1, cr2;
-algorithm
-  BackendDAE.VAR(varName=cr1) := inVar1;
-  BackendDAE.VAR(varName=cr2) := inVar2;
-  outBoolean := ComponentReference.crefEqualNoStringCompare(cr1, cr2) "a BackendDAE.Var is identified by its component reference";
+  output Boolean outBoolean = ComponentReference.crefEqualNoStringCompare(inVar1.varName, inVar2.varName) "a BackendDAE.Var is identified by its component reference";
 end varEqual;
 
 public function setVarFixed "author: PA
   Sets the fixed attribute of a variable."
   input BackendDAE.Var inVar;
   input Boolean inBoolean;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setFixedAttr(oattr, SOME(DAE.BCONST(inBoolean)));
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setFixedAttr(oattr, SOME(DAE.BCONST(inBoolean)));
 end setVarFixed;
 
 public function varFixed "author: PA
@@ -126,153 +103,81 @@ public function varFixed "author: PA
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue(inVar)
+  outBoolean := match(inVar)
     local
       Boolean fixed;
 
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
 
     // params and consts are by default fixed
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM())) then true;
-    case (BackendDAE.VAR(varKind = BackendDAE.CONST(),bindExp=SOME(_))) then true;
+    case (BackendDAE.VAR(varKind=BackendDAE.PARAM())) then true;
+    case (BackendDAE.VAR(varKind=BackendDAE.CONST(),bindExp=SOME(_))) then true;
 
     // rest defaults to false
     else false;
-  end matchcontinue;
+  end match;
 end varFixed;
 
 public function setVarStartValue "author: Frenkel TUD
   Sets the start value attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.Exp inExp;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setStartAttr(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct,io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setStartAttr(oattr, inExp);
 end setVarStartValue;
 
 public function setVarStartValueOption "author: Frenkel TUD
   Sets the start value attribute of a variable."
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> inExp;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setStartAttrOption(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setStartAttrOption(oattr, inExp);
 end setVarStartValueOption;
 
 public function setVarStartOrigin "author: Frenkel TUD
   Sets the startOrigin attribute of a variable."
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> startOrigin;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setStartOrigin(oattr, startOrigin);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setStartOrigin(oattr, startOrigin);
 end setVarStartOrigin;
 
 public function setVarAttributes "sets the variable attributes of a variable.
   author: Peter Aronsson (paronsson@wolfram.com)"
-  input BackendDAE.Var v;
-  input Option<DAE.VariableAttributes> attr;
-  output BackendDAE.Var outV;
-protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  Option<SCode.Comment> s;
-  Option<BackendDAE.TearingSelect> ts;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
+  input BackendDAE.Var inVar;
+  input Option<DAE.VariableAttributes> inAttr;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, _, ts, s, ct, io, unreplaceable) := v;
-  outV := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, attr, ts, s, ct, io, unreplaceable);
+  outVar.values := inAttr;
 end setVarAttributes;
 
 public function varStartValue "author: PA
   Returns the DAE.StartValue of a variable."
-  input BackendDAE.Var v;
+  input BackendDAE.Var inVar;
   output DAE.Exp sv;
-protected
-  Option<DAE.VariableAttributes> attr;
 algorithm
-  BackendDAE.VAR(values=attr) := v;
-  sv := DAEUtil.getStartAttr(attr);
+  sv := DAEUtil.getStartAttr(inVar.values);
 end varStartValue;
 
 public function varUnreplaceable "author: lochel
   Returns the unreplaceable attribute of a variable."
   input BackendDAE.Var inVar;
-  output Boolean outUnreplaceable;
-algorithm
-  BackendDAE.VAR(unreplaceable=outUnreplaceable) := inVar;
+  output Boolean outUnreplaceable = inVar.unreplaceable;
 end varUnreplaceable;
 
 public function varStartValueFail "author: Frenkel TUD
@@ -462,7 +367,7 @@ public function varStateSelect "author: PA
   input BackendDAE.Var inVar;
   output DAE.StateSelect outStateSelect;
 algorithm
-  outStateSelect := matchcontinue (inVar)
+  outStateSelect := match (inVar)
     local
       DAE.StateSelect stateselect;
 
@@ -470,36 +375,18 @@ algorithm
     then stateselect;
 
     else DAE.DEFAULT();
-  end matchcontinue;
+  end match;
 end varStateSelect;
 
-public function setVarStateSelect "author: Frenkel TUD
-  sets the state select attribute of a variable."
+public function setVarStateSelect "Sets the state select attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.StateSelect stateSelect;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setStateSelect(oattr, stateSelect);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setStateSelect(oattr, stateSelect);
 end setVarStateSelect;
 
 public function varStateDerivative "author: Frenkel TUD 2013-01
@@ -525,40 +412,12 @@ public function setStateDerivative "author: Frenkel TUD
   sets the state derivative."
   input BackendDAE.Var inVar;
   input Option<DAE.ComponentRef> dcr;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  Integer indx;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
+  Integer index;
 algorithm
-  BackendDAE.VAR(varName=a,
-                 varKind=BackendDAE.STATE(index=indx),
-                 varDirection=c,
-                 varParallelism=prl,
-                 varType=d,
-                 bindExp=e,
-                 bindValue=f,
-                 arryDim=g,
-                 source=source,
-                 values=oattr,
-                 tearingSelectOption = ts,
-                 comment=s,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
-  outVar := BackendDAE.VAR(a, BackendDAE.STATE(indx, dcr), c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  BackendDAE.STATE(index=index) := inVar.varKind;
+  outVar.varKind := BackendDAE.STATE(index, dcr);
 end setStateDerivative;
 
 public function getVariableAttributefromType
@@ -581,66 +440,30 @@ algorithm
   end match;
 end getVariableAttributefromType;
 
-public function setVarFinal "author: Frenkel TUD
-  Sets the final attribute of a variable."
+public function setVarFinal "Sets the final attribute of a variable."
   input BackendDAE.Var inVar;
   input Boolean finalPrefix;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setFinalAttr(oattr, finalPrefix);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setFinalAttr(oattr, finalPrefix);
 end setVarFinal;
 
-public function setVarMinMax "author: Frenkel TUD
-  Sets the minmax attribute of a variable."
+public function setVarMinMax "Sets the min/max attribute of a variable.
+  lochel: This function will not clear min/max attributes if both inMin and
+          inMax are NONE(). Is that the intended behaviour?"
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> inMin;
   input Option<DAE.Exp> inMax;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
   if isSome(inMin) or isSome(inMax) then
-    BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-    oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-    oattr := DAEUtil.setMinMax(oattr, inMin, inMax);
-    outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
-  else
-    outVar := inVar;
+    oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+    outVar.values := DAEUtil.setMinMax(oattr, inMin, inMax);
   end if;
 end setVarMinMax;
 
@@ -648,29 +471,12 @@ public function setUnit "author: jhagemann
   Sets the unit attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.Exp inUnit;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setUnitAttr(oattr, inUnit);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setUnitAttr(oattr, inUnit);
 end setUnit;
 
 public function varNominalValue "author: Frenkel TUD"
@@ -684,29 +490,12 @@ public function setVarNominalValue "author: Frenkel TUD
   Sets the nominal value attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.Exp inExp;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism prl;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable) := inVar;
-  oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
-  oattr := DAEUtil.setNominalAttr(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
+  outVar.values := DAEUtil.setNominalAttr(oattr, inExp);
 end setVarNominalValue;
 
 public function varType "author: PA
@@ -1801,78 +1590,18 @@ public function setVarKind "author: PA
   Sets the BackendDAE.VarKind of a variable"
   input BackendDAE.Var inVar;
   input BackendDAE.VarKind inVarKind;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef cr;
-  DAE.VarDirection dir;
-  DAE.VarParallelism prl;
-  BackendDAE.Type tp;
-  Option<DAE.Exp> bind;
-  Option<Values.Value> v;
-  list<DAE.Dimension> dim;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> attr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType ct;
-  BackendDAE.Var oVar;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  BackendDAE.VAR(varName=cr,
-                 varDirection=dir,
-                 varParallelism=prl,
-                 varType=tp,
-                 bindExp=bind,
-                 bindValue=v,
-                 arryDim=dim,
-                 source=source,
-                 values=attr,
-                 tearingSelectOption=ts,
-                 comment=comment,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
-  outVar := BackendDAE.VAR(cr, inVarKind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct, io, unreplaceable);
+  outVar.varKind := inVarKind;
   // referenceUpdate(inVar, 2, new_kind);
 end setVarKind;
 
 public function setVarTS "Sets the BackendDAE.TearingSelect of a variable"
   input BackendDAE.Var inVar;
   input Option<BackendDAE.TearingSelect> inTS;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef cr;
-  DAE.VarDirection dir;
-  DAE.VarParallelism prl;
-  BackendDAE.Type tp;
-  Option<DAE.Exp> bind;
-  Option<Values.Value> v;
-  list<DAE.Dimension> dim;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> attr;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType ct;
-  BackendDAE.Var oVar;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
-  BackendDAE.VarKind varKind;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  BackendDAE.VAR(varName=cr,
-                 varDirection=dir,
-                 varParallelism=prl,
-                 varType=tp,
-                 varKind=varKind,
-                 bindExp=bind,
-                 bindValue=v,
-                 arryDim=dim,
-                 source=source,
-                 values=attr,
-                 comment=comment,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bind, v, dim, source, attr, inTS, comment, ct, io, unreplaceable);
+  outVar.tearingSelectOption := inTS;
   // referenceUpdate(inVar, 2, new_kind);
 end setVarTS;
 
@@ -1880,135 +1609,40 @@ end setVarTS;
 public function setBindExp "author: lochel"
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> inBindExp;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef cr;
-  BackendDAE.VarKind varKind;
-  DAE.VarDirection dir;
-  DAE.VarParallelism prl;
-  BackendDAE.Type tp;
-  Option<Values.Value> v;
-  list<DAE.Dimension> dim;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> attr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType ct;
-  BackendDAE.Var oVar;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  BackendDAE.VAR(varName=cr,
-                 varKind=varKind,
-                 varDirection=dir,
-                 varParallelism=prl,
-                 varType=tp,
-                 bindValue=v,
-                 arryDim=dim,
-                 source=source,
-                 values=attr,
-                 tearingSelectOption=ts,
-                 comment=comment,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, ts, comment, ct, io, unreplaceable);
+  outVar.bindExp := inBindExp;
 end setBindExp;
 
 public function setBindValue "author: lochel"
   input BackendDAE.Var inVar;
   input Option<Values.Value> inBindValue;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef cr;
-  BackendDAE.VarKind varKind;
-  DAE.VarDirection dir;
-  DAE.VarParallelism prl;
-  BackendDAE.Type tp;
-  Option<DAE.Exp> bindExp;
-  list<DAE.Dimension> dim;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> attr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType ct;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  BackendDAE.VAR(varName=cr,
-                 varKind=varKind,
-                 varDirection=dir,
-                 varParallelism=prl,
-                 varType=tp,
-                 bindExp=bindExp,
-                 arryDim=dim,
-                 source=source,
-                 values=attr,
-                 tearingSelectOption=ts,
-                 comment=comment,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, ts, comment, ct, io, unreplaceable);
+  outVar.bindValue := inBindValue;
 end setBindValue;
 
 public function setVarDirectionTpl
   input BackendDAE.Var inVar;
   input DAE.VarDirection inDir;
-  output BackendDAE.Var var;
-  output DAE.VarDirection dir;
+  output BackendDAE.Var outVar;
+  output DAE.VarDirection outDir = inDir;
 algorithm
-  var := setVarDirection(inVar, inDir);
-  dir := inDir;
+  outVar := setVarDirection(inVar, inDir);
 end setVarDirectionTpl;
 
 public function setVarDirection "author: lochel
   Sets the DAE.VarDirection of a variable"
   input BackendDAE.Var inVar;
   input DAE.VarDirection inVarDirection;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef cr;
-  BackendDAE.VarKind kind;
-  DAE.VarParallelism prl;
-  BackendDAE.Type tp;
-  Option<DAE.Exp> bind;
-  Option<Values.Value> v;
-  list<DAE.Dimension> dim;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> attr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> comment;
-  DAE.ConnectorType ct;
-  BackendDAE.Var oVar;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
+  output BackendDAE.Var outVar = inVar;
 algorithm
-  BackendDAE.VAR(varName=cr,
-                 varKind=kind,
-                 varParallelism=prl,
-                 varType=tp,
-                 bindExp=bind,
-                 bindValue=v,
-                 arryDim=dim,
-                 source=source,
-                 values=attr,
-                 tearingSelectOption=ts,
-                 comment=comment,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
-  outVar := BackendDAE.VAR(cr, kind, inVarDirection, prl, tp, bind, v, dim, source, attr, ts, comment, ct, io, unreplaceable); // referenceUpdate(inVar, 3, varDirection);
+  outVar.varDirection := inVarDirection; // referenceUpdate(inVar, 3, varDirection);
 end setVarDirection;
 
-public function getVarDirection "author: wbraun
-  Get the DAE.VarDirection of a variable"
+public function getVarDirection "Get the DAE.VarDirection of a variable"
   input BackendDAE.Var inVar;
-  output DAE.VarDirection varDirection;
-algorithm
-  varDirection := match (inVar)
-    case (BackendDAE.VAR(varDirection = varDirection)) then  varDirection;
-  end match;
+  output DAE.VarDirection varDirection = inVar.varDirection;
 end getVarDirection;
 
 public function getVarNominalValue "
@@ -2061,20 +1695,10 @@ algorithm
 end isVarOnTopLevelAndOutput;
 
 public function isVarOnTopLevelAndInput "and has the DAE.VarDirection = INPUT
-  The check for top-model is done by spliting the name at \'.\' and
-  check if the list-length is 1"
+  The check for top-model is done by splitting the name at '.' and checking if
+  the list-length is 1."
   input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  match (inVar)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarDirection dir;
-      DAE.ConnectorType ct;
-    case (BackendDAE.VAR(varName = cr,varDirection = dir,connectorType = ct))
-      then topLevelInput(cr, dir, ct);
-  end match;
+  output Boolean outBoolean = topLevelInput(inVar.varName, inVar.varDirection, inVar.connectorType);
 end isVarOnTopLevelAndInput;
 
 public function isVarOnTopLevelAndInputNoDerInput
@@ -2083,7 +1707,7 @@ public function isVarOnTopLevelAndInputNoDerInput
 end isVarOnTopLevelAndInputNoDerInput;
 
 public function topLevelInput "author: PA
-  Succeds if variable is input declared at the top level of the model,
+  Succeeds if variable is input declared at the top level of the model,
   or if it is an input in a connector instance at top level."
   input DAE.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
@@ -2113,69 +1737,30 @@ algorithm
 end topLevelOutput;
 
 
-public function isFinalVar "author: Frenkel TUD
-  Returns true if var is final."
-  input BackendDAE.Var v;
-  output Boolean b;
-algorithm
-  b := match(v)
-    local
-      Option<DAE.VariableAttributes> attr;
-    case (BackendDAE.VAR(values = attr))
-      equation
-        b=DAEUtil.getFinalAttr(attr);
-      then b;
-   end match;
+public function isFinalVar "Returns true if the variable is final."
+  input BackendDAE.Var inVar;
+  output Boolean b = DAEUtil.getFinalAttr(inVar.values);
 end isFinalVar;
 
 public function isFinalOrProtectedVar
-  input BackendDAE.Var v;
-  output Boolean b;
-algorithm
-  b := match(v)
-    local
-      Option<DAE.VariableAttributes> attr;
-    case (BackendDAE.VAR(values = attr))
-      equation
-        b = DAEUtil.getFinalAttr(attr) or DAEUtil.getProtectedAttr(attr);
-      then b;
-   end match;
+  input BackendDAE.Var inVar;
+  output Boolean b = DAEUtil.getFinalAttr(inVar.values) or DAEUtil.getProtectedAttr(inVar.values);
 end isFinalOrProtectedVar;
 
-public function getVariableAttributes "author: Frenkel TUD 2011-04
-  returns the DAE.VariableAttributes of a variable"
+public function getVariableAttributes "Returns the DAE.VariableAttributes of a variable."
   input BackendDAE.Var inVar;
-  output Option<DAE.VariableAttributes> outAttr;
-algorithm
-  outAttr := match (inVar)
-    local
-      Option<DAE.VariableAttributes> attr;
-    case BackendDAE.VAR(values = attr) then attr;
-  end match;
+  output Option<DAE.VariableAttributes> outAttr = inVar.values;
 end getVariableAttributes;
 
-public function getVarSource "author: Frenkel TUD 2011-04
-  returns the DAE.ElementSource of a variable"
+public function getVarSource "Returns the DAE.ElementSource of a variable"
   input BackendDAE.Var inVar;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := match (inVar)
-    local
-      DAE.ElementSource source;
-    case BackendDAE.VAR(source = source) then source;
-  end match;
+  output DAE.ElementSource outSource = inVar.source;
 end getVarSource;
 
 public function getVarType "author: marcusw
   returns the BackendDAE.Type of the variable"
   input BackendDAE.Var inVar;
-  output BackendDAE.Type outType;
-algorithm
-  outType := match (inVar)
-    local
-      BackendDAE.Type varType;
-    case BackendDAE.VAR(varType=varType) then varType;
-  end match;
+  output BackendDAE.Type outType = inVar.varType;
 end getVarType;
 
 public function getMinMaxAsserts "author: Frenkel TUD 2011-03"
@@ -2226,18 +1811,18 @@ protected function getMinMaxAsserts1 "author: Frenkel TUD 2011-03"
   input DAE.Type tp;
   output DAE.Exp cond;
 algorithm
-  cond :=
-  match (ominmax,e,tp)
+  cond := match ominmax
     local
-      DAE.Exp min,max;
-    case (SOME(min)::(SOME(max)::{}),_,_)
-      then DAE.LBINARY(DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE()),
-                            DAE.AND(DAE.T_BOOL_DEFAULT),
-                            DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
-    case (SOME(min)::(NONE()::{}),_,_)
-      then DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE());
-    case (NONE()::(SOME(max)::{}),_,_)
-      then DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE());
+      DAE.Exp min, max;
+
+    case SOME(min)::(SOME(max)::{})
+    then DAE.LBINARY(DAE.RELATION(e, DAE.GREATEREQ(tp), min, -1, NONE()), DAE.AND(DAE.T_BOOL_DEFAULT), DAE.RELATION(e, DAE.LESSEQ(tp), max, -1, NONE()));
+
+    case SOME(min)::(NONE()::{})
+    then DAE.RELATION(e, DAE.GREATEREQ(tp), min, -1, NONE());
+
+    case NONE()::(SOME(max)::{})
+    then DAE.RELATION(e, DAE.LESSEQ(tp), max, -1, NONE());
   end match;
 end getMinMaxAsserts1;
 
@@ -2469,16 +2054,10 @@ public function copyVariables
   "Makes a copy of a Variables."
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
-protected
-  array<list<BackendDAE.CrefIndex>> indices;
-  BackendDAE.VariableArray varArr;
-  Integer buckets, num_vars, num_elems, arr_size;
-  array<Option<BackendDAE.Var>> varOptArr;
 algorithm
-  BackendDAE.VARIABLES(indices, varArr, buckets, num_vars) := inVariables;
-  indices := arrayCopy(indices);
-  varArr := copyArray(varArr);
-  outVariables := BackendDAE.VARIABLES(indices, varArr, buckets, num_vars);
+  outVariables := inVariables;
+  outVariables.crefIndices := arrayCopy(inVariables.crefIndices);
+  outVariables.varArr := copyArray(inVariables.varArr);
 end copyVariables;
 
 public function emptyVars
@@ -2498,7 +2077,7 @@ algorithm
 end emptyVars;
 
 public function emptyVarsSized
-  "Returns a Variable datastructure that is empty."
+  "Returns a BackendDAE.Variables data structure that is empty."
   input Integer size;
   output BackendDAE.Variables outVariables = emptyVars(size);
 end emptyVarsSized;
@@ -2512,11 +2091,8 @@ public function varList
      append all the variables from the sets we might get duplicates."
   input BackendDAE.Variables inVariables;
   output list<BackendDAE.Var> outVarLst;
-protected
-  BackendDAE.VariableArray arr;
 algorithm
-  BackendDAE.VARIABLES(varArr = arr) := inVariables;
-  outVarLst := vararrayList(arr);
+  outVarLst := vararrayList(inVariables.varArr);
 end varList;
 
 public function listVar
@@ -2607,12 +2183,8 @@ protected function varsLoadFactor
   input BackendDAE.Variables inVariables;
   input Integer inIncrease = 0;
   output Real outLoadFactor;
-protected
-  Integer buckets, num_vars;
 algorithm
-  BackendDAE.VARIABLES(bucketSize = buckets, numberOfVars = num_vars) := inVariables;
-  num_vars := num_vars + inIncrease;
-  outLoadFactor := intReal(num_vars) / buckets;
+  outLoadFactor := intReal(inVariables.numberOfVars + inIncrease) / intReal(inVariables.bucketSize);
 end varsLoadFactor;
 
 public function isVariable
@@ -3005,31 +2577,22 @@ public function addVar
   "Adds a variable to the set, or updates it if it already exists."
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVariables;
-  output BackendDAE.Variables outVariables;
+  output BackendDAE.Variables outVariables = inVariables;
 protected
-  DAE.ComponentRef cr, cr2;
-  array<list<BackendDAE.CrefIndex>> hashvec;
-  BackendDAE.VariableArray varr;
-  Integer bsize, num_vars, hash_idx, arr_idx;
+  Integer hash_idx, arr_idx;
   list<BackendDAE.CrefIndex> indices;
 algorithm
-  BackendDAE.VAR(varName = cr) := inVar;
-  BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars) := inVariables;
-
-  hash_idx := ComponentReference.hashComponentRefMod(cr, bsize) + 1;
-  indices := hashvec[hash_idx];
+  hash_idx := ComponentReference.hashComponentRefMod(inVar.varName, inVariables.bucketSize) + 1;
+  indices := arrayGet(inVariables.crefIndices, hash_idx);
 
   try
-    BackendDAE.CREFINDEX(index = arr_idx) :=
-      List.getMemberOnTrue(cr, indices, crefIndexEqualCref);
-    varr := vararraySetnth(varr, arr_idx + 1, inVar);
+    BackendDAE.CREFINDEX(index=arr_idx) := List.getMemberOnTrue(inVar.varName, indices, crefIndexEqualCref);
+    outVariables.varArr := vararraySetnth(inVariables.varArr, arr_idx+1, inVar);
   else
-    varr := vararrayAdd(varr, inVar);
-    arrayUpdate(hashvec, hash_idx, (BackendDAE.CREFINDEX(cr, num_vars) :: indices));
-    num_vars := num_vars + 1;
+    outVariables.varArr := vararrayAdd(outVariables.varArr, inVar);
+    arrayUpdate(outVariables.crefIndices, hash_idx, (BackendDAE.CREFINDEX(inVar.varName, outVariables.numberOfVars)::indices));
+    outVariables.numberOfVars := outVariables.numberOfVars + 1;
   end try;
-
-  outVariables := BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars);
 end addVar;
 
 public function addVars
@@ -3104,11 +2667,8 @@ public function setVarAt
   input Integer inIndex;
   input BackendDAE.Var inVar;
   output BackendDAE.Variables outVariables = inVariables;
-protected
-  BackendDAE.VariableArray arr;
 algorithm
-  BackendDAE.VARIABLES(varArr = arr) := inVariables;
-  vararraySetnth(arr, inIndex, inVar);
+  vararraySetnth(inVariables.varArr, inIndex, inVar);
 end setVarAt;
 
 public function getVarAtIndexFirst
@@ -3335,12 +2895,12 @@ end computeRangeExps;
 public function getVarLst
   input list<DAE.ComponentRef> inComponentRefLst;
   input BackendDAE.Variables inVariables;
-  input list<BackendDAE.Var> iVarLst;
+  input list<BackendDAE.Var> inVarLst;
   input list<Integer> iIntegerLst;
   output list<BackendDAE.Var> outVarLst;
   output list<Integer> outIntegerLst;
 algorithm
-  (outVarLst,outIntegerLst) := matchcontinue(inComponentRefLst,inVariables,iVarLst,iIntegerLst)
+  (outVarLst,outIntegerLst) := matchcontinue(inComponentRefLst,inVariables,inVarLst,iIntegerLst)
     local
       list<DAE.ComponentRef> crlst;
       DAE.ComponentRef cr;
@@ -3348,16 +2908,16 @@ algorithm
       list<Integer> ilst;
       BackendDAE.Var v;
       Integer indx;
-    case ({},_,_,_) then (iVarLst,iIntegerLst);
+    case ({},_,_,_) then (inVarLst,iIntegerLst);
     case (cr::crlst,_,_,_)
       equation
         (v,indx) = getVar2(cr, inVariables);
-        (varlst,ilst) = getVarLst(crlst,inVariables,v::iVarLst,indx::iIntegerLst);
+        (varlst,ilst) = getVarLst(crlst,inVariables,v::inVarLst,indx::iIntegerLst);
       then
         (varlst,ilst);
     case (_::crlst,_,_,_)
       equation
-        (varlst,ilst) = getVarLst(crlst,inVariables,iVarLst,iIntegerLst);
+        (varlst,ilst) = getVarLst(crlst,inVariables,inVarLst,iIntegerLst);
       then
         (varlst,ilst);
   end matchcontinue;
@@ -4166,8 +3726,7 @@ public function mergeMinMaxAttribute
   input Boolean negate;
   output BackendDAE.Var outVar;
 algorithm
-  outVar :=
-  matchcontinue (inAVar,inVar,negate)
+  outVar := matchcontinue (inAVar,inVar,negate)
     local
       BackendDAE.Var v,var,var1;
       Option<DAE.VariableAttributes> attr,attr1;
@@ -4190,14 +3749,11 @@ algorithm
 end mergeMinMaxAttribute;
 
 public function getMinMaxAttribute
-  input BackendDAE.Var iVar;
-  output Option<DAE.Exp> oMin;
-  output Option<DAE.Exp> oMax;
-protected
-  Option<DAE.VariableAttributes> attr;
+  input BackendDAE.Var inVar;
+  output Option<DAE.Exp> outMin;
+  output Option<DAE.Exp> outMax;
 algorithm
-  BackendDAE.VAR(values = attr) := iVar;
-  (oMin, oMax) := DAEUtil.getMinMaxValues(attr);
+  (outMin, outMax) := DAEUtil.getMinMaxValues(inVar.values);
 end getMinMaxAttribute;
 
 protected function mergeMinMax
@@ -4228,24 +3784,22 @@ protected function checkMinMax
 algorithm
   _ := matchcontinue(inMin, inMax)
     local
-      DAE.Exp min,max;
-      String s,s1,s2,s3,s4,s5;
-      Real rmin,rmax;
+      DAE.Exp min, max;
+      String s, s1, s2, s3, s4, s5;
+      Real rmin, rmax;
 
-    case (SOME(min),SOME(max))
-      equation
-        rmin = Expression.toReal(min);
-        rmax = Expression.toReal(max);
-        true = realGt(rmin,rmax);
-        s1 = ComponentReference.printComponentRefStr(cr1);
-        s2 = if negate then " = -" else " = ";
-        s3 = ComponentReference.printComponentRefStr(cr2);
-        s4 = ExpressionDump.printExpStr(min);
-        s5 = ExpressionDump.printExpStr(max);
-        s = stringAppendList({"Alias variables ",s1,s2,s3," with invalid limits min ",s4," > max ",s5});
-        Error.addMessage(Error.COMPILER_WARNING,{s});
-      then
-        ();
+    case (SOME(min), SOME(max)) equation
+      rmin = Expression.toReal(min);
+      rmax = Expression.toReal(max);
+      true = realGt(rmin, rmax);
+      s1 = ComponentReference.printComponentRefStr(cr1);
+      s2 = if negate then " = -" else " = ";
+      s3 = ComponentReference.printComponentRefStr(cr2);
+      s4 = ExpressionDump.printExpStr(min);
+      s5 = ExpressionDump.printExpStr(max);
+      s = stringAppendList({"Alias variables ", s1, s2, s3, " with invalid limits min ", s4, " > max ", s5});
+      Error.addMessage(Error.COMPILER_WARNING, {s});
+    then ();
 
     // no error
     else ();
@@ -4261,12 +3815,10 @@ algorithm
     local
       DAE.Exp min1, min2, min;
 
-    case (SOME(min1), SOME(min2))
-      algorithm
-        min := Expression.expMaxScalar(min1, min2);
-        min := ExpressionSimplify.simplify(min);
-      then
-        SOME(min);
+    case (SOME(min1), SOME(min2)) algorithm
+      min := Expression.expMaxScalar(min1, min2);
+      min := ExpressionSimplify.simplify(min);
+    then SOME(min);
 
     case (NONE(), _) then inMin2;
     case (_, NONE()) then inMin1;
@@ -4283,12 +3835,10 @@ algorithm
     local
       DAE.Exp max1, max2, max;
 
-    case (SOME(max1), SOME(max2))
-      algorithm
-        max := Expression.expMinScalar(max1, max2);
-        max := ExpressionSimplify.simplify(max);
-      then
-        SOME(max);
+    case (SOME(max1), SOME(max2)) algorithm
+      max := Expression.expMinScalar(max1, max2);
+      max := ExpressionSimplify.simplify(max);
+    then SOME(max);
 
     case (NONE(), _) then inMax2;
     case (_, NONE()) then inMax1;
@@ -4296,64 +3846,33 @@ algorithm
   end match;
 end mergeMax;
 
-// protected function mergeDirection
-//   input BackendDAE.Var inAVar;
-//   input BackendDAE.Var inVar;
-//   output BackendDAE.Var outVar;
-// algorithm
-//   outVar :=
-//   matchcontinue (inAVar,inVar)
-//     local
-//       BackendDAE.Var v,var,var1;
-//       Option<DAE.VariableAttributes> attr,attr1;
-//       DAE.Exp e,e1;
-//     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
-//       equation
-//         var1 = setVarDirection(var,DAE.INPUT());
-//       then var1;
-//     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-//       equation
-//         var1 = setVarDirection(var,DAE.INPUT());
-//       then var1;
-//     case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-//       equation
-//         var1 = setVarDirection(var,DAE.OUTPUT());
-//       then var1;
-//     case(_,_) then inVar;
-//   end matchcontinue;
-// end mergeDirection;
-
 public function calcAliasKey "author Frenkel TUD 2011-04
-  helper for selectAlias. This function is
-  mainly usable to chose the favorite name
-  of the keeped var"
-  input BackendDAE.Var var;
+  This function is mainly usable to chose the favourite name of the kept var."
+  input BackendDAE.Var inVar;
   output Integer i;
 protected
-  DAE.ComponentRef cr;
   Boolean b;
   Integer d;
 algorithm
-  BackendDAE.VAR(varName=cr) := var;
   // records
-  b := ComponentReference.isRecord(cr);
+  b := ComponentReference.isRecord(inVar.varName);
   i := if b then -1 else 0;
   // array elements
-  b := ComponentReference.isArrayElement(cr);
+  b := ComponentReference.isArrayElement(inVar.varName);
   i := intAdd(i,if b then -1 else 0);
   // protected
-  b := isProtectedVar(var);
+  b := isProtectedVar(inVar);
   i := intAdd(i,if b then 5 else 0);
   // connectors
-  b := isVarConnector(var);
+  b := isVarConnector(inVar);
   i := intAdd(i,if b then 1 else 0);
   // self generated var
-  b := isDummyDerVar(var);
+  b := isDummyDerVar(inVar);
   i := intAdd(i,if b then 10 else 0);
-  b := selfGeneratedVar(cr);
+  b := selfGeneratedVar(inVar.varName);
   i := intAdd(i,if b then 100 else 0);
   // length of name (number of dots)
-  d := ComponentReference.crefDepth(cr);
+  d := ComponentReference.crefDepth(inVar.varName);
   i := i+d;
 end calcAliasKey;
 
@@ -4384,15 +3903,15 @@ public function stateSelectToInteger "Never: -1
   Default: 1
   Prefer: 2
   Always: 3"
-  input DAE.StateSelect ss;
+  input DAE.StateSelect inStateSelect;
   output Integer prio;
 algorithm
-  prio := match(ss)
-    case (DAE.NEVER()) then -1;
-    case (DAE.AVOID()) then 0;
-    case (DAE.DEFAULT()) then 1;
-    case (DAE.PREFER()) then 2;
-    case (DAE.ALWAYS()) then 3;
+  prio := match inStateSelect
+    case DAE.NEVER() then -1;
+    case DAE.AVOID() then 0;
+    case DAE.DEFAULT() then 1;
+    case DAE.PREFER() then 2;
+    case DAE.ALWAYS() then 3;
   end match;
 end stateSelectToInteger;
 
@@ -4402,85 +3921,43 @@ public function transformXToXd "author: PA
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVar)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<DAE.Exp> exp;
-      Option<Values.Value> v;
-      list<DAE.Dimension> dim;
-      Option<DAE.VariableAttributes> attr;
-      Option<BackendDAE.TearingSelect> ts;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-      DAE.ElementSource source;
-      DAE.VarInnerOuter io;
-      Boolean unreplaceable;
-
-    case (BackendDAE.VAR(varName=cr,
-                         varKind=BackendDAE.STATE(),
-                         varDirection=dir,
-                         varParallelism=prl,
-                         varType=tp,
-                         bindExp=exp,
-                         bindValue=v,
-                         arryDim=dim,
-                         source=source,
-                         values=attr,
-                         tearingSelectOption=ts,
-                         comment=comment,
-                         connectorType=ct,
-                         innerOuter=io,
-                         unreplaceable=unreplaceable)) equation
-      cr = ComponentReference.crefPrefixDer(cr);
-    then BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, ts, comment, ct, io, unreplaceable);
+  outVar := match inVar
+    case BackendDAE.VAR(varKind=BackendDAE.STATE()) equation
+      outVar = inVar;
+      outVar.varName = ComponentReference.crefPrefixDer(inVar.varName);
+      outVar.varKind = BackendDAE.STATE_DER();
+    then outVar;
 
     else inVar;
-  end matchcontinue;
+  end match;
 end transformXToXd;
 
-public function isRecordVar"outputs true if the variable belongs to a record.
-author:Waurich TUD 2014-09"
-  input BackendDAE.Var var;
-  output Boolean isRec;
-algorithm
-  isRec := match(var)
-    local
-      DAE.ComponentRef cref;
-    case(BackendDAE.VAR(varName=cref))
-      equation
-      then ComponentReference.traverseCref(cref,ComponentReference.crefIsRec, false);
-  end match;
+public function isRecordVar "outputs true if the variable belongs to a record.
+author: Waurich TUD 2014-09"
+  input BackendDAE.Var inVar;
+  output Boolean isRec = ComponentReference.traverseCref(inVar.varName, ComponentReference.crefIsRec, false);
 end isRecordVar;
 
 public function varExp
-  input BackendDAE.Var var;
-  output DAE.Exp exp;
-protected
-  DAE.ComponentRef cref;
+  input BackendDAE.Var inVar;
+  output DAE.Exp outExp;
 algorithm
-  BackendDAE.VAR(varName=cref) := var;
-  exp := Expression.crefExp(cref);
+  outExp := Expression.crefExp(inVar.varName);
 end varExp;
 
-public function varExp2"same as varExp but adds a der()-call for state derivatives"
-  input BackendDAE.Var var;
-  output DAE.Exp exp;
+public function varExp2 "same as varExp but adds a der()-call for state derivatives"
+  input BackendDAE.Var inVar;
+  output DAE.Exp outExp;
 algorithm
-  exp := match(var)
-  local
-    DAE.ComponentRef cref;
-    DAE.Exp exp1;
-  case(BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(index=1)))
-    algorithm
-      exp1 := Expression.crefExp(cref);
-  then Expression.expDer(exp1);
-  else
-    algorithm
-      BackendDAE.VAR(varName=cref) := var;
-    then Expression.crefExp(cref);
+  outExp := match(inVar)
+    local
+      DAE.Exp exp;
+
+    case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=1))) equation
+      exp = Expression.crefExp(inVar.varName);
+    then Expression.expDer(exp);
+
+    else Expression.crefExp(inVar.varName);
   end match;
 end varExp2;
 

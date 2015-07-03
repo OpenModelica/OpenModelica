@@ -217,29 +217,15 @@ protected function simplifyTimeIndepFuncCallsShared "pre(param) -> param
   author: Frenkel TUD 2012-06"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Shared shared;
 algorithm
-  outDAE := match inDAE
-    local
-      BackendDAE.Variables knvars, aliasVars;
-      BackendDAE.EquationArray remeqns, inieqns;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-
-    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED (
-              knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns, removedEqs=remeqns, eventInfo=eventInfo ))
-      algorithm
-        BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate( knvars, Expression.traverseSubexpressionsHelper,
-            (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)) );
-        BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( inieqns, Expression.traverseSubexpressionsHelper,
-            (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)) );
-        BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns, Expression.traverseSubexpressionsHelper,
-            (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)) );
-        (eventInfo, _) := traverseEventInfoExps( eventInfo, Expression.traverseSubexpressionsHelper,
-            (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)) );
-        shared.eventInfo := eventInfo;
-      then BackendDAE.DAE(systs, shared);
-  end match;
+  shared := inDAE.shared;
+  BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
+  (shared.eventInfo, _) := traverseEventInfoExps(shared.eventInfo, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.knownVars, shared.aliasVars, false)));
+  outDAE := BackendDAE.DAE(inDAE.eqs, shared);
 end simplifyTimeIndepFuncCallsShared;
 
 protected function traverseEventInfoExps<T>
@@ -4050,15 +4036,15 @@ end addedScaledVarsWork;
 // =============================================================================
 
 public function sortEqnsVars
-  input BackendDAE.BackendDAE iDAE;
-  output BackendDAE.BackendDAE oDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  oDAE := if Flags.isSet(Flags.SORT_EQNS_AND_VARS)  then sortEqnsVarsWork(iDAE) else iDAE;
+  outDAE := if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then sortEqnsVarsWork(inDAE) else inDAE;
 end sortEqnsVars;
 
 protected function sortEqnsVarsWork
-  input BackendDAE.BackendDAE iDAE;
-  output BackendDAE.BackendDAE oDAE = iDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
 protected
   list<BackendDAE.EqSystem> systlst, new_systlst = {};
   BackendDAE.Shared shared;
@@ -4076,8 +4062,8 @@ protected
   list<BackendDAE.Var> var_lst;
   list<BackendDAE.Equation> eqn_lst;
 algorithm
-  //BackendDump.bltdump("START:", oDAE);
-  BackendDAE.DAE(systlst, shared) := iDAE;
+  //BackendDump.bltdump("START:", outDAE);
+  BackendDAE.DAE(systlst, shared) := inDAE;
   BackendDAE.SHARED(functionTree=functionTree) := shared;
   for syst in systlst loop
     syst := match syst
@@ -4120,8 +4106,8 @@ algorithm
     new_systlst := syst :: new_systlst;
   end for; //syst
 
-  oDAE:= BackendDAE.DAE(new_systlst, shared);
-  //BackendDump.bltdump("ENDE:", oDAE);
+  outDAE:= BackendDAE.DAE(new_systlst, shared);
+  //BackendDump.bltdump("ENDE:", outDAE);
 end sortEqnsVarsWork;
 
 protected function sortEqnsVarsWorkTpl
@@ -4179,15 +4165,15 @@ end compWeightsEqns;
 // =============================================================================
 
 public function simplifyLoops
-  input BackendDAE.BackendDAE iDAE;
-  output BackendDAE.BackendDAE oDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  oDAE := if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then simplifyLoopsMain(iDAE) else iDAE;
+  outDAE := if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then simplifyLoopsMain(inDAE) else inDAE;
 end simplifyLoops;
 
 protected function simplifyLoopsMain
-  input BackendDAE.BackendDAE iDAE;
-  output BackendDAE.BackendDAE oDAE = iDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
 protected
   list<BackendDAE.EqSystem> systlst, new_systlst = {};
   BackendDAE.Shared shared;
@@ -4207,9 +4193,9 @@ protected
   Integer ne, nv;
   Boolean simDAE;
 algorithm
-  //BackendDump.bltdump("START:", oDAE);
-  BackendDAE.DAE(systlst, shared) := iDAE;
-  BackendDAE.SHARED(functionTree=functionTree) := shared;
+  //BackendDump.bltdump("START:", outDAE);
+  shared := inDAE.shared;
+  functionTree := shared.functionTree;
 
   simDAE := match shared
             case BackendDAE.SHARED(backendDAEType = BackendDAE.SIMULATION()) then true;
@@ -4222,7 +4208,7 @@ algorithm
       print("\n***noSIM***\n");
     end if;
   end if;
-  for syst in systlst loop
+  for syst in inDAE.eqs loop
     update := false;
     ass1 := {};
     ass2 := {};
@@ -4241,9 +4227,9 @@ algorithm
     nSyst := if update then simplifyLoopsUpdateMatching(vars, eqns, syst, listReverse(ass1), listReverse(ass2), ne, nv, functionTree, listReverse(compOrders)) else syst;
     new_systlst := nSyst :: new_systlst;
   end for; //syst
-  oDAE:= BackendDAE.DAE(new_systlst, shared);
-  //oDAE:= BackendDAE.DAE(listReverse(new_systlst), shared);
-  //BackendDump.bltdump("ENDE:", oDAE);
+  outDAE:= BackendDAE.DAE(new_systlst, shared);
+  //outDAE:= BackendDAE.DAE(listReverse(new_systlst), shared);
+  //BackendDump.bltdump("ENDE:", outDAE);
 
   if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
     print("END: simplifyLoops\n");
@@ -4708,22 +4694,20 @@ protected function symEulerWork
   input Boolean b " true => add, false => remove euler equation";
   output BackendDAE.BackendDAE outDAE;
 protected
-  list<BackendDAE.EqSystem> systlst, osystlst = {};
+  list<BackendDAE.EqSystem> osystlst = {};
   BackendDAE.EqSystem syst_;
   BackendDAE.Shared shared;
   BackendDAE.Var tmpv;
   DAE.ComponentRef cref;
 algorithm
-  BackendDAE.DAE(systlst, shared) := inDAE;
-
   // make dt
   cref := ComponentReference.makeCrefIdent(BackendDAE.symEulerDT, DAE.T_REAL_DEFAULT, {});
   tmpv := BackendVariable.makeVar(cref);
   //tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
   tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
-  shared := BackendVariable.addKnVarDAE(tmpv, shared);
+  shared := BackendVariable.addKnVarDAE(tmpv, inDAE.shared);
 
-  for syst in systlst loop
+  for syst in inDAE.eqs loop
    (syst_, shared) := symEulerUpdateSyst(syst, b, shared);
    osystlst := syst_ :: osystlst;
   end for;
@@ -5028,27 +5012,19 @@ algorithm
   end matchcontinue;
 end traverserExpapplyRewriteRulesBackend;
 
-protected function applyRewriteRulesBackendShared
-"@author: adrpo"
+protected function applyRewriteRulesBackendShared "@author: adrpo"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Shared shared;
 algorithm
-  outDAE := match inDAE
-    local
-      BackendDAE.Variables knvars;
-      BackendDAE.EquationArray remeqns, inieqns;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED( knownVars=knvars,
-                                                            initialEqs=inieqns, removedEqs=remeqns ))
-      algorithm
-        BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars, traverserapplyRewriteRulesBackend, false);
-        BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns, traverserapplyRewriteRulesBackend, false);
-        BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns, traverserapplyRewriteRulesBackend, false);
-        // not sure if we should apply the rules on the event info!
-        // (ei,_) = traverseEventInfoExps(eventInfo,traverserapplyRewriteRulesBackend, false);
-      then BackendDAE.DAE(systs, shared);
-  end match;
+  shared := inDAE.shared;
+  BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, traverserapplyRewriteRulesBackend, false);
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, traverserapplyRewriteRulesBackend, false);
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, traverserapplyRewriteRulesBackend, false);
+  // not sure if we should apply the rules on the event info!
+  // (ei, _) := traverseEventInfoExps(eventInfo, traverserapplyRewriteRulesBackend, false);
+  outDAE := BackendDAE.DAE(inDAE.eqs, shared);
 end applyRewriteRulesBackendShared;
 
 // =============================================================================
@@ -5059,12 +5035,11 @@ end applyRewriteRulesBackendShared;
 public function listAllIterationVariables "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
 protected
-  list<BackendDAE.EqSystem> eqs;
   BackendDAE.BackendDAEType backendDAEType;
   list<String> warnings;
 algorithm
-  BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(backendDAEType=backendDAEType)) := inBackendDAE;
-  warnings := listAllIterationVariables0(eqs);
+  BackendDAE.DAE(shared=BackendDAE.SHARED(backendDAEType=backendDAEType)) := inBackendDAE;
+  warnings := listAllIterationVariables0(inBackendDAE.eqs);
 
   Error.addCompilerNotification("List of all iteration variables (DAE kind: " + BackendDump.printBackendDAEType2String(backendDAEType) + ")\n" + stringDelimitList(warnings, "\n"));
 end listAllIterationVariables;

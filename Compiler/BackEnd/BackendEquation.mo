@@ -171,8 +171,7 @@ algorithm
   end match;
 end equationList2;
 
-public function getWhenEquationExpr "
-  Get the left and right hand parts from an equation appearing in a when clause"
+public function getWhenEquationExpr "Get the left and right hand parts from an equation appearing in a when clause"
   input BackendDAE.WhenEquation inWhenEquation;
   output DAE.ComponentRef outComponentRef;
   output DAE.Exp outExp;
@@ -180,17 +179,11 @@ algorithm
   BackendDAE.WHEN_EQ(left=outComponentRef, right=outExp) := inWhenEquation;
 end getWhenEquationExpr;
 
-public function copyEquationArray "author: wbraun
-  Performs a deep copy of an expandable equation array."
+public function copyEquationArray "Performs a deep copy of an expandable equation array."
   input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray;
-protected
-  Integer numberOfElement, size, arrSize;
-  array<Option<BackendDAE.Equation>> equOptArr, newEquOptArr;
+  output BackendDAE.EquationArray outEquationArray = inEquationArray;
 algorithm
-  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
-  newEquOptArr := arrayCopy(equOptArr);
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
+  outEquationArray.equOptArr := arrayCopy(inEquationArray.equOptArr);
 end copyEquationArray;
 
 public function equationsLstVars
@@ -971,12 +964,9 @@ public function traverseEquationArray<T> "author: Frenkel TUD
     output BackendDAE.Equation outEq;
     output T outA;
   end FuncExpType;
-protected
-  array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
   //try
-    BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := inEquationArray;
-    outTypeA := BackendDAEUtil.traverseArrayNoCopy(equOptArr, func, traverseOptEquation, inTypeA);
+    outTypeA := BackendDAEUtil.traverseArrayNoCopy(inEquationArray.equOptArr, func, traverseOptEquation, inTypeA);
   //else
   //  if Flags.isSet(Flags.FAILTRACE) then
   //    Debug.trace("- BackendEquation.traverseEquationArray failed\n");
@@ -1000,12 +990,9 @@ public function traverseEquationArray_WithStop "author: Frenkel TUD
     output Boolean cont;
     output Type_a outA;
   end FuncWithStop;
-protected
-  array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
   //try
-    BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := inEquationArray;
-    outTypeA := BackendDAEUtil.traverseArrayNoCopyWithStop(equOptArr, inFuncWithStop, traverseOptEquation_WithStop, inTypeA);
+    outTypeA := BackendDAEUtil.traverseArrayNoCopyWithStop(inEquationArray.equOptArr, inFuncWithStop, traverseOptEquation_WithStop, inTypeA);
   //else
   //  if Flags.isSet(Flags.FAILTRACE) then
   //    Debug.trace("- BackendEquation.traverseEquationArray_WithStop failed\n");
@@ -1076,7 +1063,7 @@ public function traverseEquationArray_WithUpdate<T> "author: Frenkel TUD
   input BackendDAE.EquationArray inEquationArray;
   input FuncWithUpdate inFuncWithUpdate;
   input T inTypeA;
-  output BackendDAE.EquationArray outEquationArray;
+  output BackendDAE.EquationArray outEquationArray = inEquationArray;
   output T outTypeA;
 
   partial function FuncWithUpdate
@@ -1086,12 +1073,10 @@ public function traverseEquationArray_WithUpdate<T> "author: Frenkel TUD
     output T outA;
   end FuncWithUpdate;
 protected
-  Integer numberOfElement, arrSize, size;
   array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
-  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) := inEquationArray;
-  (equOptArr, outTypeA) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(equOptArr, inFuncWithUpdate, traverseOptEquation_WithUpdate, inTypeA);
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr);
+  (equOptArr, outTypeA) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(inEquationArray.equOptArr, inFuncWithUpdate, traverseOptEquation_WithUpdate, inTypeA);
+  outEquationArray.equOptArr := equOptArr;
 end traverseEquationArray_WithUpdate;
 
 protected function traverseOptEquation_WithUpdate<T> "author: Frenkel TUD 2010-11
@@ -1226,22 +1211,21 @@ public function addEquation "author: PA
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
 algorithm
-  outEquationArray := matchcontinue (inEquation, inEquationArray)
+  outEquationArray := matchcontinue (inEquationArray)
     local
       Integer n_1, numberOfElement, arrSize, expandsize, expandsize_1, newsize, size, index;
       array<Option<BackendDAE.Equation>> arr_1, equOptArr, arr_2;
-      BackendDAE.Equation e;
       Real rsize, rexpandsize;
 
-    case (e, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
       (numberOfElement < arrSize) = true "Have space to add array elt.";
       n_1 = numberOfElement + 1;
       index = findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
-      arr_1 = arrayUpdate(equOptArr, index, SOME(e));
-      size = equationSize(e) + size;
+      arr_1 = arrayUpdate(equOptArr, index, SOME(inEquation));
+      size = equationSize(inEquation) + size;
     then BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);
 
-    case (e, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation /* Do NOT Have space to add array elt. Expand array 1.4 times */
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation /* Do NOT Have space to add array elt. Expand array 1.4 times */
       (numberOfElement < arrSize) = false;
       rsize = intReal(arrSize);
       rexpandsize = rsize * 0.4;
@@ -1250,11 +1234,11 @@ algorithm
       newsize = expandsize_1 + arrSize;
       arr_1 = Array.expand(expandsize_1, equOptArr, NONE());
       n_1 = numberOfElement + 1;
-      arr_2 = arrayUpdate(arr_1, n_1, SOME(e));
-      size = equationSize(e) + size;
+      arr_2 = arrayUpdate(arr_1, n_1, SOME(inEquation));
+      size = equationSize(inEquation) + size;
     then BackendDAE.EQUATION_ARRAY(size, n_1, newsize, arr_2);
 
-    case (_, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation
+    case BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) equation
       print("- BackendEquation.addEquation failed\nArraySize: " + intString(arrSize) + "\nnumberOfElement " + intString(numberOfElement) + "\nSize " + intString(size) + "\narraySize " + intString(arrayLength(equOptArr)));
     then fail();
   end matchcontinue;
@@ -1302,15 +1286,15 @@ public function removeRemovedEqs "remove removedEqs"
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 protected
-  BackendDAE.EquationArray eqs;
-  Integer n;
+  BackendDAE.EquationArray removedEqs;
+  Integer N;
 algorithm
-  BackendDAE.SHARED(removedEqs=eqs) := inShared;
-  BackendDAE.EQUATION_ARRAY(numberOfElement=n) := eqs;
-  for ind in 1:n loop
-    eqs := equationRemove(ind, eqs);
+  BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
+  N := removedEqs.numberOfElement;
+  for i in 1:N loop
+    removedEqs := equationRemove(i, removedEqs);
   end for;
-  outShared := BackendDAEUtil.setSharedRemovedEqns(inShared, eqs);
+  outShared := BackendDAEUtil.setSharedRemovedEqns(inShared, removedEqs);
 end removeRemovedEqs;
 
 public function setAtIndex "author: lochel
@@ -1319,15 +1303,10 @@ public function setAtIndex "author: lochel
   input BackendDAE.EquationArray inEquationArray;
   input Integer inPos "one-based indexing";
   input BackendDAE.Equation inEquation;
-  output BackendDAE.EquationArray outEquationArray;
-protected
-  array<Option<BackendDAE.Equation>> equOptArr, newEquOptArr;
-  Integer size, numberOfElement, arrSize;
+  output BackendDAE.EquationArray outEquationArray = inEquationArray;
 algorithm
-  BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
-  size := size -equationOptSize(equOptArr[inPos]) +equationSize(inEquation);
-  newEquOptArr := arrayUpdate(equOptArr, inPos, SOME(inEquation));
-  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
+  outEquationArray.size := inEquationArray.size -equationOptSize(arrayGet(inEquationArray.equOptArr, inPos)) +equationSize(inEquation);
+  outEquationArray.equOptArr := arrayUpdate(inEquationArray.equOptArr, inPos, SOME(inEquation));
 end setAtIndex;
 
 public function setAtIndexFirst "author: waurich

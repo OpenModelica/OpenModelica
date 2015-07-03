@@ -556,18 +556,18 @@ end addVarsToEqSystem;
 
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outNumZeroCrossings "number of ordinary zerocrossings" ;
-  output Integer outNumTimeEvents    "number of zerocrossings that are time events" ;
+  output Integer outNumZeroCrossings "number of ordinary zero crossings" ;
+  output Integer outNumTimeEvents    "number of zero crossings that are time events" ;
   output Integer outNumRelations;
   output Integer outNumMathEventFunctions;
 protected
   list<BackendDAE.TimeEvent> timeEvents;
   list<ZeroCrossing> zeroCrossingLst, relationsLst;
 algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                                                                          zeroCrossingLst=zeroCrossingLst,
-                                                                          relationsLst=relationsLst,
-                                                                          numberMathEvents=outNumMathEventFunctions))) := inBackendDAE;
+  BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents,
+                                                    zeroCrossingLst=zeroCrossingLst,
+                                                    relationsLst=relationsLst,
+                                                    numberMathEvents=outNumMathEventFunctions)) := inBackendDAE.shared;
 
   outNumZeroCrossings := listLength(zeroCrossingLst);
   outNumTimeEvents := listLength(timeEvents);
@@ -585,11 +585,10 @@ protected function countDiscreteVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output Integer outNumDiscreteVars;
 protected
-  BackendDAE.EqSystems systs;
   BackendDAE.Variables knownVars, alias;
 algorithm
-  BackendDAE.DAE(eqs = systs, shared = BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias)) := inDAE;
-  outNumDiscreteVars := countDiscreteVars1(systs);
+  BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias) := inDAE.shared;
+  outNumDiscreteVars := countDiscreteVars1(inDAE.eqs);
   outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(knownVars, countDiscreteVars3, outNumDiscreteVars);
   outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(alias, countDiscreteVars3, outNumDiscreteVars);
 end countDiscreteVars;
@@ -963,25 +962,20 @@ end traversingisDiscreteExpFinder;
 
 
 public function isVarDiscrete "returns true if variable is discrete"
-  input BackendDAE.Var var;
-  output Boolean res;
-algorithm
-  res := match(var)
-    local VarKind kind;
-    case(BackendDAE.VAR(varKind=kind)) then isKindDiscrete(kind);
-  end match;
+  input BackendDAE.Var inVar;
+  output Boolean res = isKindDiscrete(inVar.varKind);
 end isVarDiscrete;
 
 protected function isKindDiscrete "Returns true if VarKind is discrete."
   input VarKind inVarKind;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inVarKind)
+  outBoolean := match inVarKind
     case (BackendDAE.DISCRETE()) then true;
     case (BackendDAE.PARAM()) then true;
     case (BackendDAE.CONST()) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isKindDiscrete;
 
 public function statesAndVarsExp
@@ -1208,118 +1202,75 @@ end rangeExprs;
 
 public function daeSize
 "author: Frenkel TUD
-  Returns the size of the dae system, wich corsopndens to the number of variables."
-  input BackendDAE.BackendDAE dae;
-  output Integer size;
+  Returns the size of the dae system, which correspondents to the number of variables."
+  input BackendDAE.BackendDAE inDAE;
+  output Integer outSize;
 protected
-  list<BackendDAE.EqSystem> systs;
   list<Integer> sizes;
 algorithm
-  BackendDAE.DAE(eqs=systs) := dae;
-  sizes := List.map(systs,systemSize);
-  size := List.fold(sizes,intAdd,0);
+  sizes := List.map(inDAE.eqs, systemSize);
+  outSize := List.fold(sizes, intAdd, 0);
 end daeSize;
 
 public function systemSize
-"author: Frenkel TUD
-  Returns the size of the dae system, the size of the equations in an BackendDAE.EquationArray,
+  "Returns the size of the dae system, the size of the equations in an BackendDAE.EquationArray,
   which not corresponds to the number of equations in a system."
-  input BackendDAE.EqSystem syst;
-  output Integer n;
-algorithm
-  n := match(syst)
-    local
-      BackendDAE.EquationArray eqns;
-    case BackendDAE.EQSYSTEM(orderedEqs = eqns)
-      equation
-        n = equationSize(eqns);
-      then n;
-  end match;
+  input BackendDAE.EqSystem inEqSystem;
+  output Integer outSize = equationSize(inEqSystem.orderedEqs);
 end systemSize;
 
 public function numOfComps "Returns the number of StrongComponents in the EqSystem
   author: waurich TUD"
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem inEqSystem;
   output Integer num;
+protected
+  BackendDAE.StrongComponents comps;
 algorithm
-  num:=
-  match (syst)
-    local
-      BackendDAE.StrongComponents comps;
-      Integer n;
-    case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps))
-      equation
-        n = listLength(comps);
-      then n;
-  end match;
+  BackendDAE.MATCHING(comps=comps) := inEqSystem.matching;
+  num := listLength(comps);
 end numOfComps;
 
 public function equationSize "author: PA
-
   Returns the size of the equations in an BackendDAE.EquationArray, which not
   corresponds to the number of equations in a system."
   input BackendDAE.EquationArray inEquationArray;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  match (inEquationArray)
-    local Integer n;
-    case (BackendDAE.EQUATION_ARRAY(size = n)) then n;
-  end match;
+  output Integer outInteger = inEquationArray.size;
 end equationSize;
 
 public function equationArraySizeDAE
 "author: Frenkel TUD
   Returns the number of equations in a system."
-  input BackendDAE.EqSystem dae;
-  output Integer n;
-algorithm
-  n := match(dae)
-    local
-      BackendDAE.EquationArray eqns;
-    case BackendDAE.EQSYSTEM(orderedEqs = eqns)
-      equation
-        n = equationArraySize(eqns);
-      then n;
-  end match;
+  input BackendDAE.EqSystem inEqSystem;
+  output Integer n = equationArraySize(inEqSystem.orderedEqs);
 end equationArraySizeDAE;
 
 public function equationArraySize "author: PA
-
   Returns the number of equations in an BackendDAE.EquationArray, which not
   corresponds to the number of equations in a system but not
   to the size of the system"
   input BackendDAE.EquationArray inEquationArray;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  match (inEquationArray)
-    local Integer n;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n)) then n;
-  end match;
+  output Integer outInteger = inEquationArray.numberOfElement;
 end equationArraySize;
 
 public function hasDAEMatching
-"Returns  true if all system have already a matching, otherwise return false."
-  input BackendDAE.BackendDAE dae;
+  "Returns  true if all system have already a matching, otherwise return false."
+  input BackendDAE.BackendDAE inDAE;
   output Boolean b;
 protected
-  list<BackendDAE.EqSystem> systs;
   list<Boolean> boollst;
 algorithm
-  BackendDAE.DAE(eqs=systs) := dae;
-  boollst := List.map(systs, hasEqSystemMatching);
-  b := List.fold(boollst,boolAnd,true);
+  boollst := List.map(inDAE.eqs, hasEqSystemMatching);
+  b := List.fold(boollst, boolAnd, true);
 end hasDAEMatching;
 
 public function hasEqSystemMatching
-"Returns true if EqSystem has a matching."
+  "Returns true if EqSystem has a matching."
   input BackendDAE.EqSystem dae;
   output Boolean b;
 algorithm
   b  := match(dae)
-  case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING()) then true;
-  case BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()) then false;
+    case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING()) then true;
+    case BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()) then false;
   end match;
 end hasEqSystemMatching;
 
@@ -6912,26 +6863,21 @@ protected function stateDeselectionDAE
   input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   input tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String> stateDeselection;
   output BackendDAE.BackendDAE outDAE;
+protected
+  String methodstr;
+  BackendDAEFunc.stateDeselectionFunc sDfunc;
 algorithm
-  outDAE := match(causalized,inDAE,args,stateDeselection)
-    local
-      list<BackendDAE.EqSystem> systs;
-      BackendDAE.Shared shared;
-      String methodstr;
-      BackendDAEFunc.stateDeselectionFunc sDfunc;
-
-    case (true,BackendDAE.DAE(systs,shared),_,(_,_,sDfunc,methodstr))
-      equation
-        // do state selection
-        outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
-        //SimCodeFunctionUtil.execStat("transformDAE -> state selection " + methodstr);
-      then
-         outDAE;
-    else inDAE;
-  end match;
+  if causalized then
+    // do state selection
+    (_, _, sDfunc, methodstr) := stateDeselection;
+    outDAE := sDfunc(inDAE, args);
+    //SimCodeFunctionUtil.execStat("transformDAE -> state selection " + methodstr);
+  else
+    outDAE := inDAE;
+  end if;
 end stateDeselectionDAE;
 
-protected function mapSortEqnsDAE "Run Tarjans Algorithm."
+protected function mapSortEqnsDAE "Run Tarjan's Algorithm."
   input list<BackendDAE.EqSystem> inSystem;
   input BackendDAE.Shared inShared;
   input list<BackendDAE.EqSystem> acc;
