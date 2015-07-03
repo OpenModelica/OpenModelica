@@ -46,9 +46,9 @@ libraries
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 HPCOM_DIR = hpcom/
+HPCOM_FMI_1_0_DIR = hpcom/fmu/modelExchange/1.0
 UMFPACK_DIR = umfpack/
 FMI_1_0_DIR = fmu/modelExchange/1.0
-FMI_2_0_DIR = fmu/modelExchange/2.0
 STATIC_LINKING_DIR = staticLinking
 
 .PHONY : test clean getdeps
@@ -74,6 +74,7 @@ clean :
 	@$(MAKE) -C $(UMFPACK_DIR) clean
 	@$(MAKE) -C $(FMI_1_0_DIR) clean
 	@$(MAKE) -C $(FMI_2_0_DIR) clean
+	@$(MAKE) -C $(HPCOM_FMI_1_0_DIR) clean
 	@$(MAKE) -C $(STATIC_LINKING_DIR) clean
 
 
