@@ -88,6 +88,7 @@ uniontype Restriction
     Absyn.Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
     Boolean singleton;
+    Boolean moved; // true if moved outside uniontype, otherwise false.
   end R_METARECORD; /* added by x07simbj */
 
   record R_UNIONTYPE "Metamodelica extension"

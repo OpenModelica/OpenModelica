@@ -293,7 +293,7 @@ algorithm
       Absyn.Class d;
       Absyn.Path name;
       Integer index;
-      Boolean singleton, isImpure;
+      Boolean singleton, isImpure, moved;
       Absyn.FunctionPurity purity;
 
     // ?? Only normal functions can have 'external'
@@ -332,8 +332,8 @@ algorithm
     case (_,Absyn.R_PREDEFINED_CLOCK()) then SCode.R_PREDEFINED_CLOCK();
     case (_,Absyn.R_PREDEFINED_ENUMERATION()) then SCode.R_PREDEFINED_ENUMERATION();
 
-    case (_,Absyn.R_METARECORD(name,index,singleton)) //MetaModelica extension, added by x07simbj
-      then SCode.R_METARECORD(name,index,singleton);
+    case (_,Absyn.R_METARECORD(name,index,singleton,moved)) //MetaModelica extension, added by x07simbj
+      then SCode.R_METARECORD(name,index,singleton,moved);
     case (_,Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE(); /*MetaModelica extension added by x07simbj */
 
   end match;

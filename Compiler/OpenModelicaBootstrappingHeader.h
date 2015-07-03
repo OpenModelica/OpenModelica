@@ -3995,7 +3995,7 @@ static void *Absyn__R_5fUNIONTYPE = MMC_REFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struc
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Restriction_R__METARECORD__desc_added
 #define Absyn_Restriction_R__METARECORD__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Restriction_R__METARECORD__desc__fields[3] = {"name","index","singleton"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Restriction_R__METARECORD__desc__fields[4] = {"name","index","singleton","moved"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Restriction_R__METARECORD__desc = {
   "Absyn_Restriction_R__METARECORD",
   "Absyn.Restriction.R_METARECORD",
@@ -4005,8 +4005,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Restriction_R__METARE
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__METARECORD__desc;
 #endif
-#define Absyn__R_5fMETARECORD_3dBOX3 23
-#define Absyn__R_5fMETARECORD(name,index,singleton) (mmc_mk_box4(23,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton))
+#define Absyn__R_5fMETARECORD_3dBOX4 23
+#define Absyn__R_5fMETARECORD(name,index,singleton,moved) (mmc_mk_box5(23,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton,moved))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Restriction_R__UNKNOWN__desc_added
 #define Absyn_Restriction_R__UNKNOWN__desc_added

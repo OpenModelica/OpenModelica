@@ -789,7 +789,7 @@ algorithm
     case TYPE_ENUM(p) then (SCode.R_PREDEFINED_ENUMERATION(),p);
      /* Meta Modelica extensions */
     case META_UNIONTYPE(p) then (SCode.R_UNIONTYPE(),p);
-    case  META_RECORD(p) then (SCode.R_METARECORD(p, 0, false),p);
+    case  META_RECORD(p) then (SCode.R_METARECORD(p, 0, false, false),p);
   end match;
 end stateToSCodeRestriction;
 

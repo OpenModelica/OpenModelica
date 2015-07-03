@@ -243,13 +243,19 @@ protected
   Integer index = 0;
   Boolean singleton = listLength(inElementItems) == 1;
   Absyn.Class c;
+  Absyn.Restriction r;
 algorithm
   outElementItems := list(match e
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
         Absyn.CLASSDEF(class_ = c as Absyn.CLASS(restriction = Absyn.R_RECORD()))))
       algorithm
-        c.restriction := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton);
+        // Change the record into a metarecord and add it to the list of metaclasses.
+        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, true);
+        c.restriction := r;
         outMetaClasses := c :: outMetaClasses;
+        // Change the record into a metarecord and update the original class.
+        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, false);
+        c.restriction := r;
         index := index + 1;
       then
         setElementItemClass(e, c);

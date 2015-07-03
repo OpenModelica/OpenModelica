@@ -51,7 +51,7 @@ end metaHelperBoxStart;
 template elementExternalHeader(SCode.Element elt, String pack)
 ::=
 match elt
-  case c as SCode.CLASS(restriction=r as SCode.R_METARECORD(__),classDef=p as SCode.PARTS(__))
+  case c as SCode.CLASS(restriction=r as SCode.R_METARECORD(moved = true),classDef=p as SCode.PARTS(__))
     then
       let fields=(p.elementLst |> SCode.COMPONENT(__) => name; separator=",")
       let fieldsStr=(p.elementLst |> SCode.COMPONENT(__) => '"<%name%>"'; separator=",")

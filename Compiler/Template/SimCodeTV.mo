@@ -2196,6 +2196,7 @@ uniontype Restriction
   record R_METARECORD "Metamodelica extension"
     Absyn.Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
+    Boolean moved;
   end R_METARECORD; /* added by x07simbj */
 
   record R_UNIONTYPE "Metamodelica extension"
