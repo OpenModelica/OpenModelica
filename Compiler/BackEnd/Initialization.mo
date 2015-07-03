@@ -642,8 +642,8 @@ algorithm
         then ("equation system w/o analytic Jacobian:\n", vlst);
       case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = vlst), linear = false)
         then ("torn nonlinear equation system:\n", vlst);
-      else ("", {});
       // If the component is none of these types, do nothing.
+      else ("", {});
     end matchcontinue;
 
     if not listEmpty(vlst) then
@@ -1027,16 +1027,16 @@ algorithm
       BackendDAE.EquationArray orderedEqs;
       Boolean b;
       BackendDAE.IncidenceMatrix mt;
-    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
-      algorithm
-        (_, mt) := BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL(), NONE());
-        (orderedVars, orderedEqs, b, outDumpVars) :=
-            preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
-        if b then
-          syst.orderedEqs := orderedEqs; syst.orderedVars := orderedVars;
-          syst := BackendDAEUtil.clearEqSyst(syst);
-        end if;
-      then syst;
+
+    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) algorithm
+      (_, mt) := BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL(), NONE());
+      (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
+      if b then
+        syst.orderedEqs := orderedEqs;
+        syst.orderedVars := orderedVars;
+        syst := BackendDAEUtil.clearEqSyst(syst);
+      end if;
+    then syst;
   end match;
 end preBalanceInitialSystem;
 
@@ -1075,7 +1075,6 @@ algorithm
       (vars, eqs, b, dumpVars) = preBalanceInitialSystem2(n, mt, inVars, inEqs, inB, inDumpVars);
       (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, vars, eqs, b, dumpVars);
     then (vars, eqs, b, dumpVars);
-
   end match;
 end preBalanceInitialSystem1;
 
@@ -1086,53 +1085,32 @@ protected function preBalanceInitialSystem2 "author: lochel"
   input BackendDAE.EquationArray inEqs;
   input Boolean inB;
   input list<BackendDAE.Var> inDumpVars;
-  output BackendDAE.Variables outVars;
-  output BackendDAE.EquationArray outEqs;
-  output Boolean outB;
-  output list<BackendDAE.Var> outDumpVars;
+  output BackendDAE.Variables outVars = inVars;
+  output BackendDAE.EquationArray outEqs = inEqs;
+  output Boolean outB = inB;
+  output list<BackendDAE.Var> outDumpVars = inDumpVars;
+protected
+  list<Integer> row;
+  BackendDAE.Var var;
+  DAE.ComponentRef cref;
 algorithm
-  (outVars, outEqs, outB, outDumpVars) := matchcontinue(n, mt, inVars, inEqs, inB, inDumpVars)
-    local
-      list<Integer> row;
-      Boolean b, useHomotopy;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqs;
-      list<BackendDAE.Var> rvarlst;
-      BackendDAE.Var var;
-      DAE.ComponentRef cref;
-      list<BackendDAE.Var> dumpVars;
+  try
+    row := mt[n];
+    if listEmpty(row) then
+      outB := true;
+      var := BackendVariable.getVarAt(inVars, n);
+      cref := BackendVariable.varCref(var);
 
-    case (_, _, _, _, _, _) equation
-      row = mt[n];
-      true = listEmpty(row);
-
-      var = BackendVariable.getVarAt(inVars, n);
-      cref = BackendVariable.varCref(var);
-      true = ComponentReference.isPreCref(cref);
-
-      (vars, _) = BackendVariable.removeVars({n}, inVars, {});
-    then (vars, inEqs, true, inDumpVars);
-
-    case (_, _, _, _, _, _) equation
-      row = mt[n];
-      true = listEmpty(row);
-
-      var = BackendVariable.getVarAt(inVars, n);
-      cref = BackendVariable.varCref(var);
-      false = ComponentReference.isPreCref(cref);
-
-      (eqs, dumpVars) = addStartValueEquations({var}, inEqs, inDumpVars);
-    then (inVars, eqs, true, dumpVars);
-
-    case (_, _, _, _, _, _) equation
-      row = mt[n];
-      false = listEmpty(row);
-    then (inVars, inEqs, inB, inDumpVars);
-
-    else equation
-      Error.addInternalError("function preBalanceInitialSystem1 failed", sourceInfo());
-    then fail();
-  end matchcontinue;
+      if ComponentReference.isPreCref(cref) then
+        (outVars, _) := BackendVariable.removeVars({n}, inVars, {});
+      else
+        (outEqs, outDumpVars) := addStartValueEquations({var}, inEqs, inDumpVars);
+      end if;
+    end if;
+  else
+    Error.addInternalError("function preBalanceInitialSystem2 failed", sourceInfo());
+    fail();
+  end try;
 end preBalanceInitialSystem2;
 
 protected function analyzeInitialSystem "author: lochel
