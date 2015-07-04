@@ -1846,7 +1846,7 @@ algorithm
     case BackendDAE.VAR(varKind=BackendDAE.CONST())
     then inAsserts;
 
-    case BackendDAE.VAR(varName=name,  values=attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))), varType=varType,  source=source) equation
+    case BackendDAE.VAR(varName=name, values=attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))), varType=varType, source=source) equation
       minmax = DAEUtil.getMinMax(attr);
       tp = BackendDAEUtil.makeExpType(varType);
 
@@ -1855,11 +1855,11 @@ algorithm
       (cond, _) = ExpressionSimplify.simplify(cond);
       false = Expression.isConstTrue(cond);
 
-      str = "Nominal " + ComponentReference.printComponentRefStr(name) + " out of [min,  max] interval: ";
+      str = "Nominal " + ComponentReference.printComponentRefStr(name) + " out of [min, max] interval: ";
       str = str + ExpressionDump.printExpStr(cond) + " has value: ";
       // if is real use %g otherwise use %d (ints and enums)
       format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
-      msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e,  DAE.SCONST(format)}, DAE.callAttrBuiltinString));
+      msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
       BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, DAEUtil.getElementSourceFileInfo(source));
     then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, DAE.ASSERTIONLEVEL_WARNING, source)})::inAsserts;
 
@@ -1937,15 +1937,10 @@ end daenumVariables;
 
 protected function copyArray
   "Makes a copy of a variable array."
-  input BackendDAE.VariableArray inArray;
-  output BackendDAE.VariableArray outArray;
-protected
-  Integer num_elems, size;
-  array<Option<BackendDAE.Var>> vars;
+  input BackendDAE.VariableArray inVariableArray;
+  output BackendDAE.VariableArray outVariableArray = inVariableArray;
 algorithm
-  BackendDAE.VARIABLE_ARRAY(num_elems, size, vars) := inArray;
-  vars := arrayCopy(vars);
-  outArray := BackendDAE.VARIABLE_ARRAY(num_elems, size, vars);
+  outVariableArray.varOptArr := arrayCopy(inVariableArray.varOptArr);
 end copyArray;
 
 protected function vararrayEmpty
@@ -1982,15 +1977,10 @@ protected function vararraySetnth
   input BackendDAE.VariableArray inVariableArray;
   input Integer inIndex;
   input BackendDAE.Var inVar;
-  output BackendDAE.VariableArray outVariableArray;
-protected
-  array<Option<BackendDAE.Var>> arr;
-  Integer num_elems, size;
+  output BackendDAE.VariableArray outVariableArray = inVariableArray;
 algorithm
-  BackendDAE.VARIABLE_ARRAY(num_elems, size, arr) := inVariableArray;
-  true := inIndex <= num_elems;
-  arrayUpdate(arr, inIndex, SOME(inVar));
-  outVariableArray := BackendDAE.VARIABLE_ARRAY(num_elems, size, arr);
+  true := inIndex <= inVariableArray.numberOfElements;
+  arrayUpdate(inVariableArray.varOptArr, inIndex, SOME(inVar));
 end vararraySetnth;
 
 protected function vararrayNth
@@ -1998,28 +1988,19 @@ protected function vararrayNth
   input BackendDAE.VariableArray inVariableArray;
   input Integer inIndex;
   output BackendDAE.Var outVar;
-protected
-  array<Option<BackendDAE.Var>> arr;
-  Integer num_elems;
 algorithm
-  BackendDAE.VARIABLE_ARRAY(numberOfElements = num_elems, varOptArr = arr) := inVariableArray;
-  true := inIndex <= num_elems;
-  SOME(outVar) := arr[inIndex];
+  true := inIndex <= inVariableArray.numberOfElements;
+  SOME(outVar) := arrayGet(inVariableArray.varOptArr, inIndex);
 end vararrayNth;
 
 protected function vararrayDelete
   input BackendDAE.VariableArray inVariableArray;
   input Integer inIndex;
-  output BackendDAE.VariableArray outVariableArray;
+  output BackendDAE.VariableArray outVariableArray = inVariableArray;
   output BackendDAE.Var outVar;
-protected
-  Integer num_elems, arr_size;
-  array<Option<BackendDAE.Var>> arr;
 algorithm
-  BackendDAE.VARIABLE_ARRAY(num_elems, arr_size, arr) := inVariableArray;
-  SOME(outVar) := arr[inIndex];
-  arrayUpdate(arr, inIndex, NONE());
-  outVariableArray := BackendDAE.VARIABLE_ARRAY(num_elems, arr_size, arr);
+  SOME(outVar) := arrayGet(outVariableArray.varOptArr, inIndex);
+  arrayUpdate(outVariableArray.varOptArr, inIndex, NONE());
 end vararrayDelete;
 
 protected function vararrayList
@@ -2032,7 +2013,7 @@ protected
   BackendDAE.Var var;
   Option<BackendDAE.Var> ovar;
 algorithm
-  BackendDAE.VARIABLE_ARRAY(numberOfElements = num_elems, varOptArr = arr) := inArray;
+  BackendDAE.VARIABLE_ARRAY(numberOfElements=num_elems, varOptArr=arr) := inArray;
 
   for i in num_elems:-1:1 loop
     ovar := arr[i];
@@ -2134,41 +2115,33 @@ public function equationSystemsVarsLst
   input list<BackendDAE.Var> inVars;
   output list<BackendDAE.Var> outVars;
 algorithm
-  outVars := match (systs,inVars)
+  outVars := match (systs)
     local
       BackendDAE.EqSystems rest;
-      list<BackendDAE.Var> vars,vars1;
+      list<BackendDAE.Var> vars, vars1;
       BackendDAE.Variables v;
-      case ({},_) then inVars;
-      case (BackendDAE.EQSYSTEM(orderedVars = v)::rest,_)
-        equation
-          vars = varList(v);
-          vars1 = listAppend(inVars,vars);
-        then
-          equationSystemsVarsLst(rest,vars1);
-    end match;
+
+    case {} then inVars;
+    case BackendDAE.EQSYSTEM(orderedVars=v)::rest equation
+      vars = varList(v);
+      vars1 = listAppend(inVars,vars);
+    then equationSystemsVarsLst(rest,vars1);
+  end match;
 end equationSystemsVarsLst;
 
-
 public function daeVars
-  input BackendDAE.EqSystem syst;
-  output BackendDAE.Variables vars;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.Variables vars = inEqSystem.orderedVars;
 end daeVars;
 
 public function daeKnVars
-  input BackendDAE.Shared shared;
-  output BackendDAE.Variables vars;
-algorithm
-  BackendDAE.SHARED(knownVars = vars) := shared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Variables outKnownVars = inShared.knownVars;
 end daeKnVars;
 
 public function daeAliasVars
-  input BackendDAE.Shared shared;
-  output BackendDAE.Variables vars;
-algorithm
-  BackendDAE.SHARED(aliasVars = vars) := shared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Variables outAliasVars = inShared.aliasVars;
 end daeAliasVars;
 
 public function varsSize
@@ -2203,23 +2176,21 @@ public function isVariable
   input BackendDAE.Variables inVariables3;
 algorithm
   _:=
-  matchcontinue (inComponentRef1,inVariables2,inVariables3)
+  matchcontinue (inComponentRef1, inVariables2, inVariables3)
     local
       DAE.ComponentRef cr;
-      BackendDAE.Variables vars,knvars;
+      BackendDAE.Variables vars, knvars;
       BackendDAE.VarKind kind;
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, vars);
-        isVarKindVariable(kind);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, knvars);
-        isVarKindVariable(kind);
-      then
-        ();
+
+    case (cr, vars, _) equation
+      ((BackendDAE.VAR(varKind=kind)::_), _) = getVar(cr, vars);
+      isVarKindVariable(kind);
+    then ();
+
+    case (cr, _, knvars) equation
+      ((BackendDAE.VAR(varKind = kind) :: _), _) = getVar(cr, knvars);
+      isVarKindVariable(kind);
+    then ();
   end matchcontinue;
 end isVariable;
 
@@ -2305,7 +2276,7 @@ algorithm
     case (_,_)
       equation
         true = intGt(varsSize(inDelVars),0);
-        newvars = traverseBackendDAEVars(inDelVars,deleteVars1,inVariables);
+        newvars = traverseBackendDAEVars(inDelVars, deleteVars1, inVariables);
         newvars = listVar1(varList(newvars));
       then
         newvars;
@@ -2318,14 +2289,10 @@ end deleteVars;
 protected function deleteVars1
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVars;
-  output BackendDAE.Var v;
-  output BackendDAE.Variables vars;
-protected
-  DAE.ComponentRef cr;
+  output BackendDAE.Var outVar = inVar;
+  output BackendDAE.Variables outVars;
 algorithm
-  v := inVar;
-  BackendDAE.VAR(varName = cr) := v;
-  vars := removeCref(cr,inVars);
+  outVars := removeCref(inVar.varName, inVars);
 end deleteVars1;
 
 public function deleteVar
@@ -2414,17 +2381,14 @@ public function removeVarDAE
 "author: Frenkel TUD 2012-11
   Removes a var from the vararray but does not scaling down the array"
   input Integer inVarPos "1 based index";
-  input BackendDAE.EqSystem syst;
-  output BackendDAE.EqSystem osyst;
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.Var outVar;
+protected
+  BackendDAE.Variables vars;
 algorithm
-  (osyst,outVar) := match syst
-    local
-      BackendDAE.Variables vars;
-    case BackendDAE.EQSYSTEM(orderedVars=vars)
-      equation (vars, outVar) = removeVar(inVarPos, vars);
-      then (BackendDAEUtil.setEqSystVars(syst, vars), outVar);
-  end match;
+  (vars, outVar) := removeVar(inVarPos, inEqSystem.orderedVars);
+  outEqSystem := BackendDAEUtil.setEqSystVars(inEqSystem, vars);
 end removeVarDAE;
 
 public function removeAliasVars "remove alias Vars"
@@ -2451,8 +2415,7 @@ algorithm
   (arr, outVar as BackendDAE.VAR(varName = cr)) := vararrayDelete(arr, inIndex);
   hash_idx := ComponentReference.hashComponentRefMod(cr, buckets) + 1;
   cr_indices := indices[hash_idx];
-  cr_indices := List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr, inIndex - 1),
-    cr_indices, removeVar2);
+  cr_indices := List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr, inIndex - 1), cr_indices, removeVar2);
   arrayUpdate(indices, hash_idx, cr_indices);
   outVariables := BackendDAE.VARIABLES(indices, arr, buckets, num_vars);
 end removeVar;
@@ -2461,12 +2424,8 @@ protected function removeVar2
   input BackendDAE.CrefIndex inCrefIndex1;
   input BackendDAE.CrefIndex inCrefIndex2;
   output Boolean outMatch;
-protected
-  Integer i1, i2;
 algorithm
-  BackendDAE.CREFINDEX(index = i1) := inCrefIndex1;
-  BackendDAE.CREFINDEX(index = i2) := inCrefIndex2;
-  outMatch := i1 == i2;
+  outMatch := inCrefIndex1.index == inCrefIndex2.index;
 end removeVar2;
 
 public function existsVar
@@ -2498,15 +2457,10 @@ public function addVarDAE
   Add a variable to Variables of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
-  input BackendDAE.EqSystem syst;
-  output BackendDAE.EqSystem osyst;
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.EqSystem outEqSystem;
 algorithm
-  osyst := match syst
-    local
-      BackendDAE.Variables vars;
-    case BackendDAE.EQSYSTEM(orderedVars=vars)
-      then BackendDAEUtil.setEqSystVars(syst, addVar(inVar, vars));
-  end match;
+  outEqSystem := BackendDAEUtil.setEqSystVars(inEqSystem, addVar(inVar, inEqSystem.orderedVars));
 end addVarDAE;
 
 public function addKnVarDAE
@@ -2514,15 +2468,10 @@ public function addKnVarDAE
   Add a variable to Variables of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
 algorithm
-  oshared := match shared
-    local
-      BackendDAE.Variables knvars;
-    case BackendDAE.SHARED(knownVars=knvars)
-      then BackendDAEUtil.setSharedKnVars(shared, addVar(inVar, knvars));
-  end match;
+  outShared := BackendDAEUtil.setSharedKnVars(inShared, addVar(inVar, inShared.knownVars));
 end addKnVarDAE;
 
 public function addNewKnVarDAE
@@ -2530,15 +2479,10 @@ public function addNewKnVarDAE
   Add a variable to Variables of a BackendDAE.
   No Check if variable already exist. Use only for new variables"
   input BackendDAE.Var inVar;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
 algorithm
-  oshared := match shared
-    local
-      BackendDAE.Variables knvars;
-    case BackendDAE.SHARED(knownVars=knvars)
-      then BackendDAEUtil.setSharedKnVars(shared, addNewVar(inVar, knvars));
-  end match;
+  outShared := BackendDAEUtil.setSharedKnVars(inShared, addNewVar(inVar, inShared.knownVars));
 end addNewKnVarDAE;
 
 public function addAliasVarDAE
@@ -2546,15 +2490,10 @@ public function addAliasVarDAE
   Add a alias variable to Variables of a BackendDAE.Shared
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
 algorithm
-  oshared := match shared
-    local
-      BackendDAE.Variables aliasVars;
-    case BackendDAE.SHARED(aliasVars=aliasVars)
-      then BackendDAEUtil.setSharedAliasVars(shared, addVar(inVar, aliasVars));
-  end match;
+  outShared := BackendDAEUtil.setSharedAliasVars(inShared, addVar(inVar, inShared.aliasVars));
 end addAliasVarDAE;
 
 public function addNewAliasVarDAE
@@ -2562,15 +2501,10 @@ public function addNewAliasVarDAE
   Add a alias variable to Variables of a BackendDAE.Shared
   No Check if variable already exist. Use only for new variables"
   input BackendDAE.Var inVar;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
 algorithm
-  oshared := match shared
-    local
-      BackendDAE.Variables aliasVars;
-    case BackendDAE.SHARED(aliasVars=aliasVars)
-      then BackendDAEUtil.setSharedAliasVars(shared, addNewVar(inVar, aliasVars));
-  end match;
+  outShared := BackendDAEUtil.setSharedAliasVars(inShared, addNewVar(inVar, inShared.aliasVars));
 end addNewAliasVarDAE;
 
 public function addVar
@@ -2611,18 +2545,16 @@ public function addNewVar
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 protected
-  DAE.ComponentRef cr;
   array<list<BackendDAE.CrefIndex>> hashvec;
   BackendDAE.VariableArray varr;
   Integer bsize, num_vars, idx;
   list<BackendDAE.CrefIndex> indices;
 algorithm
-  BackendDAE.VAR(varName = cr) := inVar;
   BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars) := inVariables;
-  idx := ComponentReference.hashComponentRefMod(cr, bsize) + 1;
+  idx := ComponentReference.hashComponentRefMod(inVar.varName, bsize) + 1;
   varr := vararrayAdd(varr, inVar);
   indices := hashvec[idx];
-  arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(cr, num_vars) :: indices));
+  arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(inVar.varName, num_vars)::indices));
   outVariables := BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars + 1);
 end addNewVar;
 
@@ -2638,8 +2570,7 @@ protected
   Option<BackendDAE.Var> ovar;
 algorithm
   // TODO: Don't rehash if the sets have the same size!
-  BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(
-    numberOfElements = num_vars, varOptArr = vars)) := inSrcVars;
+  BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=num_vars, varOptArr=vars)) := inSrcVars;
 
   for i in 1:num_vars loop
     ovar := vars[i];
@@ -2655,11 +2586,8 @@ public function getVarAt
   input BackendDAE.Variables inVariables;
   input Integer inIndex;
   output BackendDAE.Var outVar;
-protected
-  BackendDAE.VariableArray arr;
 algorithm
-  BackendDAE.VARIABLES(varArr=arr) := inVariables;
-  outVar := vararrayNth(arr, inIndex);
+  outVar := vararrayNth(inVariables.varArr, inIndex);
 end getVarAt;
 
 public function setVarAt
@@ -2685,55 +2613,32 @@ public function getVarSharedAt
 "author: Frenkel TUD 2012-12
   return a Variable."
   input Integer inInteger;
-  input BackendDAE.Shared shared;
+  input BackendDAE.Shared inShared;
   output BackendDAE.Var outVar;
-protected
-  BackendDAE.Variables vars;
 algorithm
-  BackendDAE.SHARED(knownVars=vars) := shared;
-  outVar := getVarAt(vars,inInteger);
+  outVar := getVarAt(inShared.knownVars, inInteger);
 end getVarSharedAt;
 
 public function getVarDAE
 "author: Frenkel TUD 2012-05
   return a Variable."
   input DAE.ComponentRef inComponentRef;
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem inEqSystem;
   output list<BackendDAE.Var> outVarLst;
   output list<Integer> outIntegerLst;
 algorithm
-  (outVarLst,outIntegerLst) := match (inComponentRef,syst)
-    local
-      BackendDAE.Variables vars;
-      list<BackendDAE.Var> varlst;
-      list<Integer> indxlst;
-   case (_,BackendDAE.EQSYSTEM(orderedVars=vars))
-      equation
-        (varlst,indxlst) = getVar(inComponentRef,vars);
-      then
-        (varlst,indxlst);
-  end match;
+  (outVarLst, outIntegerLst) := getVar(inComponentRef, inEqSystem.orderedVars);
 end getVarDAE;
 
 public function getVarShared
 "author: Frenkel TUD 2012-05
   return a Variable."
   input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Shared shared;
+  input BackendDAE.Shared inShared;
   output list<BackendDAE.Var> outVarLst;
   output list<Integer> outIntegerLst;
 algorithm
-  (outVarLst,outIntegerLst) := match (inComponentRef,shared)
-    local
-      BackendDAE.Variables vars;
-      list<BackendDAE.Var> varlst;
-      list<Integer> indxlst;
-   case (_,BackendDAE.SHARED(knownVars=vars))
-      equation
-        (varlst,indxlst) = getVar(inComponentRef,vars);
-      then
-        (varlst,indxlst);
-  end match;
+  (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.knownVars);
 end getVarShared;
 
 public function getVar
@@ -2935,12 +2840,10 @@ protected
   list<BackendDAE.CrefIndex> cr_indices;
   DAE.ComponentRef cr;
 algorithm
-  BackendDAE.VARIABLES(crefIndices = indices, varArr = arr,
-    bucketSize = buckets) := inVariables;
+  BackendDAE.VARIABLES(crefIndices=indices, varArr=arr, bucketSize=buckets) := inVariables;
   hash_idx := ComponentReference.hashComponentRefMod(inCref, buckets) + 1;
   cr_indices := indices[hash_idx];
-  BackendDAE.CREFINDEX(index = outIndex) := List.getMemberOnTrue(inCref,
-    cr_indices, crefIndexEqualCref);
+  BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(inCref, cr_indices, crefIndexEqualCref);
   outIndex := outIndex + 1;
   outVar as BackendDAE.VAR(varName = cr) := vararrayNth(arr, outIndex);
   true := ComponentReference.crefEqualNoStringCompare(cr, inCref);
@@ -3004,13 +2907,10 @@ public function mergeVariables
   output BackendDAE.Variables outVariables;
 protected
   Integer num_vars;
-  Integer b1, b2;
 algorithm
   num_vars := varsSize(inVariables2);
 
   if varsLoadFactor(inVariables1, num_vars) > 1 then
-    BackendDAE.VARIABLES(bucketSize = b1) := inVariables1;
-    BackendDAE.VARIABLES(bucketSize = b2) := inVariables2;
     outVariables := emptyVarsSized(varsSize(inVariables1) + num_vars);
     outVariables := addVariables(inVariables1, outVariables);
   else
@@ -3051,10 +2951,8 @@ protected
   Integer num_vars;
   array<Option<BackendDAE.Var>> vars;
 algorithm
-  BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(
-    numberOfElements = num_vars, varOptArr = vars)) := inVariables;
-  outArg := BackendDAEUtil.traverseArrayNoCopy(vars, inFunc,
-    traverseBackendDAEVars2, inArg, num_vars);
+  BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=num_vars, varOptArr=vars)) := inVariables;
+  outArg := BackendDAEUtil.traverseArrayNoCopy(vars, inFunc, traverseBackendDAEVars2, inArg, num_vars);
 end traverseBackendDAEVars;
 
 protected function traverseBackendDAEVars2<ArgT>
@@ -3102,10 +3000,8 @@ protected
   Integer num_vars;
   array<Option<BackendDAE.Var>> vars;
 algorithm
-  BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(
-    numberOfElements = num_vars, varOptArr = vars)) := inVariables;
-  outArg := BackendDAEUtil.traverseArrayNoCopyWithStop(vars, inFunc,
-    traverseBackendDAEVarsWithStop2, inArg, num_vars);
+  BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=num_vars, varOptArr=vars)) := inVariables;
+  outArg := BackendDAEUtil.traverseArrayNoCopyWithStop(vars, inFunc,traverseBackendDAEVarsWithStop2, inArg, num_vars);
 end traverseBackendDAEVarsWithStop;
 
 protected function traverseBackendDAEVarsWithStop2<ArgT>
@@ -3154,15 +3050,16 @@ public function traverseBackendDAEVarsWithUpdate<ArgT>
   end FuncType;
 protected
   array<list<BackendDAE.CrefIndex>> indices;
-  Integer buckets, num_vars, num_elems, arr_size;
+  Integer buckets, num_vars1, num_vars2, num_elems, arr_size;
   array<Option<BackendDAE.Var>> vars;
 algorithm
-  BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(
-    num_vars, arr_size, vars), buckets, num_vars) := inVariables;
-  (vars, outArg) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(vars, inFunc,
-    traverseBackendDAEVarsWithUpdate2, inArg, num_vars);
-  outVariables := BackendDAE.VARIABLES(indices,
-    BackendDAE.VARIABLE_ARRAY(num_vars, arr_size, vars), buckets, num_vars);
+  BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, arr_size, vars), buckets, num_vars2) := inVariables;
+  if num_vars1 <> num_vars2 then
+    Error.addInternalError("function traverseBackendDAEVarsWithUpdate failed", sourceInfo());
+    fail();
+  end if;
+  (vars, outArg) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(vars, inFunc, traverseBackendDAEVarsWithUpdate2, inArg, num_vars1);
+  outVariables := BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(num_vars1, arr_size, vars), buckets, num_vars2);
 end traverseBackendDAEVarsWithUpdate;
 
 protected function traverseBackendDAEVarsWithUpdate2<ArgT>
@@ -3347,43 +3244,12 @@ end traversingisAlgStateVarIndexFinder;
 public function mergeVariableOperations
   input BackendDAE.Var inVar;
   input list<DAE.SymbolicOperation> inOps;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
 protected
-  DAE.ComponentRef a;
-  BackendDAE.VarKind b;
-  DAE.VarDirection c;
-  DAE.VarParallelism p;
-  BackendDAE.Type d;
-  Option<DAE.Exp> e;
-  Option<Values.Value> f;
-  list<DAE.Dimension> g;
-  DAE.ElementSource source;
-  Option<DAE.VariableAttributes> oattr;
-  Option<BackendDAE.TearingSelect> ts;
-  Option<SCode.Comment> s;
-  DAE.ConnectorType ct;
   list<DAE.SymbolicOperation> ops;
-  DAE.VarInnerOuter io;
-  Boolean unreplaceable;
 algorithm
-  BackendDAE.VAR(varName=a,
-                 varKind=b,
-                 varDirection=c,
-                 varParallelism=p,
-                 varType=d,
-                 bindExp=e,
-                 bindValue=f,
-                 arryDim=g,
-                 source=source,
-                 values=oattr,
-                 tearingSelectOption=ts,
-                 comment=s,
-                 connectorType=ct,
-                 innerOuter=io,
-                 unreplaceable=unreplaceable) := inVar;
   ops := listReverse(inOps);
-  source := List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-  outVar := BackendDAE.VAR(a, b, c, p, d, e, f, g, source, oattr, ts, s, ct, io, unreplaceable);
+  outVar.source := List.foldr(ops, DAEUtil.addSymbolicTransformation, inVar.source);
 end mergeVariableOperations;
 
 public function mergeAliasVars "author: Frenkel TUD 2011-04"

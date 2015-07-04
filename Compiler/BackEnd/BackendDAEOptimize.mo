@@ -3924,16 +3924,15 @@ end updateStatesVars;
 // =============================================================================
 
 public function addedScaledVars
-" added var_norm = var/nominal,
-  where var is state.
-"
+  "added var_norm = var/nominal, where var is state."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := if Flags.isSet(Flags.ADD_SCALED_VARS)  or Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
-              addedScaledVarsWork(inDAE)
-             else
-              inDAE;
+  if Flags.isSet(Flags.ADD_SCALED_VARS) or Flags.isSet(Flags.ADD_SCALED_VARS_INPUT) then
+    outDAE := addedScaledVarsWork(inDAE);
+  else
+    outDAE := inDAE;
+  end if;
 end addedScaledVars;
 
 protected function addedScaledVarsWork
@@ -3942,24 +3941,18 @@ protected function addedScaledVarsWork
 protected
   list<BackendDAE.EqSystem> systlst;
   list<BackendDAE.EqSystem> osystlst = {};
-
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-
-  BackendDAE.Variables vars;
-  BackendDAE.Variables knvars;
-  list<BackendDAE.Var> kvarlst, lst_states, lst_inputs, lst_normv, lst_new_var = {};
+  list<BackendDAE.Var> kvarlst, lst_states, lst_inputs;
   BackendDAE.Var tmpv;
   DAE.ComponentRef cref;
   DAE.Exp norm, y_norm, y, lhs;
   BackendDAE.Equation eqn;
   BackendDAE.Shared oshared;
   BackendDAE.EqSystem syst;
-
 algorithm
   BackendDAE.DAE(systlst, oshared) := inDAE;
-  BackendDAE.SHARED(knownVars=knvars) := oshared;
-  kvarlst := BackendVariable.varList(knvars);
+  kvarlst := BackendVariable.varList(oshared.knownVars);
   lst_inputs := List.select(kvarlst, BackendVariable.isVarOnTopLevelAndInputNoDerInput);
   // states
   if Flags.isSet(Flags.ADD_SCALED_VARS) then
