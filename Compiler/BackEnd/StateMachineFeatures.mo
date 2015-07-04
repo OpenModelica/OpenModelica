@@ -1883,7 +1883,7 @@ protected
   Boolean equal;
 algorithm
   rhsExp := Util.applyOption(inEq,BackendEquation.getEquationRHS);
-  //print("In getOptInner: rhsExp: "+ (if Util.isSome(rhsExp) then ExpressionDump.printExpStr(Util.getOption(rhsExp)) else "NONE()") + "\n");
+  //print("In getOptInner: rhsExp: "+ (if isSome(rhsExp) then ExpressionDump.printExpStr(Util.getOption(rhsExp)) else "NONE()") + "\n");
   outOptInner := match rhsExp
     local
       DAE.ComponentRef crefInner;

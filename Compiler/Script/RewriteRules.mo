@@ -1077,7 +1077,7 @@ algorithm
     case _
       equation
         oR = getGlobalRoot(Global.rewriteRulesIndex);
-        true = Util.isSome(oR);
+        true = isSome(oR);
       then ();
 
     // not loaded, load it

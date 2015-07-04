@@ -5325,7 +5325,7 @@ algorithm
       equation
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
-        if not (List.isMemberOnTrue(v,arg::args,extArgCrefEq) or Util.isSome(binding)) then
+        if not (List.isMemberOnTrue(v,arg::args,extArgCrefEq) or isSome(binding)) then
           str = ComponentReference.printComponentRefStr(cr);
           Error.addSourceMessage(Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
           fail();
@@ -7758,13 +7758,13 @@ algorithm
       SourceInfo info;
     case (SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods1,info=info))),str1),SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods2))),str2))
       equation
-        str = if Util.isSome(str1) then str1 else str2;
+        str = if isSome(str1) then str1 else str2;
         mods = listAppend(mods1,mods2);
       then SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),mods,NONE(),info))),str);
     case (SCode.COMMENT(ann1,str1),SCode.COMMENT(ann2,str2))
       equation
-        str = if Util.isSome(str1) then str1 else str2;
-        ann = if Util.isSome(ann1) then ann1 else ann2;
+        str = if isSome(str1) then str1 else str2;
+        ann = if isSome(ann1) then ann1 else ann2;
       then SCode.COMMENT(ann,str);
   end matchcontinue;
 end mergeClassComments;

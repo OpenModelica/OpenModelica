@@ -815,7 +815,7 @@ algorithm
     equation
     true = ComponentReference.isArrayElement(cref);
     (crefHead,idx,crefTailOpt) = ComponentReference.stripArrayCref(cref);
-    if Util.isSome(crefTailOpt) then
+    if isSome(crefTailOpt) then
       crefLst = {Util.getOption(crefTailOpt)};
     else
       crefLst = {};

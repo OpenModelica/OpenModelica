@@ -488,7 +488,7 @@ algorithm
     case (DAE.VAR(componentRef = name, binding = bnd) :: rest_vars, _)
       equation
         potential =
-          if Util.isSome(bnd)
+          if isSome(bnd)
             then inAccPotential
             else List.consOnTrue(isExpandable(name), name, inAccPotential);
         potential = getExpandableVariablesWithNoBinding(rest_vars, potential);

@@ -3111,7 +3111,7 @@ algorithm
         // it exists and if it's an iterator or not.
         id := ComponentReference.crefFirstIdent(inCref);
         (DAE.TYPES_VAR(constOfForIteratorRange = ic),_,_,_,_) := lookupVar2(ht, id, inEnv);
-        b := Util.isSome(ic);
+        b := isSome(ic);
       then
         (SOME(b), cache);
 

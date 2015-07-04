@@ -2294,7 +2294,7 @@ algorithm
           SCode.MOD(_, _, subMods2, b2, _))
       equation
         subMods1 = listAppend(subMods1, subMods2);
-        b1 = if Util.isSome(b1) then b1 else b2;
+        b1 = if isSome(b1) then b1 else b2;
       then
         SCode.MOD(f1, e1, subMods1, b1, info);
 

@@ -5293,7 +5293,7 @@ algorithm
 
         // Now the iterator is already removed. No need for this.
         // is it the iterator of the parfor loop(implicitly declared)?
-        // isForiterator = Util.isSome(cnstForRange);
+        // isForiterator = isSome(cnstForRange);
 
         //is it either a parglobal var or for iterator
         //true = isParglobal or isForiterator;
