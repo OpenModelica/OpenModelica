@@ -4667,9 +4667,9 @@ algorithm
     if valueEq(e, inElement) then
       return;
     end if;
-
     outPosition := outPosition + 1;
   end for;
+  fail();
 end position;
 
 public function positionOnTrue<T>
