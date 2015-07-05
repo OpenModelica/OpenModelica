@@ -685,6 +685,13 @@ algorithm
     c := Types.constAnd(c, step_c);
   end if;
 
+  if Types.isBoxedType(start_ty) then
+    (start_exp, start_ty) := Types.matchType(start_exp, start_ty, Types.unboxedType(start_ty), true);
+  end if;
+  if Types.isBoxedType(stop_ty) then
+    (stop_exp, stop_ty) := Types.matchType(stop_exp, stop_ty, Types.unboxedType(stop_ty), true);
+  end if;
+
   (start_exp, ostep_exp, stop_exp, ety) :=
     deoverloadRange(start_exp, start_ty, ostep_exp, ostep_ty, stop_exp, stop_ty, inInfo);
   (outCache, ty) := elabRangeType(outCache, inEnv, start_exp, ostep_exp,

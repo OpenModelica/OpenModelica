@@ -1280,10 +1280,8 @@ public function removeRemovedEqs "remove removedEqs"
   output BackendDAE.Shared outShared;
 protected
   BackendDAE.EquationArray removedEqs = inShared.removedEqs;
-  Integer N;
 algorithm
-  N := removedEqs.numberOfElement;
-  for i in 1:N loop
+  for i in 1:removedEqs.numberOfElement loop
     removedEqs := equationRemove(i, removedEqs);
   end for;
   outShared := BackendDAEUtil.setSharedRemovedEqns(inShared, removedEqs);
