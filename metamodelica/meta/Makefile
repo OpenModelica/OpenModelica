@@ -17,6 +17,7 @@ BuiltinString.mos \
 CheckPatternScope.mo \
 ComplicatedInteractive.mos \
 Continue.mo \
+cref.mos \
 Equality.mos \
 EqPatternm.mos \
 ErrorInteractiveCallFunctionPtr.mos \
