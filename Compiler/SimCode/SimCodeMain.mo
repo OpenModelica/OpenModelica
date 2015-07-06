@@ -62,6 +62,7 @@ import CevalScriptBackend;
 import CodegenC;
 import CodegenFMU;
 import CodegenFMUCpp;
+import CodegenFMUCppHpcom;
 import CodegenQSS;
 import CodegenAdevs;
 import CodegenSparseFMI;
@@ -142,7 +143,7 @@ algorithm
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs,libPaths,includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
+  simCode := createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths,simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   SimCodeFunctionUtil.execStat("SimCode");
@@ -574,7 +575,11 @@ algorithm
       then ();
     case (_,"Cpp")
       equation
-        Tpl.tplNoret3(CodegenFMUCpp.translateModel, simCode, FMUVersion, FMUType);
+        if(Flags.isSet(Flags.HPCOM)) then
+          Tpl.tplNoret3(CodegenFMUCppHpcom.translateModel, simCode, FMUVersion, FMUType);
+        else
+          Tpl.tplNoret3(CodegenFMUCpp.translateModel, simCode, FMUVersion, FMUType);
+        end if;
       then ();
     else
       equation

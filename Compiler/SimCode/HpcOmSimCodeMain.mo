@@ -378,7 +378,7 @@ algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataScheduled);
 
-      checkOdeSystemSize(taskGraphDataOdeScheduled,odeEquations);
+      checkOdeSystemSize(taskGraphDataOdeScheduled,odeEquations,sccSimEqMapping);
       SimCodeFunctionUtil.execStat("hpcom check ODE system size");
 
       //Create Memory-Map and Sim-Code
@@ -1249,8 +1249,10 @@ Remark: this can occur when asserts are added to the ode-system.
 author:marcusw"
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input list<list<SimCode.SimEqSystem>> iOdeEqs;
+  input array<list<Integer>> iSccSimEqMapping;
   output Boolean oIsCorrect;
 protected
+  Integer scc;
   list<Integer> sccs;
   Integer actualSizePre, actualSize;
   Integer targetSize;
@@ -1261,12 +1263,18 @@ algorithm
   if(intNe(actualSizePre, actualSize)) then
     print("There are simCode-equations multiple times in the graph structure.\n");
   end if;
+  actualSize := 0;
+  for scc in sccs loop
+    actualSize := actualSize + listLength(arrayGet(iSccSimEqMapping, scc));
+  end for;
+
   targetSize := listLength(List.flatten(iOdeEqs));
   oIsCorrect := intEq(targetSize,actualSize);
   if(oIsCorrect) then
     //print("the ODE-system size is correct("+intString(actualSize)+")\n");
   else
-    print("the size should be "+intString(targetSize)+" but it is "+intString(actualSize)+"!\n");
+    print("the size of the ODE-system should be "+intString(targetSize)+" but it is "+intString(actualSize)+"!\n");
+    print("expected the following sim code equations: " + stringDelimitList(List.map(List.map(List.flatten(iOdeEqs), SimCodeUtil.simEqSystemIndex), intString), ",") + "\n");
     print("the ODE-system is NOT correct\n");
   end if;
 end checkOdeSystemSize;

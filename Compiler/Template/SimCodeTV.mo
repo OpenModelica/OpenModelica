@@ -813,6 +813,13 @@ package SimCodeUtil
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
 
+  function getVarIndexByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input String iIndexForUndefinedReferences;
+    output String oVarIndex;
+  end getVarIndexByMapping;
+
   function isVarIndexListConsecutive
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;

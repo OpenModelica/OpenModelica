@@ -10052,20 +10052,44 @@ algorithm
 end getVarToArrayIndexByType;
 
 public function getVarIndexListByMapping "author: marcusw
+  Return the variable indices stored for the given variable in the mapping-table. If the variable is part of an array, all array indices are returned. This function is used by susan."
+  input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+  input DAE.ComponentRef iVarName;
+  input String iIndexForUndefinedReferences;
+  output list<String> oVarIndexList; //if the variable is part of an array, all array indices are returned in this list (the list contains one element if the variable is a scalar)
+algorithm
+  ((oVarIndexList,_)) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iIndexForUndefinedReferences);
+end getVarIndexListByMapping;
+
+public function getVarIndexByMapping "author: marcusw
+  Return the variable index stored for the given variable in the mapping-table. This function is used by susan."
+  input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+  input DAE.ComponentRef iVarName;
+  input String iIndexForUndefinedReferences;
+  output String oConcreteVarIndex; //the scalar index of the variable (this value is always part of oVarIndexList)
+algorithm
+  ((_,oConcreteVarIndex)) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iIndexForUndefinedReferences);
+end getVarIndexByMapping;
+
+protected function getVarIndexInfosByMapping "author: marcusw
   Return the variable indices stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
   input DAE.ComponentRef iVarName;
   input String iIndexForUndefinedReferences;
-  output list<String> oVarIndexList;
+  output list<String> oVarIndexList; //if the variable is part of an array, all array indices are returned in this list (the list contains one element if the variable is a scalar)
+  output String oConcreteVarIndex; //the scalar index of the variable (this value is always part of oVarIndexList)
 protected
   DAE.ComponentRef varName = iVarName;
-  Integer arrayIdx, idx, arraySize;
+  Integer arrayIdx, idx, arraySize, concreteVarIndex;
   array<Integer> varIndices;
   list<String> tmpVarIndexListNew = {};
+  list<DAE.Subscript> arraySubscripts;
+  list<Integer> arrayDimensions;
 algorithm
+  arraySubscripts := ComponentReference.crefLastSubs(varName);
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
-    ((_,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
+    ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping);
     arraySize := arrayLength(varIndices);
     for arrayIdx in 0:(arraySize-1) loop
       idx := arrayGet(varIndices, arraySize-arrayIdx);
@@ -10080,13 +10104,28 @@ algorithm
         end if;
       end if;
     end for;
+    ((concreteVarIndex,_,_)) := List.fold(listReverse(arraySubscripts), getUnrolledArrayIndex, (0, 1, listReverse(arrayDimensions)));
+
+    // ignore all values that are undefined references and part of the same array
+    idx := 1;
+    while intLe (idx, concreteVarIndex) loop
+      if(intLt(arrayGet(varIndices, idx), 1)) then
+        concreteVarIndex := concreteVarIndex - 1;
+      end if;
+      idx := idx + 1;
+    end while;
+
+    concreteVarIndex := intAbs(arrayGet(varIndices, 1)) - 1 + concreteVarIndex;
+    oConcreteVarIndex := intString(concreteVarIndex);
   end if;
   if(listEmpty(tmpVarIndexListNew)) then
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarIndexListByMapping: No Element for " + ComponentReference.printComponentRefStr(varName) + " found!"});
     tmpVarIndexListNew := {iIndexForUndefinedReferences};
+    oConcreteVarIndex := iIndexForUndefinedReferences;
   end if;
+  //print("SimCodeUtil.getVarIndexInfosByMapping: Variable " + ComponentReference.printComponentRefStr(iVarName) + " has variable indices {" + stringDelimitList(tmpVarIndexListNew, ",") + "} and concrete index " + oConcreteVarIndex + "\n");
   oVarIndexList := tmpVarIndexListNew;
-end getVarIndexListByMapping;
+end getVarIndexInfosByMapping;
 
 public function isVarIndexListConsecutive "author: marcusw
   Check if all variable indices of the given variables, stored in the hash table, are consecutive."
