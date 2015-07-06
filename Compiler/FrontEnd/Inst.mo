@@ -1128,7 +1128,7 @@ algorithm
         // DAEUtil.addComponentType(dae1, fq_class);
         ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, {fq_class});
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
-        bc = if Util.isSome(bc) then bc else SOME(ty2);
+        bc = if isSome(bc) then bc else SOME(ty2);
         ty = InstUtil.mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = InstUtil.updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
@@ -2317,9 +2317,9 @@ algorithm
 
         // Search for equalityConstraint
         eqConstraint = InstUtil.equalityConstraint(env5, els, info);
-        ci_state6 = if Util.isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
+        ci_state6 = if isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
       then
-        (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
+        (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,inClassDef6),NONE(),eqConstraint,graph);
 
     // This rule describes how to instantiate class definition derived from an enumeration
     case (cache,env,ih,store,mods,pre,_,_,

@@ -819,7 +819,7 @@ constant Type T_FUNCTION_DEFAULT    = T_FUNCTION({},T_ANYTYPE_DEFAULT,FUNCTION_A
 constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSource);
 constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
 constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with record CiState";
-constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},true,Absyn.IDENT("SourceInfo")::{});
+constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},true,{"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","lastModification"},Absyn.IDENT("SourceInfo")::{});
 
 // Arrays of unknown dimension, eg. Real[:]
 public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
@@ -948,8 +948,10 @@ public uniontype Type "models the different front-end and back-end types"
   end T_METAOPTION;
 
   record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
+    // TODO: You can't trust these fields as it seems MetaUtil.fixUniontype is sent empty elements when running dependency analysis
     list<Absyn.Path> paths;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+    list<String> singletonFields "The field names of the singleton";
     TypeSource source;
   end T_METAUNIONTYPE;
 

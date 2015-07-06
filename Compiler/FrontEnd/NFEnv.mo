@@ -733,7 +733,7 @@ end getScope;
 //  (entries, uentry) :=
 //    NFEnvAvlTree.update(entries, entry_name, replaceEntry2, (inReplacement, inOriginEnv));
 //  outEnv := NFInstTypes.FRAME(name, prefix, ty, entries) :: rest_env;
-//  outWasReplaced := Util.isSome(uentry);
+//  outWasReplaced := isSome(uentry);
 //end replaceEntry;
 //
 //protected function replaceEntry2

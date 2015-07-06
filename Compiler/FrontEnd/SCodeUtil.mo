@@ -293,7 +293,7 @@ algorithm
       Absyn.Class d;
       Absyn.Path name;
       Integer index;
-      Boolean singleton, isImpure;
+      Boolean singleton, isImpure, moved;
       Absyn.FunctionPurity purity;
 
     // ?? Only normal functions can have 'external'
@@ -332,8 +332,8 @@ algorithm
     case (_,Absyn.R_PREDEFINED_CLOCK()) then SCode.R_PREDEFINED_CLOCK();
     case (_,Absyn.R_PREDEFINED_ENUMERATION()) then SCode.R_PREDEFINED_ENUMERATION();
 
-    case (_,Absyn.R_METARECORD(name,index,singleton)) //MetaModelica extension, added by x07simbj
-      then SCode.R_METARECORD(name,index,singleton);
+    case (_,Absyn.R_METARECORD(name,index,singleton,moved)) //MetaModelica extension, added by x07simbj
+      then SCode.R_METARECORD(name,index,singleton,moved);
     case (_,Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE(); /*MetaModelica extension added by x07simbj */
 
   end match;
@@ -2294,7 +2294,7 @@ algorithm
           SCode.MOD(_, _, subMods2, b2, _))
       equation
         subMods1 = listAppend(subMods1, subMods2);
-        b1 = if Util.isSome(b1) then b1 else b2;
+        b1 = if isSome(b1) then b1 else b2;
       then
         SCode.MOD(f1, e1, subMods1, b1, info);
 

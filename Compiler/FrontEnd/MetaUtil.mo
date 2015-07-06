@@ -33,592 +33,291 @@ encapsulated package MetaUtil
 " file:        MetaUtil.mo
   package:     MetaUtil
   description: Different MetaModelica extension functions.
-
-  RCS: $Id$
-
-  "
+"
 
 public import Absyn;
 public import ClassInf;
 public import DAE;
 public import SCode;
-public import SCodeUtil;
 
 protected import Config;
 protected import Flags;
 protected import List;
 protected import Types;
 
-public function transformArrayNodesToListNodes "function: transformArrayNodesToListNodes"
-  input list<Absyn.Exp> inList;
-  input list<Absyn.Exp> accList;
-  output list<Absyn.Exp> outList;
+public function createMetaClassesInProgram
+  "This function goes through a program and changes all records inside of
+   uniontype into metarecords. It also makes a copy of them outside of the
+   uniontype where they are found so that they can be used without prefixing
+   with the uniontype name."
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram = inProgram;
+protected
+  list<Absyn.Class> classes = {}, meta_classes;
 algorithm
-  outList := matchcontinue (inList,accList)
-    local
-      list<Absyn.Exp> localAccList,es,restList;
-      Absyn.Exp firstExp;
-    case ({},localAccList) then listReverse(localAccList);
-    case (Absyn.ARRAY({}) :: restList,localAccList)
-      equation
-        localAccList = Absyn.LIST({})::localAccList;
-        localAccList = transformArrayNodesToListNodes(restList,localAccList);
-      then localAccList;
-    case (Absyn.ARRAY(es) :: restList,localAccList)
-      equation
-        es = transformArrayNodesToListNodes(es,{});
-        localAccList = Absyn.LIST(es)::localAccList;
-        localAccList = transformArrayNodesToListNodes(restList,localAccList);
-      then localAccList;
-    case (firstExp :: restList,localAccList)
-      equation
-        localAccList = firstExp::localAccList;
-        localAccList = transformArrayNodesToListNodes(restList,localAccList);
-      then localAccList;
-  end matchcontinue;
-end transformArrayNodesToListNodes;
+  if not Config.acceptMetaModelicaGrammar() then
+    return;
+  end if;
 
-public function createListType "function: createListType"
-  input DAE.Type inType;
-  input Integer numLists;
-  output DAE.Type outType;
-algorithm
-  outType :=
-  matchcontinue (inType,numLists)
-    local
-      DAE.Type localT;
-      Integer n;
-      DAE.Type t;
-    case (localT,0) then localT;
-    case (localT,n)
-      equation
-        t = DAE.T_METALIST(localT, DAE.emptyTypeSource);
-        t = createListType(t,n-1);
-      then t;
-  end matchcontinue;
-end createListType;
+  _ := match outProgram
+    case Absyn.PROGRAM()
+      algorithm
+        for c in outProgram.classes loop
+          (c, meta_classes) := createMetaClasses(c);
+          classes := c :: listAppend(meta_classes, classes);
+        end for;
 
-public function getTypeFromProp "function: getTypeFromProp"
-  input DAE.Properties inProp;
-  output DAE.Type outType;
-algorithm
-  outType :=
-  match (inProp)
-    local
-      DAE.Type t;
-    case (DAE.PROP(t,_)) equation then t;
-  end match;
-end getTypeFromProp;
-
-public function getListOfStrings
-  input list<SCode.Element> els;
-  output list<String> outStrings;
-algorithm
-  outStrings := match(els)
-    local
-      list<SCode.Element> rest;
-      list<String> slst;
-      String n;
-
-    case({}) then {};
-
-    case(SCode.CLASS(name = n)::rest)
-      equation
-        slst = getListOfStrings(rest);
+        outProgram.classes := listReverse(classes);
       then
-        n::slst;
+        ();
 
-  end match;
-end getListOfStrings;
-
-//Check if a class has a certain restriction, added by simbj
-public function classHasMetaRestriction
-  input SCode.Element cl;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match(cl)
-    case(SCode.CLASS(restriction = SCode.R_METARECORD())) then true;
-    else false;
-  end match;
-end classHasMetaRestriction;
-
-//Check if a class has a certain restriction, added by simbj
-public function classHasRestriction
-  input SCode.Element cl;
-  input SCode.Restriction re;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue(cl,re)
-    local
-      SCode.Restriction re1,re2;
-
-    case(SCode.CLASS(restriction = re1),re2)
-      equation
-        equality(re1 = re2);
-      then true;
-
-    else false;
-  end matchcontinue;
-end classHasRestriction;
-
-public function createMetaClassesInProgram "Adds metarecord classes to the AST. This function handles a whole program,
-  including packages."
-  input Absyn.Program program;
-  output Absyn.Program out;
-algorithm
-  out :=  match (program)
-    local
-      list<Absyn.Class> classes, metaClassesFlat;
-      list<list<Absyn.Class>> metaClasses;
-      Absyn.Program p;
-
-    case p as Absyn.PROGRAM() guard Config.acceptMetaModelicaGrammar()
-      equation
-        metaClasses = List.map(p.classes, createMetaClasses);
-        metaClassesFlat = List.flatten(metaClasses);
-        classes = List.map(p.classes, createMetaClassesFromPackage);
-        p.classes = listAppend(classes, metaClassesFlat);
-      then p;
-    else program;
+    else ();
   end match;
 end createMetaClassesInProgram;
 
-protected function createMetaClassesFromPackage "Helper function to createMetaClassesInProgram"
-  input Absyn.Class cl;
-  output Absyn.Class out;
+protected function createMetaClasses
+  "Takes a class, and if it's a uniontype it converts all records inside it into
+   metarecords and returns the updated uniontype and a list of all metarecords.
+   It then recursively applies the same operation to all subclasses."
+  input Absyn.Class inClass;
+  output Absyn.Class outClass = inClass;
+  output list<Absyn.Class> outMetaClasses = {};
+protected
+  Absyn.ClassDef body;
+  list<Absyn.ClassPart> parts;
 algorithm
-  out := matchcontinue(cl)
-    local
-      String name;
-      Boolean     partialPrefix;
-      Boolean     finalPrefix;
-      Boolean     encapsulatedPrefix;
-      Absyn.Restriction restriction;
-      Absyn.ClassDef    body;
-      SourceInfo        info;
-      list<Absyn.ClassPart> classParts;
-      Option<String>  comment;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  _ := match outClass
+    case Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(),
+        body = body as Absyn.PARTS(classParts = parts))
+      algorithm
+        (parts, outMetaClasses) := fixClassParts(parts, outClass.name);
+        body.classParts := parts;
+        outClass.body := body;
+      then
+        ();
 
-    case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts=classParts,ann=ann,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
-      equation
-        classParts = List.map(classParts,createMetaClassesFromClassParts);
-        body = Absyn.PARTS(typeVars,classAttrs,classParts,ann,comment);
-      then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
+    case Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(),
+        body = body as Absyn.CLASS_EXTENDS(parts = parts))
+      algorithm
+        (parts, outMetaClasses) := fixClassParts(parts, outClass.name);
+        body.parts := parts;
+        outClass.body := body;
+      then
+        ();
 
-    else cl;
-  end matchcontinue;
-end createMetaClassesFromPackage;
+    else ();
+  end match;
+
+  _ := match outClass
+    case Absyn.CLASS(body = body as Absyn.PARTS())
+      algorithm
+        body.classParts := createMetaClassesFromClassParts(body.classParts);
+        outClass.body := body;
+      then
+        ();
+
+    case Absyn.CLASS(body = body as Absyn.CLASS_EXTENDS())
+      algorithm
+        body.parts := createMetaClassesFromClassParts(body.parts);
+        outClass.body := body;
+      then
+        ();
+
+    else ();
+  end match;
+end createMetaClasses;
 
 protected function createMetaClassesFromClassParts
-  input Absyn.ClassPart classPart;
-  output Absyn.ClassPart out;
+  input list<Absyn.ClassPart> inClassParts;
+  output list<Absyn.ClassPart> outClassParts;
 algorithm
-  out := matchcontinue (classPart)
-    local
-      list<Absyn.ElementItem> els;
-      list<list<Absyn.ElementItem>> lels;
+  outClassParts := list(match p
+    case Absyn.PUBLIC()
+      algorithm
+        p.contents := createMetaClassesFromElementItems(p.contents);
+      then
+        p;
 
-    case (Absyn.PUBLIC(els))
-      equation
-        lels = List.map(els, createMetaClassesFromElementItem);
-        els = List.flatten(lels);
-      then Absyn.PUBLIC(els);
+    case Absyn.PROTECTED()
+      algorithm
+        p.contents := createMetaClassesFromElementItems(p.contents);
+      then
+        p;
 
-    case (Absyn.PROTECTED(els))
-      equation
-        lels = List.map(els, createMetaClassesFromElementItem);
-        els = List.flatten(lels);
-      then Absyn.PROTECTED(els);
-
-    else classPart;
-  end matchcontinue;
+    else p;
+  end match for p in inClassParts);
 end createMetaClassesFromClassParts;
 
-protected function createMetaClassesFromElementItem
-  input Absyn.ElementItem elementItem;
-  output list<Absyn.ElementItem> out;
+protected function createMetaClassesFromElementItems
+  input list<Absyn.ElementItem> inElementItems;
+  output list<Absyn.ElementItem> outElementItems = {};
+protected
+  Absyn.Class cls;
+  list<Absyn.Class> meta_classes;
+  list<Absyn.ElementItem> els;
 algorithm
-  out := matchcontinue(elementItem)
-    local
-      SourceInfo info;
-      Boolean replaceable_;
-      Absyn.Class class_, cl2;
-      list<Absyn.Class> metaClasses, classes;
-      list<Absyn.ElementItem> elementItems;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=class_))))
-      equation
-        metaClasses = createMetaClasses(class_);
-        cl2 = createMetaClassesFromPackage(class_);
-        classes = cl2 :: metaClasses;
-        elementItems = List.map1r(classes,setElementItemClass,elementItem);
-      then elementItems;
-    else {elementItem};
-  end matchcontinue;
-end createMetaClassesFromElementItem;
+  for e in listReverse(inElementItems) loop
+    e := match e
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+          Absyn.CLASSDEF(class_ = cls)))
+        algorithm
+          (cls, meta_classes) := createMetaClasses(cls);
+          els := list(setElementItemClass(e, c) for c in meta_classes);
+          outElementItems := listAppend(els, outElementItems);
+        then
+          setElementItemClass(e, cls);
+
+      else e;
+    end match;
+
+    outElementItems := e :: outElementItems;
+  end for;
+end createMetaClassesFromElementItems;
 
 protected function setElementItemClass
-  input Absyn.ElementItem elementItem;
-  input Absyn.Class class_;
-  output Absyn.ElementItem out;
+  input Absyn.ElementItem inElementItem;
+  input Absyn.Class inClass;
+  output Absyn.ElementItem outElementItem = inElementItem;
 algorithm
-  out := match (elementItem,class_)
-      local
-      Boolean finalPrefix;
-      Option<Absyn.RedeclareKeywords> redeclareKeywords;
-      Absyn.InnerOuter innerOuter;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constrainClass;
-      Boolean replaceable_;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,info=info,constrainClass=constrainClass)),_)
-      then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
-    /* Annotations, comments */
-    else elementItem;
+  outElementItem := match outElementItem
+    local
+      Absyn.Element e;
+      Absyn.ElementSpec es;
+
+    case Absyn.ELEMENTITEM(element = e as Absyn.ELEMENT(specification = es as Absyn.CLASSDEF()))
+      algorithm
+        es.class_ := inClass;
+        e.specification := es;
+        outElementItem.element := e;
+      then
+        outElementItem;
+
+    else outElementItem;
   end match;
 end setElementItemClass;
 
-//Added by simbj
-//Analyze the AST, find union type and extend the AST with metarecords
-public function createMetaClasses
-input Absyn.Class cl;
-output list<Absyn.Class> clstout;
+protected function convertElementToClass
+  input Absyn.ElementItem inElementItem;
+  output Absyn.Class outClass;
 algorithm
-  clstout := matchcontinue(cl)
-    local
-      list<Absyn.ClassPart> cls;
-      list<Absyn.ElementItem> els;
-      list<Absyn.Class> cllst;
-      SCode.Restriction r_1;
-      Absyn.Class c;
-      String n;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Absyn.ClassDef d;
-      SourceInfo file_info;
+  Absyn.ELEMENTITEM(element = Absyn.ELEMENT(
+    specification = Absyn.CLASSDEF(class_ = outClass))) := inElementItem;
+end convertElementToClass;
 
-    case(c as Absyn.CLASS(name = n,restriction = r,
-         body = Absyn.PARTS(classParts = {Absyn.PUBLIC(contents = els)})))
-      equation
-        r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
-        SCode.R_UNIONTYPE() = r_1;
-        els = fixElementItems(els,n,0,listLength(els)==1);
-        cllst = convertElementsToClasses(els);
-      then cllst;
-    else {};
-  end matchcontinue;
-end createMetaClasses;
-
-//Added by simbj
-//Helper function
-function convertElementsToClasses
-  input list<Absyn.ElementItem> els;
-  output list<Absyn.Class> outcls;
+protected function fixClassParts
+  input list<Absyn.ClassPart> inClassParts;
+  input Absyn.Ident inClassName;
+  output list<Absyn.ClassPart> outClassParts = {};
+  output list<Absyn.Class> outMetaClasses = {};
+protected
+  list<Absyn.Class> meta_classes;
+  list<Absyn.ElementItem> els;
 algorithm
-  outcls := match(els)
-    local
-      list<Absyn.ElementItem> rest;
-      Absyn.Class c;
-      list<Absyn.Class> clst;
-
-    case({}) then {};
-
-    case(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = c)))::rest)
-      equation
-        clst = convertElementsToClasses(rest);
+  outClassParts := list(match p
+    case Absyn.PUBLIC()
+      algorithm
+        (els, meta_classes) := fixElementItems(p.contents, inClassName);
+        p.contents := els;
+        outMetaClasses := listAppend(meta_classes, outMetaClasses);
       then
-        c::clst;
+        p;
 
-    /* Strip annotation, comment */
-    case(_::rest)
-      then convertElementsToClasses(rest);
-  end match;
-end convertElementsToClasses;
+    case Absyn.PROTECTED()
+      algorithm
+        (els, meta_classes) := fixElementItems(p.contents, inClassName);
+        p.contents := els;
+        outMetaClasses := listAppend(meta_classes, outMetaClasses);
+      then
+        p;
 
-//Added by simbj
-//Reparses type and returns the real type
-//NOTE: This is probably a bad way to do this, should be moved, maybe to the parser?
-function reparseType
-  input Absyn.Path path;
-  output DAE.Type outType;
+    else p;
+  end match for p in inClassParts);
+end fixClassParts;
+
+protected function fixElementItems
+  input list<Absyn.ElementItem> inElementItems;
+  input String inName;
+  output list<Absyn.ElementItem> outElementItems;
+  output list<Absyn.Class> outMetaClasses = {};
+protected
+  Integer index = 0;
+  Boolean singleton = listLength(inElementItems) == 1;
+  Absyn.Class c;
+  Absyn.Restriction r;
 algorithm
-  outType := match(path)
-    local
-      DAE.Type t;
-    case(Absyn.IDENT("Integer")) then DAE.T_INTEGER_DEFAULT;
-    case(Absyn.IDENT("Real")) then DAE.T_REAL_DEFAULT;
-    case(Absyn.IDENT("String")) then DAE.T_STRING_DEFAULT;
-    case(Absyn.IDENT("Boolean")) then DAE.T_BOOL_DEFAULT;
-    // BTH
-    case(Absyn.IDENT("Clock"))
-      equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
-      then DAE.T_CLOCK_DEFAULT;
-  end match;
-end reparseType;
+  outElementItems := list(match e
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+        Absyn.CLASSDEF(class_ = c as Absyn.CLASS(restriction = Absyn.R_RECORD()))))
+      algorithm
+        // Change the record into a metarecord and add it to the list of metaclasses.
+        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, true);
+        c.restriction := r;
+        outMetaClasses := c :: outMetaClasses;
+        // Change the record into a metarecord and update the original class.
+        r := Absyn.R_METARECORD(Absyn.IDENT(inName), index, singleton, false);
+        c.restriction := r;
+        index := index + 1;
+      then
+        setElementItemClass(e, c);
 
-/* These functions are helper functions for the Uniontypes, added by simbj */
-public function getRestriction
-  input Absyn.Element el;
-  output Absyn.Restriction res;
-algorithm
-  res := match(el)
-    local
-      Absyn.ElementSpec spec;
-      Absyn.Class cl;
-      Absyn.Restriction r;
-    case(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(restriction=r))))
-      then r;
-    else Absyn.R_UNKNOWN();
-  end match;
-end getRestriction;
-
-function fixRestriction
-  input Absyn.Restriction resin;
-  input String name;
-  input Integer index;
-  input Boolean singleton;
-  output Absyn.Restriction resout;
-algorithm
-  resout := match(resin,name,index,singleton)
-    local
-      Absyn.Ident ident;
-      Absyn.Path path;
-    case(Absyn.R_RECORD(),_,_,_)
-      equation
-        ident = name;
-        path = Absyn.IDENT(ident);
-      then Absyn.R_METARECORD(path,index,singleton);
-    else resin;
-  end match;
-end fixRestriction;
-
-
-function fixClass
-  input Absyn.Class classin;
-  input String name;
-  input Integer index;
-  input Boolean singleton;
-  output Absyn.Class classout;
-algorithm
-  classout := match(classin,name,index,singleton)
-    local
-      Absyn.Ident n;
-      Boolean p;
-      Boolean f;
-      Boolean e;
-      Absyn.Restriction res;
-      Absyn.ClassDef b;
-      SourceInfo i;
-
-    case(Absyn.CLASS(n,p,f,e,res,b,i),_,_,_)
-      equation
-        res = fixRestriction(res,name,index,singleton);
-      then Absyn.CLASS(n,p,f,e,res,b,i);
-    else classin;
-  end match;
-end fixClass;
-
-
-function fixElementSpecification
-  input Absyn.ElementSpec specin;
-  input String name;
-  input Integer index;
-  input Boolean singleton;
-  output Absyn.ElementSpec specout;
-algorithm
-  specout := match(specin,name,index,singleton)
-    local
-      Boolean rep;
-      Absyn.Class c;
-    case(Absyn.CLASSDEF(rep,c),_,_,_)
-      equation
-        c = fixClass(c,name,index,singleton);
-      then Absyn.CLASSDEF(rep,c);
-    else specin;
-  end match;
-end fixElementSpecification;
-
-function fixElement
-  input Absyn.Element elementin;
-  input String name;
-  input Integer index;
-  input Boolean singleton;
-  output Absyn.Element elementout;
-
-algorithm
-  elementout := match(elementin,name,index,singleton)
-    local
-      Boolean f;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter i;
-      Absyn.ElementSpec spec;
-      SourceInfo inf;
-      Option<Absyn.ConstrainClass> con;
-    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, specification=spec, info=inf, constrainClass=con),_,_,_)
-      equation
-        spec = fixElementSpecification(spec,name,index,singleton);
-      then Absyn.ELEMENT(f,r,i,spec,inf,con);
-  end match;
-end fixElement;
-
-
-
-function fixElementItems
-  input list<Absyn.ElementItem> elementItemsin;
-  input String name;
-  input Integer index;
-  input Boolean singleton;
-  output list<Absyn.ElementItem> elementItemsout;
-algorithm
-  elementItemsout := match (elementItemsin,name,index,singleton)
-    local
-      Absyn.Element element;
-      Absyn.ElementItem elementitem;
-      list<Absyn.ElementItem> rest;
-    case({},_,_,_) then {};
-    case(Absyn.ELEMENTITEM(element)::rest,_,_,_)
-      equation
-        element = fixElement(element,name,index,singleton);
-        rest = fixElementItems(rest,name,index+1,singleton);
-      then (Absyn.ELEMENTITEM(element)::rest);
-    case (_::rest,_,_,_) then fixElementItems(rest,name,index,singleton);
-  end match;
+    else e;
+  end match for e in inElementItems);
 end fixElementItems;
 
-/* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^END^OF^HELPERFUNCTIONS^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
-
-public function constructorCallTypeToNamesAndTypes "Fetches the field names
-and types from a record call or metarecord call"
-  input DAE.Type inType;
-  output list<String> varNames;
-  output list<DAE.Type> outTypes;
-algorithm
-  (varNames,outTypes) := match (inType)
-    local
-      list<String> names;
-      list<DAE.Type> types;
-      list<DAE.FuncArg> fargs;
-      list<DAE.Var> fields;
-
-    case (DAE.T_METARECORD(fields = fields))
-      equation
-        names = List.map(fields, Types.getVarName);
-        types = List.map(fields, Types.getVarType);
-      then (names,types);
-
-    case (DAE.T_FUNCTION(funcArg = fargs,funcResultType = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))))
-      equation
-        names = List.map(fargs, Types.funcArgName);
-        types = List.map(fargs, Types.funcArgType);
-      then (names,types);
-  end match;
-end constructorCallTypeToNamesAndTypes;
-
 public function fixUniontype
-  input ClassInf.State st;
-  input Option<DAE.Type> t;
-  input SCode.ClassDef c;
+  input ClassInf.State inState;
+  input SCode.ClassDef inClassDef;
   output Option<DAE.Type> outType;
 algorithm
-  outType := matchcontinue (st,t,c)
+  outType := match (inState, inClassDef)
     local
-      list<SCode.Element> els;
-      list<String> slst;
-      list<Absyn.Path> paths;
-      Absyn.Path p;
       Boolean b;
+      Absyn.Path p;
+      list<Absyn.Path> paths;
+      list<String> names, singletonFields;
       DAE.TypeSource ts;
 
-    case (ClassInf.META_UNIONTYPE(p),_,SCode.PARTS(elementLst = els))
-      equation
-        p = Absyn.makeFullyQualified(p);
-        slst = getListOfStrings(els);
-        paths = List.map1r(slst, Absyn.pathReplaceIdent, p);
-        b = listLength(paths)==1;
-        ts = Types.mkTypeSource(SOME(p));
+    case (ClassInf.META_UNIONTYPE(), SCode.PARTS())
+      algorithm
+        p := Absyn.makeFullyQualified(inState.path);
+        names := SCode.elementNames(inClassDef.elementLst);
+        paths := list(Absyn.pathReplaceIdent(p, n) for n in names);
+        b := listLength(paths)==1;
+        if b then
+          singletonFields := SCode.componentNames(listGet(inClassDef.elementLst, 1));
+        else
+          singletonFields := {};
+        end if;
+        ts := Types.mkTypeSource(SOME(p));
       then
-        SOME(DAE.T_METAUNIONTYPE(paths,b,ts));
+        SOME(DAE.T_METAUNIONTYPE(paths,b,singletonFields,ts));
 
-    else t;
-  end matchcontinue;
+    else NONE();
+  end match;
 end fixUniontype;
 
-public function createLhsExp "function: createLhsExp"
+public function checkArrayType
+  "Checks that an array type is valid."
+  input DAE.Type inType;
+protected
+  DAE.Type el_ty;
+algorithm
+  el_ty := Types.arrayElementType(inType);
+  false := (not Types.isString(el_ty) and Types.isBoxedType(el_ty)) or
+    Flags.isSet(Flags.RML);
+end checkArrayType;
+
+public function transformArrayNodesToListNodes
   input list<Absyn.Exp> inList;
-  output Absyn.Exp outExp;
-algorithm
-  outExp := matchcontinue (inList)
-    local
-      list<Absyn.Exp> lst;
-      Absyn.Exp firstExp;
-    case (firstExp :: {}) then firstExp;
-    case (lst) then Absyn.TUPLE(lst);
-  end matchcontinue;
-end createLhsExp;
-
-public function onlyCrefExpressions "function: onlyCrefExpressions"
-  input list<Absyn.Exp> expList;
-  output Boolean boolVal;
-algorithm
-  boolVal :=
-  matchcontinue (expList)
-    local
-      list<Absyn.Exp> restList;
-    case ({}) then true;
-    case (Absyn.CREF(_) :: restList) then onlyCrefExpressions(restList);
-    else false;
-  end matchcontinue;
-end onlyCrefExpressions;
-
-public function isTupleExp
-  input Absyn.Exp inExp;
-  output Boolean b;
-algorithm
-  b := match (inExp)
-    case Absyn.TUPLE(_) then true;
-    else false;
-  end match;
-end isTupleExp;
-
-public function extractListFromTuple "author: KS
- Given an Absyn.Exp, this function will extract the list of expressions if the
- expression is a tuple, otherwise a list of length one is created"
-  input Absyn.Exp inExp;
-  input Integer numOfExps;
   output list<Absyn.Exp> outList;
 algorithm
-  outList :=
-  match (inExp,numOfExps)
-    local
-      list<Absyn.Exp> l;
-      Absyn.Exp exp;
-    case (Absyn.TUPLE(l),1) then {Absyn.TUPLE(l)};
-    case (Absyn.TUPLE(l),_) then l;
-    else {inExp};
-  end match;
-end extractListFromTuple;
-
-public function tryToConvertArrayToList
-"Convert an array, T[:], of a MetaModelica type into list (done by a different function).
-MetaModelica types can only be of array<T> type, not T[:].
-This is mainly to produce better error messages."
-  input DAE.Exp exp;
-  input DAE.Type ty;
-  output DAE.Exp outExp;
-  output DAE.Type outTy;
-algorithm
-  (outExp,outTy) := match (exp,ty)
-    local
-      DAE.Type flatType;
-    case (_,_)
-      equation
-        (flatType,_) = Types.flattenArrayType(ty);
-        false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or Flags.isSet(Flags.RML) "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
-      then (exp,ty);
-  end match;
-end tryToConvertArrayToList;
+  outList := list(match e
+    case Absyn.ARRAY({}) then Absyn.LIST({});
+    case Absyn.ARRAY()
+      then Absyn.LIST(transformArrayNodesToListNodes(e.arrayExp));
+    else e;
+  end match for e in inList);
+end transformArrayNodesToListNodes;
 
 annotation(__OpenModelica_Interface="frontend");
 end MetaUtil;

@@ -503,7 +503,7 @@ algorithm
     case (SCode.IMPORT(visibility=SCode.PROTECTED()),OPTIONS(stripProtectedImports=true)) then false;
     case (SCode.CLASS(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedClasses=true)) then false;
     case (SCode.COMPONENT(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedComponents=true)) then false;
-    case (SCode.CLASS(restriction=SCode.R_METARECORD()),OPTIONS(stripMetaRecords=true)) then false;
+    case (SCode.CLASS(restriction=SCode.R_METARECORD(moved = true)),OPTIONS(stripMetaRecords=true)) then false;
     else true;
   end match;
 end filterElement;

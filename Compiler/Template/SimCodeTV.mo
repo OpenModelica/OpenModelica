@@ -1873,6 +1873,7 @@ package DAE
     record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
       list<Absyn.Path> paths;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+      list<String> singletonFields "The field names of the singleton";
       TypeSource source;
     end T_METAUNIONTYPE;
 
@@ -2196,6 +2197,7 @@ uniontype Restriction
   record R_METARECORD "Metamodelica extension"
     Absyn.Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
+    Boolean moved;
   end R_METARECORD; /* added by x07simbj */
 
   record R_UNIONTYPE "Metamodelica extension"

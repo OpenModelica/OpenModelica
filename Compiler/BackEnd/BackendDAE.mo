@@ -126,8 +126,15 @@ uniontype Shared "Data shared for all equation-systems"
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
     SymbolicJacobians symjacs               "Symbolic Jacobians";
     ExtraInfo info "contains extra info that we send around like the model name";
+    PartitionsInfo partitionsInfo;
   end SHARED;
 end Shared;
+
+uniontype PartitionsInfo
+  record PARTITIONS_INFO
+    array<.DAE.ClockKind> clocks;
+  end PARTITIONS_INFO;
+end PartitionsInfo;
 
 uniontype ExtraInfo "extra information that we should send around with the DAE"
   record EXTRA_INFO "extra information that we should send around with the DAE"
@@ -536,7 +543,6 @@ uniontype EventInfo
     list<ZeroCrossing> sampleLst       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
-    array<.DAE.ClockKind> clocks;
   end EVENT_INFO;
 end EventInfo;
 

@@ -1459,7 +1459,7 @@ algorithm
 
     case (cache,_,"classAnnotationExists",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        b = Interactive.getNamedAnnotation(classpath, p, path, SOME(false), Util.isSome);
+        b = Interactive.getNamedAnnotation(classpath, p, path, SOME(false), isSome);
       then
         (cache,Values.BOOL(b),st);
 

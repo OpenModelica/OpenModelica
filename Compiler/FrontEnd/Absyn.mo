@@ -1029,6 +1029,7 @@ uniontype Restriction "These constructors each correspond to a different kind of
     Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
     Boolean singleton;
+    Boolean moved; // true if moved outside uniontype, otherwise false.
   end R_METARECORD;
   record R_UNKNOWN "Helper restriction" end R_UNKNOWN; /* added by simbj */
 end Restriction;

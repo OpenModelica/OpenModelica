@@ -1454,36 +1454,16 @@ protected
   // Fields EQSYSTEM:
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
   // Fields SHARED:
-  BackendDAE.Variables knownVars;
-  BackendDAE.Variables externalObjects;
-  BackendDAE.Variables aliasVars;
-  BackendDAE.EquationArray initialEqs;
   BackendDAE.EquationArray removedEqs;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.EventInfo eventInfo;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo info;
   // Fields of EQUATION_ARRAY
   Integer orderedSize, removedSize;
   Integer orderedNumberOfElement, removedNumberOfElement;
   Integer orderedArrSize, removedArrSize;
   array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) := inSyst;
-  BackendDAE.SHARED(knownVars, externalObjects, aliasVars, initialEqs, removedEqs, constraints,
-    classAttrs, cache, graph, functionTree, eventInfo, extObjClasses,backendDAEType, symjacs, info) := inShared;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := inSyst;
+  BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
 
   BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedArrSize, orderedEquOptArr) := orderedEqs;
   BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedArrSize, removedEquOptArr) := removedEqs;
@@ -1502,10 +1482,8 @@ algorithm
   // add output variables and (non-input) local variables to modes that declared them
   (_, modesOut) := Array.mapNoCopy_1(varOptArr, annotateModeOutLocal, modesOut);
 
-  // A lot of code bloat just for updating fields "orderedEqs" and "removedEqs" in "EQSYSTEM" and "SHARED" ...
-  outSyst := BackendDAE.EQSYSTEM(orderedVars, orderedEqsNew, m, mT, matching, stateSets, partitionKind);
-  outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars, initialEqs, removedEqsNew, constraints,
-    classAttrs, cache, graph, functionTree, eventInfo, extObjClasses,backendDAEType, symjacs, info);
+  outSyst := inSyst;
+  outShared := inShared;
 
 end annotateModes;
 
@@ -1905,7 +1883,7 @@ protected
   Boolean equal;
 algorithm
   rhsExp := Util.applyOption(inEq,BackendEquation.getEquationRHS);
-  //print("In getOptInner: rhsExp: "+ (if Util.isSome(rhsExp) then ExpressionDump.printExpStr(Util.getOption(rhsExp)) else "NONE()") + "\n");
+  //print("In getOptInner: rhsExp: "+ (if isSome(rhsExp) then ExpressionDump.printExpStr(Util.getOption(rhsExp)) else "NONE()") + "\n");
   outOptInner := match rhsExp
     local
       DAE.ComponentRef crefInner;
@@ -2488,37 +2466,21 @@ protected function wrapAddTimeEventHack "
 Author: BTH
 Just a workaround as long as no support of synchronous features."
   input list<BackendDAE.TimeEvent> timeEventsIn;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
 algorithm
-  oshared := match (timeEventsIn,shared)
+  outShared := match inShared
     local
-      list<BackendDAE.TimeEvent> timeEvents;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      list<BackendDAE.ZeroCrossing> zeroCrossingLst;
-      list<BackendDAE.ZeroCrossing> sampleLst;
-      list<BackendDAE.ZeroCrossing> relationsLst;
-      Integer numberMathEvents;
-      array<DAE.ClockKind> clocks;
+      BackendDAE.Shared shared;
       BackendDAE.EventInfo eventInfo;
-    case( _, BackendDAE.SHARED( eventInfo =
-              BackendDAE.EVENT_INFO (
-                  timeEvents = timeEvents, whenClauseLst = whenClauseLst,
-                  zeroCrossingLst = zeroCrossingLst, sampleLst = sampleLst,
-                  relationsLst = relationsLst, numberMathEvents = numberMathEvents,
-                  clocks = clocks ) ))
-      equation
-        timeEvents = listAppend(timeEvents,timeEventsIn);
-        eventInfo = BackendDAE.EVENT_INFO (
-                      timeEvents = timeEvents, whenClauseLst = whenClauseLst,
-                      zeroCrossingLst = zeroCrossingLst, sampleLst = sampleLst,
-                      relationsLst = relationsLst, numberMathEvents = numberMathEvents,
-                      clocks = clocks );
-      then BackendDAEUtil.setSharedEventInfo(shared, eventInfo);
+      list<BackendDAE.TimeEvent> timeEvents;
+    case shared as BackendDAE.SHARED(eventInfo=eventInfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents))
+      algorithm
+        eventInfo.timeEvents := listAppend(timeEvents, timeEventsIn);
+        shared.eventInfo := eventInfo;
+      then shared;
   end match;
 end wrapAddTimeEventHack;
-
-
 
 protected function wrapInWhenHack "
 Author: BTH

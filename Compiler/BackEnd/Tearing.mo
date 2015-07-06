@@ -86,15 +86,12 @@ end TearingMethod;
 public function tearingSystem "author: Frenkel TUD 2012-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-protected
-  Boolean update;
 algorithm
   outDAE := matchcontinue(inDAE)
     local
       String methodString;
       TearingMethod method;
       BackendDAE.BackendDAEType DAEtype;
-      BackendDAE.Shared shared;
 
     // if noTearing is selected, do nothing.
     case(_) equation
@@ -105,11 +102,9 @@ algorithm
     // get method function and traveres systems
     case(_) equation
       methodString = Config.getTearingMethod();
-      BackendDAE.DAE(shared=shared) = inDAE;
-      BackendDAE.SHARED(backendDAEType=DAEtype) = shared;
+      BackendDAE.SHARED(backendDAEType=DAEtype) = inDAE.shared;
       false = stringEqual(methodString, "shuffleTearing") and stringEq("simulation",BackendDump.printBackendDAEType2String(DAEtype));
       method = getTearingMethod(methodString);
-      BackendDAE.DAE() = inDAE;
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for ");
         BackendDump.printBackendDAEType(DAEtype);
@@ -3772,7 +3767,7 @@ protected function recursiveTearingMain
   output BackendDAE.BackendDAE outDAE;
   output Boolean update = false;
 protected
-  list<BackendDAE.EqSystem> systlst, systlst_new = {};
+  list<BackendDAE.EqSystem> systlst_new = {};
   BackendDAE.Shared shared;
   DAE.FunctionTree funcs;
   BackendDAE.Variables vars, knownVars;
@@ -3802,11 +3797,10 @@ protected
   Boolean maxSizeOne =  Flags.getConfigInt(Flags.RTEARING) == 1;
   list<DAE.Exp> loopT, noLoopT;
 algorithm
-
-  BackendDAE.DAE(systlst, shared) := inDAE;
-  BackendDAE.SHARED(functionTree = funcs, knownVars = knownVars) := shared;
+  shared := inDAE.shared;
+  BackendDAE.SHARED(functionTree=funcs, knownVars=knownVars) := shared;
   //BackendDump.bltdump("IN:", inDAE);
-  for syst in systlst loop
+  for syst in inDAE.eqs loop
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
     (_, mm, _) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.SPARSE(), SOME(funcs));
     tmp_update := false;

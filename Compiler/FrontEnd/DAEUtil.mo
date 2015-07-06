@@ -5137,7 +5137,7 @@ algorithm
           DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOpt2, connectEquationOptLst2, typeLst2, operations2, comment2))
       equation
         p = List.union(partOfLst1, partOfLst2);
-        i = if Util.isSome(instanceOpt1) then instanceOpt1 else instanceOpt2;
+        i = if isSome(instanceOpt1) then instanceOpt1 else instanceOpt2;
         c = List.union(connectEquationOptLst1, connectEquationOptLst2);
         t = List.union(typeLst1, typeLst2);
         o = listAppend(operations1, operations2);

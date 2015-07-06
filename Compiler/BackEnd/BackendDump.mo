@@ -267,7 +267,6 @@ protected
   BackendDAE.ExternalObjectClasses extObjClasses;
   BackendDAE.BackendDAEType backendDAEType;
   BackendDAE.SymbolicJacobians symjacs;
-  array<DAE.ClockKind> clocks;
 algorithm
   BackendDAE.SHARED(knownVars=knownVars,
                     externalObjects=externalObjects,
@@ -276,7 +275,7 @@ algorithm
                     removedEqs=removedEqs,
                     constraints=constraints,
                     eventInfo=BackendDAE.EVENT_INFO( timeEvents=timeEvents, relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst,
-                                                     sampleLst=sampleLst, whenClauseLst=whenClauseLst, clocks = clocks ),
+                                                     sampleLst=sampleLst, whenClauseLst=whenClauseLst ),
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := inShared;

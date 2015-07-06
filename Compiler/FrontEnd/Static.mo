@@ -685,6 +685,13 @@ algorithm
     c := Types.constAnd(c, step_c);
   end if;
 
+  if Types.isBoxedType(start_ty) then
+    (start_exp, start_ty) := Types.matchType(start_exp, start_ty, Types.unboxedType(start_ty), true);
+  end if;
+  if Types.isBoxedType(stop_ty) then
+    (stop_exp, stop_ty) := Types.matchType(stop_exp, stop_ty, Types.unboxedType(stop_ty), true);
+  end if;
+
   (start_exp, ostep_exp, stop_exp, ety) :=
     deoverloadRange(start_exp, start_ty, ostep_exp, ostep_ty, stop_exp, stop_ty, inInfo);
   (outCache, ty) := elabRangeType(outCache, inEnv, start_exp, ostep_exp,
@@ -718,7 +725,7 @@ algorithm
         (expl, DAE.PROP(ty, c)) := elabArray(expl, props, inPrefix, inInfo); // type-checking the array
         arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(listLength(expl))}, DAE.emptyTypeSource);
         exp := DAE.ARRAY(Types.simplifyType(arr_ty), not Types.isArray(ty), expl);
-        (exp, arr_ty) := MetaUtil.tryToConvertArrayToList(exp, arr_ty) "converts types that cannot be arrays in ot lists.";
+        MetaUtil.checkArrayType(ty);
         exp := elabMatrixToMatrixExp(exp);
       then
         (exp, DAE.PROP(arr_ty, c));
@@ -797,7 +804,7 @@ protected
   String exp_str, ty1_str, ty2_str;
 algorithm
   Absyn.CONS(e1, e2) := inExp;
-  {e1, e2} := MetaUtil.transformArrayNodesToListNodes({e1, e2}, {});
+  {e1, e2} := MetaUtil.transformArrayNodesToListNodes({e1, e2});
 
   // Elaborate both sides of the cons expression.
   (outCache, exp1, prop1) := elabExpInExpression(outCache, inEnv, e1,
@@ -1406,7 +1413,7 @@ algorithm
 
     // If we have a guard expression we don't determine the dimension, since the
     // number of elements depend on the guard.
-    if Util.isSome(guard_exp) then
+    if isSome(guard_exp) then
       outHasGuard := true;
       dim := DAE.DIM_UNKNOWN();
     end if;
@@ -1902,14 +1909,14 @@ algorithm
       algorithm
         (outCache, fnTypes) := Lookup.lookupFunctionsInEnv(inCache, inEnv, fn, info);
         (typeA,typeB,resType,defaultBinding,path) := checkReductionType1(inEnv, fn,fnTypes,info);
-        ty2 := if Util.isSome(defaultBinding) then typeB else inType;
+        ty2 := if isSome(defaultBinding) then typeB else inType;
         (exp,typeA,bindings) := Types.matchTypePolymorphicWithError(inExp, inType,typeA,SOME(path),{},info);
         (_,typeB,bindings) := Types.matchTypePolymorphicWithError(DAE.CREF(DAE.CREF_IDENT("$result",DAE.T_ANYTYPE_DEFAULT,{}),DAE.T_ANYTYPE_DEFAULT),ty2,typeB,SOME(path),bindings,info);
         bindings := Types.solvePolymorphicBindings(bindings, info, {path});
         typeA := Types.fixPolymorphicRestype(typeA, bindings, info);
         typeB := Types.fixPolymorphicRestype(typeB, bindings, info);
         resType := Types.fixPolymorphicRestype(resType, bindings, info);
-        (exp,ty) := checkReductionType2(exp, inType,typeA,typeB,resType,Types.equivtypes(typeA,typeB) or Util.isSome(defaultBinding),Types.equivtypes(typeB,resType),info);
+        (exp,ty) := checkReductionType2(exp, inType,typeA,typeB,resType,Types.equivtypes(typeA,typeB) or isSome(defaultBinding),Types.equivtypes(typeB,resType),info);
         (outCache, Util.SUCCESS()) := instantiateDaeFunction(outCache, inEnv, path, false, NONE(), true);
         Error.assertionOrAddSourceMessage(Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.EXPERIMENTAL_REDUCTIONS), Error.COMPILER_NOTIFICATION, {"Custom reduction functions are an OpenModelica extension to the Modelica Specification. Do not use them if you need your model to compile using other tools or if you are concerned about using experimental features. Use +d=experimentalReductions to disable this message."}, info);
       then
@@ -8058,7 +8065,7 @@ protected function instantiateDaeFunction2
   output Util.Status status;
 protected
   Integer numError = Error.getNumErrorMessages();
-  Boolean instOnlyForcedFunctions = Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions));
+  Boolean instOnlyForcedFunctions = isSome(getGlobalRoot(Global.instOnlyForcedFunctions));
 algorithm
   (outCache,status) := matchcontinue(builtin, clOpt, instOnlyForcedFunctions, forceFunctionInst)
     local
@@ -10958,7 +10965,7 @@ algorithm
         genWarning = Types.isFixedWithNoBinding(tt, SCode.PARAM());
         s = ComponentReference.printComponentRefStr(cr);
         genWarning = not (boolNot(genWarning) or
-                          Util.isSome(forIteratorConstOpt) or
+                          isSome(forIteratorConstOpt) or
                           Flags.getConfigBool(Flags.CHECK_MODEL));
         pre_str = PrefixUtil.printPrefixStr2(pre);
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
