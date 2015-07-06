@@ -2228,6 +2228,7 @@ algorithm
       then
         tp;
     case (DAE.TSUB(ty = tp)) then tp;
+    case DAE.RSUB() then inExp.ty;
     case (DAE.CODE(ty = tp)) then tp;
       /* array reduction with known size */
     case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=e,guardExp=NONE())},reductionInfo=DAE.REDUCTIONINFO(exprType=ty as DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
@@ -4952,6 +4953,15 @@ algorithm
       (e, ext_arg) = inFunc(e, ext_arg);
     then (e, ext_arg);
 
+    case e1 as DAE.RSUB()
+      algorithm
+        (e1_1, ext_arg) := traverseExpBottomUp(e1.exp, inFunc, inExtArg);
+        if not referenceEq(e1.exp, e1_1) then
+          e1.exp := e1_1;
+        end if;
+        (e1, ext_arg) := inFunc(e1, ext_arg);
+      then (e1, ext_arg);
+
     case DAE.SIZE(exp=e1, sz=NONE()) equation
       (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
       e = if referenceEq(e1, e1_1) then inExp else DAE.SIZE(e1_1, NONE());
@@ -5492,6 +5502,14 @@ algorithm
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
       then (DAE.TSUB(e1_1,i,tp),ext_arg_1);
 
+    case (_,e1 as DAE.RSUB(),rel,ext_arg)
+      algorithm
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1.exp, rel, ext_arg);
+        if not referenceEq(e1.exp, e1_1) then
+          e1.exp := e1_1;
+        end if;
+      then (e1,ext_arg_1);
+
     case (_,(DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
       equation
         (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
@@ -5572,7 +5590,7 @@ algorithm
     else
       equation
         str = ExpressionDump.printExpStr(inExp);
-        str = "Expression.traverseExpTopDown1 not implemented correctly: " + str;
+        str = getInstanceName() + " or " + System.dladdr(func) + "not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;

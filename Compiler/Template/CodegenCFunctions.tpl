@@ -2398,13 +2398,16 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
     <<
     <%preExp%>
     >>
-  case STMT_ASSIGN(exp1=CREF(componentRef=cr as CREF_QUAL(identType=T_METATYPE(ty=t1 as T_METARECORD(__)), componentRef=cr2 as CREF_IDENT(__)),ty=t2)) then
+  case STMT_ASSIGN(exp1=RSUB(exp=explhs as CREF(ty=t1 as T_METARECORD(__)), fieldName=fieldName))
+  case STMT_ASSIGN(exp1=RSUB(exp=explhs as CREF(ty=t1 as T_METAUNIONTYPE(__)), fieldName=fieldName))
+  case STMT_ASSIGN(exp1=explhs as CREF(componentRef=CREF_QUAL(identType=T_METATYPE(ty=t1 as T_METAUNIONTYPE(__)), componentRef=cr2 as CREF_IDENT(ident=fieldName)), ty=t2))
+  case STMT_ASSIGN(exp1=explhs as CREF(componentRef=CREF_QUAL(identType=T_METATYPE(ty=t1 as T_METARECORD(__)), componentRef=cr2 as CREF_IDENT(ident=fieldName)),ty=t2)) then
     let &preExp = buffer ""
     let tmp = tempDecl("modelica_metatype",&varDecls)
-    let varPart = '_<%cr.ident%>' // So it only works in function context?
+    let varPart = daeExp(explhs, context, &preExp, &varDecls, &auxFunction)
     let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-    let indexInRecord = intAdd(1, lookupIndexInMetaRecord(t1.fields, cr2.ident))
-    let len = intAdd(2, listLength(t1.fields))
+    let indexInRecord = intAdd(1, lookupIndexInMetaRecord(getMetaRecordFields(t1), fieldName))
+    let len = intAdd(2, listLength(getMetaRecordFields(t1)))
     <<
     <%preExp%>
     <%tmp%> = MMC_TAGPTR(mmc_alloc_words(<%len%>));
@@ -2412,20 +2415,10 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
     ((modelica_metatype*)MMC_UNTAGPTR(<%tmp%>))[<%indexInRecord%>] = <%expPart%>;
     <%varPart%> = <%tmp%>;
     >>
-  case STMT_ASSIGN(exp1=CREF(componentRef=cr as CREF_QUAL(identType=T_METATYPE(ty=t1 as T_METAUNIONTYPE(__)), componentRef=cr2 as CREF_IDENT(__)),ty=t2)) then
-    let &preExp = buffer ""
-    let tmp = tempDecl("modelica_metatype",&varDecls)
-    let varPart = '_<%cr.ident%>' // So it only works in function context?
-    let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-    let indexInRecord = intAdd(1, position(cr2.ident, t1.singletonFields))
-    let len = intAdd(2, listLength(t1.singletonFields))
-    <<
-    <%preExp%>
-    <%tmp%> = MMC_TAGPTR(mmc_alloc_words(<%len%>));
-    memcpy(MMC_UNTAGPTR(<%tmp%>), MMC_UNTAGPTR(<%varPart%>), <%len%>*sizeof(modelica_metatype));
-    ((modelica_metatype*)MMC_UNTAGPTR(<%tmp%>))[<%indexInRecord%>] = <%expPart%>;
-    <%varPart%> = <%tmp%>;
-    >>
+
+  case STMT_ASSIGN(exp1=RSUB(__)) then
+    error(sourceInfo(), 'Code generation not implemented for lhs assignment <%printExpStr(exp1)%>')
+
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_FUNC(__))) then
     let &preExp = buffer ""
@@ -2672,7 +2665,7 @@ match stmt
     let call = daeExpCallTuple(exp, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
     let callassign = algStmtAssignWithRhsExpStr(firstexp, call, context, &preExp, &postExp, &varDecls, &auxFunction)
     <<
-    /* tuple assignment <%expExpLst |> e => Util.escapeModelicaStringToCString(printExpStr(e)) ; separator=", "%>*/
+    /* tuple assignment <%expExpLst |> e => escapeCComments(printExpStr(e)) ; separator=", "%>*/
     <%preExp%>
     <%callassign%>
     <%postExp%>
@@ -2990,6 +2983,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
     <% match type
     case "modelica_metatype" then
       (match typeof(exp)
+      case T_METAARRAY(__)
       case T_METATYPE(ty=T_METAARRAY(__)) then
         let tmp = tempDecl("modelica_integer",&varDecls)
         let len = tempDecl("modelica_integer",&varDecls)
@@ -3000,6 +2994,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
           <%body%>
         }
         >>
+      case T_METALIST(__)
       case T_METATYPE(ty=T_METALIST(__)) then
         <<
         for (<%tvar%> = <%evar%>; !listEmpty(<%tvar%>); <%tvar%>=listRest(<%tvar%>))
@@ -3616,6 +3611,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case META_OPTION(__)
   case MATCHEXPRESSION(__)
   case METARECORDCALL(__)
+  case RSUB(__)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
@@ -4153,6 +4149,7 @@ end getTempDeclMatchOutputName;
   case e as CAST(__)            then daeExpCast(e, context, &preExp, &varDecls, &auxFunction)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp, &varDecls, &auxFunction)
   case e as TSUB(__)            then daeExpTsub(e, context, &preExp, &varDecls, &auxFunction)
+  case e as RSUB(__)            then daeExpRsub(e, context, &preExp, &varDecls, &auxFunction)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp, &varDecls, &auxFunction)
   case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp, &varDecls, &auxFunction)
   case e as TUPLE(__)           then daeExpTuple(e, context, &preExp, &varDecls, &auxFunction)
@@ -4386,11 +4383,9 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
     'boxvar_<%crefFunctionName(cr)%>'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) _<%crefStr(cr)%>)'
+  case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METAUNIONTYPE(__)), componentRef=cri as CREF_IDENT(__)))
   case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METARECORD(__)), componentRef=cri as CREF_IDENT(__))) then
-    let offset = intAdd(findVarIndex(cri.ident,ty.fields),2) // 0-based
-    '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
-  case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METAUNIONTYPE(__)), componentRef=cri as CREF_IDENT(__))) then
-    let offset = intAdd(position(cri.ident,ty.singletonFields),1) // 1-based
+    let offset = intAdd(findVarIndex(cri.ident,getMetaRecordFields(ty)),2) // 0-based
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
   else
     match context
@@ -5898,6 +5893,19 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
   case TSUB(__) then
     error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
 end daeExpTsub;
+
+template daeExpRsub(Exp inExp, Context context, Text &preExp,
+                    Text &varDecls, Text &auxFunction)
+ "Generates code for an tsub expression."
+::=
+  match inExp
+  case RSUB(__) then
+    let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let offset = intAdd(ix,1) // 1-based
+    '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%res%>), <%offset%>)))'
+  case RSUB(__) then
+    error(sourceInfo(), '<%printExpStr(inExp)%>: failed')
+end daeExpRsub;
 
 template daeExpAsub(Exp inExp, Context context, Text &preExp,
                     Text &varDecls, Text &auxFunction)

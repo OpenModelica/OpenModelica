@@ -2747,23 +2747,18 @@ algorithm
         // componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
 
         (attr,ty,binding,cnstForRange,componentEnv,name) := match tyParent
-          case DAE.T_METARECORD(fields=fields)
+          case DAE.T_METAARRAY()
             algorithm
-              {} := ss;
-              DAE.CREF_IDENT(ident=id2,subscriptLst={}) := ids;
-              DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(id2,fields)+1);
+              true := listLength(Types.getDimensions(tyParent)) == listLength(ss);
+              (cache,attr,ty,binding,cnstForRange,name) := lookupVarFMetaModelica(cache, componentEnv, ids, Types.metaArrayElementType(tyParent));
               splicedExpData := InstTypes.SPLICEDEXPDATA(NONE(),ty);
             then (attr,ty,binding,cnstForRange,componentEnv,name);
-          case DAE.T_METAUNIONTYPE(knownSingleton=true, paths={p})
+          case _ guard Types.isBoxedType(tyParent) and not Types.isUnknownType(tyParent)
             algorithm
               {} := ss;
-              DAE.CREF_IDENT(ident=id2,subscriptLst={}) := ids;
-              (cache, DAE.T_METARECORD(fields=fields), _) := lookupType(cache, componentEnv, p, NONE());
-              DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(id2,fields)+1);
+              (cache,attr,ty,binding,cnstForRange,name) := lookupVarFMetaModelica(cache, componentEnv, ids, tyParent);
               splicedExpData := InstTypes.SPLICEDEXPDATA(NONE(),ty);
             then (attr,ty,binding,cnstForRange,componentEnv,name);
-          case DAE.T_METAUNIONTYPE()
-            then fail();
           else
             algorithm
               (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) := lookupVar(cache, componentEnv, ids);
@@ -2793,6 +2788,49 @@ algorithm
 
   end match;
 end lookupVarF;
+
+protected function lookupVarFMetaModelica
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input DAE.ComponentRef cr;
+  input DAE.Type inType;
+  output FCore.Cache cache = inCache;
+  output DAE.Attributes attr;
+  output DAE.Type ty;
+  output DAE.Binding binding;
+  output Option<DAE.Const> cnstForRange;
+  output String name;
+algorithm
+  (attr,ty,binding,cnstForRange,name) := match cr
+    local
+      list<DAE.Var> fields;
+      Absyn.Path p;
+      DAE.Type tt;
+    case DAE.CREF_IDENT()
+      algorithm
+        fields := Types.getMetaRecordFields(inType);
+        DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(cr.ident,fields)+1);
+        for s in cr.subscriptLst loop
+          ty := match ty
+            case DAE.T_METAARRAY() then ty.ty;
+          end match;
+        end for;
+        ty := Types.getMetaRecordIfSingleton(ty);
+      then (attr,ty,binding,cnstForRange,name);
+    case DAE.CREF_QUAL()
+      algorithm
+        fields := Types.getMetaRecordFields(inType);
+        DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(cr.ident,fields)+1);
+        for s in cr.subscriptLst loop
+          ty := match ty
+            case DAE.T_METAARRAY() then ty.ty;
+          end match;
+        end for;
+        ty := Types.getMetaRecordIfSingleton(ty);
+        (cache,attr,ty,binding,cnstForRange,name) := lookupVarFMetaModelica(cache, inEnv, cr.componentRef, ty);
+      then (attr,ty,binding,cnstForRange,name);
+  end match;
+end lookupVarFMetaModelica;
 
 protected function lookupBinding
 "@author: adrpo
@@ -3048,7 +3086,7 @@ algorithm
 end sliceDimensionType;
 
 
-protected function buildMetaRecordType "common function when looking up the type of a metarecord"
+public function buildMetaRecordType "common function when looking up the type of a metarecord"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input SCode.Element cdef;

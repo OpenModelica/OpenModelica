@@ -1364,6 +1364,12 @@ package DAE
       Integer ix;
       Type ty;
     end TSUB;
+    record RSUB
+      Exp exp;
+      Integer ix;
+      String fieldName;
+      Type ty;
+    end RSUB;
     record SIZE
       Exp exp;
       Option<Exp> sz;
@@ -1873,7 +1879,6 @@ package DAE
     record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
       list<Absyn.Path> paths;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-      list<String> singletonFields "The field names of the singleton";
       TypeSource source;
     end T_METAUNIONTYPE;
 
@@ -3189,6 +3194,10 @@ package Types
     input DAE.Type ty;
     output Boolean b;
   end isArrayWithUnknownDimension;
+  function getMetaRecordFields
+    input DAE.Type ty;
+    output list<DAE.Var> fields;
+  end getMetaRecordFields;
 end Types;
 
 package HashTableCrIListArray
