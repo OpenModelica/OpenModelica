@@ -55,7 +55,8 @@ DEPENDENCIES = \
 *.json \
 Makefile \
 ReferenceFiles \
-ReferenceGraphs
+ReferenceGraphs \
+fmu
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

@@ -1,4 +1,4 @@
-// name:     CoupledClutches_HPCOM_FMI_1_0_CPP
+// name:     CoupledClutches_HPCOM_FMI_1_0_CPP_HPCOM
 // keywords: CoupledClutches FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml CoupledClutches.fmu CoupledClutches_me_FMU.mo CoupledClutches.lib* CoupledClutches.so CoupledClutches.dll CoupledClutches_*.c CoupledClutches_*.h CoupledClutches_*.o CoupledClutches_*.json
@@ -11,6 +11,7 @@ loadFile("CoupledClutches.mo"); getErrorString();
 translateModelFMU(CoupledClutches); getErrorString();
 
 //importFMU("CoupledClutches.fmu", "<default>", 6); getErrorString();
+//importFMU("CoupledClutches.fmu"); getErrorString();
 //loadFile("CoupledClutches_me_FMU.mo"); getErrorString();
 //simulate(CoupledClutches_me_FMU, numberOfIntervals=150, variableFilter="J1_w1|J2_w1|J3_w1|J4_w1"); getErrorString();
 
@@ -20,6 +21,8 @@ translateModelFMU(CoupledClutches); getErrorString();
 //val(J4_w1, 1);
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true
