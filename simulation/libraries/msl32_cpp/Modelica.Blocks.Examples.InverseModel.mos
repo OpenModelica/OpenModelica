@@ -29,7 +29,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Blocks.Examples.InverseModel
 // {"firstOrder1.y","firstOrder2.y","feedback.y"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Blocks.Examples.InverseModel.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.InverseModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

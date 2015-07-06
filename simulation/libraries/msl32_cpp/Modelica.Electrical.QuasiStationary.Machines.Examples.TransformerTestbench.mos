@@ -29,7 +29,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
 // {"source.plug_p.reference.gamma","source.voltageSource[2].pin_p.reference.gamma","source.voltageSource[3].pin_p.reference.gamma"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

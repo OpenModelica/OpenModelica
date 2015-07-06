@@ -28,7 +28,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField
 // {"rev.phi","rev.w"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField.mat\"
 // "
 // ""
 // Frontend failed

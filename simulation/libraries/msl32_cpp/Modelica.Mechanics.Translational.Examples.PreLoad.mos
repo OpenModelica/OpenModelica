@@ -32,7 +32,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.Translational.Examples.PreLoad
 // {"friction.v_rel","innerContactA.s_rel","innerContactB.s_rel","outerContactA.v_rel","outerContactB.s_rel","outerContactB.v_rel"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Mechanics.Translational.Examples.PreLoad.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.PreLoad', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

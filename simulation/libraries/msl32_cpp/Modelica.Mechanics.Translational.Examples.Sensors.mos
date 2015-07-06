@@ -34,7 +34,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.Translational.Examples.Sensors
 // {"forceSensor.f","accSensor1.a","speedSensor1.v","positionSensor1.s","positionSensor2.s","mass.s","mass.v","mass.a"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Mechanics.Translational.Examples.Sensors.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Sensors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

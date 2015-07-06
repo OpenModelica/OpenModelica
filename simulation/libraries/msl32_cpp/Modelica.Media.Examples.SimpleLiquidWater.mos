@@ -27,7 +27,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Media.Examples.SimpleLiquidWater
 // {"U"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Media.Examples.SimpleLiquidWater.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.SimpleLiquidWater', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

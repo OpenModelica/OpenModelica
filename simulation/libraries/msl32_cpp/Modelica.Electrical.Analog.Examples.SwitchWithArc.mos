@@ -28,7 +28,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Analog.Examples.SwitchWithArc
 // {"inductor1.i","inductor2.i"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Electrical.Analog.Examples.SwitchWithArc.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 8000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.SwitchWithArc', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

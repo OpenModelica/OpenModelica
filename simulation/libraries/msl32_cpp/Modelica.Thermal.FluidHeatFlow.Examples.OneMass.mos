@@ -28,7 +28,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Thermal.FluidHeatFlow.Examples.OneMass
 // {"pipe.T","heatCapacitor.T"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Thermal.FluidHeatFlow.Examples.OneMass.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.OneMass', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

@@ -32,7 +32,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Media.Examples.TestOnly.MixIdealGasAir
 // {"medium.p","medium.T","medium2.p","medium2.T","medium2.X[1]","medium2.X[2]"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Media.Examples.TestOnly.MixIdealGasAir.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TestOnly.MixIdealGasAir', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

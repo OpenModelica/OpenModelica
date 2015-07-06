@@ -33,7 +33,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Digital.Examples.DLATREGSRH
 // {"set.y","data_1.y","data_0.y","enable.y","reset.y","dLATREGSRH.dataOut[1]","dLATREGSRH.dataOut[2]"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Electrical.Digital.Examples.DLATREGSRH.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.DLATREGSRH', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
