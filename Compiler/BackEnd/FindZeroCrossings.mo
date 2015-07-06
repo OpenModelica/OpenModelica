@@ -59,33 +59,6 @@ protected import List;
 protected import Util;
 
 // =============================================================================
-// section for some public util functions
-//
-// =============================================================================
-
-public function getZeroCrossings
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=outZeroCrossingList))) := inBackendDAE;
-end getZeroCrossings;
-
-public function getRelations
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(relationsLst=outZeroCrossingList))) := inBackendDAE;
-end getRelations;
-
-public function getSamples "deprecated - use EVENT_INFO.timeEvents instead"
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLst=outZeroCrossingList))) := inBackendDAE;
-end getSamples;
-
-
-// =============================================================================
 // section for preOptModule >>encapsulateWhenConditions<<
 //
 // This module encapsulates each when-condition in a boolean-variable
