@@ -315,7 +315,7 @@ void Cvode::initialize()
 void Cvode::solve(const SOLVERCALL action)
 {
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
 
   #ifdef RUNTIME_PROFILING
   MEASURETIME_REGION_DEFINE(cvodeSolveFunctionHandler, "solve");
@@ -455,7 +455,7 @@ void Cvode::CVodeCore()
     throw ModelicaSimulationError(SOLVER,"CVode::ReInit");
 
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
 
   while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {

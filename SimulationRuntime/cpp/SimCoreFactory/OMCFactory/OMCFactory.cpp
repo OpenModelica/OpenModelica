@@ -55,28 +55,26 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
-     std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", OF_CSV)("mat", OF_MAT)("buffer", OF_BUFFER)("empty", OF_EMPTY);
-     std::map<std::string,LogCategory> logCatMap = map_list_of("init", LC_INIT)("nls", LC_NLS)("ls",LC_LS)("solv", LC_SOLV)("output", LC_OUT)("event",LC_EVT)("modell",LC_MOD)("other",LC_OTHER);
+     std::map<std::string,LogCategory> logCatMap = map_list_of("init", LC_INIT)("nls", LC_NLS)("ls",LC_LS)("solv", LC_SOLV)("output", LC_OUT)("event",LC_EVT)("model",LC_MOD)("other",LC_OTHER);
      std::map<std::string,LogLevel> logLvlMap = map_list_of("error", LL_ERROR)("warning", LL_WARNING)("info", LL_INFO)("debug", LL_DEBUG);
      std::map<std::string,OutputPointType> outputPointTypeMap = map_list_of("all", OPT_ALL)("step", OPT_STEP)("empty", OPT_EMPTY);
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
-          ("emit_protected", "emits protected variables to the result file")
+          //("emit_protected", "emits protected variables to the result file")
           ("runtime-library,r", po::value<string>(),"path to cpp runtime libraries")
           ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
           ("results-file,R", po::value<string>(),"name of results file")
-          ("config-path,c", po::value< string >(),  "path to xml files")
+          //("config-path,c", po::value< string >(),  "path to xml files")
           ("start-time,s", po::value< double >()->default_value(0.0),  "simulation start time")
           ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
           ("step-size,f", po::value< double >()->default_value(0.0),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
           ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver),  "linear solver method")
           ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
-          ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,mat,empty]")
           ("number-of-intervals,v", po::value< int >()->default_value(500),  "number of intervals")
           ("tolerance,y", po::value< double >()->default_value(1e-6),  "solver tolerance")
-          ("log-settings,l", po::value< std::vector<std::string> >(),  "log information: init, nls, ls, solv, output, event, modell, other")
+          ("log-settings,l", po::value< std::vector<std::string> >(),  "log information: init, nls, ls, solv, output, event, model, other")
           ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("OMEdit", po::value<vector<string> >(), "OMEdit options")
@@ -107,9 +105,11 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      string modelica_lib_path;
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
-   double stepsize =vm["step-size"].as<double>();
-   if (!(stepsize > 0.0))
-    stepsize =  stoptime/vm["number-of-intervals"].as<int>();
+     double stepsize =vm["step-size"].as<double>();
+
+     if (!(stepsize > 0.0))
+       stepsize =  stoptime/vm["number-of-intervals"].as<int>();
+
      double tolerance =vm["tolerance"].as<double>();
      string solver =  vm["solver"].as<string>();
      string nonLinSolver =  vm["non-lin-solver"].as<string>();
@@ -149,23 +149,6 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      {
           throw ModelicaSimulationError(MODEL_FACTORY,"results-filename is not set");
 
-     }
-     string outputFormat_str;
-     OutputFormat outputFomat;
-     if (vm.count("OutputFormat"))
-     {
-          //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
-          outputFormat_str = vm["OutputFormat"].as<string>();
-          outputFomat = outputFormatMap[outputFormat_str];
-          if(!((outputFomat==OF_CSV) || (outputFomat==OF_EMPTY) || (outputFomat==OF_BUFFER) || (outputFomat==OF_MAT)))
-          {
-            std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" or  outputFormat=\"empty\" or  outputFormat=\"matlab\"in simulate command ";
-            throw ModelicaSimulationError(MODEL_FACTORY,eception_msg.c_str());
-          }
-     }
-     else
-     {
-          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename  is not set");
      }
 
      string outputPointType_str;
@@ -207,13 +190,6 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
      }
 
-     /*fs::path results_file_path = fs::path( resultsfilename) ;
-    if(!(results_file_path.extension().string() == ".csv"))
-    {
-            std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
-          throw ModelicaSimulationError(MODEL_FACTORY,eception_msg.c_str();
-
-    }*/
      fs::path libraries_path = fs::path( runtime_lib_path) ;
 
      fs::path modelica_path = fs::path( modelica_lib_path) ;
@@ -223,7 +199,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
 
 
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,outputFomat,time_out,outputPointType,logSet};
+     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,time_out,outputPointType,logSet};
 
 
      _library_path = libraries_path;
@@ -247,7 +223,7 @@ std::vector<const char *> OMCFactory::modifyArguments(int argc, const char* argv
       else if (strncmp(argv[i], "-override=", 10) == 0) {
           std::map<std::string, std::string> supported = map_list_of
               ("startTime", "-s")("stopTime", "-e")("stepSize", "-f")
-              ("tolerance", "-y")("solver", "-i")("outputFormat", "-o");
+              ("tolerance", "-y")("solver", "-i");
           std::vector<std::string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {

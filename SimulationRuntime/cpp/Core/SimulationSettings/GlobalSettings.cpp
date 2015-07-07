@@ -19,7 +19,6 @@ GlobalSettings::GlobalSettings()
   , _selected_nonlin_solver("Newton")
   , _resultsfile_name("results.csv")
   , _endless_sim(false)
-  , _outputFormat(OF_EMPTY)
   , _outputPointType(OPT_ALL)
   , _alarm_time(0)
 {
@@ -70,16 +69,6 @@ bool GlobalSettings::useEndlessSim()
 void GlobalSettings::useEndlessSim(bool endles)
 {
   _endless_sim = endles;
-}
-
-OutputFormat GlobalSettings::getOutputFormat()
-{
-  return _outputFormat;
-}
-
-void GlobalSettings::setOutputFormat(OutputFormat format)
-{
-  _outputFormat = format;
 }
 
 OutputPointType GlobalSettings::getOutputPointType()
