@@ -21,6 +21,5 @@ simulate(ParameterCycle); getErrorString();
 //          var1:PARAM(start = 0.1 )  = if bool then var0 else var0 / var2 .ParameterCycle, .Real type: Real []
 //          var2:PARAM(start = 0.1 )  = if bool then var0 / var1 else var0 .ParameterCycle, .Real type: Real []
 // Error: No system for the symbolic initialization was generated
-// [SimCode/SimCodeUtil.mo:476:7-476:148:writable] Error: Internal error function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]
 // "
 // endResult
