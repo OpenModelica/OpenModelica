@@ -115,6 +115,7 @@ algorithm
 
   if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
     BackendDump.dumpEqSystems(systs, "base-clock partitioning");
+    BackendDump.dumpClocks(baseClocks, "Base clocks");
   end if;
 end clockPartitioning1;
 
