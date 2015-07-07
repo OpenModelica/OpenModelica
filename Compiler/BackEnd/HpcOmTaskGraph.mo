@@ -5004,12 +5004,12 @@ algorithm
         if intNe(listLength(sortedSystComps),listLength(sortedGraphComps)) then print("the graph and the system have a difference number of components.\n"); end if;
         isEqual := true;
         while isEqual and not listEmpty(sortedGraphComps) loop
-          tpl1::sortedGraphComps := sortedGraphComps;         
-          tpl2::sortedSystComps := sortedSystComps;          
-          (comp1,i1) := tpl1;          
+          tpl1::sortedGraphComps := sortedGraphComps;
+          tpl2::sortedSystComps := sortedSystComps;
+          (comp1,i1) := tpl1;
           (comp2,i2) := tpl2;
           if BackendDAEUtil.componentsEqual(comp1,comp2) and intEq(i1,i2) then isEqual:= true;
-          else 
+          else
             isEqual := false;
             print("comp"+intString(i1)+BackendDump.printComponent(comp1)+" is not equal to "+"comp"+intString(i2)+BackendDump.printComponent(comp2)+"\n");
           end if;

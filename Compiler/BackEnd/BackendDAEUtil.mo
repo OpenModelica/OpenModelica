@@ -8245,27 +8245,27 @@ algorithm
   case(BackendDAE.SINGLEEQUATION(eqn=i1,var=i2),BackendDAE.SINGLEEQUATION(eqn=j1,var=j2))
     equation
   then intEq(i1,j1) and intEq(i2,j2);
-    
+
   case(BackendDAE.EQUATIONSYSTEM(eqns=l1,vars=l2),BackendDAE.EQUATIONSYSTEM(eqns=k1,vars=k2))
     equation
   then List.isEqualOnTrue(l1,k1,intEq) and List.isEqualOnTrue(l2,k2,intEq);
-    
+
   case(BackendDAE.SINGLEARRAY(eqn=i1,vars=l1),BackendDAE.SINGLEARRAY(eqn=j1,vars=k1))
     equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
-    
+
   case(BackendDAE.SINGLEALGORITHM(eqn=i1,vars=l1),BackendDAE.SINGLEALGORITHM(eqn=j1,vars=k1))
     equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
-    
+
   case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLECOMPLEXEQUATION(eqn=j1,vars=k1))
     equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
-    
+
   case(BackendDAE.SINGLEWHENEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEWHENEQUATION(eqn=j1,vars=k1))
     equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
-    
+
   case(BackendDAE.SINGLEIFEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEIFEQUATION(eqn=j1,vars=k1))
     equation
   then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
@@ -8290,7 +8290,7 @@ algorithm
   case((i1,l1),(i2,l2))
     equation
   then intEq(i1,i2) and List.isEqualOnTrue(l1,l2,intEq);
-    
+
   else
     then false;
   end matchcontinue;
