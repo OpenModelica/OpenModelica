@@ -27,7 +27,7 @@ using std::string;
 
 enum LogCategory {LC_INIT = 0, LC_NLS = 1, LC_LS = 2, LC_SOLV = 3, LC_OUT = 4, LC_EVT = 5, LC_OTHER = 6, LC_MOD = 7};
 enum LogLevel {LL_ERROR = 0, LL_WARNING = 1, LL_INFO = 2, LL_DEBUG = 3};
-enum OutputPointType {OPT_ALL, OPT_STEP, OPT_EMPTY};
+enum OutputPointType {OPT_ALL, OPT_STEP, OPT_NONE};
 
 struct LogSettings
 {

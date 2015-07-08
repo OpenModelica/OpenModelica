@@ -732,10 +732,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize()
    {
-      _historyImpl->init();
-
-
-      _historyImpl->clear();
+      if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
+      {
+        _historyImpl->init();
+        _historyImpl->clear();
+      }
    }
    <%writeoutput(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
    >>
@@ -1460,6 +1461,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
     let moLib     =  makefileParams.compileDir
     let home      = makefileParams.omhome
     let execParameters = '-s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
+    let outputParameter = if (stringEq(settings.outputFormat, "empty")) then "-O none" else ""
     let fileNamePrefixx = fileNamePrefix
 
     let libFolder =simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
@@ -1471,7 +1473,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
         <<
         #!/bin/sh
         <%preRunCommandLinux%>
-        <%execCommandLinux%> ./<%fileNamePrefixx%> <%execParameters%> $*
+        <%execCommandLinux%> ./<%fileNamePrefixx%> <%execParameters%> <%outputParameter%> $*
         >>
       case  "win32"
       case  "win64" then
@@ -1480,7 +1482,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
         <%preRunCommandWindows%>
         REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
-        <%moLib%>/<%fileNamePrefixx%>.exe <%execParameters%>
+        <%moLib%>/<%fileNamePrefixx%>.exe <%execParameters%> <%outputParameter%>
         >>
     end match
   end match
@@ -1929,7 +1931,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-r"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-m"] = "<%moLib%>";
       opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
-
+      <%if (stringEq(settings.outputFormat, "empty")) then 'opts["-O"] = "none";' else ""%>
       <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
@@ -5909,41 +5911,41 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       writeDerivativeVarsResultNames(varsnames);
 
       <%
-      match   settings.outputFormat case "mat"
-      then
-      <<
-      writeParametertNames(paramnames);
-      writeIntParameterNames(paramnames);
-      writeBoolParameterNames(paramnames);
-      writeAlgVarsResultDescription(vardescs);
-      writeDiscreteAlgVarsResultDescription(vardescs);
-      writeIntAlgVarsResultDescription(vardescs);
-      writeBoolAlgVarsResultDescription(vardescs);
-      writeAliasVarsResultDescription(vardescs);
-      writeIntAliasVarsResultDescription(vardescs);
-      writeBoolAliasVarsResultDescription(vardescs);
-      writeStateVarsResultDescription(vardescs);
-      writeDerivativeVarsResultDescription(vardescs);
-      writeParameterDescription(paramdecs);
-      writeIntParameterDescription(paramdecs);
-      writeBoolParameterDescription(paramdecs);
-      >>
+      match   settings.outputFormat
+        case "mat" then
+        <<
+        writeParametertNames(paramnames);
+        writeIntParameterNames(paramnames);
+        writeBoolParameterNames(paramnames);
+        writeAlgVarsResultDescription(vardescs);
+        writeDiscreteAlgVarsResultDescription(vardescs);
+        writeIntAlgVarsResultDescription(vardescs);
+        writeBoolAlgVarsResultDescription(vardescs);
+        writeAliasVarsResultDescription(vardescs);
+        writeIntAliasVarsResultDescription(vardescs);
+        writeBoolAliasVarsResultDescription(vardescs);
+        writeStateVarsResultDescription(vardescs);
+        writeDerivativeVarsResultDescription(vardescs);
+        writeParameterDescription(paramdecs);
+        writeIntParameterDescription(paramdecs);
+        writeBoolParameterDescription(paramdecs);
+        >>
       %>
       _historyImpl->write(varsnames,vardescs,paramnames,paramdecs);
       <%
-      match   settings.outputFormat case "mat"
-      then
-      <<
+      match   settings.outputFormat
+        case "mat" then
+        <<
         HistoryImplType::value_type_p params;
 
         writeParams(params);
-      >>
-      else
-      <<
-       HistoryImplType::value_type_p params;
-      >>
+        >>
+        else
+        <<
+        HistoryImplType::value_type_p params;
+        >>
       %>
-       _historyImpl->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
+      _historyImpl->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
     }
     //Write the current values
     else
