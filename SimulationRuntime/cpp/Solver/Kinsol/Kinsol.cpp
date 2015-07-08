@@ -215,15 +215,24 @@ void Kinsol::solve()
         _algLoop->evaluate();
         _algLoop->getRHS(_f);
 
+		SparseMatrix amatrix;
+		_algLoop->getSystemMatrix(amatrix);
+
+		double* jac = new  double[dimSys*dimSys];
+		for(int i=0;i<dimSys;i++)
+			for(int j=0;j<dimSys;j++)
+				 jac[i+j*_dimSys] = amatrix(j,i);
+
 		_algLoop->getReal(_y);
-        calcJacobian(_f,_y);
-        dgesv_(&dimSys, &dimRHS, _jac, &dimSys, _ihelpArray, _f,&dimSys,&irtrn);
+       // calcJacobian(_f,_y);
+        dgesv_(&dimSys, &dimRHS, jac, &dimSys, _ihelpArray, _f,&dimSys,&irtrn);
 
 		for(int i=0; i<_dimSys; i++)
           _f[i]*=-1.0;
 
         memcpy(_y, _f, _dimSys*sizeof(double));
-        _algLoop->setReal(_y);
+        delete [] jac ;
+		_algLoop->setReal(_y);
         //_algLoop->evaluate();
         if(irtrn != 0)
             throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");

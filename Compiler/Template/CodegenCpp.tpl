@@ -650,7 +650,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    let initialjacMats = (jacobianMatrixes |> (mat, vars, name, (sparsepattern,_), colorList, _, jacIndex) =>
     initialAnalyticJacobians(jacIndex, mat, vars, name, sparsepattern, colorList,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
-    ;separator="/*test <%jacIndex%>*/";empty)
+    ;separator="\n";empty)
    <<
 
    <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
@@ -660,8 +660,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data, boost::shared_ptr<ISimVars> sim_vars)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data,sim_vars)
        , _AColorOfColumn(NULL)
-       <%jacobiansVariableInit(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
        <%initialjacMats%>
+       <%jacobiansVariableInit(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
    {
    }
 
@@ -5458,6 +5458,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <<
         void <%modelname%>Algloop<%ls.index%>::initialize()
         {
+           __Asparse = boost::shared_ptr<SparseMatrix> (new SparseMatrix);
           <%initAlgloopEquation(eq,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
           AlgLoopDefaultImplementation::initialize();
 
@@ -5536,21 +5537,26 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   {
 
    }
-  void <%modelname%>Algloop<%nls.index%>::getSystemMatrix(SparseMatrix* A_matrix)
+  void <%modelname%>Algloop<%nls.index%>::getSystemMatrix(SparseMatrix& A_matrix)
   {
 
    }
   >>
  case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
   match ls.jacobianMatrix
-     case SOME(__) then
+     case SOME((_,_,_,_,_,_,index)) then
    <<
     void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(double* A_matrix)
     {
 
     }
-    void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix* A_matrix)
+    void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix& A_matrix)
     {
+        if(IMixedSystem* jacobian_system = dynamic_cast<IMixedSystem*>( _system))
+        {
+          jacobian_system->getJacobian(A_matrix,<%index%>);
+         // cout << "A Matrix for system " << <%index%> << A_matrix << std::endl;
+        }
 
     }
    >>
@@ -5563,7 +5569,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
            "memcpy(A_matrix,__A->getData(),_dimAEq*_dimAEq*sizeof(double));"
           %>
      }
-     void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix* A_matrix)
+     void <%modelname%>Algloop<%ls.index%>::getSystemMatrix(SparseMatrix& A_matrix)
      {
           <% match eq
           case SES_LINEAR(__) then
@@ -7055,7 +7061,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     >>%>
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void getSystemMatrix(double* A_matrix);
-    virtual void getSystemMatrix(SparseMatrix* A_matrix);
+    virtual void getSystemMatrix(SparseMatrix&);
     virtual bool isLinear();
     virtual bool isLinearTearing();
     virtual bool isConsistent();
@@ -14630,7 +14636,7 @@ template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> ja
           let index_ = listLength(seedVars)
           <<
             ,_<%matrixName%>jacobian(SparseMatrix(<%index_%>,<%indexColumn%>,<%sp_size_index%>))
-            ,_<%matrixName%>jac_y(ublas::zero_vector<double>(<%index_%>))
+            ,_<%matrixName%>jac_y(ublas::zero_vector<double>(<%indexColumn%>))
             ,_<%matrixName%>jac_tmp(ublas::zero_vector<double>(<%tmpvarsSize%>))
             ,_<%matrixName%>jac_x(ublas::zero_vector<double>(<%index_%>))
           >>
@@ -14794,7 +14800,7 @@ _<%matrixName%>jac_x.clear();
 
   void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
   {
-
+    /*Index <%indexJacobian%>*/
     <%jacvals%>
     matrix = _<%matrixName%>jacobian;
   }
