@@ -98,11 +98,12 @@ protected
   BackendDAE.Shared shared;
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqs;
+  BackendDAE.EquationArray eqs, removedEqs;
   BackendDAE.BaseClockPartitionKind partitionKind;
   list<DAE.ComponentRef> holdComps;
   array<Integer> varsPartition;
 algorithm
+  removedEqs := inSyst.removedEqs;
   syst := substituteParitionOpExps(inSyst);
 
   (contSysts, clockedSysts) := baseClockPartitioning(syst, inShared);
@@ -111,6 +112,12 @@ algorithm
 
   //Continuous system always first in equation systems list
   systs := listAppend(contSysts, clockedSysts);
+  (syst, systs) := match systs
+    case {} then (BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns()), {});
+    case syst::systs then (syst, systs);
+  end match;
+  syst.removedEqs := removedEqs;
+  systs := syst::systs;
   outDAE := BackendDAE.DAE(systs, setClocks(inShared, baseClocks));
 
   if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then

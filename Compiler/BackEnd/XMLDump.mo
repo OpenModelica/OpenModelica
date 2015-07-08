@@ -1030,14 +1030,15 @@ algorithm
                  vars_knownVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_externalObject),
                  vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
-                 ieqns,reqns,constrs,_,_,_,funcs,
-                 eventInfo,
+                 ieqns,_,constrs,_,_,_,funcs,eventInfo,
                  extObjCls,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
       equation
 
         knvars  = BackendVariable.varList(vars_knownVars);
         extvars = BackendVariable.varList(vars_externalObject);
         aliasvars = BackendVariable.varList(vars_aliasVars);
+
+        reqns = BackendDAEUtil.collapseRemovedEqs(inBackendDAE);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
@@ -1071,13 +1072,15 @@ algorithm
                  vars_knownVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_externalObject),
                  vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
-                 ieqns,reqns,constrs,_,_,_,funcs,
-                 eventInfo,extObjCls,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
+                 ieqns,_,constrs,_,_,_,funcs,eventInfo,
+                 extObjCls,_,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
       equation
 
         knvars  = BackendVariable.varList(vars_knownVars);
         extvars = BackendVariable.varList(vars_externalObject);
         aliasvars = BackendVariable.varList(vars_aliasVars);
+
+        reqns = BackendDAEUtil.collapseRemovedEqs(inBackendDAE);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);

@@ -1250,41 +1250,42 @@ public function equationAddDAE "author: Frenkel TUD 2011-05"
   output BackendDAE.EqSystem outEqSystem;
 algorithm
   outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, addEquation(inEquation, inEqSystem.orderedEqs));
-  outEqSystem := BackendDAEUtil.setEqSystMatching(outEqSystem, BackendDAE.NO_MATCHING());
+  outEqSystem.matching := BackendDAE.NO_MATCHING();
 end equationAddDAE;
 
 public function equationsAddDAE "author: Frenkel TUD 2011-05"
   input list<BackendDAE.Equation> inEquations;
   input BackendDAE.EqSystem inEqSystem;
-  output BackendDAE.EqSystem outEqSystem;
+  output BackendDAE.EqSystem outEqSystem = inEqSystem;
 algorithm
-  outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, List.fold(inEquations, addEquation, inEqSystem.orderedEqs));
-  outEqSystem := BackendDAEUtil.setEqSystMatching(outEqSystem, BackendDAE.NO_MATCHING());
+  outEqSystem.orderedEqs := addEquations(inEquations, outEqSystem.orderedEqs);
+  outEqSystem.matching := BackendDAE.NO_MATCHING();
 end equationsAddDAE;
 
 public function requationsAddDAE "author: Frenkel TUD 2012-10
   Add a list of equations to removed equations of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input list<BackendDAE.Equation> inEquations;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
+  input BackendDAE.EqSystem inSyst;
+  output BackendDAE.EqSystem outSyst;
 algorithm
-  outShared := match inEquations
-    case {} then inShared;
-    else  then BackendDAEUtil.setSharedRemovedEqns(inShared, List.fold(inEquations, addEquation, inShared.removedEqs));
+  outSyst := match inEquations
+    case {} then inSyst;
+    else  then BackendDAEUtil.setEqSystRemovedEqns(inSyst, List.fold(inEquations, addEquation, inSyst.removedEqs));
   end match;
 end requationsAddDAE;
 
 public function removeRemovedEqs "remove removedEqs"
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
+  input BackendDAE.EqSystem inSyst;
+  output BackendDAE.EqSystem outSyst = inSyst;
 protected
-  BackendDAE.EquationArray removedEqs = inShared.removedEqs;
+  BackendDAE.EquationArray removedEqs = inSyst.removedEqs;
+  Integer N;
 algorithm
   for i in 1:removedEqs.numberOfElement loop
     removedEqs := equationRemove(i, removedEqs);
   end for;
-  outShared := BackendDAEUtil.setSharedRemovedEqns(inShared, removedEqs);
+  outSyst.removedEqs := removedEqs;
 end removeRemovedEqs;
 
 public function setAtIndex "author: lochel

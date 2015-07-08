@@ -1433,6 +1433,7 @@ algorithm
         syst.orderedVars := BackendVariable.listVar1(varLst);
         shared.aliasVars := BackendVariable.listVar1(aliasLst);
         shared.knownVars := BackendVariable.listVar1(knownLst);
+        syst.removedEqs := BackendEquation.listEquation({});
         shared.removedEqs := BackendEquation.listEquation({});
         syst.orderedEqs := BackendEquation.listEquation(eqLst);
         //BackendDump.dumpEquationList(eqLst,"eqsOut");

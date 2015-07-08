@@ -134,11 +134,11 @@ algorithm
     shared := BackendDAEUtil.createEmptyShared(BackendDAE.INITIALSYSTEM(), dae.shared.info, dae.shared.cache, dae.shared.graph);
     shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
-    shared := BackendDAEUtil.setSharedRemovedEqns(shared, reeqns);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
 
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+    initsyst := BackendDAEUtil.setEqSystRemovedEqns(initsyst, reeqns);
     (initsyst, dumpVars) := preBalanceInitialSystem(initsyst);
     SimCodeFunctionUtil.execStat("created initial system");
 
@@ -466,22 +466,25 @@ protected
   //list<DAE.ComponentRef> crefs;
 algorithm
   //BackendDump.dumpBackendDAE(inDAE, "inDAE");
-  outHS := HashSet.emptyHashSet();
-  outHS := List.fold(inDAE.eqs, collectPreVariablesEqSystem, outHS);
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inDAE.shared.removedEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS)); // ???
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inDAE.shared.initialEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS));
-
+  outHS := List.fold(inDAE.eqs, collectPreVariablesEqSystem, HashSet.emptyHashSet());
+  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inDAE.shared.initialEqs, Expression.traverseSubexpressionsHelper,
+                                                             (collectPreVariablesTraverseExp, outHS) );
+  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inDAE.shared.removedEqs, Expression.traverseSubexpressionsHelper,
+                                                             (collectPreVariablesTraverseExp, outHS) );
   //print("collectPreVariables:\n");
   //crefs := BaseHashSet.hashSetList(outHS);
   //BackendDump.debuglst(crefs, ComponentReference.printComponentRefStr, "\n", "\n");
 end collectPreVariables;
 
 public function collectPreVariablesEqSystem
-  input BackendDAE.EqSystem inEqSystem;
+  input BackendDAE.EqSystem inSyst;
   input HashSet.HashSet inHS;
   output HashSet.HashSet outHS;
 algorithm
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inEqSystem.orderedEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, inHS));
+  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inSyst.orderedEqs, Expression.traverseSubexpressionsHelper,
+                                                             (collectPreVariablesTraverseExp, inHS) );
+  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns( inSyst.removedEqs, Expression.traverseSubexpressionsHelper,
+                                                             (collectPreVariablesTraverseExp, outHS) );
 end collectPreVariablesEqSystem;
 
 public function collectPreVariablesTraverseExp

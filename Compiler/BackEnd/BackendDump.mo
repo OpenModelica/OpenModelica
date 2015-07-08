@@ -104,7 +104,7 @@ algorithm
   BackendDAE.DAE(eqs, shared) := inBackendDAE;
   List.map_0(eqs, printEqSystem);
   print("\n");
-  printShared(shared);
+  printShared(eqs, shared);
 end printBackendDAE;
 
 public function printEqSystem "This function prints the BackendDAE.EqSystem representation to stdout."
@@ -256,6 +256,7 @@ public function printClassAttributes "This unction print the  Optimica ClassAttr
 end printClassAttributes;
 
 public function printShared "This function dumps the BackendDAE.Shared representation to stdout."
+  input BackendDAE.EqSystems inSysts "for backward compatibility";
   input BackendDAE.Shared inShared;
 protected
   BackendDAE.Variables knownVars, externalObjects, aliasVars;
@@ -272,17 +273,16 @@ algorithm
                     externalObjects=externalObjects,
                     aliasVars=aliasVars,
                     initialEqs=initialEqs,
-                    removedEqs=removedEqs,
                     constraints=constraints,
                     eventInfo=BackendDAE.EVENT_INFO( timeEvents=timeEvents, relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst,
                                                      sampleLst=sampleLst, whenClauseLst=whenClauseLst ),
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := inShared;
+  removedEqs := BackendDAEUtil.collapseRemovedEqs(BackendDAE.DAE(inSysts, inShared));
   print("\nBackendDAEType: ");
   printBackendDAEType(backendDAEType);
   print("\n\n");
-
 
   dumpVariables(knownVars, "Known Variables (constants)");
   dumpVariables(externalObjects, "External Objects");
@@ -3267,7 +3267,7 @@ algorithm
       print(headerline + ":\n");
       List.map_0(eqs, printEqSystem);
       print("\n");
-      printShared(shared);
+      printShared(eqs, shared);
     then ();
   end matchcontinue;
 end bltdump;
@@ -3308,7 +3308,8 @@ protected
   DumpCompShortTornTpl tornTpl;
   BackendDAE.BackendDAEType backendDAEType;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(removedEqs=removedEqs, backendDAEType=backendDAEType)) := inDAE;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(backendDAEType=backendDAEType)) := inDAE;
+  removedEqs := BackendDAEUtil.collapseRemovedEqs(inDAE);
   daeType := printBackendDAEType2String(backendDAEType);
 
   HS := HashSet.emptyHashSet();

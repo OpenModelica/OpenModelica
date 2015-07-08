@@ -262,31 +262,32 @@ public function checkBackendDAE "author: Frenkel TUD
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
   output list<BackendDAE.Equation> outWrongEqns;
 algorithm
-  (outExpCrefs,outWrongEqns) := matchcontinue (inBackendDAE)
+  (outExpCrefs,outWrongEqns) := matchcontinue inBackendDAE
     local
-      BackendDAE.Variables vars1,vars2,allvars;
-      BackendDAE.EquationArray eqns,reqns,ieqns;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      list<BackendDAE.Var> varlst1,varlst2,allvarslst;
-      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5;
-      list<BackendDAE.Equation> wrongEqns,wrongEqns1,wrongEqns2;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      BackendDAE.Variables allvars;
+      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs;
+      list<BackendDAE.Equation> wrongEqns;
 
 
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,orderedEqs = eqns)::{},shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,
-          eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))))
+    case BackendDAE.DAE(syst::{}, shared)
       equation
-        allvars = BackendVariable.mergeVariables(vars1, vars2);
-        ((_,expcrefs)) = traverseBackendDAEExpsVars(vars1,checkBackendDAEExp,(allvars,{}));
-        ((_,expcrefs1)) = traverseBackendDAEExpsVars(vars2,checkBackendDAEExp,(allvars,expcrefs));
-        ((_,expcrefs2)) = traverseBackendDAEExpsEqns(eqns,checkBackendDAEExp,(allvars,expcrefs1));
-        ((_,expcrefs3)) = traverseBackendDAEExpsEqns(reqns,checkBackendDAEExp,(allvars,expcrefs2));
-        ((_,expcrefs4)) = traverseBackendDAEExpsEqns(ieqns,checkBackendDAEExp,(allvars,expcrefs3));
-        (_,(_,expcrefs5)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkBackendDAEExp,(allvars,expcrefs4));
-        wrongEqns = BackendEquation.traverseEquationArray(eqns,checkEquationSize,{});
-        wrongEqns1 = BackendEquation.traverseEquationArray(reqns,checkEquationSize,wrongEqns);
-        wrongEqns2 = BackendEquation.traverseEquationArray(ieqns,checkEquationSize,wrongEqns1);
+        allvars = BackendVariable.mergeVariables(syst.orderedVars, shared.knownVars);
+        ((_, expcrefs)) = traverseBackendDAEExpsVars(syst.orderedVars, checkBackendDAEExp, (allvars, {}));
+       ((_, expcrefs)) = traverseBackendDAEExpsEqns(shared.removedEqs, checkBackendDAEExp, (allvars, expcrefs));
+        ((_, expcrefs)) = traverseBackendDAEExpsVars(shared.knownVars, checkBackendDAEExp, (allvars, expcrefs));
+        ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.orderedEqs, checkBackendDAEExp, (allvars, expcrefs));
+        ((_, expcrefs)) = traverseBackendDAEExpsEqns(syst.removedEqs, checkBackendDAEExp, (allvars, expcrefs));
+        ((_, expcrefs)) = traverseBackendDAEExpsEqns(shared.initialEqs, checkBackendDAEExp, (allvars, expcrefs));
+        (_, (_, expcrefs)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst( shared.eventInfo.whenClauseLst, checkBackendDAEExp,
+                                                                                      (allvars, expcrefs) );
+        wrongEqns = BackendEquation.traverseEquationArray(syst.orderedEqs, checkEquationSize, {});
+        wrongEqns = BackendEquation.traverseEquationArray(shared.removedEqs, checkEquationSize, wrongEqns);
+        wrongEqns = BackendEquation.traverseEquationArray(syst.removedEqs, checkEquationSize, wrongEqns);
+        wrongEqns = BackendEquation.traverseEquationArray(shared.initialEqs, checkEquationSize, wrongEqns);
       then
-        (expcrefs5,wrongEqns2);
+        (expcrefs, wrongEqns);
 
     else
       equation
@@ -485,22 +486,18 @@ public function copyEqSystem
   input BackendDAE.EqSystem inSystem;
   output BackendDAE.EqSystem outSystem;
 protected
-  BackendDAE.Variables ordvars, ordvars1;
-  BackendDAE.EquationArray eqns, eqns1;
-  Option<BackendDAE.IncidenceMatrix> m, mT, m1, mT1;
-  BackendDAE.Matching matching, matching1;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns, removedEqs;
+  Option<BackendDAE.IncidenceMatrix> m, mt;
+  BackendDAE.Matching matching;
 algorithm
-  BackendDAE.EQSYSTEM(ordvars, eqns, m, mT, matching, stateSets, partitionKind) := inSystem;
-
-  ordvars1 := BackendVariable.copyVariables(ordvars);
-  eqns1 := BackendEquation.copyEquationArray(eqns);
-  m1 := copyIncidenceMatrix(m);
-  mT1 := copyIncidenceMatrix(mT);
-  matching1 := copyMatching(matching);
-
-  outSystem := BackendDAE.EQSYSTEM(ordvars1, eqns1, m1, mT1, matching1, stateSets, partitionKind);
+  vars := BackendVariable.copyVariables(inSystem.orderedVars);
+  eqns := BackendEquation.copyEquationArray(inSystem.orderedEqs);
+  removedEqs := BackendEquation.copyEquationArray(inSystem.removedEqs);
+  m := copyIncidenceMatrix(inSystem.m);
+  mt := copyIncidenceMatrix(inSystem.mT);
+  matching := copyMatching(inSystem.matching);
+  outSystem := BackendDAE.EQSYSTEM(vars, eqns, m, mt, matching, inSystem.stateSets, inSystem.partitionKind, removedEqs);
 end copyEqSystem;
 
 public function copyBackendDAEShared
@@ -561,17 +558,12 @@ public function numberOfZeroCrossings "author: lochel"
   output Integer outNumRelations;
   output Integer outNumMathEventFunctions;
 protected
-  list<BackendDAE.TimeEvent> timeEvents;
-  list<ZeroCrossing> zeroCrossingLst, relationsLst;
+  BackendDAE.EventInfo eventInfo = inBackendDAE.shared.eventInfo;
 algorithm
-  BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                                                    zeroCrossingLst=zeroCrossingLst,
-                                                    relationsLst=relationsLst,
-                                                    numberMathEvents=outNumMathEventFunctions)) := inBackendDAE.shared;
-
-  outNumZeroCrossings := listLength(zeroCrossingLst);
-  outNumTimeEvents := listLength(timeEvents);
-  outNumRelations := listLength(relationsLst);
+  outNumZeroCrossings := listLength(eventInfo.zeroCrossingLst);
+  outNumTimeEvents := listLength(eventInfo.timeEvents);
+  outNumRelations := listLength(eventInfo.relationsLst);
+  outNumMathEventFunctions := eventInfo.numberMathEvents;
 end numberOfZeroCrossings;
 
 public function numberOfDiscreteVars "author: lochel"
@@ -1784,20 +1776,13 @@ public function whenClauseAddDAE
 "author: Frenkel TUD 2011-05"
   input list<BackendDAE.WhenClause> inWcLst;
   input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
+  output BackendDAE.Shared outShared = inShared;
+protected
+  BackendDAE.EventInfo eventInfo;
 algorithm
-  outShared := match inShared
-    local
-      BackendDAE.Shared shared;
-      BackendDAE.EventInfo eventInfo;
-      list<BackendDAE.WhenClause> wclst;
-
-    case shared as BackendDAE.SHARED(eventInfo=eventInfo as BackendDAE.EVENT_INFO(whenClauseLst=wclst))
-      equation
-        eventInfo.whenClauseLst = listAppend(wclst, inWcLst);
-        shared.eventInfo = eventInfo;
-      then shared;
-  end match;
+  eventInfo := outShared.eventInfo;
+  eventInfo.whenClauseLst := listAppend(inShared.eventInfo.whenClauseLst, inWcLst);
+  outShared.eventInfo := eventInfo;
 end whenClauseAddDAE;
 
 public function getStrongComponents
@@ -5709,26 +5694,21 @@ public function traverseBackendDAEExps "author: Frenkel TUD
     output Type_a outA;
   end FuncExpType;
 algorithm
-  outTypeA:=
-  matchcontinue (inBackendDAE,func,inTypeA)
+  outTypeA := matchcontinue inBackendDAE
     local
-      BackendDAE.Variables vars2;
-      BackendDAE.EquationArray reqns,ieqns;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
+      BackendDAE.Shared shared;
       list<BackendDAE.EqSystem> systs;
       String name;
 
-    case (BackendDAE.DAE( eqs=systs, shared=BackendDAE.SHARED(knownVars=vars2, initialEqs=ieqns, removedEqs=reqns,
-                          eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) )), _, _)
+    case BackendDAE.DAE(systs, shared)
       equation
-        ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
-        ext_arg_2 = traverseBackendDAEExpsVars(vars2,func,ext_arg_1);
-        ext_arg_4 = traverseBackendDAEExpsEqns(reqns,func,ext_arg_2);
-        ext_arg_5 = traverseBackendDAEExpsEqns(ieqns,func,ext_arg_4);
-        (_,ext_arg_6) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,func,ext_arg_5);
+        outTypeA = List.fold1(systs, traverseBackendDAEExpsEqSystem, func, inTypeA);
+        outTypeA = traverseBackendDAEExpsVars(shared.knownVars, func, outTypeA);
+        outTypeA = traverseBackendDAEExpsEqns(shared.initialEqs, func, outTypeA);
+        outTypeA = traverseBackendDAEExpsEqns(shared.removedEqs, func, outTypeA);
+        (_, outTypeA) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, outTypeA);
       then
-        ext_arg_6;
+        outTypeA;
 
     else equation
       (_, _, name) = System.dladdr(func);
@@ -5888,25 +5868,21 @@ public function traverseBackendDAEExpsNoCopyWithUpdate "
     output Type_a outA;
   end FuncExpType;
 algorithm
-  outTypeA:=
-  matchcontinue (inBackendDAE,func,inTypeA)
+  outTypeA := matchcontinue inBackendDAE
     local
-      BackendDAE.Variables vars2;
-      BackendDAE.EquationArray reqns,ieqns;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
-      list<BackendDAE.WhenClause> wc;
+      BackendDAE.Shared shared;
       String name;
 
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),_,_)
+    case BackendDAE.DAE(systs, shared)
       equation
-        ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystemWithUpdate,func,inTypeA);
-        ext_arg_2 = traverseBackendDAEExpsVarsWithUpdate(vars2,func,ext_arg_1);
-        ext_arg_4 = traverseBackendDAEExpsEqnsWithUpdate(reqns,func,ext_arg_2);
-        ext_arg_5 = traverseBackendDAEExpsEqnsWithUpdate(ieqns,func,ext_arg_4);
-        (_,ext_arg_6) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(wc,func,ext_arg_5);
+        outTypeA = List.fold1(systs, traverseBackendDAEExpsEqSystemWithUpdate, func, inTypeA);
+        outTypeA = traverseBackendDAEExpsVarsWithUpdate(shared.knownVars, func, outTypeA);
+        outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, func, outTypeA);
+        outTypeA = traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, func, outTypeA);
+        (_, outTypeA) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, outTypeA);
       then
-        ext_arg_6;
+        outTypeA;
 
     else equation
       (_, _, name) = System.dladdr(func);
@@ -5930,13 +5906,10 @@ public function traverseBackendDAEExpsEqSystem "This function goes through the B
     output DAE.Exp outExp;
     output Type_a outA;
   end FuncExpType;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns) := syst;
-  outTypeA := traverseBackendDAEExpsVars(vars,func,inTypeA);
-  outTypeA := traverseBackendDAEExpsEqns(eqns,func,outTypeA);
+  outTypeA := traverseBackendDAEExpsVars(syst.orderedVars, func, inTypeA);
+  outTypeA := traverseBackendDAEExpsEqns(syst.orderedEqs, func, outTypeA);
+  outTypeA := traverseBackendDAEExpsEqns(syst.removedEqs, func, outTypeA);
 end traverseBackendDAEExpsEqSystem;
 
 public function traverseBackendDAEExpsEqSystemWithUpdate "This function goes through the BackendDAE structure and finds all the
@@ -5953,13 +5926,10 @@ public function traverseBackendDAEExpsEqSystemWithUpdate "This function goes thr
     output DAE.Exp outExp;
     output Type_a outA;
   end FuncExpType;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns) := syst;
-  outTypeA := traverseBackendDAEExpsVarsWithUpdate(vars,func,inTypeA);
-  outTypeA := traverseBackendDAEExpsEqnsWithUpdate(eqns,func,outTypeA);
+  outTypeA := traverseBackendDAEExpsVarsWithUpdate(syst.orderedVars, func, inTypeA);
+  outTypeA := traverseBackendDAEExpsEqnsWithUpdate(syst.orderedEqs, func, outTypeA);
+  outTypeA := traverseBackendDAEExpsEqnsWithUpdate(syst.removedEqs, func, outTypeA);
 end traverseBackendDAEExpsEqSystemWithUpdate;
 
 public function traverseBackendDAEExpsVars "Helper for traverseBackendDAEExps"
@@ -7928,10 +7898,11 @@ public function createEqSystem
   input BackendDAE.EquationArray inEqs;
   input BackendDAE.StateSets inStateSets = {};
   input BackendDAE.BaseClockPartitionKind inPartitionKind = BackendDAE.UNKNOWN_PARTITION();
+  input BackendDAE.EquationArray removedEqs = BackendEquation.emptyEqns();
   output BackendDAE.EqSystem outSyst;
 algorithm
   outSyst := BackendDAE.EQSYSTEM( inVars, inEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),
-                                  inStateSets, inPartitionKind );
+                                  inStateSets, inPartitionKind, removedEqs );
 end createEqSystem;
 
 public function createEmptyShared
@@ -7946,7 +7917,7 @@ protected
   DAE.FunctionTree functions = DAEUtil.avlTreeNew();
 algorithm
   shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
-                               DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei,
+                               DAEUtil.avlTreeNew(), emptyEventInfo(), {}, backendDAEType, {}, ei,
                                BackendDAE.PARTITIONS_INFO(emptyClocks()) );
 end createEmptyShared;
 
@@ -8082,12 +8053,13 @@ public function clearEqSyst
   output BackendDAE.EqSystem outSyst;
 protected
   BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqs;
+  BackendDAE.EquationArray eqs, removedEqs;
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind) := inSyst;
-  outSyst := BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqs, m=NONE(), mT=NONE(),
+  BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind,
+                       removedEqs=removedEqs ) := inSyst;
+  outSyst := BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqs, m=NONE(), mT=NONE(), removedEqs=removedEqs,
                                   matching=BackendDAE.NO_MATCHING(), stateSets=stateSets, partitionKind=partitionKind );
 end clearEqSyst;
 
@@ -8105,19 +8077,13 @@ algorithm
   end match;
 end setEqSystMatching;
 
-public function setSharedRemovedEqns
-  input BackendDAE.Shared inShared;
+public function setEqSystRemovedEqns
+  input BackendDAE.EqSystem inSyst;
   input BackendDAE.EquationArray removedEqs;
-  output BackendDAE.Shared outShared;
+  output BackendDAE.EqSystem outSyst = inSyst;
 algorithm
-  outShared := match inShared
-    local
-      BackendDAE.Shared shared;
-    case shared as BackendDAE.SHARED()
-      algorithm shared.removedEqs := removedEqs;
-      then shared;
-  end match;
-end setSharedRemovedEqns;
+  outSyst.removedEqs := removedEqs;
+end setEqSystRemovedEqns;
 
 public function setSharedInitialEqns
   input BackendDAE.Shared inShared;
@@ -8164,15 +8130,9 @@ end setSharedFunctionTree;
 public function setSharedEventInfo
   input BackendDAE.Shared inShared;
   input BackendDAE.EventInfo eventInfo;
-  output BackendDAE.Shared outShared;
+  output BackendDAE.Shared outShared = inShared;
 algorithm
-  outShared := match inShared
-    local
-      BackendDAE.Shared shared;
-    case shared as BackendDAE.SHARED()
-      algorithm shared.eventInfo := eventInfo;
-      then shared;
-  end match;
+  outShared.eventInfo := eventInfo;
 end setSharedEventInfo;
 
 public function setSharedKnVars
@@ -8219,6 +8179,24 @@ algorithm
       then shared;
   end match;
 end setSharedOptimica;
+
+public function collapseRemovedEqs
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.EquationArray outEqns;
+protected
+  list<BackendDAE.Equation> eqsLst;
+algorithm
+  eqsLst := List.fold(inDAE.eqs, collapseRemovedEqs1, {});
+  outEqns := BackendEquation.listEquation(listAppend(eqsLst, BackendEquation.equationList(inDAE.shared.removedEqs)));
+end collapseRemovedEqs;
+
+protected function collapseRemovedEqs1
+  input BackendDAE.EqSystem inSyst;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := listAppend(BackendEquation.equationList(inSyst.removedEqs), inEqns);
+end collapseRemovedEqs1;
 
 public function emptyEventInfo
   output BackendDAE.EventInfo info;

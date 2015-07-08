@@ -5943,6 +5943,7 @@ algorithm
       array<tuple<Integer,Integer,Integer>> varCompMap;
       TaskGraph graph;
       TaskGraphMeta graphData;
+      BackendDAE.EqSystems systs;
       BackendDAE.EquationArray remEqs;
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqLst;
@@ -5960,8 +5961,8 @@ algorithm
       array<ComponentInfo> compInformations1, compInformations2;
   case(_,_,_)
     equation
-      BackendDAE.DAE(shared = shared) = dae;
-      BackendDAE.SHARED(removedEqs=remEqs) = shared;
+      BackendDAE.DAE(eqs = systs, shared = shared) = dae;
+      remEqs = BackendDAEUtil.collapseRemovedEqs(dae);
       TASKGRAPHMETA(varCompMapping=varCompMap) = graphDataIn;
       eqLst = BackendEquation.equationList(remEqs);
       numNewComps = listLength(eqLst);

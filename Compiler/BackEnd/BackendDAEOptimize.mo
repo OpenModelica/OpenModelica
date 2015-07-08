@@ -109,16 +109,18 @@ protected function simplifyTimeIndepFuncCalls0 "author: Frenkel TUD 2012-06"
 algorithm
   (osyst, outShared, outChanged) := matchcontinue (isyst, inShared)
     local
-      BackendDAE.Variables orderedVars, knvars, aliasvars;
-      BackendDAE.EquationArray orderedEqs;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
 
-    case (BackendDAE.EQSYSTEM(orderedEqs=orderedEqs), BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasvars))
+    case (syst, shared)
       algorithm
         ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate (
-            orderedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls,
-            (knvars, aliasvars, false))
+            syst.orderedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls,
+            (shared.knownVars, shared.aliasVars, false))
+        );
+        ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate (
+            syst.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls,
+            (shared.knownVars, shared.aliasVars, false))
         );
     then (isyst, inShared, true);
 
@@ -1146,25 +1148,21 @@ public function removeUnusedParameter
 algorithm
   outDlow := match inDlow
     local
-      BackendDAE.Variables knvars, knvars1, aliasVars;
-      BackendDAE.EquationArray remeqns, inieqns;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.Variables knvars, knvars1;
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
 
-    case BackendDAE.DAE(eqs,shared as BackendDAE.SHARED (
-            knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns, removedEqs=remeqns,
-            eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) ))
+    case BackendDAE.DAE(eqs, shared)
       algorithm
         knvars1 := BackendVariable.emptyVars();
+        knvars := shared.knownVars;
         ((knvars, knvars1)) := BackendVariable.traverseBackendDAEVars(knvars, copyNonParamVariables, (knvars,knvars1));
         ((_, knvars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (knvars,knvars1));
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, checkUnusedParameter, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars, checkUnusedParameter, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, checkUnusedParameter, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns, checkUnusedParameter, (knvars,knvars1));
-        (_, (_,knvars1)) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst, checkUnusedParameter, (knvars,knvars1));
+        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedParameter, (knvars,knvars1));
+        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedParameter, (knvars,knvars1));
+        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedParameter, (knvars,knvars1));
+        (_, (_,knvars1)) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, checkUnusedParameter, (knvars,knvars1));
         shared.knownVars := knvars1;
       then
         BackendDAE.DAE(eqs, shared);
@@ -1277,23 +1275,20 @@ public function removeUnusedVariables
 algorithm
   outDlow := match inDlow
     local
-      BackendDAE.Variables knvars, knvars1, aliasVars;
-      BackendDAE.EquationArray remeqns, inieqns;
-      list<BackendDAE.WhenClause> whenClauseLst;
+      BackendDAE.Variables knvars, knvars1;
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
 
-    case BackendDAE.DAE(eqs, shared as BackendDAE.SHARED (
-            knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns, removedEqs=remeqns,
-            eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) ))
+    case BackendDAE.DAE(eqs, shared)
       algorithm
         knvars1 := BackendVariable.emptyVars();
+        knvars := shared.knownVars;
         ((_, knvars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (knvars,knvars1));
         ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, checkUnusedVariables, (knvars,knvars1));
-        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns, checkUnusedVariables, (knvars,knvars1));
-        (_, (_,knvars1)) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst, checkUnusedVariables, (knvars,knvars1));
+        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedVariables, (knvars,knvars1));
+        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedVariables, (knvars,knvars1));
+        ((_, knvars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedVariables, (knvars,knvars1));
+        (_, (_,knvars1)) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, checkUnusedVariables, (knvars,knvars1));
         shared.knownVars := knvars1;
       then
         BackendDAE.DAE(eqs, shared);
@@ -1394,30 +1389,23 @@ protected
 algorithm
   outDlow := match inDlow
     local
-      BackendDAE.Variables knvars, aliasVars, exobj;
-      BackendDAE.EquationArray remeqns, inieqns;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.Shared shared;
       BackendDAE.EqSystems eqs;
       DAE.FunctionTree funcs, usedfuncs;
-    case BackendDAE.DAE(eqs, shared as BackendDAE.SHARED (
-            knownVars=knvars, aliasVars=aliasVars, initialEqs=inieqns, removedEqs=remeqns, externalObjects=exobj,
-            eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst), functionTree=funcs, symjacs=symjacs ))
+    case BackendDAE.DAE(eqs, shared)
       algorithm
+        funcs := shared.functionTree;
         usedfuncs := copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
         func := function checkUnusedFunctions(inFunctions = funcs);
         usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystem, func, usedfuncs);
         usedfuncs := List.fold1(eqs, BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians, func, usedfuncs);
-        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(knvars, func, usedfuncs);
-        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(exobj, func, usedfuncs);
-        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars, func, usedfuncs);
-        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, func, usedfuncs);
-        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns, func, usedfuncs);
-        (_, usedfuncs) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst, func, usedfuncs);
-
-        //traverse Symbolic jacobians
-        usedfuncs := removeUnusedFunctionsSymJacs(symjacs, funcs, usedfuncs);
+        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.knownVars, func, usedfuncs);
+        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.externalObjects, func, usedfuncs);
+        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, func, usedfuncs);
+        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, func, usedfuncs);
+        usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, func, usedfuncs);
+        (_, usedfuncs) := BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(shared.eventInfo.whenClauseLst, func, usedfuncs);
+        usedfuncs := removeUnusedFunctionsSymJacs(shared.symjacs, funcs, usedfuncs);
         shared.functionTree := usedfuncs;
       then
         BackendDAE.DAE(eqs, shared);
@@ -1603,16 +1591,15 @@ protected function mergeIndependentBlocks
   input BackendDAE.EqSystem syst2;
   output BackendDAE.EqSystem syst;
 protected
-  BackendDAE.Variables vars, vars1, vars2;
-  BackendDAE.EquationArray eqs, eqs1, eqs2;
-  BackendDAE.StateSets stateSets, statSets1;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqs, removedEqs;
+  BackendDAE.StateSets stateSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars1, orderedEqs=eqs1, stateSets=stateSets) := syst1;
-  BackendDAE.EQSYSTEM(orderedVars=vars2, orderedEqs=eqs2, stateSets=statSets1) := syst2;
-  vars := BackendVariable.mergeVariables(vars2, vars1);
-  eqs := BackendEquation.addEquations(BackendEquation.equationList(eqs2), eqs1);
-  stateSets := listAppend(stateSets, statSets1);
-  syst := BackendDAEUtil.createEqSystem(vars, eqs, stateSets, BackendDAE.UNKNOWN_PARTITION());
+  vars := BackendVariable.mergeVariables(syst2.orderedVars, syst1.orderedVars);
+  eqs := BackendEquation.addEquations(BackendEquation.equationList(syst2.orderedEqs), syst1.orderedEqs);
+  removedEqs := BackendEquation.addEquations(BackendEquation.equationList(syst2.removedEqs), syst1.removedEqs);
+  stateSets := listAppend(syst2.stateSets, syst1.stateSets);
+  syst := BackendDAEUtil.createEqSystem(vars, eqs, stateSets, BackendDAE.UNKNOWN_PARTITION(), removedEqs);
 end mergeIndependentBlocks;
 
 public function partitionIndependentBlocks
@@ -2235,7 +2222,7 @@ algorithm
         ((eqnslst,asserts,true)) := List.fold1(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, ({},{},false));
         syst.orderedEqs := BackendEquation.listEquation(eqnslst);
         syst := BackendDAEUtil.clearEqSyst(syst);
-        shared := BackendEquation.requationsAddDAE(asserts, shared);
+        syst := BackendEquation.requationsAddDAE(asserts, syst);
       then (syst, shared);
 
     else
@@ -3425,22 +3412,27 @@ algorithm
       BackendDAE.Shared shared;
       list<BackendDAE.Equation> lsteqns;
       Boolean b;
-    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, initialEqs=inieqns, removedEqs=remeqns))
+    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, initialEqs=inieqns))
       algorithm
         repl := BackendVarTransform.emptyReplacements();
         repl := BackendVariable.traverseBackendDAEVars(knvars, removeConstantsFinder, repl);
         if Flags.isSet(Flags.DUMP_CONST_REPL) then
           BackendVarTransform.dumpReplacements(repl);
         end if;
+
         (knvars, (repl, _)) := BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceFinalVarTraverser, (repl, 0));
-        lsteqns := BackendEquation.equationList(remeqns);
+
+        lsteqns := BackendEquation.equationList(shared.initialEqs);
         (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
-        remeqns := if b then BackendEquation.listEquation(lsteqns) else remeqns;
-        lsteqns := BackendEquation.equationList(inieqns);
+        shared.initialEqs := if b then BackendEquation.listEquation(lsteqns) else shared.initialEqs;
+
+        lsteqns := BackendEquation.equationList(shared.removedEqs);
         (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
-        inieqns := if b then BackendEquation.listEquation(lsteqns) else inieqns;
+        shared.removedEqs := if b then BackendEquation.listEquation(lsteqns) else shared.removedEqs;
+
+
         systs := List.map1(systs, removeConstantsWork, repl);
-        shared.removedEqs := remeqns; shared.initialEqs := inieqns;
+
       then BackendDAE.DAE(systs, shared);
   end match;
 end removeConstants;
@@ -3460,11 +3452,18 @@ algorithm
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
       algorithm
         BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceFinalVarTraverser, (repl, 0));
-        (lsteqns, b) := BackendVarTransform.replaceEquations(BackendEquation.equationList(eqns), repl, NONE());
+
+        (lsteqns, b) := BackendVarTransform.replaceEquations(BackendEquation.equationList(syst.orderedEqs), repl, NONE());
         if b then
           syst.orderedEqs := BackendEquation.listEquation(lsteqns);
           syst := BackendDAEUtil.clearEqSyst(syst);
         end if;
+
+        (lsteqns, b) := BackendVarTransform.replaceEquations(BackendEquation.equationList(syst.removedEqs), repl, NONE());
+        if b then
+          syst.removedEqs := BackendEquation.listEquation(lsteqns);
+        end if;
+
       then syst;
   end match;
 end removeConstantsWork;
@@ -3517,11 +3516,12 @@ protected function replaceEdgeChange0 "author: Frenkel TUD 2012-11"
 algorithm
   (osyst, outChanged) := matchcontinue isyst
     local
-      BackendDAE.EquationArray orderedEqs;
+      BackendDAE.EquationArray orderedEqs, removedEqs;
 
-    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs)
+    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs, removedEqs=removedEqs)
     algorithm
       BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserreplaceEdgeChange, false);
+      BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(removedEqs, traverserreplaceEdgeChange, false);
     then (isyst, true);
 
     else (isyst, inChanged);
@@ -4249,15 +4249,12 @@ protected
   array<Integer> ass1 "eqn := ass1[var]";
   array<Integer> ass2 "var := ass2[eqn]";
   Integer n1, n2;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  BackendDAE.StateSets stateSets;
   BackendDAE.Matching matching;
   BackendDAE.StrongComponents comps;
 algorithm
   //print("\nStart simplifyLoopsUpdateMatching");
-
-  BackendDAE.EQSYSTEM(partitionKind=partitionKind, stateSets=stateSets,matching=matching) := inSyst;
-  BackendDAE.MATCHING(comps=comps, ass1 = ass1, ass2=ass2) := matching;
+  matching := inSyst.matching;
+  BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2) := matching;
 
   n1 := listLength(ass1_);
   n2 := listLength(ass2_);
@@ -4274,8 +4271,10 @@ algorithm
 
   comps := simplifyLoopsUpdateComps(comps, ass1_, ass2_, compOrders);
 
-  matching := BackendDAE.MATCHING(ass1,ass2,comps);
-  outSyst :=  BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), matching, stateSets, partitionKind);
+  outSyst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+  outSyst.orderedEqs := inEqns;
+  outSyst.orderedVars := inVars;
+  outSyst := BackendDAEUtil.setEqSystMatrices(outSyst);
 
   //print("\nEnde simplifyLoopsUpdateMatching");
 end simplifyLoopsUpdateMatching;
@@ -4953,24 +4952,18 @@ protected function applyRewriteRulesBackend0
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
   input Boolean inChanged;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem osyst = isyst;
   output BackendDAE.Shared outShared = inShared;
   output Boolean outChanged;
 algorithm
-  (osyst, outChanged) := matchcontinue isyst
-    local
-      BackendDAE.Variables orderedVars;
-      BackendDAE.EquationArray orderedEqs;
-      BackendDAE.EqSystem syst;
-
-    case BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
-      algorithm
-        BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(orderedVars, traverserapplyRewriteRulesBackend, false);
-        BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserapplyRewriteRulesBackend, false);
-      then (isyst, true);
-
-    else (isyst, inChanged);
-  end matchcontinue;
+  try
+    BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(isyst.orderedVars, traverserapplyRewriteRulesBackend, false);
+    BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(isyst.orderedEqs, traverserapplyRewriteRulesBackend, false);
+    BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(isyst.removedEqs, traverserapplyRewriteRulesBackend, false);
+    outChanged := true;
+  else
+    outChanged := false;
+  end try;
 end applyRewriteRulesBackend0;
 
 protected function traverserapplyRewriteRulesBackend
