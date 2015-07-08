@@ -5797,7 +5797,7 @@ algorithm
     case (DAE.T_METARECORD(knownSingleton=false,utPath = path1), DAE.T_METARECORD(knownSingleton=false,utPath=path2))
       equation
         true = Absyn.pathEqual(path1,path2);
-      then DAE.T_METAUNIONTYPE({},false,{},{path1});
+      then DAE.T_METAUNIONTYPE({},false,DAE.NOT_SINGLETON(),{path1});
 
     case (DAE.T_INTEGER(),DAE.T_REAL())
       then DAE.T_REAL_DEFAULT;
@@ -8221,7 +8221,7 @@ algorithm
     local
       Boolean b;
       Absyn.Path p;
-    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},b,if b then list(varName(v) for v in inTy.fields) else {},{p});
+    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},b,if b then DAE.EVAL_SINGLETON_KNOWN_TYPE(inTy) else DAE.NOT_SINGLETON(),{p});
     else inTy;
   end match;
 end getUniontypeIfMetarecord;
@@ -8240,7 +8240,7 @@ protected function getUniontypeIfMetarecordTraverse
   output Integer odummy = dummy;
 algorithm
   oty := match ty
-    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.knownSingleton,if ty.knownSingleton then list(varName(v) for v in ty.fields) else {},{ty.utPath});
+    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.knownSingleton,if ty.knownSingleton then DAE.EVAL_SINGLETON_KNOWN_TYPE(ty) else DAE.NOT_SINGLETON(),{ty.utPath});
     else ty;
   end match;
 end getUniontypeIfMetarecordTraverse;
@@ -8880,6 +8880,47 @@ protected function unboxedTypeTraverseHelper<T>
   output DAE.Type oty = unboxedType(ty);
   output T odummy = dummy;
 end unboxedTypeTraverseHelper;
+
+public function getMetaRecordFields
+  input DAE.Type ty;
+  output list<DAE.Var> fields;
+algorithm
+  fields := match ty
+    local
+      DAE.EvaluateSingletonTypeFunction fun;
+    case DAE.T_METARECORD(fields=fields) then fields;
+    case DAE.T_METAUNIONTYPE(knownSingleton=false)
+      algorithm
+        Error.addInternalError(getInstanceName() + " called on a non-singleton uniontype: " + unparseType(ty), sourceInfo());
+      then fail();
+    case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_KNOWN_TYPE(ty=DAE.T_METARECORD(fields=fields))) then fields;
+    case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_TYPE_FUNCTION(fun=fun))
+      algorithm
+        DAE.T_METARECORD(fields=fields) := fun();
+      then fields;
+    else
+      algorithm
+        Error.addInternalError(getInstanceName() + " called on a non-singleton uniontype: " + unparseType(ty), sourceInfo());
+      then fail();
+  end match;
+end getMetaRecordFields;
+
+public function getMetaRecordIfSingleton
+  input DAE.Type ty;
+  output DAE.Type oty;
+algorithm
+  oty := match ty
+    local
+      DAE.EvaluateSingletonTypeFunction fun;
+    case DAE.T_METAUNIONTYPE(knownSingleton=false) then ty;
+    case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_KNOWN_TYPE(ty=oty)) then oty;
+    case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_TYPE_FUNCTION(fun=fun))
+      algorithm
+        oty := fun();
+      then oty;
+    else ty;
+  end match;
+end getMetaRecordIfSingleton;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

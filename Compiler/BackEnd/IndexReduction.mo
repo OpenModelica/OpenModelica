@@ -573,8 +573,8 @@ protected function differentiateEqns
   output array<Integer> omapIncRowEqn;
   output list<tuple<list<Integer>,list<Integer>,list<Integer>>> oNotDiffableMSS;
 algorithm
-  (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,oNotDiffableMSS):=
-  match (inEqnsTpl,inEqns,unassignedStates,unassignedEqns,inSystem,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,iNotDiffableMSS)
+  (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,oNotDiffableMSS) :=
+  match (inEqnsTpl, inSystem)
     local
       Integer eqnss,eqnss1;
       BackendDAE.EquationArray eqns_1,eqns;
@@ -592,7 +592,7 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.BaseClockPartitionKind partitionKind;
     // all equations are differentiated
-    case (_::_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_,_,_,_,_,_)
+    case (_::_, syst as BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, m=SOME(m), mT=SOME(mt)))
       equation
         eqnss = BackendDAEUtil.equationArraySize(eqns);
         (v1,eqns_1,so,ilst,orgEqnsLst) = replaceDifferentiatedEqns(inEqnsTpl,v,eqns,inStateOrd,mt,imapIncRowEqn,{},inOrgEqnsLst);
@@ -605,7 +605,8 @@ algorithm
         // set changed variables assignments to zero
         ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
         eqnslst1 = collectVarEqns(ilst,{},mt,arrayLength(mt),arrayLength(m));
-        syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching,stateSets,partitionKind);
+        syst.orderedVars = v1;
+        syst.orderedEqs = eqns_1;
         eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
         eqnslst1 =  List.uniqueIntN(listAppend(inEqns,eqnslst1),eqnss1);
         eqnslst1 = listAppend(eqnslst1,eqnslst);
@@ -614,11 +615,12 @@ algorithm
           BackendDump.debuglst(eqnslst1,intString," ","\n");
         end if;
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE() , SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) =
+            BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn);
       then
         (syst,inShared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
     // not all equations are differentiated
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({},_)
       then
         (inSystem,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,(inEqns,unassignedStates,unassignedEqns)::iNotDiffableMSS);
   end match;
@@ -948,47 +950,46 @@ protected function handleundifferntiableMSS
   output array<Integer> omapIncRowEqn;
 algorithm
   (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn):=
-  matchcontinue (b,statesWithUnusedDer,inEqns,unassignedStates,unassignedEqns,inSystem,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn)
+  matchcontinue (b,statesWithUnusedDer,inEqns,unassignedStates,unassignedEqns,inSystem)
     local
       Integer i;
       BackendDAE.EquationArray eqns;
-      list<Integer> ilst,eqnslst,eqnslst1;
+      list<Integer> ilst, eqnslst, eqnslst1;
       BackendDAE.Variables v,v1;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrix mt;
       BackendDAE.EqSystem syst;
-      BackendDAE.Matching matching;
-      array<Integer> ass1,ass2,mapIncRowEqn;
+      array<Integer> ass1, ass2, mapIncRowEqn;
       array<list<Integer>> mapEqnIncRow;
       list<BackendDAE.Var> varlst;
       BackendDAE.Var var;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
       DAE.FunctionTree funcs;
     // 1th try to replace final parameter
-    case (_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_,_,_,_,_)
+    case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(_), mT=SOME(_)))
       equation
-        ((eqns,eqnslst as _::_,_)) = List.fold1(inEqns,replaceFinalVars,BackendVariable.daeKnVars(inShared),(eqns,{},BackendVarTransform.emptyReplacements()));
+        ((eqns, eqnslst as _::_, _)) = List.fold1( inEqns, replaceFinalVars, BackendVariable.daeKnVars(inShared),
+                                                   (syst.orderedEqs, {}, BackendVarTransform.emptyReplacements()));
+        syst.orderedEqs = eqns;
         // unassign changed equations and assigned vars
-        eqnslst1 = List.flatten(List.map1r(eqnslst,arrayGet,imapEqnIncRow));
-        ilst = List.map1r(eqnslst1,arrayGet,inAss2);
-        ilst = List.select1(ilst,intGt,0);
-        ass2 = List.fold1r(eqnslst1,arrayUpdate,-1,inAss2);
-        ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
+        eqnslst1 = List.flatten(List.map1r(eqnslst, arrayGet, imapEqnIncRow));
+        ilst = List.map1r(eqnslst1, arrayGet, inAss2);
+        ilst = List.select1(ilst, intGt, 0);
+        ass2 = List.fold1r(eqnslst1, arrayUpdate, -1, inAss2);
+        ass1 = List.fold1r(ilst, arrayUpdate, -1, inAss1);
         // update IncidenceMatrix
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Replaced final Parameter in Eqns\n");
           print("Update Incidence Matrix: ");
-          BackendDump.debuglst(eqnslst,intString," ","\n");
+          BackendDump.debuglst(eqnslst, intString, " ", "\n");
         end if;
-        syst = BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets,partitionKind);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst, imapEqnIncRow, imapIncRowEqn);
+        (syst, mapEqnIncRow, mapIncRowEqn) =
+            BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst, imapEqnIncRow, imapIncRowEqn);
       then
-        (syst,inShared,ass1,ass2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
+        (syst, inShared, ass1, ass2, inStateOrd, inOrgEqnsLst, mapEqnIncRow, mapIncRowEqn);
 
     // if size of unmatched eqns is equal to size of states without used derivative change all to algebraic
-    case (true,_::_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_,_,_,_,_)
+    case (true,_::_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(m), mT=SOME(mt)))
       equation
         // change varKind
         varlst = List.map1r(statesWithUnusedDer,BackendVariable.getVarAt,v);
@@ -996,12 +997,11 @@ algorithm
           print("Change varKind to algebraic for\n");
           BackendDump.printVarList(varlst);
         end if;
-        varlst = BackendVariable.setVarsKind(varlst,BackendDAE.VARIABLE());
-        v1 = BackendVariable.addVars(varlst,v);
+        varlst = BackendVariable.setVarsKind(varlst, BackendDAE.VARIABLE());
+        syst.orderedVars = BackendVariable.addVars(varlst, syst.orderedVars);
         // update IncidenceMatrix
-        eqnslst1 = collectVarEqns(statesWithUnusedDer,{},mt,arrayLength(mt),arrayLength(m));
-        eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
-        syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,stateSets,partitionKind);
+        eqnslst1 = collectVarEqns(statesWithUnusedDer, {}, mt, arrayLength(mt), arrayLength(m));
+        eqnslst1 = List.map1r(eqnslst1, arrayGet, imapIncRowEqn);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Update Incidence Matrix: ");
           BackendDump.debuglst(eqnslst1,intString," ","\n");
@@ -1012,7 +1012,7 @@ algorithm
         (syst,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
 /* Debugging case
-    case (false,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
+    case (false,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets))
       equation
         varlst = BackendEquation.equationsLstVars(notDiffedEquations,v);
         varlst = List.select(varlst,BackendVariable.isStateVar);
@@ -1027,7 +1027,7 @@ algorithm
 
     // if size of unmatched eqns is not equal to size of states without used derivative change first to algebraic
     // until I have a better sulution
-    case (false,i::ilst,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets,partitionKind),_,_,_,_,_,_,_)
+    case (false,i::ilst,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(m), mT=SOME(mt)))
       equation
         // change varKind
         var = BackendVariable.getVarAt(v,i);
@@ -1037,16 +1037,15 @@ algorithm
           BackendDump.printVarList(varlst);
         end if;
         varlst = BackendVariable.setVarsKind(varlst,BackendDAE.VARIABLE());
-        v1 = BackendVariable.addVars(varlst,v);
-        varlst = List.map1r(ilst,BackendVariable.getVarAt,v);
+        syst.orderedVars = BackendVariable.addVars(varlst, v);
         if Flags.isSet(Flags.BLT_DUMP) then
+          varlst = List.map1r(ilst, BackendVariable.getVarAt, v);
           print("Other Candidates are\n");
           BackendDump.printVarList(varlst);
         end if;
         // update IncidenceMatrix
-        eqnslst1 = collectVarEqns({i},{},mt,arrayLength(mt),arrayLength(m));
-        eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
-        syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,stateSets,partitionKind);
+        eqnslst1 = collectVarEqns({i}, {}, mt, arrayLength(mt), arrayLength(m));
+        eqnslst1 = List.map1r(eqnslst1, arrayGet, imapIncRowEqn);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Update Incidence Matrix: ");
           BackendDump.debuglst(eqnslst1,intString," ","\n");
@@ -1057,7 +1056,7 @@ algorithm
         (syst,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
     // if no state with unused derivative is in the set check global
-    case (_,{},_,_,_,BackendDAE.EQSYSTEM(v,_,SOME(_),SOME(mt),_,_,_),_,_,_,_,_,_,_)
+    case (_,{},_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(_), mT=SOME(mt)))
       equation
         ilst = Matching.getUnassigned(BackendVariable.varsSize(v), inAss1, {});
         ilst = List.fold1(ilst, statesWithUnusedDerivative, mt, {});
@@ -1074,7 +1073,7 @@ algorithm
       then
         (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn);
 
-    case (_,_,_,_,_,BackendDAE.EQSYSTEM(v,_,SOME(_),SOME(_),_,_,_),_,_,_,_,_,_,_)
+    case (_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(_), mT=SOME(_)))
       equation
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,v);
         if Flags.isSet(Flags.BLT_DUMP) then
@@ -1538,20 +1537,21 @@ protected function addStateSets
 algorithm
   (oSetIndex,oSystem) := match(iTplLst,inSystem)
     local
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> om;
-      Option<BackendDAE.IncidenceMatrixT> omT;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+      BackendDAE.EqSystem syst;
       Integer setIndex;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.Variables vars;
+      BackendDAE.StateSets stateSets;
     case ({},_) then (iSetIndex,inSystem);
-    case (_::_,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets,partitionKind))
+    case (_::_, syst)
       equation
-        (setIndex,vars,eqns,stateSets) = generateStateSets(iTplLst,iSetIndex,vars,eqns,stateSets);
+        (setIndex, vars, eqs, stateSets) =
+          generateStateSets(iTplLst, iSetIndex, syst.orderedVars, syst.orderedEqs, syst.stateSets);
+        syst.orderedVars = vars;
+        syst.orderedEqs = eqs;
+        syst.stateSets = stateSets;
       then
-        (setIndex,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets,partitionKind));
+        (setIndex, syst);
   end match;
 end addStateSets;
 
@@ -1998,7 +1998,7 @@ algorithm
         // sort vars with heuristic
         hovvars = BackendVariable.listVar1(statecandidates);
         eqns1 = BackendEquation.listEquation(eqnslst);
-        syst = BackendDAE.EQSYSTEM(hovvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+        syst = BackendDAEUtil.createEqSystem(hovvars, eqns1);
         (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         m1 = incidenceMatrixfromEnhanced2(me,hovvars);
         mT1 = BackendDAEUtil.transposeMatrix(m1,nfreeStates);
@@ -2055,7 +2055,7 @@ algorithm
         eqns = BackendEquation.addEquations(eqnslst1, eqns);
         vars = BackendVariable.listVar1(vlst);
         vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
-        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+        syst = BackendDAEUtil.createEqSystem(vars, eqns);
         // get advanced incidence Matrix
         (me,meT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         if Flags.isSet(Flags.BLT_DUMP) then
@@ -2524,7 +2524,7 @@ algorithm
         (eqnlst,varlst,ass1,ass2,eqns1) := getSetSystem(assigned,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqns1,flag,nassigned,eqnlst,varlst,ass1,ass2);
         eqns := BackendEquation.listEquation(eqnlst);
         vars := BackendVariable.listVar1(varlst);
-        syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+        syst := BackendDAEUtil.createEqSystem(vars, eqns);
         //  BackendDump.printEqSystem(syst);
         //  BackendDump.dumpMatching(listArray(ass1));
         //  BackendDump.dumpMatching(listArray(ass2));
@@ -3347,37 +3347,36 @@ protected function replaceHigherDerivatives
 "author: Frenkel TUD 2013-01
   change for var:STATE(2): der(var,2) to der($DER.var), der(var) -> DER.var, add Var $DER.var:STATE(1)"
   input BackendDAE.EqSystem inSystem;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem osyst = inSystem;
 protected
   BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
-  Option<BackendDAE.IncidenceMatrix> om,omT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
   HashTableCrIntToExp.HashTable ht;
   list<BackendDAE.Var> dummyvars;
-  array<Integer> ass1,ass2;
+  array<Integer> ass1, ass2;
   list<tuple<Integer,Integer>> addassign;
-  Integer nv1,nv;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  Integer nv1, nv;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets,partitionKind=partitionKind) := inSystem;
   // traverse vars and generate dummy vars and replacement rules
   ht := HashTableCrIntToExp.emptyHashTable();
-  nv := BackendVariable.varsSize(vars);
-  (vars,(_,_,nv1,addassign,dummyvars,ht)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,makeHigherStatesRepl,(vars,1,nv,{},{},ht));
+  nv := BackendVariable.varsSize(osyst.orderedVars);
+  BackendDAE.MATCHING(ass1=ass1, ass2=ass2) := osyst.matching;
+
+  (vars, (_, _, nv1, addassign, dummyvars, ht)) :=
+      BackendVariable.traverseBackendDAEVarsWithUpdate( osyst.orderedVars, makeHigherStatesRepl,
+                                                        (osyst.orderedVars, 1, nv, {}, {}, ht) );
   // BaseHashTable.dumpHashTable(ht);
   // add dummy Vars;
   dummyvars := listReverse(dummyvars);
-  vars := BackendVariable.addVars(dummyvars,vars);
+  vars := BackendVariable.addVars(dummyvars, vars);
   // perform replacement rules
-  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
+  (osyst.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceDummyDerivativesVar, ht);
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( osyst.orderedEqs, Expression.traverseSubexpressionsHelper,
+                                                       (replaceDummyDerivativesExp, ht) );
   // extend assignments
   ass1 := Array.expand(nv1-nv, ass1, -1);
   // set the new assignments
-  List.map2_0(addassign,setHigerDerivativeAssignment,ass1,ass2);
-  osyst := BackendDAE.EQSYSTEM(vars,eqns,om,omT,BackendDAE.MATCHING(ass1,ass2,{}),stateSets,partitionKind);
+  List.map2_0(addassign, setHigerDerivativeAssignment, ass1, ass2);
+  osyst.matching := BackendDAE.MATCHING(ass1, ass2, {});
 end replaceHigherDerivatives;
 
 protected function setHigerDerivativeAssignment
@@ -3492,27 +3491,23 @@ protected function addAllDummyStates
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.StateOrder so;
   input HashTableCrIntToExp.HashTable iHt;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem osyst = inSystem;
   output HashTableCrIntToExp.HashTable oHt;
 protected
   BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
-  Option<BackendDAE.IncidenceMatrix> om,omT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
   list<BackendDAE.Var> dummvars;
-  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := inSystem;
   // traverse vars and generate dummy vars and replacement rules
-  (vars,(_,_,dummvars,oHt)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,makeAllDummyVarandDummyDerivativeRepl,(vars,so,{},iHt));
+  (vars, (_, _, dummvars, oHt)) :=
+      BackendVariable.traverseBackendDAEVarsWithUpdate( osyst.orderedVars, makeAllDummyVarandDummyDerivativeRepl,
+                                                        (osyst.orderedVars, so, {}, iHt) );
   // BaseHashTable.dumpHashTable(oHt);
   // add dummy Vars;
   vars := BackendVariable.addVars(dummvars,vars);
   // perform replacement rules
-  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,oHt);
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,oHt));
-  osyst := BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets,partitionKind);
+  (osyst.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceDummyDerivativesVar, oHt);
+  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( osyst.orderedEqs, Expression.traverseSubexpressionsHelper,
+                                                       (replaceDummyDerivativesExp, oHt) );
 end addAllDummyStates;
 
 protected function makeAllDummyVarandDummyDerivativeRepl
@@ -3667,26 +3662,27 @@ protected function addDummyStates
   output BackendDAE.EqSystem osyst;
   output HashTableCrIntToExp.HashTable oHt;
 algorithm
-  (osyst,oHt) :=
-  match (dummyStates, level, repl, inSystem, iHt)
+  (osyst,oHt) := match (dummyStates, inSystem)
     local
       HashTableCrIntToExp.HashTable ht;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
+      BackendDAE.EqSystem syst;
       BackendDAE.BaseClockPartitionKind partitionKind;
-    case ({},_,_,_,_) then (inSystem,iHt);
-    case (_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=matching,stateSets=stateSets,partitionKind=partitionKind),_)
+    case ({}, _)
+      then (inSystem, iHt);
+    case (_, syst)
       equation
         // create dummy_der vars and change deselected states to dummy states
-        ((vars,ht)) = List.fold1(dummyStates,makeDummyVarandDummyDerivative,level,(vars,iHt));
-        (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,Expression.traverseSubexpressionsHelper,(replaceFirstOrderDerivativesExp,repl));
-      then
-        (BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets,partitionKind),ht);
+        ((vars, ht)) = List.fold1(dummyStates, makeDummyVarandDummyDerivative, level, (syst.orderedVars, iHt));
+        (syst.orderedVars, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceDummyDerivativesVar, ht);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( syst.orderedEqs, Expression.traverseSubexpressionsHelper,
+                                                                 (replaceDummyDerivativesExp, ht) );
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( syst.orderedEqs, Expression.traverseSubexpressionsHelper,
+                                                                 (replaceFirstOrderDerivativesExp, repl) );
+      then (syst, ht);
   end match;
 end addDummyStates;
 
@@ -4173,20 +4169,11 @@ end findStateOrder;
 
 protected function findStateOrderWork "author Frenkel TUD 2013-01"
   input BackendDAE.EqSystem inSystem;
-  output BackendDAE.EqSystem outSystem;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  output BackendDAE.EqSystem outSystem = inSystem;
 algorithm
-  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := inSystem;
   // find der(s) = v
-  vars := BackendEquation.traverseEquationArray(eqns, traverseFindStateOrder, vars);
-  outSystem := BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind);
+  outSystem.orderedVars := BackendEquation.traverseEquationArray( inSystem.orderedEqs, traverseFindStateOrder,
+                                                                  inSystem.orderedVars );
 end findStateOrderWork;
 
 protected function traverseFindStateOrder

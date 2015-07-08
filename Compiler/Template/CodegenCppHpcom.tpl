@@ -25,10 +25,10 @@ template translateModel(SimCode simCode)
       let useMemoryOptimization = Flags.isSet(Flags.HPCOM_MEMORY_OPT)
 
       let className = lastIdentOfPath(modelInfo.name)
-      let numRealVars = numRealvars(modelInfo, hpcomData.hpcOmMemory)
-      let numIntVars = numIntvars(modelInfo, hpcomData.hpcOmMemory)
-      let numBoolVars = numBoolvars(modelInfo, hpcomData.hpcOmMemory)
-      let numPreVars = getPreVarsCount(modelInfo, hpcomData.hpcOmMemory)
+      let numRealVars = numRealvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
+      let numIntVars = numIntvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
+      let numBoolVars = numBoolvarsHpcom(modelInfo, hpcomData.hpcOmMemory)
+      let numPreVars = numPreVarsHpcom(modelInfo, hpcomData.hpcOmMemory)
 
       let() = textFile(simulationMainFile(target, simCode, &extraFuncs, &extraFuncsDecl, "",
                                           (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""),
@@ -36,19 +36,19 @@ template translateModel(SimCode simCode)
                                           (if Flags.isSet(USEMPI) then mpiFinalize() else ""),
                                           numRealVars, numIntVars, numBoolVars, numPreVars),
                                           'OMCpp<%fileNamePrefix%>Main.cpp')
-      let() = textFile(simulationCppFile(simCode, contextOther, update(allEquations, whenClauses, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
+      let() = textFile(simulationCppFile(simCode, contextOther, updateHpcom(allEquations, whenClauses, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
                                          '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', &extraFuncs, &extraFuncsDecl, className,
-                                         generateAdditionalConstructorDefinitions(hpcomData.schedules),
-                                         generateAdditionalConstructorBodyStatements(hpcomData.schedules, className, dotPath(modelInfo.name)),
-                                         generateAdditionalDestructorBodyStatements(hpcomData.schedules),
+                                         additionalHpcomConstructorDefinitions(hpcomData.schedules),
+                                         additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, dotPath(modelInfo.name)),
+                                         additionalHpcomDestructorBodyStatements(hpcomData.schedules),
                                          stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
 
       let() = textFile(simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
-                      generateAdditionalIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
+                      additionalHpcomIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
                       "",
-                      generateAdditionalProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", false),
-                      memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', false),
-                      memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', false), false),
+                      additionalHpcomProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", false),
+                      memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
+                      memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false), false),
                       //CodegenCpp.MemberVariablePreVariables(modelInfo,false), false),
                       'OMCpp<%fileNamePrefix%>.h')
 
@@ -93,18 +93,18 @@ template translateModel(SimCode simCode)
 end translateModel;
 
 // HEADER
-template generateAdditionalIncludes(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template additionalHpcomIncludes(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
   match simCode
     case SIMCODE(__) then
       <<
-      <%generateAdditionalIncludesForParallelCode(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
+      <%additionalHpcomIncludesForParallelCode(simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace)%>
       >>
   end match
-end generateAdditionalIncludes;
+end additionalHpcomIncludes;
 
-template generateAdditionalIncludesForParallelCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
+template additionalHpcomIncludesForParallelCode(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match type
@@ -139,9 +139,9 @@ template generateAdditionalIncludesForParallelCode(SimCode simCode, Text& extraF
       #include <boost/thread.hpp>
       >>
   end match
-end generateAdditionalIncludesForParallelCode;
+end additionalHpcomIncludesForParallelCode;
 
-template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template additionalHpcomProtectedMemberDeclaration(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
   match simCode
@@ -196,7 +196,7 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Text& ext
       >>%>
       >>
   end match
-end generateAdditionalProtectedMemberDeclaration;
+end additionalHpcomProtectedMemberDeclaration;
 
 template generateAdditionalStructHeaders(Schedule odeSchedule)
 ::=
@@ -407,7 +407,7 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
   >>
 end generateThreadFunctionHeaderDecl;
 
-template generateAdditionalConstructorDefinitions(Option<tuple<Schedule,Schedule,Schedule>> scheduleOpt)
+template additionalHpcomConstructorDefinitions(Option<tuple<Schedule,Schedule,Schedule>> scheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match scheduleOpt
@@ -435,9 +435,9 @@ template generateAdditionalConstructorDefinitions(Option<tuple<Schedule,Schedule
       end match
     else ""
   end match
-end generateAdditionalConstructorDefinitions;
+end additionalHpcomConstructorDefinitions;
 
-template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt, String modelNamePrefixStr, String fullModelName)
+template additionalHpcomConstructorBodyStatements(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt, String modelNamePrefixStr, String fullModelName)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match schedulesOpt
@@ -524,7 +524,7 @@ template generateAdditionalConstructorBodyStatements(Option<tuple<Schedule,Sched
         else ""
     else ""
   end match
-end generateAdditionalConstructorBodyStatements;
+end additionalHpcomConstructorBodyStatements;
 
 template generateThreadMeasureTimeDeclaration(String fullModelName, Integer numberOfThreads)
 ::=
@@ -632,7 +632,7 @@ match(iType)
   >>
 end destroyArrayLocks;
 
-template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt)
+template additionalHpcomDestructorBodyStatements(Option<tuple<Schedule,Schedule,Schedule>> schedulesOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match schedulesOpt
@@ -694,29 +694,27 @@ template generateAdditionalDestructorBodyStatements(Option<tuple<Schedule,Schedu
         else ""
     else ""
   end match
-end generateAdditionalDestructorBodyStatements;
+end additionalHpcomDestructorBodyStatements;
 
-
-template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template updateHpcom(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
 
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__), hpcomData=HPCOMDATA(__)) then
-      let parCode = generateParallelEvaluate(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcomData.schedules, context, stateDerVectorName, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
+      let &extraFuncsPar = buffer ""
+      let parCode = generateParallelEvaluate(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, extraFuncsPar ,extraFuncsDecl, extraFuncsNamespace, hpcomData.schedules, context, stateDerVectorName, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
       <%equationFunctions(allEquations,whenClauses, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,false)%>
 
       <%createEvaluateConditions(allEquations,whenClauses, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, contextOther, stateDerVectorName, useFlatArrayNotation)%>
-      /*
-      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther)%>
 
-      <%createEvaluateAll(allEquations,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation,  boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
-      */
       <%parCode%>
+
+      <%extraFuncsPar%>
       >>
   end match
-end update;
+end updateHpcom;
 
 template generateParallelEvaluate(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name,
                  list<SimWhenClause> whenClauses, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Option<tuple<Schedule, Schedule, Schedule>> schedulesOpt, Context context, Text stateDerVectorName /*=__zDot*/,
@@ -1880,41 +1878,41 @@ template simulationMakefile(String target, SimCode simCode, Text& extraFuncs, Te
                                 additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI))
 end simulationMakefile;
 
-template getPreVarsCount(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
+template numPreVarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(floatArraySize=floatArraySize,intArraySize=intArraySize,boolArraySize=boolArraySize))) then
       '<%floatArraySize%> + <%intArraySize%> + <%boolArraySize%>'
     else
       CodegenCpp.getPreVarsCount(modelInfo)
-end getPreVarsCount;
+end numPreVarsHpcom;
 
-template numRealvars(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
+template numRealvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(floatArraySize=floatArraySize))) then
       '<%floatArraySize%>'
     else
       '<%CodegenCpp.numRealvars(modelInfo)%>'
-end numRealvars;
+end numRealvarsHpcom;
 
-template numIntvars(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
+template numIntvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(intArraySize=intArraySize))) then
       '<%intArraySize%>'
     else
       CodegenCpp.numIntvars(modelInfo)
-end numIntvars;
+end numIntvarsHpcom;
 
-template numBoolvars(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
+template numBoolvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOpt)
 ::=
   match(hpcOmMemoryOpt)
     case(SOME(hpcomMemory as MEMORYMAP_ARRAY(boolArraySize=boolArraySize))) then
       '<%boolArraySize%>'
     else
       CodegenCpp.numBoolvars(modelInfo)
-end numBoolvars;
+end numBoolvarsHpcom;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenCppHpcom;

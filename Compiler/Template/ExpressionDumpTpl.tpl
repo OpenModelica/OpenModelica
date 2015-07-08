@@ -92,6 +92,12 @@ match exp
     let rparen = if needs_paren then ")"
     let exp_str = dumpExp(exp, stringDelimiter)
     '<%lparen%><%exp_str%><%rparen%>[<%ix%>]'
+  case RSUB(__) then
+    let needs_paren = parenthesizeSubExp(exp)
+    let lparen = if needs_paren then "("
+    let rparen = if needs_paren then ")"
+    let exp_str = dumpExp(exp, stringDelimiter)
+    '<%if typeinfo() then '/*RSUB: <%unparseType(ty)%>*/'%><%lparen%><%exp_str%><%rparen%>.<%fieldName%>'
   case SIZE(__) then
     let exp_str = dumpExp(exp, stringDelimiter)
     let dim_str = match sz case SOME(dim) then ', <%dumpExp(dim, stringDelimiter)%>'

@@ -8232,5 +8232,69 @@ algorithm
   clocks := arrayCreate(0, DAE.INFERRED_CLOCK());
 end emptyClocks;
 
+public function componentsEqual"outputs true if 1 strongly connected components are equal"
+  input BackendDAE.StrongComponent comp1;
+  input BackendDAE.StrongComponent comp2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(comp1,comp2)
+    local
+      Integer i1,i2, j1,j2;
+      list<Integer> l1,l2,k1,k2;
+      list<tuple<Integer,list<Integer>>> l3,k3;
+  case(BackendDAE.SINGLEEQUATION(eqn=i1,var=i2),BackendDAE.SINGLEEQUATION(eqn=j1,var=j2))
+    equation
+  then intEq(i1,j1) and intEq(i2,j2);
+
+  case(BackendDAE.EQUATIONSYSTEM(eqns=l1,vars=l2),BackendDAE.EQUATIONSYSTEM(eqns=k1,vars=k2))
+    equation
+  then List.isEqualOnTrue(l1,k1,intEq) and List.isEqualOnTrue(l2,k2,intEq);
+
+  case(BackendDAE.SINGLEARRAY(eqn=i1,vars=l1),BackendDAE.SINGLEARRAY(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLEALGORITHM(eqn=i1,vars=l1),BackendDAE.SINGLEALGORITHM(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLECOMPLEXEQUATION(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLEWHENEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEWHENEQUATION(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLEIFEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEIFEQUATION(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=l1,residualequations=l2,otherEqnVarTpl=l3)),BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=k1,residualequations=k2,otherEqnVarTpl=k3)))
+    equation
+  then List.isEqualOnTrue(l1,k1,intEq) and List.isEqualOnTrue(l2,k2,intEq) and List.isEqualOnTrue(l3,k3,otherEqnVarTplEqual);
+  else
+    then false;
+  end matchcontinue;
+end componentsEqual;
+
+protected function otherEqnVarTplEqual"compares 2 tpls from otherEqnVarTpl in TearingSets"
+  input tuple<Integer,list<Integer>> tpl1;
+  input tuple<Integer,list<Integer>> tpl2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(tpl1,tpl2)
+    local
+      Integer i1,i2;
+      list<Integer> l1,l2;
+  case((i1,l1),(i2,l2))
+    equation
+  then intEq(i1,i2) and List.isEqualOnTrue(l1,l2,intEq);
+
+  else
+    then false;
+  end matchcontinue;
+end otherEqnVarTplEqual;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

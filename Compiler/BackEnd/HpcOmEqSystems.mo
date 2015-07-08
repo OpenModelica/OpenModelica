@@ -169,7 +169,8 @@ algorithm
       list<Integer> tvarIdcs, resEqIdcs, eqIdcs, varIdcs;
       list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      BackendDAE.EqSystem systTmp;
+      BackendDAE.EqSystem syst;
+      EqSys hpcSyst;
       BackendDAE.EquationArray eqs;
       BackendDAE.Jacobian jac;
       BackendDAE.JacobianType jacType;
@@ -182,14 +183,13 @@ algorithm
       BackendVarTransform.VariableReplacements derRepl;
       list<BackendDAE.Equation> eqLst, eqsNew, eqsOld, resEqs, addEqs;
       list<BackendDAE.Var> varLst,varLstRepl, varsNew, varsOld, tvars, addVars;
-      EqSys syst;
     case(_,_,_,_,_,_,_)
       equation
         // completed
         true = listLength(compsIn) < compIdx;
       then
         (systIn,tornSysIdxIn);
-    case(_,_,_,_,_,_,_)
+    case(_,_,_,_,syst,_,_)
       equation
         // strongComponent is a linear tornSystem
         true = listLength(compsIn) >= compIdx;
@@ -204,16 +204,14 @@ algorithm
 
         // add the new vars and equations to the original EqSystem
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
-        BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets, partitionKind=partitionKind) = systIn;
-        varsOld = BackendVariable.varList(vars);
-        eqsOld = BackendEquation.equationList(eqs);
+        varsOld = BackendVariable.varList(syst.orderedVars);
+        eqsOld = BackendEquation.equationList(syst.orderedEqs);
 
         varLst = listAppend(varsOld,varsNew);
         eqLst = listAppend(eqsOld, eqsNew);
         eqLst = List.fold2(List.intRange(listLength(resEqIdcs)),replaceAtPositionFromList,resEqs,resEqIdcs,eqLst);  // replaces the old residualEquations with the new ones
-        vars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
-        eqs = BackendEquation.listEquation(eqLst);
-
+        syst.orderedVars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
+        syst.orderedEqs = BackendEquation.listEquation(eqLst);
 
         // build the matching
         ass1All = arrayCreate(listLength(varLst),-1);
@@ -231,15 +229,15 @@ algorithm
         compsNew = listAppend(compsNew, otherComps);
         compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
         ((ass1All,ass2All)) = List.fold2(List.intRange(arrayLength(ass1New)),updateMatching,(listLength(eqsOld),listLength(varsOld)),(ass1New,ass2New),(ass1All,ass2All));
-        matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
+        syst.matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
 
         //build new DAE-EqSystem
-        systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
-        (systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
-        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdxIn+1);
+        syst = BackendDAEUtil.setEqSystMatrices(syst);
+        (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(),NONE());
+        (syst, tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,syst,sharedIn,tornSysIdxIn+1);
       then
-        (systTmp,tornSysIdx);
-    case(_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqs, stateSets=stateSets, partitionKind=partitionKind),_,_)
+        (syst, tornSysIdx);
+    case(_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqs),_,_)
       equation
         // strongComponent is a system of equations
         true = listLength(compsIn) >= compIdx;
@@ -263,9 +261,9 @@ algorithm
               //BackendDump.dumpEquationList(eqLst,"eqLst");
 
          // build linear system
-         syst = getEqSystem(eqLst,varLstRepl);
-           //dumpEqSys(syst);
-         (eqsNew,addEqs,addVars) = CramerRule(syst);
+         hpcSyst = getEqSystem(eqLst, varLstRepl);
+           //dumpEqSys(hpcSyst);
+         (eqsNew,addEqs,addVars) = CramerRule(hpcSyst);
          (eqsNew,_) = BackendVarTransform.replaceEquations(eqsNew,derRepl,NONE());//introduce der(.) for $DER.
 
            //BackendDump.dumpEquationList(eqsNew,"eqsNew");
@@ -288,8 +286,8 @@ algorithm
         eqLst = listAppend(eqsOld,addEqs);
         varLst = listAppend(varsOld,addVars);
         eqLst = List.fold2(List.intRange(listLength(eqsNew)),replaceAtPositionFromList,eqsNew,eqIdcs,eqLst);  // replaces the old residualEquations with the new ones
-        eqs = BackendEquation.listEquation(eqLst);
-        vars = BackendVariable.listVar1(varLst);
+        syst.orderedEqs = BackendEquation.listEquation(eqLst);
+        syst.orderedVars = BackendVariable.listVar1(varLst);
 
         // update assignments
         ass1All = arrayCreate(listLength(varLst),-1);
@@ -297,22 +295,22 @@ algorithm
         ass1All = Array.copy(ass1,ass1All);  // the comps before and after the tornsystem
         ass2All = Array.copy(ass2,ass2All);
         List.map2_0(compsNew,updateAssignmentsByComp,ass1All,ass2All);
-        matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
+        syst.matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
            //BackendDump.dumpFullMatching(matching);
 
         //build new DAE-EqSystem
-        systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
+        syst = BackendDAEUtil.setEqSystMatrices(syst);
         //(systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
 
-        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdxIn+1);
+        (syst,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1All,ass2All,syst,sharedIn,tornSysIdxIn+1);
       then
-        (systTmp,tornSysIdx);
+        (syst,tornSysIdx);
     else
       // go to next StrongComponent
       equation
-        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
+        (syst, tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
       then
-        (systTmp,tornSysIdx);
+        (syst, tornSysIdx);
   end matchcontinue;
 end reduceLinearTornSystem1;
 
@@ -579,7 +577,7 @@ protected
 algorithm
   eqArr := BackendEquation.listEquation(eqsIn);
   varArr := BackendVariable.listVar1(varsIn);
-  eqSys := BackendDAE.EQSYSTEM(varArr,eqArr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+  eqSys := BackendDAEUtil.createEqSystem(varArr, eqArr);
   (m,mT) := BackendDAEUtil.incidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE());
   size := listLength(eqsIn);
   (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT,numAuxiliaryVars=numAuxiliaryVars),({},{},resEqsIn));
@@ -1044,7 +1042,7 @@ algorithm
         // get the EQSYSTEM, the incidenceMatrix and a matching
         vars = BackendVariable.listVar1(inVars);
         eqArr = BackendEquation.listEquation(inEqs);
-        sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
+        sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
         (sysTmp,m,mt) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.NORMAL(),NONE());
         nVars = listLength(inVars);
         nEqs = listLength(inEqs);
@@ -1054,7 +1052,7 @@ algorithm
         BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
         BackendDAEEXT.getAssignment(ass2, ass1);
         matching = BackendDAE.MATCHING(ass1, ass2, {});
-        sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,SOME(m),SOME(mt),matching,{},BackendDAE.UNKNOWN_PARTITION());
+        sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
         // perform BLT to order the StrongComponents
         mapIncRowEqn = listArray(List.intRange(nEqs));
         mapEqnIncRow = Array.map(mapIncRowEqn,List.create);

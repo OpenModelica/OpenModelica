@@ -819,7 +819,17 @@ constant Type T_FUNCTION_DEFAULT    = T_FUNCTION({},T_ANYTYPE_DEFAULT,FUNCTION_A
 constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSource);
 constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
 constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with record CiState";
-constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},true,{"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","lastModification"},Absyn.IDENT("SourceInfo")::{});
+
+constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), 1, {
+    TYPES_VAR("fileName", dummyAttrVar, T_STRING_DEFAULT, UNBOUND(), NONE()),
+    TYPES_VAR("isReadOnly", dummyAttrVar, T_BOOL_DEFAULT, UNBOUND(), NONE()),
+    TYPES_VAR("lineNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
+    TYPES_VAR("columnNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
+    TYPES_VAR("lineNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
+    TYPES_VAR("columnNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
+    TYPES_VAR("lastModification", dummyAttrVar, T_REAL_DEFAULT, UNBOUND(), NONE())
+  }, true, emptyTypeSource);
+constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo")::{});
 
 // Arrays of unknown dimension, eg. Real[:]
 public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
@@ -951,7 +961,7 @@ public uniontype Type "models the different front-end and back-end types"
     // TODO: You can't trust these fields as it seems MetaUtil.fixUniontype is sent empty elements when running dependency analysis
     list<Absyn.Path> paths;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-    list<String> singletonFields "The field names of the singleton";
+    EvaluateSingletonType singletonType;
     TypeSource source;
   end T_METAUNIONTYPE;
 
@@ -1000,6 +1010,23 @@ public uniontype CodeType
   record C_VARIABLENAMES "Array of VariableName"
   end C_VARIABLENAMES;
 end CodeType;
+
+uniontype EvaluateSingletonType "Is here because constants are not allowed to contain function pointers for some reason"
+  record EVAL_SINGLETON_TYPE_FUNCTION
+    EvaluateSingletonTypeFunction fun;
+  end EVAL_SINGLETON_TYPE_FUNCTION;
+
+  record EVAL_SINGLETON_KNOWN_TYPE
+    Type ty;
+  end EVAL_SINGLETON_KNOWN_TYPE;
+
+  record NOT_SINGLETON
+  end NOT_SINGLETON;
+end EvaluateSingletonType;
+
+partial function EvaluateSingletonTypeFunction
+  output Type ty;
+end EvaluateSingletonTypeFunction;
 
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
 public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
@@ -1369,6 +1396,13 @@ uniontype Exp "Expressions
     Integer ix;
     Type ty;
   end TSUB;
+
+  record RSUB "Record field indexing"
+    Exp exp;
+    Integer ix; // Used when generating code for MetaModelica records
+    String fieldName;
+    Type ty;
+  end RSUB;
 
   record SIZE "The size operator"
     Exp exp;

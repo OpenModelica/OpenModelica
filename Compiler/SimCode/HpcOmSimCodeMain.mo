@@ -329,9 +329,9 @@ algorithm
 
       //Apply filters
       //-------------
-      (taskGraphDaeSimplified,taskGraphDataDaeSimplified) = (taskGraphDae,taskGraphDataDae);
-      (taskGraphOdeSimplified,taskGraphDataOdeSimplified) = applyGRS(taskGraphOde,taskGraphDataOde, sccSimEqMapping, inBackendDAE);
-      (taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified) = (taskGraphZeroFuncs,taskGraphDataZeroFuncs);
+      (taskGraphDaeSimplified,taskGraphDataDaeSimplified) = applyGRS(taskGraphDae,taskGraphDataDae);
+      (taskGraphOdeSimplified,taskGraphDataOdeSimplified) = applyGRS(taskGraphOde,taskGraphDataOde);
+      (taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified) = applyGRS(taskGraphZeroFuncs,taskGraphDataZeroFuncs);
       SimCodeUtil.execStat("hpcom GRS");
 
       fileName = ("taskGraph"+filenamePrefix+"ODE_merged.graphml");
@@ -348,8 +348,19 @@ algorithm
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
 
       (scheduleDae,simCode,taskGraphDaeScheduled,taskGraphDataDaeScheduled,sccSimEqMapping) = createSchedule(taskGraphDaeSimplified,taskGraphDataDaeSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksDae,"DAE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+           //criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(scheduleDae,numProc,taskGraphDaeScheduled,taskGraphDataDaeScheduled,"DAE system");
+           //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleDae,arrayLength(taskGraphDaeScheduled));
+           //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDaeScheduled, taskGraphDataDaeScheduled, fileName+"_schedDAE.graphml", criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
+
       (scheduleOde,simCode,taskGraphOdeScheduled,taskGraphDataOdeScheduled,sccSimEqMapping) = createSchedule(taskGraphOdeSimplified,taskGraphDataOdeSimplified,sccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksOde,"ODE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+           //criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(scheduleOde,numProc,taskGraphOdeScheduled,taskGraphDataOdeScheduled,"DAE system");
+           //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleOde,arrayLength(taskGraphOdeScheduled));
+           //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, fileName+"_schedODE.graphml", criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
+
       (scheduleZeroFunc,simCode,taskGraphZeroFuncScheduled,taskGraphDataZeroFuncScheduled,sccSimEqMapping) = createSchedule(taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksZeroFunc,"ZeroFunc system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
+            //criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(scheduleZeroFunc,numProc,taskGraphZeroFuncScheduled,taskGraphDataZeroFuncScheduled,"DAE system");
+            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleZeroFunc,arrayLength(taskGraphZeroFuncScheduled));
+            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphZeroFuncScheduled, taskGraphDataZeroFuncScheduled, fileName+"_schedZE.graphml", criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
 
       SimCode.SIMCODE( modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations,
                        partitionsKind, baseClocks, useHomotopy, initialEquations, removedInitialEquations, startValueEquations,
@@ -378,7 +389,7 @@ algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataScheduled);
 
-      checkOdeSystemSize(taskGraphDataOdeScheduled,odeEquations);
+      checkOdeSystemSize(taskGraphDataOdeScheduled,odeEquations,sccSimEqMapping);
       SimCodeFunctionUtil.execStat("hpcom check ODE system size");
 
       //Create Memory-Map and Sim-Code
@@ -483,8 +494,6 @@ public function applyGRS"applies several task graph rewriting rules to merge tas
 author:Waurich 2014-11"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  input array<list<Integer>> iSccSimEqMapping;
-  input BackendDAE.BackendDAE iBackendDAE;
   output HpcOmTaskGraph.TaskGraph oTaskGraph;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 protected
@@ -1249,8 +1258,10 @@ Remark: this can occur when asserts are added to the ode-system.
 author:marcusw"
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input list<list<SimCode.SimEqSystem>> iOdeEqs;
+  input array<list<Integer>> iSccSimEqMapping;
   output Boolean oIsCorrect;
 protected
+  Integer scc;
   list<Integer> sccs;
   Integer actualSizePre, actualSize;
   Integer targetSize;
@@ -1261,12 +1272,18 @@ algorithm
   if(intNe(actualSizePre, actualSize)) then
     print("There are simCode-equations multiple times in the graph structure.\n");
   end if;
+  actualSize := 0;
+  for scc in sccs loop
+    actualSize := actualSize + listLength(arrayGet(iSccSimEqMapping, scc));
+  end for;
+
   targetSize := listLength(List.flatten(iOdeEqs));
   oIsCorrect := intEq(targetSize,actualSize);
   if(oIsCorrect) then
     //print("the ODE-system size is correct("+intString(actualSize)+")\n");
   else
-    print("the size should be "+intString(targetSize)+" but it is "+intString(actualSize)+"!\n");
+    print("the size of the ODE-system should be "+intString(targetSize)+" but it is "+intString(actualSize)+"!\n");
+    print("expected the following sim code equations: " + stringDelimitList(List.map(List.map(List.flatten(iOdeEqs), SimCodeUtil.simEqSystemIndex), intString), ",") + "\n");
     print("the ODE-system is NOT correct\n");
   end if;
 end checkOdeSystemSize;
