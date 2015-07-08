@@ -3323,7 +3323,6 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
     data->simulationInfo.callStatistics.functionODE++;
 
-    data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, functionODE_systems);'
     else '<%fncalls%>' %>
 
@@ -3355,7 +3354,6 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     TRACE_PUSH
     <%varDecls%>
 
-    data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, functionAlg_systems);'
     else '<%fncalls%>' %>
 
@@ -3416,6 +3414,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, functionDAE_systems);'
     else '<%fncalls%>' %>
     <%reinit%>
+    data->simulationInfo.discreteCall = 0;
 
     TRACE_POP
     return 0;
@@ -3477,7 +3476,6 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
     data->simulationInfo.callStatistics.functionZeroCrossingsEquations++;
 
-    data->simulationInfo.discreteCall = 0;
     <%eqs%>
 
     TRACE_POP
