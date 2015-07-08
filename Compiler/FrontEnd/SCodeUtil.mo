@@ -34,7 +34,7 @@ encapsulated package SCodeUtil
   package:     SCodeUtil
   description: SCodeUtil translates Absyn to SCode intermediate form
 
-  RCS: $Id$
+  RCS: $Id: SCodeUtil.mo 25312 2015-03-30 08:35:17Z jansilar $
 
   This module contains functions to translate from
   an Absyn data representation to a simplified version
@@ -382,18 +382,19 @@ algorithm
       Absyn.Parallelism p;
       Absyn.ArrayDim adim,extraADim;
       Absyn.Direction dir;
+      Absyn.IsField fi;
       SCode.ConnectorType ct;
       SCode.Parallelism sp;
       SCode.Variability sv;
 
-    case (Absyn.ATTR(f, s, p, v, dir, adim),extraADim)
+    case (Absyn.ATTR(f, s, p, v, dir, fi, adim),extraADim)
       equation
         ct = translateConnectorType(f, s);
         sv = translateVariability(v);
         sp = translateParallelism(p);
         adim = listAppend(extraADim, adim);
       then
-        SCode.ATTR(adim, ct, sp, sv, dir);
+        SCode.ATTR(adim, ct, sp, sv, dir, fi);
   end match;
 end translateAttributes;
 
@@ -1139,6 +1140,7 @@ algorithm
       list<SCode.Subscript> tot_dim,ad,d;
       Absyn.ElementAttributes attr;
       Absyn.Direction di;
+      Absyn.IsField isf;
       Absyn.TypeSpec t;
       Option<Absyn.Modification> m;
       Option<Absyn.Comment> comment;
@@ -1219,7 +1221,7 @@ algorithm
     case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),_) then {};
 
     case (_,_,_,repl,vis,Absyn.COMPONENTS(attributes =
-      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
+      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,isField = isf,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
         // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
@@ -1244,7 +1246,7 @@ algorithm
       then
         (SCode.COMPONENT(n,
           SCode.PREFIXES(vis,sRed,sFin,io,sRep),
-          SCode.ATTR(tot_dim,ct,prl1,var1,di),
+          SCode.ATTR(tot_dim,ct,prl1,var1,di,isf),
           t,mod,cmt,cond,info) :: xs_1);
 
     case (_,_,_,_,vis,Absyn.IMPORT(import_ = imp, info = info),_)
@@ -2166,7 +2168,7 @@ protected
 algorithm
   ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
   cd := SCode.DERIVED(ts,SCode.NOMOD(),
-                      SCode.ATTR({},SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR()));
+                      SCode.ATTR({},SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR(),Absyn.NONFIELD()));
   elt := SCode.CLASS(
            str,
            SCode.PREFIXES(
@@ -2752,8 +2754,8 @@ algorithm
       SCode.Parallelism p1, p2;
       SCode.Variability v1, v2;
       Absyn.Direction d1, d2;
-
-    case(SCode.ATTR({}, ct1, p1, v1, d1), SCode.ATTR(ad2, _, _, _, _)) then SCode.ATTR(ad2, ct1, p1, v1, d1);
+      Absyn.IsField if1;
+    case(SCode.ATTR({}, ct1, p1, v1, d1, if1), SCode.ATTR(ad2, _, _, _, _, _)) then SCode.ATTR(ad2, ct1, p1, v1, d1, if1);
     else fromRedeclare;
 
   end matchcontinue;

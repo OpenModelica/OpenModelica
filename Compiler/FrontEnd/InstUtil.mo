@@ -7354,14 +7354,15 @@ algorithm
       Absyn.Direction dir;
       SCode.Parallelism prl;
       SCode.Variability vt;
+      Absyn.IsField isf;
 
     // if classprefix is variable, keep component variability
     case (_,Prefix.PREFIX(_,Prefix.CLASSPRE(SCode.VAR()))) then attr;
     // if variability is constant, do not override it!
     case(SCode.ATTR(variability = SCode.CONST()),_) then attr;
     // if classprefix is parameter or constant, override component variability
-    case(SCode.ATTR(ad,ct,prl,_,dir),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
-      then SCode.ATTR(ad,ct,prl,vt,dir);
+    case(SCode.ATTR(ad,ct,prl,_,dir,isf),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
+      then SCode.ATTR(ad,ct,prl,vt,dir,isf);
     // anything else
     else attr;
   end matchcontinue;

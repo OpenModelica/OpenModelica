@@ -34,7 +34,7 @@ encapsulated package NFSCodeLookup
   package:     NFSCodeLookup
   description: SCode flattening
 
-  RCS: $Id$
+  RCS: $Id: NFSCodeLookup.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module flattens the SCode representation by removing all extends, imports
   and redeclares, and fully qualifying class names.
@@ -77,10 +77,10 @@ public constant SCode.Prefixes BUILTIN_PREFIXES = SCode.PREFIXES(
   Absyn.NOT_INNER_OUTER(), SCode.NOT_REPLACEABLE());
 
 public constant SCode.Attributes BUILTIN_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR());
+  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD());
 
 public constant SCode.Attributes BUILTIN_CONST_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR());
+  {}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD());
 
 public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
   {}, {}, {}, {}, {}, {}, {}, NONE());

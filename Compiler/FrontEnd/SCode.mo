@@ -34,7 +34,7 @@ encapsulated package SCode
   package:     SCode
   description: SCode intermediate form
 
-  RCS: $Id$
+  RCS: $Id: SCode.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module contains data structures to describe a Modelica
   model in a more convenient (canonical) way than the Absyn module does.
@@ -580,6 +580,7 @@ uniontype Attributes "- Attributes"
     Parallelism parallelism "parallelism prefix: parglobal, parlocal, parprivate";
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
+    Absyn.IsField isField "non-fiel / field";
   end ATTR;
 end Attributes;
 
@@ -616,11 +617,11 @@ public constant Prefixes defaultPrefixes =
     NOT_REPLACEABLE());
 
 public constant Attributes defaultVarAttr =
-  ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.BIDIR());
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.BIDIR(), Absyn.NONFIELD());
 public constant Attributes defaultParamAttr =
-  ATTR({}, POTENTIAL(), NON_PARALLEL(), PARAM(), Absyn.BIDIR());
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), PARAM(), Absyn.BIDIR(), Absyn.NONFIELD());
 public constant Attributes defaultConstAttr =
-  ATTR({}, POTENTIAL(), NON_PARALLEL(), CONST(), Absyn.BIDIR());
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), CONST(), Absyn.BIDIR(), Absyn.NONFIELD());
 
 // .......... functionality .........
 protected import Error;
@@ -1659,14 +1660,16 @@ algorithm
       ConnectorType ct1, ct2;
       Absyn.ArrayDim ad1,ad2;
       Absyn.Direction dir1,dir2;
+      Absyn.IsField if1,if2;
 
-    case(ATTR(ad1,ct1,prl1,var1,dir1),ATTR(ad2,ct2,prl2,var2,dir2))
+    case(ATTR(ad1,ct1,prl1,var1,dir1,if1),ATTR(ad2,ct2,prl2,var2,dir2,if2))
       equation
         true = arrayDimEqual(ad1,ad2);
         true = valueEq(ct1, ct2);
         true = parallelismEqual(prl1,prl2);
         true = variabilityEqual(var1,var2);
         true = Absyn.directionEqual(dir1,dir2);
+        true = Absyn.isFieldEqual(if1,if2);
       then
         true;
 
@@ -3590,19 +3593,21 @@ algorithm
       Parallelism p1,p2,p;
       Variability v1,v2,v;
       Absyn.Direction d1,d2,d;
+      Absyn.IsField isf1, isf2, isf;
       Absyn.ArrayDim ad1,ad2,ad;
       ConnectorType ct1, ct2, ct;
 
     case (_,NONE()) then SOME(ele);
-    case(ATTR(ad1,ct1,p1,v1,d1), SOME(ATTR(_,ct2,p2,v2,d2)))
+    case(ATTR(ad1,ct1,p1,v1,d1,isf1), SOME(ATTR(_,ct2,p2,v2,d2,isf2)))
       equation
         ct = propagateConnectorType(ct1, ct2);
         p = propagateParallelism(p1,p2);
         v = propagateVariability(v1,v2);
         d = propagateDirection(d1,d2);
+        isf = propagateIsField(isf1,isf2);
         ad = ad1; // TODO! CHECK if ad1 == ad2!
       then
-        SOME(ATTR(ad,ct,p,v,d));
+        SOME(ATTR(ad,ct,p,v,d,isf));
   end match;
 end mergeAttributes;
 
@@ -3763,9 +3768,10 @@ protected
   Variability v;
   Parallelism p;
   Absyn.Direction d;
+  Absyn.IsField isf;
 algorithm
-  ATTR(_, ct, p, v, d) := inAttributes;
-  outAttributes := ATTR({}, ct, p, v, d);
+  ATTR(_, ct, p, v, d, isf) := inAttributes;
+  outAttributes := ATTR({}, ct, p, v, d, isf);
 end removeAttributeDimensions;
 
 public function setAttributesDirection
@@ -3777,9 +3783,10 @@ protected
   ConnectorType ct;
   Parallelism p;
   Variability v;
+  Absyn.IsField isf;
 algorithm
-  ATTR(ad, ct, p, v, _) := inAttributes;
-  outAttributes := ATTR(ad, ct, p, v, inDirection);
+  ATTR(ad, ct, p, v, _, isf) := inAttributes;
+  outAttributes := ATTR(ad, ct, p, v, inDirection, isf);
 end setAttributesDirection;
 
 public function attrVariability
@@ -5335,9 +5342,10 @@ protected
   Parallelism prl1,prl2;
   Variability var1, var2;
   Absyn.Direction dir1, dir2;
+  Absyn.IsField if1, if2;
 algorithm
-  ATTR(dims1, ct1, prl1, var1, dir1) := inOriginalAttributes;
-  ATTR(dims2, ct2, prl2, var2, dir2) := inNewAttributes;
+  ATTR(dims1, ct1, prl1, var1, dir1, if1) := inOriginalAttributes;
+  ATTR(dims2, ct2, prl2, var2, dir2, if2) := inNewAttributes;
 
   // If the new component has an array type, don't propagate the old dimensions.
   // E.g. type Real3 = Real[3];
@@ -5351,7 +5359,8 @@ algorithm
   prl2 := propagateParallelism(prl1,prl2);
   var2 := propagateVariability(var1, var2);
   dir2 := propagateDirection(dir1, dir2);
-  outNewAttributes := ATTR(dims2, ct2, prl2, var2, dir2);
+  if2 := propagateIsField(if1,if2);
+  outNewAttributes := ATTR(dims2, ct2, prl2, var2, dir2, if2);
 end propagateAttributes;
 
 public function propagateArrayDimensions
@@ -5408,6 +5417,18 @@ algorithm
     else inNewDirection;
   end match;
 end propagateDirection;
+
+public function propagateIsField
+  input Absyn.IsField inOriginalIsField;
+  input Absyn.IsField inNewIsField;
+  output Absyn.IsField outNewIsField;
+algorithm
+  outNewIsField := matchcontinue(inOriginalIsField, inNewIsField)
+    case (_, Absyn.NONFIELD()) then inOriginalIsField;
+    else inNewIsField;
+  end matchcontinue;
+end propagateIsField;
+
 
 public function propagateAttributesVar
   input Element inOriginalVar;

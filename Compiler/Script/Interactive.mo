@@ -35,7 +35,7 @@ encapsulated package Interactive
   description: This module contain functionality for model management,
                expression evaluation, etc. in the interactive environment.
 
-  $Id$
+  $Id: Interactive.mo 25580 2015-04-16 14:04:16Z jansilar $
 
   This module contain functionality for model management, expression evaluation, etc.
   in the interactive environment.
@@ -1003,7 +1003,7 @@ protected
   Absyn.Path path;
   list<Absyn.NamedArg> nargs;
   Integer n;
-  String cmt, variability, causality;
+  String cmt, variability, causality, isField;
   Absyn.Class cls;
   list<GlobalScript.LoadedFile> lf;
   Absyn.Modification mod;
@@ -1546,7 +1546,8 @@ algorithm
          // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} := args;
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)}),
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = isField)})} := args;
 
         if listLength(expl) == 5 then
           {Absyn.BOOL(value = finalPrefix),
@@ -1564,7 +1565,7 @@ algorithm
 
         (outResult, p) := setComponentProperties(Absyn.crefToPath(class_), cr,
             finalPrefix, flowPrefix, streamPrefix, protected_, repl,
-            /*parallelism,*/ variability, {dref1,dref2}, causality, p);
+            /*parallelism,*/ variability, {dref1,dref2}, causality, p, isField);
       then
         outResult;
 
@@ -4032,7 +4033,8 @@ protected function setComponentProperties
             string, /* variability */
             bool list, /* dynamic_ref, two booleans */
             string, /* causality */
-            Absyn.Program)
+            Absyn.Program,
+            string, /*isField*/)
   outputs: (string, Absyn.Program)"
   input Absyn.Path inPath1;
   input Absyn.ComponentRef inComponentRef2;
@@ -4046,24 +4048,25 @@ protected function setComponentProperties
   input list<Boolean> inBooleanLst8;
   input String inString9;
   input Absyn.Program inProgram10;
+  input String inString11;
   output String outString;
   output Absyn.Program outProgram;
 algorithm
   (outString,outProgram):=
-  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,/*inString6,*/inString7,inBooleanLst8,inString9,inProgram10)
+  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,/*inString6,*/inString7,inBooleanLst8,inString9,inProgram10,inString11)
     local
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
       Absyn.Program newp,p;
       Absyn.Path p_class;
-      String varname,variability,causality;
+      String varname,variability,causality,isField;
       Boolean finalPrefix,flowPrefix,streamPrefix,prot,repl;
       list<Boolean> dyn_ref;
-    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM())
+    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM(),isField)
       equation
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
-        cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, "" /*parallelism*/, variability, dyn_ref, causality);
+        cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, "" /*parallelism*/, variability, dyn_ref, causality, isField);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         ("Ok",newp);
@@ -4096,13 +4099,14 @@ protected function setComponentPropertiesInClass
   input String inString7;
   input list<Boolean> inBooleanLst8;
   input String inString9;
+  input String inString10; /*isField*/
   output Absyn.Class outClass;
 algorithm
   outClass:=
-  match (inClass1,inString2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString6,inString7,inBooleanLst8,inString9)
+  match (inClass1,inString2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString6,inString7,inBooleanLst8,inString9, inString10)
     local
       list<Absyn.ClassPart> parts_1,parts;
-      String id,varname,parallelism,variability,causality,bcname;
+      String id,varname,parallelism,variability,causality,bcname,isField;
       Boolean p,f,e,finalPrefix,flowPrefix,streamPrefix,prot,repl;
       Absyn.Restriction r;
       Option<String> cmt;
@@ -4120,9 +4124,9 @@ algorithm
                       encapsulatedPrefix = e,
                       restriction = r,
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
-                      info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality)
+                      info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField)
       equation
-        parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
+        parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
       then
         Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt),file_info);
 
@@ -4133,9 +4137,9 @@ algorithm
                       encapsulatedPrefix = e,
                       restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName=bcname, modifications=mod, parts = parts,ann = ann,comment = cmt),
-                      info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality)
+                      info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField)
       equation
-        parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
+        parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
       then
         Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,mod,cmt,parts_1,ann),file_info);
 
@@ -4167,25 +4171,26 @@ protected function setComponentPropertiesInClassparts
   input String inString7;
   input list<Boolean> inBooleanLst8;
   input String inString9;
+  input String inString10; /*isField*/
   output list<Absyn.ClassPart> outAbsynClassPartLst;
 algorithm
   outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst1,inIdent2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString6,inString7,inBooleanLst8,inString9)
+  matchcontinue (inAbsynClassPartLst1,inIdent2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString6,inString7,inBooleanLst8,inString9,inString10)
     local
       list<Absyn.ElementItem> publst,publst_1,protlst,protlst_1,elts_1,elts;
       Absyn.Element elt,elt_1;
       list<Absyn.ClassPart> parts_1,parts_2,parts,rest,rest_1;
-      String cr,parallelism,variability,causality;
+      String cr,parallelism,variability,causality,isField;
       Boolean finalPrefix,flowPrefix,streamPrefix,repl,prot;
       list<Boolean> dyn_ref;
       Absyn.ClassPart part;
 
-    case ({},_,_,_,_,_,_,_,_,_,_) then {};
-    case (parts,cr,finalPrefix,flowPrefix,streamPrefix,true,repl,parallelism,variability,dyn_ref,causality) /* public moved to protected protected moved to public */
+    case ({},_,_,_,_,_,_,_,_,_,_,_) then {};
+    case (parts,cr,finalPrefix,flowPrefix,streamPrefix,true,repl,parallelism,variability,dyn_ref,causality,isField) /* public moved to protected protected moved to public */
       equation
         publst = getPublicList(parts);
         Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), publst);
-        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality);
+        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality, isField);
         publst_1 = deleteOrUpdateComponentFromElementitems(cr, publst, NONE()); // TODO: Do not move the component...
         protlst = getProtectedList(parts);
         protlst_1 = listAppend(protlst, {Absyn.ELEMENTITEM(elt_1)});
@@ -4194,11 +4199,11 @@ algorithm
       then
         parts_2;
 
-    case (parts,cr,finalPrefix,flowPrefix,streamPrefix,false,repl,parallelism,variability,dyn_ref,causality) /* protected moved to public protected attr not changed. */
+    case (parts,cr,finalPrefix,flowPrefix,streamPrefix,false,repl,parallelism,variability,dyn_ref,causality,isField) /* protected moved to public protected attr not changed. */
       equation
         protlst = getProtectedList(parts);
         Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), protlst);
-        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality);
+        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality, isField);
         protlst_1 = deleteOrUpdateComponentFromElementitems(cr, protlst, NONE()); // TODO: Do not move the component...
         publst = getPublicList(parts);
         publst_1 = listAppend(publst, {Absyn.ELEMENTITEM(elt_1)});
@@ -4207,23 +4212,23 @@ algorithm
       then
         parts_2;
 
-    case ((Absyn.PUBLIC(contents = elts) :: rest),cr,finalPrefix,flowPrefix,streamPrefix,prot,repl,parallelism,variability,dyn_ref,causality) /* protected attr not changed. protected attr not changed, 2. */
+    case ((Absyn.PUBLIC(contents = elts) :: rest),cr,finalPrefix,flowPrefix,streamPrefix,prot,repl,parallelism,variability,dyn_ref,causality,isField) /* protected attr not changed. protected attr not changed, 2. */
       equation
-        rest = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
-        elts_1 = setComponentPropertiesInElementitems(elts, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality);
+        rest = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality,isField);
+        elts_1 = setComponentPropertiesInElementitems(elts, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality,isField);
       then
         (Absyn.PUBLIC(elts_1) :: rest);
 
-    case ((Absyn.PROTECTED(contents = elts) :: rest),cr,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality) /* protected attr not changed, 2. */
+    case ((Absyn.PROTECTED(contents = elts) :: rest),cr,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField) /* protected attr not changed, 2. */
       equation
-        rest = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
-        elts_1 = setComponentPropertiesInElementitems(elts, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality);
+        rest = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
+        elts_1 = setComponentPropertiesInElementitems(elts, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality, isField);
       then
         (Absyn.PROTECTED(elts_1) :: rest);
 
-    case ((part :: rest),cr,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality) /* protected attr not changed, 3. */
+    case ((part :: rest),cr,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField) /* protected attr not changed, 3. */
       equation
-        rest_1 = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
+        rest_1 = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
       then
         (part :: rest_1);
 
@@ -4241,7 +4246,8 @@ protected function setComponentPropertiesInElementitems
               string, /* parallelism */
               string, /* variability */
               bool list, /* dynamic_ref, two booleans */
-              string) /* causality */
+              string, /* causality */
+              string) /* isField */
   outputs:  Absyn.ElementItem list"
   input list<Absyn.ElementItem> inAbsynElementItemLst1;
   input Absyn.Ident inIdent2;
@@ -4253,29 +4259,30 @@ protected function setComponentPropertiesInElementitems
   input String inString6;
   input list<Boolean> inBooleanLst7;
   input String inString8;
+  input String inString9; /*isfield*/
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
   outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString5,inString6,inBooleanLst7,inString8)
+  matchcontinue (inAbsynElementItemLst1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString5,inString6,inBooleanLst7,inString8,inString9)
     local
       list<Absyn.ElementItem> res,rest;
       Absyn.Element elt_1,elt;
-      String cr,prl,va,cau;
+      String cr,prl,va,cau,isf;
       Boolean finalPrefix,flowPrefix,streamPrefix,repl;
       list<Boolean> dr;
       Absyn.ElementItem elitem;
 
-    case ({},_,_,_,_,_,_,_,_,_) then {};
-    case ((Absyn.ELEMENTITEM(element = elt) :: rest),cr,finalPrefix,flowPrefix,streamPrefix, repl,prl,va,dr,cau)
+    case ({},_,_,_,_,_,_,_,_,_,_) then {};
+    case ((Absyn.ELEMENTITEM(element = elt) :: rest),cr,finalPrefix,flowPrefix,streamPrefix, repl,prl,va,dr,cau, isf)
       equation
-        res = setComponentPropertiesInElementitems(rest, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau);
-        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau);
+        res = setComponentPropertiesInElementitems(rest, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau, isf);
+        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau, isf);
       then
         (Absyn.ELEMENTITEM(elt_1) :: res);
 
-    case ((elitem :: rest),cr,finalPrefix,flowPrefix,streamPrefix,repl,prl,va,dr,cau)
+    case ((elitem :: rest),cr,finalPrefix,flowPrefix,streamPrefix,repl,prl,va,dr,cau,isf)
       equation
-        res = setComponentPropertiesInElementitems(rest, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau);
+        res = setComponentPropertiesInElementitems(rest, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau, isf);
       then
         (elitem :: res);
   end matchcontinue;
@@ -4292,7 +4299,8 @@ protected function setComponentPropertiesInElement
               string, /* parallelism */
               string, /* variability */
               bool list, /* dynamic_ref, two booleans */
-              string) /* causality */
+              string,  /* causality */
+              string)  /* isField */
   outputs: Absyn.Element"
   input Absyn.Element inElement1;
   input Absyn.Ident inIdent2;
@@ -4304,15 +4312,16 @@ protected function setComponentPropertiesInElement
   input String inString6;
   input list<Boolean> inBooleanLst7;
   input String inString8;
+  input String inString9; /* isField*/
   output Absyn.Element outElement;
 algorithm
   outElement:=
-  matchcontinue (inElement1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString5,inString6,inBooleanLst7,inString8)
+  matchcontinue (inElement1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString5,inString6,inBooleanLst7,inString8,inString9)
     local
       Option<Absyn.RedeclareKeywords> redeclkw_1,redeclkw;
       Absyn.InnerOuter inout_1,inout;
       Absyn.ElementSpec spec_1,spec;
-      String cr,va,cau,prl;
+      String cr,va,cau,prl,isf;
       list<Absyn.ComponentItem> ellst;
       SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
@@ -4321,12 +4330,12 @@ algorithm
       Absyn.Element elt;
     case (Absyn.ELEMENT(redeclareKeywords = redeclkw,
           specification = (spec as Absyn.COMPONENTS(components = ellst)),info = info,constrainClass = constr),
-          cr,finalPrefix,flowPrefix,streamPrefix,repl,prl,va,dr,cau)
+          cr,finalPrefix,flowPrefix,streamPrefix,repl,prl,va,dr,cau,isf)
       equation
         getCompitemNamed(Absyn.CREF_IDENT(cr,{}), ellst);
         redeclkw_1 = setReplaceableKeywordAttributes(redeclkw, repl);
         inout_1 = setInnerOuterAttributes(dr);
-        spec_1 = setComponentPropertiesInElementspec(spec, cr, flowPrefix, streamPrefix, prl, va, cau);
+        spec_1 = setComponentPropertiesInElementspec(spec, cr, flowPrefix, streamPrefix, prl, va, cau, isf);
       then
         Absyn.ELEMENT(finalPrefix,redeclkw_1,inout_1,spec_1,info,constr);
     else inElement1;
@@ -4377,7 +4386,8 @@ protected function setComponentPropertiesInElementspec
               bool, /* stream */
               string, /* parallelism */
               string, /* variability */
-              string) /* causality */
+              string /* causality */
+              string /* IsField */
   outputs:  Absyn.ElementSpec"
   input Absyn.ElementSpec inElementSpec1;
   input Absyn.Ident inIdent2;
@@ -4386,21 +4396,22 @@ protected function setComponentPropertiesInElementspec
   input String inString3;
   input String inString4;
   input String inString5;
+  input String inString6;
   output Absyn.ElementSpec outElementSpec;
 algorithm
   outElementSpec:=
-  matchcontinue (inElementSpec1,inIdent2,inFlow,inStream,inString3,inString4,inString5)
+  matchcontinue (inElementSpec1,inIdent2,inFlow,inStream,inString3,inString4,inString5,inString6)
     local
       Absyn.ElementAttributes attr_1,attr;
       Absyn.TypeSpec path;
       list<Absyn.ComponentItem> items;
-      String cr,va,cau,prl;
+      String cr,va,cau,prl,isf;
       Boolean flowPrefix,streamPrefix;
       Absyn.ElementSpec spec;
-    case (Absyn.COMPONENTS(attributes = attr,typeSpec = path,components = items),cr,flowPrefix,streamPrefix,prl,va,cau)
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec = path,components = items),cr,flowPrefix,streamPrefix,prl,va,cau,isf)
       equation
         itemsContainCompname(items, cr);
-        attr_1 = setElementAttributes(attr, flowPrefix, streamPrefix, prl, va, cau);
+        attr_1 = setElementAttributes(attr, flowPrefix, streamPrefix, prl, va, cau, isf);
       then
         Absyn.COMPONENTS(attr_1,path,items);
 
@@ -4438,7 +4449,8 @@ protected function setElementAttributes
              bool, /* stream */
              string, /* parallelism */
              string, /* variability */
-             string) /*causality */
+             string, /* causality */
+             string) /* nonfield/field */
   outputs: Absyn.ElementAttributes"
   input Absyn.ElementAttributes inElementAttributes1;
   input Boolean inFlow;
@@ -4446,24 +4458,27 @@ protected function setElementAttributes
   input String inString2;
   input String inString3;
   input String inString4;
+  input String inString5;
   output Absyn.ElementAttributes outElementAttributes;
 algorithm
   outElementAttributes:=
-  match (inElementAttributes1,inFlow,inStream,inString2,inString3,inString4)
+  match (inElementAttributes1,inFlow,inStream,inString2,inString3,inString4,inString5)
     local
       Absyn.Parallelism pa_1;
       Absyn.Variability va_1;
       Absyn.Direction cau_1;
+      Absyn.IsField fi_1;
       list<Absyn.Subscript> dim;
       Boolean flowPrefix,streamPrefix;
-      String va,cau,prl;
-    case (Absyn.ATTR(arrayDim = dim),flowPrefix,streamPrefix,prl,va,cau)
+      String va,cau,prl,fi;
+    case (Absyn.ATTR(arrayDim = dim),flowPrefix,streamPrefix,prl,va,cau,fi)
       equation
         pa_1 = setElementParallelism(prl);
         va_1 = setElementVariability(va);
         cau_1 = setElementCausality(cau);
+        fi_1 = setElementIsField(fi);
       then
-        Absyn.ATTR(flowPrefix,streamPrefix,pa_1,va_1,cau_1,dim);
+        Absyn.ATTR(flowPrefix,streamPrefix,pa_1,va_1,cau_1,fi_1,dim);
   end match;
 end setElementAttributes;
 
@@ -4506,6 +4521,19 @@ algorithm
     case ("output") then Absyn.OUTPUT();
   end match;
 end setElementCausality;
+
+protected function setElementIsField
+"Sets isField attribute according to string value."
+  input String inString;
+  output Absyn.IsField outIsField;
+algorithm
+  outIsField:=
+  match (inString)
+    case ("") then Absyn.NONFIELD();
+    case ("nonfield") then Absyn.NONFIELD();
+    case ("field") then Absyn.FIELD();
+  end match;
+end setElementIsField;
 
 protected function selectString
 " author: adrpo@ida
@@ -9023,16 +9051,16 @@ algorithm
     attr := matchcontinue(str)
       case _ equation
         failure(-1 = System.stringFind(str,"parameter"));
-      then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.PARAM(),Absyn.BIDIR(),{});
+      then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.PARAM(),Absyn.BIDIR(),Absyn.NONFIELD(),{});
 
       case _ equation
         failure(-1 = System.stringFind(str,"constant"));
-      then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.CONST(),Absyn.BIDIR(),{});
+      then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.CONST(),Absyn.BIDIR(),Absyn.NONFIELD(),{});
 
       case _ equation
         failure(-1 = System.stringFind(str,"discrete"));
-      then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.DISCRETE(),Absyn.BIDIR(),{});
-      case _ then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),{});
+      then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.DISCRETE(),Absyn.BIDIR(),Absyn.NONFIELD(),{});
+      case _ then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),Absyn.NONFIELD(),{});
   end matchcontinue;
 end getDefaultAttr;
 

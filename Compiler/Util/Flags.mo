@@ -1204,6 +1204,9 @@ constant ConfigFlag HETS = CONFIG_FLAG(88, "hets",
     ("derCalls", Util.gettext("sort terms based on der-calls"))
     })),
   Util.gettext("heuristic euqtion terms sort"));
+constant ConfigFlag PDE = CONFIG_FLAG(89, "PDE",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Experimental feature: enables PDE discretization module."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1297,7 +1300,8 @@ constant list<ConfigFlag> allConfigFlags = {
   INIT_OPT_MODULES_ADD,
   INIT_OPT_MODULES_SUB,
   PERMISSIVE,
-  HETS
+  HETS,
+  PDE
 };
 
 public function new

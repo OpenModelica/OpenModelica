@@ -34,7 +34,7 @@ encapsulated package Inst
   package:     Inst
   description: Model instantiation
 
-  RCS: $Id$
+  RCS: $Id: Inst.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module is responsible for instantiation of Modelica models.
   The instantation is the process of instantiating model components,
@@ -2739,7 +2739,7 @@ algorithm
                         SCode.R_TYPE(),
                         SCode.DERIVED(
                           tSpec,SCode.NOMOD(),
-                          SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR())),
+                          SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD())),
                         SCode.noComment,
                         Absyn.dummyInfo);
         (cache,_,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets);
@@ -3654,7 +3654,7 @@ algorithm
 
         cls = SCode.CLASS(id, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
           SCode.NOT_PARTIAL(), SCode.R_TYPE(), SCode.DERIVED(ts, SCode.NOMOD(),
-          SCode.ATTR(ad, ct, SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR())), SCode.noComment, info);
+          SCode.ATTR(ad, ct, SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD())), SCode.noComment, info);
 
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         // Gather all the dimensions

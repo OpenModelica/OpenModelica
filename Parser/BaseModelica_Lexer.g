@@ -149,7 +149,11 @@ T_GLOBAL;
 T_KERNEL;
 END_PARFOR;
 
+// ---------
+// PDEModelica Extensions
+// ---------
 
+FIELD;
 
 // ---------
 // Operators
@@ -287,6 +291,13 @@ CONSTRAINT : 'constraint' { if (!optimica_enabled()) $type = IDENT; };
 //INITIALGUESS : 'initialGuess' { if (!optimica_enabled()) $type = IDENT; };
 //FREE : 'free' { if (!optimica_enabled()) $type = IDENT; };
 //FINALTIME : 'finalTime' { if (!optimica_enabled()) $type = IDENT; };
+
+// ---------
+// PDEModelica
+// ---------
+
+FIELD : 'field';
+NONFIELD : 'nonfield';
 
 /*------------------------------------------------------------------
  * LEXER RULES

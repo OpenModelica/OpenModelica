@@ -34,7 +34,7 @@ encapsulated package NFSCodeEnv
   package:     NFSCodeEnv
   description: SCode flattening
 
-  RCS: $Id$
+  RCS: $Id: NFSCodeEnv.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module flattens the SCode representation by removing all extends, imports
   and redeclares, and fully qualifying class names.
@@ -1082,7 +1082,7 @@ algorithm
   ty := Absyn.TPATH(Absyn.QUALIFIED("$EnumType",
     Absyn.QUALIFIED(index, inEnumPath)), NONE());
   enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes, SCode.ATTR({},
-    SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()), ty,
+    SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(),Absyn.NONFIELD()), ty,
     SCode.NOMOD(), SCode.noComment, NONE(), inInfo);
   outEnv := extendEnvWithElement(enum_lit, inEnv);
 end extendEnvWithEnum;
@@ -1111,7 +1111,7 @@ protected
 algorithm
   Absyn.ITERATOR(name=iter_name) := inIterator;
   iter := SCode.COMPONENT(iter_name, SCode.defaultPrefixes,
-    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
+    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
     SCode.noComment, NONE(), Absyn.dummyInfo);
   outEnv := extendEnvWithElement(iter, inEnv);

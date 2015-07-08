@@ -600,7 +600,7 @@ algorithm
         c = SCode.COMPONENT(
               name,
               SCode.defaultPrefixes,
-              SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
+              SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD()),
               Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
               SCode.noComment, NONE(), Absyn.dummyInfo);
         v = DAE.TYPES_VAR(

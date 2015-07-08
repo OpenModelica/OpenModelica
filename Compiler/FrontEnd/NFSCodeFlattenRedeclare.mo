@@ -34,7 +34,7 @@ encapsulated package NFSCodeFlattenRedeclare
   package:     NFSCodeFlattenRedeclare
   description: SCode flattening
 
-  RCS: $Id$
+  RCS: $Id: NFSCodeFlattenRedeclare.mo 25211 2015-03-23 09:47:31Z jansilar $
 
   This module contains redeclare-specific functions used by SCodeFlatten to
   handle redeclares. Redeclares can be either modifiers or elements.
@@ -763,15 +763,17 @@ protected
   SCode.Parallelism prl1,prl2;
   SCode.Variability var1, var2;
   Absyn.Direction dir1, dir2;
+  Absyn.IsField isf1, isf2;
 algorithm
-  SCode.ATTR(dims1, ct1, prl1, var1, dir1) := inOriginalAttributes;
-  SCode.ATTR(dims2, ct2, prl2, var2, dir2) := inNewAttributes;
+  SCode.ATTR(dims1, ct1, prl1, var1, dir1, isf1) := inOriginalAttributes;
+  SCode.ATTR(dims2, ct2, prl2, var2, dir2, isf2) := inNewAttributes;
   dims2 := propagateArrayDimensions(dims1, dims2);
   ct2 := propagateConnectorType(ct1, ct2);
   prl2 := propagateParallelism(prl1,prl2);
   var2 := propagateVariability(var1, var2);
   dir2 := propagateDirection(dir1, dir2);
-  outNewAttributes := SCode.ATTR(dims2, ct2, prl2, var2, dir2);
+  isf2 := propagateIsField(isf1, isf2);
+  outNewAttributes := SCode.ATTR(dims2, ct2, prl2, var2, dir2, isf2);
 end propagateAttributes;
 
 protected function propagateArrayDimensions
@@ -828,6 +830,17 @@ algorithm
     else inNewDirection;
   end match;
 end propagateDirection;
+
+protected function propagateIsField
+  input Absyn.IsField inOriginalIsField;
+  input Absyn.IsField inNewIsField;
+  output Absyn.IsField outNewIsField;
+algorithm
+  outNewIsField := match(inOriginalIsField, inNewIsField)
+    case (_, Absyn.NONFIELD()) then inOriginalIsField;
+    else inNewIsField;
+  end match;
+end propagateIsField;
 
 protected function traceReplaceElementInScope
 "@author: adrpo

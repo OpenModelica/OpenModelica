@@ -34,7 +34,7 @@ encapsulated package Dump
   package:     Dump
   description: debug printing
 
-  RCS: $Id$
+  RCS: $Id: Dump.mo 25312 2015-03-30 08:35:17Z jansilar $
 
   Printing routines for debugging of the AST.  These functions do
   nothing but print the data structures to the standard output.
@@ -4247,7 +4247,8 @@ algorithm
       Absyn.Variability variability;
       Absyn.Direction direction;
       Absyn.ArrayDim arrayDim;
-    case Absyn.ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim)
+      Absyn.IsField isField;
+    case Absyn.ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,isField,arrayDim)
       equation
         Print.printBuf("record Absyn.ATTR flowPrefix = ");
         Print.printBuf(boolString(flowPrefix));
@@ -4259,6 +4260,8 @@ algorithm
         printVariabilityAsCorbaString(variability);
         Print.printBuf(", direction = ");
         printDirectionAsCorbaString(direction);
+        Print.printBuf(", isField = ");
+        printIsFieldAsCorbaString(isField);
         Print.printBuf(", arrayDim = ");
         printArrayDimAsCorbaString(arrayDim);
         Print.printBuf(" end Absyn.ATTR;");
@@ -4326,6 +4329,22 @@ algorithm
       then ();
   end match;
 end printDirectionAsCorbaString;
+
+protected function printIsFieldAsCorbaString
+  input Absyn.IsField isf;
+algorithm
+  _ := match isf
+    case Absyn.NONFIELD()
+      equation
+        Print.printBuf("record Absyn.NONFIELD end Absyn.NONFIELD;");
+      then ();
+    case Absyn.FIELD()
+      equation
+        Print.printBuf("record Absyn.FIELD end Absyn.FIELD;");
+      then ();
+  end match;
+end printIsFieldAsCorbaString;
+
 
 protected function printElementArgAsCorbaString
   input Absyn.ElementArg arg;

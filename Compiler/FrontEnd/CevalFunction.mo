@@ -35,7 +35,7 @@ encapsulated package CevalFunction
   description:  This module constant evaluates DAE.Function objects, i.e.
                 modelica functions defined by the user.
 
-  RCS: $Id$
+  RCS: $Id: CevalFunction.mo 25312 2015-03-30 08:35:17Z jansilar $
 
   TODO:
     * Implement evaluation of MetaModelica statements.
@@ -1705,7 +1705,7 @@ algorithm
                 SCode.COMPONENT(
                   inName,
                   SCode.defaultPrefixes,
-                  SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                  SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                   SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),
@@ -1727,7 +1727,7 @@ algorithm
                 SCode.COMPONENT(
                   inName,
                   SCode.defaultPrefixes,
-                  SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                  SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                   SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),

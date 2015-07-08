@@ -34,7 +34,7 @@ encapsulated package InstSection
   package:     InstSection
   description: Model instantiation
 
-  RCS: $Id$
+  RCS: $Id: InstSection.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module is responsible for instantiation of Modelica equation
   and algorithm sections (including connect equations)."
@@ -3296,7 +3296,7 @@ algorithm
                           SCode.COMPONENT(
                             componentName,
                             SCode.defaultPrefixes,
-                            SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                            SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                             SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
@@ -3383,7 +3383,7 @@ algorithm
                           SCode.COMPONENT(
                             componentName,
                             SCode.defaultPrefixes,
-                            SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                            SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                             SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
@@ -3437,7 +3437,7 @@ algorithm
           c1_2,
           state,
           ty1,
-          SCode.ATTR(arrDims, ct1, prl1, vt1, Absyn.BIDIR()),
+          SCode.ATTR(arrDims, ct1, prl1, vt1, Absyn.BIDIR(), Absyn.NONFIELD()),
           vis1,
           io1,
           source);

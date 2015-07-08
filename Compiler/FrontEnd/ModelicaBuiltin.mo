@@ -46,6 +46,16 @@ annotation(Documentation(info="<html>
 </html>"));
 end der;
 
+function pder "Partial space derivative of the input expression in the first argument with respect to second argument"
+  input Real u(unit="'p");
+  input Real x(unit="'q");
+  output Real du(unit="'p/'q");
+external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"???\">der()</a>
+</html>"));
+end pder;
+
 impure function initial "True if in initialization phase"
   output Boolean isInitial;
 external "builtin";
@@ -652,6 +662,26 @@ function inStream
   See <a href=\"modelica://ModelicaReference.Operators.'inStream()'\">inStream()</a>
 </html>"));
 end inStream;
+
+
+/*PDE extension built-ins*/
+/*function pder "Partial space derivative of the input expression in the first argument with respect to second argument"
+  input Real u(unit="'p");
+  input Real x(unit="'q");
+  output Real du(unit="'p/'q");
+external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"???\">der()</a>
+</html>"));
+end pder;
+*/
+
+record DomainLineSegment1D
+  parameter Real L;
+  constant Integer N;
+  parameter Real dx = L / (N-1);
+  parameter Real[N] x = array(i*dx for i in 0:N-1);
+end DomainLineSegment1D;
 
 /* Extension for uncertainty computations */
 record Distribution

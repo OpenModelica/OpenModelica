@@ -34,7 +34,7 @@ encapsulated package Lookup
   package:     Lookup
   description: Scoping rules
 
-  RCS: $Id$
+  RCS: $Id: Lookup.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This module is responsible for the lookup mechanism in Modelica.
   It is responsible for looking up classes, variables, etc. in the
@@ -2286,6 +2286,7 @@ algorithm
       list<Absyn.Subscript> d;
       SCode.Parallelism prl;
       SCode.Variability var;
+      Absyn.IsField isf;
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
       SCode.Comment comment;
@@ -2300,7 +2301,7 @@ algorithm
     case (cache, env, (((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(_, redecl, f as SCode.FINAL(), io, repl),
-        SCode.ATTR(d,ct,prl,var,_),tp,mod,comment,cond,info)),cmod) :: rest), _)
+        SCode.ATTR(d,ct,prl,var,_,isf),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
@@ -2321,14 +2322,14 @@ algorithm
         dir = Absyn.BIDIR();
         vis = SCode.PROTECTED();
       then
-        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl, f,io,repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
+        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl, f,io,repl),SCode.ATTR(d,ct,prl,var,dir,isf),tp,umod,comment,cond,info) :: res);
 
     // constants become protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     // mahge: 2013-01-15 : only if they have bindings. otherwise they are still modifiable.
     case (cache, env, (((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, _, io, repl),
-        SCode.ATTR(d,ct,prl,SCode.CONST(),_),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_)
+        SCode.ATTR(d,ct,prl,SCode.CONST(),_,isf),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
@@ -2349,13 +2350,13 @@ algorithm
         vis = SCode.PUBLIC();
         f = SCode.NOT_FINAL();
       then
-        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
+        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir,isf),tp,umod,comment,cond,info) :: res);
 
 
     case (cache, env, (((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(_, redecl, f, io, repl),
-        SCode.ATTR(d,ct,prl,var as SCode.CONST(),_),tp,mod,comment,cond,info)),cmod) :: rest), _)
+        SCode.ATTR(d,ct,prl,var as SCode.CONST(),_,isf),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
@@ -2376,13 +2377,13 @@ algorithm
         dir = Absyn.BIDIR();
         vis = SCode.PROTECTED();
       then
-        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
+        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir,isf),tp,umod,comment,cond,info) :: res);
 
     // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case (cache, env, (((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(_, redecl, _, io, repl),
-        SCode.ATTR(d,ct,prl,_,_),tp,mod,comment,cond,info)),cmod) :: rest), _)
+        SCode.ATTR(d,ct,prl,_,_,isf),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
@@ -2403,7 +2404,7 @@ algorithm
         f = SCode.NOT_FINAL();
         dir = Absyn.INPUT();
       then
-        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
+        (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,ct,prl,var,dir,isf),tp,umod,comment,cond,info) :: res);
 
     case (_, _, (comp,cmod)::_, _)
       equation
@@ -2427,7 +2428,7 @@ algorithm
   //print(" creating element of type: " + id + "\n");
   //print(" with generated mods:" + SCode.printSubs1Str(submodlst) + "\n");
   outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
-          SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT()),
+          SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT(),Absyn.NONFIELD()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
           SCode.NOMOD(),SCode.noComment,NONE(),info);
   annotation(__OpenModelica_EarlyInline = true);

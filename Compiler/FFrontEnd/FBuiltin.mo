@@ -133,9 +133,9 @@ protected constant SCode.Prefixes commonPrefixesNotFinal =
     SCode.NOT_REPLACEABLE());
 
 protected
-constant SCode.Attributes attrConst = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.CONST(),Absyn.BIDIR());
-constant SCode.Attributes attrParam = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
-constant SCode.Attributes attrParamVectorNoDim = SCode.ATTR({Absyn.NOSUB()},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
+constant SCode.Attributes attrConst = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.CONST(),Absyn.BIDIR(),Absyn.NONFIELD());
+constant SCode.Attributes attrParam = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NONFIELD());
+constant SCode.Attributes attrParamVectorNoDim = SCode.ATTR({Absyn.NOSUB()},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NONFIELD());
 
 //
 // The primitive types
@@ -487,7 +487,7 @@ protected constant SCode.Element timeComp =
           SCode.COMPONENT(
             "time",
             SCode.defaultPrefixes,
-            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(),Absyn.NONFIELD()),
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 
@@ -495,7 +495,7 @@ protected constant SCode.Element startTimeComp =
           SCode.COMPONENT(
             "startTime",
             SCode.defaultPrefixes,
-            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(),Absyn.NONFIELD()),
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 
@@ -503,7 +503,7 @@ protected constant SCode.Element finalTimeComp =
           SCode.COMPONENT(
             "finalTime",
             SCode.defaultPrefixes,
-            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(),Absyn.NONFIELD()),
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 
@@ -511,7 +511,7 @@ protected constant SCode.Element objectiveIntegrandComp =
           SCode.COMPONENT(
             "objectiveIntegrand",
             SCode.defaultPrefixes,
-            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(),Absyn.NONFIELD()),
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 
@@ -519,7 +519,7 @@ protected constant SCode.Element objectiveVarComp =
           SCode.COMPONENT(
             "objectiveVar",
             SCode.defaultPrefixes,
-            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT(),Absyn.NONFIELD()),
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 

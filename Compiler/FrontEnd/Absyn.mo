@@ -35,7 +35,7 @@ encapsulated package Absyn
   package:     Absyn
   description: Abstract syntax
 
-  RCS: $Id$
+  RCS: $Id: Absyn.mo 25819 2015-04-29 11:33:05Z jansilar $
 
   This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
   contains uniontypes for constructing the abstract syntax tree
@@ -627,9 +627,16 @@ uniontype ElementAttributes "Element attributes"
     Parallelism parallelism "for OpenCL/CUDA parglobal, parlocal ...";
     Variability variability "parameter, constant etc.";
     Direction direction "input/output";
+    IsField isField "non-field / field";
     ArrayDim arrayDim "array dimensions";
-  end ATTR;
+   end ATTR;
 end ElementAttributes;
+
+public
+uniontype IsField "Is field"
+  record NONFIELD "variable is not a field"  end NONFIELD;
+  record FIELD "variable is a field"         end FIELD;
+end IsField;
 
 public
 uniontype Parallelism "Parallelism"
@@ -5350,6 +5357,19 @@ algorithm
     else false;
   end match;
 end directionEqual;
+
+public function isFieldEqual
+  input IsField isField1;
+  input IsField isField2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(isField1, isField2)
+    case (NONFIELD(), NONFIELD()) then true;
+    case (FIELD(), FIELD()) then true;
+    else false;
+  end match;
+end isFieldEqual;
+
 
 public function pathLt
   input Path path1;

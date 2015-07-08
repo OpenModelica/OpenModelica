@@ -444,9 +444,8 @@ algorithm
         elName = "_autogen_" + id + intString(instNo);
         //print("Parsed function call " + id + "\n");
         // create element, instert modifiers here
-        elem = Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), {}), Absyn.TPATH(Absyn.IDENT(id), NONE()),
-          {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), Absyn.dummyInfo, NONE()));
-
+        elem = Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), Absyn.NONFIELD(), {}),
+                      Absyn.TPATH(Absyn.IDENT(id), NONE()), {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), Absyn.dummyInfo, NONE()));
       then (Absyn.CREF(Absyn.CREF_QUAL(elName, {}, Absyn.CREF_IDENT("out", {}))),  eqs, elem::oldElems, count);
 
     case(Absyn.CALL(crf, fargs))
