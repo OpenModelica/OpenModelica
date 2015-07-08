@@ -81,10 +81,15 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 //
 // State Sets
 // ========================================
-//
-//
+// 
+// 
 // no matching
 //
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.01)
 //
 // true
 // ""

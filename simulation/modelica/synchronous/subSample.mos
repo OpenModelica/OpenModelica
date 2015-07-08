@@ -131,10 +131,15 @@ translateModel(test_subSample); getErrorString();
 //
 // State Sets
 // ========================================
-//
-//
+// 
+// 
 // no matching
 //
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.01)
 //
 // true
 // ""
