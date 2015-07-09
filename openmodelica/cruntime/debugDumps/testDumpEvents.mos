@@ -47,228 +47,228 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [3] (pre:  0)  1 = v <= 0.0
 // LOG_EVENTS        | info    | state event at time=0.451523641008
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 3.100613
+// |                 | |       | | reinit $Pv = 3.10061
 // LOG_EVENTS        | info    | state event at time=0.451523641072
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=0.767590189724
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=1.08365673842
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 2.170429
+// |                 | |       | | reinit $Pv = 2.17043
 // LOG_EVENTS        | info    | state event at time=1.08365673851
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=1.30490332252
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=1.52614990659
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 1.519300
+// |                 | |       | | reinit $Pv = 1.5193
 // LOG_EVENTS        | info    | state event at time=1.52614990673
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=1.68102251546
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=1.83589512431
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 1.063510
+// |                 | |       | | reinit $Pv = 1.06351
 // LOG_EVENTS        | info    | state event at time=1.8358951245
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=1.94430595052
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.0527167767
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.744457
+// |                 | |       | | reinit $Pv = 0.744457
 // LOG_EVENTS        | info    | state event at time=2.05271677697
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.12860435505
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.20449193337
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.521120
+// |                 | |       | | reinit $Pv = 0.52112
 // LOG_EVENTS        | info    | state event at time=2.20449193375
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.25761323821
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.31073454302
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.364784
+// |                 | |       | | reinit $Pv = 0.364784
 // LOG_EVENTS        | info    | state event at time=2.31073454357
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.34791945641
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.38510436977
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.255349
+// |                 | |       | | reinit $Pv = 0.255349
 // LOG_EVENTS        | info    | state event at time=2.38510437055
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.41113380913
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.43716324847
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.178744
+// |                 | |       | | reinit $Pv = 0.178744
 // LOG_EVENTS        | info    | state event at time=2.43716324959
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.45538385602
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.47360446354
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.125121
+// |                 | |       | | reinit $Pv = 0.125121
 // LOG_EVENTS        | info    | state event at time=2.47360446513
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.48635888882
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.49911331406
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.087585
+// |                 | |       | | reinit $Pv = 0.0875846
 // LOG_EVENTS        | info    | state event at time=2.49911331634
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.50804141174
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.51696950938
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.061309
+// |                 | |       | | reinit $Pv = 0.0613092
 // LOG_EVENTS        | info    | state event at time=2.51696951264
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.52321917775
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.52946884606
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.042916
+// |                 | |       | | reinit $Pv = 0.0429165
 // LOG_EVENTS        | info    | state event at time=2.52946885072
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.5338436139
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.53821838167
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.030042
+// |                 | |       | | reinit $Pv = 0.0300415
 // LOG_EVENTS        | info    | state event at time=2.53821838832
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.54128071912
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.5443430565
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.021029
+// |                 | |       | | reinit $Pv = 0.0210291
 // LOG_EVENTS        | info    | state event at time=2.54434306601
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.54648669268
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.54863032877
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.014720
+// |                 | |       | | reinit $Pv = 0.0147203
 // LOG_EVENTS        | info    | state event at time=2.54863034235
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55013087404
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55163141919
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.010304
+// |                 | |       | | reinit $Pv = 0.0103042
 // LOG_EVENTS        | info    | state event at time=2.5516314386
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55268180081
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55373218227
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.007213
+// |                 | |       | | reinit $Pv = 0.00721297
 // LOG_EVENTS        | info    | state event at time=2.55373221
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.5544674493
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55520271612
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.005049
+// |                 | |       | | reinit $Pv = 0.00504908
 // LOG_EVENTS        | info    | state event at time=2.55520275574
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55571740291
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55623208942
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.003534
+// |                 | |       | | reinit $Pv = 0.00353435
 // LOG_EVENTS        | info    | state event at time=2.55623214602
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55659236999
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55695265019
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.002474
+// |                 | |       | | reinit $Pv = 0.00247404
 // LOG_EVENTS        | info    | state event at time=2.55695273106
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55720484635
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.557457042
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.001732
+// |                 | |       | | reinit $Pv = 0.00173183
 // LOG_EVENTS        | info    | state event at time=2.55745715755
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55763357898
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55781011528
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.001212
+// |                 | |       | | reinit $Pv = 0.00121227
 // LOG_EVENTS        | info    | state event at time=2.55781028041
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55793369072
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55805726525
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000849
+// |                 | |       | | reinit $Pv = 0.000848586
 // LOG_EVENTS        | info    | state event at time=2.55805750132
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55814376745
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55823026845
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000594
+// |                 | |       | | reinit $Pv = 0.000594002
 // LOG_EVENTS        | info    | state event at time=2.55823060619
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55829081917
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55835136827
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000416
+// |                 | |       | | reinit $Pv = 0.000415791
 // LOG_EVENTS        | info    | state event at time=2.55835185227
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55839375266
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55843613483
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000291
+// |                 | |       | | reinit $Pv = 0.000291038
 // LOG_EVENTS        | info    | state event at time=2.55843683061
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55846580237
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55849546686
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000204
+// |                 | |       | | reinit $Pv = 0.000203706
 // LOG_EVENTS        | info    | state event at time=2.55849647374
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55851623202
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55853699312
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000143
+// |                 | |       | | reinit $Pv = 0.000142567
 // LOG_EVENTS        | info    | state event at time=2.55853847233
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55855152591
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55856605309
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000100
+// |                 | |       | | reinit $Pv = 9.97582e-05
 // LOG_EVENTS        | info    | state event at time=2.55856831036
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55857622212
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55858638353
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000070
+// |                 | |       | | reinit $Pv = 6.97784e-05
 // LOG_EVENTS        | info    | state event at time=2.55859037025
 // |                 | |       | | [1] h <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55859349653
 // |                 | |       | | [3] v <= 0.0
 // LOG_EVENTS        | info    | state event at time=2.55860059936
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000049
+// |                 | |       | | reinit $Pv = 4.87753e-05
 // LOG_EVENTS        | info    | state event at time=2.55860557137
 // |                 | |       | | [3] v <= 0.0
 // |                 | |       | | [2] impact and v <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000000
+// |                 | |       | | reinit $Pv = 0
 // "
 // end SimulationResult;
 // record SimulationResult
@@ -285,7 +285,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [3] (pre:  0)  1 = v <= 0.0
 // LOG_EVENTS        | info    | state event at time=0.451523641008
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 3.100613
+// |                 | |       | | reinit $Pv = 3.10061
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -329,7 +329,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0.767590189724
 // LOG_EVENTS        | info    | state event at time=1.08365673842
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 2.170429
+// |                 | |       | | reinit $Pv = 2.17043
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -373,7 +373,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.30490332252
 // LOG_EVENTS        | info    | state event at time=1.52614990659
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 1.519300
+// |                 | |       | | reinit $Pv = 1.5193
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -417,7 +417,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.68102251546
 // LOG_EVENTS        | info    | state event at time=1.83589512431
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 1.063510
+// |                 | |       | | reinit $Pv = 1.06351
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -461,7 +461,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.94430595052
 // LOG_EVENTS        | info    | state event at time=2.0527167767
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.744457
+// |                 | |       | | reinit $Pv = 0.744457
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -505,7 +505,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.12860435505
 // LOG_EVENTS        | info    | state event at time=2.20449193337
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.521120
+// |                 | |       | | reinit $Pv = 0.52112
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -549,7 +549,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.25761323821
 // LOG_EVENTS        | info    | state event at time=2.31073454302
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.364784
+// |                 | |       | | reinit $Pv = 0.364784
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -593,7 +593,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.34791945641
 // LOG_EVENTS        | info    | state event at time=2.38510436977
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.255349
+// |                 | |       | | reinit $Pv = 0.255349
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -637,7 +637,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.41113380913
 // LOG_EVENTS        | info    | state event at time=2.43716324847
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.178744
+// |                 | |       | | reinit $Pv = 0.178744
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -681,7 +681,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.45538385602
 // LOG_EVENTS        | info    | state event at time=2.47360446354
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.125121
+// |                 | |       | | reinit $Pv = 0.125121
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -725,7 +725,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.48635888882
 // LOG_EVENTS        | info    | state event at time=2.49911331406
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.087585
+// |                 | |       | | reinit $Pv = 0.0875846
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -769,7 +769,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.50804141174
 // LOG_EVENTS        | info    | state event at time=2.51696950938
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.061309
+// |                 | |       | | reinit $Pv = 0.0613092
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -813,7 +813,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.52321917775
 // LOG_EVENTS        | info    | state event at time=2.52946884606
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.042916
+// |                 | |       | | reinit $Pv = 0.0429165
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -857,7 +857,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5338436139
 // LOG_EVENTS        | info    | state event at time=2.53821838167
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.030042
+// |                 | |       | | reinit $Pv = 0.0300415
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -901,7 +901,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54128071912
 // LOG_EVENTS        | info    | state event at time=2.5443430565
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.021029
+// |                 | |       | | reinit $Pv = 0.0210291
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -945,7 +945,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54648669268
 // LOG_EVENTS        | info    | state event at time=2.54863032877
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.014720
+// |                 | |       | | reinit $Pv = 0.0147203
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -989,7 +989,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55013087404
 // LOG_EVENTS        | info    | state event at time=2.55163141919
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.010304
+// |                 | |       | | reinit $Pv = 0.0103042
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1033,7 +1033,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55268180081
 // LOG_EVENTS        | info    | state event at time=2.55373218227
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.007213
+// |                 | |       | | reinit $Pv = 0.00721297
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1077,7 +1077,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5544674493
 // LOG_EVENTS        | info    | state event at time=2.55520271612
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.005049
+// |                 | |       | | reinit $Pv = 0.00504908
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1121,7 +1121,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55571740291
 // LOG_EVENTS        | info    | state event at time=2.55623208942
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.003534
+// |                 | |       | | reinit $Pv = 0.00353435
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1165,7 +1165,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55659236999
 // LOG_EVENTS        | info    | state event at time=2.55695265019
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.002474
+// |                 | |       | | reinit $Pv = 0.00247404
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1209,7 +1209,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55720484635
 // LOG_EVENTS        | info    | state event at time=2.557457042
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.001732
+// |                 | |       | | reinit $Pv = 0.00173183
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1253,7 +1253,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55763357898
 // LOG_EVENTS        | info    | state event at time=2.55781011528
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.001212
+// |                 | |       | | reinit $Pv = 0.00121227
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1297,7 +1297,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55793369072
 // LOG_EVENTS        | info    | state event at time=2.55805726525
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000849
+// |                 | |       | | reinit $Pv = 0.000848586
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1341,7 +1341,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55814376745
 // LOG_EVENTS        | info    | state event at time=2.55823026845
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000594
+// |                 | |       | | reinit $Pv = 0.000594002
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1385,7 +1385,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55829081917
 // LOG_EVENTS        | info    | state event at time=2.55835136827
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000416
+// |                 | |       | | reinit $Pv = 0.000415791
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1429,7 +1429,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55839375266
 // LOG_EVENTS        | info    | state event at time=2.55843613483
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000291
+// |                 | |       | | reinit $Pv = 0.000291038
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1473,7 +1473,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55846580237
 // LOG_EVENTS        | info    | state event at time=2.55849546686
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000204
+// |                 | |       | | reinit $Pv = 0.000203706
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1517,7 +1517,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55851623202
 // LOG_EVENTS        | info    | state event at time=2.55853699312
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000143
+// |                 | |       | | reinit $Pv = 0.000142567
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1561,7 +1561,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55855152591
 // LOG_EVENTS        | info    | state event at time=2.55856605309
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000100
+// |                 | |       | | reinit $Pv = 9.97582e-05
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1605,7 +1605,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55857622212
 // LOG_EVENTS        | info    | state event at time=2.55858638353
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000070
+// |                 | |       | | reinit $Pv = 6.97784e-05
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1649,7 +1649,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55859349653
 // LOG_EVENTS        | info    | state event at time=2.55860059936
 // |                 | |       | | [1] h <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000049
+// |                 | |       | | reinit $Pv = 4.87753e-05
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
@@ -1678,7 +1678,7 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // LOG_EVENTS        | info    | state event at time=2.55860557137
 // |                 | |       | | [3] v <= 0.0
 // |                 | |       | | [2] impact and v <= 0.0
-// |                 | |       | | reinit $Pv  = 0.000000
+// |                 | |       | | reinit $Pv = 0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860557137
 // |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
 // |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1

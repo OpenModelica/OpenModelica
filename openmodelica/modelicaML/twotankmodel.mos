@@ -7,7 +7,7 @@
 // ModelicaML: 1.3.6 Examples from 29.Nov 2010
 //
 loadFile("./TwoTanksSystemExample/package.mo"); getErrorString();
-simulate(TwoTanksSystemExample.Simulations.TankSystemSimulation, method="rungekutta", stopTime=400, numberOfIntervals=4000, simflags="-iim=numeric -iom=newuoa"); getErrorString();
+simulate(TwoTanksSystemExample.Simulations.TankSystemSimulation, method="rungekutta", stopTime=400, numberOfIntervals=4000); getErrorString();
 
 val(dm.tank1.h,11);
 val(dm.tank1.h,49);

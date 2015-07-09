@@ -28,7 +28,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Spice3.Examples.Graetz
 // {"D1.pin","D3.n.v"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Electrical.Spice3.Examples.Graetz.mat\"
 // "
 // ""
 // Translation succeeded

@@ -20,6 +20,10 @@ flatteningPlanarMechanics.log \
 TestMedia.log \
 cppruntime.log \
 cppruntimeHpcom.log \
+cppruntimeFMU1.log \
+cppruntimeFMU2.log \
+cppruntimeUmfpack.log \
+cppruntimeStaticLinking.log \
 taskGraph.log \
 debugDumps.log \
 dumpCruntime.log \
@@ -144,7 +148,8 @@ fmi_cs_st.log \
 uncertainties.log \
 scodeinst.log \
 xml.log \
-xogeny.log
+xogeny.log \
+openmodelicadiff.log
 
 .PHONY : all omc-diff ReferenceFiles failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
 
@@ -368,6 +373,18 @@ cppruntime.log: omc-diff
 cppruntimeHpcom.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/hpcom -f Makefile test  > $@
 	@echo $@ done
+cppruntimeFMU1.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile test  > $@
+	@echo $@ done
+cppruntimeFMU2.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile test  > $@
+	@echo $@ done
+cppruntimeUmfpack.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/umfpack -f Makefile test  > $@
+	@echo $@ done
+cppruntimeStaticLinking.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/staticLinking -f Makefile test  > $@
+	@echo $@ done
 linearization.log: omc-diff
 	$(MAKE) -C openmodelica/linearization -f Makefile test > $@
 	@echo $@ done
@@ -516,6 +533,9 @@ modelica3d.log: omc-diff
 hummod.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/HumMod -f Makefile test > $@
 	@echo $@ done
+openmodelicadiff.log: omc-diff
+	$(MAKE) -C openmodelica/diff -f Makefile test > $@
+	@echo $@ done
 
 failingtest: omc-diff
 	cd mofiles; $(MAKE) -f Makefile failingtest; \
@@ -567,6 +587,10 @@ clean_g_2 :
 	$(MAKE) -C metamodelica/meta -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/hpcom -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/umfpack -f Makefile clean
+	$(MAKE) -C openmodelica/cppruntime/staticLinking -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean
@@ -643,8 +667,13 @@ git-sanity-check: git-clean
 	find -name "*.a" >> invalid-files.log
 	find -name "*.mat" >> invalid-files.log
 	find -name "*.csv" >> invalid-files.log
+	(find -type f -executable -exec file -i '{}' ";" | grep -s charset=binary >> invalid-files.log) || true
 	sort invalid-files.log > invalid-files.sorted
 	sort .gitvalidfiles > .gitvalidfiles.sorted
 	comm --check-order -23 invalid-files.sorted .gitvalidfiles.sorted > invalid-files.log
 	cat invalid-files.log
 	test ! -s invalid-files.log
+	for commit in `git rev-list origin/master..HEAD`; do \
+	  test 50 -ge "`git log --format="%s" $$commit~1..$$commit | wc -c`" || (echo "$$commit has a too long commit summary (leave an empty line after the first if it is not part of the summary)"; git log $$commit~1..$$commit; false);\
+	  test 72 -ge "`git log --format="%b" $$commit~1..$$commit | wc -L`" || (echo "$$commit has too long commit lines (max 72 characters per line)"; git log $$commit~1..$$commit; false);\
+	done

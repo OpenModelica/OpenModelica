@@ -38,7 +38,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Fluid.Examples.InverseParameterization
 // {"source.ports[1].m_flow","source.ports[1].p","source.ports[1].h_outflow","sink.ports[1].m_flow","sink.ports[1].p","sink.ports[1].h_outflow","sink1.ports[1].m_flow","sink1.ports[1].p","sink1.ports[1].h_outflow","sink2.ports[1].m_flow","sink2.ports[1].p","sink2.ports[1].h_outflow"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Fluid.Examples.InverseParameterization.mat\"
 // "
 // ""
 // Compilation succeeded

@@ -27,7 +27,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine
 // {"x_zero"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine.mat\"
 // "
 // ""
 // Frontend failed

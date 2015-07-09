@@ -30,7 +30,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier
 // {"voltageQS.pin_p.reference.gamma","iAC.mean1.x","iAC.mean2.x","iDC2.mean.x"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

@@ -33,7 +33,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Media.Examples.ReferenceAir.MoistAir1
 // {"volume.medium.p","volume.medium.T","volume.medium.X[1]","volume.medium.X[2]","volume.medium.Xi[1]","fixedMassFlowRate.port.p","ambient.port.m_flow"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Media.Examples.ReferenceAir.MoistAir1.mat\"
 // "
 // ""
 // Frontend succeeded

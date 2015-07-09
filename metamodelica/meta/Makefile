@@ -17,6 +17,7 @@ BuiltinString.mos \
 CheckPatternScope.mo \
 ComplicatedInteractive.mos \
 Continue.mo \
+cref.mos \
 Equality.mos \
 EqPatternm.mos \
 ErrorInteractiveCallFunctionPtr.mos \
@@ -120,7 +121,8 @@ Uniontype11.mos \
 Uniontype12.mos \
 Uniontype13.mos \
 Uniontype14.mos \
-Uniontype15.mos
+Uniontype15.mos \
+UniontypeFunc1.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

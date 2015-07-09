@@ -1,0 +1,20 @@
+// name:     Crane_FMI_1_0_CPP
+// keywords: Crane FMI-Export FMI-Import
+// status:   correct
+// Real variables, Real input variable, continuous-time states, state events, event iteration
+
+loadModel(Modelica); getErrorString();
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+loadFile("cranes.mo"); getErrorString();
+translateModelFMU(cranes.crane); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "SimCode: The model cranes.crane has been translated to FMU"
+// ""
+// endResult

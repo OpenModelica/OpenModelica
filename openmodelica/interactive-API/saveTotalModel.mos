@@ -129,7 +129,7 @@ readFile("BranchingDynamicPipes.mo");
 //         parameter Boolean use_HeatTransfer = false \"= true to use the HeatTransfer model\";
 //         replaceable model HeatTransfer = Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.IdealFlowHeatTransfer constrainedby Modelica.Fluid.Pipes.BaseClasses.HeatTransfer.PartialFlowHeatTransfer;
 //         Interfaces.HeatPorts_a[nNodes] heatPorts if use_HeatTransfer;
-//         HeatTransfer heatTransfer(redeclare each final package Medium = Medium, final n = n, final nParallel = nParallel, final surfaceAreas = perimeter * lengths, final lengths = lengths, final dimensions = dimensions, final roughnesses = roughnesses, final states = mediums.state, final vs = vs, final use_k = use_HeatTransfer) \"Heat transfer model\";
+//         HeatTransfer heatTransfer(redeclare final package Medium = Medium, final n = n, final nParallel = nParallel, final surfaceAreas = perimeter * lengths, final lengths = lengths, final dimensions = dimensions, final roughnesses = roughnesses, final states = mediums.state, final vs = vs, final use_k = use_HeatTransfer) \"Heat transfer model\";
 //         final parameter Real[n] dxs = lengths / sum(lengths);
 //       equation
 //         Qb_flows = heatTransfer.Q_flows;

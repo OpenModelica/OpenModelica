@@ -9,12 +9,10 @@
 //
 
 runScript("ModelTestingDefaults.mos");getErrorString();
-simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings);
 timeout := 120;
 
-referenceFile := "../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat";
 compareVars :=
 {
    "body1.frame_a.r_0[1]",
@@ -28,11 +26,10 @@ compareVars :=
    "body1.w_a[3]"
 };
 
-setDebugFlags("hpcom"); getErrorString();
-setCommandLineOptions("+n=2 +hpcomScheduler=level"); getErrorString();
+//setDebugFlags("hpcom"); getErrorString();
+//setCommandLineOptions("+n=2 +hpcomScheduler=level +hpcomCode=openmp"); getErrorString();
 
 runScript(modelTesting);getErrorString();
-
 
 // Result:
 // true

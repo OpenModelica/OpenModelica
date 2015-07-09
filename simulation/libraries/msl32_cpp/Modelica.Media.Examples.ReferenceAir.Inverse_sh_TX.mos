@@ -32,7 +32,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX
 // {"h1","s1","Th","Ts","h2","s2"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Media.Examples.ReferenceAir.Inverse_sh_TX.mat\"
 // "
 // ""
 // Frontend succeeded

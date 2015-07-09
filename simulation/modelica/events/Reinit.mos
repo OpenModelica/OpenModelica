@@ -1,0 +1,38 @@
+// name: Reinit
+// keywords: event, reinit
+// status: correct
+//
+//   This test is used to check multiple when conditions for a reinit statement
+//
+
+loadString("
+package TestReinit
+  model test1
+    Real x;
+  initial equation
+    x = 0;
+  equation
+    der(x) = 0;
+
+    when {time > 0.1, time > 0.2} then
+      reinit(x, x+1);
+    end when;
+  end test1;
+end TestReinit;
+"); getErrorString();
+
+simulate(TestReinit.test1); getErrorString();
+val(x, 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestReinit.test1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestReinit.test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 2.0
+// ""
+// endResult

@@ -30,7 +30,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Fluid.Examples.PumpingSystem
 // {"PT1.y","pumps.medium.T","reservoir.level","reservoir.medium.T"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Fluid.Examples.PumpingSystem.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

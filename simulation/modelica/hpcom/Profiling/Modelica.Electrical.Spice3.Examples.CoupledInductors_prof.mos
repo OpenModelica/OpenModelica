@@ -6,5 +6,7 @@ loadModel(Modelica,{"3.2.1"});
 
 setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
-simulate(Modelica.Electrical.Spice3.Examples.CoupledInductors, measureTime=true, simflags="-clock=CYC");
+
+setCommandLineOptions("+profiling=all"); getErrorString();
+simulate(Modelica.Electrical.Spice3.Examples.CoupledInductors, simflags="-clock=CYC");
 getErrorString();

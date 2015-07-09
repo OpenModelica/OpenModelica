@@ -33,7 +33,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.Translational.Examples.Accelerate
 // {"accelerate.s","accelerate.v","accelerate.a","mass.s","mass.flange_b.s","mass.flange_a.f","mass.flange_b.f"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Mechanics.Translational.Examples.Accelerate.mat\"
 // "
 // ""
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''

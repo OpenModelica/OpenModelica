@@ -1,0 +1,34 @@
+// name:     Crane_HPCOM_FMI_1_0_CPP_HPCOM
+// keywords: Crane FMI-Export FMI-Import
+// status:   correct
+// Real variables, Real input variable, continuous-time states, state events, event iteration
+
+loadModel(Modelica); getErrorString();
+setDebugFlags("hpcom"); getErrorString();
+setCommandLineOptions("+simCodeTarget=Cpp +n=2 +hpcomCode=openmp +hpcomScheduler=level"); getErrorString();
+loadFile("cranes.mo"); getErrorString();
+translateModelFMU(cranes.crane); getErrorString();
+
+//importFMU("cranes_crane.fmu", "<default>", 6); getErrorString();
+//importFMU("cranes_crane.fmu"); getErrorString();
+//loadFile("cranes_crane_me_FMU.mo"); getErrorString();
+//simulate(cranes_crane_me_FMU, numberOfIntervals=150); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe cranes_crane_eqs_prof-file is missing.
+// Using level Scheduler for the DAE system
+// Using level Scheduler for the ODE system
+// Using level Scheduler for the ZeroFunc system
+// HpcOm is still under construction.
+// "SimCode: The model cranes.crane has been translated to FMU"
+// ""
+// endResult

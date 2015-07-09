@@ -35,7 +35,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Media.Examples.R134a.R134a2
 // {"volume.medium.h","volume.medium.p","volume1.medium.h","volume1.medium.p","fixedMassFlowRate.port.p","ambient.port.m_flow"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Media.Examples.R134a.R134a2.mat\"
 // "
 // ""
 // [Modelica 3.2.1/Media/R134a.mo:417:7-418:58:writable]Modelica Assert: A calculation of two-phase properties with input of pressure and temperature is not possible.

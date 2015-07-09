@@ -30,7 +30,6 @@ runScript(modelTesting);getErrorString();
 // Modelica.Fluid.Examples.Tanks.TanksWithOverflow
 // {"upperTank.level","upperTank.medium.h","lowerTank.level","lowerTank.medium.h"}
 // "OpenModelicaModelTesting.SimulationRuntime.Cpp
-// \"ReferenceFiles/Modelica.Fluid.Examples.Tanks.TanksWithOverflow.mat\"
 // "
 // ""
 // Compilation succeeded
