@@ -349,19 +349,19 @@ algorithm
       (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
 
       (scheduleDae,simCode,taskGraphDaeScheduled,taskGraphDataDaeScheduled,sccSimEqMapping) = createSchedule(taskGraphDaeSimplified,taskGraphDataDaeSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksDae,"DAE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
-           //criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(scheduleDae,numProc,taskGraphDaeScheduled,taskGraphDataDaeScheduled,"DAE system");
-           //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleDae,arrayLength(taskGraphDaeScheduled));
-           //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDaeScheduled, taskGraphDataDaeScheduled, fileName+"_schedDAE.graphml", criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
+           //HpcOmScheduler.printSchedule(scheduleDae);
+           schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleDae,arrayLength(taskGraphDaeScheduled));
+           HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDaeScheduled, taskGraphDataDaeScheduled, "taskGraph"+filenamePrefix+"DAE_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
 
       (scheduleOde,simCode,taskGraphOdeScheduled,taskGraphDataOdeScheduled,sccSimEqMapping) = createSchedule(taskGraphOdeSimplified,taskGraphDataOdeSimplified,sccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksOde,"ODE system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
-           //criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(scheduleOde,numProc,taskGraphOdeScheduled,taskGraphDataOdeScheduled,"DAE system");
-           //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleOde,arrayLength(taskGraphOdeScheduled));
-           //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, fileName+"_schedODE.graphml", criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
+           //HpcOmScheduler.printSchedule(scheduleOde);
+           schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleOde,arrayLength(taskGraphOdeScheduled));
+           HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOdeScheduled, taskGraphDataOdeScheduled, "taskGraph"+filenamePrefix+"ODE_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
 
       (scheduleZeroFunc,simCode,taskGraphZeroFuncScheduled,taskGraphDataZeroFuncScheduled,sccSimEqMapping) = createSchedule(taskGraphZeroFuncSimplified,taskGraphDataZeroFuncSimplified,daeSccSimEqMapping,simVarMapping,filenamePrefix,numProc,simCode,scheduledTasksZeroFunc,"ZeroFunc system",Flags.getConfigString(Flags.HPCOM_SCHEDULER));
-            //criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(scheduleZeroFunc,numProc,taskGraphZeroFuncScheduled,taskGraphDataZeroFuncScheduled,"DAE system");
-            //schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleZeroFunc,arrayLength(taskGraphZeroFuncScheduled));
-            //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphZeroFuncScheduled, taskGraphDataZeroFuncScheduled, fileName+"_schedZE.graphml", criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
+           //HpcOmScheduler.printSchedule(scheduleZeroFunc);
+           schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(scheduleZeroFunc,arrayLength(taskGraphZeroFuncScheduled));
+           HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphZeroFuncScheduled, taskGraphDataZeroFuncScheduled, "taskGraph"+filenamePrefix+"ZF_scheduled.graphml", "", HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,false,false));
 
       SimCode.SIMCODE( modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations,
                        partitionsKind, baseClocks, useHomotopy, initialEquations, removedInitialEquations, startValueEquations,
@@ -779,7 +779,7 @@ author: mwalther, Waurich TUD"
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
   output array<list<Integer>> oSccSimEqMapping;
 protected
-  list<String> knownScheduler = {"none","level","levelfix","ext","metis","hmet","listr","rand","list","mcp","part","taskdep","tds","bls","sbs"};
+  list<String> knownScheduler = {"none","level","levelfix","ext","metis","hmet","listr","rand","list","mcp","part","taskdep","tds","bls","sbs","sts"};
   String schedulerName = iSchedulerName;
 algorithm
   if(boolNot(List.exist1(knownScheduler,stringEq,schedulerName))) then
@@ -890,6 +890,11 @@ algorithm
       equation
         print("Using Single Block Scheduling for the " + iSystemName + "\n");
         schedule = HpcOmEqSystems.createSingleBlockSchedule(iTaskGraph,iTaskGraphMeta,iScheduledTasks,iSccSimEqMapping);
+      then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_,_,_,_,"sts")
+      equation
+        print("Using Single Thread Scheduling for the " + iSystemName + "\n");
+        schedule = HpcOmScheduler.createSingleThreadSchedule(iTaskGraph,iTaskGraphMeta,iNumProc);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     else
       equation

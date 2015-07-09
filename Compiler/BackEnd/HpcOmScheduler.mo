@@ -207,15 +207,15 @@ algorithm
 
         //print("Scheduling task " + intString(index) + " to thread " + intString(threadId) + "\n");
         if(boolNot(listEmpty(predecessors))) then //in this case the node has predecessors
-	        //find all predecessors which are scheduled to another thread and thus require a lock
-	        (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
-	        outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks);
-	        //threadTasks = listAppend(List.map(newLockIdc,convertLockIdToAssignTask), threadTasks);
-	        threadTasks = listAppend(lockTasks, threadTasks);
+          //find all predecessors which are scheduled to another thread and thus require a lock
+          (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
+          outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks);
+          //threadTasks = listAppend(List.map(newLockIdc,convertLockIdToAssignTask), threadTasks);
+          threadTasks = listAppend(lockTasks, threadTasks);
 
-	        //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
-	        simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
-	        //simEqIdc = List.sort(simEqIdc,intGt);
+          //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
+          simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
+          //simEqIdc = List.sort(simEqIdc,intGt);
         else
           simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
         end if;
@@ -459,7 +459,6 @@ protected
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
-  //() := HpcOmTaskGraph.printTaskGraph(taskGraphT);
   commCostsT := HpcOmTaskGraph.transposeCommCosts(commCosts);
   leaveNodes := HpcOmTaskGraph.getLeafNodes(iTaskGraph);
   //print("Leave nodes: " + stringDelimitList(List.map(leaveNodes,intString),", ") + "\n");
@@ -2499,7 +2498,7 @@ algorithm
         removeLocks = {};
         tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
 
-        (tmpSchedule,removeLocks) = createScheduleFromAssignments(extInfoArr,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,commCosts,inComps,iSimVarMapping,tmpSchedule);
+        (tmpSchedule,removeLocks) = createScheduleFromAssignments(extInfoArr,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,iSimVarMapping,tmpSchedule);
         // remove superfluous locks
         if Flags.isSet(Flags.HPCOM_DUMP) then
           print("number of removed superfluous locks: "+intString(intDiv(listLength(removeLocks),2))+"\n");
@@ -4551,112 +4550,179 @@ author: Waurich TUD 2015-02"
   input array<list<Integer>> iSccSimEqMapping;
   input array<list<SimCodeVar.SimVar>> iSimVarMapping; //Maps each backend var to a list of simVars
   output HpcOmSimCode.Schedule oSchedule;
-protected
-  Integer nProc,nTasks;
-  list<Integer> rootNodes;
-  array<Integer> threadMap;
-  array<Real> partitionCosts;
-  array<list<Integer>> partitions;
-  HpcOmTaskGraph.TaskGraph graphT;
-
-  array<HpcOmTaskGraph.Communications> commCosts;
-  array<list<Integer>> inComps;
-  array<list<HpcOmSimCode.Task>> threadTask;
-  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
-  HpcOmSimCode.Schedule schedule;
-  list<Integer> order;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
-  nProc := Flags.getConfigInt(Flags.NUM_PROC);
-  nTasks := arrayLength(iTaskGraph);
-  rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
-  partitions := arrayCreate(nProc,{});
-  threadMap := arrayCreate(nTasks,-1);
-  partitionCosts := arrayCreate(nProc,0.0);
-  graphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
-  ((partitions,threadMap,partitionCosts)) := List.fold(List.map(rootNodes,List.create),function assignTasksToPartitions(graph = iTaskGraph, graphT = graphT, meta = iTaskGraphMeta),(partitions,threadMap,partitionCosts));
+  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iSimVarMapping)
+    local
+      Integer nTasks;
+      list<Integer> rootNodes;
+      array<Integer>  taskMap;
+      array<Real> partitionCosts;
+      array<list<Integer>> partitions, partMap;
+      HpcOmTaskGraph.TaskGraph graphT;
 
-  threadTask := arrayCreate(numProc,{});
-  allCalcTasks := convertTaskGraphToTasks(graphT,iTaskGraphMeta,convertNodeToTask);
-  schedule := HpcOmSimCode.THREADSCHEDULE(threadTask,{},{},allCalcTasks);
-  order := List.intRange(nTasks);
-  (oSchedule,_) := createScheduleFromAssignments(threadMap,partitions,SOME(order),iTaskGraph,graphT,iTaskGraphMeta,iSccSimEqMapping,{},order,commCosts,inComps,iSimVarMapping,schedule);
+      array<HpcOmTaskGraph.Communications> commCosts;
+      array<list<Integer>> inComps;
+      array<list<HpcOmSimCode.Task>> threadTask;
+      array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+      HpcOmSimCode.Schedule schedule;
+      list<Integer> order;
+    case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
+      algorithm
+        true := intNe(arrayLength(iTaskGraph),0);
+        nTasks := arrayLength(iTaskGraph);
+        rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+        partitions := arrayCreate(numProc,{});
+        taskMap := arrayCreate(nTasks,-1);
+        partMap := arrayCreate(listLength(rootNodes),{});
+        partitionCosts := arrayCreate(numProc,0.0);
+        graphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        // get all existing partitions
+        (taskMap,partMap,_) := List.fold1(rootNodes,assignPartitions,iTaskGraph,(taskMap,partMap,1));
+          //print("taskMap \n"+stringDelimitList(List.map(arrayList(taskMap), intString),"\n")+"\n");
+          //print("partMap \n"+stringDelimitList(List.map(arrayList(partMap), HpcOmTaskGraph.intLstString),"\n")+"\n");
+        // gather them to n partitions
+        (taskMap,partitions) := distributePartitions(taskMap,partMap,iTaskGraphMeta,numProc);
+          //print("partitions \n"+stringDelimitList(List.map(arrayList(partitions), HpcOmTaskGraph.intLstString),"\n")+"\n");
+
+        threadTask := arrayCreate(numProc,{});
+        allCalcTasks := convertTaskGraphToTasks(graphT,iTaskGraphMeta,convertNodeToTask);
+        schedule := HpcOmSimCode.THREADSCHEDULE(threadTask,{},{},allCalcTasks);
+        order := List.flatten(HpcOmTaskGraph.getLevelNodes(iTaskGraph));
+        if List.isEqual(arrayGet(partitions,1),{20,7,15,16,2},true) then
+          order := listReverse(order);
+        end if;
+        (oSchedule,_) := createScheduleFromAssignments(taskMap,partitions,SOME(order),iTaskGraph,graphT,iTaskGraphMeta,iSccSimEqMapping,{},order,iSimVarMapping,schedule);
+      then oSchedule;
+    case(_,_,_,_,_)
+      algorithm
+        true := intEq(arrayLength(iTaskGraph),0);a
+       then HpcOmSimCode.EMPTYSCHEDULE(HpcOmSimCode.PARALLELTASKLIST({}));
+    else
+      algorithm
+        if Flags.isSet(Flags.FAILTRACE) then print("HpcOmScheduler.createPartSchedule failed\n"); end if;
+      then fail();
+  end matchcontinue;
 end createPartSchedule;
 
-protected function assignTasksToPartitions"assigns all rootNodes and their partitions to the partition with the least total execution costs"
-  input list<Integer> rootNodes;
-  input HpcOmTaskGraph.TaskGraph graph;
-  input HpcOmTaskGraph.TaskGraph graphT;
-  input HpcOmTaskGraph.TaskGraphMeta meta;
-  input tuple<array<list<Integer>>,array<Integer>,array<Real>> tplIn;
-  output tuple<array<list<Integer>>,array<Integer>,array<Real>> tplOut;
+protected function distributePartitions
+  input array<Integer> taskMapIn;
+  input array<list<Integer>> partMap;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
+  input Integer n;
+  output array<Integer> taskMapOut;
+  output array<list<Integer>> partitions;
+protected
+  Integer partIdx;
+  Real costs;
+  list<Integer> part;
+  list<list<Integer>> clusters;
+  list<Real> partCosts={};
 algorithm
-  tplOut := matchcontinue(rootNodes,graph,graphT,meta,tplIn)
-    local
-      Integer rootNode, partitionIdx;
-      Real minCosts,costs;
-      list<Integer> rest, partition, assThreads;
-      list<Real> costLst;
-      array<Integer> threadMap;
-      array<Real> partitionCosts;
-      array<list<Integer>> partitions;
-  case({},_,_,_,(_,_,_))
-    equation
-  then
-    tplIn;
-  case(rootNode::rest,_,_,_,(partitions,threadMap,partitionCosts))
-    equation
-    true = intEq(-1,arrayGet(threadMap,rootNode));
-    minCosts = Array.fold(partitionCosts,realMin,arrayGet(partitionCosts,1));
-    partitionIdx = Array.position(partitionCosts,minCosts);
-    partition = getPartition({rootNode},graph,graphT,threadMap,partitionIdx,{});
-    partitions = Array.appendToElement(partitionIdx,partition,partitions);
-    costLst = List.map(arrayGet(partitions,partitionIdx),function HpcOmTaskGraph.getExeCostReqCycles(iGraphData=meta));
-    costs = List.fold(costLst,realAdd,0.0);
-    partitionCosts = arrayUpdate(partitionCosts,partitionIdx,costs);
-    (partitions,threadMap,partitionCosts) = assignTasksToPartitions(rest,graph,graphT,meta,(partitions,threadMap,partitionCosts));
-  then
-    (partitions,threadMap,partitionCosts);
-  case(rootNode::rest,_,_,_,(partitions,threadMap,partitionCosts))
-    equation
-    true = intNe(-1,arrayGet(threadMap,rootNode));
-    (partitions,threadMap,partitionCosts) = assignTasksToPartitions(rest,graph,graphT,meta,(partitions,threadMap,partitionCosts));
-  then
-    (partitions,threadMap,partitionCosts);
+  // get costs
+  for part in arrayList(partMap) loop
+    costs := List.fold(List.map1(part,HpcOmTaskGraph.getExeCostReqCycles,metaIn),realAdd,0.0);
+    partCosts := costs::partCosts;
+  end for;
+  partCosts := listReverse(partCosts);
+  //cluster them and correct task<->partition mapping
+  (partitions,_) := HpcOmTaskGraph.distributeToClusters(List.intRange(arrayLength(partMap)),partCosts,n);
+  for partIdx in List.intRange(n) loop
+    part := arrayGet(partitions,partIdx);
+    clusters := List.map1(part,Array.getIndexFirst,partMap);
+    part := List.fold(clusters,listAppend,{});
+    partitions := arrayUpdate(partitions,partIdx,part);
+    List.map2_0(part, Array.updateIndexFirst,partIdx,taskMapIn);
+  end for;
+  taskMapOut := taskMapIn;
+end distributePartitions;
 
-  end matchcontinue;
-end assignTasksToPartitions;
-
-protected function getPartition"get all tasks that are somehow connected to the checkNodes"
-  input list<Integer> checkNodes;
+protected function assignPartitions"for every root node, assign all successing nodes to one partition. If we find an already assigned task from another partitions,replace all these tasks  "
+  input Integer rootNode;
   input HpcOmTaskGraph.TaskGraph graph;
-  input HpcOmTaskGraph.TaskGraph graphT;
-  input array<Integer> assNodes;
-  input Integer partitionIdx;
-  input list<Integer> partitionIn;
-  output list<Integer> partitionOut;
+  input tuple<array<Integer>,array<list<Integer>>,Integer> tplIn; // <task-->partitions, partitions-->tasks, currPartIdx>
+  output tuple<array<Integer>,array<list<Integer>>,Integer> tplOut;
+protected
+  Integer node, idx;
+  array<Integer> taskAss;
+  array<list<Integer>> partAss;
+  list<Integer> nodes, successors, assParts, unassTasks, otherParts, otherPartsTasks;
 algorithm
-  partitionOut := match(checkNodes,graph,graphT,assNodes,partitionIdx,partitionIn)
-    local
-      Integer node;
-      list<Integer> children,parents,rest,partition;
-    case({},_,_,_,_,_)
-      then
-        partitionIn;
-    case(node::rest,_,_,_,_,_)
-      equation
-      children = arrayGet(graph,node);
-      (_,children) = List.filter1OnTrueSync(List.map(children,function Array.getIndexFirst(inArray = assNodes)),intEq,-1,children);
-      parents = arrayGet(graphT,node);
-      (_,parents) = List.filter1OnTrueSync(List.map(parents,function Array.getIndexFirst(inArray = assNodes)),intEq,-1,parents);
-      partition = listAppend(children, parents);
-      List.map2_0(node::partition,Array.updateIndexFirst, partitionIdx, assNodes);
-      rest = listAppend(partition,rest);
-      partition = listAppend(partitionIn,node::partition);
-      partition = getPartition(rest,graph,graphT,assNodes,partitionIdx,partition);
-    then partition;
-  end match;
-end getPartition;
+  (taskAss,partAss,idx) := tplIn;
+  taskAss := arrayUpdate(taskAss,rootNode,idx);
+  partAss := Array.appendToElement(idx,{rootNode},partAss);
+  nodes := {rootNode};
+  while not listEmpty(nodes) loop
+    node::nodes := nodes;
+    successors := arrayGet(graph,node);
+    (unassTasks,otherPartsTasks) := List.split1OnTrue(successors,isUnAssigned,taskAss);
+    otherParts := List.map1(otherPartsTasks,Array.getIndexFirst,taskAss);
+    (otherParts,otherPartsTasks) := List.filter1OnTrueSync(otherParts,intNe,idx,otherPartsTasks);
+    otherParts := List.unique(otherParts);
+    if not listEmpty(otherParts) then
+      // if there are already tasks assigned to other partitions, replace these idxs
+      (taskAss,_) := Array.mapNoCopy_1(taskAss,reassignPartitions,(otherParts,idx));
+      otherPartsTasks := List.fold(List.map1(otherParts,Array.getIndexFirst,partAss),listAppend,{});  // get all tasks that belong to the other partitions
+      List.map2_0(otherParts,Array.updateIndexFirst,{},partAss);
+      partAss := Array.appendToElement(idx,otherPartsTasks,partAss);
+    end if;
+    List.map2_0(unassTasks,Array.updateIndexFirst, idx, taskAss);
+    partAss := Array.appendToElement(idx,unassTasks,partAss);
+    nodes := listAppend(unassTasks,nodes);
+  end while;
+  tplOut := (taskAss,partAss,idx+1);
+end assignPartitions;
+
+protected function isUnAssigned"checks whether the task is already assigned(==-1)"
+  input Integer task;
+  input array<Integer> ass;
+  output Boolean isUnass;
+protected
+  Integer idx;
+algorithm
+  idx := arrayGet(ass,task);
+  isUnass := intEq(idx,-1);
+end isUnAssigned;
+
+protected function reassignPartitions"if the task is one of the oldAss, replace it with newAss"
+  input tuple<Integer,tuple<list<Integer>,Integer>> tplIn;  //value,<oldValues, newValue>
+  output tuple<Integer,tuple<list<Integer>,Integer>> tplOut;
+protected
+  Integer value, newAss;
+  list<Integer> oldAss;
+algorithm
+  (value,(oldAss,newAss)) := tplIn;
+  if List.exist1(oldAss,intEq,value) then
+    value := newAss;
+  end if;
+  tplOut := (value,(oldAss,newAss));
+end reassignPartitions;
+
+//---------------------------------
+// SingleThread Schedule
+//---------------------------------
+
+public function createSingleThreadSchedule"creates a schedule in which all tasks are computed in thread 1"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input Integer numProc;
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  Integer nTasks, size;
+  HpcOmTaskGraph.TaskGraph taskGraphT;
+  list<HpcOmSimCode.Task> allTasksLst;
+  array<list<HpcOmSimCode.Task>> thread2TaskAss;
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+algorithm
+  nTasks := arrayLength(iTaskGraph);
+  size := arrayLength(iTaskGraph);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  // create the schedule
+  allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+  thread2TaskAss := arrayCreate(numProc,{});
+  allTasksLst := List.map(arrayList(allCalcTasks),Util.tuple21);
+  thread2TaskAss := arrayUpdate(thread2TaskAss,1,allTasksLst);
+  oSchedule := HpcOmSimCode.THREADSCHEDULE(thread2TaskAss,{},{},allCalcTasks);
+end createSingleThreadSchedule;
 
 
 //---------------------------------
@@ -4674,18 +4740,17 @@ author: Waurich TUD 2013-10 "
   output HpcOmSimCode.Schedule oSchedule;
 protected
   Integer size, numSfLocks;
-  array<list<HpcOmSimCode.Task>> threads;
   array<list<Integer>> taskGraphT;
   array<Real> alapArray;  // this is the latest possible starting time of every node
   list<Real> alapLst, alapSorted, priorityLst;
   list<Integer> order;
-  list<HpcOmSimCode.Task> removeLocks;
   array<Integer> taskAss; //<idx>=task, <value>=processor
   array<list<Integer>> procAss; //<idx>=processor, <value>=task;
-  array<list<HpcOmSimCode.Task>> threadTask;
   HpcOmSimCode.Schedule schedule;
-  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+  list<HpcOmSimCode.Task> removeLocks;
   array<HpcOmTaskGraph.Communications> commCosts;
+  array<list<HpcOmSimCode.Task>> threads, threadTask;
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
   array<list<Integer>> inComps;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
@@ -4703,7 +4768,7 @@ algorithm
   allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
   schedule := HpcOmSimCode.THREADSCHEDULE(threadTask,{},{},allCalcTasks);
   removeLocks := {};
-  (schedule,removeLocks) := createScheduleFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,commCosts,inComps,iSimVarMapping,schedule);
+  (schedule,removeLocks) := createScheduleFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,iSimVarMapping,schedule);
   // remove superfluous locks
   numSfLocks := intDiv(listLength(removeLocks),2);
   if Flags.isSet(Flags.HPCOM_DUMP) then
@@ -4860,14 +4925,12 @@ author:Waurich TUD 2013-12"
   input array<list<Integer>> SccSimEqMappingIn;
   input list<HpcOmSimCode.Task> removeLocksIn;
   input list<Integer> orderIn;  // need the complete order for removeSuperfluousLocks
-  input array<HpcOmTaskGraph.Communications> iCommCosts;
-  input array<list<Integer>> iCompTaskMapping; //all StrongComponents from the BLT that belong to the Nodes [nodeId = arrayIdx]
   input array<list<SimCodeVar.SimVar>> iSimVarMapping; //Maps each backend var to a list of simVars
   input HpcOmSimCode.Schedule scheduleIn;
   output HpcOmSimCode.Schedule scheduleOut;
   output list<HpcOmSimCode.Task> removeLocksOut;
 algorithm
-  (scheduleOut,removeLocksOut) := match(taskAss,procAss,orderOpt,taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocksIn,orderIn,iCommCosts,iCompTaskMapping,iSimVarMapping,scheduleIn)
+  (scheduleOut,removeLocksOut) := match(taskAss,procAss,orderOpt,taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocksIn,orderIn,iSimVarMapping,scheduleIn)
     local
       Integer node,proc,mark,numProc;
       Real exeCost,commCost;
@@ -4876,17 +4939,17 @@ algorithm
       array<Integer> nodeMark;
       array<list<Integer>> inComps;
       array<tuple<Integer,Real>> exeCosts;
-      array<HpcOmTaskGraph.Communications> commCosts;
+      array<HpcOmTaskGraph.Communications> inCommCosts;
       array<list<HpcOmSimCode.Task>> threadTasks;
       list<HpcOmSimCode.Task> taskLst1,taskLst,taskLstAss,taskLstRel, removeLocks;
       HpcOmSimCode.Schedule schedule;
       HpcOmSimCode.Task task;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
-    case(_,_,SOME({}),_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
+    case(_,_,SOME({}),_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
       equation
       then
         (scheduleIn,removeLocksIn);
-    case(_,_,SOME(order),_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks, outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
+    case(_,_,SOME(order),_,_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=inCommCosts,inComps=inComps,nodeMark=nodeMark),_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks, outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
       equation
         numProc = arrayLength(procAss);
         (node::rest) = order;
@@ -4899,12 +4962,11 @@ algorithm
         (_,otherParents,_) = List.intersection1OnTrue(parentNodes,sameProcTasks,intEq);
         (_,otherChildren,_) = List.intersection1OnTrue(childNodes,sameProcTasks,intEq);
         // keep the locks that are superfluous, remove them later
-        removeLocks = getSuperfluousLocks(otherParents,node,taskAss,orderIn,numProc,allCalcTasks,iCommCosts,iCompTaskMapping,iSimVarMapping,removeLocksIn);
-        taskLstAss = List.map6(otherParents,createDepTaskByTaskIdc,node,allCalcTasks,false,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        removeLocks = getSuperfluousLocks(otherParents,node,taskAss,orderIn,numProc,allCalcTasks,inCommCosts,inComps,iSimVarMapping,removeLocksIn);
+        taskLstAss = List.map6(otherParents,createDepTaskByTaskIdc,node,allCalcTasks,false,inCommCosts,inComps,iSimVarMapping);
         //relLockDepTasks = List.map1(otherChildren,getReleaseLockString,node);
-        taskLstRel = List.map6(otherChildren,createDepTaskByTaskIdcR,node,allCalcTasks,true,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        taskLstRel = List.map6(otherChildren,createDepTaskByTaskIdcR,node,allCalcTasks,true,inCommCosts,inComps,iSimVarMapping);
         //build the calcTask
-        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMetaIn;
         components = arrayGet(inComps,node);
         mark = arrayGet(nodeMark,node);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
@@ -4918,10 +4980,10 @@ algorithm
         threadTasks = arrayUpdate(threadTasks,proc,taskLst);
         outgoingDepTasks = listAppend(outgoingDepTasks,taskLstAss);
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
-        (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,iCommCosts,iCompTaskMapping,iSimVarMapping,schedule);
+        (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,iSimVarMapping,schedule);
       then
         (schedule,removeLocks);
-    case(_,_,NONE(),_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
+    case(_,_,NONE(),_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
       equation
         print("createSchedulerFromAssignments failed.implement this!\n");
       then
@@ -5576,7 +5638,7 @@ author:Waurich TUD 2013-12"
   input String inSystemName; //e.g. "ODE system" or "DAE system"
   output String criticalPathInfoOut;
 algorithm
-  criticalPathInfoOut := match(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn,inSystemName)
+  criticalPathInfoOut := matchcontinue(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn,inSystemName)
     local
       list<HpcOmSimCode.Task> outgoingDepTasks;
       list<Real> levelCosts;
@@ -5625,9 +5687,10 @@ algorithm
         criticalPathInfo;
     else
       equation
+        print("HpcOmScheduler.analyseScheduledTaskGraph failed\n");
       then
-        "";
-  end match;
+        "HpcOmScheduler.analyseScheduledTaskGraph failed\n";
+  end matchcontinue;
 end analyseScheduledTaskGraph;
 
 protected function analyseScheduledTaskGraphLevel
@@ -5889,7 +5952,7 @@ author:Waurich TUD 2013-11"
   output HpcOmSimCode.Schedule scheduleOut;
   output Real finishingTime;
 algorithm
-  (scheduleOut,finishingTime) := match(scheduleIn,numProc,taskGraphIn,taskGraphMetaIn)
+  (scheduleOut,finishingTime) := matchcontinue(scheduleIn,numProc,taskGraphIn,taskGraphMetaIn)
     local
       Real finTime;
       array<Integer> taskIdcs; // idcs of the current Task for every proc.
@@ -5925,7 +5988,11 @@ algorithm
         finTime = -1.0;
       then
         (schedule,finTime);
-  end match;
+    else
+      equation
+        print("getFinishingTimesForSchedule failed\n");
+    then fail();
+  end matchcontinue;
 end getFinishingTimesForSchedule;
 
 protected function getTimeFinishedOfLastTask "get the timeFinished of the last task of a thread. if the thread is empty its -1.0.
