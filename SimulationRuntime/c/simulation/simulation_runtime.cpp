@@ -162,7 +162,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
   {
     string flagList = *flags;
     string flag;
-    unsigned long pos;
+    mmc_uint_t pos;
 
     do
     {
@@ -330,10 +330,10 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     return;
   }
 
-  for(long i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) {
+  for(mmc_sint_t i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) {
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for(long i=0; i<modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput) {
+  for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput) {
     if(modelData->realAlias[i].aliasType == 0)  /* variable */ {
       modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->realAlias[i].filterOutput) {
@@ -346,10 +346,10 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
       }
     }
   }
-  for (long i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) {
+  for (mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) {
     modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for (long i=0; i<modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput) {
+  for (mmc_sint_t i=0; i<modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput) {
     if(modelData->integerAlias[i].aliasType == 0)  /* variable */ {
       modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->integerAlias[i].filterOutput) {
@@ -362,10 +362,10 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
       }
     }
   }
-  for (long i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) {
+  for (mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) {
     modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for (long i=0; i<modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput) {
+  for (mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput) {
     if(modelData->booleanAlias[i].aliasType == 0)  /* variable */ {
       modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->booleanAlias[i].filterOutput) {
@@ -378,10 +378,10 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
       }
     }
   }
-  for (long i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput) {
+  for (mmc_sint_t i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput) {
     modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for (long i=0; i<modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput) {
+  for (mmc_sint_t i=0; i<modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput) {
     if(modelData->stringAlias[i].aliasType == 0)  /* variable */ {
       modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->stringAlias[i].filterOutput) {
@@ -421,7 +421,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   errno = 0;
   if (omc_flag[FLAG_ALARM]) {
     char *endptr;
-    long alarmVal = strtol(omc_flagValue[FLAG_ALARM],&endptr,10);
+    mmc_sint_t alarmVal = strtoll(omc_flagValue[FLAG_ALARM],&endptr,10);
     if (errno || *endptr != 0) {
       throwStreamPrint(data->threadData, "-alarm takes an integer argument (got '%s')", omc_flagValue[FLAG_ALARM]);
     }
@@ -566,7 +566,7 @@ int initializeResultData(DATA* simData, int cpuTime)
 {
   int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
-  long maxSteps = 4 * simData->simulationInfo.numSteps;
+  mmc_sint_t maxSteps = 4 * simData->simulationInfo.numSteps;
   sim_result.filename = strdup(simData->modelData.resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
@@ -626,8 +626,8 @@ int callSolver(DATA* simData, string init_initMethod, string init_file,
 {
   TRACE_PUSH
   int retVal = -1;
-  long i;
-  long solverID = S_UNKNOWN;
+  mmc_sint_t i;
+  mmc_sint_t solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
   threadData_t *threadData = simData->threadData;
   MMC_TRY_INTERNAL(mmc_jumper)

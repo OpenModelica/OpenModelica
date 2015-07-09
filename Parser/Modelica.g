@@ -1245,7 +1245,7 @@ primary returns [void* ast]
       char* chars = (char*)$v.text->chars;
       char* endptr;
       const char* args[2] = {NULL};
-      long l = 0;
+      mmc_sint_t l = 0;
       errno = 0;
       l = strtol(chars,&endptr,10);
       args[0] = chars;
@@ -1263,10 +1263,10 @@ primary returns [void* ast]
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
         $ast = Absyn__REAL(mmc_mk_scon(chars));
       } else {
-        if (((long)1<<(MMC_SIZE_INT*8-2))-1 >= l) {
+        if (((mmc_sint_t)1<<(MMC_SIZE_INT*8-2))-1 >= l) {
           $ast = Absyn__INTEGER(MMC_IMMEDIATE(MMC_TAGFIXNUM(l))); /* We can't use mmc_mk_icon here - it takes "int"; not "long" */
         } else {
-          long lt = ((long)1<<(MMC_SIZE_INT == 8 ? 62 : 30))-1;
+          mmc_sint_t lt = ((mmc_sint_t)1<<(MMC_SIZE_INT == 8 ? 62 : 30))-1;
           if (l > lt) {
             const char *msg = MMC_SIZE_INT != 8 ? "\%s-bit signed integers! Truncating integer: \%s to 1073741823" : "\%s-bit signed integers! Truncating integer: \%s to 4611686018427387903";
             c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, msg,

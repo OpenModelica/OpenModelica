@@ -28,6 +28,11 @@
  *
  */
 
+#if defined(_MSC_VER) || defined(__MINGW32__)
+ #define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+#endif
+
 #include "meta_modelica.h"
 #include "OpenModelicaBootstrappingHeader.h"
 #include "parse.c"
