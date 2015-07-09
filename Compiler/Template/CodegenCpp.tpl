@@ -5573,7 +5573,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      {
           <% match eq
           case SES_LINEAR(__) then
-          "*A_matrix=*__Asparse;"
+          "A_matrix=*(__Asparse.get());"
           %>
      }
 

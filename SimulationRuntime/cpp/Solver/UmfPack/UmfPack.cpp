@@ -62,7 +62,7 @@ void UmfPack::solve()
     {
         _algLoop->evaluate();
         _algLoop->getRHS(_rhs);
-        _algLoop->getSystemMatrix(_jacs);
+        _algLoop->getSystemMatrix(*(_jacs.get()));
 
         int status, sys=0;
         double Control [UMFPACK_CONTROL], Info [UMFPACK_INFO] ;
