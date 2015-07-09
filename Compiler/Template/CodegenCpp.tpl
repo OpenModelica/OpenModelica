@@ -1744,8 +1744,8 @@ extern "C"  int initSimulation(ISimController* &controller, ISimData* &data, dou
   // Declare Output
   <%defineOutputVars(simCode)%>
 
-  // Set simulation Settings: mainly stepsize important
-  SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",EMPTY, 100,EMPTY2, OFF};
+  LogSettings logsetting;
+  SimSettings settings = {"RTEuler","","Kinsol",        0.0,      100.0,  cycletime,      0.0025,      10.0,         0.0001, "<%lastIdentOfPath(modelInfo.name)%>",OF_EMPTY, 100,OPT_EMPTY, logsetting};
   //                       Solver,          nonlinearsolver starttime endtime stepsize   lower limit upper limit  tolerance
   try
   {
