@@ -4,12 +4,6 @@
  *  @{
  */
 
-#include <string.h>
-using std::string;
-#endif
-*/
-
-
 struct SimSettings
 {
   string solver_name;
