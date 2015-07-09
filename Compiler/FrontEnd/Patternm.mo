@@ -705,7 +705,7 @@ algorithm
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,st,_,pre,_,_)
       equation
         // First do inputs
-        inExps = MetaUtil.extractListFromTuple(inExp, 0);
+        inExps = convertExpToPatterns(inExp);
         (inExps,inputAliases,inputAliasesAndCrefs) = List.map_3(inExps,getInputAsBinding);
         (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
         // Then add locals
@@ -2010,7 +2010,7 @@ algorithm
     case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,classPart=cp,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls),caseLocalTree))) = addLocalDecls(cache,env,decls,FCore.caseScopeName,impl,info);
-        patterns = MetaUtil.extractListFromTuple(pattern, 0);
+        patterns = convertExpToPatterns(pattern);
         patterns = if listLength(tys)==1 then {pattern} else patterns;
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
         // open a pattern type scope
@@ -2943,6 +2943,19 @@ algorithm
     else (inExp,inType);
   end match;
 end makeTupleFromMetaTuple;
+
+protected function convertExpToPatterns
+  "Converts an expression to a list of patterns. If the expression is a tuple
+   then the contents of the tuple are returned, otherwise the expression itself
+   is returned as a list."
+  input Absyn.Exp inExp;
+  output list<Absyn.Exp> outInputs;
+algorithm
+  outInputs := match inExp
+    case Absyn.TUPLE() then inExp.expressions;
+    else {inExp};
+  end match;
+end convertExpToPatterns;
 
 annotation(__OpenModelica_Interface="frontend");
 end Patternm;

@@ -1170,7 +1170,7 @@ import Util;
     (partlyFilledClFloat, partlyFilledClInt, partlyFilledClBool) := threadPartlyFilledCacheLines;
     (fullyFilledClFloat, fullyFilledClInt, fullyFilledClBool) := threadFullyFilledCacheLines;
 
-    if(Util.isSome(iMatchedCacheLine)) then //advice was given, to which CL the variable should be added
+    if(isSome(iMatchedCacheLine)) then //advice was given, to which CL the variable should be added
       clMapIdx := numOfCLs;
       SOME((partlyFilledCacheLine, matchedClIndex)) := iMatchedCacheLine;
       partlyFilledCacheLineOption := SOME(partlyFilledCacheLine);
@@ -1365,7 +1365,7 @@ import Util;
     Integer levelIdx, threadIdx;
   algorithm
     (levelIdx, threadIdx) := iLevelThreadIdx;
-    if(Util.isSome(iOldPartlyFilledCacheLine)) then
+    if(isSome(iOldPartlyFilledCacheLine)) then
       SOME(PARTLYFILLEDCACHELINE_LEVEL(prefetchLevel=prefetchLevel,writeLevel=writeLevel)) := iOldPartlyFilledCacheLine;
     else
       prefetchLevel := {};
@@ -2867,7 +2867,7 @@ import Util;
       simVarOpt := arrayGet(iAllVarsMapping, varIdx);
       description := "unknown";
       threadText := "Th -1";
-      if(Util.isSome(simVarOpt)) then
+      if(isSome(simVarOpt)) then
         simVar := Util.getOption(simVarOpt);
         varCompRef := SimCodeFunctionUtil.varName(simVar);
         description :=  ComponentReference.printComponentRefStr(varCompRef);

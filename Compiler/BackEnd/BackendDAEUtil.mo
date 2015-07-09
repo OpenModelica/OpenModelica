@@ -513,27 +513,16 @@ algorithm
   outShared:=
   match (inShared)
     local
-      BackendDAE.Variables knvars,exobj,knvars1,exobj1,av;
-      BackendDAE.EquationArray remeqns,inieqns,remeqns1,inieqns1;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.ExtraInfo ei;
+      BackendDAE.Shared shared;
 
-    case (BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei))
+    case shared as BackendDAE.SHARED()
       equation
-        knvars1 = BackendVariable.copyVariables(knvars);
-        _ = BackendVariable.copyVariables(exobj);
-        inieqns1 = BackendEquation.copyEquationArray(inieqns);
-        remeqns1 = BackendEquation.copyEquationArray(remeqns);
+        shared.knownVars = BackendVariable.copyVariables(shared.knownVars);
+        shared.externalObjects = BackendVariable.copyVariables(shared.externalObjects);
+        shared.initialEqs = BackendEquation.copyEquationArray(shared.initialEqs);
+        shared.removedEqs = BackendEquation.copyEquationArray(shared.removedEqs);
       then
-        BackendDAE.SHARED(knvars1,exobj,av,inieqns1,remeqns1,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei);
+        shared;
   end match;
 end copyBackendDAEShared;
 
@@ -567,18 +556,18 @@ end addVarsToEqSystem;
 
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outNumZeroCrossings "number of ordinary zerocrossings" ;
-  output Integer outNumTimeEvents    "number of zerocrossings that are time events" ;
+  output Integer outNumZeroCrossings "number of ordinary zero crossings" ;
+  output Integer outNumTimeEvents    "number of zero crossings that are time events" ;
   output Integer outNumRelations;
   output Integer outNumMathEventFunctions;
 protected
   list<BackendDAE.TimeEvent> timeEvents;
   list<ZeroCrossing> zeroCrossingLst, relationsLst;
 algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                                                                          zeroCrossingLst=zeroCrossingLst,
-                                                                          relationsLst=relationsLst,
-                                                                          numberMathEvents=outNumMathEventFunctions))) := inBackendDAE;
+  BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents,
+                                                    zeroCrossingLst=zeroCrossingLst,
+                                                    relationsLst=relationsLst,
+                                                    numberMathEvents=outNumMathEventFunctions)) := inBackendDAE.shared;
 
   outNumZeroCrossings := listLength(zeroCrossingLst);
   outNumTimeEvents := listLength(timeEvents);
@@ -596,11 +585,10 @@ protected function countDiscreteVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output Integer outNumDiscreteVars;
 protected
-  BackendDAE.EqSystems systs;
   BackendDAE.Variables knownVars, alias;
 algorithm
-  BackendDAE.DAE(eqs = systs, shared = BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias)) := inDAE;
-  outNumDiscreteVars := countDiscreteVars1(systs);
+  BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias) := inDAE.shared;
+  outNumDiscreteVars := countDiscreteVars1(inDAE.eqs);
   outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(knownVars, countDiscreteVars3, outNumDiscreteVars);
   outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(alias, countDiscreteVars3, outNumDiscreteVars);
 end countDiscreteVars;
@@ -645,35 +633,23 @@ protected function calculateValues "author: PA
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := match (inBackendDAE)
+  outBackendDAE := match inBackendDAE
     local
-      list<BackendDAE.Var> knvarlst,varlst1,varlst2;
-      BackendDAE.Variables knvars,extVars,paramvars,av;
-      BackendDAE.EquationArray seqns,ie;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
+      BackendDAE.Variables knvars;
       FCore.Cache cache;
       FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo wc;
-      ExternalObjectClasses extObjCls;
       EqSystems eqs;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.ExtraInfo ei;
+      BackendDAE.Shared shared;
 
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars = knvars,externalObjects=extVars,aliasVars = av,
-                 initialEqs = ie,removedEqs = seqns, constraints = constrs,classAttrs = clsAttrs,
-                 cache=cache,graph=graph, functionTree = funcs, eventInfo = wc, extObjClasses=extObjCls,
-                 backendDAEType=btp, symjacs=symjacs, info=ei)))
+    case BackendDAE.DAE(eqs, shared as BackendDAE.SHARED(knownVars=knvars, cache=cache, graph=graph))
       algorithm
-        knvars := BackendVariable.traverseBackendDAEVarsWithUpdate(
-          knvars, function calculateValueTraverser(inEnv = graph), cache);
+        knvars := BackendVariable.traverseBackendDAEVarsWithUpdate (
+            knvars, function calculateValueTraverser(inEnv = graph), cache );
         // Reverse the order of the known vars in the hashtable. This is stupid,
         // but things break otherwise.
-        knvars := BackendVariable.listVar(BackendVariable.varList(knvars));
+        shared.knownVars := BackendVariable.listVar(BackendVariable.varList(knvars));
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,constrs,clsAttrs,cache,graph,funcs,wc,extObjCls,btp,symjacs,ei));
+        BackendDAE.DAE(eqs, shared);
   end match;
 end calculateValues;
 
@@ -986,25 +962,20 @@ end traversingisDiscreteExpFinder;
 
 
 public function isVarDiscrete "returns true if variable is discrete"
-  input BackendDAE.Var var;
-  output Boolean res;
-algorithm
-  res := match(var)
-    local VarKind kind;
-    case(BackendDAE.VAR(varKind=kind)) then isKindDiscrete(kind);
-  end match;
+  input BackendDAE.Var inVar;
+  output Boolean res = isKindDiscrete(inVar.varKind);
 end isVarDiscrete;
 
 protected function isKindDiscrete "Returns true if VarKind is discrete."
   input VarKind inVarKind;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inVarKind)
+  outBoolean := match inVarKind
     case (BackendDAE.DISCRETE()) then true;
     case (BackendDAE.PARAM()) then true;
     case (BackendDAE.CONST()) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isKindDiscrete;
 
 public function statesAndVarsExp
@@ -1231,118 +1202,75 @@ end rangeExprs;
 
 public function daeSize
 "author: Frenkel TUD
-  Returns the size of the dae system, wich corsopndens to the number of variables."
-  input BackendDAE.BackendDAE dae;
-  output Integer size;
+  Returns the size of the dae system, which correspondents to the number of variables."
+  input BackendDAE.BackendDAE inDAE;
+  output Integer outSize;
 protected
-  list<BackendDAE.EqSystem> systs;
   list<Integer> sizes;
 algorithm
-  BackendDAE.DAE(eqs=systs) := dae;
-  sizes := List.map(systs,systemSize);
-  size := List.fold(sizes,intAdd,0);
+  sizes := List.map(inDAE.eqs, systemSize);
+  outSize := List.fold(sizes, intAdd, 0);
 end daeSize;
 
 public function systemSize
-"author: Frenkel TUD
-  Returns the size of the dae system, the size of the equations in an BackendDAE.EquationArray,
+  "Returns the size of the dae system, the size of the equations in an BackendDAE.EquationArray,
   which not corresponds to the number of equations in a system."
-  input BackendDAE.EqSystem syst;
-  output Integer n;
-algorithm
-  n := match(syst)
-    local
-      BackendDAE.EquationArray eqns;
-    case BackendDAE.EQSYSTEM(orderedEqs = eqns)
-      equation
-        n = equationSize(eqns);
-      then n;
-  end match;
+  input BackendDAE.EqSystem inEqSystem;
+  output Integer outSize = equationSize(inEqSystem.orderedEqs);
 end systemSize;
 
 public function numOfComps "Returns the number of StrongComponents in the EqSystem
   author: waurich TUD"
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem inEqSystem;
   output Integer num;
+protected
+  BackendDAE.StrongComponents comps;
 algorithm
-  num:=
-  match (syst)
-    local
-      BackendDAE.StrongComponents comps;
-      Integer n;
-    case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps))
-      equation
-        n = listLength(comps);
-      then n;
-  end match;
+  BackendDAE.MATCHING(comps=comps) := inEqSystem.matching;
+  num := listLength(comps);
 end numOfComps;
 
 public function equationSize "author: PA
-
   Returns the size of the equations in an BackendDAE.EquationArray, which not
   corresponds to the number of equations in a system."
   input BackendDAE.EquationArray inEquationArray;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  match (inEquationArray)
-    local Integer n;
-    case (BackendDAE.EQUATION_ARRAY(size = n)) then n;
-  end match;
+  output Integer outInteger = inEquationArray.size;
 end equationSize;
 
 public function equationArraySizeDAE
 "author: Frenkel TUD
   Returns the number of equations in a system."
-  input BackendDAE.EqSystem dae;
-  output Integer n;
-algorithm
-  n := match(dae)
-    local
-      BackendDAE.EquationArray eqns;
-    case BackendDAE.EQSYSTEM(orderedEqs = eqns)
-      equation
-        n = equationArraySize(eqns);
-      then n;
-  end match;
+  input BackendDAE.EqSystem inEqSystem;
+  output Integer n = equationArraySize(inEqSystem.orderedEqs);
 end equationArraySizeDAE;
 
 public function equationArraySize "author: PA
-
   Returns the number of equations in an BackendDAE.EquationArray, which not
   corresponds to the number of equations in a system but not
   to the size of the system"
   input BackendDAE.EquationArray inEquationArray;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  match (inEquationArray)
-    local Integer n;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n)) then n;
-  end match;
+  output Integer outInteger = inEquationArray.numberOfElement;
 end equationArraySize;
 
 public function hasDAEMatching
-"Returns  true if all system have already a matching, otherwise return false."
-  input BackendDAE.BackendDAE dae;
+  "Returns  true if all system have already a matching, otherwise return false."
+  input BackendDAE.BackendDAE inDAE;
   output Boolean b;
 protected
-  list<BackendDAE.EqSystem> systs;
   list<Boolean> boollst;
 algorithm
-  BackendDAE.DAE(eqs=systs) := dae;
-  boollst := List.map(systs, hasEqSystemMatching);
-  b := List.fold(boollst,boolAnd,true);
+  boollst := List.map(inDAE.eqs, hasEqSystemMatching);
+  b := List.fold(boollst, boolAnd, true);
 end hasDAEMatching;
 
 public function hasEqSystemMatching
-"Returns true if EqSystem has a matching."
+  "Returns true if EqSystem has a matching."
   input BackendDAE.EqSystem dae;
   output Boolean b;
 algorithm
   b  := match(dae)
-  case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING()) then true;
-  case BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()) then false;
+    case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING()) then true;
+    case BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()) then false;
   end match;
 end hasEqSystemMatching;
 
@@ -1855,37 +1783,20 @@ end splitoutEquationAndVars;
 public function whenClauseAddDAE
 "author: Frenkel TUD 2011-05"
   input list<BackendDAE.WhenClause> inWcLst;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
 algorithm
-  oshared := match (inWcLst,shared)
+  outShared := match inShared
     local
-      BackendDAE.Variables knvars,exobj,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      list<BackendDAE.WhenClause> wclst,wclst1;
-      list<ZeroCrossing> zc, rellst, smplLst;
-      Integer numberOfMathEventFunctions;
-      ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAEType btp;
-      list<BackendDAE.TimeEvent> timeEvents;
-      BackendDAE.ExtraInfo ei;
-      array<DAE.ClockKind> clocks;
+      BackendDAE.Shared shared;
+      BackendDAE.EventInfo eventInfo;
+      list<BackendDAE.WhenClause> wclst;
 
-    case (_,BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs,
-                               BackendDAE.EVENT_INFO(timeEvents, wclst, zc, smplLst, rellst, numberOfMathEventFunctions, clocks),
-                               eoc, btp, symjacs, ei ))
+    case shared as BackendDAE.SHARED(eventInfo=eventInfo as BackendDAE.EVENT_INFO(whenClauseLst=wclst))
       equation
-        wclst1 = listAppend(wclst,inWcLst);
-      then BackendDAE.SHARED( knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs,
-                              BackendDAE.EVENT_INFO(timeEvents, wclst1, zc, smplLst, rellst, numberOfMathEventFunctions, clocks),
-                              eoc, btp, symjacs, ei );
-
+        eventInfo.whenClauseLst = listAppend(wclst, inWcLst);
+        shared.eventInfo = eventInfo;
+      then shared;
   end match;
 end whenClauseAddDAE;
 
@@ -6952,26 +6863,21 @@ protected function stateDeselectionDAE
   input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   input tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String> stateDeselection;
   output BackendDAE.BackendDAE outDAE;
+protected
+  String methodstr;
+  BackendDAEFunc.stateDeselectionFunc sDfunc;
 algorithm
-  outDAE := match(causalized,inDAE,args,stateDeselection)
-    local
-      list<BackendDAE.EqSystem> systs;
-      BackendDAE.Shared shared;
-      String methodstr;
-      BackendDAEFunc.stateDeselectionFunc sDfunc;
-
-    case (true,BackendDAE.DAE(systs,shared),_,(_,_,sDfunc,methodstr))
-      equation
-        // do state selection
-        outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
-        //SimCodeFunctionUtil.execStat("transformDAE -> state selection " + methodstr);
-      then
-         outDAE;
-    else inDAE;
-  end match;
+  if causalized then
+    // do state selection
+    (_, _, sDfunc, methodstr) := stateDeselection;
+    outDAE := sDfunc(inDAE, args);
+    //SimCodeFunctionUtil.execStat("transformDAE -> state selection " + methodstr);
+  else
+    outDAE := inDAE;
+  end if;
 end stateDeselectionDAE;
 
-protected function mapSortEqnsDAE "Run Tarjans Algorithm."
+protected function mapSortEqnsDAE "Run Tarjan's Algorithm."
   input list<BackendDAE.EqSystem> inSystem;
   input BackendDAE.Shared inShared;
   input list<BackendDAE.EqSystem> acc;
@@ -8040,7 +7946,8 @@ protected
   DAE.FunctionTree functions = DAEUtil.avlTreeNew();
 algorithm
   shared := BackendDAE.SHARED( emptyVars, emptyVars, emptyVars, emptyEqs, emptyEqs, {}, {}, cache, graph,
-                               DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei);
+                               DAEUtil.avlTreeNew(), BackendDAEUtil.emptyEventInfo(), {}, backendDAEType, {}, ei,
+                               BackendDAE.PARTITIONS_INFO(emptyClocks()) );
 end createEmptyShared;
 
 public function makeSingleEquationComp
@@ -8135,15 +8042,9 @@ end setFunctionTree;
 public function setEqSystEqs
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.EquationArray inEqs;
-  output BackendDAE.EqSystem outSyst;
+  output BackendDAE.EqSystem syst = inSyst;
 algorithm
-  outSyst := match inSyst
-    local
-      BackendDAE.EqSystem syst;
-    case syst as BackendDAE.EQSYSTEM()
-      algorithm syst.orderedEqs := inEqs;
-      then syst;
-  end match;
+  syst.orderedEqs := inEqs;
 end setEqSystEqs;
 
 public function setEqSystVars
@@ -8302,10 +8203,27 @@ algorithm
   end match;
 end setSharedAliasVars;
 
+public function setSharedOptimica
+  input BackendDAE.Shared inShared;
+  input list<DAE.Constraint> constraints;
+  input list<DAE.ClassAttributes> classAttrs;
+  output BackendDAE.Shared outShared;
+algorithm
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      equation
+        shared.constraints = constraints;
+        shared.classAttrs = classAttrs;
+      then shared;
+  end match;
+end setSharedOptimica;
+
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, emptyClocks());
+  info := BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0);
 end emptyEventInfo;
 
 public function emptyClocks
@@ -8313,6 +8231,70 @@ public function emptyClocks
 algorithm
   clocks := arrayCreate(0, DAE.INFERRED_CLOCK());
 end emptyClocks;
+
+public function componentsEqual"outputs true if 1 strongly connected components are equal"
+  input BackendDAE.StrongComponent comp1;
+  input BackendDAE.StrongComponent comp2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(comp1,comp2)
+    local
+      Integer i1,i2, j1,j2;
+      list<Integer> l1,l2,k1,k2;
+      list<tuple<Integer,list<Integer>>> l3,k3;
+  case(BackendDAE.SINGLEEQUATION(eqn=i1,var=i2),BackendDAE.SINGLEEQUATION(eqn=j1,var=j2))
+    equation
+  then intEq(i1,j1) and intEq(i2,j2);
+
+  case(BackendDAE.EQUATIONSYSTEM(eqns=l1,vars=l2),BackendDAE.EQUATIONSYSTEM(eqns=k1,vars=k2))
+    equation
+  then List.isEqualOnTrue(l1,k1,intEq) and List.isEqualOnTrue(l2,k2,intEq);
+
+  case(BackendDAE.SINGLEARRAY(eqn=i1,vars=l1),BackendDAE.SINGLEARRAY(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLEALGORITHM(eqn=i1,vars=l1),BackendDAE.SINGLEALGORITHM(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLECOMPLEXEQUATION(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLEWHENEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEWHENEQUATION(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.SINGLEIFEQUATION(eqn=i1,vars=l1),BackendDAE.SINGLEIFEQUATION(eqn=j1,vars=k1))
+    equation
+  then intEq(i1,j1) and List.isEqualOnTrue(l1,k1,intEq);
+
+  case(BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=l1,residualequations=l2,otherEqnVarTpl=l3)),BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=k1,residualequations=k2,otherEqnVarTpl=k3)))
+    equation
+  then List.isEqualOnTrue(l1,k1,intEq) and List.isEqualOnTrue(l2,k2,intEq) and List.isEqualOnTrue(l3,k3,otherEqnVarTplEqual);
+  else
+    then false;
+  end matchcontinue;
+end componentsEqual;
+
+protected function otherEqnVarTplEqual"compares 2 tpls from otherEqnVarTpl in TearingSets"
+  input tuple<Integer,list<Integer>> tpl1;
+  input tuple<Integer,list<Integer>> tpl2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(tpl1,tpl2)
+    local
+      Integer i1,i2;
+      list<Integer> l1,l2;
+  case((i1,l1),(i2,l2))
+    equation
+  then intEq(i1,i2) and List.isEqualOnTrue(l1,l2,intEq);
+
+  else
+    then false;
+  end matchcontinue;
+end otherEqnVarTplEqual;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

@@ -1128,7 +1128,7 @@ algorithm
         // DAEUtil.addComponentType(dae1, fq_class);
         ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, {fq_class});
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
-        bc = if Util.isSome(bc) then bc else SOME(ty2);
+        bc = if isSome(bc) then bc else SOME(ty2);
         ty = InstUtil.mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = InstUtil.updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
@@ -2004,12 +2004,12 @@ protected function instClassdef2 "
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
-  output Option<DAE.Type> outTypesTypeOption;
+  output Option<DAE.Type> oty;
   output Option<SCode.Attributes> optDerAttr;
   output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,oty,optDerAttr,outEqualityConstraint,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts,compelts_2_elem;
@@ -2317,9 +2317,10 @@ algorithm
 
         // Search for equalityConstraint
         eqConstraint = InstUtil.equalityConstraint(env5, els, info);
-        ci_state6 = if Util.isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
+        ci_state6 = if isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
+        (cache,oty) = MetaUtil.fixUniontype(cache, env5, ci_state6, inClassDef6);
       then
-        (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
+        (cache,env5,ih,store,dae,csets5,ci_state6,vars,oty,NONE(),eqConstraint,graph);
 
     // This rule describes how to instantiate class definition derived from an enumeration
     case (cache,env,ih,store,mods,pre,_,_,
@@ -2607,9 +2608,9 @@ algorithm
           re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         str = Util.assoc(str,{("List","list"),("Tuple","tuple"),("Array","array")});
-        (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph)
+        (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,oty,optDerAttr,outEqualityConstraint,outGraph)
         = instClassdef2(cache,env,ih,store,mods,pre,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA),re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,inCallingScope,graph,inSets,instSingleCref,comment,info,stopInst);
-      then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph);
+      then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,oty,optDerAttr,outEqualityConstraint,outGraph);
 
     case (_,_,_,_,_,_,_,_,
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(path=cn,typeSpecs=tSpecs)),

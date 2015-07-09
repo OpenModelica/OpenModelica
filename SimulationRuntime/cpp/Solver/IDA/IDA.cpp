@@ -283,7 +283,7 @@ void Ida::initialize()
 void Ida::solve(const SOLVERCALL action)
 {
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
   #ifdef RUNTIME_PROFILING
   MEASURETIME_REGION_DEFINE(idaSolveFunctionHandler, "solve");
@@ -423,7 +423,7 @@ void Ida::IDACore()
     throw std::runtime_error("IDA::ReInit");
 
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
   while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {

@@ -813,6 +813,13 @@ package SimCodeUtil
     output list<String> oVarIndexList;
   end getVarIndexListByMapping;
 
+  function getVarIndexByMapping
+    input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
+    input DAE.ComponentRef iVarName;
+    input String iIndexForUndefinedReferences;
+    output String oVarIndex;
+  end getVarIndexByMapping;
+
   function isVarIndexListConsecutive
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;
@@ -1364,6 +1371,12 @@ package DAE
       Integer ix;
       Type ty;
     end TSUB;
+    record RSUB
+      Exp exp;
+      Integer ix;
+      String fieldName;
+      Type ty;
+    end RSUB;
     record SIZE
       Exp exp;
       Option<Exp> sz;
@@ -2196,6 +2209,7 @@ uniontype Restriction
   record R_METARECORD "Metamodelica extension"
     Absyn.Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
+    Boolean moved;
   end R_METARECORD; /* added by x07simbj */
 
   record R_UNIONTYPE "Metamodelica extension"
@@ -3187,6 +3201,10 @@ package Types
     input DAE.Type ty;
     output Boolean b;
   end isArrayWithUnknownDimension;
+  function getMetaRecordFields
+    input DAE.Type ty;
+    output list<DAE.Var> fields;
+  end getMetaRecordFields;
 end Types;
 
 package HashTableCrIListArray

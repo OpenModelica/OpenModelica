@@ -32,8 +32,6 @@ public:
   ///path for simulation results in textfile
   virtual string getOutputPath();
   virtual void setOutputPath(string);
-  virtual OutputFormat getOutputFormat();
-  virtual void setOutputFormat(OutputFormat format);
   virtual OutputPointType getOutputPointType();
   virtual void setOutputPointType(OutputPointType);
   virtual LogSettings getLogSettings();
@@ -71,7 +69,6 @@ private:
       _selected_nonlin_solver,
       _resultsfile_name,
       _runtimeLibraryPath;
-  OutputFormat _outputFormat;
   OutputPointType _outputPointType;
   LogSettings _log_settings;
   unsigned int _alarm_time;

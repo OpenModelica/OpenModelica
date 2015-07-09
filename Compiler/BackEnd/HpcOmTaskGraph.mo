@@ -4989,18 +4989,35 @@ protected function validateComponents "author: marcusw
   input list<tuple<BackendDAE.StrongComponent,Integer>> systComps;
   output Boolean res;
 protected
+  Boolean isEqual;
+  Integer i1,i2;
+  BackendDAE.StrongComponent comp1,comp2;
+  tuple<BackendDAE.StrongComponent,Integer> tpl1,tpl2;
   list<tuple<BackendDAE.StrongComponent,Integer>> sortedGraphComps, sortedSystComps;
 algorithm
   res := matchcontinue(graphComps,systComps)
     case(_,_)
-      equation
-        sortedGraphComps = List.sort(graphComps,compareComponents);
-        sortedSystComps = List.sort(systComps,compareComponents);
-        true = List.isEqual(sortedGraphComps, sortedSystComps, true);
+      algorithm
+        sortedGraphComps := List.sort(graphComps,compareComponents);
+        sortedSystComps := List.sort(systComps,compareComponents);
+        //true := List.isEqual(sortedGraphComps, sortedSystComps, true);
+        if intNe(listLength(sortedSystComps),listLength(sortedGraphComps)) then print("the graph and the system have a difference number of components.\n"); end if;
+        isEqual := true;
+        while isEqual and not listEmpty(sortedGraphComps) loop
+          tpl1::sortedGraphComps := sortedGraphComps;
+          tpl2::sortedSystComps := sortedSystComps;
+          (comp1,i1) := tpl1;
+          (comp2,i2) := tpl2;
+          if BackendDAEUtil.componentsEqual(comp1,comp2) and intEq(i1,i2) then isEqual:= true;
+          else
+            isEqual := false;
+            print("comp"+intString(i1)+BackendDump.printComponent(comp1)+" is not equal to "+"comp"+intString(i2)+BackendDump.printComponent(comp2)+"\n");
+          end if;
+        end while;
       then true;
     else
       equation
-        print("Different components in graph and system");
+        print("Different components in graph and system\n");
       then false;
   end matchcontinue;
 end validateComponents;

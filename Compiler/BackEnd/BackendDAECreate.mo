@@ -133,7 +133,7 @@ algorithm
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
-  einfo := BackendDAE.EVENT_INFO(timeEvents, whenclauses_1, {}, {}, {}, 0, arrayCreate(0, DAE.INFERRED_CLOCK()));
+  einfo := BackendDAE.EVENT_INFO(timeEvents, whenclauses_1, {}, {}, {}, 0);
   symjacs := {(NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {})};
   outBackendDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(vars_1, eqnarr)::{},
                                   BackendDAE.SHARED(knvars,
@@ -149,7 +149,8 @@ algorithm
                                                     einfo,
                                                     extObjCls,
                                                     BackendDAE.SIMULATION(),
-                                                    symjacs,inExtraInfo));
+                                                    symjacs,inExtraInfo,
+                                                    BackendDAE.PARTITIONS_INFO(BackendDAEUtil.emptyClocks())));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   neqStr := intString(BackendDAEUtil.equationSize(eqnarr));
   nvarStr := intString(BackendVariable.varsSize(vars_1));

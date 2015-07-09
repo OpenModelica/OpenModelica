@@ -34,7 +34,7 @@ encapsulated package Matching
   package:     Matching
   description: Matching contains functions for matching algorithms
 
-  RCS: $Id: Matching.mo 11428 2012-03-14 17:38:09Z Frenkel TUD $"
+  RCS: $Id: Matching.mo $"
 
 
 public import BackendDAE;
@@ -117,9 +117,9 @@ public function BBMatching
   input BackendDAE.MatchingOptions inMatchingOptions;
   input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output BackendDAE.EqSystem outSys=inSys;
-  output BackendDAE.Shared outShared=inShared;
-  output BackendDAE.StructurallySingularSystemHandlerArg outArg=inArg;
+  output BackendDAE.EqSystem outSys = inSys;
+  output BackendDAE.Shared outShared = inShared;
+  output BackendDAE.StructurallySingularSystemHandlerArg outArg = inArg;
 protected
   Integer i;
   Boolean success = true;
@@ -132,7 +132,7 @@ protected
   list<Integer> mEqns;
 algorithm
   //BackendDAE.EQSYSTEM(m=SOME(m), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)) := outSys;
-  BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
+  SOME(m) := outSys.m;
   nEqns := BackendDAEUtil.systemSize(outSys);
   nVars := BackendVariable.daenumVariables(outSys);
   // Be carefull, since matching may have been generated with not distinguishing between
@@ -162,7 +162,7 @@ algorithm
           end if;
         end for;
         (_, i, outSys, outShared, ass1, ass2, outArg) := sssHandler({mEqns}, i, outSys, outShared, ass1, ass2, outArg);
-        BackendDAE.EQSYSTEM(m=SOME(m)) := outSys;
+        SOME(m) := outSys.m;
         //nEqns := BackendDAEUtil.systemSize(outSys);
         //nVars := BackendVariable.daenumVariables(outSys);
         //ass1 := assignmentsArrayExpand(ass1, nVars, arrayLength(ass1), -1);
@@ -264,7 +264,7 @@ end invertMatching;
 // =============================================================================
 
 public function DFSLH
-"deapth first search with look ahead feature. basically the same like MC21A."
+"depth first search with look ahead feature. basically the same like MC21A."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;

@@ -65,22 +65,16 @@ public function resolveLoops "author:Waurich TUD 2013-12
   current law can be applied."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems eqSysts;
+  BackendDAE.Shared shared;
 algorithm
-  outDAE := matchcontinue(inDAE)
-    local
-      BackendDAE.EqSystems eqSysts;
-      BackendDAE.Shared shared;
-
-    case (_) equation
-      true = Flags.isSet(Flags.RESOLVE_LOOPS);
-      BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
-      (eqSysts, shared, _) = List.mapFold2(eqSysts, resolveLoops_main, shared, 1);
-      outDAE = BackendDAE.DAE(eqSysts, shared);
-    then outDAE;
-
-    else
-    then inDAE;
-  end matchcontinue;
+  if Flags.isSet(Flags.RESOLVE_LOOPS) then
+    (eqSysts, shared, _) := List.mapFold2(inDAE.eqs, resolveLoops_main, inDAE.shared, 1);
+    outDAE := BackendDAE.DAE(eqSysts, shared);
+  else
+    outDAE := inDAE;
+  end if;
 end resolveLoops;
 
 protected function resolveLoops_main "author: Waurich TUD 2014-01
@@ -1753,24 +1747,16 @@ public function reshuffling_post
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystems eqSystems;
-  BackendDAE.Shared shared;
 algorithm
-  outDAE := matchcontinue(inDAE)
-    local
-      BackendDAE.BackendDAE dae;
-  case(_)
-    equation
-      true = Flags.isSet(Flags.RESHUFFLE_POST);
-      //print("RESHUFFLING\n");
-      //BackendDump.dumpBackendDAE(inDAE,"INDAE");
-      BackendDAE.DAE(eqs=eqSystems, shared=shared) = inDAE;
-      eqSystems = List.map1(eqSystems,reshuffling_post0,shared);
-      dae = BackendDAE.DAE(eqSystems,shared);
-      //BackendDump.dumpBackendDAE(dae,"OUTDAE");
-    then dae;
+  if Flags.isSet(Flags.RESHUFFLE_POST) then
+    //print("RESHUFFLING\n");
+    //BackendDump.dumpBackendDAE(inDAE,"INDAE");
+    eqSystems := List.map1(inDAE.eqs,reshuffling_post0, inDAE.shared);
+    outDAE := BackendDAE.DAE(eqSystems, inDAE.shared);
+    //BackendDump.dumpBackendDAE(outDAE,"OUTDAE");
   else
-    then inDAE;
-  end matchcontinue;
+    outDAE := inDAE;
+  end if;
 end reshuffling_post;
 
 protected function reshuffling_post0 "author: waurich TUD 2014-09"

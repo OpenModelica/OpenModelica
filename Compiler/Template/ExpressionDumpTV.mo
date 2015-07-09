@@ -349,6 +349,12 @@ package DAE
       Type ty;
     end TSUB;
 
+    record RSUB
+      Exp exp;
+      String fieldName;
+      Type ty;
+    end RSUB;
+
     record SIZE
       Exp exp;
       Option<Exp> sz;

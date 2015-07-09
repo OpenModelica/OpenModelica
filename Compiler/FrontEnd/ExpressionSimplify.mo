@@ -1681,12 +1681,13 @@ protected function simplifyCref
 algorithm
   exp := matchcontinue (origExp, inCREF, inType)
     local
-      Type t,t2;
+      Type t,t2,t3;
       list<Subscript> ssl;
       ComponentRef cr;
-      Ident idn;
+      Ident idn,idn2;
       list<DAE.Exp> expl_1;
       DAE.Exp expCref;
+      Integer index;
 
     case(_,DAE.CREF_IDENT(idn,t2,(ssl as ((DAE.SLICE(DAE.ARRAY(_,_,_))) :: _))),t)
       equation
@@ -1694,6 +1695,31 @@ algorithm
         expCref = Expression.makeCrefExp(cr,t);
         exp = simplifyCref2(expCref,ssl);
       then exp;
+
+/*
+    case (_, DAE.CREF_QUAL(idn,t2 as DAE.T_METATYPE(DAE.T_METAARRAY()),ssl,DAE.CREF_IDENT(idn2,t3)),t)
+      equation
+        exp = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(idn,t2,{}),t2), list(Expression.subscriptIndexExp(s) for s in ssl));
+        print(ExpressionDump.printExpStr(exp) + "\n");
+        index = match tt as Types.metaArrayElementType(t2)
+          // case DAE.T_METARECORD() then t2.fields;
+          case DAE.T_METAUNIONTYPE() then List.position(idn2, tt.singletonFields);
+        end match;
+        exp = DAE.RSUB(exp, index, idn2, t);
+        print(ExpressionDump.printExpStr(origExp) + "\n");
+        print(ExpressionDump.printExpStr(exp) + "\n");
+        print("CREF_QUAL: " + idn + "\n");
+        print("CREF_QUAL: " + Types.unparseType(t2) + "\n");
+        print("CREF_QUAL: " + Types.unparseType(t) + "\n");
+        print("CREF_QUAL: " + Types.unparseType(t3) + "\n");
+      then exp;
+*/
+    case (_, DAE.CREF_QUAL(idn, DAE.T_METATYPE(ty=t2), ssl, cr), t)
+      equation
+        exp = simplifyCrefMM1(idn, t2, ssl);
+        exp = simplifyCrefMM(exp, Expression.typeof(exp), cr);
+      then exp;
+
     else origExp;
   end matchcontinue;
 end simplifyCref;
@@ -1739,6 +1765,55 @@ algorithm
 
   end matchcontinue;
 end simplifyCref2;
+
+protected function simplifyCrefMM_index
+  input DAE.Exp inExp;
+  input String ident;
+  input DAE.Type ty;
+  output DAE.Exp exp;
+protected
+  Integer index;
+  DAE.Type nty,ty2;
+  list<DAE.Var> fields;
+algorithm
+  fields := Types.getMetaRecordFields(ty);
+  index := Types.findVarIndex(ident, fields)+1;
+  DAE.TYPES_VAR(ty=nty) := listGet(fields, index);
+  exp := DAE.RSUB(inExp, index, ident, nty);
+end simplifyCrefMM_index;
+
+protected function simplifyCrefMM
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input ComponentRef inCref;
+  output DAE.Exp exp;
+algorithm
+  exp := match inCref
+    case DAE.CREF_IDENT()
+      algorithm
+        exp := simplifyCrefMM_index(inExp, inCref.ident, inType);
+        exp := if listEmpty(inCref.subscriptLst) then exp else DAE.ASUB(exp, list(Expression.subscriptIndexExp(s) for s in inCref.subscriptLst));
+      then exp;
+    case DAE.CREF_QUAL()
+      algorithm
+        exp := simplifyCrefMM_index(inExp, inCref.ident, inType);
+        exp := if listEmpty(inCref.subscriptLst) then exp else DAE.ASUB(exp, list(Expression.subscriptIndexExp(s) for s in inCref.subscriptLst));
+        exp := simplifyCrefMM(exp, Expression.typeof(exp), inCref.componentRef);
+      then exp;
+  end match;
+end simplifyCrefMM;
+
+protected function simplifyCrefMM1
+  input String ident;
+  input DAE.Type ty;
+  input list<Subscript> ssl;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match (ssl)
+    case {} then DAE.CREF(DAE.CREF_IDENT(ident,ty,{}),ty);
+    else DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(ident,ty,{}),ty), list(Expression.subscriptIndexExp(s) for s in ssl));
+  end match;
+end simplifyCrefMM1;
 
 public function simplify2
 "Advanced simplifications covering several

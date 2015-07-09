@@ -99,20 +99,7 @@ public function encapsulateWhenConditions "author: lochel"
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
-  BackendDAE.Variables knownVars;
-  BackendDAE.Variables externalObjects;
-  BackendDAE.Variables aliasVars;
-  BackendDAE.EquationArray initialEqs;
   BackendDAE.EquationArray removedEqs;
-  list<DAE.Constraint> constraints;
-  list<DAE.ClassAttributes> classAttrs;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree functionTree;
-  BackendDAE.EventInfo eventInfo;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
 
   list<BackendDAE.TimeEvent> timeEvents;
   list<BackendDAE.WhenClause> whenClauseLst;
@@ -128,31 +115,17 @@ protected
   BackendDAE.Variables vars_;
   BackendDAE.EquationArray eqns_;
   BackendDAE.ExtraInfo info;
-  array<DAE.ClockKind> clocks;
+  BackendDAE.EventInfo eventInfo;
+
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  BackendDAE.SHARED(knownVars=knownVars,
-                    externalObjects=externalObjects,
-                    aliasVars=aliasVars,
-                    initialEqs=initialEqs,
-                    removedEqs=removedEqs,
-                    constraints=constraints,
-                    classAttrs=classAttrs,
-                    cache=cache,
-                    graph=graph,
-                    functionTree=functionTree,
-                    eventInfo=eventInfo,
-                    extObjClasses=extObjClasses,
-                    backendDAEType=backendDAEType,
-                    symjacs=symjacs,
-                    info=info) := shared;
-  BackendDAE.EVENT_INFO(timeEvents=timeEvents,
-                        whenClauseLst=whenClauseLst,
-                        zeroCrossingLst=zeroCrossingLst,
-                        sampleLst=sampleLst,
-                        relationsLst=relationsLst,
-                        numberMathEvents=numberMathEvents,
-                        clocks=clocks) := eventInfo;
+  BackendDAE.SHARED(removedEqs=removedEqs, eventInfo=eventInfo) := shared;
+  BackendDAE.EVENT_INFO( timeEvents=timeEvents,
+                         whenClauseLst=whenClauseLst,
+                         zeroCrossingLst=zeroCrossingLst,
+                         sampleLst=sampleLst,
+                         relationsLst=relationsLst,
+                         numberMathEvents=numberMathEvents ) := eventInfo;
 
   ht := HashTableExpToIndex.emptyHashTable();
 
@@ -163,7 +136,9 @@ algorithm
   (whenClauseLst, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(whenClauseLst, {}, {}, {}, ht, index);
 
   // removed equations
-  ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseEquationArray(removedEqs, encapsulateWhenConditions_Equation, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
+  ((removedEqs, vars, eqns, index, ht)) :=
+      BackendEquation.traverseEquationArray( removedEqs, encapsulateWhenConditions_Equation,
+                                             (BackendEquation.emptyEqns(), vars, eqns, index, ht) );
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
   systs := listAppend(systs, {BackendDAEUtil.createEqSystem(vars_, eqns_)});
@@ -173,23 +148,11 @@ algorithm
                                      zeroCrossingLst,
                                      sampleLst,
                                      relationsLst,
-                                     numberMathEvents,
-                                     clocks);
-  shared := BackendDAE.SHARED(knownVars,
-                              externalObjects,
-                              aliasVars,
-                              initialEqs,
-                              removedEqs,
-                              constraints,
-                              classAttrs,
-                              cache,
-                              graph,
-                              functionTree,
-                              eventInfo,
-                              extObjClasses,
-                              backendDAEType,
-                              symjacs,
-                              info);
+                                     numberMathEvents);
+
+  shared := BackendDAEUtil.setSharedEventInfo(shared, eventInfo);
+  shared := BackendDAEUtil.setSharedRemovedEqns(shared, removedEqs);
+
   outDAE := if intGt(index, 1) then BackendDAE.DAE(systs, shared) else inDAE;
   if Flags.isSet(Flags.DUMP_ENCAPSULATECONDITIONS) then
     BackendDump.dumpBackendDAE(outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
@@ -704,14 +667,13 @@ algorithm
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<BackendDAE.ZeroCrossing> relations, sampleLst;
       Integer countMathFunctions;
-      array<DAE.ClockKind> clocks;
     //No zero crossing for clocked discrete partitions;
     case BackendDAE.CLOCKED_PARTITION(subClock=BackendDAE.SUBCLOCK(solver=NONE()))
       then (inSyst, inShared);
     else
       algorithm
         BackendDAE.SHARED( knownVars=knvars, eventInfo=einfo) := inShared;
-        BackendDAE.EVENT_INFO( timeEvents=timeEvents, zeroCrossingLst=zero_crossings, clocks=clocks,
+        BackendDAE.EVENT_INFO( timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
                                sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
                                numberMathEvents=countMathFunctions ) := einfo;
         eqs_lst := BackendEquation.equationList(eqns);
@@ -725,7 +687,7 @@ algorithm
         end if;
         eqns1 := BackendEquation.listEquation(eqs_lst1);
         einfo := BackendDAE.EVENT_INFO( timeEvents, whenclauses, zero_crossings, sampleLst, relations,
-                                           countMathFunctions, clocks );
+                                           countMathFunctions );
       then (BackendDAEUtil.setEqSystEqs(inSyst, eqns1), BackendDAEUtil.setSharedEventInfo(inShared, einfo));
   end match;
 end findZeroCrossings1;

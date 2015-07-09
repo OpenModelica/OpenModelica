@@ -370,30 +370,27 @@ protected function replaceStrongComponent "replaces the indexed component with c
   input Integer idx;
   input BackendDAE.StrongComponents compsNew;
   input BackendDAE.StrongComponents compsAdd;
-  output BackendDAE.EqSystem systOut;
+  output BackendDAE.EqSystem systOut = systIn;
 protected
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.Matching matching;
-  BackendDAE.StateSets stateSets ;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  array<Integer> ass1,ass2,ass1add,ass2add;
+  array<Integer> ass1, ass2, ass1add, ass2add;
   BackendDAE.StrongComponents comps;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := systIn;
-  BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps) := matching;
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)) := systIn;
   if not listEmpty(compsAdd) then
-    ass1add := arrayCreate(listLength(compsAdd),0);
-    ass2add := arrayCreate(listLength(compsAdd),0);
-    ass1 := arrayAppend(ass1,ass1add);
-    ass2 := arrayAppend(ass2,ass1add);
-    List.map2_0(compsAdd,updateAssignment,ass1,ass2);
+    ass1add := arrayCreate(listLength(compsAdd), 0);
+    ass2add := arrayCreate(listLength(compsAdd), 0);
+    ass1 := arrayAppend(ass1, ass1add);
+    ass2 := arrayAppend(ass2, ass1add);
+    List.map2_0(compsAdd, updateAssignment, ass1, ass2);
   end if;
-  List.map2_0(compsNew,updateAssignment,ass1,ass2);
-  comps := List.replaceAtWithList(compsNew,idx-1,comps);
-  comps := listAppend(comps,compsAdd);
-  matching := BackendDAE.MATCHING(ass1,ass2,comps);
-  systOut := BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,stateSets,partitionKind);
+  List.map2_0(compsNew, updateAssignment, ass1, ass2);
+  comps := List.replaceAtWithList(compsNew, idx-1, comps);
+  comps := listAppend(comps, compsAdd);
+  systOut.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+  systOut := BackendDAEUtil.setEqSystMatrices(systOut);
 end replaceStrongComponent;
 
 protected function updateAssignment
@@ -739,8 +736,8 @@ protected function constantLinearSystemWork
   output Integer sysIdxOut;
   output Integer compIdxOut;
 algorithm
-  (osyst,oshared,outRunMatching,sysIdxOut,compIdxOut):=
-  matchcontinue (isyst,ishared,comp,sysIdxIn,compIdxIn)
+  (osyst, oshared, outRunMatching, sysIdxOut, compIdxOut):=
+  matchcontinue (isyst, ishared, comp)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -764,18 +761,22 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns), shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_CONSTANT())),_,_)
+    case (syst, shared, (BackendDAE.EQUATIONSYSTEM( eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),
+                                                    jacType=BackendDAE.JAC_CONSTANT() )))
       equation
         //the A-matrix and the b-Vector are constant
-        eqn_lst = BackendEquation.getEqns(eindex,eqns);
-        var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
-        (syst,shared) = solveLinearSystem(syst,shared,eqn_lst,eindex,var_lst,vindx,jac);
+        eqn_lst = BackendEquation.getEqns(eindex, syst.orderedEqs);
+        var_lst = List.map1r(vindx, BackendVariable.getVarAt, syst.orderedVars);
+        (syst,shared) = solveLinearSystem(syst, shared, eqn_lst, eindex, var_lst, vindx, jac);
       then (syst,shared,true,sysIdxIn,compIdxIn+1);
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets, partitionKind=partitionKind),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_LINEAR())),_,_)
+
+    case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), shared,
+           BackendDAE.EQUATIONSYSTEM( eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),
+                                      jacType=BackendDAE.JAC_LINEAR() ) )
       equation
         true = BackendDAEUtil.isSimulationDAE(ishared);
         //only the A-matrix is constant, apply Gaussian Elimination
-        eqn_lst = BackendEquation.getEqns(eindex,eqns);
+        eqn_lst = BackendEquation.getEqns(eindex, eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         true = jacobianIsConstant(jac);
         true = Flags.isSet(Flags.CONSTJAC);
@@ -785,7 +786,8 @@ algorithm
           //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
         eqn_lst = BackendEquation.getEqns(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
-        (sysEqs,bEqs,bVars,order,sysIdx) = solveConstJacLinearSystem(syst,shared,eqn_lst,eindex,listReverse(var_lst),vindx,jac,sysIdxIn,compIdxIn);
+        (sysEqs, bEqs, bVars, order, sysIdx) =
+            solveConstJacLinearSystem(syst, shared, eqn_lst, eindex, listReverse(var_lst), vindx, jac, sysIdxIn, compIdxIn);
           //print("the b-vector stuff \n");
           //BackendDump.printEquationList(bEqs);
           //BackendDump.printVarList(bVars);
@@ -796,28 +798,29 @@ algorithm
           //print("numberOfElement"+intString(BackendDAEUtil.equationArraySize(eqns))+"\n");
           //print("arrSize"+intString(BackendDAEUtil.equationArraySize2(eqns))+"\n");
           //print("length"+intString(listLength(BackendEquation.equationList(eqns)))+"\n");
-        bVarIdcs = List.intRange2(BackendVariable.varsSize(vars)+1,BackendVariable.varsSize(vars)+listLength(bVars));
-        bEqIdcs = List.intRange2(BackendDAEUtil.equationArraySize(eqns)+1,BackendDAEUtil.equationArraySize(eqns)+listLength(bEqs));
-        bComps = List.threadMap(bEqIdcs,bVarIdcs,BackendDAEUtil.makeSingleEquationComp);
-        sysComps = List.threadMap(List.map1(arrayList(order),List.getIndexFirst,eindex),listReverse(vindx),BackendDAEUtil.makeSingleEquationComp);
+        bVarIdcs = List.intRange2(BackendVariable.varsSize(vars)+1, BackendVariable.varsSize(vars)+listLength(bVars));
+        bEqIdcs = List.intRange2(BackendDAEUtil.equationArraySize(eqns)+1, BackendDAEUtil.equationArraySize(eqns)+listLength(bEqs));
+        bComps = List.threadMap(bEqIdcs, bVarIdcs, BackendDAEUtil.makeSingleEquationComp);
+        sysComps = List.threadMap( List.map1(arrayList(order), List.getIndexFirst, eindex), listReverse(vindx),
+                                   BackendDAEUtil.makeSingleEquationComp );
           //print("bCOMPS\n");
           //BackendDump.dumpComponents(bComps);
           //print("SYSCOMPS\n");
           //BackendDump.dumpComponents(sysComps);
         //build system
-        vars = List.fold(bVars, BackendVariable.addVar, vars);
+        syst.orderedVars = List.fold(bVars, BackendVariable.addVar, vars);
         eqns = List.fold(bEqs, BackendEquation.addEquation, eqns);
-        eqns = List.threadFold(eindex,sysEqs,BackendEquation.setAtIndexFirst,eqns);
-        syst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), matching, stateSets, partitionKind);
+        syst.orderedEqs = List.threadFold(eindex, sysEqs, BackendEquation.setAtIndexFirst, eqns);
+        syst = BackendDAEUtil.setEqSystMatrices(syst);
         syst = replaceStrongComponent(syst,compIdxIn,sysComps,bComps);
           //print("compIdxIn"+intString(compIdxIn)+"\n");
-      then (syst,ishared,false,sysIdx,compIdxIn+listLength(sysComps));
-    else (isyst,ishared,false,sysIdxIn,compIdxIn+1);
+      then (syst, ishared, false, sysIdx, compIdxIn+listLength(sysComps));
+    else (isyst, ishared, false, sysIdxIn, compIdxIn+1);
   end matchcontinue;
 end constantLinearSystemWork;
 
 protected function solveLinearSystem
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared ishared;
   input list<BackendDAE.Equation> eqn_lst;
   input list<Integer> eqn_indxs;
@@ -827,39 +830,39 @@ protected function solveLinearSystem
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared):=
-  match (syst,ishared,eqn_lst,eqn_indxs,var_lst,var_indxs,jac)
+  (osyst, oshared) := match (inSyst, ishared)
     local
-      BackendDAE.Variables vars,vars1,v;
-      BackendDAE.EquationArray eqns,eqns1, eqns2;
+      BackendDAE.Variables v;
+      BackendDAE.EquationArray eqns, eqns1;
       list<DAE.Exp> beqs;
       list<DAE.ElementSource> sources;
       list<Real> rhsVals,solvedVals;
       list<list<Real>> jacVals;
       Integer linInfo;
       list<DAE.ComponentRef> names;
-      BackendDAE.Matching matching;
       DAE.FunctionTree funcs;
       BackendDAE.Shared shared;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+      BackendDAE.EqSystem syst;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind),BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(), BackendDAE.SHARED(functionTree=funcs))
       equation
         eqns1 = BackendEquation.listEquation(eqn_lst);
         v = BackendVariable.listVar1(var_lst);
-        (beqs,sources) = BackendDAEUtil.getEqnSysRhs(eqns1,v,SOME(funcs));
+        (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqns1, v, SOME(funcs));
         beqs = listReverse(beqs);
-        rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
-        jacVals = evaluateConstantJacobian(listLength(var_lst),jac);
-        (solvedVals,linInfo) = System.dgesv(jacVals,rhsVals);
-        names = List.map(var_lst,BackendVariable.varCref);
-        checkLinearSystem(linInfo,names,jacVals,rhsVals,eqn_lst);
-        sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));
-        (vars1,eqns2,shared) = changeConstantLinearSystemVars(var_lst,solvedVals,sources,var_indxs,vars,eqns,ishared);
-        eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns2);
+        rhsVals = ValuesUtil.valueReals(List.map(beqs, Ceval.cevalSimple));
+        jacVals = evaluateConstantJacobian(listLength(var_lst), jac);
+        (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
+        names = List.map(var_lst, BackendVariable.varCref);
+        checkLinearSystem(linInfo, names, jacVals, rhsVals, eqn_lst);
+        sources = List.map1( sources, DAEUtil.addSymbolicTransformation,
+                             DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals) );
+        (v, eqns, shared) = changeConstantLinearSystemVars( var_lst, solvedVals, sources, var_indxs,
+                                                                           syst.orderedVars, syst.orderedEqs, ishared );
+        syst.orderedVars = v;
+        syst.orderedEqs = List.fold(eqn_indxs, BackendEquation.equationRemove, eqns);
       then
-        (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching,stateSets,partitionKind),shared);
+        (BackendDAEUtil.setEqSystMatrices(syst), shared);
   end match;
 end solveLinearSystem;
 
@@ -1749,40 +1752,35 @@ protected function optimizeJacobianMatrix "author: wbraun"
   input list<DAE.ComponentRef> inComRef1 "eqnvars";
   input list<DAE.ComponentRef> inComRef2 "vars to differentiate";
   output BackendDAE.BackendDAE outJacobian;
+protected
+  array<Integer> ea = listArray({});
+  BackendDAE.Matching eMatching = BackendDAE.MATCHING(ea, ea, {});
 algorithm
   outJacobian :=
     matchcontinue (inBackendDAE,inComRef1,inComRef2)
     local
       BackendDAE.BackendDAE backendDAE, backendDAE2;
-      BackendDAE.Variables v;
-      BackendDAE.EquationArray e;
-
+      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      array<Integer> ea;
-
-      Option<BackendDAE.IncidenceMatrix> om,omT;
       Boolean b;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
-      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e,m=om,mT=omT,stateSets=stateSets,partitionKind=partitionKind)::{},shared),{},_)
+      case (BackendDAE.DAE(syst::{}, shared), {}, _)
         equation
-          v = BackendVariable.listVar({});
-          ea = listArray({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}),stateSets,partitionKind)::{},shared));
-      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e,m=om,mT=omT,stateSets=stateSets,partitionKind=partitionKind)::{},shared),_,{})
+          syst.orderedVars = BackendVariable.listVar({});
+          syst.matching = eMatching;
+        then BackendDAE.DAE(syst::{}, shared);
+      case (BackendDAE.DAE(syst::{}, shared), _, {})
         equation
-          v = BackendVariable.listVar({});
-          ea = listArray({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}),stateSets,partitionKind)::{},shared));
-      case (backendDAE,_,_)
+          syst.orderedVars = BackendVariable.listVar({});
+          syst.matching = eMatching;
+        then BackendDAE.DAE(syst::{}, shared);
+      case (backendDAE, _, _)
         equation
           if Flags.isSet(Flags.JAC_DUMP2) then
             print("analytical Jacobians -> optimize jacobians time: " + realString(clock()) + "\n");
           end if;
 
           b = Flags.disableDebug(Flags.EXEC_STAT);
-
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE);
           end if;
@@ -2140,21 +2138,19 @@ algorithm
   (outSyst, outShared) := match (inSyst, inShared)
     local
       BackendDAE.EqSystem syst;
-      list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
       array<Integer> ass1;
       array<Integer> ass2;
       BackendDAE.StrongComponents comps;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, BackendDAE.MATCHING(ass1,ass2,comps), stateSets, partitionKind), shared) equation
-      (comps, shared) = calculateJacobiansComponents(comps, vars, eqns, shared, {});
-    then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, BackendDAE.MATCHING(ass1,ass2,comps), stateSets, partitionKind), shared);
+    case (syst as BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqns,
+                                       matching=BackendDAE.MATCHING(ass1,ass2,comps) ), shared)
+      equation
+        (comps, shared) = calculateJacobiansComponents(comps, vars, eqns, shared, {});
+        syst.matching = BackendDAE.MATCHING(ass1, ass2, comps);
+      then (syst, shared);
   end match;
 end calculateEqSystemJacobians;
 
@@ -2568,24 +2564,18 @@ algorithm
   (outSyst,outShared) := match (inSyst, inShared)
     local
       BackendDAE.EqSystem syst;
-      list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
-      array<Integer> ass1;
-      array<Integer> ass2;
       BackendDAE.StrongComponents comps;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.StateSets stateSets;
-      BackendDAE.Matching matching;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (syst as BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), shared)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets=stateSets), shared)
       equation
         comps = BackendDAEUtil.getStrongComponents(syst);
         (stateSets, shared) = calculateStateSetsJacobian(stateSets, vars, eqns, comps, shared, {});
-      then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), shared);
+        syst.stateSets = stateSets;
+      then (syst, shared);
   end match;
 end calculateEqSystemStateSetsJacobians;
 

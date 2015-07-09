@@ -2526,20 +2526,13 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Text &auxFunction
 ::=
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
-      let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-      let ifthen = functionWhenReinitStatementThen(false, reinits, &varDecls, &auxFunction)
-      let initial_assign = match initialCall
-        case true then functionWhenReinitStatementThen(true, reinits, &varDecls, &auxFunction)
-        else '; /* nothing to do */'
+      let helpIf = (conditions |> e => '(<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)';separator=" || ")
+      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls, &auxFunction)
 
-      if reinits then
+      if boolAnd(intGt(listLength(conditions), 0), intGt(listLength(reinits), 0)) then
         <<
         /* for whenclause index <%int%> */
-        if(initial())
-        {
-          <%initial_assign%>
-        }
-        else if(0<%helpIf%>)
+        if(<%helpIf%>)
         {
           <%ifthen%>
         }
@@ -2547,7 +2540,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Text &auxFunction
 end genreinits;
 
 
-template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator> reinits, Text &varDecls, Text &auxFunction)
+template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls, Text &auxFunction)
   "Generates re-init statement for when equation."
 ::=
   let body = (reinits |> reinit =>
@@ -2560,14 +2553,11 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
            'copy_real_array_data_mem(<%val%>, &<%cref(stateVar)%>);'
          else
            '<%cref(stateVar)%> = <%val%>;'
-      let needToIterate =
-        if not initialCall then
-          "data->simulationInfo.needToIterate = 1;"
       <<
-      infoStreamPrint(LOG_EVENTS, 0, "reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
       <%lhs%>
-      <%needToIterate%>
+      infoStreamPrint(LOG_EVENTS, 0, "reinit <%cref(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar)%>);
+      data->simulationInfo.needToIterate = 1;
       >>
     case TERMINATE(__) then
       let &preExp = buffer ""
@@ -3323,7 +3313,6 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
     data->simulationInfo.callStatistics.functionODE++;
 
-    data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, functionODE_systems);'
     else '<%fncalls%>' %>
 
@@ -3355,7 +3344,6 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     TRACE_PUSH
     <%varDecls%>
 
-    data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, functionAlg_systems);'
     else '<%fncalls%>' %>
 
@@ -3416,6 +3404,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, functionDAE_systems);'
     else '<%fncalls%>' %>
     <%reinit%>
+    data->simulationInfo.discreteCall = 0;
 
     TRACE_POP
     return 0;
@@ -3477,7 +3466,6 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
     data->simulationInfo.callStatistics.functionZeroCrossingsEquations++;
 
-    data->simulationInfo.discreteCall = 0;
     <%eqs%>
 
     TRACE_POP

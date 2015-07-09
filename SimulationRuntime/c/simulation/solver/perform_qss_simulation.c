@@ -112,22 +112,22 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
   modelica_real* dQ = NULL;    /* change in quantity of every state, default = nominal*10^-4 */
 
   /* allocate memory*/
-  qik = calloc(STATES, sizeof(modelica_real));
-      fail = (qik == NULL) ? 1 : ( 0 | fail);
-  xik = calloc(STATES, sizeof(modelica_real));
-      fail = (xik == NULL) ? 1 : ( 0 | fail);
-  derXik = calloc(STATES, sizeof(modelica_real));
-      fail = (derXik == NULL) ? 1 : ( 0 | fail);
-  tq = calloc(STATES, sizeof(modelica_real));
-      fail = (tq == NULL) ? 1 : ( 0 | fail);
-  tx = calloc(STATES, sizeof(modelica_real));
-      fail = (tx == NULL) ? 1 : ( 0 | fail);
-  tqp = calloc(STATES, sizeof(modelica_real));
-      fail = (tqp == NULL) ? 1 : ( 0 | fail);
-  nQh = calloc(STATES, sizeof(modelica_real));
-      fail = (nQh == NULL) ? 1 : ( 0 | fail);
-  dQ = calloc(STATES, sizeof(modelica_real));
-      fail = (dQ == NULL) ? 1 : ( 0 | fail);
+  qik = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (qik == NULL) ? 1 : ( 0 | fail);
+  xik = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (xik == NULL) ? 1 : ( 0 | fail);
+  derXik = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (derXik == NULL) ? 1 : ( 0 | fail);
+  tq = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (tq == NULL) ? 1 : ( 0 | fail);
+  tx = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (tx == NULL) ? 1 : ( 0 | fail);
+  tqp = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (tqp == NULL) ? 1 : ( 0 | fail);
+  nQh = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (nQh == NULL) ? 1 : ( 0 | fail);
+  dQ = (modelica_real*)calloc(STATES, sizeof(modelica_real));
+  fail = (dQ == NULL) ? 1 : ( 0 | fail);
 
 
   if (fail)
@@ -152,7 +152,7 @@ modelica_integer prefixedName_performQSSSimulation(DATA* data, SOLVER_INFO* solv
   }
 
 /* Transform the sparsity pattern into a data structure for an index based access. */
-  modelica_integer* der = calloc(ROWS, sizeof(modelica_integer));
+  modelica_integer* der = (modelica_integer*)calloc(ROWS, sizeof(modelica_integer));
   if (NULL==der)
     return OO_MEMORY;
   for (i = 0; i < ROWS; i++)
@@ -507,14 +507,15 @@ static modelica_integer getStatesInDer(const unsigned int* index, const unsigned
 {
   uinteger i = 0, k = 0; /* loop var */
   uinteger numDer = 0;
-  modelica_integer* der = calloc(ROWS, sizeof(modelica_integer));
+  modelica_integer* der = (modelica_integer*)calloc(ROWS, sizeof(modelica_integer));
+  uinteger* stackPointer = (uinteger*)calloc(ROWS, sizeof(uinteger));
+
   if (NULL == der)
     return OO_MEMORY;
 
   for (i = 0; i < ROWS; i++)
     der[i] = -1;
 
-  uinteger stackPointer[ROWS];
   for (i = 0; i < ROWS; i++)
     stackPointer[i] = 0;
 
@@ -534,6 +535,7 @@ static modelica_integer getStatesInDer(const unsigned int* index, const unsigned
   }
 
   free(der);
+  free(stackPointer);
   return OK;
 }
 
@@ -548,7 +550,12 @@ static uinteger minStep(const modelica_real* tqp, const uinteger size )
 {
   uinteger i = 0;
   uinteger ind = i;
-  modelica_real tmin = 1.0/0.0; /* Wwe can have a QNAN at any index and tqp[i] < QNAN will fail in every case. */
+  modelica_real tmin =
+#if defined(_MSC_VER)
+      NAN;
+#else
+      1.0/0.0; /* We can have a QNAN at any index and tqp[i] < QNAN will fail in every case. */
+#endif
 
   for (i = 0; i < size; i++)
   {

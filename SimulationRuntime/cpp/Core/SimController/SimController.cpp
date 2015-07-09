@@ -187,7 +187,6 @@ void SimController::StartVxWorks(SimSettings simsettings,string modelKey)
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
         global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
         global_settings->setSelectedSolver(simsettings.solver_name);
-        global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setAlarmTime(simsettings.timeOut);
         global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setOutputPointType(simsettings.outputPointType);
@@ -240,7 +239,6 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
         global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
         global_settings->setSelectedSolver(simsettings.solver_name);
-        global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setAlarmTime(simsettings.timeOut);
         global_settings->setOutputPointType(simsettings.outputPointType);
@@ -277,29 +275,28 @@ void SimController::Start(SimSettings simsettings, string modelKey)
 
         boost::shared_ptr<IWriteOutput> writeoutput_system = boost::dynamic_pointer_cast<IWriteOutput>(mixedsystem);
 
-        if((global_settings->getOutputFormat()==OF_BUFFER) && writeoutput_system)
+        boost::shared_ptr<ISimData> simData = getSimData(modelKey).lock();
+        //get history object to query simulation results
+        IHistory* history = writeoutput_system->getHistory();
+        //simulation results (output variables)
+        ublas::matrix<double> Ro;
+        //query simulation result otuputs
+        history->getOutputResults(Ro);
+        vector<string> output_names;
+        history->getOutputNames(output_names);
+        string name;
+        int j=0;
+
+        BOOST_FOREACH(name,output_names)
         {
-            boost::shared_ptr<ISimData> simData = getSimData(modelKey).lock();
-            //get history object to query simulation results
-            IHistory* history = writeoutput_system->getHistory();
-            //simulation results (output variables)
-            ublas::matrix<double> Ro;
-            //query simulation result otuputs
-            history->getOutputResults(Ro);
-            vector<string> output_names;
-            history->getOutputNames(output_names);
-            string name;
-            int j=0;
-            BOOST_FOREACH(name,output_names)
-            {
-                ublas::vector<double> o_j;
-                o_j = ublas::row(Ro,j);
-                simData->addOutputResults(name,o_j);
-                j++;
-            }
-            vector<double> time_values = history->getTimeEntries();
-            simData->addTimeEntries(time_values);
+            ublas::vector<double> o_j;
+            o_j = ublas::row(Ro,j);
+            simData->addOutputResults(name,o_j);
+            j++;
         }
+
+        vector<double> time_values = history->getTimeEntries();
+        simData->addTimeEntries(time_values);
     }
     catch(ModelicaSimulationError & ex)
     {

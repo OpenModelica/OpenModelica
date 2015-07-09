@@ -134,28 +134,27 @@ protected function singularSystemCheck1
   input tuple<BackendDAEFunc.matchingAlgorithmFunc,String> matchingAlgorithm;
   input BackendDAE.StructurallySingularSystemHandlerArg arg;
   input BackendDAE.Shared iShared;
-  output BackendDAE.EqSystem outSyst;
+  output BackendDAE.EqSystem outSyst = iSyst;
 protected
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrixT mT;
-  BackendDAE.StateSets stateSets;
   list<list<Integer>> comps;
   array<Integer> ass1,ass2;
   BackendDAEFunc.matchingAlgorithmFunc matchingFunc;
-  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EqSystem syst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),stateSets=stateSets,partitionKind=partitionKind) := iSyst;
+  BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT)) := iSyst;
   (matchingFunc,_) :=  matchingAlgorithm;
   // get absolute Incidence Matrix
   m := BackendDAEUtil.absIncidenceMatrix(m);
   mT := BackendDAEUtil.absIncidenceMatrix(mT);
   // try to match
-  outSyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
+  syst := BackendDAEUtil.setEqSystMatrices(iSyst, SOME(m), SOME(mT));
+  syst.matching := BackendDAE.NO_MATCHING();
   // do matching
-  (outSyst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_,_) := matchingFunc(outSyst,iShared,true,(BackendDAE.INDEX_REDUCTION(),eqnConstr),foundSingularSystem,arg);
-  outSyst := BackendDAEUtil.setEqSystMatching(iSyst,BackendDAE.MATCHING(ass1,ass2,{}));
+  (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)), _, _) :=
+      matchingFunc(syst, iShared, true, (BackendDAE.INDEX_REDUCTION(), eqnConstr), foundSingularSystem, arg);
+  outSyst.matching := BackendDAE.MATCHING(ass1, ass2, {});
   /*
     print("singularSystemCheck:\n");
     BackendDump.printEqSystem(outSyst);
@@ -164,7 +163,7 @@ algorithm
     DumpGraphML.dumpSystem(outSyst,iShared,NONE(),"SingularSystemCheck" + intString(nVars) + ".graphml",false);
   */
   // free states matching information because there it is unkown if the state or the state derivative was matched
-  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
+  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(outSyst.orderedVars, freeStateAssignments, (1,ass1,ass2));
 end singularSystemCheck1;
 
 protected function freeStateAssignments "unset assignments of statevariables."

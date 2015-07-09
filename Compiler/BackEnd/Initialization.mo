@@ -86,22 +86,14 @@ protected
   BackendDAE.BackendDAE initdae;
   BackendDAE.EqSystem initsyst;
   BackendDAE.EqSystems systs;
-  BackendDAE.EquationArray inieqns, eqns, emptyeqns, reeqns;
-  BackendDAE.ExtraInfo ei;
+  BackendDAE.EquationArray eqns, reeqns;
   BackendDAE.Shared shared;
   BackendDAE.Variables initVars;
-  BackendDAE.Variables knvars, vars, fixvars, evars, eavars, avars;
-  Boolean b, b1, b2;
-  Boolean useHomotopy;
-  DAE.FunctionTree functionTree;
-  FCore.Cache cache;
-  FCore.Graph graph;
+  BackendDAE.Variables vars, fixvars;
+  Boolean b, b1, b2, useHomotopy;
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2;
-  list<BackendDAE.Var> tempVar;
-  list<DAE.ClassAttributes> classAttrs;
-  list<DAE.Constraint> constraints;
   list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> pastOptModules;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
@@ -117,15 +109,6 @@ algorithm
     (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
     // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
     hs := collectPreVariables(dae);
-    BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars,
-                                                      aliasVars=avars,
-                                                      initialEqs=inieqns,
-                                                      constraints=constraints,
-                                                      classAttrs=classAttrs,
-                                                      cache=cache,
-                                                      graph=graph,
-                                                      functionTree=functionTree,
-                                                      info=ei)) := dae;
 
     // collect vars and eqns for initial system
     vars := BackendVariable.emptyVars();
@@ -133,13 +116,13 @@ algorithm
     eqns := BackendEquation.emptyEqns();
     reeqns := BackendEquation.emptyEqns();
 
-    ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(avars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
-    ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars, eqns, hs));
-    ((eqns, reeqns)) := BackendEquation.traverseEquationArray(inieqns, collectInitialEqns, (eqns, reeqns));
+    ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
+    ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.knownVars, collectInitialVars, (vars, fixvars, eqns, hs));
+    ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.initialEqs, collectInitialEqns, (eqns, reeqns));
 
     // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpEquationArray, eqns, "initial equations");
 
-    ((vars, fixvars, eqns, reeqns, _)) := List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs)));
+    ((vars, fixvars, eqns, reeqns, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs)));
 
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
 
@@ -148,24 +131,11 @@ algorithm
 
     vars := BackendVariable.rehashVariables(vars);
     fixvars := BackendVariable.rehashVariables(fixvars);
-    evars := BackendVariable.emptyVars();
-    eavars := BackendVariable.emptyVars();
-    emptyeqns := BackendEquation.emptyEqns();
-    shared := BackendDAE.SHARED(fixvars,
-                                evars,
-                                eavars,
-                                emptyeqns,
-                                reeqns,
-                                constraints,
-                                classAttrs,
-                                cache,
-                                graph,
-                                functionTree,
-                                BackendDAEUtil.emptyEventInfo(),
-                                {},
-                                BackendDAE.INITIALSYSTEM(),
-                                {},
-                                ei);
+    shared := BackendDAEUtil.createEmptyShared(BackendDAE.INITIALSYSTEM(), dae.shared.info, dae.shared.cache, dae.shared.graph);
+    shared := BackendDAEUtil.setSharedKnVars(shared, fixvars);
+    shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
+    shared := BackendDAEUtil.setSharedRemovedEqns(shared, reeqns);
+    shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
 
     // generate initial system and pre-balance it
     initsyst := BackendDAEUtil.createEqSystem(vars, eqns);
@@ -250,6 +220,7 @@ algorithm
     if Flags.isSet(Flags.ITERATION_VARS) then
       BackendDAEOptimize.listAllIterationVariables(initdae);
     end if;
+
     if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
       BackendDump.dumpCompShort(initdae);
     end if;
@@ -311,25 +282,18 @@ end solveInitialSystemEqSystem;
 protected function inlineWhenForInitialization "author: lochel
   This function inlines when-clauses for the initialization."
   input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  BackendDAE.EqSystems systs;
-  BackendDAE.Shared shared;
+  output BackendDAE.BackendDAE outDAE = inDAE;
 algorithm
-  BackendDAE.DAE(systs, shared) := inDAE;
-  systs := List.map(systs, inlineWhenForInitializationSystem);
-  outDAE := BackendDAE.DAE(systs, shared);
+  outDAE.eqs := List.map(inDAE.eqs, inlineWhenForInitializationSystem);
 end inlineWhenForInitialization;
 
 protected function inlineWhenForInitializationSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
 protected
-  BackendDAE.EquationArray eqns;
   list<BackendDAE.Equation> eqnlst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=eqns) := inEqSystem;
-  eqnlst := BackendEquation.traverseEquationArray(eqns, inlineWhenForInitializationEquation, {});
+  eqnlst := BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, inlineWhenForInitializationEquation, {});
   //print("Before: " + intString(listLength(eqnlst)) + "\n");
   eqnlst := List.uniqueOnTrue(eqnlst, BackendEquation.equationEqual) "hack for #3209";
   //print("After: " + intString(listLength(eqnlst)) + "\n");
@@ -362,7 +326,7 @@ algorithm
     then eqns;
 
     // algorithm
-    case BackendDAE.ALGORITHM(alg=alg, source=source,expand=crefExpand) equation
+    case BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
       (stmts, leftCrs) = inlineWhenForInitializationWhenAlgorithm(stmts, {}, HashSet.emptyHashSetSized(50));
       alg = DAE.ALGORITHM_STMTS(stmts);
@@ -382,27 +346,17 @@ protected function inlineWhenForInitializationWhenEquation "author: lochel"
   input BackendDAE.EquationAttributes inEqAttr;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
+protected
+  DAE.Exp crexp;
+  BackendDAE.Equation eqn;
 algorithm
-  outEqns := matchcontinue(inWEqn)
-    local
-      DAE.ComponentRef left;
-      DAE.Exp condition, right, crexp;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqns;
-
-    // active when equation during initialization
-    case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right) equation
-      true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExpBottomUp
-      crexp = Expression.crefExp(left);
-      eqn = BackendEquation.generateEquation(crexp, right, inSource, inEqAttr);
-    then eqn::inEqns;
-
-    // inactive when equation during initialization
-    case BackendDAE.WHEN_EQ(condition=condition, left=left) equation
-      false = Expression.containsInitialCall(condition, false);
-      eqns = generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(left, true), inSource, inEqns);
-    then eqns;
-  end matchcontinue;
+  if Expression.containsInitialCall(inWEqn.condition, false) then
+    crexp := Expression.crefExp(inWEqn.left);
+    eqn := BackendEquation.generateEquation(crexp, inWEqn.right, inSource, inEqAttr);
+    outEqns := eqn::inEqns;
+  else
+    outEqns := generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(inWEqn.left, true), inSource, inEqns);
+  end if;
 end inlineWhenForInitializationWhenEquation;
 
 protected function inlineWhenForInitializationWhenAlgorithm "author: lochel
@@ -509,17 +463,13 @@ protected function collectPreVariables "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output HashSet.HashSet outHS;
 protected
-  BackendDAE.EqSystems systs;
-  BackendDAE.EquationArray ieqns, removedEqs;
   //list<DAE.ComponentRef> crefs;
 algorithm
   //BackendDump.dumpBackendDAE(inDAE, "inDAE");
-  BackendDAE.DAE(systs, BackendDAE.SHARED(removedEqs=removedEqs, initialEqs=ieqns)) := inDAE;
-
   outHS := HashSet.emptyHashSet();
-  outHS := List.fold(systs, collectPreVariablesEqSystem, outHS);
-  ((_,outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(removedEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS)); // ???
-  ((_,outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(ieqns, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS));
+  outHS := List.fold(inDAE.eqs, collectPreVariablesEqSystem, outHS);
+  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inDAE.shared.removedEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS)); // ???
+  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inDAE.shared.initialEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS));
 
   //print("collectPreVariables:\n");
   //crefs := BaseHashSet.hashSetList(outHS);
@@ -530,11 +480,8 @@ public function collectPreVariablesEqSystem
   input BackendDAE.EqSystem inEqSystem;
   input HashSet.HashSet inHS;
   output HashSet.HashSet outHS;
-protected
-  BackendDAE.EquationArray orderedEqs;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := inEqSystem;
-  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, inHS));
+  ((_, outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inEqSystem.orderedEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, inHS));
 end collectPreVariablesEqSystem;
 
 public function collectPreVariablesTraverseExp
@@ -587,14 +534,10 @@ end collectPreVariablesTraverseExp2;
 
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute "author: lochel
   This function ... read the function name."
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inDAE;
   output Boolean outWarning;
-protected
-  list<BackendDAE.EqSystem> eqs;
 algorithm
-  BackendDAE.DAE(eqs=eqs) := inBackendDAE;
-  outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(eqs,
-    Flags.isSet(Flags.INITIALIZATION));
+  outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(inDAE.eqs, Flags.isSet(Flags.INITIALIZATION));
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute;
 
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "author: lochel"
@@ -609,7 +552,7 @@ algorithm
     outWarning := outWarning or warn;
 
     // If we found an iteration variable with default zero start attribute but
-    // +initialization wasn't given, we don't need to continue searching.
+    // +d=initialization wasn't given, we don't need to continue searching.
     if warn and not inShowWarnings then
       return;
     end if;
@@ -622,13 +565,11 @@ protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute1 "au
   output Boolean outWarning = false "True if any warnings were printed.";
 protected
   BackendDAE.StrongComponents comps;
-  BackendDAE.Variables ordered_vars;
   list<Integer> vlst = {};
   list<BackendDAE.Var> vars;
   String err;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = ordered_vars,
-                      matching = BackendDAE.MATCHING(comps = comps)) := inEqSystem;
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := inEqSystem;
 
   // Go through all the strongly connected components.
   for comp in comps loop
@@ -648,8 +589,8 @@ algorithm
 
     if not listEmpty(vlst) then
       // Filter out the variables that are missing start values.
-      vars := List.map1r(vlst, BackendVariable.getVarAt, ordered_vars);
-      //vars := list(BackendVariable.getVarAt(ordered_vars, idx) for idx in vlst);
+      vars := List.map1r(vlst, BackendVariable.getVarAt, inEqSystem.orderedVars);
+      //vars := list(BackendVariable.getVarAt(inEqSystem.orderedVars, idx) for idx in vlst);
       vars := list(v for v guard(not BackendVariable.varHasStartValue(v)) in vars);
       //vars := List.filterOnTrue(vars, BackendVariable.varHasStartValue);
 
@@ -658,10 +599,9 @@ algorithm
         outWarning := true;
 
         if inShowWarnings then
-          Error.addCompilerWarning("Iteration variables with default zero start attribute in "
-            + err + warnAboutVars2(vars));
+          Error.addCompilerWarning("Iteration variables with default zero start attribute in " + err + warnAboutVars2(vars));
         else
-          // If +initialization wasn't given we don't need to continue searching
+          // If +d=initialization wasn't given we don't need to continue searching
           // once we've found one.
           return;
         end if;
@@ -735,8 +675,7 @@ protected function selectInitializationVariablesDAE "author: lochel
   output list<BackendDAE.Var> outPrimaryParameters = {};
   output list<BackendDAE.Var> outAllPrimaryParameters = {};
 protected
-  list<BackendDAE.EqSystem> systs;
-  BackendDAE.Variables knownVars, alias, allParameters;
+  BackendDAE.Variables allParameters;
   BackendDAE.EquationArray allParameterEqns;
   BackendDAE.EqSystem paramSystem;
   BackendDAE.IncidenceMatrix m, mT;
@@ -749,15 +688,14 @@ protected
   BackendDAE.Var p;
   DAE.Exp bindExp;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias)) := inDAE;
-  outVars := selectInitializationVariables(systs);
-  outVars := BackendVariable.traverseBackendDAEVars(knownVars, selectInitializationVariables2, outVars);
-  outVars := BackendVariable.traverseBackendDAEVars(alias, selectInitializationVariables2, outVars);
+  outVars := selectInitializationVariables(inDAE.eqs);
+  outVars := BackendVariable.traverseBackendDAEVars(inDAE.shared.knownVars, selectInitializationVariables2, outVars);
+  outVars := BackendVariable.traverseBackendDAEVars(inDAE.shared.aliasVars, selectInitializationVariables2, outVars);
 
   // select all parameters
   allParameters := BackendVariable.emptyVars();
   allParameterEqns := BackendEquation.emptyEqns();
-  (allParameters, allParameterEqns) := BackendVariable.traverseBackendDAEVars(knownVars, selectParameter2, (allParameters, allParameterEqns));
+  (allParameters, allParameterEqns) := BackendVariable.traverseBackendDAEVars(inDAE.shared.knownVars, selectParameter2, (allParameters, allParameterEqns));
   nParam := BackendVariable.varsSize(allParameters);
 
   if nParam > 0 then
@@ -884,11 +822,8 @@ protected function selectInitializationVariables1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables outVars;
-protected
-  BackendDAE.Variables orderedVars;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars) := inEqSystem;
-  outVars := BackendVariable.traverseBackendDAEVars(orderedVars, selectInitializationVariables2, inVars);
+  outVars := BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, selectInitializationVariables2, inVars);
 end selectInitializationVariables1;
 
 protected function selectParameter2 "author: lochel"
@@ -982,7 +917,7 @@ protected function simplifyInitialFunctionsExp
   output DAE.Exp outExp;
   output Boolean outUseHomotopy;
 algorithm
-  (outExp,outUseHomotopy) := match (inExp,useHomotopy)
+  (outExp, outUseHomotopy) := match (inExp, useHomotopy)
     local
       DAE.Exp e1, e2, e3, actual, simplified;
 
@@ -1016,28 +951,22 @@ end simplifyInitialFunctionsExp;
 // =============================================================================
 
 protected function preBalanceInitialSystem "author: lochel"
-  input BackendDAE.EqSystem inSystem;
-  output BackendDAE.EqSystem outSystem;
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.EqSystem outEqSystem = inEqSystem;
   output list<BackendDAE.Var> outDumpVars;
+protected
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  Boolean b;
+  BackendDAE.IncidenceMatrix mt;
 algorithm
-  outSystem := match inSystem
-    local
-      BackendDAE.EqSystem syst;
-      BackendDAE.Variables orderedVars;
-      BackendDAE.EquationArray orderedEqs;
-      Boolean b;
-      BackendDAE.IncidenceMatrix mt;
-
-    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) algorithm
-      (_, mt) := BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL(), NONE());
-      (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, orderedVars, orderedEqs, false, {});
-      if b then
-        syst.orderedEqs := orderedEqs;
-        syst.orderedVars := orderedVars;
-        syst := BackendDAEUtil.clearEqSyst(syst);
-      end if;
-    then syst;
-  end match;
+  (_, mt) := BackendDAEUtil.incidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE());
+  (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, inEqSystem.orderedVars, inEqSystem.orderedEqs, false, {});
+  if b then
+    outEqSystem.orderedEqs := orderedEqs;
+    outEqSystem.orderedVars := orderedVars;
+    outEqSystem := BackendDAEUtil.clearEqSyst(outEqSystem);
+  end if;
 end preBalanceInitialSystem;
 
 protected function preBalanceInitialSystem1 "author: lochel"
@@ -1124,23 +1053,19 @@ protected function analyzeInitialSystem "author: lochel
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.EqSystem syst;
-  list<BackendDAE.EqSystem> systs, systs2;
-  BackendDAE.Shared shared;
-  BackendDAE.EquationArray orderedEqs;
+  list<BackendDAE.EqSystem> eqs;
 algorithm
   // filter empty systems
-  BackendDAE.DAE(systs, shared) := initDAE;
-  systs2 := {};
+  eqs := {};
   outRemovedEqns := {};
-  for syst in systs loop
+  for syst in initDAE.eqs loop
     if BackendDAEUtil.nonEmptySystem(syst) then
-      systs2 := syst::systs2;
+      eqs := syst::eqs;
     else
-      BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := syst;
-      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(orderedEqs));
+      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(syst.orderedEqs));
     end if;
   end for;
-  dae := BackendDAE.DAE(systs2, shared);
+  dae := BackendDAE.DAE(eqs, initDAE.shared);
 
   (outDAE, (_, _, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, analyzeInitialSystem2, (inDAE, inInitVars, {}, outRemovedEqns));
 end analyzeInitialSystem;
@@ -1159,80 +1084,68 @@ algorithm
 end getInitEqIndex;
 
 protected function analyzeInitialSystem2 "author: lochel"
-  input BackendDAE.EqSystem isyst;
+  input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Shared inShared;
   input tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> inTpl;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.Shared outShared = inShared;
   output tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
 algorithm
-  (osyst, outTpl) := matchcontinue (isyst, inTpl)
+  outTpl := matchcontinue inTpl
     local
       BackendDAE.BackendDAE inDAE;
-      BackendDAE.EqSystem system, sys;
-      BackendDAE.EquationArray eqns, eqns2;
-      BackendDAE.Shared shared;
-      BackendDAE.Variables vars, initVars;
-      Integer nVars, nEqns;
+      BackendDAE.EquationArray eqns2;
+      BackendDAE.Variables initVars;
       list<BackendDAE.Var> dumpVars, dumpVars2;
-      DAE.FunctionTree funcs;
-      BackendDAE.IncidenceMatrix m, m1, mOrig;
-      BackendDAE.IncidenceMatrixT mt, mt1;
-      BackendDAE.AdjacencyMatrixEnhanced me;
-      BackendDAE.AdjacencyMatrixTEnhanced meT;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;
       list<BackendDAE.Equation> removedEqns, removedEqns2;
-      list<Integer> unassigned;
-      BackendDAE.EqSystem syst;
 
     // (regular) determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
+    case ((inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-0 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 0);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs, initVars, inShared, 0);
 // print("index-0 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
-    then (system, (inDAE, initVars, dumpVars, removedEqns));
+      outEqSystem = BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
+    then ((inDAE, initVars, dumpVars, removedEqns));
 
     // (index-1) mixed-determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
+    case ((inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-1 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 1);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs, initVars, inShared, 1);
 // print("index-1 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
-    then (system, (inDAE, initVars, dumpVars, removedEqns));
+      outEqSystem = BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
+    then ((inDAE, initVars, dumpVars, removedEqns));
 
     // (index-2) mixed-determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
+    case ((inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-2 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 2);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs, initVars, inShared, 2);
 // print("index-2 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
-    then (system, (inDAE, initVars, dumpVars, removedEqns));
+      outEqSystem = BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
+    then ((inDAE, initVars, dumpVars, removedEqns));
 
     // (index-3) mixed-determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
+    case ((inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-3 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 3);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs, initVars, inShared, 3);
 // print("index-3 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
-      system = BackendDAEUtil.setEqSystEqs(isyst, eqns2);
-    then (system, (inDAE, initVars, dumpVars, removedEqns));
+      outEqSystem = BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
+    then ((inDAE, initVars, dumpVars, removedEqns));
 
     else fail();
   end matchcontinue;
@@ -1273,14 +1186,14 @@ algorithm
 
   // get state-index list
   stateIndices := BackendVariable.getVarIndexFromVariables(inInitVars, inVars);
-//print("{" + stringDelimitList(List.map(stateIndices, intString),",") + "}\n");
+//print("{" + stringDelimitList(List.map(stateIndices, intString), ",") + "}\n");
 
   // get initial equation-index list
   //(initEqs, _) := List.extractOnTrue(BackendEquation.equationList(inEqns), BackendEquation.isInitialEquation);
   //nInitEqs := BackendDAEUtil.equationSize(BackendEquation.listEquation(initEqs));
   ((_, initEqsIndices)) := List.fold(BackendEquation.equationList(inEqns), getInitEqIndex, (1, {}));
   nInitEqs := listLength(initEqsIndices);
-//print("{" + stringDelimitList(List.map(initEqsIndices, intString),",") + "}\n");
+//print("{" + stringDelimitList(List.map(initEqsIndices, intString), ",") + "}\n");
 
   // modify incidence matrix for under-determined systems
   nAddEqs := intMax(nVars-nEqns + inIndex, inIndex);
@@ -1314,10 +1227,10 @@ algorithm
   // map artificial variables to redundant equations
   range := if nAddVars > 0 then List.intRange2(nVars+1, nVars+nAddVars) else {};
   redundantEqns := mapIndices(range, ass1);
-//print("{" + stringDelimitList(List.map(redundantEqns, intString),",") + "}\n");
+//print("{" + stringDelimitList(List.map(redundantEqns, intString), ",") + "}\n");
 
   // symbolic consistency check
-  (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared,false);
+  (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared, false);
   (_, _, _) := consistencyCheck(redundantEqns, inEqns, inVars, inShared, nAddVars, m_, me, ass1, ass2, mapIncRowEqn);
 
   // remove redundant equations
@@ -1329,7 +1242,7 @@ algorithm
   // map artificial equations to unfixed states
   range := if nAddEqs > 0 then List.intRange2(nEqns+1, nEqns+nAddEqs) else {};
   range := mapIndices(range, ass2);
-//print("{" + stringDelimitList(List.map(range, intString),",") + "}\n");
+//print("{" + stringDelimitList(List.map(range, intString), ",") + "}\n");
 
   // introduce additional initial equations
   initVarList := List.map1r(range, BackendVariable.getVarAt, inVars);
@@ -1343,27 +1256,21 @@ protected function fixUnderDeterminedSystem "author: lochel"
   input Integer inNEqns;
   input Integer inNAddEqns;
   output BackendDAE.IncidenceMatrix outM;
+protected
+  list<Integer> newEqIndices;
 algorithm
-  outM := match(inM, inInitVarIndices, inNEqns, inNAddEqns)
-    local
-      BackendDAE.IncidenceMatrix m;
-      list<Integer> newEqIndices;
+  if inNAddEqns < 0 then
+    Error.addInternalError("function fixUnderDeterminedSystem failed due to invalid input", sourceInfo());
+    fail();
+  end if;
 
-    case (_, _, _, 0)
-    then inM;
+  outM := arrayCreate(inNEqns+inNAddEqns, {});
+  outM := Array.copy(inM, outM);
 
-    //case (_, {}, _,  _) equation
-    //  print("Error!!!!\n");
-    //then fail();
-
-    case (_, _, _, _) equation
-      true = (inNAddEqns > 0) "just to be careful";
-      m = arrayCreate(inNEqns+inNAddEqns, {});
-      m = Array.copy(inM, m);
-      newEqIndices = List.intRange2(inNEqns+1, inNEqns+inNAddEqns);
-      m = List.fold1(newEqIndices, squareIncidenceMatrix1, inInitVarIndices, m);
-    then m;
-  end match;
+  if inNAddEqns > 0 then
+    newEqIndices := List.intRange2(inNEqns+1, inNEqns+inNAddEqns);
+    outM := List.fold1(newEqIndices, squareIncidenceMatrix1, inInitVarIndices, outM);
+  end if;
 end fixUnderDeterminedSystem;
 
 protected function squareIncidenceMatrix1 "author: lochel"
@@ -1381,25 +1288,20 @@ protected function fixOverDeterminedSystem "author: lochel"
   input Integer inNVars;
   input Integer inNAddVars;
   output BackendDAE.IncidenceMatrix outM;
+protected
+  list<Integer> newVarIndices;
 algorithm
-  outM := match(inM, inInitEqnIndices, inNVars, inNAddVars)
-    local
-      BackendDAE.IncidenceMatrix m;
-      list<Integer> newVarIndices;
+  if inNAddVars < 0 then
+    Error.addInternalError("function fixOverDeterminedSystem failed due to invalid input", sourceInfo());
+    fail();
+  end if;
 
-    case (_, _, _, 0)
-    then inM;
-
-    //case (_, {}, _, _) equation
-    //  print("Error!!!!\n");
-    //then fail();
-
-    case (_, _, _, _) equation
-      true = (inNAddVars > 0) "just to be careful";
-      newVarIndices = List.intRange2(inNVars+1, inNVars+inNAddVars);
-      m = List.fold1(inInitEqnIndices, squareIncidenceMatrix2, newVarIndices, inM);
-    then m;
-  end match;
+  if inNAddVars > 0 then
+    newVarIndices := List.intRange2(inNVars+1, inNVars+inNAddVars);
+    outM := List.fold1(inInitEqnIndices, squareIncidenceMatrix2, newVarIndices, inM);
+  else
+    outM := inM;
+  end if;
 end fixOverDeterminedSystem;
 
 protected function squareIncidenceMatrix2 "author: lochel"
@@ -1749,7 +1651,6 @@ algorithm
       DAE.ComponentRef cref;
       BackendDAE.Type type_;
       DAE.Exp exp, exp1, x;
-      DAE.FunctionTree funcs;
 
     case {}
     then inRepls;
@@ -1765,8 +1666,7 @@ algorithm
       cref = BackendVariable.varCref(var);
       type_ = BackendVariable.varType(var);
       x = DAE.CREF(cref, type_);
-      BackendDAE.SHARED(functionTree = funcs) = inShared;
-      (eqn as BackendDAE.EQUATION(scalar=exp)) = BackendEquation.solveEquation(eqn, x, SOME(funcs));
+      (eqn as BackendDAE.EQUATION(scalar=exp)) = BackendEquation.solveEquation(eqn, x, SOME(inShared.functionTree));
 
       varName = BackendVariable.varCref(var);
       (exp1, _) = Expression.traverseExpBottomUp(exp, BackendDAEUtil.replaceCrefsWithValues, (inVars, varName));
@@ -1961,7 +1861,7 @@ protected function introducePreVarsForAliasVariables "author: lochel
   output BackendDAE.Var outVar;
   output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet> outTpl;
 algorithm
-  (outVar,outTpl) := matchcontinue(inVar, inTpl)
+  (outVar, outTpl) := matchcontinue(inVar, inTpl)
     local
       BackendDAE.Var var;
       DAE.ComponentRef cr;
@@ -2023,23 +1923,21 @@ end introducePreVarsForAliasVariables;
 
 protected function collectInitialVarsEqnsSystem "author: lochel
   This function collects variables and equations for the initial system out of an given EqSystem."
-  input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet> iTpl;
-  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet> oTpl;
+  input BackendDAE.EqSystem inEqSystem;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet> inTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet> outTpl;
 protected
-  BackendDAE.Variables orderedVars, vars, fixvars;
-  BackendDAE.EquationArray orderedEqs, eqns, reqns;
-  BackendDAE.StateSets stateSets;
+  BackendDAE.Variables vars, fixvars;
+  BackendDAE.EquationArray eqns, reqns;
   HashSet.HashSet hs;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := isyst;
-  (vars, fixvars, eqns, reqns, hs) := iTpl;
+  (vars, fixvars, eqns, reqns, hs) := inTpl;
 
-  ((vars, fixvars, eqns, hs)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars, eqns, hs));
-  ((eqns, reqns)) := BackendEquation.traverseEquationArray(orderedEqs, collectInitialEqns, (eqns, reqns));
-  //((fixvars, eqns)) := List.fold(stateSets, collectInitialStateSetVars, (fixvars, eqns));
+  ((vars, fixvars, eqns, hs)) := BackendVariable.traverseBackendDAEVars(inEqSystem.orderedVars, collectInitialVars, (vars, fixvars, eqns, hs));
+  ((eqns, reqns)) := BackendEquation.traverseEquationArray(inEqSystem.orderedEqs, collectInitialEqns, (eqns, reqns));
+  //((fixvars, eqns)) := List.fold(inEqSystem.stateSets, collectInitialStateSetVars, (fixvars, eqns));
 
-  oTpl := (vars, fixvars, eqns, reqns, hs);
+  outTpl := (vars, fixvars, eqns, reqns, hs);
 end collectInitialVarsEqnsSystem;
 
 protected function collectInitialVars "author: lochel
@@ -2361,7 +2259,7 @@ protected function collectInitialBindings "author: lochel
   output BackendDAE.Var outVar;
   output tuple<BackendDAE.EquationArray, BackendDAE.EquationArray> outTpl;
 algorithm
-  (outVar,outTpl) := match (inVar, inTpl)
+  (outVar, outTpl) := match (inVar, inTpl)
     local
       BackendDAE.Var var;
       DAE.ComponentRef cr;
