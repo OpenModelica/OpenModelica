@@ -117,8 +117,6 @@ void read_value(std::string s, modelica_real* res, modelica_real default_value);
 void read_value(std::string s, modelica_integer* res, modelica_integer default_value = 0);
 /* reads integer value from a string */
 void read_value(std::string s, int* res);
-/* reads a mmc_sint_t value from a string */
-void read_value(std::string s, mmc_sint_t* res);
 /* reads std::string value from a string */
 void read_value(std::string s, std::string* str);
 /* reads modelica_string value from a string */
@@ -755,8 +753,8 @@ inline void read_value(std::string s, modelica_integer* res, modelica_integer de
   }
 }
 
-/* reads mmc_sint_t value from a string */
-inline void read_value(std::string s, mmc_sint_t* res)
+/* reads int value from a string */
+inline void read_value(std::string s, int* res)
 {
   if(s.compare("true") == 0)
     *res = 1;
