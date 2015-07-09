@@ -278,12 +278,12 @@ void Arkode::initialize()
 
 void Arkode::solve(const SOLVERCALL action)
 {
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
+  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() ==  OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
 
   if (_arkodesettings && _system)
   {
-    // Solver und System für Integration vorbereiten
+    //
     if ((action & RECORDCALL) && (action & FIRST_CALL))
     {
         initialize();
@@ -380,8 +380,8 @@ void Arkode::ArkodeCore()
   if (_idid < 0)
     throw ModelicaSimulationError(SOLVER,"ARKode::ReInit");
 
-  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
+  bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() ==  OPT_ALL);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == OF_EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == OPT_EMPTY);
 
   while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {
@@ -654,7 +654,7 @@ void Arkode::writeSimulationInfo()
 }
 
 int Arkode::check_flag(void *flagvalue, const char *funcname, int opt)
-// {
+{
   int *errflag;
 
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
