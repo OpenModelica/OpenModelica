@@ -668,7 +668,7 @@ git-sanity-check: git-clean
 	find -name "*.mat" >> invalid-files.log
 	find -name "*.csv" >> invalid-files.log
 	(find -type f -executable -exec file -i '{}' ";" | grep -s charset=binary >> invalid-files.log) || true
-	sort invalid-files.log > invalid-files.sorted
+	sort invalid-files.log | grep -v runtest.db > invalid-files.sorted
 	sort .gitvalidfiles > .gitvalidfiles.sorted
 	comm --check-order -23 invalid-files.sorted .gitvalidfiles.sorted > invalid-files.log
 	cat invalid-files.log
