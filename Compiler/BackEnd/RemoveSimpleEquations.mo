@@ -3571,9 +3571,9 @@ algorithm
         ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(shared.initialEqs, replaceEquationTraverser, (repl, {}, false));
         shared.initialEqs = if b1 then BackendEquation.listEquation(eqnslst) else shared.initialEqs;
 
-        ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(shared.removedEqs, replaceEquationTraverser, (repl, {}, false));
-        eqnslst = List.select(eqnslst, assertWithCondTrue);
-        shared.removedEqs = if b1 then BackendEquation.listEquation(eqnslst) else shared.removedEqs;
+        ((_, eqnslst, _)) = BackendEquation.traverseEquationArray(shared.removedEqs, replaceEquationTraverser, (repl, {}, false));
+        eqnslst = List.select(eqnslst, BackendEquation.assertWithCondTrue);
+        shared.removedEqs = BackendEquation.listEquation(eqnslst);
 
         (eventInfo.whenClauseLst, _) =
             BackendVarTransform.replaceWhenClauses(eventInfo.whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
@@ -3672,16 +3672,6 @@ algorithm
   end matchcontinue;
 end replaceVarTraverser;
 
-protected function assertWithCondTrue "author: Frenkel TUD 2012-12"
-  input BackendDAE.Equation inEqn;
-  output Boolean b;
-algorithm
-  b := match inEqn
-    case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=DAE.BCONST(true))})) then false;
-    else true;
-  end match;
-end assertWithCondTrue;
-
 protected function removeSimpleEquationsShared1 "author: Frenkel TUD 2012-12"
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.EqSystems inSysts1;
@@ -3715,7 +3705,7 @@ algorithm
 
         ((_, eqnslst, _)) := BackendEquation.traverseEquationArray(syst.removedEqs, replaceEquationTraverser, (repl, {}, false));
         // remove asserts with condition=true from removed equations
-        eqnslst := List.select(eqnslst, assertWithCondTrue);
+        eqnslst := List.select(eqnslst, BackendEquation.assertWithCondTrue);
         syst.removedEqs := BackendEquation.listEquation(eqnslst);
       then
         removeSimpleEquationsShared1(rest, syst::inSysts1, repl, statesetrepl1, aliasVars);
@@ -4421,12 +4411,12 @@ algorithm
       remEqList = BackendEquation.equationList(syst.removedEqs);
       (remEqList,_) = BackendEquation.traverseExpsOfEquationList(remEqList, traverseExpTopDown, HTCrToExp);
       //remove asserts with condition=true from removed equations
-      syst.removedEqs = BackendEquation.listEquation(List.select(remEqList, assertWithCondTrue));
+      syst.removedEqs = BackendEquation.listEquation(List.select(remEqList, BackendEquation.assertWithCondTrue));
 
       remEqList = BackendEquation.equationList(shared.removedEqs);
       (remEqList,_) = BackendEquation.traverseExpsOfEquationList(remEqList, traverseExpTopDown, HTCrToExp);
       //remove asserts with condition=true from removed equations
-      shared.removedEqs = BackendEquation.listEquation(List.select(remEqList, assertWithCondTrue));
+      shared.removedEqs = BackendEquation.listEquation(List.select(remEqList, BackendEquation.assertWithCondTrue));
 
 
       // BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB

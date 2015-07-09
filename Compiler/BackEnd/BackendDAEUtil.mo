@@ -109,6 +109,7 @@ protected import Types;
 protected import UnitCheck;
 protected import Values;
 protected import XMLDump;
+protected import MetaModelica.Dangerous.listReverseInPlace;
 
 protected
 type Var = BackendDAE.Var;
@@ -3613,6 +3614,15 @@ algorithm
   osyst := BackendDAEUtil.setEqSystMatrices(syst, SOME(outM), SOME(outMT));
 end getIncidenceMatrixScalar;
 
+public function removedIncidenceMatrix
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> inFunctionTree;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+algorithm
+  (outM, outMT) := incidenceMatrixDispatch(inSyst.orderedVars, inSyst.removedEqs, inIndxType, inFunctionTree);
+end removedIncidenceMatrix;
 
 protected function traverseStmts "Author: Frenkel TUD 2012-06
   traverese DAE.Statement without change possibility."
@@ -6664,7 +6674,7 @@ algorithm
 
     case (_, (optModule, moduleStr, _)::rest) equation
       BackendDAE.DAE(systs, shared) = optModule(inDAE);
-      systs = filterEmptySystems(systs);
+      (systs, shared) = filterEmptySystems(systs, shared);
       dae = BackendDAE.DAE(systs, shared);
       SimCodeFunctionUtil.execStat("preOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
@@ -6949,7 +6959,7 @@ algorithm
     case (_, (optModule, moduleStr, _)::rest, _, _)
       equation
         BackendDAE.DAE(systs, shared) = optModule(inDAE);
-        systs = filterEmptySystems(systs);
+        (systs, shared) = filterEmptySystems(systs, shared);
         dae = BackendDAE.DAE(systs, shared);
         SimCodeFunctionUtil.execStat("postOpt " + moduleStr);
         if Flags.isSet(Flags.OPT_DAE_DUMP) then
@@ -7510,11 +7520,11 @@ protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(systs,shared) := dae;
-  (systs,shared) := List.map1Fold(systs,func,a,shared);
+  BackendDAE.DAE(systs, shared) := dae;
+  (systs, shared) := List.map1Fold(systs, func, a, shared);
   // Filter out empty systems
-  systs := filterEmptySystems(systs);
-  odae := BackendDAE.DAE(systs,shared);
+  (systs, shared) := filterEmptySystems(systs, shared);
+  odae := BackendDAE.DAE(systs, shared);
 end mapEqSystem1;
 
 public function mapEqSystemAndFold<B>
@@ -7540,7 +7550,7 @@ algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
   (systs, shared, outExtra) := List.mapFold2(systs, inFunc, shared, initialExtra);
   // Filter out empty systems
-  systs := filterEmptySystems(systs);
+  (systs, shared) := filterEmptySystems(systs, shared);
   outDAE := BackendDAE.DAE(systs, shared);
 end mapEqSystemAndFold;
 
@@ -7561,10 +7571,10 @@ protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(systs,shared) := dae;
+  BackendDAE.DAE(systs, shared) := dae;
   extra := List.fold1(systs,func,shared,initialExtra);
   // Filter out empty systems
-  systs := filterEmptySystems(systs);
+  (systs, shared) := filterEmptySystems(systs, shared);
 end foldEqSystem;
 
 public function mapEqSystem
@@ -7585,43 +7595,51 @@ algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
   (systs, shared) := List.mapFold(systs, inFunc, shared);
   // Filter out empty systems
-  systs := filterEmptySystems(systs);
+  (systs, shared) := filterEmptySystems(systs, shared);
   outDAE := BackendDAE.DAE(systs, shared);
 end mapEqSystem;
 
 public function nonEmptySystem
   input BackendDAE.EqSystem syst;
   output Boolean nonEmpty;
-protected
-  Integer num;
-  BackendDAE.Variables vars;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
-  num := BackendVariable.varsSize(vars);
-  nonEmpty := num <> 0;
+  nonEmpty := BackendVariable.varsSize(syst.orderedVars) <> 0 or BackendDAEUtil.equationArraySize(syst.removedEqs) <> 0;
 end nonEmptySystem;
 
 public function filterEmptySystems
   "Filter out equation systems leaving at least one behind"
-  input BackendDAE.EqSystems systs;
-  output BackendDAE.EqSystems osysts;
+  input BackendDAE.EqSystems inSysts;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.EqSystems outSysts;
+  output BackendDAE.Shared outShared = inShared;
+protected
+  list<BackendDAE.Equation> reqns;
+  BackendDAE.Equation eq;
 algorithm
-  osysts := filterEmptySystems2(List.select(systs,nonEmptySystem),systs);
-end filterEmptySystems;
-
-protected function filterEmptySystems2
-  "Filter out equation systems leaving at least one behind"
-  input BackendDAE.EqSystems systs;
-  input BackendDAE.EqSystems full;
-  output BackendDAE.EqSystems olst;
-algorithm
-  olst := match (systs,full)
+  (reqns, outSysts) := List.fold(inSysts, filterEmptySystem, ({}, {}));
+  outSysts := match outSysts
     local
       BackendDAE.EqSystem syst;
-    case ({},syst::_) then {syst};
-    else systs;
+    case {}
+      then {BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())};
+    else listReverseInPlace(outSysts);
   end match;
-end filterEmptySystems2;
+  outShared.removedEqs := BackendEquation.addEquations(reqns, outShared.removedEqs);
+end filterEmptySystems;
+
+protected function filterEmptySystem
+  input BackendDAE.EqSystem inSyst;
+  input tuple<list<BackendDAE.Equation>, BackendDAE.EqSystems> inTpl;
+  output tuple<list<BackendDAE.Equation>, BackendDAE.EqSystems> outTpl;
+protected
+  list<BackendDAE.Equation> reqs;
+  BackendDAE.EqSystems systs;
+algorithm
+  (reqs, systs) := inTpl;
+  outTpl := if BackendVariable.varsSize(inSyst.orderedVars) == 0
+            then (listAppend(BackendEquation.equationList(inSyst.removedEqs), reqs), systs)
+            else (reqs, inSyst::systs);
+end filterEmptySystem;
 
 public function getAllVarLst "retrieve all variables of the dae by collecting them from each equation system and combining with known vars"
   input BackendDAE.BackendDAE dae;

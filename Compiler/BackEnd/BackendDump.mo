@@ -104,11 +104,11 @@ algorithm
   BackendDAE.DAE(eqs, shared) := inBackendDAE;
   List.map_0(eqs, printEqSystem);
   print("\n");
-  printShared(eqs, shared);
+  printShared(shared);
 end printBackendDAE;
 
 public function printEqSystem "This function prints the BackendDAE.EqSystem representation to stdout."
-  input BackendDAE.EqSystem inEqSystem;
+  input BackendDAE.EqSystem inSyst;
 protected
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
@@ -118,23 +118,16 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars,
-                      orderedEqs=orderedEqs,
-                      m=m,
-                      mT=mT,
-                      matching=matching,
-                      stateSets=stateSets,
-                      partitionKind=partitionKind) := inEqSystem;
-
-  print("\n" + partitionKindString(partitionKind) + "\n" + UNDERLINE + "\n");
-  dumpVariables(orderedVars, "Variables");
-  dumpEquationArray(orderedEqs, "Equations");
-  dumpStateSets(stateSets, "State Sets");
-  dumpOption(m, dumpIncidenceMatrix);
-  dumpOption(mT, dumpIncidenceMatrixT);
+  print("\n" + partitionKindString(inSyst.partitionKind) + "\n" + UNDERLINE + "\n");
+  dumpVariables(inSyst.orderedVars, "Variables");
+  dumpEquationArray(inSyst.orderedEqs, "Equations");
+  dumpEquationArray(inSyst.removedEqs, "Simple Equations");
+  dumpStateSets(inSyst.stateSets, "State Sets");
+  dumpOption(inSyst.m, dumpIncidenceMatrix);
+  dumpOption(inSyst.mT, dumpIncidenceMatrixT);
 
   print("\n");
-  dumpFullMatching(matching);
+  dumpFullMatching(inSyst.matching);
   print("\n");
 end printEqSystem;
 
@@ -256,49 +249,28 @@ public function printClassAttributes "This unction print the  Optimica ClassAttr
 end printClassAttributes;
 
 public function printShared "This function dumps the BackendDAE.Shared representation to stdout."
-  input BackendDAE.EqSystems inSysts "for backward compatibility";
   input BackendDAE.Shared inShared;
-protected
-  BackendDAE.Variables knownVars, externalObjects, aliasVars;
-  BackendDAE.EquationArray initialEqs, removedEqs;
-  list<DAE.Constraint> constraints;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
-  list<BackendDAE.WhenClause> whenClauseLst;
-  list<BackendDAE.TimeEvent> timeEvents;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.BackendDAEType backendDAEType;
-  BackendDAE.SymbolicJacobians symjacs;
 algorithm
-  BackendDAE.SHARED(knownVars=knownVars,
-                    externalObjects=externalObjects,
-                    aliasVars=aliasVars,
-                    initialEqs=initialEqs,
-                    constraints=constraints,
-                    eventInfo=BackendDAE.EVENT_INFO( timeEvents=timeEvents, relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst,
-                                                     sampleLst=sampleLst, whenClauseLst=whenClauseLst ),
-                    extObjClasses=extObjClasses,
-                    backendDAEType=backendDAEType,
-                    symjacs=symjacs) := inShared;
-  removedEqs := BackendDAEUtil.collapseRemovedEqs(BackendDAE.DAE(inSysts, inShared));
+
   print("\nBackendDAEType: ");
-  printBackendDAEType(backendDAEType);
+  printBackendDAEType(inShared.backendDAEType);
   print("\n\n");
 
-  dumpVariables(knownVars, "Known Variables (constants)");
-  dumpVariables(externalObjects, "External Objects");
-  dumpExternalObjectClasses(extObjClasses, "Classes of External Objects");
-  dumpVariables(aliasVars, "Alias Variables");
-  dumpEquationArray(removedEqs, "Simple Equations");
-  dumpEquationArray(initialEqs, "Initial Equations");
-  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings");
-  dumpZeroCrossingList(relationsLst, "Relations");
+  dumpVariables(inShared.knownVars, "Known Variables (constants)");
+  dumpVariables(inShared.externalObjects, "External Objects");
+  dumpExternalObjectClasses(inShared.extObjClasses, "Classes of External Objects");
+  dumpVariables(inShared.aliasVars, "Alias Variables");
+  dumpEquationArray(inShared.removedEqs, "Simple Shared Equations");
+  dumpEquationArray(inShared.initialEqs, "Initial Equations");
+  dumpZeroCrossingList(inShared.eventInfo.zeroCrossingLst, "Zero Crossings");
+  dumpZeroCrossingList(inShared.eventInfo.relationsLst, "Relations");
   if stringEqual(Config.simCodeTarget(), "Cpp") then
-    dumpZeroCrossingList(sampleLst, "Samples");
+    dumpZeroCrossingList(inShared.eventInfo.sampleLst, "Samples");
   else
-    dumpTimeEvents(timeEvents, "Time Events");
+    dumpTimeEvents(inShared.eventInfo.timeEvents, "Time Events");
   end if;
-  dumpWhenClauseList(whenClauseLst, "When Clauses");
-  dumpConstraintList(constraints, "Constraints");
+  dumpWhenClauseList(inShared.eventInfo.whenClauseLst, "When Clauses");
+  dumpConstraintList(inShared.constraints, "Constraints");
 end printShared;
 
 public function printClocks
@@ -3267,7 +3239,7 @@ algorithm
       print(headerline + ":\n");
       List.map_0(eqs, printEqSystem);
       print("\n");
-      printShared(eqs, shared);
+      printShared(shared);
     then ();
   end matchcontinue;
 end bltdump;

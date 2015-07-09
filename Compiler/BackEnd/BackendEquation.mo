@@ -350,6 +350,16 @@ algorithm
   end matchcontinue;
 end traversingStateRefFinder;
 
+public function assertWithCondTrue "author: Frenkel TUD 2012-12"
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match inEqn
+    case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=DAE.BCONST(true))})) then false;
+    else true;
+  end match;
+end assertWithCondTrue;
+
 public function equationsParams "author: marcusw
   From a list of equations return all occurring parameter variables. Duplicates are removed."
   input list<BackendDAE.Equation> inEquationLst;

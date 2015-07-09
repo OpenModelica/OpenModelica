@@ -1636,8 +1636,8 @@ public function partitionIndependentBlocksHelper
 algorithm
   (systs,oshared) := matchcontinue (isyst,ishared,numErrorMessages,throwNoError)
     local
-      BackendDAE.IncidenceMatrix m,mT;
-      array<Integer> ixs;
+      BackendDAE.IncidenceMatrix m, mT, rm, rmT;
+      array<Integer> ixs, rixs;
       Boolean b;
       Integer i;
       BackendDAE.Shared shared;
@@ -1645,17 +1645,18 @@ algorithm
       DAE.FunctionTree funcs;
     case (syst,shared,_,_)
       equation
-        // print("partitionIndependentBlocks: TODO: Implement me\n");
         funcs = BackendDAEUtil.getFunctions(ishared);
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
-        ixs = arrayCreate(arrayLength(m),0);
+        (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
+        (rm, rmT) = BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs));
+        ixs = arrayCreate(arrayLength(m), 0);
+        rixs = arrayCreate(arrayLength(m), 0);
         // ixsT = arrayCreate(arrayLength(mT),0);
-        i = SynchronousFeatures.partitionIndependentBlocks0(m,mT,ixs);
+        i = SynchronousFeatures.partitionIndependentBlocks0(m, mT, rm, rmT, ixs, rixs);
         // i2 = SynchronousFeatures.partitionIndependentBlocks0(mT,m,ixsT);
         b = i > 1;
         // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
-        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i,syst,ixs,mT,throwNoError) else {syst};
+        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, ixs, rixs, mT, throwNoError) else {syst};
         // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
       then (systs,shared);
