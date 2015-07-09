@@ -57,6 +57,10 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -79,10 +83,14 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // 2/2 (1): vd = $getPart(v)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
-// 
-// 
+//
+//
 // no matching
 //
 //

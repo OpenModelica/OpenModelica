@@ -67,6 +67,10 @@ translateModel(test_subSample); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -89,6 +93,10 @@ translateModel(test_subSample); getErrorString();
 // 2/2 (1): vd = $getPart(v)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -107,6 +115,10 @@ translateModel(test_subSample); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): u2 = $getPart(u)    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -129,10 +141,14 @@ translateModel(test_subSample); getErrorString();
 // 1/1 (1): u3 = $getPart(u2)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
-// 
-// 
+//
+//
 // no matching
 //
 //

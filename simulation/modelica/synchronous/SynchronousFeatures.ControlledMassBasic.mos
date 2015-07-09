@@ -69,6 +69,10 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -101,10 +105,14 @@ translateModel(SynchronousFeatures.ControlledMassBasic); getErrorString();
 // 7/7 (1): xd = $getPart(x)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
-// 
-// 
+//
+//
 // no matching
 //
 //

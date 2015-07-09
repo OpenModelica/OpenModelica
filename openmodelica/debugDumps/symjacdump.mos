@@ -1,9 +1,9 @@
 // name: symjacdump.mos
 // keywords: omc debug dump
 // status: correct
-// 
+//
 // omc debug dump: +d=symjacdump
-// 
+//
 
 loadString("
 model testSymjacdump \"testsuite/simulation/modelica/nonlinear_system/nlsTestPackage.mo: model problem6\"
@@ -236,6 +236,10 @@ buildModel(testSymjacdump); getErrorString();
 // 98/98 (1): 0.0 = 2.0 * x_99_SeedNLSJac0 + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x_99_SeedNLSJac0 - x_98_.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -362,7 +366,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -598,6 +602,10 @@ buildModel(testSymjacdump); getErrorString();
 // 98/98 (1): x_98_.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x_99_SeedNLSJac0 + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x_99_SeedNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -926,7 +934,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1162,6 +1170,10 @@ buildModel(testSymjacdump); getErrorString();
 // 98/98 (1): 0.0 = 2.0 * x_2_SeedNLSJac1 + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x_2_SeedNLSJac1 - x_3_.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1288,7 +1300,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1522,6 +1534,10 @@ buildModel(testSymjacdump); getErrorString();
 // 96/96 (1): x_5_.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x_4_.$pDERNLSJac1.dummyVarNLSJac1 + 9.80296049406921e-05 * (1.03960396039604 + x[4]) * x_4_.$pDERNLSJac1.dummyVarNLSJac1 - x_3_.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 // 97/97 (1): x_4_.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x_3_.$pDERNLSJac1.dummyVarNLSJac1 + 9.80296049406921e-05 * (1.02970297029703 + x[3]) * x_3_.$pDERNLSJac1.dummyVarNLSJac1 - x_2_SeedNLSJac1    [dynamic]
 // 98/98 (1): x_3_.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x_2_SeedNLSJac1 + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x_2_SeedNLSJac1    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -1852,7 +1868,7 @@ buildModel(testSymjacdump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
