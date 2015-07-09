@@ -84,6 +84,15 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 
 unsigned int alarm (unsigned int seconds);
 
+#include <float.h>
+#define isinf(d) (!_finite(d) && !_isnan(d))
+#define isnan _isnan
+#define fpu_error(x) (isinf(x) || isnan(x))
+
+#if !defined(snprintf)
+#define snprintf snprintf_s
+#endif
+
 #else /* not msvc */
 
 /* define inline for non-MSVC */

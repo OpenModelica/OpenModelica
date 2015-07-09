@@ -74,11 +74,6 @@ modelica_real division_error(threadData_t *threadData, modelica_real b, const ch
   return b;
 }
 
-#if defined(_MSC_VER)
-#include <float.h>
-#define isnan _isnan
-#endif
-
 modelica_real isnan_error(threadData_t *threadData,modelica_real b, const char* division_str, const char* file, long line)
 {
   if(isnan(b))

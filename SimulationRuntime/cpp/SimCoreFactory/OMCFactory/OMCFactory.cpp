@@ -61,7 +61,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc,  const char* argv[])
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
-          //("emit_protected", "emits protected variables to the result file")
+          ("emit_protected", "emits protected variables to the result file")
           ("runtime-library,r", po::value<string>(),"path to cpp runtime libraries")
           ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
           ("results-file,R", po::value<string>(),"name of results file")

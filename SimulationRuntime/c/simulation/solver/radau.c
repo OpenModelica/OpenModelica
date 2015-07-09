@@ -32,13 +32,6 @@
  * author: team Bielefeld :)
  */
 
-#if defined(_MSC_VER)
-#include <float.h>
-#define isinf(d) (!_finite(d) && !_isnan(d))
-#define isnan _isnan
-#define snprintf _snprintf
-#endif
-
 #include <string.h>
 
 #include "radau.h"
