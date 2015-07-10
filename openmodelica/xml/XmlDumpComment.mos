@@ -2,7 +2,7 @@
 // keywords: xml, dump
 // status: correct
 // teardown_command: rm -f XmlDumpComment.xml
-// 
+//
 // Tests that < is escaped in Xml dumps
 //
 
@@ -8997,7 +8997,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </variable>
 // <variable id=\"322\" name=\"world.z_label.R_rel[2,3]\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <bindValueExpression>
-// <bindExpression string=\"-0.0\">
+// <bindExpression string=\"0.0\">
 // </bindExpression>
 // </bindValueExpression>
 // <classesNames>

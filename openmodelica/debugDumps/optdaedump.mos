@@ -1,9 +1,9 @@
 // name: optdaedump.mos
 // keywords: omc debug dump
 // status: correct
-// 
+//
 // omc debug dump: +d=optdaedump
-// 
+//
 
 loadString("
 model testOptdaedump
@@ -90,6 +90,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -121,7 +125,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -189,6 +193,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -220,7 +228,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -288,6 +296,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -319,7 +331,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -387,6 +399,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -418,7 +434,110 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// pre-optimization module expandDerOperator:
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (13)
+// ========================================
+// 1: v2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 2: v1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 3: v0:VARIABLE() .testOptdaedump, .Real type: Real []
+// 4: iC:VARIABLE() .testOptdaedump, .Real type: Real []
+// 5: iL:STATE(1)() .testOptdaedump, .Real type: Real []
+// 6: i2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 7: i1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 8: i0:VARIABLE() .testOptdaedump, .Real type: Real []
+// 9: uC:STATE(1)() .testOptdaedump, .Real type: Real []
+// 10: uL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 11: u2:VARIABLE() .testOptdaedump, .Real type: Real []
+// 12: u1:VARIABLE() .testOptdaedump, .Real type: Real []
+// 13: u0:VARIABLE() .testOptdaedump, .Real type: Real []
+//
+//
+// Equations (13, 13)
+// ========================================
+// 1/1 (1): u0 = cos(time)    [dynamic]
+// 2/2 (1): u0 = v1 - v0    [dynamic]
+// 3/3 (1): u1 = R1 * i1    [dynamic]
+// 4/4 (1): u1 = v1 - v2    [dynamic]
+// 5/5 (1): u2 = R2 * i2    [dynamic]
+// 6/6 (1): u2 = v2 - v0    [dynamic]
+// 7/7 (1): uL = L * der(iL)    [dynamic]
+// 8/8 (1): uL = v2 - v0    [dynamic]
+// 9/9 (1): iC = C * der(uC)    [dynamic]
+// 10/10 (1): uC = v1 - v0    [dynamic]
+// 11/11 (1): v0 = 0.0    [dynamic]
+// 12/12 (1): i0 = i1 + iC    [dynamic]
+// 13/13 (1): i1 = i2 + iL    [dynamic]
+//
+//
 // Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (4)
+// ========================================
+// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
+// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
+// 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
+// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -458,11 +577,11 @@ buildModel(testOptdaedump); getErrorString();
 // 2: v1:VARIABLE() .testOptdaedump, .Real type: Real []
 // 3: v0:VARIABLE() .testOptdaedump, .Real type: Real []
 // 4: iC:VARIABLE() .testOptdaedump, .Real type: Real []
-// 5: iL:VARIABLE() .testOptdaedump, .Real type: Real []
+// 5: iL:STATE(1)() .testOptdaedump, .Real type: Real []
 // 6: i2:VARIABLE() .testOptdaedump, .Real type: Real []
 // 7: i1:VARIABLE() .testOptdaedump, .Real type: Real []
 // 8: i0:VARIABLE() .testOptdaedump, .Real type: Real []
-// 9: uC:VARIABLE() .testOptdaedump, .Real type: Real []
+// 9: uC:STATE(1)() .testOptdaedump, .Real type: Real []
 // 10: uL:VARIABLE() .testOptdaedump, .Real type: Real []
 // 11: u2:VARIABLE() .testOptdaedump, .Real type: Real []
 // 12: u1:VARIABLE() .testOptdaedump, .Real type: Real []
@@ -486,6 +605,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -502,10 +625,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7: 5 10
 // 8: 11 10
 // 9: 9 4
-// 10: 13 9
+// 10: 13 -9
 // 11: 3
 // 12: 4 7 8
-// 13: 5 6 7
+// 13: -5 6 7
 //
 // Transposed Incidence Matrix (row: variable)
 // ========================================
@@ -514,11 +637,11 @@ buildModel(testOptdaedump); getErrorString();
 // 2: 4 2
 // 3: 11 6 2
 // 4: 12 9
-// 5: 13 7
+// 5: -13 7
 // 6: 13 5
 // 7: 13 12 3
 // 8: 12
-// 9: 10 9
+// 9: -10 9
 // 10: 8 7
 // 11: 8 6 5
 // 12: 4 3
@@ -551,7 +674,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -591,105 +714,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: v1:VARIABLE() .testOptdaedump, .Real type: Real []
 // 3: v0:VARIABLE() .testOptdaedump, .Real type: Real []
 // 4: iC:VARIABLE() .testOptdaedump, .Real type: Real []
-// 5: iL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 6: i2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 7: i1:VARIABLE() .testOptdaedump, .Real type: Real []
-// 8: i0:VARIABLE() .testOptdaedump, .Real type: Real []
-// 9: uC:VARIABLE() .testOptdaedump, .Real type: Real []
-// 10: uL:VARIABLE() .testOptdaedump, .Real type: Real []
-// 11: u2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 12: u1:VARIABLE() .testOptdaedump, .Real type: Real []
-// 13: u0:VARIABLE() .testOptdaedump, .Real type: Real []
-//
-//
-// Equations (13, 13)
-// ========================================
-// 1/1 (1): u0 = cos(time)    [dynamic]
-// 2/2 (1): u0 = v1 - v0    [dynamic]
-// 3/3 (1): u1 = R1 * i1    [dynamic]
-// 4/4 (1): u1 = v1 - v2    [dynamic]
-// 5/5 (1): u2 = R2 * i2    [dynamic]
-// 6/6 (1): u2 = v2 - v0    [dynamic]
-// 7/7 (1): uL = L * der(iL)    [dynamic]
-// 8/8 (1): uL = u2    [dynamic]
-// 9/9 (1): iC = C * der(uC)    [dynamic]
-// 10/10 (1): uC = u0    [dynamic]
-// 11/11 (1): v0 = 0.0    [dynamic]
-// 12/12 (1): i0 = i1 + iC    [dynamic]
-// 13/13 (1): i1 = i2 + iL    [dynamic]
-//
-//
-// State Sets
-// ========================================
-//
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-// Known Variables (constants) (4)
-// ========================================
-// 1: C:PARAM()  = 3.0 .testOptdaedump, .Real type: Real []
-// 2: L:PARAM()  = 0.5 .testOptdaedump, .Real type: Real []
-// 3: R2:PARAM()  = 2.0 .testOptdaedump, .Real type: Real []
-// 4: R1:PARAM()  = 1.0 .testOptdaedump, .Real type: Real []
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// When Clauses (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// pre-optimization module expandDerOperator:
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (13)
-// ========================================
-// 1: v2:VARIABLE() .testOptdaedump, .Real type: Real []
-// 2: v1:VARIABLE() .testOptdaedump, .Real type: Real []
-// 3: v0:VARIABLE() .testOptdaedump, .Real type: Real []
-// 4: iC:VARIABLE() .testOptdaedump, .Real type: Real []
 // 5: iL:STATE(1)() .testOptdaedump, .Real type: Real []
 // 6: i2:VARIABLE() .testOptdaedump, .Real type: Real []
 // 7: i1:VARIABLE() .testOptdaedump, .Real type: Real []
@@ -718,6 +742,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -749,7 +777,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -817,6 +845,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -848,7 +880,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -916,6 +948,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -947,7 +983,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1015,6 +1051,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1046,7 +1086,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1114,6 +1154,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1145,7 +1189,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1213,6 +1257,10 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1244,7 +1292,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1302,6 +1350,10 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1338,7 +1390,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1396,6 +1448,10 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1432,7 +1488,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1490,6 +1546,10 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1526,7 +1586,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1584,6 +1644,10 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1620,7 +1684,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1678,6 +1742,10 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1714,7 +1782,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1775,6 +1843,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1832,7 +1904,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -1892,6 +1964,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -1949,7 +2025,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2009,6 +2085,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2066,7 +2146,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2126,6 +2206,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2183,7 +2267,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2243,6 +2327,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2300,7 +2388,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2360,6 +2448,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2417,7 +2509,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2477,6 +2569,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2534,7 +2630,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2594,6 +2690,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2651,7 +2751,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2711,6 +2811,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2768,7 +2872,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2828,6 +2932,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -2885,7 +2993,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -2945,6 +3053,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3002,7 +3114,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3062,6 +3174,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3119,7 +3235,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3179,6 +3295,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3236,7 +3356,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3296,6 +3416,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3353,7 +3477,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3411,6 +3535,10 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): i0 = i1 + iC    [dynamic]
 // 8/8 (1): i1 = i2 + iL    [dynamic]
 // 9/9 (1): uC = cos(time)    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -3471,7 +3599,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3531,6 +3659,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3589,7 +3721,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3649,6 +3781,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3707,7 +3843,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3767,6 +3903,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3825,7 +3965,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -3885,6 +4025,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -3943,7 +4087,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4003,6 +4147,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4061,7 +4209,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4121,6 +4269,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4179,7 +4331,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4239,6 +4391,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4297,7 +4453,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4347,6 +4503,10 @@ buildModel(testOptdaedump); getErrorString();
 // 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4383,7 +4543,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4431,6 +4591,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = -uL.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 // 3/3 (1): i1SeedNLSJac0 = i2.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 // 4/4 (1): u1.$pDERNLSJac0.dummyVarNLSJac0 = R1 * i1SeedNLSJac0    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -4485,7 +4649,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4531,6 +4695,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4569,7 +4737,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4616,6 +4784,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4664,7 +4836,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4710,6 +4882,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4758,7 +4934,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4804,6 +4980,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4852,7 +5032,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4898,6 +5078,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -4946,7 +5130,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -4992,6 +5176,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5040,7 +5228,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5086,6 +5274,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5134,7 +5326,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5180,6 +5372,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5228,7 +5424,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5274,6 +5470,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = R2 * i1SeedNLSJac0 + u1.$pDERNLSJac0.dummyVarNLSJac0    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5322,7 +5522,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  = -u1.$pDERNLSJac0.dummyVarNLSJac0  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5383,6 +5583,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5441,7 +5645,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5501,6 +5705,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5559,7 +5767,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5619,6 +5827,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5677,7 +5889,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5737,6 +5949,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5795,7 +6011,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5855,6 +6071,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -5913,7 +6133,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -5973,6 +6193,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6031,7 +6255,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6091,6 +6315,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6149,7 +6377,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: v2:VARIABLE()  = uL .testOptdaedump, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6213,6 +6441,10 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): v0 = 0.0    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6240,7 +6472,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6284,6 +6516,10 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6321,6 +6557,10 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): $DER.uC = -sin(time)    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6348,7 +6588,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6410,6 +6650,10 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $_start(iL)    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6453,6 +6697,10 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6488,7 +6736,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6550,6 +6798,10 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $_start(iL)    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6594,6 +6846,10 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6629,7 +6885,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6679,6 +6935,10 @@ buildModel(testOptdaedump); getErrorString();
 // 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6713,7 +6973,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6761,6 +7021,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = -uL.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 // 3/3 (1): i1SeedNLSJac1 = i2.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 // 4/4 (1): u1.$pDERNLSJac1.dummyVarNLSJac1 = R1 * i1SeedNLSJac1    [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
 //
 //
 // State Sets
@@ -6813,7 +7077,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6859,6 +7123,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6895,7 +7163,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -6942,6 +7210,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -6988,7 +7260,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7034,6 +7306,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7080,7 +7356,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7126,6 +7402,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7172,7 +7452,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7218,6 +7498,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7264,7 +7548,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7310,6 +7594,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7356,7 +7644,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7402,6 +7690,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7448,7 +7740,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7494,6 +7786,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7540,7 +7836,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7586,6 +7882,10 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = R2 * i1SeedNLSJac1 + u1.$pDERNLSJac1.dummyVarNLSJac1    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7632,7 +7932,7 @@ buildModel(testOptdaedump); getErrorString();
 // 2: uL.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  = -u1.$pDERNLSJac1.dummyVarNLSJac1  type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7695,6 +7995,10 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $_start(iL)    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7739,6 +8043,10 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7774,7 +8082,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -7836,6 +8144,10 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $_start(iL)    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7880,6 +8192,10 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0    [initial]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -7915,7 +8231,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //

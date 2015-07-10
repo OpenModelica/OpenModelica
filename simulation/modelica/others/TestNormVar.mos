@@ -72,6 +72,10 @@ simulate(foo,stopTime=0);
 // 4/4 (1): x__OMC$scaled_state = 0.01 * x    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -114,7 +118,7 @@ simulate(foo,stopTime=0);
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -174,6 +178,10 @@ simulate(foo,stopTime=0);
 // 4/4 (1): u__OMC$scaled_input = 0.05 * u    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -216,7 +224,7 @@ simulate(foo,stopTime=0);
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
@@ -278,6 +286,10 @@ simulate(foo,stopTime=0);
 // 5/5 (1): u__OMC$scaled_input = 0.05 * u    [dynamic]
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
@@ -322,7 +334,7 @@ simulate(foo,stopTime=0);
 // ========================================
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //

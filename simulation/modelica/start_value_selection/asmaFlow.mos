@@ -637,7 +637,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 47: aimc.thermalAmbient.Q_flowTotal:VARIABLE(unit = "W" final = true ) .asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Thermal.AsynchronousInductionMachines.ThermalAmbientAIMC$aimc$thermalAmbient, .Modelica.SIunits.HeatFlowRate type: Real []
 // 48: aimc.thermalAmbient.Q_flowRotorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of rotor (squirrel cage)".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Thermal.AsynchronousInductionMachines.ThermalAmbientAIMC$aimc$thermalAmbient, .Modelica.SIunits.HeatFlowRate type: Real []
 // 49: aimc.thermalAmbient.Q_flowStatorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of stator windings".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Thermal.AsynchronousInductionMachines.ThermalAmbientAIMC$aimc$thermalAmbient, .Modelica.SIunits.HeatFlowRate type: Real []
-// 50: aimc.i_0_s:DUMMY_STATE(start = -0.0 unit = "A" stateSelect=StateSelect.prefer )  "Stator zero-sequence current".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current$aimc$i_0_s type: Real []
+// 50: aimc.i_0_s:DUMMY_STATE(start = 0.0 unit = "A" stateSelect=StateSelect.prefer )  "Stator zero-sequence current".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Current$aimc$i_0_s type: Real []
 // 51: aimc.phiMechanical:DUMMY_STATE(start = 0.0 unit = "rad" )  "Mechanical angle of rotor against stator".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.SIunits.Angle$aimc$phiMechanical type: Real []
 // 52: aimc.inertiaRotor.w:STATE(1,aimc.inertiaRotor.a)(start = 0.0 unit = "rad/s" )  "Absolute angular velocity of component (= der(phi))".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Mechanics.Rotational.Components.Inertia$aimc$inertiaRotor, .Modelica.SIunits.AngularVelocity$aimc$inertiaRotor$w type: Real []
 // 53: aimc.inertiaRotor.a:VARIABLE(unit = "rad/s2" )  "Absolute angular acceleration of component (= der(w))".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Mechanics.Rotational.Components.Inertia$aimc$inertiaRotor, .Modelica.SIunits.AngularAcceleration type: Real []
@@ -790,6 +790,22 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 97/97 (1): $DER.aimc.airGapS.psi_mr[2] = aimc.airGapS.spacePhasor_r.v_[2]    [binding]
 // 98/98 (1): aimc.wMechanical = aimc.inertiaRotor.w    [binding]
 // 99/99 (1): $DER.aimc.phiMechanical = aimc.inertiaRotor.w    [binding]
+//
+//
+// Simple Equations (4, 0)
+// ========================================
+// 1/1 (0): algorithm
+//   assert(1.0 + aimc.rs.resistor[1].alpha * (293.15 - aimc.rs.resistor[1].T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic]
+// 2/1 (0): algorithm
+//   assert(1.0 + aimc.rs.resistor[2].alpha * (293.15 - aimc.rs.resistor[2].T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic]
+// 3/1 (0): algorithm
+//   assert(1.0 + aimc.rs.resistor[3].alpha * (293.15 - aimc.rs.resistor[3].T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic]
+// 4/1 (0): algorithm
+//   assert(1.0 + aimc.squirrelCageR.alpha * (293.15 - aimc.squirrelCageR.T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic]
 //
 //
 // State Sets
@@ -1534,20 +1550,8 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 280: aimc.statorCore.w:VARIABLE(unit = "rad/s" )  = aimc.statorCoreParameters.wRef  "Remagnetization angular velocity".asmaFlow, .Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage$aimc, .Modelica.Electrical.Machines.Losses.InductionMachines.Core$aimc$statorCore, .Modelica.SIunits.AngularVelocity type: Real []
 //
 //
-// Simple Equations (4, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
-// 1/1 (0): algorithm
-//   assert(1.0 + aimc.squirrelCageR.alpha * (293.15 - aimc.squirrelCageR.T_ref) >= 1e-15, "Temperature outside scope of model!");
-//    [dynamic]
-// 2/1 (0): algorithm
-//   assert(1.0 + aimc.rs.resistor[3].alpha * (293.15 - aimc.rs.resistor[3].T_ref) >= 1e-15, "Temperature outside scope of model!");
-//    [dynamic]
-// 3/1 (0): algorithm
-//   assert(1.0 + aimc.rs.resistor[2].alpha * (293.15 - aimc.rs.resistor[2].T_ref) >= 1e-15, "Temperature outside scope of model!");
-//    [dynamic]
-// 4/1 (0): algorithm
-//   assert(1.0 + aimc.rs.resistor[1].alpha * (293.15 - aimc.rs.resistor[1].T_ref) >= 1e-15, "Temperature outside scope of model!");
-//    [dynamic]
 //
 //
 // Initial Equations (0, 0)

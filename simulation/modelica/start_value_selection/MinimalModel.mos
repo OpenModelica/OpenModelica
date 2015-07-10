@@ -38,7 +38,7 @@ buildModel(MinimalModel); getErrroString();
 // ########################################
 //
 //
-// unspecified partition
+// unknown partition
 // ========================================
 //
 // Variables (0)
@@ -49,17 +49,15 @@ buildModel(MinimalModel); getErrroString();
 // ========================================
 //
 //
+// Simple Equations (0, 0)
+// ========================================
+//
+//
 // State Sets
 // ========================================
 //
 //
-// Matching
-// ========================================
-// 0 variables and equations
-//
-//
-// StrongComponents
-// ========================================
+// no matching
 //
 //
 //
@@ -87,7 +85,7 @@ buildModel(MinimalModel); getErrroString();
 // 3: a:VARIABLE()  = const_k .MinimalModel, .Real type: Real []
 //
 //
-// Simple Equations (0, 0)
+// Simple Shared Equations (0, 0)
 // ========================================
 //
 //
