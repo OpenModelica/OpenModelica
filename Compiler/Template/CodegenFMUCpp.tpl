@@ -277,9 +277,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   }
 
   // getters
-  <%accessFunctions(simCode, "get", modelShortName, modelInfo)%>
+  <%if isFMIVersion20(FMUVersion) then accessFunctionsFMU2(simCode, "get", modelShortName, modelInfo) else accessFunctionsFMU1(simCode, "get", modelShortName, modelInfo)%>
   // setters
-  <%accessFunctions(simCode, "set", modelShortName, modelInfo)%>
+  <%if isFMIVersion20(FMUVersion) then accessFunctionsFMU2(simCode, "set", modelShortName, modelInfo) else accessFunctionsFMU1(simCode, "set", modelShortName, modelInfo)%>
   >>
   // TODO:
   // <%setDefaultStartValues(modelInfo)%>
@@ -476,23 +476,23 @@ template setExternalFunctionSwitch(Function fn)
       >>
 end setExternalFunctionSwitch;
 
-template accessFunctions(SimCode simCode, String direction, String modelShortName, ModelInfo modelInfo)
+template accessFunctionsFMU1(SimCode simCode, String direction, String modelShortName, ModelInfo modelInfo)
  "Generates getters or setters for Real, Integer, Boolean, and String."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   let qualifier = if stringEq(direction, "set") then "const"
   <<
-  <%accessVarsFunction(simCode, direction, modelShortName, "Real", "double", "_pointerToRealVars")%>
-  <%accessVarsFunction(simCode, direction, modelShortName, "Integer", "int", "_pointerToIntVars")%>
-  <%accessVarsFunction(simCode, direction, modelShortName, "Boolean", "int", "_pointerToBoolVars")%>
+  <%accessVarsFunctionFMU1(simCode, direction, modelShortName, "Real", "double", "_pointerToRealVars")%>
+  <%accessVarsFunctionFMU1(simCode, direction, modelShortName, "Integer", "int", "_pointerToIntVars")%>
+  <%accessVarsFunctionFMU1(simCode, direction, modelShortName, "Boolean", "int", "_pointerToBoolVars")%>
 
   void <%modelShortName%>FMU::<%direction%>String(const unsigned int vr[], int nvr, <%qualifier%> string value[]) {
   }
   >>
-end accessFunctions;
+end accessFunctionsFMU1;
 
-template accessVarsFunction(SimCode simCode, String direction, String modelShortName, String typeName, String typeImpl, String arrayName)
+template accessVarsFunctionFMU1(SimCode simCode, String direction, String modelShortName, String typeName, String typeImpl, String arrayName)
  "Generates get<%typeName%> or set<%typeName%> function."
 ::=
   let qualifier = if stringEq(direction, "set") then "const"
@@ -506,9 +506,90 @@ template accessVarsFunction(SimCode simCode, String direction, String modelShort
       %>
     }
   }
+  >>
+end accessVarsFunctionFMU1;
+
+template accessFunctionsFMU2(SimCode simCode, String direction, String modelShortName, ModelInfo modelInfo)
+ "Generates getters or setters for Real, Integer, Boolean, and String."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  <%accessRealFunctionFMU2(simCode, direction, modelShortName, modelInfo)%>
+  <%accessVarsFunctionFMU2(simCode, direction, modelShortName, "Integer", "int", vars.intAlgVars, vars.intParamVars, vars.intAliasVars)%>
+  <%accessVarsFunctionFMU2(simCode, direction, modelShortName, "Boolean", "int", vars.boolAlgVars, vars.boolParamVars, vars.boolAliasVars)%>
+  <%accessVarsFunctionFMU2(simCode, direction, modelShortName, "String", "string", vars.stringAlgVars, vars.stringParamVars, vars.stringAliasVars)%>
+  >>
+end accessFunctionsFMU2;
+
+template accessRealFunctionFMU2(SimCode simCode, String direction, String modelShortName, ModelInfo modelInfo)
+ "Generates getReal or setReal function."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__), varInfo=VARINFO(numStateVars=numStateVars, numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numParams=numParams)) then
+  let qualifier = if stringEq(direction, "set") then "const"
+  <<
+  void <%modelShortName%>FMU::<%direction%>Real(const unsigned int vr[], int nvr, <%qualifier%> double value[]) {
+    std::stringstream message;
+    for (int i = 0; i < nvr; i++)
+      switch (vr[i]) {
+        <%vars.stateVars |> var => accessVecVarFMU2(direction, var, 0, "__z"); separator="\n"%>
+        <%vars.derivativeVars |> var => accessVecVarFMU2(direction, var, numStateVars, "__zDot"); separator="\n"%>
+        <%vars.algVars |> var => accessVarFMU2(simCode, direction, var, intMul(2, numStateVars)); separator="\n"%>
+        <%vars.discreteAlgVars |> var => accessVarFMU2(simCode, direction, var, intAdd(intMul(2, numStateVars), numAlgVars)); separator="\n"%>
+        <%vars.paramVars |> var => accessVarFMU2(simCode, direction, var, intAdd(intAdd(intMul(2, numStateVars), numAlgVars), numDiscreteReal)); separator="\n"%>
+        <%vars.aliasVars |> var => accessVarFMU2(simCode, direction, var, intAdd(intAdd(intAdd(intMul(2, numStateVars), numAlgVars), numDiscreteReal), numParams)); separator="\n"%>
+        default:
+          message.str("");
+          message << "<%direction%>Real with wrong value reference " << vr[i];
+          throw std::invalid_argument(message.str());
+      }
+  }
 
   >>
-end accessVarsFunction;
+end accessRealFunctionFMU2;
+
+template accessVarsFunctionFMU2(SimCode simCode, String direction, String modelShortName, String typeName, String typeImpl, list<SimVar> algVars, list<SimVar> paramVars, list<SimVar> aliasVars)
+ "Generates get<%typeName%> or set<%typeName%> function."
+::=
+  let qualifier = if stringEq(direction, "set") then "const"
+  <<
+  void <%modelShortName%>FMU::<%direction%><%typeName%>(const unsigned int vr[], int nvr, <%qualifier%> <%typeImpl%> value[]) {
+    std::stringstream message;
+    for (int i = 0; i < nvr; i++)
+      switch (vr[i]) {
+        <%algVars |> var => accessVarFMU2(simCode, direction, var, 0); separator="\n"%>
+        <%paramVars |> var => accessVarFMU2(simCode, direction, var, listLength(algVars)); separator="\n"%>
+        <%aliasVars |> var => accessVarFMU2(simCode, direction, var, intAdd(listLength(algVars), listLength(paramVars))); separator="\n"%>
+        default:
+          message.str("");
+          message << "<%direction%><%typeName%> with wrong value reference " << vr[i];
+          throw std::invalid_argument(message.str());
+      }
+  }
+  >>
+end accessVarsFunctionFMU2;
+
+template accessVarFMU2(SimCode simCode, String direction, SimVar simVar, Integer offset)
+ "Generates a case statement accessing one variable."
+::=
+match simVar
+  case SIMVAR(__) then
+  let descName = System.stringReplace(crefStrNoUnderscore(name), "$", "_D_")
+  let description = if comment then '/* <%descName%> "<%comment%>" */' else '/* <%descName%> */'
+  let cppName = getCppName(simCode, simVar)
+  let cppSign = getCppSign(simCode, simVar)
+  if stringEq(direction, "get") then
+  <<
+  case <%intAdd(offset, index)%>: <%description%>
+    value[i] = <%cppSign%><%cppName%>; break;
+  >>
+  else
+  <<
+  case <%intAdd(offset, index)%>: <%description%>
+    <%cppName%> = <%cppSign%>value[i]; break;
+  >>
+end accessVarFMU2;
 
 template getCppName(SimCode simCode, SimVar simVar)
   "Get name of variable in Cpp runtime, resolving aliases"
@@ -535,7 +616,7 @@ match simVar
       else ''
 end getCppSign;
 
-template accessVecVar(String direction, SimVar simVar, Integer offset, String vecName)
+template accessVecVarFMU2(String direction, SimVar simVar, Integer offset, String vecName)
  "Generates a case statement accessing one variable of a vector, neglecting $dummy state."
 ::=
 match simVar
@@ -556,7 +637,7 @@ match simVar
   case <%intAdd(offset, index)%>: <%description%>
     <%vecName%>[<%index%>] = value[i]; break;
   >>
-end accessVecVar;
+end accessVecVarFMU2;
 
 template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, String FMUVersion, String additionalLinkerFlags_GCC,
                             String additionalLinkerFlags_MSVC, String additionalCFlags_GCC, String additionalCFlags_MSVC)
