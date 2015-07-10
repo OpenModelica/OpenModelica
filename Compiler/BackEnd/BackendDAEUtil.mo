@@ -1792,7 +1792,10 @@ public function getStrongComponents
   input BackendDAE.EqSystem syst;
   output BackendDAE.StrongComponents outComps;
 algorithm
-  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=outComps)) := syst;
+  outComps := match(syst)
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=outComps))) then outComps;
+    else {};
+  end match;
 end getStrongComponents;
 
 public function getFunctions
