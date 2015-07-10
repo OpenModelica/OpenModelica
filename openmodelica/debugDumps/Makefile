@@ -7,6 +7,7 @@ optSimpleSolveDAEdump.mos \
 paramdlowdump.mos \
 symjacdump.mos \
 tearingdump.mos \
+libraryCoverageFlags.mos \
 
 
 FAILINGTESTFILES = \
