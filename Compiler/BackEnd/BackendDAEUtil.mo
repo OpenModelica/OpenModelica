@@ -7636,9 +7636,10 @@ protected
   BackendDAE.EqSystems systs;
 algorithm
   (reqs, systs) := inTpl;
-  outTpl := if BackendVariable.varsSize(inSyst.orderedVars) == 0
-            then (listAppend(BackendEquation.equationList(inSyst.removedEqs), reqs), systs)
-            else (reqs, inSyst::systs);
+  outTpl := if BackendVariable.varsSize(inSyst.orderedVars) <> 0
+               or (isClockedSyst(inSyst) and BackendDAEUtil.equationArraySize(inSyst.removedEqs) <> 0)
+            then (reqs, inSyst::systs)
+            else (listAppend(BackendEquation.equationList(inSyst.removedEqs), reqs), systs);
 end filterEmptySystem;
 
 public function getAllVarLst "retrieve all variables of the dae by collecting them from each equation system and combining with known vars"
@@ -7651,6 +7652,16 @@ algorithm
   BackendDAE.DAE(eqs=eqs,shared = BackendDAE.SHARED(knownVars=knvars)) := dae;
   varLst := List.flatten(List.map(listAppend({knvars}, List.map(eqs, BackendVariable.daeVars)), BackendVariable.varList));
 end getAllVarLst;
+
+public function isClockedSyst
+  input BackendDAE.EqSystem inSyst;
+  output Boolean out;
+algorithm
+  out := match inSyst
+    case BackendDAE.EQSYSTEM(partitionKind=BackendDAE.CLOCKED_PARTITION()) then true;
+    else false;
+  end match;
+end isClockedSyst;
 
 public function getAlgorithms
   input BackendDAE.BackendDAE dae;
