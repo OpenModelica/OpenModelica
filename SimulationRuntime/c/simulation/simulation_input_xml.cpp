@@ -164,7 +164,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     ci = v["classIndex"];
     ct = v["classType"];
     /* transform to mmc_sint_t  */
-    mi->lastCI = atoll(ci.c_str());
+    mi->lastCI = atoi(ci.c_str());
 
     /* which one of the classifications?  */
     mi->lastCT = ct.compare("rSta") ? mi->lastCT : &mi->rSta;
@@ -761,7 +761,7 @@ inline void read_value(std::string s, int* res)
   else if(s.compare("false") == 0)
     *res = 0;
   else
-    *res = atoll(s.c_str());
+    *res = atoi(s.c_str());
 }
 
 std::string& ltrim(std::string& str) {
